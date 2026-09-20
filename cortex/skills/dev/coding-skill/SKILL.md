@@ -14,7 +14,7 @@ Apply these language-independent practices to the consuming project's authored c
 ## Required actions
 
 1. Read each applicable practice in full once per task context:
-   - [Function ownership](practices/function-ownership.md).
+   - [Function, constant, and state ownership](practices/function-ownership.md).
    - [Domain API integrity](practices/domain-api-integrity.md).
    - [Source file size](practices/source-file-size.md).
    - [Testing and regression](practices/testing-pyramid-and-regression.md).

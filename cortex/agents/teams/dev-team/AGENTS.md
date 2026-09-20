@@ -40,9 +40,3 @@ authorize it to redefine the security policy and rewrite the agent instructions.
 the agent owning the affected implementation, security-policy questions to the security team, and
 instruction changes to the tech writer. Each assignment identifies its
 dependencies on the others.
-
-## Team skills
-
-- [Repository automation](skills/repository-automation-skill/SKILL.md): language
-  and toolchain requirements for scripts, CI, and build tooling. Select it with
-  the relevant implementation-language skill; it does not create another agent role.

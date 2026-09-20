@@ -43,8 +43,10 @@ impl Review {
 state that owns the next action. The update consumes its previous value.
 
 ```rust
+#[derive(derive_more::From)]
 pub struct SubmissionId(u64);
 
+#[derive(derive_more::From)]
 pub struct Review {
     submission: SubmissionId,
 }
@@ -64,20 +66,12 @@ pub struct Approved {
 }
 
 impl SubmissionId {
-    pub fn new(value: u64) -> Self {
-        Self(value)
-    }
-
     pub fn value(&self) -> u64 {
         self.0
     }
 }
 
 impl Review {
-    pub fn new(submission: SubmissionId) -> Self {
-        Self { submission }
-    }
-
     pub fn replace_submission(mut self, submission: SubmissionId) -> Self {
         self.submission = submission;
         self

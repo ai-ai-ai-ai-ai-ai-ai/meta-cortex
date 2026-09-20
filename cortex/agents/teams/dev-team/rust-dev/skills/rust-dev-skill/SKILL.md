@@ -8,28 +8,32 @@ description: Apply Rust practices for ownership, workflow states, domain types, 
 Apply these practices to authored Rust product code, tooling, tests, examples,
 and build scripts.
 
-## Behavior and workflows
+## Modeling
 
-- [Function ownership](practices/function-ownership.md): Receivers, associated functions, enum methods, and external callback exceptions.
-- [Workflow typestate](practices/workflow-typestate.md): Legal operation order, consuming transitions, and private capability construction.
-- [Owned updates](practices/owned-updates.md): Replacing values through `self`, returning outcomes, and narrow `&mut self` exceptions.
+- [Domain types](practices/modeling/domain-types.md): Newtypes, validated construction, named aggregates, and conversion traits.
+- [Domain states](practices/modeling/domain-states.md): Enums, state-owned payloads, exhaustive matching, and legitimate `Option`/`bool` uses.
+- [Struct construction](practices/modeling/struct-construction.md): Derived single-field conversions, named-field literals, and the prohibition on authored `new` constructors.
+- [Default values](practices/modeling/default-values.md): Derived struct defaults and explicit default enum variants.
 
-## Types and APIs
+## Behavior
 
-- [Domain types](practices/domain-types.md): Newtypes, validated construction, named aggregates, and conversion traits.
-- [Domain states](practices/domain-states.md): Enums, state-owned payloads, exhaustive matching, and legitimate `Option`/`bool` uses.
-- [API inputs](practices/api-inputs.md): One non-receiver parameter, named requests, and fixed-signature exceptions.
-- [Error handling](practices/error-handling.md): Concrete `thiserror` errors, typed sources, `?` propagation, and prohibited panic shortcuts.
-- [Paths and imports](practices/path-imports.md): Two-segment use-site paths, module qualifiers, and Clippy configuration.
-- [Macro minimization](practices/rust-macro-minimization.md): Restrictions on authored macros and permitted compiler, ecosystem, and generation cases.
+- [Function ownership](practices/behavior/function-ownership.md): Function, constant, and state ownership; dependency direction; methods versus conversions; external boundary exceptions.
+- [API inputs](practices/behavior/api-inputs.md): One non-receiver parameter, named requests, and fixed-signature exceptions.
+- [Workflow typestate](practices/behavior/workflow-typestate.md): Legal operation order, consuming transitions, and private capability construction.
+- [Owned updates](practices/behavior/owned-updates.md): Replacing values through `self`, returning outcomes, and narrow `&mut self` exceptions.
+- [Error handling](practices/behavior/error-handling.md): Concrete `thiserror` errors, typed sources, `?` propagation, and prohibited panic shortcuts.
 
-## External boundaries
+## Boundaries
 
-- [Serialization and ABI boundaries](practices/serialization-boundaries.md): Typed decoding, wire representations, and Rust/WASM boundary conversion.
-- [Rust–TypeScript separation](practices/rust-typescript-code-separation.md): Rust domain ownership, browser lifecycle ownership, and generated contracts.
-- [WASM name coherence](practices/rust-wasm-name-coherence.md): Exported names, generated ABI types, and established wire names.
+- [Serialization and ABI boundaries](practices/boundaries/serialization-boundaries.md): Typed decoding, wire representations, and Rust/WASM boundary conversion.
+- [Rust–TypeScript separation](practices/boundaries/rust-typescript-code-separation.md): Rust domain ownership, browser lifecycle ownership, and generated contracts.
+- [WASM name coherence](practices/boundaries/rust-wasm-name-coherence.md): Exported names, generated ABI types, and established wire names.
 
-## Supporting practices
+## Tooling
 
-- [Rust testing](practices/rust-testing.md): Inline unit tests, boundary coverage, and the 90% line-coverage floor.
-- [Rust dependency selection](practices/dependency-selection.md): crates.io download thresholds and repository popularity checks.
+- [Libraries](practices/tooling/libraries.md): Serde, thiserror, derive_more, and tracing as the Rust project library choices.
+
+- [Paths and imports](practices/tooling/path-imports.md): Two-segment use-site paths, module qualifiers, and Clippy configuration.
+- [Rust dependency selection](practices/tooling/dependency-selection.md): crates.io download thresholds and repository popularity checks.
+- [Macro minimization](practices/tooling/rust-macro-minimization.md): Restrictions on authored macros and permitted compiler, ecosystem, and generation cases.
+- [Rust testing](practices/tooling/rust-testing.md): Inline unit tests, boundary coverage, and the 90% line-coverage floor.

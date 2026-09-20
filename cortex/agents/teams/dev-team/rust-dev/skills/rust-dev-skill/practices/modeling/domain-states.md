@@ -39,7 +39,7 @@ Represent named alternatives with enums and keep each state’s data on its owni
   - For example, model `CredentialRole::Password(Password::Current)`.
 - Keep orthogonal concepts as separate enums.
 - Put domain behavior on the type that owns the required knowledge.
-  - Prefer methods that validate, transform, or return a domain state.
+  - Use methods for domain decisions and actions; use conversion traits for direct value transformations.
   - Match the enum directly so new variants remain compiler-visible.
 - Narrow enum variants before reading their payloads.
   - Use an exhaustive `match` when variants represent evolving domain decisions

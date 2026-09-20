@@ -37,9 +37,8 @@ locations through delegation so each agent can load its assigned context directl
   Supply it to browser UI implementation assignments alongside TypeScript
   development. Design-only assignments do not require TypeScript; markup,
   styling, or component edits receive the applicable coding prerequisites.
-- For repository scripts, CI, or build tooling, load
-  [repository automation](agents/teams/dev-team/skills/repository-automation-skill/SKILL.md)
-  and the development skill for the implementation language.
+- For repository scripts, CI, or build tooling, load the development skill
+  for the implementation language.
 - For secret handling in implementation or review, load
   [secret lifecycle](agents/teams/security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md)
   after common security, regardless of the assigned agent's team.
@@ -48,10 +47,10 @@ locations through delegation so each agent can load its assigned context directl
 
 For Rust/WASM consumers, including TypeScript and web implementations, load:
 
-- [Rust–TypeScript separation](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/rust-typescript-code-separation.md).
-- [WASM name coherence](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/rust-wasm-name-coherence.md).
-- [Rust error handling](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/error-handling.md) and
-  [domain states](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/domain-states.md)
+- [Rust–TypeScript separation](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/boundaries/rust-typescript-code-separation.md).
+- [WASM name coherence](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/boundaries/rust-wasm-name-coherence.md).
+- [Rust error handling](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/behavior/error-handling.md) and
+  [domain states](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/modeling/domain-states.md)
   when interpreting Rust failure and absence contracts.
 
 ## Validation

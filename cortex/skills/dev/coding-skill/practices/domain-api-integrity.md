@@ -35,9 +35,11 @@ placing domain decisions on these types.
 - Return success without a value only for a
   genuinely effect-only operation with no meaningful success state.
 - Return semantic outcomes for eligibility, classification, and selection decisions.
-- Put each decision on the owner of the data it interprets.
+- Put each decision in the domain that owns the rule; its input type alone
+  does not determine ownership.
 - Choose the [precise receiver](function-ownership.md#precise-receivers).
-- Keep kind-only rules with kind semantics, even for a single-field predicate.
+- Keep consumer-specific interpretations out of source types, even when the
+  interpretation reads only one field.
 - Keep aggregate APIs meaningful when they delegate to nested owners.
 - Carry the selected data on its outcome instead of requiring another lookup.
 - Apply [decision locality](function-ownership.md#decision-locality) recursively.
