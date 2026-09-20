@@ -15,7 +15,7 @@ bindings and dependency code retain their externally owned contracts.
 Load domain structure and explicit state together. For effectful workflows,
 also load Effect workflows before implementation; their rules apply together.
 
-- [Function ownership](practices/typescript-function-ownership.md): use meaningful instance owners, restrict statics to construction, and keep Svelte handlers within their component's interaction contract.
+- [Function ownership](practices/typescript-function-ownership.md): own functions, constants, and state; restrict static methods to construction, and keep Svelte handlers within their component's interaction contract.
 
 - [Single parameter](practices/typescript-single-parameter.md): authored functions, methods, constructors, and arrows take at most one parameter. Multiple inputs require one named semantic request. Only externally fixed signatures receive a narrow documented exception.
 - [Named arguments](practices/typescript-named-args.md): every object-shaped parameter has a named semantic type; every object call argument is a named, explicitly typed value. Inline object arguments, casts, defaults, and spread expressions must not bypass the rule. Only the specified Svelte compiler runes receive an exception.

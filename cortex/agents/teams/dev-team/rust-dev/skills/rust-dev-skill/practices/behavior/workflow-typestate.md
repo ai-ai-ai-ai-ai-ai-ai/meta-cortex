@@ -5,8 +5,8 @@ the operations allowed at that stage. A transition consumes the current state
 and returns the next state, so callers cannot skip steps or reuse a consumed
 capability.
 
-For example, a reservation must be validated before it can be completed:
-`Draft::validate` returns `Ready`, and only `Ready` has a `finish` method.
+For example, validate a reservation record before writing it:
+`Ready::try_from` accepts a draft, and only `Ready` has a `persist` method.
 
 This is the highest-priority modeling rule for new or changed meaningful action flows.
 Migrate one cohesive flow at a time; do not rewrite unrelated flows merely to
@@ -80,57 +80,70 @@ impl Reservation {
 ```
 
 **Preferred:** validation constructs a private capability and consumes the draft.
-Only the validated state exposes `finish`, which consumes that capability.
+Only the validated state exposes `persist`, which consumes that capability.
 The domain quantity remains typed through the transition.
 
 ```rust
 pub mod reservation {
-    use std::num::NonZeroU16;
+    use std::{fs, io, num::NonZeroU16, path::PathBuf};
 
     pub struct Quantity(NonZeroU16);
 
+    #[derive(Debug, thiserror::Error)]
     pub enum QuantityError {
+        #[error("quantity must be greater than zero")]
         Zero,
     }
 
-    impl Quantity {
-        pub fn parse(raw: u16) -> Result<Self, QuantityError> {
+    #[derive(Debug, thiserror::Error)]
+    pub enum ReservationError {
+        #[error("invalid reservation quantity")]
+        Quantity(#[from] QuantityError),
+        #[error("could not persist reservation")]
+        Persist(#[from] io::Error),
+    }
+
+    impl TryFrom<u16> for Quantity {
+        type Error = QuantityError;
+
+        fn try_from(raw: u16) -> Result<Self, Self::Error> {
             NonZeroU16::new(raw).map(Self).ok_or(QuantityError::Zero)
         }
+    }
 
+    impl Quantity {
         pub fn units(&self) -> u16 {
             self.0.get()
         }
     }
 
     pub struct Draft {
-        raw_quantity: u16,
+        pub raw_quantity: u16,
+        pub destination: PathBuf,
     }
 
     pub struct Ready {
         quantity: Quantity,
+        destination: PathBuf,
     }
 
     pub struct Completed {
         quantity: Quantity,
     }
 
-    impl Draft {
-        pub fn new(raw_quantity: u16) -> Self {
-            Self { raw_quantity }
-        }
+    impl TryFrom<Draft> for Ready {
+        type Error = QuantityError;
 
-        pub fn validate(self) -> Result<Ready, QuantityError> {
-            let quantity = Quantity::parse(self.raw_quantity)?;
-            Ok(Ready { quantity })
+        fn try_from(draft: Draft) -> Result<Self, Self::Error> {
+            let quantity = Quantity::try_from(draft.raw_quantity)?;
+            Ok(Self { quantity, destination: draft.destination })
         }
     }
 
     impl Ready {
-        pub fn finish(self) -> Completed {
-            Completed {
-                quantity: self.quantity,
-            }
+        pub fn persist(self) -> Result<Completed, ReservationError> {
+            fs::write(&self.destination, self.quantity.units().to_string())?;
+            Ok(Completed { quantity: self.quantity })
         }
     }
 
@@ -145,35 +158,30 @@ pub mod reservation {
 The caller follows the sequence through the available methods:
 
 ```rust
-use reservation::{Completed, Draft, QuantityError};
+use reservation::{Draft, Ready, ReservationError};
 
-pub struct ReservationRequest {
-    pub quantity: u16,
-}
-
-impl ReservationRequest {
-    pub fn complete(self) -> Result<Completed, QuantityError> {
-        let draft = Draft::new(self.quantity);
-        let ready = draft.validate()?;
-        let completed = ready.finish();
-        Ok(completed)
-    }
+fn main() -> Result<(), ReservationError> {
+    let draft = Draft { raw_quantity: 3, destination: "reservation.txt".into() };
+    let ready = Ready::try_from(draft)?;
+    let _completed = ready.persist()?;
+    Ok(())
 }
 ```
 
 This usage snippet shares the preceding `reservation` module. Validation
 failure returns a typed error before completion. On success, moving `draft`
-into `validate` prevents its reuse, and moving `ready` into `finish` prevents
-completing that same capability twice.
+into `Ready::try_from` prevents its reuse, and moving `ready` into `persist`
+prevents writing through that same capability twice.
 
 From outside `reservation`, constructing `Ready` with a struct literal is a
-compile error. Calling `finish` on `Draft`, cloning `Ready`, or reusing a moved
+compile error. Calling `persist` on `Draft`, cloning `Ready`, or reusing a moved
 `Ready` is also a compile error. Keep these as separate compile-fail cases
 when implementing this flow.
 
-This example completes an in-memory transition. It does not reserve external
-inventory. A real effect must still check current authorization and availability
-at its owning boundary. Private fields protect against external callers;
+This example writes a validated reservation record; it does not reserve inventory.
+`TryFrom` validates data, while `persist` performs I/O and remains a named action.
+Inventory availability and authorization belong to their own effect boundary.
+Private fields protect against external callers;
 code inside the defining module must also preserve the construction invariant.
 
 ## Validation

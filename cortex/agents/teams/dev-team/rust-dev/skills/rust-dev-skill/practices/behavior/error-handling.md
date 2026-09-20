@@ -11,6 +11,8 @@ Preserve the meaning and source of each failure. Propagate typed errors until an
   `?`, including locally constructed fixtures.
 - Production libraries, binaries, examples, and build scripts use concrete
   `thiserror` enums with operation-specific variants and typed sources.
+- Prefer `#[from]` and `?` for direct source-error conversions. Keep `map_err`
+  when adding context or choosing between variants with the same source type.
 - Test crates that use `anyhow` declare it under `[dev-dependencies]`.
 - Use `serde_json::Result<T>` for codecs whose only failure is serde JSON.
 
@@ -26,8 +28,7 @@ Preserve the meaning and source of each failure. Propagate typed errors until an
 
 ## Examples
 
-These fragments assume a parsing function inside a domain owner and a
-`thiserror` dependency. Both accept one raw boundary value.
+These alternatives convert a boundary string into `RetryCount`.
 
 **Prohibited:** malformed input becomes a panic, so the caller cannot classify
 or recover from the expected input error.
@@ -35,15 +36,17 @@ or recover from the expected input error.
 ```rust
 pub struct RetryCount(u16);
 
-impl RetryCount {
-    pub fn parse(raw: &str) -> Self {
-        Self(raw.parse().unwrap())
+impl TryFrom<&str> for RetryCount {
+    type Error = std::num::ParseIntError;
+
+    fn try_from(raw: &str) -> Result<Self, Self::Error> {
+        Ok(Self(raw.parse().unwrap()))
     }
 }
 ```
 
 **Preferred:** the failure names the operation and retains its typed source.
-The caller can propagate with `?` or match `RetryCountError` explicitly.
+`#[from]` supplies the conversion used by `?` and preserves the source.
 
 ```rust
 use std::num::ParseIntError;
@@ -54,12 +57,14 @@ pub struct RetryCount(u16);
 #[derive(Debug, Error)]
 pub enum RetryCountError {
     #[error("invalid retry count")]
-    InvalidNumber(#[source] ParseIntError),
+    InvalidNumber(#[from] ParseIntError),
 }
 
-impl RetryCount {
-    pub fn parse(raw: &str) -> Result<Self, RetryCountError> {
-        let count = raw.parse().map_err(RetryCountError::InvalidNumber)?;
+impl TryFrom<&str> for RetryCount {
+    type Error = RetryCountError;
+
+    fn try_from(raw: &str) -> Result<Self, Self::Error> {
+        let count = raw.parse()?;
         Ok(Self(count))
     }
 }

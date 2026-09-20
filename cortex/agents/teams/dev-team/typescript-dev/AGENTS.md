@@ -7,7 +7,7 @@ functional tests. This includes Svelte scripts and component behavior.
 ## Implementation and design handoff
 
 - Apply [TypeScript development](skills/ts-dev-skill/SKILL.md) with the common
-  coding, automation, cross-language, and security prerequisites selected for
+  coding, cross-language, and security prerequisites selected for
   the assignment. Browser UI assignments also receive the web design practices.
 - Implement the assigned interface's behavior and state transitions against
   the supplied design. Route changes to visual direction through Team Gizmo

@@ -60,15 +60,9 @@ assume its derive imports; aggregate examples assume existing domain types.
 Use one wrapper for each domain meaning.
 
 ```rust
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, derive_more::From)]
 pub struct FieldIndex {
     pub value: u32,
-}
-
-impl From<u32> for FieldIndex {
-    fn from(value: u32) -> Self {
-        Self { value }
-    }
 }
 
 impl FieldIndex {
@@ -78,7 +72,7 @@ impl FieldIndex {
 ```
 
 - Use `From<Primitive>` for an infallible single-field wrapper.
-- Use a parser or `TryFrom` when construction validates the value.
+- Use `TryFrom` when conversion validates the value.
 - Add associated constants only for common values with stable meaning.
 - Keep dynamic values on the normal conversion path.
 - Preserve the wrapper through domain and WASM calls.
@@ -113,7 +107,6 @@ let credential = Credential {
 #### Prohibited actions
 
 - Do not implement `From<(A, B, C)>` for independent aggregate fields.
-- Do not add a trivial `new(a, b, c)` that only hides those field names.
 - Do not expose state-capability fields merely to permit aggregate literals.
 
 ### Serde-transparent string newtype
@@ -124,7 +117,8 @@ let credential = Credential {
 pub struct StoreId(String);
 ```
 
-Wire JSON unchanged; Rust API is typed. Validate in `parse()` and in `Deserialize` when invariants matter (`SymmetricKey`, `EventId`, …).
+Wire JSON stays unchanged; the Rust API is typed. Validate through `TryFrom`
+when invariants matter. Deserialization must preserve the same validation.
 
 ### Version newtype
 
@@ -146,10 +140,6 @@ enum VersionedVaultEventBody {
 }
 ```
 
-### Trusted construction
-
-`from_trusted` / `from_vault_record` for values already validated or emitted by this process. Do not use for external input.
-
 ## Standard conversions
 
 Use standard conversion traits when converting one value into another has an
@@ -158,9 +148,9 @@ conversion.
 
 ### Required actions
 
-- Prefer `From<T>` for an infallible, value-preserving conversion from one
+- Use `From<T>` for a direct, infallible, value-preserving conversion from one
   input value.
-- Prefer `TryFrom<T>` for the corresponding fallible conversion. Return a
+- Use `TryFrom<T>` for the corresponding fallible conversion. Return a
   concrete error that describes the failure.
 - Implement `From` or `TryFrom` on the destination type. Use their provided
   `Into` or `TryInto` implementations at suitable call sites.
@@ -215,16 +205,11 @@ pub struct Invoice {
 Passing an `AccountId` as `Invoice.id` is a type error.
 
 ```rust
+#[derive(derive_more::From)]
 pub struct InvoiceId(u64);
+
+#[derive(derive_more::From)]
 pub struct AccountId(u64);
-
-impl From<u64> for InvoiceId {
-    fn from(value: u64) -> Self { Self(value) }
-}
-
-impl From<u64> for AccountId {
-    fn from(value: u64) -> Self { Self(value) }
-}
 
 pub struct Invoice {
     pub id: InvoiceId,

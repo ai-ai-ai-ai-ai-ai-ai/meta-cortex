@@ -36,6 +36,7 @@ Does not apply to:
 - Compiler- and ecosystem-provided derives and attributes required by an
   integration boundary, including Serde, thiserror, wasm-bindgen, Tsify, and
   test attributes.
+- `derive_more::From` for infallible single-field wrappers.
 - Standard formatting, logging, assertion, and collection-construction macros.
 - Purpose-built external code-generation libraries where token generation is
   the actual product requirement rather than a shortcut for ordinary code.

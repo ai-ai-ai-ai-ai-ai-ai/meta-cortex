@@ -11,16 +11,13 @@ then pass one typed command request into application behavior.
 
 - Use a named struct when an operation needs multiple independent values.
 - Name that struct for its domain or operation, such as `RotateKeyRequest`.
-- Construct independent request values with named fields.
 - Use the domain newtype directly when the operation needs one scalar value.
-- Validate request-wide invariants in a named fallible constructor.
 - Destructure or match the request inside the function or method that owns the
   operation.
 
 ## Prohibited actions
 
 - Do not use tuples, arrays, or collections to hide unrelated parameters.
-- Do not add a trivial positional constructor such as `new(a, b, c)`.
 - Do not use generic request names such as `Args`, `Params`, `Input`, or
   `Options` without domain or operation meaning.
 - Do not bundle booleans, sentinel values, or cross-workflow optional fields
@@ -39,65 +36,6 @@ framework callbacks may retain their externally required parameters.
 
 The pairs show alternative implementations, not definitions to combine in one
 module. Prohibited examples can compile while violating the API rules.
-
-### Replace positional constructors with named requests
-
-These method fragments assume `AccountId` and `Amount` domain types and a
-`Transfer` struct with `source`, `destination`, and `amount` fields.
-
-**Prohibited:** multiple positional inputs obscure their roles. A tuple would
-retain the same ambiguity.
-
-```rust
-impl Transfer {
-    pub fn new(source: AccountId, destination: AccountId, amount: Amount) -> Self {
-        Self { source, destination, amount }
-    }
-}
-```
-
-**Preferred:** one named request keeps independent fields visible at construction.
-
-```rust
-pub struct TransferRequest {
-    pub source: AccountId,
-    pub destination: AccountId,
-    pub amount: Amount,
-}
-
-impl Transfer {
-    pub fn new(request: TransferRequest) -> Self {
-        Self {
-            source: request.source,
-            destination: request.destination,
-            amount: request.amount,
-        }
-    }
-}
-```
-
-### Make call-site roles visible
-
-These expressions use the corresponding constructors above. `source` and
-`destination` both have type `AccountId`, so swapping positional arguments
-still compiles. Named fields expose the intended mapping during review.
-
-**Prohibited:** the call hides which account sends and which receives.
-
-```rust
-let transfer = Transfer::new(source, destination, amount);
-```
-
-**Preferred:** the call names each role. Field names improve reviewability;
-they do not prove that the caller selected the correct accounts.
-
-```rust
-let transfer = Transfer::new(TransferRequest {
-    source,
-    destination,
-    amount,
-});
-```
 
 ### Pass one domain value directly
 
@@ -136,26 +74,34 @@ impl RetryPolicy {
 
 A tuple is one syntactic parameter, but independent inputs remain positional.
 Changing the container does not satisfy the named-request requirement.
+These fragments assume a `TransferService` that owns access to the account ledger
+and executes a transfer. This operation changes balances; it is not a conversion.
 
-**Prohibited:** tuple positions still determine the account roles.
+**Prohibited:** tuple positions determine the account roles.
 
 ```rust
-impl Transfer {
-    pub fn new(values: (AccountId, AccountId, Amount)) -> Self {
+impl TransferService {
+    pub fn execute(&self, values: (AccountId, AccountId, Amount)) {
         let (source, destination, amount) = values;
-        Self { source, destination, amount }
+        // Execute the transfer using these values.
     }
 }
 ```
 
-**Preferred:** accept the named `TransferRequest` defined above and destructure
-its fields inside the operation that owns them.
+**Preferred:** accept a named request and destructure it inside the operation.
+The request describes operation inputs; it does not wrap a trivial constructor.
 
 ```rust
-impl Transfer {
-    pub fn new(request: TransferRequest) -> Self {
+pub struct TransferRequest {
+    pub source: AccountId,
+    pub destination: AccountId,
+    pub amount: Amount,
+}
+
+impl TransferService {
+    pub fn execute(&self, request: TransferRequest) {
         let TransferRequest { source, destination, amount } = request;
-        Self { source, destination, amount }
+        // Execute the transfer using these values.
     }
 }
 ```
@@ -205,14 +151,13 @@ impl ResizeHandler for WindowAdapter {
             width: Width::from(width),
             height: Height::from(height),
         };
-        self.layout = Layout::for_viewport(viewport);
+        self.layout = Layout::from(viewport);
     }
 }
 
-impl Layout {
-    fn for_viewport(viewport: Viewport) -> Self {
-        Self { viewport }
-    }
+#[derive(derive_more::From)]
+pub struct Layout {
+    viewport: Viewport,
 }
 ```
 
