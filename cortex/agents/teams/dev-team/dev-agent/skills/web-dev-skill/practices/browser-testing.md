@@ -1,7 +1,5 @@
 # Browser Testing
 
-Apply the [common testing and regression practices](../../../../../../../skills/dev/coding-skill/practices/testing-pyramid-and-regression.md).
-
 ## Browser integration
 
 - **Playwright tests own observable browser integration:**

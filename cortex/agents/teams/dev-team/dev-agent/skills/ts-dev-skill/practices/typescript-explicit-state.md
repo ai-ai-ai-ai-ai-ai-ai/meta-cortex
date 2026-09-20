@@ -102,8 +102,6 @@ mutable flags create the same problem.
   workflows and keep expected failures in Effect's typed error channel.
 - Keep accumulated codec field issues in the concrete error type.
 - Rust uses its standard Result.
-- Follow [TypeScript domain structure](typescript-domain-structure.md) for
-  failure propagation and named domain types.
 - Same-prefix closed values almost always belong on a nested object plus an
   operation enum. Do not flatten `DocumentExportAssemble` /
   `DocumentExportValidate` into one sibling list. Field allow-lists must be
