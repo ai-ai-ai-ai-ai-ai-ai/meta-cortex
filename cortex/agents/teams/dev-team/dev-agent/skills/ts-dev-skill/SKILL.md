@@ -5,12 +5,15 @@ description: Apply TypeScript rules for named APIs, explicit state, concrete dom
 
 # TypeScript Development Skill
 
-Read and apply the [common coding skill](../../../../../../skills/dev/coding-skill/SKILL.md),
-then every applicable rule below. These rules cover authored TypeScript,
+Apply every applicable rule below with the prerequisites supplied by the
+assignment’s skill composition. These rules cover authored TypeScript,
 JavaScript, Svelte scripts, tests, configuration, and agent tooling. Generated
 bindings and dependency code retain their externally owned contracts.
 
 ## Required practices
+
+Load domain structure and explicit state together. For effectful workflows,
+also load Effect workflows before implementation; their rules apply together.
 
 - [Function ownership](practices/typescript-function-ownership.md): use meaningful instance owners, restrict statics to construction, and keep Svelte handlers within their component's interaction contract.
 
@@ -25,7 +28,6 @@ bindings and dependency code retain their externally owned contracts.
 ## Task-specific practices
 
 - For asynchronous serialization, apply [serial operation queues](practices/typescript-serial-operation-queues.md), together with the Effect workflow requirements.
-- For Rust/WASM consumers, apply [code separation](../rust-dev-skill/practices/rust-typescript-code-separation.md) and [name coherence](../rust-dev-skill/practices/rust-wasm-name-coherence.md).
 
 Read the applicable practices in full, including their boundary exceptions
 and validation requirements. Existing code is not permission to weaken a rule.

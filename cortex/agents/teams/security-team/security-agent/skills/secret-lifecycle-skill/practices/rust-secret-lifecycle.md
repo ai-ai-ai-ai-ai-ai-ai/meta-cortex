@@ -1,7 +1,5 @@
 # Rust Secret Lifecycle
 
-Apply the [common secret lifecycle practices](../../../../../../../skills/security/security-skill/practices/secret-lifecycle.md).
-
 Rust owns secret validation, cryptographic use, redacted representation,
 zeroization, and long-lived capability state. Follow the project's cryptographic policy.
 

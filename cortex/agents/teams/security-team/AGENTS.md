@@ -8,4 +8,4 @@ Team Gizmo uses this index to route assignments.
 | [Security agent](security-agent/AGENTS.md) | Security architecture, trust boundaries, secret lifecycle, and security review. |
 
 Coordinate application and infrastructure changes with the
-[development team](../dev-team/AGENTS.md) through Team Gizmo.
+development team through Team Gizmo.

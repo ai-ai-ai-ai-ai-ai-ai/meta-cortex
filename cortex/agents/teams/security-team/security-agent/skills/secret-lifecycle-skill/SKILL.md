@@ -5,7 +5,7 @@ description: Implement and review secret lifetimes across Rust, WASM, TypeScript
 
 # Secret Lifecycle Skill
 
-Apply the [common security skill](../../../../../../skills/security/security-skill/SKILL.md).
+Use the common security prerequisites supplied with the assignment.
 For each affected boundary, read the applicable practice:
 
 - [Rust secret lifecycle](practices/rust-secret-lifecycle.md): validated secret types, redaction, zeroization, and capability ownership.

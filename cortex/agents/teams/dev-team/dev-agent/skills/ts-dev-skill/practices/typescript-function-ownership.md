@@ -1,9 +1,6 @@
 # TypeScript Function Ownership
 
-Apply the [common function ownership rules](../../../../../../../skills/dev/coding-skill/practices/function-ownership.md)
-and [TypeScript domain structure](typescript-domain-structure.md). These
-requirements specialize ownership for TypeScript and Svelte without weakening
-the common rule.
+These requirements specialize function ownership for TypeScript and Svelte.
 
 ## TypeScript owners
 

@@ -1,2 +1,2 @@
-/target/
-/installer/target/
+.idea/
+target/

@@ -53,18 +53,20 @@ the host applies those settings.
 
 ## Skill composition
 
-Agent instructions select skills according to the assignment.
+[Skill composition](skill-composition.md) selects common prerequisites and
+specialized skills according to the assignment.
 Each practice has one canonical owner.
 
 - **Common skills**
   - Define language-independent practices grouped by subject.
-  - Cover [coding](skills/dev/coding-skill/SKILL.md),
-    [security](skills/security/security-skill/SKILL.md), and
-    [agent context](skills/agents/context-engineer/SKILL.md).
+  - Cover [coding](skills/dev/coding-skill/SKILL.md) and
+    [security](skills/security/security-skill/SKILL.md).
   - Do not depend on agent roles or team structure.
 - **Specialized skills**
   - Live with their owning agents.
   - Extend common practices for the relevant language or task.
+  - The [context engineer](agents/teams/ai-team/context-engineer/AGENTS.md)
+    owns Technical Writing and Code Example Authoring for documentation and programming-rule examples.
 
 The framework's instructions remain generic.
 Project-specific requirements and architecture belong to the consuming project.

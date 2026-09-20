@@ -60,7 +60,7 @@ only when two materially different directions remain plausible.
 ## Svelte 5 Rules
 
 - Keep markup readable and components thin.
-- Follow [TypeScript explicit state](../../ts-dev-skill/practices/typescript-explicit-state.md): authored
+- Follow TypeScript explicit state: authored
   JavaScript, TypeScript, and Svelte use neither `undefined` nor `null` for
   value absence. Normalize external absence at its narrow boundary and model
   application state with a named enum-backed discriminated union.

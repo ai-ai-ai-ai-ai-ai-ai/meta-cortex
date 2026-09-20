@@ -15,10 +15,12 @@ For a new user task:
 1. Establish the [project context](#project-context).
 2. Read [meta-cortex.toml](meta-cortex.toml) and apply the
    [agent configuration rules](#agent-configuration).
-3. Read and follow [agents/AGENTS.md](agents/AGENTS.md) to launch Gizmo Prime
+3. Load [skill composition](skill-composition.md) and select prerequisites for
+   the task. Carry its selections and resolved document locations into assignments.
+4. Read and follow [agents/AGENTS.md](agents/AGENTS.md) to launch Gizmo Prime
    as a subagent through the host’s agent execution tool. Pass the task context
-   into its assignment. That document defines subsequent subagent launches,
-   coordination, and skill composition.
+   into its assignment. That document defines subsequent subagent launches
+   and coordination.
 
 ### Project context
 
@@ -39,6 +41,8 @@ Apply the consuming project's context throughout the task:
 - Interpret "the project" and "the repository" in skills as the consuming project.
 - Map architectural examples to the project's actual packages and paths while preserving their rules.
 - Implement changes and run validation within the assigned project scope.
+- Pass project context, configuration rules, the configuration file location,
+  the agent directory, and skill-composition instructions through every delegation.
 
 ### Agent configuration
 

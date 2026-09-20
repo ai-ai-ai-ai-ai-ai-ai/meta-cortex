@@ -2,12 +2,6 @@
 
 ## Purpose
 
-- Apply the repository's primary function-ownership rule to every authored
-  TypeScript function.
-- Apply the repository-wide
-  [domain API integrity rule](../../../../../../../skills/dev/coding-skill/practices/domain-api-integrity.md)
-  to every authored TypeScript domain and application API.
-
 Keep TypeScript domain models typed by meaning, nested, and enum-driven. A raw
 representation does not carry the metadata that makes a domain value safe to
 use. Treat raw domain primitives, inline unions, raw-string field allow-lists,
@@ -82,8 +76,6 @@ boundary where it is used.
 - Put validation, execution, and dispatch on meaningful instances.
 - Keep component handlers on a Svelte component only when they belong to that
   component's state or interaction contract.
-- Follow the repository-wide
-  [function ownership rule](../../../../../../../skills/dev/coding-skill/practices/function-ownership.md).
 - Model state changes as named transitions from one domain state to a named
   next state or outcome.
 - Keep advanced-state construction private to the transition that validates
@@ -93,9 +85,8 @@ boundary where it is used.
 - Keep one explicit current writer version and an explicit supported-reader
   set. Reject unsupported versions with a domain-specific failure.
 - Define an explicit migration before changing a persisted shape.
-- Follow the security-owned
-  [secret lifecycle](../../../../../../../skills/security/security-skill/practices/secret-lifecycle.md) for
-  browser interactions that temporarily receive plaintext.
+- Browser interactions that temporarily receive plaintext must preserve the
+  secret lifecycle requirements supplied with the assignment.
 
 ### Prohibited actions
 
@@ -214,7 +205,7 @@ Applies to:
 
 Does not apply to:
 
-- Rust `Result` / `Option` (see [rust-coding.md](../../rust-dev-skill/practices/rust-coding.md))
+- Rust `Result` / `Option`
 - Generated WASM / dependency typings
 
 ## Examples

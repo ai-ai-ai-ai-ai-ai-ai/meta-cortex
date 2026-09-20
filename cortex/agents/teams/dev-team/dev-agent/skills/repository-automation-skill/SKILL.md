@@ -5,8 +5,6 @@ description: Apply repository automation language, toolchain, and inventory requ
 
 # Repository Automation Skill
 
-For scripts, build logic, CI, or repository tooling, apply the
-[common coding skill](../../../../../../skills/dev/coding-skill/SKILL.md) and
+For scripts, build logic, CI, or repository tooling, apply
 [automation languages](practices/automation-languages.md).
-Use the [Rust skill](../rust-dev-skill/SKILL.md) or
-[TypeScript skill](../ts-dev-skill/SKILL.md) for authored implementation.
+Use the coding and implementation-language prerequisites supplied by the assignment.

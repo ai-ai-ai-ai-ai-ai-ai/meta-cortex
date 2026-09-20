@@ -5,9 +5,6 @@
 Authored TypeScript functions and methods may take at most one parameter.
 Multi-argument APIs must use a named object type.
 
-This is TypeScript's application of the one-parameter request rule in
-[domain API integrity](../../../../../../../skills/dev/coding-skill/practices/domain-api-integrity.md).
-
 ## Scope
 
 - Apply to all authored TypeScript and Svelte, including application code and tooling.

@@ -1,41 +1,35 @@
 ---
 name: rust-dev-skill
-description: Apply Rust coding rules for typed domain APIs, ownership, typestate, errors, and WASM boundaries.
+description: Apply Rust practices for ownership, workflow states, domain types, errors, and external boundaries.
 ---
 
 # Rust Development Skill
 
-Read and apply the [common coding skill](../../../../../../skills/dev/coding-skill/SKILL.md),
-then load all required and supporting Rust practices below. Apply cross-language
-practices when that boundary is involved. These requirements cover authored product code,
-tooling, tests, examples, and build scripts.
+Apply these practices to authored Rust product code, tooling, tests, examples,
+and build scripts.
 
-## Required practices
+## Behavior and workflows
 
-- [Rust coding](practices/rust-coding.md): at most one non-receiver parameter, named request structs, validated domain newtypes, exhaustive enum modeling, typed errors, and non-use paths of at most two segments.
-- [Action ownership and typestate](practices/rust-action-ownership.md): every function has a meaningful type owner; meaningful action flows encode legal sequencing in types. Consume replaced capabilities and keep advanced-state construction private.
-- [Typed newtypes](practices/typed-newtypes.md): preserve domain meaning through public APIs and boundaries. Use named aggregate fields and validated construction rather than positional constructors.
-- [Macro minimization](practices/rust-macro-minimization.md): repository-defined macros are prohibited for routine code; retain only the documented compiler, ecosystem, and code-generation exceptions.
+- [Function ownership](practices/function-ownership.md): Receivers, associated functions, enum methods, and external callback exceptions.
+- [Workflow typestate](practices/workflow-typestate.md): Legal operation order, consuming transitions, and private capability construction.
+- [Owned updates](practices/owned-updates.md): Replacing values through `self`, returning outcomes, and narrow `&mut self` exceptions.
 
-Production errors use concrete `thiserror` enums. `anyhow` is test-only.
-Do not call `unwrap`, `expect`, or `expect_err`, including in tests; fallible
-tests return a concrete result or `anyhow::Result` and propagate with `?`.
-Owned updates consume `self`; `&mut self` is limited to required traits or
-externally owned mutation contracts. Preserve the narrow exceptions in the
-linked rules.
+## Types and APIs
 
-## Cross-language work
+- [Domain types](practices/domain-types.md): Newtypes, validated construction, named aggregates, and conversion traits.
+- [Domain states](practices/domain-states.md): Enums, state-owned payloads, exhaustive matching, and legitimate `Option`/`bool` uses.
+- [API inputs](practices/api-inputs.md): One non-receiver parameter, named requests, and fixed-signature exceptions.
+- [Error handling](practices/error-handling.md): Concrete `thiserror` errors, typed sources, `?` propagation, and prohibited panic shortcuts.
+- [Paths and imports](practices/path-imports.md): Two-segment use-site paths, module qualifiers, and Clippy configuration.
+- [Macro minimization](practices/rust-macro-minimization.md): Restrictions on authored macros and permitted compiler, ecosystem, and generation cases.
 
-When code crosses Rust, WASM, and TypeScript, read and apply:
+## External boundaries
 
-- [Rust–TypeScript separation](practices/rust-typescript-code-separation.md): Rust owns portable domain models and decisions; TypeScript owns browser lifecycle and presentation. Consume generated contracts directly.
-- [WASM name coherence](practices/rust-wasm-name-coherence.md): exported callables retain their Rust names; construct the exact generated ABI type and preserve established wire names.
-
-Do not expose `Option<T>` through `Tsify` fields or `wasm_bindgen` parameters
-or returns. Normalize domain absence into named Rust enums before export.
-Internal truthful absence may still use `Option<T>` as specified in Rust coding.
+- [Serialization and ABI boundaries](practices/serialization-boundaries.md): Typed decoding, wire representations, and Rust/WASM boundary conversion.
+- [Rust–TypeScript separation](practices/rust-typescript-code-separation.md): Rust domain ownership, browser lifecycle ownership, and generated contracts.
+- [WASM name coherence](practices/rust-wasm-name-coherence.md): Exported names, generated ABI types, and established wire names.
 
 ## Supporting practices
 
-- Apply [Rust testing](practices/rust-testing.md): inline unit-test placement, typed boundary coverage, and the combined portable Rust coverage floor of 90%.
-- When adding or reviewing dependencies, first load [common library selection](../../../../../../skills/dev/coding-skill/practices/prefer-popular-libraries.md), then [Rust dependency selection](practices/dependency-selection.md) for the ecosystem download thresholds.
+- [Rust testing](practices/rust-testing.md): Inline unit tests, boundary coverage, and the 90% line-coverage floor.
+- [Rust dependency selection](practices/dependency-selection.md): crates.io download thresholds and repository popularity checks.

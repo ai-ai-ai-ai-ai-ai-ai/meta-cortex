@@ -1,7 +1,5 @@
 # TypeScript Secret Lifecycle
 
-Apply the [common secret lifecycle practices](../../../../../../../skills/security/security-skill/practices/secret-lifecycle.md).
-
 TypeScript and Svelte own only the required browser interaction lifetime. They
 must not become an alternate secret domain or persistence layer. Follow the
 product lifecycle authority for the affected flow.

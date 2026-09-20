@@ -6,9 +6,7 @@ Use Effect v3 to model effectful TypeScript workflows explicitly. Effect keeps
 expected failures, service requirements, resource lifetimes, concurrency, and
 runtime boundaries visible in one composable program.
 
-This policy complements [TypeScript domain structure](typescript-domain-structure.md)
-and [TypeScript explicit state](typescript-explicit-state.md). It does not move
-portable product or security ownership out of Rust/WASM.
+Effect does not move portable product or security ownership out of Rust/WASM.
 
 ## Scope
 

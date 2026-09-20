@@ -5,8 +5,8 @@ description: Apply web and Svelte development rules for presentation, state, acc
 
 # Web Development Skill
 
-Read and apply the [common coding skill](../../../../../../skills/dev/coding-skill/SKILL.md)
-and the [TypeScript skill](../ts-dev-skill/SKILL.md) for authored web code.
+Apply these practices with the coding and TypeScript prerequisites supplied
+by the assignment’s skill composition.
 
 ## Required practices
 
@@ -15,8 +15,6 @@ and the [TypeScript skill](../ts-dev-skill/SKILL.md) for authored web code.
 - [UI design](practices/ui-design-skills.md): preserve the specified Svelte stack, shared components, semantic tokens, explicit interaction states, responsive behavior, accessibility, and localization requirements.
 - [Svelte state](practices/svelte-state-modeling.md): initialize meaningful state explicitly, use enum-backed discriminated unions, preserve generated domain types, and keep portable workflows in Rust.
 - [Unused code](practices/web-unused-code.md): require zero unused-code findings and audit class members when tooling cannot trace them. Do not suppress findings or retain unused compatibility aliases.
-- [Rust–TypeScript separation](../rust-dev-skill/practices/rust-typescript-code-separation.md): keep domain policy in Rust and presentation/browser lifecycle in TypeScript; use generated contracts without mirrors or redundant forwarding wrappers.
-- [WASM name coherence](../rust-dev-skill/practices/rust-wasm-name-coherence.md): preserve exported callable names and use the declared generated class or structural DTO.
 
 Read applicable practices in full. Runtime enums used by Svelte components
 belong in adjacent `.ts` modules. Place `$state.snapshot` at the rune-owning
