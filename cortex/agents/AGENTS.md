@@ -8,7 +8,7 @@ applies to its assignment.
 - [Gizmo Prime](gizmo-prime/AGENTS.md) owns the overall feature and directs Team Gizmo.
 - [Team Gizmo](teams/gizmo/AGENTS.md) breaks work into assignments and coordinates team agents.
 - Agents in the [development team](teams/dev-team/AGENTS.md) and [security team](teams/security-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
-- The [AI team](teams/ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its context engineer subagent.
+- The [AI team](teams/ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer subagent.
 
 Each agent's `AGENTS.md` describes its role. Keep role responsibilities here
 and technical guidance in linked skills so they can evolve independently.
@@ -32,10 +32,13 @@ role instructions and task context. Reading a role document does not launch
 a subagent. Report unavailable subagent execution capabilities as blockers.
 
 - Pass the role directory above and its resolved document locations to coordinators.
+- Keep the team directory complete. Each team's `AGENTS.md` catalogs every
+  agent it contains with responsibilities, assignment boundaries, a role link,
+  and any incomplete-role status, so Team Gizmo can select agents from these summaries.
 - Gizmo Prime launches the single Team Gizmo as a subagent.
 - Team Gizmo launches the team agents needed for its assignments as subagents.
 - Assign instructions, specifications, skills, practices, and catalog edits to
-  the context engineer subagent. Pass the subject owner's requirements and the
+  the tech writer subagent. Pass the subject owner's requirements and the
   applicable coding or security prerequisites with the assignment.
 
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.

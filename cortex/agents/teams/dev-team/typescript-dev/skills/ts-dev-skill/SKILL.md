@@ -1,6 +1,6 @@
 ---
 name: ts-dev-skill
-description: Apply TypeScript rules for named APIs, explicit state, concrete domain types, and Effect workflows.
+description: Apply TypeScript rules for named APIs, explicit state, concrete domain types, Effect workflows, and browser implementation.
 ---
 
 # TypeScript Development Skill
@@ -26,6 +26,11 @@ also load Effect workflows before implementation; their rules apply together.
 - [Effect workflows](practices/typescript-effect.md): Effect v3 is required for new or materially changed asynchronous, fallible, resource-owning, concurrent, service-dependent, or boundary-decoding workflows. Do not introduce competing Result wrappers, `neverthrow`, or hand-rolled Promise error workflows. Pure calculations and rendering do not need ceremonial Effect wrappers.
 
 ## Task-specific practices
+
+- For browser UI, apply [browser implementation](practices/browser-implementation.md): Svelte stack, component integration, domain boundaries, translations, and browser validation.
+- For Svelte state and lifecycle, apply [Svelte state modeling](practices/svelte-state-modeling.md).
+- For browser regressions and integration suites, apply [browser testing](practices/browser-testing.md).
+- For web source cleanup, apply [unused code](practices/web-unused-code.md).
 
 - For asynchronous serialization, apply [serial operation queues](practices/typescript-serial-operation-queues.md), together with the Effect workflow requirements.
 

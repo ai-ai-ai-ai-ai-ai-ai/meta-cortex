@@ -15,6 +15,6 @@ common practices; agent instructions select and compose skills for a task.
 Keep one canonical copy of each practice and update all callers when moving it.
 
 For installer changes, apply the framework's
-[Rust skill](cortex/agents/teams/dev-team/dev-agent/skills/rust-dev-skill/SKILL.md).
+[Rust skill](cortex/agents/teams/dev-team/rust-dev/skills/rust-dev-skill/SKILL.md).
 From `installer/`, run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and
 `cargo test` before completing Rust changes.
