@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use tempfile::NamedTempFile;
 use thiserror::Error;
 
-static FRAMEWORK: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../framework");
+static FRAMEWORK: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../cortex");
 const LICENSE: &[u8] = include_bytes!("../../LICENSE");
 const ENTRY: &str = "<!-- meta-cortex:start -->\nRead and follow [.meta-cortex/AGENTS.md](.meta-cortex/AGENTS.md).\n<!-- meta-cortex:end -->";
 

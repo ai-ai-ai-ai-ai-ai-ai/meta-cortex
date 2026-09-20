@@ -1,85 +1,108 @@
 # Meta-Cortex
 
 Meta-Cortex is a composable development platform that organizes teams of AI
-agents to turn ideas and requirements into working software. Its agents,
-rules, skills, and execution configuration form one framework, installed in
-a project's `.meta-cortex/` directory. Your AI host supplies the models and
-tools; Meta-Cortex defines how they work together in your repository.
+agents to turn ideas and requirements into working software.
 
-## Install
+Your AI host supplies the models and execution tools. Meta-Cortex supplies the
+agent roles, skills, practices, and coordination instructions used in your
+project.
 
-Install the executable with:
+- [Get started](#get-started)
+- [Use Meta-Cortex](#use-meta-cortex)
+- [Update a project](#update-a-project)
 
-```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.sh | sh
-```
+## Get started
 
-Or install with Homebrew:
+### Install the command
+
+Choose one installation method.
+
+**Homebrew**
 
 ```sh
 brew install ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 ```
 
-Homebrew installs the executable under its managed prefix (`brew --prefix`),
-with the command available through that prefix’s `bin/` directory. It does not
-install framework files into your home or current directory.
-
-Run initialization from your project, or supply its directory:
+**Shell installer**
 
 ```sh
-meta-cortex init
-meta-cortex init /path/to/project
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.sh | sh
 ```
 
-The executable contains the framework; initialization needs no network access.
-It installs `<project>/.meta-cortex/` (the current directory is the default
-project) and adds a short managed block to the project's
-`AGENTS.md`, preserving existing instructions. Your AI host must read that file
-for the framework to take effect. Review `.meta-cortex/meta-cortex.toml` for
-models supported by your host.
+Prebuilt binaries are available for macOS and Linux on ARM64 and x86-64.
+See [GitHub Releases](https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases)
+for downloadable artifacts.
 
-Running `init` again with the same unmodified framework is safe. It refuses to
-overwrite a different version, local edits, or symbolic links. Automated
-framework upgrades are not implemented yet: back up and move the existing
-`.meta-cortex/` directory before installing another version, then reapply your
-configuration changes. If a filesystem error interrupts initialization, inspect
-and move the incomplete directory before retrying.
+### Initialize your project
 
-See the [framework overview](framework/README.md) for agent coordination,
-project context, and expected behavior. Installation does not start agents.
+1. Open an existing project directory.
+2. Run initialization:
 
-## Develop
+   ```sh
+   meta-cortex init
+   ```
 
-The framework source lives in `framework/`. This repository's [AGENTS.md](AGENTS.md)
-uses that source directly, so framework development follows the same rules we
-ship. The Rust installer crate lives in `installer/` and embeds it at build time. The Apache license stays at the
-repository root and is included in installed copies.
+   To initialize another directory, provide its path:
+
+   ```sh
+   meta-cortex init /path/to/project
+   ```
+
+3. Review `.meta-cortex/meta-cortex.toml` for models supported by your AI host.
+4. Use a host that reads the project's root `AGENTS.md`.
+
+The executable contains the framework, so initialization works offline.
+Installing or initializing Meta-Cortex does not start agents.
+
+### What gets installed
+
+- **Executable**
+  - Homebrew manages it under the prefix shown by `brew --prefix`.
+  - The command is available through that prefix's `bin/` directory.
+- **Project framework**
+  - Initialization writes the framework to `<project>/.meta-cortex/`.
+  - The current directory is the default project.
+- **Project entry point**
+  - Initialization adds a managed block to the project's root `AGENTS.md`.
+  - The block directs the host to `.meta-cortex/AGENTS.md`.
+  - Existing project instructions are preserved.
+
+## Use Meta-Cortex
+
+Give your AI host a development task in the initialized project.
+Read the [framework guide](cortex/README.md) for project context, agent
+coordination, model configuration, and skill composition.
+
+## Update a project
+
+Updating the executable and updating a project's framework are separate actions.
+An existing `.meta-cortex/` directory does not change when Homebrew upgrades the
+command.
+
+### Upgrade the command
+
+For a Homebrew installation:
 
 ```sh
-cargo run -- init /path/to/test-project
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
-cargo llvm-cov --fail-under-lines 90
-cargo build --release --locked
+brew upgrade ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 ```
 
-## Release
+For a shell installation, rerun the shell installer above.
 
-[Cargo-dist](https://axodotdev.github.io/cargo-dist/book/) builds native macOS
-and Linux binaries for ARM64 and x86-64, a shell installer, and a Homebrew formula.
-GoReleaser is not needed. Configuration lives in [dist-workspace.toml](dist-workspace.toml);
-the release workflow is generated by cargo-dist 0.32.0.
+### Replace an installed framework
 
-The [Homebrew tap](https://github.com/ai-ai-ai-ai-ai-ai-ai/homebrew-tap) updates
-its formula from the latest public release using its own GitHub Actions token.
-Its update workflow runs hourly and can be triggered manually after a release.
-No cross-repository token is required. Both repositories are public.
+Automated framework upgrades are not implemented yet.
 
-Install the pinned release tool with `cargo install cargo-dist --version 0.32.0 --locked`.
-After editing release configuration, run `dist generate` and commit its output.
-Use `dist plan` to inspect artifacts and `dist build --artifacts=local` to test a
-native package. To publish, update the package version in `installer/Cargo.toml` and lockfile, commit
-the changes, and push the matching `vX.Y.Z` tag. The generated release workflow
-publishes the GitHub assets; the tap workflow then imports the formula. No release or tap is created by
-building this repository locally.
+1. Back up the project's `.meta-cortex/` directory.
+2. Move the existing directory out of the installation path.
+3. Run `meta-cortex init` with the new executable.
+4. Review and reapply your configuration changes.
+
+Repeated initialization succeeds when the installed framework is unchanged and
+matches the executable's bundle. Initialization refuses to overwrite a different
+version, local edits, or symbolic links.
+
+If a filesystem error interrupts initialization, inspect and move the incomplete
+installation before retrying.
+
+For development and release instructions, see [Contributing](CONTRIBUTING.md).
