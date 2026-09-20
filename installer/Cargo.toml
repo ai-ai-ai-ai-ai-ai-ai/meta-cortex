@@ -1,0 +1,21 @@
+[package]
+name = "meta-cortex"
+version = "0.1.0"
+edition = "2024"
+description = "Install the Meta-Cortex development framework in a project"
+license = "Apache-2.0"
+repository = "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex"
+homepage = "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex"
+publish = false
+
+[dependencies]
+clap = { version = "4.6.7", features = ["derive"] }
+include_dir = "0.7.4"
+thiserror = "2.0.20"
+tempfile = "3.27.0"
+
+[lints]
+workspace = true
+
+[package.metadata.dist]
+dist = true

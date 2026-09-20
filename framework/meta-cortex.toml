@@ -1,0 +1,14 @@
+# Execution settings for Meta-Cortex agents.
+# Settings apply by role, regardless of agent directory.
+
+[gizmo-prime]
+model = "gpt-6-astra"
+reasoning_effort = "low"
+
+[team.gizmo]
+model = "gpt-6-astra"
+reasoning_effort = "low"
+
+[team.agent]
+model = "gpt-5.6-luna"
+reasoning_effort = "xhigh"
