@@ -1,9 +1,9 @@
 ---
-name: technical-writing
+name: context-engineering
 description: Write and maintain agent-facing specifications, instructions, skills, and practices. Keep their structure, authority, links, and content consistent.
 ---
 
-# Technical Writing
+# Context Engineering
 
 Keep the consuming project's persistent agent context readable and accurate.
 This includes specifications, instructions, skills, practices, and their indexes.

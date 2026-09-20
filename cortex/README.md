@@ -65,8 +65,8 @@ Each practice has one canonical owner.
 - **Specialized skills**
   - Live with their owning agents.
   - Extend common practices for the relevant language or task.
-  - The [context engineer](agents/teams/ai-team/context-engineer/AGENTS.md)
-    owns Technical Writing and Code Example Authoring for documentation and programming-rule examples.
+  - The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)
+    owns Context Engineering and Code Example Authoring for documentation and programming-rule examples.
 
 The framework's instructions remain generic.
 Project-specific requirements and architecture belong to the consuming project.

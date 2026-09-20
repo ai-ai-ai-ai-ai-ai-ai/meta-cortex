@@ -12,7 +12,7 @@ Every user-visible UI task must load and apply this card when it:
 
 Before editing:
 
-1. Read the assigned development-agent contract.
+1. Read the assigned design brief.
 2. Select the product or interface specification for the assigned interaction.
 3. Inspect the real target at runtime when possible.
 4. Inspect an incumbent source of visual truth:
@@ -39,61 +39,6 @@ only when two materially different directions remain plausible.
 
 - Preserve established routes, analytics contracts, and interaction semantics
   unless the task scope changes them.
-
-## Fixed Stack
-
-- Use Svelte 5 with `$props`, `$state`, `$derived`, and focused `$effect` runes.
-- Use Vite and Bun through repository Taskfile workflows.
-- Use Tailwind CSS v4 and semantic CSS variables from `app.css`.
-- Reuse shared Svelte UI primitives from
-  the owning application's shared `lib/components/ui/` directory.
-- Use `tailwind-variants`, `tailwind-merge`, and `cn` for variants.
-- Use `@lucide/svelte` as the single ordinary icon family.
-- Use CSS, `tw-animate-css`, and Svelte-native behavior for normal motion.
-- Do not add React, Next.js, JSX/TSX, React-only packages, shadcn React
-  components, or a parallel component system.
-- Do not add a design or animation dependency when the fixed stack suffices.
-- Inspect the owning `package.json` and justify any new dependency.
-- Impeccable is opt-in. Do not load, install, or run it unless the user
-  explicitly requests it by name.
-
-## Svelte 5 Rules
-
-- Keep markup readable and components thin.
-- Follow TypeScript explicit state: authored
-  JavaScript, TypeScript, and Svelte use neither `undefined` nor `null` for
-  value absence. Normalize external absence at its narrow boundary and model
-  application state with a named enum-backed discriminated union.
-- Use typed props and generated `$app-wasm` types directly.
-- Key stable collections with their semantic identifier.
-- Prefer semantic elements to ARIA patches.
-- Follow the package's Svelte event conventions.
-- Return cleanup from `$effect` for listeners, observers, timers, and external
-  animation state.
-- Keep continuous pointer and scroll values outside component-wide rune state.
-  Prefer CSS, `IntersectionObserver`, or a narrow action.
-- Keep application-wide state and effects in the existing `.svelte.ts`
-  controller pattern. Do not create React-style stores.
-- Svelte renders and coordinates; it does not own vault policy.
-
-## Rust, WASM, And Security
-
-Preserve the dependency direction: authentication and domain core → WASM bridge → web presentation.
-
-- Put validation, authorization, cryptography, vault decisions, data shaping,
-  and durable behavior in typed Rust exposed through WASM.
-- Limit Svelte to presentation state, browser ceremonies, lifecycle,
-  accessibility, and explicit interaction.
-- Do not mirror Rust enums or DTOs with TypeScript string unions.
-- Never place secrets in URLs, logs, DOM attributes, test IDs, analytics, or
-  hidden fallback markup.
-- Never persist plaintext secrets in browser convenience state.
-- Mask sensitive values until explicit reveal. Clear temporary revealed or
-  generated state when hidden or dismissed.
-- Keep passkey creation explicit. Default setup to authentication with an
-  existing credential; never infer credential absence from cancellation.
-
-Any visual shortcut that weakens these boundaries is a failed design.
 
 ## Components, Tokens, And Themes
 
@@ -142,8 +87,6 @@ Any visual shortcut that weakens these boundaries is a failed design.
 - Prevent horizontal overflow; never hide broken layout with arbitrary clipping.
 - Use `100svh` or `100dvh` intentionally; avoid mobile `100vh` or `h-screen`
   jumps.
-- Use capability and state detection, not viewport heuristics, for browser and
-  extension functionality.
 - Add motion only for feedback, hierarchy, transition, or comprehension.
 - Prefer existing CSS transitions and animate `transform` or `opacity`, not
   layout properties.
@@ -170,10 +113,6 @@ Any visual shortcut that weakens these boundaries is a failed design.
 
 ## Copy And Accessibility
 
-- Put every visible product string and accessible name in the shared Rust-owned
-  translation catalogs and render it through the application's translation API.
-- Preserve parity across every supported language catalog.
-- Do not hide inline English in fallbacks, conditionals, or ARIA attributes.
 - Use field-specific labels and descriptions; accessibility outranks
   deduplication.
 - Ensure keyboard navigation, visible focus, logical order, dialog focus
@@ -186,11 +125,10 @@ Any visual shortcut that weakens these boundaries is a failed design.
 ## Validation
 
 1. Inspect the real rendered flow before editing when possible.
-2. Implement the smallest coherent visual and behavior change.
+2. Apply the assigned layout, markup, and styling changes.
 3. Inspect every changed state in light and dark themes.
 4. Inspect representative phone and desktop widths.
-5. Add or update focused Playwright UI-demo coverage.
-6. Run formatting and the applicable UI checks.
-7. Inspect attached app logs before changing code after a browser-test failure.
+5. Capture the changed visual states and report defects with reproduction steps.
+6. Run formatting and the applicable visual and accessibility checks.
 
 Any applicable failed directive means the UI is not ready.
