@@ -82,17 +82,50 @@ branches will merge into the same `feature/editor` branch.
 
 ### Finish task work
 
-- Keep changes within the assigned task branch and scope.
-- Save the finished work on the branch and run the required focused checks.
-  If checks change files, save those changes and rerun affected checks.
-- Finish with a clean worktree and report the task result and validation outcome.
-  Incomplete work or failed checks must be reported accurately.
+The worker runs these steps in its assigned task worktree. `changed_path` is one
+assigned repository-relative file path; `task_message` describes the finished change.
 
-**Prohibited:** report a task complete while its final edits remain unsaved or
-its required checks have failed.
+1. Check the branch and inspect pending changes:
 
-**Preferred:** finish the task branch, verify its changes, and report completion
-so integration can begin.
+   ```sh
+   git -C "$task_path" branch --show-current
+   git -C "$task_path" status --short
+   git -C "$task_path" diff
+   git -C "$task_path" diff --cached
+   ```
+
+   Confirm the branch is `task_branch`. Review tracked changes and inspect any
+   new files listed by status. Keep unrelated files outside the task's changes.
+
+2. Run the assigned task checks from `task_path`. Fix failures before reporting
+   completion. Review any files modified by those checks before saving them.
+
+3. Stage each assigned file explicitly, repeating `git add` for each path:
+
+   ```sh
+   git -C "$task_path" add -- "$changed_path"
+   git -C "$task_path" diff --cached
+   ```
+
+   The staged diff must contain only the completed task changes. If it includes
+   unrelated work, correct the staging selection before proceeding.
+
+4. Save the reviewed changes on the task branch:
+
+   ```sh
+   git -C "$task_path" commit -m "$task_message"
+   git -C "$task_path" status --short
+   ```
+
+   Short status must be empty. If no changes need saving, skip the commit command.
+   If content changes after validation, rerun affected checks. Report the branch,
+   completed task, and check results; identify unfinished work or failed checks.
+
+**Prohibited:** report completion while final edits remain pending or required
+checks have failed.
+
+**Preferred:** inspect and save only the task's changes, verify clean status,
+and report completion so branch integration can begin.
 
 ### Integrate finished branches
 
@@ -165,61 +198,122 @@ then integrate the next completed branch in dependency order.
 
 ### Resolve integration failures
 
-- If a merge conflicts, abort it and report the conflicting files. Have the
-  owner resolve the conflict in its task worktree by merging the feature branch
-  into the task branch. Once the repair and checks finish, integrate that branch.
-- If combined checks fail, keep the branches and route the fix to its owner.
-  Integrate the repair and rerun affected checks before dependent work or cleanup.
-- If Git cannot complete or abort an operation, report its actual state and
-  preserve the workspaces. Use ordinary Git to resolve it.
+1. If the feature merge reports conflicts, list the affected files:
 
-**Prohibited:** discard one side of a domain conflict without its owner or
-remove branches while combined validation is failing.
+   ```sh
+   git -C "$feature_path" diff --name-only --diff-filter=U
+   ```
 
-**Preferred:** return the conflicting task for repair, then merge the repaired
-branch and check the feature again.
+   Record these paths for the task owner, then abort this attempted merge:
 
-If the feature merge conflicts, list the affected paths before aborting:
+   ```sh
+   git -C "$feature_path" merge --abort
+   git -C "$feature_path" status
+   ```
 
-```sh
-git -C "$feature_path" diff --name-only --diff-filter=U
-git -C "$feature_path" merge --abort
-git -C "$feature_path" status --short
-```
+   Expect a clean worktree with no merge in progress. If abort fails, retain the
+   workspaces and report Git's error and status; do not reset away work.
 
-The task owner performs the repair in its worker worktree:
+2. Have the task owner merge the feature branch into its worker branch:
 
-```sh
-git -C "$task_path" merge --no-edit -- "$feature_branch"
-```
+   ```sh
+   git -C "$task_path" merge --no-edit -- "$feature_branch"
+   ```
 
-The owner resolves the files, saves the repair on its branch, and reruns task
-checks. Once that task finishes, repeat the normal feature merge and validation.
+   If it merges successfully, continue with task checks. If it conflicts, the
+   owner identifies and edits the conflicting files in this worktree:
+
+   ```sh
+   git -C "$task_path" diff --name-only --diff-filter=U
+   ```
+
+   Resolve application behavior with the responsible owner rather than choosing
+   one side automatically.
+
+3. For a conflicted worker merge, stage each resolved file using its
+   repository-relative `changed_path`, then inspect the resolution:
+
+   ```sh
+   git -C "$task_path" add -- "$changed_path"
+   git -C "$task_path" diff --name-only --diff-filter=U
+   git -C "$task_path" diff --cached
+   ```
+
+   Repeat staging for all resolved files. The unresolved-file list must be empty.
+   After reviewing the staged resolution, finish the merge:
+
+   ```sh
+   git -C "$task_path" commit --no-edit
+   git -C "$task_path" status --short
+   ```
+
+   Expect clean status. Rerun the worker's checks and report the repaired task.
+   Once it finishes, repeat feature integration and combined validation.
+
+4. If Git merged successfully but combined checks fail, keep the branches and
+   report the failing checks to the task owner. Use the worker repair steps above
+   to incorporate current feature changes if needed, then fix the failed behavior
+   and follow task completion. Do not run `merge --abort` for a completed merge.
+   Integrate the repair and rerun checks before dependent tasks or cleanup.
+
+**Prohibited:** discard a side of a domain conflict or remove branches while
+combined validation is failing.
+
+**Preferred:** abort only the conflicted merge, return the affected paths for
+repair, and validate the repaired branch after integrating it.
 
 ### Complete and clean up
 
-1. Verify finished task branches are fully merged using Git's branch comparison,
-   such as `git branch --merged feature/example`. Complete feature validation.
-2. Remove finished task worktrees with `git worktree remove` and their branches
-   with `git branch -d` from the feature worktree. Keep any branch that still has
-   work in progress or unmerged changes. Do not force cleanup if Git refuses.
-3. Retain the feature branch and integration worktree. Report their locations,
-   merged tasks, check results, and unfinished work. Local completion excludes
-   publishing, PR creation, and merging into the base branch.
+1. Complete the feature's assigned validation before cleanup. For each finished
+   task, check that Git lists its branch as fully merged:
 
-**Prohibited:** force-delete an unmerged task branch or a dirty worktree.
+   ```sh
+   git -C "$feature_path" branch --merged "$feature_branch" --list "$task_branch"
+   ```
 
-**Preferred:** let Git confirm branches are merged, remove only finished task
-workspaces, and leave the validated feature branch available for review.
+   The output must include `task_branch`. An empty result means keep the branch
+   and resolve its remaining integration work.
 
-For each finished task, confirm its branch appears in the merged-branch list
-and its worktree is clean before running removal commands. Keep the feature
-worktree and branch. Run branch deletion from the feature worktree so Git checks
-integration against the destination branch.
+2. Confirm the task is no longer active and its worktree is clean:
 
-```sh
-git -C "$feature_path" branch --merged "$feature_branch" --list "$task_branch"
-git -C "$task_path" status --short
-git -C "$repo_path" worktree remove "$task_path"
-git -C "$feature_path" branch -d "$task_branch"
-```
+   ```sh
+   git -C "$task_path" status --short
+   ```
+
+   Expect no output. Keep the workspace if it contains pending changes or the
+   worker still needs it; report that unfinished work.
+
+3. Remove the finished worker worktree:
+
+   ```sh
+   git -C "$repo_path" worktree remove "$task_path"
+   ```
+
+   Continue only if removal succeeds. If Git refuses, retain the workspace and
+   report the reason; do not force removal.
+
+4. Delete its fully merged branch from the feature worktree:
+
+   ```sh
+   git -C "$feature_path" branch -d "$task_branch"
+   ```
+
+   Expect Git to report deletion. If it refuses, keep the branch and investigate
+   the reason instead of forcing deletion.
+
+5. Confirm the remaining workspaces and feature status:
+
+   ```sh
+   git -C "$repo_path" worktree list
+   git -C "$feature_path" branch --show-current
+   git -C "$feature_path" status --short
+   ```
+
+   Keep the feature worktree on `feature_branch` with clean status. Report its
+   branch/path, merged tasks, validation results, and retained task workspaces.
+   Local completion excludes publishing, PR creation, and merging into the base.
+
+**Prohibited:** force-delete an unmerged task branch or dirty worktree.
+
+**Preferred:** confirm integration and clean status, remove the finished worker
+workspace and branch, and retain the validated feature for review.

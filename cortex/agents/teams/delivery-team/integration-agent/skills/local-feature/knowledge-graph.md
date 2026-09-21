@@ -18,7 +18,8 @@
   - Order dependent tasks; supply scopes, branch names, paths, checks, and the
     actual library location. Read-only work needs no write workspace.
 - **[local_feature:completion](practices/local-feature-integration.md#finish-task-work)**
-  - Save assigned changes on the task branch and validate finished content.
+  - Inspect and stage assigned files explicitly, save them on the task branch,
+    and validate finished content.
   - Finish with a clean worktree and report completion or outstanding problems.
 - **[local_feature:integration](practices/local-feature-integration.md#integrate-finished-branches)**
   - Integrate finished branches in dependency order with one feature writer.
@@ -27,7 +28,9 @@
     incompatible merge policy rather than substituting squash or history rewriting.
   - Validate combined changes and report merged tasks and check results.
 - **[local_feature:repair](practices/local-feature-integration.md#resolve-integration-failures)**
-  - Abort conflicts and return them to their owners for task-branch repair.
+  - Abort conflicted merges and return them to their owners for task-branch
+    repair. Resolve and stage conflicting files before finishing the worker merge.
+    Do not abort an already completed merge when combined checks fail.
   - Retain branches on failure; integrate repairs and revalidate before dependent
     work or cleanup. Preserve and report Git state if an operation cannot finish.
 - **[local_feature:cleanup](practices/local-feature-integration.md#complete-and-clean-up)**
