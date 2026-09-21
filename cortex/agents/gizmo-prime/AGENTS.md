@@ -14,10 +14,12 @@ Own the feature outcome. Team Gizmo manages workers and integration.
 ```mermaid
 flowchart LR
     P[Gizmo Prime] -->|Feature scope and corrections| G[Team Gizmo]
-    G -->|Feature branch and check results| P
+    G -->|One feature branch and check results| P
 ```
 
 - Apply the supplied local-feature practice.
+- Own one feature branch for the entire feature with Team Gizmo. Keep that
+  branch for follow-up tasks and corrections within the feature.
 - Give Team Gizmo:
   - Feature objective and scope.
   - Base branch and any existing feature branch and worktree.

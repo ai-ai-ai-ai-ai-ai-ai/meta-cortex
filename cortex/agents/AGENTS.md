@@ -58,6 +58,9 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 ## Local feature ownership
 
 - Gizmo Prime owns the feature scope, base decision, and final acceptance.
+- Gizmo Prime and its single Team Gizmo manage one feature branch for the entire
+  feature. Many agent task branches contribute to that same feature branch;
+  each belongs to one worker's bounded assignment, not a separate feature.
 - Team Gizmo assigns the integration agent from the delivery catalog for local
   write work. It orders integration, routes repairs,
   and oversees cleanup. Keep one active integration agent per feature.

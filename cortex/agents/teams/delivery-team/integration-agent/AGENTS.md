@@ -10,8 +10,8 @@ the host's existing agent communication tools.
 
 - Receive the base branch, feature branch, task assignments, and required checks
   from Team Gizmo.
-- Create the feature branch and its integration worktree, or use the assigned
-  existing feature worktree.
+- Create one feature branch and integration worktree for the entire feature,
+  or reuse the assigned existing feature worktree for continued work.
 - Create each worker's task branch from the feature branch in a separate Git
   worktree. These are linked worktrees of the same repository, not nested
   repositories or folders inside the feature worktree.
@@ -30,7 +30,8 @@ then return their branch names and paths to Team Gizmo.
 - When Team Gizmo reports a worker finished, integrate that worker's branch in
   the requested dependency order.
 - Run Git commands in the feature worktree. Merge the task branch by name.
-  Remain the sole writer to the feature branch; integrate one task at a time.
+  All worker branches target this same feature branch. Remain its sole writer;
+  integrate one task at a time.
 - Run the required combined checks from the feature worktree.
 - Report the result to Team Gizmo:
   - Task branch merged and destination feature branch.

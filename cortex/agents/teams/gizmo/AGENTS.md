@@ -45,18 +45,20 @@ for that assignment rather than preloading unrelated agents.
 
 ```mermaid
 flowchart LR
-    G[Team Gizmo] -->|Tasks and fixes| W[Workers]
+    G[Team Gizmo] -->|Task branches and fixes| W[Workers]
     W -->|Completion and checks| G
-    G -->|Integrate finished branches| I[Integration agent]
+    G -->|Merge into one feature branch| I[Integration agent]
     I -->|Results or conflicts| G
 ```
 
 1. For write work, launch one integration agent from the delivery catalog using
    the team-agent configuration. Supply Prime's feature/base decision and the
    local-feature prerequisite selected by skill composition.
-2. Have the integration agent create the feature and task workspaces. Give each
-   worker its branch, worktree, scope, dependencies, checks, and library location.
-3. When a worker finishes, direct the integration agent to merge that task branch.
+2. Have the integration agent prepare one feature worktree for the whole feature
+   and a separate task branch/worktree for each worker assignment. Give each
+   worker its scope, dependencies, checks, and library location.
+3. When a worker finishes, direct the integration agent to merge its task branch
+   into the same feature branch. Reuse that feature branch for corrections.
    Order dependent work and keep feature integration sequential.
 4. Check integration results and route conflicts or failures to their owners.
 5. Have the integration agent clean up finished tasks after validation. Report

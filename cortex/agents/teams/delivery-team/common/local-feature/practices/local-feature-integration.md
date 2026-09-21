@@ -17,11 +17,14 @@ to the same Git repository. Replace the variables with the assigned values.
 2. Use the base branch selected by the user or project, otherwise the current
    checked-out branch. Resolve a missing branch choice before proceeding.
    Do not fetch implicitly for local-only work.
-3. Create a feature branch and integration worktree, or reuse the explicitly
-   assigned feature workspace. Follow the project's branch naming convention.
+3. Use one feature branch and integration worktree for the entire feature.
+   Create them once; reuse them for additional tasks and corrections within that
+   feature. Follow the project's branch naming convention.
 4. Create a separate task branch and worktree for each write assignment from
    the feature branch. Start dependent tasks after their prerequisites are
    integrated and validated; independent tasks may run concurrently.
+   Multiple task branches feed the same feature branch. A task branch is the
+   assigned worker's contribution to the feature, not another feature branch.
 5. Supply task scope, branch names, workspace paths, and validation requirements.
    Pass the actual framework library location separately: ignored libraries,
    dependencies, and pending edits are not copied into new Git worktrees.
@@ -30,8 +33,9 @@ to the same Git repository. Replace the variables with the assigned values.
 **Prohibited:** assume subagent sessions automatically isolate their edits, or
 create a task worktree expecting another checkout's pending edits to appear.
 
-**Preferred:** create `task/parser` in its own worktree from the feature branch
-and give its worker the correct source and library paths.
+**Preferred:** create `task/parser` and `task/ui` in separate worktrees from
+`feature/editor`. Merge both back into `feature/editor`; continue using that
+feature branch for later fixes. Give each worker its source and library paths.
 
 For a new feature and its first task, inspect the repository and create the
 worktrees. Repeat only the task creation for each additional worker, with its
