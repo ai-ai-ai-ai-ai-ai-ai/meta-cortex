@@ -81,22 +81,25 @@ command catalog; they do not require an MCP server or Loom.
 
 ### Prepare and discover
 
-1. Resolve this skill's absolute directory as `skill_dir`.
-2. Copy its scripts to a temporary runtime directory and install the locked
-   dependencies with Bun 1.3.14. Keep dependencies outside the framework so
-   they cannot enter installer bundles or modify an installed library.
+1. Resolve the Meta-Cortex library root as `library_root` (`cortex/` in this
+   repository, `.meta-cortex/` in an installed project).
+2. Install the root workspace once with Bun 1.3.14:
 
    ```sh
-   skill_runtime=$(mktemp -d)
-   cp -R "$skill_dir/scripts/." "$skill_runtime/"
-   cd "$skill_runtime"
-   bun install --frozen-lockfile
+   cd "$library_root"
+   bun install --frozen-lockfile --ignore-scripts
    ```
+
+   The root manifest and lockfile cover all skill script packages. The hoisted
+   linker shares one root `node_modules/`; Bun reuses its home-directory cache
+   (`~/.bun/install/cache`). Do not create per-skill installs, lockfiles, caches,
+   or temporary runtime copies. Keep dependency versions aligned across skills
+   so Bun does not need nested installations for conflicts.
 
 3. Discover command schemas and complete YAML examples:
 
    ```sh
-   bun src/ts/cli.ts --request-yaml='version: 1
+   bun agents/teams/ai-team/tech-writer/skills/context-engineering/scripts/src/ts/cli.ts --request-yaml='version: 1
    tools:
      list: {}'
    ```
@@ -148,7 +151,8 @@ inspect the returned findings, and state the audited scope.
 ### Maintain scripts
 
 - Keep source in `scripts/src/ts` and tests in `scripts/src/test`.
-- Run `bun run verify` in the temporary scripts copy after changing code.
+- Run `bun run verify` at the library root after changing code.
+- Update dependencies through the root workspace and commit its `bun.lock`.
 - Update discovery examples with their request contracts. Every example must
   remain directly invocable.
 - Preserve [Nook's MIT notice](scripts/LICENSE.nook) with the adapted code.

@@ -3,7 +3,11 @@
   "configVersion": 1,
   "workspaces": {
     "": {
+      "name": "@meta-cortex/skill-workspace",
+    },
+    "agents/teams/ai-team/tech-writer/skills/context-engineering/scripts": {
       "name": "@meta-cortex/context-engineering",
+      "version": "0.1.0",
       "dependencies": {
         "effect": "3.22.2",
         "yaml": "2.9.0",
@@ -41,6 +45,8 @@
     "@humanwhocodes/module-importer": ["@humanwhocodes/module-importer@1.0.1", "", {}, "sha512-bxveV4V8v5Yb4ncFTT3rPSgZBOpCkjfK0y4oVVVJwIuDVBRMDXrPyXRL988i5ap9m9bnyEEjWfm5WkBmtffLfA=="],
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ=="],
+
+    "@meta-cortex/context-engineering": ["@meta-cortex/context-engineering@workspace:agents/teams/ai-team/tech-writer/skills/context-engineering/scripts"],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 

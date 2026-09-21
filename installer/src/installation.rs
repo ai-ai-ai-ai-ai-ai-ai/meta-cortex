@@ -103,7 +103,19 @@ impl Bundle<'_> {
                 }
             }
         }
-        if fs::read_dir(&self.destination)?.count() != expected {
+        let mut actual = 0;
+        for entry in fs::read_dir(&self.destination)? {
+            let entry = entry?;
+            if self.directory.path().as_os_str().is_empty() && entry.file_name() == "node_modules" {
+                // The library's Bun workspace owns this local, unbundled directory.
+                if !entry.file_type()?.is_dir() {
+                    return Err(InstallError::Conflict(entry.path()));
+                }
+                continue;
+            }
+            actual += 1;
+        }
+        if actual != expected {
             return Err(InstallError::Conflict(self.destination.clone()));
         }
         Ok(())
@@ -111,7 +123,7 @@ impl Bundle<'_> {
 }
 
 impl Project {
-    const FRAMEWORK: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../cortex");
+    const FRAMEWORK: Dir<'_> = include_dir!("$META_CORTEX_BUNDLE");
     const LICENSE: &[u8] = include_bytes!("../../LICENSE");
 
     pub fn open(path: PathBuf) -> Result<Self, InstallError> {
@@ -264,6 +276,34 @@ mod tests {
             assert_eq!(first, fs::read_to_string(agents)?);
             Ok(())
         }
+        fn preserves_workspace_dependencies(self) -> Result<(), InstallError> {
+            self.install()?;
+            let root = self.directory.path().join(".meta-cortex");
+            let modules = root.join("node_modules");
+            assert!(!modules.exists());
+            assert!(root.join("package.json").is_file());
+            assert!(root.join("bun.lock").is_file());
+            fs::create_dir(&modules)?;
+            let marker = modules.join("installed-package");
+            fs::write(&marker, "local dependency")?;
+            self.install()?;
+            Project::open(self.directory.path().to_path_buf())?.info()?;
+            assert_eq!(fs::read_to_string(marker)?, "local dependency");
+            fs::write(root.join("unexpected-file"), "unexpected")?;
+            assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
+            Ok(())
+        }
+        fn rejects_linked_dependencies(self) -> Result<(), InstallError> {
+            self.install()?;
+            let external = tempdir()?;
+            let modules = self.directory.path().join(".meta-cortex/node_modules");
+            symlink(external.path(), &modules)?;
+            assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
+            fs::remove_file(&modules)?;
+            fs::write(&modules, "not a directory")?;
+            assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
+            Ok(())
+        }
         fn rejects_modified_bundle(self) -> Result<(), InstallError> {
             self.install()?;
             let path = self.directory.path().join(".meta-cortex/AGENTS.md");
@@ -347,6 +387,14 @@ mod tests {
             assert!(!self.directory.path().join(".meta-cortex").exists());
             Ok(())
         }
+    }
+    #[test]
+    fn preserves_root_workspace_dependencies() -> Result<(), InstallError> {
+        Fixture::create()?.preserves_workspace_dependencies()
+    }
+    #[test]
+    fn rejects_invalid_workspace_dependencies() -> Result<(), InstallError> {
+        Fixture::create()?.rejects_linked_dependencies()
     }
     #[test]
     fn preserves_project_and_is_idempotent() -> Result<(), InstallError> {
