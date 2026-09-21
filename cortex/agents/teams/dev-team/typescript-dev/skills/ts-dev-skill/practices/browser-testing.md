@@ -1,53 +1,74 @@
 # Browser Testing
 
-## Browser integration
+Playwright verifies observable browser integration. Portable algorithms and
+product decisions are tested directly in Rust, not reimplemented in TypeScript.
 
-- **Playwright tests own observable browser integration:**
-   - Cover critical user flows such as unlock, save, local provider sync,
-     recovery, import, secret disclosure, and conflict UI.
-   - Cover browser-only sequencing, persistence, visibility, clipboard,
-     download, multi-tab, extension, and origin behavior.
-   - Do not use browser tests to prove mathematical or algorithmic correctness
-     that portable Rust can establish directly.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-## Suite coverage
+## Test the boundary that can fail
 
-When a Playwright suite partitions specifications across projects, require
-   every non-demo behavior specification to appear exactly once in the shared
-   executable gate manifest. Suites that rely on default `testDir` discovery
-   do not need a redundant manifest.
+Cover critical user flows and browser-only ordering, persistence, visibility,
+clipboard/download, multi-tab, extension, and origin behavior. Do not claim a
+rendered label proves domain calculations.
 
-### Unit-first browser failure loop
+**Prohibited:**
 
-Use this procedure for a failing web or extension e2e scenario.
+```ts
+// A UI label is used as the only proof of a domain calculation:
+await expect(page.getByText("Total correct")).toBeVisible();
+```
 
-**Required actions**
+**Preferred:**
 
-1. Read the saved job output, app logs, error context, and Playwright trace.
-   Identify the first failing behavior and its owning boundary before changing
-   code.
-2. Select the smallest applicable existing regression framework.
-   Use the framework that exercises the failing ownership boundary.
-3. Apply the mandatory regression procedure in the common testing practices before fixing the defect.
-   - Exercise actual transport contracts such as typed `Result` values.
-   - Do not use permissive mocks that return a shape production cannot return.
-4. Make the smallest owning correction and retain the authored regressions.
-5. Keep the browser assertion for browser validation.
-   - For a browser-only defect, cover the closest deterministic unit contract
-     and retain the browser-level regression.
-   - Unit evidence narrows the repair loop. It does not replace e2e acceptance.
-   - Diagnose returned failing-job evidence before the next repair.
-   - Author the applicable unit regressions before changing that repair's code.
+```ts
+// In the existing browser scenario, after the Rust calculation tests:
+await page.getByRole("button", saveButton).click();
+await expect(page.getByRole("status")).toHaveText(savedMessage);
+```
 
-**Prohibited actions**
+## Repair from evidence, with a regression first
 
-- Do not weaken assertions, increase timeouts, or skip a failing scenario as
-  the fix.
-- Do not create a new test framework when an existing owner can express the
-  behavior.
-- Do not measure coverage quality by test count alone. Require meaningful
-  contract and branch evidence.
+Read job output, app logs, error context, and trace before editing. Identify the
+first failed boundary, choose the smallest existing test owner, and follow the
+common regression-before-fix procedure. Mocks must honor production transport
+contracts. Keep browser acceptance alongside the unit regression.
 
+**Prohibited:**
 
-Record applicable browser regression results for changed user flows.
-Every non-demo behavior specification must belong to an executable gate.
+```ts
+// A mock succeeds with a value the production port cannot return:
+port.save = () => Promise.resolve(receipt);
+```
+
+**Preferred:**
+
+```ts
+// Production port returns an Effect with a typed success/failure contract:
+port.save = () => Effect.succeed(receipt);
+```
+
+## Do not weaken the failing scenario
+
+Fix the owning defect, not the evidence. Do not increase timeouts, skip the
+scenario, weaken assertions, or invent a test framework when one already fits.
+For every subsequent repair, inspect the new failure evidence first.
+
+**Prohibited:**
+
+```ts
+test.skip("saved state survives reload", scenario);
+```
+
+**Preferred:**
+
+```ts
+test("saved state survives reload", scenario);
+```
+
+## Validation
+
+- In partitioned suites, place every non-demo behavior spec exactly once in the executable gate manifest.
+- Default testDir discovery needs no duplicate manifest; every behavior spec still needs an executable gate.
+- Record affected user-flow results and meaningful contract/branch evidence, not test count.
+- Browser-only defects retain browser regressions and the closest deterministic unit contract.

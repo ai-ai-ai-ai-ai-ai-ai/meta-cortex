@@ -1,83 +1,113 @@
 # TypeScript Single Parameter
 
-## Purpose
+Authored functions, methods, constructors, and arrows take at most one parameter.
+This includes Svelte and tooling; generated bindings retain their external shapes.
 
-Authored TypeScript functions and methods may take at most one parameter.
-Multi-argument APIs must use a named object type.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-## Scope
+## Collect independent inputs in one request
 
-- Apply to all authored TypeScript and Svelte, including application code and tooling.
-- Exclude generated bindings.
-- Host callback signatures may require multiple positional values.
-  - Keep that boundary narrow.
-  - Use a focused ESLint suppression with a reason when the host owns the
-    callback shape.
-  - Do not suppress a project-authored API.
+Use one semantic request for independent inputs. Destructure it inside the owner.
+Do not hide positional inputs in arrays or generic Args/Params names.
 
-## Problem Pattern
+**Prohibited:**
 
 ```ts
-export function writeDocumentFile(
-  document: Document,
-  destinationPath: string,
-): Promise<DocumentFileWriteResult>;
+// Inside TransferService:
+transfer(source: AccountId, destination: AccountId): TransferOutcome;
 ```
 
-Multiple positional parameters hide argument meaning at call sites and make
-reordering unsafe.
-
-## Preferred Pattern
+**Preferred:**
 
 ```ts
-export type DocumentFileWriteRequest = {
-  readonly document: Document;
-  readonly destinationPath: string;
-};
+interface TransferRequest {
+  readonly source: AccountId;
+  readonly destination: AccountId;
+}
+// Inside TransferService:
+transfer(request: TransferRequest): TransferOutcome;
 
-declare class DocumentFileWriter {
-  // Method signature; the writer owns the destination capability.
-  write(request: DocumentFileWriteRequest): Promise<DocumentFileWriteResult>;
+// At the caller:
+const request: TransferRequest = { source, destination };
+service.transfer(request);
+```
+
+## Name object-shaped parameters
+
+Arrays, tuples, maps, sets, records, and mapped types also need semantic named
+contracts. This applies to helpers and destructured callback inputs. A callback
+may return an inline object shape; that does not exempt its inputs.
+
+**Prohibited:**
+
+```ts
+// Inside Selection:
+replace(items: readonly ItemId[]): void;
+```
+
+**Preferred:**
+
+```ts
+type SelectedItems = readonly ItemId[];
+// Inside Selection:
+replace(items: SelectedItems): void;
+```
+
+## Keep fixed host signatures at the edge
+
+A host callback may require several inputs. Document the actual contract and
+limit any lint suppression to that callback. Convert its inputs to one request
+before application behavior. A project-owned callback receives no exemption.
+
+**Prohibited:**
+
+```ts
+// Required host callback, inside WindowAdapter:
+resized(width: number, height: number): void {
+  this.layout.resize(width, height);
 }
 ```
 
-Call sites pass a single object:
+**Preferred:**
 
 ```ts
-const request: DocumentFileWriteRequest = { document, destinationPath };
-writer.write(request);
+// The host requires resized(width, height); only this callback is exempt.
+resized(width: number, height: number): void {
+  const viewport: Viewport = {
+    width: Width.from(width),
+    height: Height.from(height),
+  };
+  this.layout.resize(viewport);
+}
 ```
 
-Rules:
+## Do not disguise additional inputs
 
-- Maximum one parameter per authored function, method, constructor, or arrow
-  function.
-- Every object-shaped parameter uses a named semantic `type`, `interface`, or
-  Rust-generated boundary type.
-  - Object-shaped includes object literals, mapped types such as `Pick<T, K>`
-    and `Omit<T, K>`, arrays, tuples, maps, sets, and records.
-- Inline object parameter annotations are prohibited, including for local
-  helpers, destructured parameters, `T[]`, tuples, `Array<T>`, and
-  `ReadonlyArray<T>`.
-- Generic or operation-only contract names such as `Args`, `CallbackArgs`,
-  `PutArgs`, or names derived from line numbers are prohibited.
-  - Name the contract after its domain value or request.
-- Do not use optional `undefined` parameters to fake multi-argument APIs.
-  - Model omitted fields with domain unions or required object fields.
-- Default values belong at the call site or inside the function body after
-  reading the object, not as a second positional parameter.
-- A function-valued parameter may return an inline object type.
-  - That return value is not the parameter contract.
-  - Object-shaped callback parameters still require named semantic contracts.
+Do not add optional undefined parameters or a second positional default.
+Model omitted values as named states. Apply defaults at the caller or inside
+the body after receiving the named request.
 
-## Enforcement
+**Prohibited:**
 
-Use ESLint `max-params: [error, 1]` and semantic review to enforce the rule.
+```ts
+// Inside Search:
+run(query: SearchQuery, options = defaultOptions): SearchResults;
+```
 
-## Review checklist
+**Preferred:**
 
-- [ ] New authored functions take zero or one parameter.
-- [ ] Multi-value inputs use a typed object argument.
-- [ ] Every object-shaped parameter refers to a named semantic contract.
-- [ ] Any host-callback exception is local and explains the host contract.
-- [ ] The applicable lint checks pass.
+```ts
+interface SearchRequest {
+  readonly query: SearchQuery;
+  readonly options: SearchOptions;
+}
+// Inside Search:
+run(request: SearchRequest): SearchResults;
+```
+
+## Validation
+
+- Enforce ESLint `max-params: [error, 1]` and review semantic request names.
+- Check each multi-input exception against its named external contract.
+- Apply named-argument checks to every object-shaped input and call.

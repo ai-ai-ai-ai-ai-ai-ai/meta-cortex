@@ -1,5 +1,7 @@
 # Rust Struct Construction
 
+## No constructor indirection
+
 Do not define `new` constructors. They hide field assignments behind another
 function, making construction harder to read and reason about.
 
@@ -7,6 +9,8 @@ function, making construction harder to read and reason about.
 
 Use `#[derive(derive_more::From)]` for infallible wrappers instead of writing
 the conversion by hand. Write `TryFrom<T>` when validation can fail.
+For a generic workflow owner, implement only the permitted initial-state
+conversion manually; a blanket derive would expose construction for every state.
 
 Enable the crate’s `from` feature:
 

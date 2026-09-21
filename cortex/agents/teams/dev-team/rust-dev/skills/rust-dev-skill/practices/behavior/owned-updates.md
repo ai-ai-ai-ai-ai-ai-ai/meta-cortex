@@ -1,13 +1,11 @@
 # Rust Owned Updates
 
-Consume an owned value when an update replaces it. Returning the updated value
-makes replacement explicit without introducing a workflow stage for every edit.
-A transition with genuinely different next actions returns an exhaustive outcome.
+Consume an owned value when an update replaces it. Return the updated value
+without inventing a workflow stage for every edit.
 
 ## Required actions
 
-- Consume owned Rust state when an update replaces its value.
-- Use `mut self` internally and return `Self`, a next state, or a typed result.
+- Use `mut self` for replacement updates and return `Self` or a typed result.
 - Retain `&mut self` only for required traits or externally owned mutation contracts.
 - Keep those exceptions at their exact boundary.
 - Introduce channels only for a real high-level actor or concurrent owner.
@@ -17,90 +15,60 @@ A transition with genuinely different next actions returns an exhaustive outcome
 - Do not add actor infrastructure merely to avoid an owned update.
 - Do not introduce artificial lifecycle phases for a pure value update.
 
-## Examples
+## Replace an owned value
 
-An owned update should return the resulting value. When an operation can lead
-to different next actions, use an enum that carries the corresponding state.
-A boolean leaves the caller to infer what happened and what it can do next.
+A retry policy owns its retry limit and delay. Changing the limit preserves the
+rest of that policy. This updates an existing value; it does not convert a limit
+into a policy or interpret another domain's outcome.
 
-**Prohibited:** mutation retains the same API surface for every outcome, and
-`true` does not name the resulting state.
+**Prohibited:** mutate the existing policy through a borrowed receiver.
 
 ```rust
-pub struct Review {
-    approved: bool,
+use std::time;
+
+#[derive(derive_more::From)]
+pub struct RetryLimit(u32);
+
+pub struct RetryPolicy {
+    pub limit: RetryLimit,
+    pub delay: time::Duration,
 }
 
-impl Review {
-    pub fn approve(&mut self, approved: bool) -> bool {
-        self.approved = approved;
-        approved
+impl RetryPolicy {
+    pub fn with_limit(&mut self, limit: RetryLimit) {
+        self.limit = limit;
     }
 }
 ```
 
-**Preferred:** the decision has a domain name, and each outcome carries the
-state that owns the next action. The update consumes its previous value.
+**Preferred:** consume the old policy and return its replacement.
 
 ```rust
-#[derive(derive_more::From)]
-pub struct SubmissionId(u64);
+use std::time;
 
 #[derive(derive_more::From)]
-pub struct Review {
-    submission: SubmissionId,
+pub struct RetryLimit(u32);
+
+pub struct RetryPolicy {
+    pub limit: RetryLimit,
+    pub delay: time::Duration,
 }
 
-pub enum Decision {
-    Approve,
-    RequestChanges,
-}
-
-pub enum ReviewOutcome {
-    Approved(Approved),
-    ChangesRequested(Review),
-}
-
-pub struct Approved {
-    submission: SubmissionId,
-}
-
-impl SubmissionId {
-    pub fn value(&self) -> u64 {
-        self.0
-    }
-}
-
-impl Review {
-    pub fn replace_submission(mut self, submission: SubmissionId) -> Self {
-        self.submission = submission;
+impl RetryPolicy {
+    pub fn with_limit(mut self, limit: RetryLimit) -> Self {
+        self.limit = limit;
         self
     }
-
-    pub fn decide(self, decision: Decision) -> ReviewOutcome {
-        match decision {
-            Decision::Approve => ReviewOutcome::Approved(Approved {
-                submission: self.submission,
-            }),
-            Decision::RequestChanges => ReviewOutcome::ChangesRequested(self),
-        }
-    }
 }
 
-impl Approved {
-    pub fn submission(&self) -> &SubmissionId {
-        &self.submission
-    }
-}
+let policy = RetryPolicy { limit: RetryLimit::from(3), delay };
+let policy = policy.with_limit(RetryLimit::from(5));
 ```
 
-Callers match `ReviewOutcome` exhaustively. They receive the selected state
-without a second lookup or an optional field. In a real workflow, the owner
-admitting `Decision` must establish who may make it; the enum alone proves
-neither authorization nor freshness.
+The previous policy is moved. The returned policy keeps its delay and replaces
+only its limit. Neither a conversion trait nor an approval state is needed.
 
 ## Validation
 
-- Check that replaced values are consumed and the returned value owns the result.
-- Test each outcome and ensure callers cannot reuse a consumed capability.
+- Check that the update consumes the previous value and preserves unchanged fields.
 - Identify the exact external contract for every retained mutation exception.

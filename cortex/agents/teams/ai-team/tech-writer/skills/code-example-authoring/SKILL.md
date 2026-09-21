@@ -10,6 +10,45 @@ including tests, scripts, and boundary adapters.
 
 ## Required actions
 
+### Let code carry programming rules
+
+For Rust and TypeScript practices, code examples must dominate the explanation.
+Give each focused rule a prohibited/preferred pair. Keep prose to the requirement,
+its motivation, and the context needed to read the code. Cut repeated prose before
+cutting signatures, types, or call sites that demonstrate the decision. Do not
+pad examples to reach a line-count ratio.
+
+**Prohibited:** several paragraphs about type safety followed by “use newtypes,”
+without showing which declarations change.
+
+**Preferred:** one sentence and a pair that makes the distinction visible:
+“Give each identifier its own type so unrelated identifiers cannot be exchanged.”
+
+```rust
+// Prohibited: these fields accept the same primitive.
+pub struct Invoice {
+    pub id: u64,
+    pub customer: u64,
+}
+```
+
+```rust
+// Preferred: distinct identifier types preserve their meaning.
+#[derive(derive_more::From)]
+pub struct InvoiceId(u64);
+
+#[derive(derive_more::From)]
+pub struct CustomerId(u64);
+
+pub struct Invoice {
+    pub id: InvoiceId,
+    pub customer: CustomerId,
+}
+```
+
+These fragments assume `derive_more` with its `from` feature. The identifiers
+have no additional validation constraints.
+
 ### Show the code needed to decide
 
 Include the signatures, call sites, types, and boundary code needed to expose

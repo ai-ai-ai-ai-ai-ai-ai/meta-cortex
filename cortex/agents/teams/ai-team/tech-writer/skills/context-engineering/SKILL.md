@@ -18,6 +18,8 @@ Discover their locations from project instructions and actual files.
 - Apply [focused rules and examples](practices/focused-examples.md) to every substantive rule or explanatory section, whether it concerns code, prose, or behavior.
 - Apply [article structure](practices/article-structure.md) to changed documents.
 - Apply [consistency](practices/consistency.md) to authority, context flow, and link direction.
+- Apply [practice knowledge graphs](practices/knowledge-graphs.md) when selecting
+  rule owners, changing requirements or exceptions, or updating a skill catalog.
 - Treat violations of these practices as P1 documentation defects.
 - Preserve exact policy meaning when changing presentation.
 - Keep each policy in one canonical document.
@@ -61,7 +63,7 @@ locations and reports the specific semantic and mechanical checks performed.
 ## Validation
 
 1. Review meaning, scope, and document ownership.
-2. Check the changed document against all four practices, including whether each substantive section's examples demonstrate its decision.
+2. Check the changed document against the applicable authoring practices, including whether each substantive section's examples demonstrate its decision.
 3. Verify affected paths, links, headings, and indexes.
 4. Run applicable checks provided by the consuming project.
 5. Report the checks actually run and any unresolved inconsistencies.

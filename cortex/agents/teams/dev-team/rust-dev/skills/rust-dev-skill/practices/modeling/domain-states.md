@@ -1,239 +1,203 @@
 # Rust Domain States
 
-Represent named alternatives with enums and keep each state’s data on its owning variant. Use optional values only for truthful structural absence.
+Name each state and put its data on its variant. These rules cover public and
+private application code, tests, persisted models, and Rust/WASM contracts.
+Examples are alternatives, not declarations to combine in one module. Referenced
+payload types already exist; method fragments belong to their stated owners.
 
-## Required actions
+## Replace `Option` with meaningful states
 
-- Reserve `Option<T>` for truthful structural absence. Legitimate examples
-  include iterator or lookup results, optional caller filters, uninitialized
-  caches, and external API fields.
-- When absence means unauthenticated, unauthorized, pending, unsupported,
-  configured versus unconfigured, or another named state, use an enum. Put
-  state-specific values on the owning variant.
-- Return `Option<T>` when callers genuinely ask whether a lookup result exists.
-- Keep domain and application values concrete. Use a generic type parameter or
-  trait object only for a real shared contract or capability.
-- Keep domain validation next to the Rust type that makes the state explicit.
-- Before adding a new struct or enum, search for an equivalent core type.
-- Keep `domain-core` organized by domain module groups such as `auth`, `crypto`,
-  `secrets`, `sync`, and `vault`.
-- Place new core domain files in their owning group. Re-export them through
-  `lib.rs` when they belong to the stable public core API.
-- Represent not-applicable, unconfigured, pending, manual, or another named
-  domain state with a Rust enum. Derive the generated boundary type from it.
-- Truthful structural omission in external or persisted wire formats may still
-  use `Option<T>` internally.
+Prohibit authored `Option` fields, parameters, returns, aliases, and stored locals,
+including caches, filters, parsers, and adapters. `None` hides whether a value is
+not loaded, disabled, not found, or invalid. Named variants carry that meaning.
+Do not substitute a generic `Maybe<T>`, sentinel, or decorative wrapper.
 
-### Enum modeling
+**Prohibited:** the caller must guess why the order is absent.
 
-- Model closed sets as Rust enums.
-- Model runtime alternatives as enum variants with state-owned fields.
-- Model legal action sequencing with typestate.
-- Put each field on the variant or sub-struct that owns it.
-- Give an enum variant a dedicated payload struct when it owns multiple
-  independently named fields.
-  - Keep each field on the payload for the state that owns it.
-- Keep unit variants and scalar payload variants when those are the truthful
-  domain and wire shapes.
-- Use a nested enum when one semantic category refines another.
-  - For example, model `CredentialRole::Password(Password::Current)`.
-- Keep orthogonal concepts as separate enums.
-- Put domain behavior on the type that owns the required knowledge.
-  - Use methods for domain decisions and actions; use conversion traits for direct value transformations.
-  - Match the enum directly so new variants remain compiler-visible.
-- Narrow enum variants before reading their payloads.
-  - Use an exhaustive `match` when variants represent evolving domain decisions
-    or require distinct behavior.
-  - Prefer an expression-oriented `match` that shows genuine domain alternatives
-    symmetrically instead of a guard return followed by the success path.
-  - Let each arm produce the operation's result when the alternatives are peers.
-  - Prefer `if let` or positive `let ... else` for interrelated or admission
-    branches when every unmatched variant intentionally receives the same handling.
-  - Keep ordinary failure propagation with `?`.
-  - Keep an early return when it clearly expresses admission or control flow.
-  - Apply decision locality
-    when nesting reveals decisions that belong to other owners.
-- Use a membership collection for uniqueness checks.
-  - Prefer `HashSet::insert` when rejecting duplicate identifiers.
-- Group a focused vocabulary under its owning module.
-  - Use concise names such as `field::Index` and `field::Observation`.
-  - Keep focused model and serialization tests beside that module.
+```rust
+pub struct OrderCache {
+    pub order: Option<Order>,
+}
+```
 
-## Prohibited actions
+**Preferred:** the cache names its actual alternatives.
 
-- Do not use one shared field bag for unrelated enum variants.
-- Do not represent different workflow states as optional fields in one reused
-  struct.
-- Do not flatten a refining category into unrelated top-level variants.
-- Do not replace a unit or scalar enum payload with a dedicated struct merely
-  for structural uniformity.
-- Do not change a persisted enum's payload shape without the explicit wire
-  contract or migration required by the task.
-- Do not nest editability, visibility, or another independent dimension under a
-  role merely because both describe one record.
-- Do not add `is_*` methods that only decode one enum variant into `bool`.
-- Do not use `let ... else` when doing so would silently collapse variants that
-  need exhaustive domain handling.
-- Do not force boolean predicates into `match` or invent enum wrappers for symmetry.
-- Do not deepen nested matches merely to make branches look symmetrical.
-- Avoid negated compound conditions and deeply nested destructuring patterns.
-- Do not scan every prior element when a membership collection expresses the
-  same uniqueness rule.
-- Do not use `Option<T>`, empty strings, or a `Missing` enum variant for required
-  persisted or signed values.
-- Do not use `Option<T>` or a decorative `Missing` variant for failure.
-- Do not create a one-variant wrapper enum merely to avoid `Option<T>`.
-- Do not introduce a generic type parameter only to avoid naming the concrete
-  domain contract.
-- Do not add new domain files directly under the core crate's `src` root.
-  Put them in their owning domain module group.
+```rust
+pub enum OrderCache {
+    NotLoaded,
+    Loaded(Order),
+}
+```
 
-## Recognizing a missing state
+### Translate dependency results immediately
 
-An `Option<T>` can mean one Rust shape is being reused across different worlds.
-The code says "maybe this field exists." The real product model may be "this
-value is in one named state or another named state."
+A library may return `Option`; consume it at the call boundary. Do not retain or
+forward it, or implement an authored `Option`-returning trait. Choose a different
+interface when it requires that signature.
 
-Required persisted values are another failure mode. `Option<T>` permits an
-invalid record to enter the model. Rejection is postponed until unrelated domain
-logic runs.
+**Prohibited:** expose the map's optional result from the repository.
 
-When you see `Option<T>`, ask:
+```rust
+pub fn find(&self, id: &OrderId) -> Option<&Order> {
+    self.orders.get(id)
+}
+```
 
-1. Why is this optional?
-2. Is the containing struct shared by multiple workflows or provider kinds?
-3. Are we using absence to mean a named state like draft, missing config,
-   unauthenticated, local-only, pending, or unsupported?
-4. Would an enum with per-variant structs make illegal states unrepresentable?
+**Preferred:** return the lookup's named outcome.
 
-## Enums instead of booleans
+```rust
+pub enum OrderLookup<'a> {
+    Found(&'a Order),
+    NotFound,
+}
 
-Do not use `bool` as an authored domain value by default. Use a named enum even
-when the domain currently has exactly two cases.
+// Inside impl OrderRepository:
+pub fn find(&self, id: &OrderId) -> OrderLookup<'_> {
+    match self.orders.get(id) {
+        Some(order) => OrderLookup::Found(order),
+        None => OrderLookup::NotFound,
+    }
+}
+```
 
-This rule covers:
+## Require values that cannot be absent
 
-- domain and application state;
-- struct and enum payload fields;
-- public and cross-module function parameters;
-- policy, mode, command, and configuration inputs;
-- persisted schemas and owned wire contracts; and
-- Rust/WASM boundary parameters and fields.
+A required persisted or signed value stays required. Failure belongs in a typed
+`Result`, not a `Missing` variant or empty string. Deserialize through validated
+types; preserve established wire shapes through adapters and explicit migrations.
 
-### Why booleans fail
+**Prohibited:** an incomplete record enters the domain.
 
-A boolean carries no domain metadata in its value. `true` does not explain what
-is true, which policy it selects, or what transition produced it.
+```rust
+pub enum InvoiceIdentity {
+    Missing,
+    Assigned(InvoiceId),
+}
 
-That loss of meaning creates several defects.
+pub struct Invoice {
+    pub id: InvoiceIdentity,
+}
+```
 
-- **Call sites become abstract.** `sync(true)` makes the reader recover meaning
-  from a distant signature.
-- **Mental complexity increases.** Every reader must remember what `true` and
-  `false` mean for that specific value.
-- **Argument order is unsafe.** Two boolean parameters have the same type, so
-  swapping them still compiles.
-- **Evolution is blocked.** A boolean has only two cases. A third state forces a
-  breaking signature, schema, and caller rewrite.
-- **Related flags create invalid states.** Multiple booleans form combinations
-  the domain may never permit.
-- **Review loses intent.** A changed literal shows no domain meaning in a diff.
+**Preferred:** an invoice cannot exist without its validated identity.
 
-### Why enums win
+```rust
+pub struct Invoice {
+    pub id: InvoiceId,
+}
+```
 
-An enum carries the domain meaning in the type and in every variant.
+The decoder rejects missing or invalid identifiers before constructing `Invoice`.
+A legitimate draft belongs to a separately named state, not an incomplete invoice.
 
-- `ProviderSyncFreshness::Forced` explains itself at the call site.
-- Distinct enum types prevent parameters from being swapped accidentally.
-- A new case becomes another variant of the same coherent vocabulary.
-- Exhaustive matching forces every decision point to handle that new case.
-- State-owned enum payloads keep variant-specific data on the variant that owns
-  it.
-- Mutually exclusive states become the only representable states.
-- Persisted and generated contracts retain semantic names instead of anonymous
-  bits.
+## Replace domain booleans with named alternatives
 
-Do not create decorative `True` and `False` variants. Name the actual domain
-states, such as `Scheduled` and `Forced`, `Locked` and `Unlocked`, or `Absent`
-and `Present`.
+Use enums for state, policy, mode, commands, configuration, and observations that
+enter domain decisions. `true` hides the selected behavior; `Forced` names it.
+Do not add `True`/`False` variants or an `is_*` method that merely decodes a variant.
 
-### Narrow exceptions
+These calls belong inside an operation; `sync` is the existing operation owner.
 
-An authored `bool` requires a concrete reason. Convenience, fewer lines, or
-having only two cases today are not reasons.
+**Prohibited:** the call requires knowledge of a distant boolean parameter.
 
-The allowed cases are intentionally narrow.
+```rust
+sync.run(true);
+```
 
-- A standard-library or required trait signature mandates `bool`.
-- A fixed external protocol owns a boolean field that the application cannot change.
-  Convert it into a named enum at the boundary before domain policy reads it.
-- A private predicate answers a literal yes-or-no query such as `is_empty()` or
-  `contains()`. Consume that result immediately. Do not store it as domain
-  state or pass it onward as a policy or mode argument.
-- A standard-library membership operation such as `HashSet::insert` may return
-  `bool`. Consume it immediately as control flow.
+**Preferred:** the parameter names the policy.
 
-Additional boundary rules:
+```rust
+pub enum SyncMode {
+    Scheduled,
+    Forced,
+}
 
-- Raw observations are not a general exception. An observation that enters
-  domain policy uses a named enum such as `MarkerPresence::Absent` or
-  `MarkerPresence::Present`.
-- Every retained public parameter, stored field, or lint allowance involving
-  `bool` documents which narrow exception applies. Test fixtures and internal
-  DTOs do not receive a blanket exemption.
-- Do not serialize a boolean that can be derived from an enum.
-- Do not expose a semantic predicate merely to avoid returning or matching the
-  domain enum.
+// At the call site:
+sync.run(SyncMode::Forced);
+```
 
-## Options or enums
+### Convert external records into owned types
 
-Once an `Option<T>` represents a named domain state, prefer an enum almost
-always. The enum makes the meaning part of the type.
+Do not author boolean fields, application parameters, returns, aliases, or stored
+locals, including transport DTOs, tests, and private helpers. Allow `From<bool>`
+on a destination enum to decode an external flag, or `TryFrom` when the
+conversion can fail; this conversion boundary does
+not permit boolean application APIs. Dependency implementations and generated
+external bindings keep their own types.
 
-Named enums improve optional domain models in several ways.
+If a dependency returns a record with several booleans, convert the whole record
+at the adapter. Own the conversion on the destination through `From`, or `TryFrom`
+when combinations can be invalid. Do not retain the raw record inside a wrapper
+and expose its flags through getters.
 
-- **Names carry intent.** `NotLoaded` explains more than `None`.
-- **Matches are exhaustive.** A new variant forces every decision point to
-  account for the new state.
-- **Illegal combinations disappear.** One enum replaces optional fields that
-  could otherwise contradict each other.
-- **Payload ownership is explicit.** Each variant carries only the values that
-  exist in that state.
+The external crate in these fragments owns `external::SyncObservation`, with
+boolean `force` and `upload` fields. We do not redeclare that raw struct.
 
-Do not use `Option<T>` merely because the state has two cases today. Ask what
-`None` means in the domain. Use a named enum when it means empty, not loaded,
-cleared, unauthenticated, unsupported, pending, or another real state.
+**Prohibited:** a wrapper carries the untyped policy into application code.
 
-Keep `Option<T>` when the caller is asking whether a value exists. Map lookups,
-iterator searches, caches, optional caller filters, and truthful external wire
-omissions remain idiomatic uses.
+```rust
+pub struct SyncRequest {
+    pub raw: external::SyncObservation,
+}
+```
 
-Do not preserve optional persisted fields as a compatibility fallback. Current
-schemas deserialize directly into required validated values or explicit state
-enums and reject incomplete data.
+**Preferred:** the owned record names both independent policies.
 
-## Scope and boundaries
+```rust
+pub enum UploadMode {
+    Enabled,
+    Disabled,
+}
 
-Applies to authored Rust domain and bridge code, including provider targets,
-enrollment payloads, application state, sync state, storage modes, credential
-states, and WASM DTOs.
+pub struct SyncRequest {
+    pub mode: SyncMode,
+    pub upload: UploadMode,
+}
 
-Raw external API or user-controlled partial-input DTOs may remain permissive.
-Convert them immediately into domain enums, required validated newtypes, or
-typed errors. Persisted project schemas do not receive a legacy fallback unless a
-task explicitly requires a migration.
+impl From<bool> for SyncMode {
+    fn from(force: bool) -> Self {
+        if force { Self::Forced } else { Self::Scheduled }
+    }
+}
 
-It also does not replace idiomatic `Option<T>` return values from maps,
-iterators, parsers, searches, or caches when the caller is genuinely asking
-whether a value exists.
+impl From<bool> for UploadMode {
+    fn from(upload: bool) -> Self {
+        if upload { Self::Enabled } else { Self::Disabled }
+    }
+}
 
-## Examples
+impl From<external::SyncObservation> for SyncRequest {
+    fn from(raw: external::SyncObservation) -> Self {
+        let mode = SyncMode::from(raw.force);
+        let upload = UploadMode::from(raw.upload);
+        Self { mode, upload }
+    }
+}
 
-These declarations assume existing `Endpoint` and `AccessToken` domain types.
-They describe runtime configuration, not a persisted-schema migration.
+// At the adapter, before application code receives the request:
+// sync.run(SyncRequest::from(external_observation));
+```
 
-**Prohibited:** a flag and independent optional fields permit enabled service
-without credentials, or disabled service with unexplained leftover data.
+This small conversion cost buys compiler-checked distinctions throughout the
+application: an `UploadMode` cannot be supplied where a `SyncMode` belongs.
+If flags describe one state rather than independent policies, use one enum of
+legal combinations and reject invalid input instead of copying the flag matrix.
+For raw JSON, decode into those owned enums; do not invent an intermediate
+application-authored struct of booleans.
+
+Library predicates and operators necessarily produce boolean expressions. Consume
+those directly in control flow, as with membership insertion below; do not store
+them as values or expose an authored boolean predicate. This is not permission
+for boolean domain models or duplicate serialized flags derived from enums.
+
+## Put payloads on their owning variants
+
+One state must not carry another state's fields. Use a dedicated payload struct
+for multiple named fields; keep unit and single-value variants when they fit.
+Do not reshape a persisted enum just to make its variants look uniform.
+
+**Prohibited:** disabled services can carry credentials, while enabled ones can
+lack them.
 
 ```rust
 pub struct ServiceConfiguration {
@@ -243,8 +207,7 @@ pub struct ServiceConfiguration {
 }
 ```
 
-**Preferred:** the enabled state owns its complete payload. Callers must match
-the semantic alternative before accessing the credentials.
+**Preferred:** only the enabled variant carries its complete configuration.
 
 ```rust
 pub enum ServiceConfiguration {
@@ -258,36 +221,118 @@ pub struct EnabledService {
 }
 ```
 
-This aggregate assumes already validated domain values. A restricted authorization
-capability additionally requires private construction at its validating boundary.
+The payload assumes validated values. Authorization capabilities additionally
+need private construction; legal action sequencing belongs in typestate.
+
+## Separate independent dimensions; nest refinements
+
+Visibility does not refine an account role: keep them separate. A shipping speed
+refines shipment: nest it under that delivery kind.
+
+**Prohibited:** independent choices multiply variants; a refinement loses its parent.
+
+```rust
+pub enum AccountState {
+    VisibleReader,
+    HiddenReader,
+    VisibleEditor,
+    HiddenEditor,
+}
+
+pub enum DeliveryMode {
+    Pickup,
+    StandardShipment,
+    ExpressShipment,
+}
+```
+
+**Preferred:** independent choices compose, while related choices stay nested.
+
+```rust
+pub enum AccountRole { Reader, Editor }
+pub enum Visibility { Visible, Hidden }
+
+pub struct AccountState {
+    pub role: AccountRole,
+    pub visibility: Visibility,
+}
+
+pub enum DeliveryMode {
+    Pickup,
+    Shipment(ShippingSpeed),
+}
+
+pub enum ShippingSpeed { Standard, Express }
+```
+
+## Match decisions exhaustively
+
+When variants require distinct behavior, name every arm. A wildcard or early
+return must not silently assign future variants an existing policy. Use `if let`
+or positive `let ... else` only when all unmatched variants intentionally share
+one behavior. Avoid negated compound conditions and deeply nested matches.
+
+These alternatives convert the existing domain `DeliveryKind` into the
+consumer-owned `AddressRequirement`.
+
+**Prohibited:** new delivery kinds silently become address-free.
+
+```rust
+impl From<DeliveryKind> for AddressRequirement {
+    fn from(kind: DeliveryKind) -> Self {
+        match kind {
+            DeliveryKind::Shipment => Self::Required,
+            _ => Self::NotRequired,
+        }
+    }
+}
+```
+
+**Preferred:** adding a delivery kind requires a new decision.
+
+```rust
+impl From<DeliveryKind> for AddressRequirement {
+    fn from(kind: DeliveryKind) -> Self {
+        match kind {
+            DeliveryKind::Shipment => Self::Required,
+            DeliveryKind::Download => Self::NotRequired,
+        }
+    }
+}
+```
+
+## Consume membership results as control flow
+
+Use a membership collection to reject duplicate identifiers instead of scanning
+all previous values. The insertion boolean is a mechanical result, not stored
+policy. These alternatives belong to an `OrderRegistry` owning `seen`.
+
+**Prohibited:** a growing list is scanned for every registration.
+
+```rust
+pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
+    if self.seen.iter().any(|existing| existing == &id) {
+        return Err(RegistrationError::Duplicate);
+    }
+    self.seen.push(id);
+    Ok(self)
+}
+```
+
+**Preferred:** `seen` is a `HashSet<OrderId>` and insertion detects duplicates.
+
+```rust
+pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
+    if !self.seen.insert(id) {
+        return Err(RegistrationError::Duplicate);
+    }
+    Ok(self)
+}
+```
 
 ## Validation
 
-- Add or update tests for each new enum state.
-- Add deserialization tests proving required persisted values reject missing and
-  empty input.
-- Check that helper APIs accept typed variants/enums instead of strings or
-  optional field bags.
-- Check variants with independently named multi-field payloads for dedicated
-  payload structs.
-- Preserve truthful unit, scalar, and persisted enum wire shapes.
-- Check related categories for a truthful nested-enum boundary.
-- Keep independent dimensions as separate types.
-- Search changed enums for `is_*` methods that only reveal a variant.
-- Replace quadratic duplicate scans with a membership collection.
-- Prefer flat `let ... else` variant narrowing in multi-step filters only when
-  every other variant is intentionally equivalent.
-- Require an exhaustive `match` for evolving domain decisions.
-- Verify every generic type parameter and trait object represents a real shared
-  contract or capability.
-- Inventory authored Rust `bool` fields, parameters, returns, and lint
-  allowances in the changed scope.
-- Replace every domain, state, policy, mode, command, configuration, persisted,
-  and owned-boundary boolean with a meaningfully named enum.
-- Keep a boolean only for a required trait, fixed external protocol, or private
-  immediately consumed predicate. Document the exact exception.
-- Review every `clippy::fn_params_excessive_bools` and
-  `clippy::struct_excessive_bools` allowance in the changed scope. An allowance
-  is not justification and should normally disappear with the refactor.
-- Run targeted portable Rust tests and Clippy for the affected crates,
-  including all targets with warnings denied.
+- Reject authored `Option` and boolean contracts or stored values; inspect whole-record boundary conversions.
+- Test each state and reject incomplete or invalid persisted values at decoding.
+- Check payload ownership, independent dimensions, and exhaustive decisions.
+- Run the affected Rust tests and Clippy for all targets with warnings denied.

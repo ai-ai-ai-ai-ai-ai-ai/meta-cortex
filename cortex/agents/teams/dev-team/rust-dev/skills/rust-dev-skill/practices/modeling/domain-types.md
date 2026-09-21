@@ -4,19 +4,31 @@ Give each domain value a distinct type. Preserve its meaning through constructio
 
 ## Required actions
 
+- Reuse an equivalent core type before introducing another struct or enum.
+- Keep values concrete; use generics or trait objects only for a real shared
+  contract or capability, not to avoid naming the domain type.
+- Keep domain types, validation, and focused tests in their owning domain module.
+  Group related vocabulary there; do not add domain files directly to the core
+  crate's `src` root. Re-export stable public types through `lib.rs`.
+
 - Required persisted or signed values use required validated newtypes.
 - Represent typed domain values with existing core newtypes such as
-  `IsoTimestamp`, `StoredVaultYaml`, `StoreId`, `EventId`, and `SymmetricKey`.
+  `OrderId`, `CustomerId`, `Quantity`, `OrderTotal`, and `MessageBody`.
   Add a newtype when the domain has no existing one.
-- Use named domain newtypes in reachable public parameters, returns, and fields.
-- Apply the rule recursively through options, results, collections, tuples, generics, aliases, and bounds.
-- Keep raw numeric representations private to implementation details or newtype storage.
-- Retain raw strings only for locale/i18n plumbing or other explicitly owned boundaries.
+- Use named domain newtypes in all parameters, returns, fields, constants,
+  and local domain values, including private code and tests.
+- Apply the rule recursively through results, collections, tuples, generics, aliases, and bounds.
+- Keep primitive representations inside their owning newtype or at an external
+  edge that requires them. Convert boundary input immediately.
+- Wrap user content and locale keys too; their names express different meanings.
+- Convert dependency-owned raw records into owned domain records at the adapter;
+  do not retain them as application payloads behind a wrapper.
 - Use a narrow item-scoped `expect` only for a legitimate serialization, database, or FFI boundary, with its reason documented.
 
 ## Prohibited actions
 
-- Do not expose raw numeric primitives or domain-bearing strings through public APIs.
+- Do not use raw strings, numbers, bytes, or other primitives as domain values,
+  even in private helpers. A variable name or `type Quantity = u32` is insufficient.
 - Do not use blanket lint allowances to bypass domain types.
 
 - Do not use raw `String` for typed domain values such as timestamps, YAML
@@ -44,11 +56,39 @@ primitive only through an explicit edge getter when JavaScript must consume it.
 that representation. Parse it into a newtype inside Rust before calling core.
 Do not duplicate validation in TypeScript.
 
-### Legitimately raw representations
+### Primitive storage is not a domain contract
 
-- Plaintext user content when the content itself is the value.
-- Locale lookup keys used only for locale plumbing.
-- Raw JSON used only as an encoding primitive at the boundary.
+Primitives implement a value type; they must not replace it in application code.
+Arithmetic belongs inside the owning type. Unwrap only where a required external
+API consumes the representation, and wrap incoming values immediately.
+
+**Prohibited:** unrelated values remain interchangeable, despite field names.
+
+```rust
+pub struct OrderLine {
+    pub quantity: u32,
+    pub description: String,
+}
+```
+
+**Preferred:** both the number and text retain their domain meaning.
+
+```rust
+#[derive(derive_more::From)]
+pub struct Quantity(u32);
+
+#[derive(derive_more::From)]
+pub struct ProductDescription(String);
+
+pub struct OrderLine {
+    pub quantity: Quantity,
+    pub description: ProductDescription,
+}
+```
+
+These wrappers are infallible examples. Use validated `TryFrom` construction
+when the domain restricts the value. Named enums represent states; do not use
+primitive sentinels to encode them.
 
 ## Construction patterns
 
@@ -140,6 +180,42 @@ enum VersionedVaultEventBody {
 }
 ```
 
+## External raw values
+
+Uncontrolled external APIs may return primitives or raw records. Accept those
+values in destination-owned `From<Raw>` conversions; use `TryFrom<Raw>` when
+validation can fail. Convert immediately at the adapter, then pass only the typed
+result into application code. Raw conversion parameters are allowed; raw
+application contracts are not.
+
+This applies to strings, numbers, booleans, bytes, and dependency-owned records.
+Do not duplicate the dependency's raw struct or retain it behind a wrapper. For
+multi-field input, convert the record and let each destination field type own
+its conversion.
+
+These call fragments assume an external `read_message()` returning `String` and
+an application-owned `inbox`. This example accepts arbitrary message text.
+
+**Prohibited:** make the application interpret external primitives.
+
+```rust
+inbox.receive(external.read_message()); // receive accepts String.
+```
+
+**Preferred:** convert once, at entry; the application accepts `MessageBody`.
+
+```rust
+#[derive(derive_more::From)]
+pub struct MessageBody(String);
+
+// Inside the adapter:
+let body = MessageBody::from(external.read_message());
+inbox.receive(body);
+```
+
+For constrained input, use `TryFrom` and propagate its typed error. Do not panic,
+replace invalid input with a default, or weaken validation to force `From`.
+
 ## Standard conversions
 
 Use standard conversion traits when converting one value into another has an
@@ -222,5 +298,7 @@ use validated construction instead of these infallible conversions.
 
 ## Validation
 
-- Inventory reachable public numeric APIs recursively. Enforce them with
-  `raw_numeric_public_api`.
+- Inventory primitive domain values in public and private code, including
+  locals, constants, text, bytes, and nested collections.
+- Use `raw_numeric_public_api` where available for the public numeric subset;
+  passing it does not verify the broader rule.

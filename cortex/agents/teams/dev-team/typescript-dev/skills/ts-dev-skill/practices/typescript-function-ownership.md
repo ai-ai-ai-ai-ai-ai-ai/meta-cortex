@@ -1,53 +1,91 @@
 # TypeScript Function Ownership
 
-These requirements specialize function ownership for TypeScript and Svelte.
+Put behavior, constants, and state on the type or component that owns them.
+A file, namespace, Utils class, or empty instance is not an owner.
 
-## TypeScript owners
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-- Use a concrete kind owner or typed companion for TypeScript enum semantics.
-- Reserve authored TypeScript static methods for narrow construction builders.
-- Put TypeScript execution, validation, formatting, and dispatch on instances.
-- Give those instances the request, state, or capability that their behavior owns.
-- Do not mutate primitive or enum prototypes to add TypeScript behavior.
-- Do not rename TypeScript execution to a builder merely to retain a static method.
-- Do not create an empty instance that serves only as a container for former statics.
+## Use instances for owned behavior
 
-## Constants and variables
+Instances own execution, validation, formatting, and dispatch. Reserve static
+methods for narrow construction builders. Give enum semantics a concrete kind
+owner or typed companion; never mutate primitive or enum prototypes.
 
-Put constants on their owning class as `static readonly` members. Keep mutable
-state in instance fields. Free functions, module-level `const`/`let`/`var`
-values, and mutable static fields are prohibited. Function-valued constants are
-not an exception. Parameters and local variables belong inside owned methods.
-
-**Prohibited:** module-level state and a function-valued constant have no owner.
+**Prohibited:**
 
 ```ts
-const DEFAULT_FORMAT = ExportFormat.Json;
-let format = DEFAULT_FORMAT;
-const currentFormat = (): ExportFormat => format;
-```
-
-**Preferred:** the export session owns its default, selected format, and behavior.
-
-```ts
-enum ExportFormat {
-  Json = "json",
-  Csv = "csv",
-}
-
-class ExportSession {
-  static readonly DEFAULT_FORMAT: ExportFormat = ExportFormat.Json;
-  private format: ExportFormat = ExportSession.DEFAULT_FORMAT;
-
-  currentFormat(): ExportFormat {
-    return this.format;
+class ExportUtils {
+  static run(request: ExportRequest): ExportOutcome {
+    return ExportRuntime.run(request);
   }
 }
 ```
 
-## Component boundaries
+**Preferred:**
 
-Svelte component handlers and lifecycle callbacks belong to the component only
-when they use that component's state or interaction contract. Component-local
-state belongs to that component; module-script globals do not. Shared behavior
-moves to its meaningful domain or application owner.
+```ts
+class ExportSession {
+  constructor(private readonly runtime: ExportRuntime) {}
+
+  run(request: ExportRequest): ExportOutcome {
+    return this.runtime.execute(request);
+  }
+}
+```
+
+## Own constants and mutable state
+
+Use static readonly for owned constants and instance fields for mutable state.
+Prohibit module const/let/var, mutable statics, and function-valued globals.
+Parameters, immediate callbacks, and local bindings stay in the owning operation.
+
+**Prohibited:**
+
+```ts
+let selectedFormat = ExportFormat.Archive;
+const changeFormat = (format: ExportFormat) => { selectedFormat = format; };
+```
+
+**Preferred:**
+
+```ts
+class ExportSelection {
+  static readonly DEFAULT_FORMAT = ExportFormat.Archive;
+  private format = ExportSelection.DEFAULT_FORMAT;
+
+  select(format: ExportFormat): void {
+    this.format = format;
+  }
+}
+```
+
+## Keep component ownership local
+
+A Svelte handler or lifecycle callback belongs to the component only when it
+uses that component’s state or interaction contract. Module-script globals and
+shared product behavior belong elsewhere. Do not rename execution to build or
+create empty objects just to retain former statics.
+
+**Prohibited:**
+
+```ts
+// In a component script:
+function classifyOrder(order: Order): OrderOutcome {
+  return orderPolicy.classify(order);
+}
+```
+
+**Preferred:**
+
+```ts
+// In the component's interaction handler:
+const outcome = orderPolicy.classify(order);
+view.render(outcome);
+```
+
+## Validation
+
+- Inventory free functions, module variables, statics, and component handlers.
+- Check semantic ownership separately from placement; empty containers do not pass.
+- Keep shared behavior on its domain/application owner.

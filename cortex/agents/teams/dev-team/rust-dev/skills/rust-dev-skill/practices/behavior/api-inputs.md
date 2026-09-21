@@ -1,5 +1,7 @@
 # Rust API Inputs
 
+## One non-receiver input
+
 Authored functions, methods, and constructors take at most one non-receiver
 parameter. Multiple input values form one named domain or operation request.
 The receiver `self`, `&self`, or `&mut self` does not count as a parameter.

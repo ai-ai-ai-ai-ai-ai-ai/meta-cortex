@@ -1,12 +1,11 @@
 # Rust Workflow Typestate
 
-Represent each actionable stage of a workflow with a type. Give that type only
-the operations allowed at that stage. A transition consumes the current state
-and returns the next state, so callers cannot skip steps or reuse a consumed
-capability.
+Represent a multi-stage workflow with a domain-named owner parameterized by
+its state, such as `Publication<State>`. Implement transitions on the owner’s
+concrete states. Each transition consumes the owner and returns its next type.
 
-For example, validate a reservation record before writing it:
-`Ready::try_from` accepts a draft, and only `Ready` has a `persist` method.
+For example, only `Publication<Draft>` can validate and only
+`Publication<Validated>` can publish.
 
 This is the highest-priority modeling rule for new or changed meaningful action flows.
 Migrate one cohesive flow at a time; do not rewrite unrelated flows merely to
@@ -21,14 +20,16 @@ at each stage. These mechanisms complement one another.
 ### State and transitions
 
 - Use typestate for most meaningful action flows.
-- Begin with distinct data-carrying structs for distinct actionable stages.
-- Put only valid operations on each stage's implementation.
+- Use distinct state types to carry the data available at each stage.
+- Put transition methods on specialized owner implementations, such as
+  `impl Publication<Validated>`, rather than on the state data.
 - Carry validated domain values forward through transition results.
 - Consume `self` when a transition replaces the prior state's capabilities.
 - Return an exhaustive outcome enum when a transition has multiple next states.
 - Return typed errors for failed validation or failed effects.
 - Keep independent state dimensions separate.
-- Introduce a generic state wrapper only for a demonstrated shared need.
+- Name the workflow owner for its domain. Keep independent domain objects
+  separate when they own distinct behavior rather than stages of one workflow.
 - Seal a generic phase contract when external implementations would forge states.
 
 ### Capability construction
@@ -52,137 +53,143 @@ at each stage. These mechanisms complement one another.
 - Do not clone a one-use capability to preserve the pre-transition state.
 - Do not treat typestate as proof of runtime authorization or cryptographic safety.
 
-## Examples
+## Publication pipeline
 
-A ready state is a capability: possessing it allows an operation that an
-unvalidated value must not expose. A boolean and optional fields leave that
-contract to callers and permit contradictory combinations.
+`Publication<Draft> → Publication<Validated> → Publication<Published>`
 
-**Prohibited:** callers can fabricate readiness, change the quantity afterward,
-or call `finish` without validation. Cloning also duplicates the claimed capability.
+The publication owns transitions. Each state holds the data available at that
+stage. Validation is a conversion; publishing writes a file and is an action.
+
+**Prohibited:** a mutable flag lets callers skip validation or change the content
+after validation. Every instance exposes `publish` regardless of its state.
 
 ```rust
-#[derive(Clone, Default)]
-pub struct Reservation {
-    pub quantity: Option<u16>,
-    pub ready: bool,
+use std::{fs, io, path::PathBuf};
+
+pub struct Publication {
+    pub content: String,
+    pub destination: PathBuf,
+    pub validated: bool,
 }
 
-impl Reservation {
+impl Publication {
     pub fn validate(&mut self) {
-        self.ready = self.quantity.is_some_and(|value| value > 0);
+        self.validated = !self.content.trim().is_empty();
     }
 
-    pub fn finish(&self) -> Option<u16> {
-        self.quantity
+    pub fn publish(&self) -> io::Result<()> {
+        fs::write(&self.destination, &self.content)
     }
 }
 ```
 
-**Preferred:** validation constructs a private capability and consumes the draft.
-Only the validated state exposes `persist`, which consumes that capability.
-The domain quantity remains typed through the transition.
+**Preferred:** transitions belong to specialized `Publication<State>`
+implementations. Callers can construct only the draft publication.
 
 ```rust
-pub mod reservation {
-    use std::{fs, io, num::NonZeroU16, path::PathBuf};
+pub mod publishing {
+    use std::{fs, io, path::PathBuf};
 
-    pub struct Quantity(NonZeroU16);
-
-    #[derive(Debug, thiserror::Error)]
-    pub enum QuantityError {
-        #[error("quantity must be greater than zero")]
-        Zero,
-    }
-
-    #[derive(Debug, thiserror::Error)]
-    pub enum ReservationError {
-        #[error("invalid reservation quantity")]
-        Quantity(#[from] QuantityError),
-        #[error("could not persist reservation")]
-        Persist(#[from] io::Error),
-    }
-
-    impl TryFrom<u16> for Quantity {
-        type Error = QuantityError;
-
-        fn try_from(raw: u16) -> Result<Self, Self::Error> {
-            NonZeroU16::new(raw).map(Self).ok_or(QuantityError::Zero)
-        }
-    }
-
-    impl Quantity {
-        pub fn units(&self) -> u16 {
-            self.0.get()
-        }
+    pub struct Publication<State> {
+        state: State,
     }
 
     pub struct Draft {
-        pub raw_quantity: u16,
+        pub content: String,
         pub destination: PathBuf,
     }
 
-    pub struct Ready {
-        quantity: Quantity,
+    pub struct Validated {
+        content: String,
         destination: PathBuf,
     }
 
-    pub struct Completed {
-        quantity: Quantity,
+    pub struct Published {
+        destination: PathBuf,
     }
 
-    impl TryFrom<Draft> for Ready {
-        type Error = QuantityError;
+    #[derive(Debug, thiserror::Error)]
+    pub enum PublishError {
+        #[error("document is empty")]
+        EmptyDocument,
+        #[error("could not publish document")]
+        Write(#[from] io::Error),
+    }
+
+    impl From<Draft> for Publication<Draft> {
+        fn from(state: Draft) -> Self {
+            Self { state }
+        }
+    }
+
+    impl TryFrom<Draft> for Validated {
+        type Error = PublishError;
 
         fn try_from(draft: Draft) -> Result<Self, Self::Error> {
-            let quantity = Quantity::try_from(draft.raw_quantity)?;
-            Ok(Self { quantity, destination: draft.destination })
+            if draft.content.trim().is_empty() {
+                return Err(PublishError::EmptyDocument);
+            }
+
+            let Draft { content, destination } = draft;
+            Ok(Self { content, destination })
         }
     }
 
-    impl Ready {
-        pub fn persist(self) -> Result<Completed, ReservationError> {
-            fs::write(&self.destination, self.quantity.units().to_string())?;
-            Ok(Completed { quantity: self.quantity })
+    impl Publication<Draft> {
+        pub fn validate(self) -> Result<Publication<Validated>, PublishError> {
+            let state = Validated::try_from(self.state)?;
+            Ok(Publication { state })
         }
     }
 
-    impl Completed {
-        pub fn quantity(&self) -> &Quantity {
-            &self.quantity
+    impl Publication<Validated> {
+        pub fn publish(self) -> Result<Publication<Published>, PublishError> {
+            let Validated { content, destination } = self.state;
+            fs::write(&destination, content)?;
+            Ok(Publication { state: Published { destination } })
+        }
+    }
+
+    impl Publication<Published> {
+        pub fn destination(&self) -> &PathBuf {
+            &self.state.destination
         }
     }
 }
 ```
 
-The caller follows the sequence through the available methods:
+The initial `From` implementation is deliberately limited to `Publication<Draft>`.
+Do not derive `From<State>` for every publication state. Conversion creates
+validated data; only publication methods wrap advanced states in the workflow.
+
+### Run the pipeline
 
 ```rust
-use reservation::{Draft, Ready, ReservationError};
+use publishing::{Draft, Publication, PublishError};
 
-fn main() -> Result<(), ReservationError> {
-    let draft = Draft { raw_quantity: 3, destination: "reservation.txt".into() };
-    let ready = Ready::try_from(draft)?;
-    let _completed = ready.persist()?;
+fn main() -> Result<(), PublishError> {
+    let draft = Draft {
+        content: String::from("Release notes"),
+        destination: "release-notes.md".into(),
+    };
+
+    let publication = Publication::from(draft);
+    let publication = publication.validate()?;
+    let publication = publication.publish()?;
+
+    println!("Published to {}", publication.destination().display());
     Ok(())
 }
 ```
 
-This usage snippet shares the preceding `reservation` module. Validation
-failure returns a typed error before completion. On success, moving `draft`
-into `Ready::try_from` prevents its reuse, and moving `ready` into `persist`
-prevents writing through that same capability twice.
+**Prohibited:** publish a draft, inspect a published result before publishing,
+or reuse a publication after a consuming transition. These fail to compile.
 
-From outside `reservation`, constructing `Ready` with a struct literal is a
-compile error. Calling `persist` on `Draft`, cloning `Ready`, or reusing a moved
-`Ready` is also a compile error. Keep these as separate compile-fail cases
-when implementing this flow.
+**Preferred:** move through the pipeline above. Each returned type exposes only
+the next valid operations. Validation and I/O failures return typed errors.
 
-This example writes a validated reservation record; it does not reserve inventory.
-`TryFrom` validates data, while `persist` performs I/O and remains a named action.
-Inventory availability and authorization belong to their own effect boundary.
-Private fields protect against external callers;
-code inside the defining module must also preserve the construction invariant.
+This example writes a file; it does not guarantee atomic writes or durable
+storage. Check runtime permissions and freshness at the actual effect boundary.
 
 ## Validation
 

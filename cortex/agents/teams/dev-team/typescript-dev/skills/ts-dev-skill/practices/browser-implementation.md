@@ -1,80 +1,144 @@
 # Browser Implementation
 
-Apply these implementation requirements to browser UI and Svelte components.
-The assignment supplies the design requirements and cross-language contracts.
+Implement browser UI with the prescribed Svelte stack. The assignment supplies
+design, cross-language, and security prerequisites.
 
-## Fixed Stack
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-- Use Svelte 5 with `$props`, `$state`, `$derived`, and focused `$effect` runes.
-- Use Vite and Bun through repository Taskfile workflows.
-- Use Tailwind CSS v4 and semantic CSS variables from `app.css`.
-- Reuse shared Svelte UI primitives from
-  the owning application's shared `lib/components/ui/` directory.
-- Use `tailwind-variants`, `tailwind-merge`, and `cn` for variants.
-- Use `@lucide/svelte` as the single ordinary icon family.
-- Use CSS, `tw-animate-css`, and Svelte-native behavior for normal motion.
-- Do not add React, Next.js, JSX/TSX, React-only packages, shadcn React
-  components, or a parallel component system.
-- Do not add a design or animation dependency when the fixed stack suffices.
-- Inspect the owning `package.json` and justify any new dependency.
-- Impeccable is opt-in. Do not load, install, or run it unless the user
-  explicitly requests it by name.
+## Use the existing UI stack
 
+Use Svelte 5 runes, Vite/Bun through Taskfile workflows, Tailwind v4 with semantic
+app.css variables, and shared lib/components/ui primitives. Use tailwind-variants,
+tailwind-merge, cn, and @lucide/svelte. Motion uses CSS, tw-animate-css, or Svelte.
+Do not add React/Next/JSX/TSX, React-only/shadcn React components, or a parallel UI
+system. Inspect package.json before justifying any dependency. Impeccable requires
+an explicit user request by name.
 
-## Svelte 5 Rules
+**Prohibited:**
 
-- Keep markup readable and components thin.
-- Follow TypeScript explicit state: authored
-  JavaScript, TypeScript, and Svelte use neither `undefined` nor `null` for
-  value absence. Normalize external absence at its narrow boundary and model
-  application state with a named enum-backed discriminated union.
-- Use typed props and generated `$app-wasm` types directly.
-- Key stable collections with their semantic identifier.
-- Prefer semantic elements to ARIA patches.
-- Follow the package's Svelte event conventions.
-- Return cleanup from `$effect` for listeners, observers, timers, and external
-  animation state.
-- Keep continuous pointer and scroll values outside component-wide rune state.
-  Prefer CSS, `IntersectionObserver`, or a narrow action.
-- Keep application-wide state and effects in the existing `.svelte.ts`
-  controller pattern. Do not create React-style stores.
-- Svelte renders and coordinates; it does not own vault policy.
+```ts
+import { Button } from "@some-react-ui/button";
+```
 
+**Preferred:**
 
-## Rust, WASM, And Security
+```ts
+import { Button } from "$lib/components/ui/button";
+```
 
-Preserve the dependency direction: authentication and domain core → WASM bridge → web presentation.
+## Let Svelte own rendering and interactions
 
-- Put validation, authorization, cryptography, vault decisions, data shaping,
-  and durable behavior in typed Rust exposed through WASM.
-- Limit Svelte to presentation state, browser ceremonies, lifecycle,
-  accessibility, and explicit interaction.
-- Do not mirror Rust enums or DTOs with TypeScript string unions.
-- Never place secrets in URLs, logs, DOM attributes, test IDs, analytics, or
-  hidden fallback markup.
-- Never persist plaintext secrets in browser convenience state.
-- Mask sensitive values until explicit reveal. Clear temporary revealed or
-  generated state when hidden or dismissed.
-- Keep passkey creation explicit. Default setup to authentication with an
-  existing credential; never infer credential absence from cancellation.
+Keep markup readable and components thin. Use typed props/generated types,
+semantic HTML before ARIA patches, semantic keys for lists, and package event
+conventions. Use explicit enum states rather than null/undefined. Keep product
+validation, authorization, crypto, shaping, and durable policy in Rust/WASM.
 
-Any visual shortcut that weakens these boundaries is a failed design.
+**Prohibited:**
 
+```ts
+// A component reimplements a portable policy:
+const action = observation.kind === PageKind.Checkout
+  ? PageAction.OfferAssistance : PageAction.Ignore;
+```
 
-## Browser Capabilities
+**Preferred:**
 
-- Use capability and state detection, not viewport heuristics, for browser and
-  extension functionality.
+```ts
+// Inside the component interaction handler:
+const action = policy.classify(observation);
+browser.apply(action);
+```
 
-## Translation Integration
+## Release lifecycle resources
 
-- Put every visible product string and accessible name in the shared Rust-owned
-  translation catalogs and render it through the application's translation API.
-- Preserve parity across every supported language catalog.
-- Do not hide inline English in fallbacks, conditionals, or ARIA attributes.
+Return cleanup from $effect for listeners, observers, timers, and animation
+state. Keep continuous pointer/scroll values outside component-wide runes, using
+CSS, IntersectionObserver, or a narrow action. Keep shared app state/effects in
+the existing .svelte.ts controller pattern, not a second store architecture.
 
-## Browser Validation
+**Prohibited:**
 
-- Add or update focused Playwright UI-demo coverage.
-- Run formatting and the applicable UI checks.
-- Inspect attached app logs before changing code after a browser-test failure.
+```ts
+// Inside the component:
+$effect(() => { viewport.subscribe(); });
+```
+
+**Preferred:**
+
+```ts
+// subscribe returns a callable cleanup; the port owns the browser details.
+$effect(() => {
+  const release = viewport.subscribe();
+  return release;
+});
+```
+
+## Detect capabilities, not screen size
+
+Use actual browser/extension capability and state detection. A small viewport
+is not evidence that an API is unavailable.
+
+**Prohibited:**
+
+```ts
+if (viewport.kind === ViewportKind.Narrow) {
+  panel.hideClipboard();
+}
+```
+
+**Preferred:**
+
+```ts
+switch (clipboardSupport.kind) {
+  case ClipboardSupportKind.Available: return panel.showClipboard();
+  case ClipboardSupportKind.Unavailable: return panel.hideClipboard();
+}
+```
+
+## Keep secrets out of incidental surfaces
+
+No secrets in URLs/logs/DOM attributes/test IDs/analytics/hidden markup or
+persistent convenience state. Mask until explicit reveal; clear temporary
+revealed/generated state on hide/dismissal. Keep passkey creation explicit and
+never infer missing credentials from cancellation.
+
+**Prohibited:**
+
+```ts
+logger.info(secret);
+location.hash = secret;
+```
+
+**Preferred:**
+
+```ts
+// Log a typed event, never the secret value.
+logger.info(DisclosureEvent.Concealed);
+// Inside the disclosure owner, release the transient revealed state.
+disclosure.conceal();
+```
+
+## Translate visible and accessible text
+
+Use the shared Rust-owned translation catalogs through the application API.
+Maintain all locales; do not hide English in fallback branches or ARIA labels.
+
+**Prohibited:**
+
+```ts
+// Inside the presentation owner:
+const label = "Save document";
+```
+
+**Preferred:**
+
+```ts
+const label = translations.label(TranslationKey.SaveDocument);
+```
+
+## Validation
+
+- Add/update focused Playwright UI-demo coverage for changed interactions.
+- Run formatting and applicable UI checks; inspect app logs before changing code after a failure.
+- Verify dependency direction, translations, lifecycle cleanup, and secret surfaces.

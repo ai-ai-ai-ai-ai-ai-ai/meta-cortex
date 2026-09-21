@@ -122,7 +122,10 @@ pub mod address {
     }
 }
 
-let requirement = address::AddressRequirement::from(delivery::DeliveryKind::Shipment);
+use address::AddressRequirement;
+use delivery::DeliveryKind;
+
+let requirement = AddressRequirement::from(DeliveryKind::Shipment);
 ```
 
 Use `From` for direct infallible conversions and `TryFrom` when conversion can
