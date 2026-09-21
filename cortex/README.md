@@ -44,9 +44,10 @@ Work continues until the requested outcome is supported by evidence.
 
 ## Local feature work
 
-For repository changes, the [local ownership model](agents/AGENTS.md#local-feature-ownership)
-assigns feature decisions to Gizmo Prime, task coordination to Team Gizmo,
-and Git mechanics to the delivery team's integration agent.
+For repository changes, [Gizmo Prime](agents/gizmo-prime/AGENTS.md#local-feature-decisions)
+owns feature decisions, [Team Gizmo](agents/teams/gizmo/AGENTS.md#control-local-feature-changes)
+coordinates tasks, and the [integration agent](agents/teams/delivery-team/integration-agent/AGENTS.md)
+performs Git operations.
 The integration agent’s [local-feature skill](agents/teams/delivery-team/integration-agent/skills/local-feature/SKILL.md)
 owns workspace setup, merge rules, repairs, and cleanup.
 
