@@ -35,35 +35,11 @@ The [agent instructions](agents/AGENTS.md) define the coordination workflow.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
   - Return evidence and unresolved blockers.
-- **Integration agent**
-  - Belongs to the delivery team and uses the team-agent execution setting.
-  - Performs local Git integration under Team Gizmo's direction.
+- **[Integration agent](agents/teams/delivery-team/integration-agent/AGENTS.md)**
+  - Manages feature worktrees and merges completed task branches.
 
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
-
-## Local feature work
-
-For repository changes, [Gizmo Prime](agents/gizmo-prime/AGENTS.md#local-feature-decisions)
-owns feature decisions, [Team Gizmo](agents/teams/gizmo/AGENTS.md#control-local-feature-changes)
-coordinates tasks, and the [integration agent](agents/teams/delivery-team/integration-agent/AGENTS.md)
-performs Git operations.
-The integration agent’s [local-feature skill](agents/teams/delivery-team/integration-agent/skills/local-feature/SKILL.md)
-owns workspace setup, merge rules, repairs, and cleanup.
-
-Workers receive isolated task branches and worktrees. When workers finish,
-the integration agent merges their task branches into the feature branch. The result is a local
-feature branch with combined validation evidence, ready for review or a separately
-authorized publishing workflow. Read-only tasks need no write worktrees.
-
-These are instructions executed through the host and ordinary Git. Installing
-Meta-Cortex does not provision worktrees or start an integration service.
-
-**Prohibited:** assume launching several subagents automatically gives each one
-an isolated checkout, then let them merge concurrently into the feature branch.
-
-**Preferred:** issue task worktrees explicitly and have the integration agent
-merge finished task branches in order, returning the feature branch and checks.
 
 ## Execution configuration
 
@@ -90,8 +66,7 @@ Each practice has one canonical owner.
     [security](agents/teams/security-team/common/security-skill/SKILL.md).
   - Do not depend on agent coordination or specialized skills.
 - **Specialized skills**
-  - Live with their owning agents, including the integration agent’s
-    [local-feature skill](agents/teams/delivery-team/integration-agent/skills/local-feature/SKILL.md).
+  - Live with their owning agents.
   - Extend and directly reference common practices for the relevant language or task.
   - The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)
     owns Context Engineering, Code Practice Writing, and Delivery Writing for
