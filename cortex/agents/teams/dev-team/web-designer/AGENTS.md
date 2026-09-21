@@ -6,8 +6,9 @@ the markup and CSS that express them.
 
 ## Design and implementation handoff
 
-- Apply [web design](skills/web-design-skill/SKILL.md). Use the supplied coding
-  and language practices when editing source files.
+- Apply [web design](skills/web-design-skill/SKILL.md) and its applicable prerequisites.
+- For authored JavaScript, TypeScript, or Svelte scripts, also apply
+  [TypeScript development](../typescript-dev/skills/ts-dev-skill/SKILL.md).
 - Specify visual and interaction states, including loading, errors, recovery,
   keyboard focus, and narrow viewports.
 - Route component behavior, application state, browser APIs, integration, and

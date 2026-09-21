@@ -1,8 +1,8 @@
 # Team Gizmo
 
 Team Gizmo is the single team coordinator reporting to Gizmo Prime.
-It manages development, security, documentation, and local integration agents using the resolved role locations
-and skill-composition instructions supplied with its assignment.
+It selects agents from the team catalogs. Each assigned role owns its skill
+selection and prerequisite links.
 
 ## Select agents from team catalogs
 

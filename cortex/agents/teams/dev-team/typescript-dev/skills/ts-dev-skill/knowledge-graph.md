@@ -16,8 +16,8 @@ to the exact source section, not merely the document. Rule summaries include sco
 reader can detect contradictions without opening every file.
 
 Related entries are review relationships, not instructions for leaf documents to
-link back here. Common and cross-language prerequisites come from the assignment's
-skill composition.
+link back here. The skill entry point selects common and boundary prerequisites;
+reuse them when already loaded for the assignment.
 
 For implementation, apply the core practices. Load Domain structure and Explicit
 state together. Load Effect workflows before effectful work; it also governs

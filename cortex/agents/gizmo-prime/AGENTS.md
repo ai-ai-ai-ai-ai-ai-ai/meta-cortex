@@ -17,7 +17,8 @@ flowchart LR
     G -->|One feature branch and check results| P
 ```
 
-- Apply the supplied local-feature practice.
+- Use [feature setup](../teams/delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#set-up-workspaces)
+  to establish the base and feature workspace for Team Gizmo.
 - Own one feature branch for the entire feature with Team Gizmo. Keep that
   branch for follow-up tasks and corrections within the feature.
 - Give Team Gizmo:

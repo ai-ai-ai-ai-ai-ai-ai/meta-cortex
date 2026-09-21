@@ -53,10 +53,9 @@ the host applies those settings.
    - Unsupported settings or missing execution capabilities are reported as blockers.
    - Agents must not silently substitute another configuration.
 
-## Skill composition
+## Skills
 
-[Skill composition](skill-composition.md) selects common prerequisites and
-specialized skills according to the assignment.
+Each role selects its skills. Skills link directly to their prerequisites.
 Each practice has one canonical owner.
 
 - **Common skills**

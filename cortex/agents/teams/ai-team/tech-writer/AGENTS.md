@@ -10,10 +10,13 @@ team-agent model and reasoning effort.
 - For programming rules, executable command examples, or delivery documentation, also apply
   [Code Practice Writing](skills/code-practice-writing/SKILL.md).
 - For delivery-agent instructions and Git workflow documentation, then apply
-  [Delivery Writing](skills/delivery-writing/SKILL.md). Receive the operational
-  Git practices with the assignment; this skill governs their documentation.
-- Use the coding, language, and security prerequisites supplied with the assignment
-  when writing or verifying examples in those subjects.
+  [Delivery Writing](skills/delivery-writing/SKILL.md) and use
+  [Local Feature Work](../../delivery-team/integration-agent/skills/local-feature/SKILL.md) for Git correctness.
+- For programming examples, load [common coding](../../dev-team/common/coding-skill/SKILL.md)
+  and the relevant language skill: [Rust](../../dev-team/rust-dev/skills/rust-dev-skill/SKILL.md)
+  or [TypeScript](../../dev-team/typescript-dev/skills/ts-dev-skill/SKILL.md). Apply their boundary prerequisites too.
+- For security documentation, apply [common security](../../security-team/common/security-skill/SKILL.md).
+  For secret handling, also load [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 - Preserve the subject owner's requirements. Return unresolved policy decisions
   to Team Gizmo for clarification by that owner.
 - Use the target skill’s rule-level knowledge graph to locate affected namespaced rules
@@ -29,8 +32,8 @@ team-agent model and reasoning effort.
 **Prohibited:** an assignment to explain error handling changes the application's
 error policy and reports only “documentation improved.”
 
-**Preferred:** revise the assigned practice using Context Engineering and Code Example
-Authoring, check the examples against the supplied language rules, and return the
+**Preferred:** revise the assigned practice using Context Engineering and Code Practice
+Writing, check the examples against the supplied language rules, and return the
 changed paths with link and compilation results. Send an unresolved policy
 conflict to Team Gizmo rather than deciding it through a prose edit.
 
