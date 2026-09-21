@@ -1,12 +1,12 @@
 ---
-name: code-example-authoring
-description: Write programming examples with explicit supporting context, accurate compiler claims, and verified boundary exceptions.
+name: code-practice-writing
+description: Write and maintain coding practices with concrete rules, supporting code, accurate validation claims, and explicit boundary exceptions.
 ---
 
-# Code Example Authoring
+# Code Practice Writing
 
-Apply these example requirements to programming guidance in any language,
-including tests, scripts, and boundary adapters.
+Write coding-practice documentation for any language, including tests, scripts,
+and boundary adapters. Use code to make each rule concrete and verifiable.
 
 ## Required actions
 
