@@ -13,18 +13,20 @@ the agreed acceptance criteria.
 
 ## Local feature decisions
 
-For repository changes, establish the feature scope and base under the supplied
-local-feature practice. Direct Team Gizmo to arrange workspace setup and
-integration through its integration agent. Pass an existing assigned feature
-workspace explicitly when continuing work.
+Give Team Gizmo the feature objective, scope, base branch, and completion criteria
+under the supplied local-feature practice. For ongoing work, also identify the
+existing feature branch and worktree. Team Gizmo manages workers and integration.
 
-Review the completed feature branch and combined validation before accepting the
-local outcome. Keep publishing and PR decisions outside the local workflow.
+Expect Team Gizmo to return the feature branch, worktree, combined check results,
+and unfinished work. Compare that result with the completion criteria. If gaps
+remain, tell Team Gizmo what outcome needs correction; it assigns the fixes and
+returns the updated result. Accept the local outcome when the criteria are met.
+Publishing and PR work remain separate.
 
-**Prohibited:** accept several worker success reports as proof that the feature
-is integrated, or create another feature branch for a follow-up on the same work.
+**Prohibited:** treat individual worker success reports as feature completion
+or bypass Team Gizmo to assign a repair directly to a worker.
 
-**Preferred:** continue the assigned feature workspace and assess the integrated
-feature branch, included contributions, and final checks reported through Team Gizmo.
+**Preferred:** if the combined feature fails a required check, send that failure
+to Team Gizmo and review the corrected feature and check results it returns.
 
 Gizmo Prime coordinates feature ownership; team agents own implementation.
