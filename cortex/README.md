@@ -47,8 +47,9 @@ specialized skills are:
   image inputs, secret boundaries, and real BuildKit cache evidence.
 - [Kubernetes](agents/teams/sre-team/kubernetes-specialist/skills/kubernetes-skill/SKILL.md) for
   workloads that stay within the cluster runtime boundary.
-- [Cloud-Native](agents/teams/sre-team/cloud-native/skills/cloud-native-skill/SKILL.md) for
-  bounded, observable infrastructure and operational changes.
+- [Cloud-Native](agents/teams/sre-team/kubernetes-specialist/skills/cloud-native-skill/SKILL.md) for
+  bounded, observable infrastructure and operational changes, loaded by the
+  Kubernetes specialist for cloud-native assignments.
 
 ## Execution configuration
 

@@ -41,7 +41,8 @@ locations through delegation so each agent can load its assigned context directl
   payloads.
 - For cloud-native infrastructure or operational configuration, load
   [common coding](skills/dev/coding-skill/SKILL.md) before the
-  [cloud-native skill](agents/teams/sre-team/cloud-native/skills/cloud-native-skill/SKILL.md).
+  [cloud-native skill](agents/teams/sre-team/kubernetes-specialist/skills/cloud-native-skill/SKILL.md),
+  which is owned by the Kubernetes specialist.
   Also load [common security](skills/security/security-skill/SKILL.md) when the
   assignment handles credentials, private keys, recovery material, or decrypted
   payloads.
