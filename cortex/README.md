@@ -35,9 +35,34 @@ The [agent instructions](agents/AGENTS.md) define the coordination workflow.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
   - Return evidence and unresolved blockers.
+- **Integration agent**
+  - Belongs to the delivery team and uses the team-agent execution setting.
+  - Performs local Git integration under Team Gizmo's direction.
 
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
+
+## Local feature work
+
+For repository changes, the [local ownership model](agents/AGENTS.md#local-feature-ownership)
+assigns feature decisions to Gizmo Prime, contribution acceptance to Team Gizmo,
+and Git mechanics to the delivery team's integration agent.
+The [local-feature skill](skills/repository-automation/local-feature/SKILL.md)
+owns workspace setup, committed handoffs, merge rules, recovery, and cleanup.
+
+Workers receive isolated task branches and worktrees. Accepted commits flow
+through one integration writer into the feature branch. The result is a local
+feature head with combined validation evidence, ready for review or a separately
+authorized publishing workflow. Read-only tasks need no write worktrees.
+
+These are instructions executed through the host and ordinary Git. Installing
+Meta-Cortex does not provision worktrees or start an integration service.
+
+**Prohibited:** assume launching several subagents automatically gives each one
+an isolated checkout, then let them merge concurrently into the feature branch.
+
+**Preferred:** issue task worktrees explicitly and have the integration agent
+combine accepted commits in order, returning the resulting head and checks.
 
 ## Execution configuration
 
@@ -59,8 +84,9 @@ Each practice has one canonical owner.
 
 - **Common skills**
   - Define language-independent practices grouped by subject.
-  - Cover [coding](skills/dev/coding-skill/SKILL.md) and
-    [security](skills/security/security-skill/SKILL.md).
+  - Cover [coding](skills/dev/coding-skill/SKILL.md),
+    [security](skills/security/security-skill/SKILL.md), and
+    [local repository work](skills/repository-automation/local-feature/SKILL.md).
   - Do not depend on agent roles or team structure.
 - **Specialized skills**
   - Live with their owning agents.

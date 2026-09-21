@@ -9,6 +9,8 @@ applies to its assignment.
 - [Team Gizmo](teams/gizmo/AGENTS.md) breaks work into assignments and coordinates team agents.
 - Agents in the [development team](teams/dev-team/AGENTS.md) and [security team](teams/security-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
 - The [AI team](teams/ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer subagent.
+- The [delivery team](teams/delivery-team/AGENTS.md) owns local feature integration
+  through its integration agent.
 
 Each agent's `AGENTS.md` describes its role. Keep role responsibilities here
 and technical guidance in linked skills so they can evolve independently.
@@ -42,6 +44,9 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
   applicable coding or security prerequisites with the assignment.
 
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
+- For repository changes, pass the local-feature skill selected by composition.
+  Include the feature branch/worktree and each write assignment's task branch,
+  worktree, and base SHA. Resolve library paths independently of task paths.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
 - Use the supplied skill-composition instructions to select common prerequisites and specialized skills. Pass the selections and their document locations with each assignment.
@@ -49,3 +54,23 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.
 - Return results and blockers through Team Gizmo to Gizmo Prime; route corrections back to the responsible agent.
 - Keep work within the user's request. Completion means the requested outcome is supported by evidence, with limitations stated clearly.
+
+## Local feature ownership
+
+- Gizmo Prime owns the feature scope, base decision, and final acceptance.
+- Team Gizmo assigns the integration agent from the delivery catalog for local
+  write work. It accepts contributions, orders integration, routes repairs,
+  and authorizes cleanup. Keep one active integration agent per feature.
+- The integration agent owns feature and task workspace setup and is the sole
+  feature-branch writer. Implementing agents commit in their assigned task
+  worktrees and return handoffs through Team Gizmo.
+- Read-only work does not launch an integration agent or create write workspaces.
+- Local completion ends at a validated feature branch. Publishing or PR work
+  requires a separately authorized workflow and is outside this role's scope.
+
+**Prohibited:** each worker merges its own branch into the feature while Gizmo
+only collects completion messages.
+
+**Preferred:** workers return committed handoffs; Team Gizmo accepts and orders
+them; the integration agent reports the combined head and checks to Team Gizmo.
+Gizmo Prime evaluates that result against the feature objective.
