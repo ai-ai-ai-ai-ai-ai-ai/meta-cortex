@@ -96,38 +96,72 @@ so integration can begin.
 
 ### Integrate finished branches
 
-1. Once a task is finished, integrate its branch in dependency order. Use one
-   writer for the feature branch and merge one task branch at a time.
-2. Check the integration worktree is on the feature branch and clean. Resolve
-   an unfinished Git operation before attempting another merge; preserve
+Integrate completed tasks in dependency order. Keep one writer to the feature
+branch and finish each integration before starting the next.
+
+1. Confirm the finished worker's checkout is on `task_branch` and clean:
+
+   ```sh
+   git -C "$task_path" branch --show-current
+   git -C "$task_path" status --short
+   ```
+
+   The first command must print the assigned task branch; the second must print
+   nothing. Return unfinished work to its owner before proceeding.
+
+2. Confirm the integration checkout is on `feature_branch` and clean:
+
+   ```sh
+   git -C "$feature_path" branch --show-current
+   git -C "$feature_path" status --short
+   git -C "$feature_path" status
+   ```
+
+   Check the branch name, empty short status, and absence of an unfinished merge
+   or rebase in the full status. Resolve an unfinished operation first. Preserve
    unrelated changes instead of resetting them.
-3. Inspect the task branch's changes against its scope. Merge it by branch name,
-   using fast-forward when possible and an ordinary Git merge otherwise.
-   Preserve branch history rather than squashing, cherry-picking, or rewriting
-   the feature. Resolve incompatible repository merge policy before proceeding.
-4. Run the relevant combined checks. Report which task branches were merged and
-   the feature's validation results. Task checks alone do not validate the combination.
 
-**Prohibited:** let workers merge concurrently into the feature branch or claim
-that their separate passing checks prove the combined feature works.
+3. Inspect the task's changes against its assigned scope:
 
-**Preferred:** after `task/parser` finishes, merge it into the feature branch and
-validate the result. Then integrate the next completed task in dependency order.
+   ```sh
+   git -C "$feature_path" diff "$feature_branch...$task_branch"
+   ```
 
-After the task finishes, inspect its worktree and branch changes, then merge
-from the feature worktree. Both status checks must be clean. The three-dot diff
-shows task changes since its shared history with the feature branch.
+   The three-dot comparison shows task changes since its shared history with the
+   feature branch. Return out-of-scope changes to the owner before merging.
 
-```sh
-git -C "$task_path" status --short
-git -C "$feature_path" branch --show-current
-git -C "$feature_path" status --short
-git -C "$feature_path" diff "$feature_branch...$task_branch"
-git -C "$feature_path" merge --no-edit -- "$task_branch"
-```
+4. Merge the finished task branch into the feature branch:
 
-Run the project's assigned validation commands in `feature_path` after the merge.
-Git merge success alone does not establish that those checks passed.
+   ```sh
+   git -C "$feature_path" merge --no-edit -- "$task_branch"
+   ```
+
+   Git fast-forwards when possible or performs an ordinary merge. Preserve that
+   history; do not substitute squash, cherry-pick, or history rewriting. Resolve
+   incompatible repository merge policy before running the command. If it fails,
+   follow the integration-failure procedure below before continuing.
+
+5. Confirm the task branch is fully merged and the worktree is clean:
+
+   ```sh
+   git -C "$feature_path" branch --merged "$feature_branch" --list "$task_branch"
+   git -C "$feature_path" status --short
+   ```
+
+   The branch listing must include `task_branch`; short status must be empty.
+   Investigate an unexpected result before treating integration as successful.
+
+6. Run the project's assigned combined validation commands from `feature_path`.
+   Report the merged task branch, destination feature branch, commands run, and
+   check results. Git merge success and separate task checks do not establish
+   that the combined feature passes. Route failed checks for repair before
+   integrating dependent tasks.
+
+**Prohibited:** merge several worker branches concurrently or report a passing
+feature based only on a successful Git merge.
+
+**Preferred:** merge `task/parser`, verify its inclusion, run the combined checks,
+then integrate the next completed branch in dependency order.
 
 ### Resolve integration failures
 
