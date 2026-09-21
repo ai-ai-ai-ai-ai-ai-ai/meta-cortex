@@ -39,6 +39,17 @@ The [agent instructions](agents/AGENTS.md) define the coordination workflow.
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
 
+The [SRE team](agents/teams/sre-team/AGENTS.md) owns portable infrastructure,
+container builds, Kubernetes workloads, and cloud-native operations. Its
+specialized skills are:
+
+- [Docker](agents/teams/sre-team/skills/docker-skill/SKILL.md) for deliberate
+  image inputs, secret boundaries, and real BuildKit cache evidence.
+- [Kubernetes](agents/teams/sre-team/skills/kubernetes-skill/SKILL.md) for
+  workloads that stay within the cluster runtime boundary.
+- [Cloud-Native](agents/teams/sre-team/skills/cloud-native-skill/SKILL.md) for
+  bounded, observable infrastructure and operational changes.
+
 ## Execution configuration
 
 [meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for

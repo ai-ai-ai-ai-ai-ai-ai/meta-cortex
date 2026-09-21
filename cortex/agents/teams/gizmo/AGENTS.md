@@ -7,8 +7,8 @@ and skill-composition instructions supplied with its assignment.
 ## Select agents from team catalogs
 
 1. Read every team's `AGENTS.md` from the supplied team directory before
-   selecting subagents. Include all teams, not only the one that initially
-   appears relevant.
+   selecting subagents. Include the development, security, [SRE](../sre-team/AGENTS.md),
+   and AI team catalogs, not only the one that initially appears relevant.
 2. Use those catalogs to identify each agent's responsibility, assignment
    boundaries, role location, and readiness. They provide the basic knowledge
    needed to choose agents; do not preload every agent's instructions or skills.

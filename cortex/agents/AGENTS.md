@@ -7,7 +7,7 @@ applies to its assignment.
 
 - [Gizmo Prime](gizmo-prime/AGENTS.md) owns the overall feature and directs Team Gizmo.
 - [Team Gizmo](teams/gizmo/AGENTS.md) breaks work into assignments and coordinates team agents.
-- Agents in the [development team](teams/dev-team/AGENTS.md) and [security team](teams/security-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
+- Agents in the [development team](teams/dev-team/AGENTS.md), [security team](teams/security-team/AGENTS.md), and [SRE team](teams/sre-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
 - The [AI team](teams/ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer subagent.
 
 Each agent's `AGENTS.md` describes its role. Keep role responsibilities here

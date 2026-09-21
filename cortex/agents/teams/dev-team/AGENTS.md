@@ -14,9 +14,9 @@ the consuming project.
 - **[Web designer](web-designer/AGENTS.md)**
   - UI/UX, navigation, layout, typography, responsive styling, and visual states.
   - Assigned markup/CSS and visual accessibility validation.
-- **[SRE agent](sre-agent/AGENTS.md)**
-  - Intended scope: infrastructure, development environments, and operational reliability.
-  - Status: role instructions are not yet defined; the linked file is a placeholder.
+- **[SRE team](../sre-team/AGENTS.md)**
+  - Infrastructure, container builds, Kubernetes workloads, and cloud-native operations.
+  - Select the specialist role from the SRE team catalog for the assigned scope.
 
 ## Assignment boundaries
 
