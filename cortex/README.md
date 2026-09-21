@@ -92,7 +92,8 @@ Each practice has one canonical owner.
   - Live with their owning agents.
   - Extend common practices for the relevant language or task.
   - The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)
-    owns Context Engineering and Code Example Authoring for documentation and programming-rule examples.
+    owns Context Engineering, Code Example Authoring, and Delivery Writing for
+    documentation, programming examples, and delivery/Git instructions.
 
 The framework's instructions remain generic.
 Project-specific requirements and architecture belong to the consuming project.

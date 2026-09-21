@@ -32,6 +32,8 @@ locations through delegation so each agent can load its assigned context directl
   loads its authoring skills in role-defined order. Supply common coding and
   implementation-language practices for programming examples, and security
   prerequisites when the subject involves security.
+  For delivery and Git documentation, supply the local-feature skill as subject
+  context; the tech writer selects Delivery Writing for its authoring guidance.
 - For Rust code, load
   [Rust development](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/SKILL.md).
 - For TypeScript, JavaScript, or Svelte scripts, load

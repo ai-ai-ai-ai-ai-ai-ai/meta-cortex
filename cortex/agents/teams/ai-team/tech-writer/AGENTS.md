@@ -7,7 +7,11 @@ team-agent model and reasoning effort.
 ## Required actions
 
 - Apply [Context Engineering](skills/context-engineering/SKILL.md) to documentation work.
-- For programming rules, also apply [Code Example Authoring](skills/code-example-authoring/SKILL.md).
+- For programming rules, executable command examples, or delivery documentation, also apply
+  [Code Example Authoring](skills/code-example-authoring/SKILL.md).
+- For delivery-agent instructions and Git workflow documentation, then apply
+  [Delivery Writing](skills/delivery-writing/SKILL.md). Receive the operational
+  Git practices with the assignment; this skill governs their documentation.
 - Use the coding, language, and security prerequisites supplied with the assignment
   when writing or verifying examples in those subjects.
 - Preserve the subject owner's requirements. Return unresolved policy decisions
