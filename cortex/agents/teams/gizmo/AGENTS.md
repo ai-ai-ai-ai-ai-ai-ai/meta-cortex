@@ -55,29 +55,24 @@ flowchart LR
     I -->|Results or conflicts| G
 ```
 
-1. For write work, launch one [integration agent](../delivery-team/integration-agent/AGENTS.md)
-   using the team-agent configuration. Supply Prime's feature/base decision and
-   [Local Feature Work](../delivery-team/integration-agent/skills/local-feature/SKILL.md)
-   for the Git procedures it will execute.
-2. Before launching workers, assign [workspace setup](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#set-up-workspaces)
-   to that agent: one feature worktree for the entire feature and separate task
-   branches/worktrees. Give workers the returned locations, scopes, dependencies,
-   checks, and library location. Include [task completion](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#finish-task-work)
-   so they know how to finish their branches and report results.
-3. When a worker finishes, assign [branch integration](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#integrate-finished-branches)
-   to the integration agent. Keep merges sequential and in dependency order.
-   Continue using the same feature branch for corrections.
-4. If integration reports conflicts or failing checks, route the applicable
-   [repair procedure](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#resolve-integration-failures)
-   to the responsible worker. Send its finished branch back for integration.
-5. After feature validation passes, assign [cleanup](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#complete-and-clean-up)
-   to the integration agent. Return its feature branch, workspace, combined checks,
-   and unfinished work to Prime.
+- For write work, launch one [integration agent](../delivery-team/integration-agent/AGENTS.md)
+  using the team-agent configuration. Give it Prime's feature/base decision,
+  worker assignments, dependency order, and required checks.
+- Assign workspace preparation to that agent. Give workers the returned branch
+  names and paths, their task scope, checks, and library location.
+- When a worker finishes, tell the integration agent which task branch to
+  integrate next. Order tasks by dependency and wait for each integration result.
+- Route reported conflicts or failed checks to the responsible worker with the
+  integration agent's repair context. Request integration again after the fix.
+- Once the combined feature passes its checks, ask the integration agent to
+  finish cleanup. Return the feature branch, workspace, check results, and
+  unfinished work to Prime.
 
-**Prohibited:** have workers update the feature branch concurrently.
+**Prohibited:** take over Git operations or resolve an implementation conflict
+instead of assigning it to its owner.
 
-**Preferred:** let each worker finish its task branch, then have the integration
-agent merge it and report the result before starting the next integration.
+**Preferred:** direct the integration agent, inspect its results, and assign
+reported fixes to the responsible worker.
 
 Team Gizmo coordinates implementation without replacing its agents or expanding
 the feature scope. Gizmo Prime retains responsibility for the whole feature.
