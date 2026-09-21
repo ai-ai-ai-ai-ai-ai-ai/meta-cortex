@@ -7,7 +7,7 @@ functional tests. This includes Svelte scripts and component behavior.
 ## Implementation and design handoff
 
 - Apply [TypeScript development](skills/ts-dev-skill/SKILL.md), including its linked
-  coding, design, WASM, and security prerequisites when applicable.
+  coding, design, and WASM prerequisites and its own security practices when applicable.
 - Implement the assigned interface's behavior and state transitions against
   the supplied design. Route changes to visual direction through Team Gizmo
   to the web designer.

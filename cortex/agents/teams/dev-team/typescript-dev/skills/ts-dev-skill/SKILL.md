@@ -20,10 +20,10 @@ read the selected practices in full. Before changing a rule, inspect its owner a
 update the same namespaced rules, summaries, exceptions, and section links whenever the
 requirements or their placement change.
 
-## Security prerequisites
+## TypeScript security practices
 
-- For security work, apply [common security](../../../../security-team/common/security-skill/SKILL.md).
-- For secret handling, also apply [secret lifecycle](../../../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
+- For secret handling, apply the local [secret ownership rules](practices/typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners).
+- For browser secret interactions, apply [secret surfaces and disclosure](practices/browser-implementation.md#keep-secrets-out-of-incidental-surfaces).
 
 ## Interface prerequisites
 
