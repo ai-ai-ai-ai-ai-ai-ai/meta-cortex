@@ -9,6 +9,10 @@ and skill-composition instructions supplied with its assignment.
 1. Read every team's `AGENTS.md` from the supplied team directory before
    selecting subagents. Include all teams, not only the one that initially
    appears relevant.
+   - [Development](../dev-team/AGENTS.md): implementation and design.
+   - [Security](../security-team/AGENTS.md): security requirements and review.
+   - [AI](../ai-team/AGENTS.md): documentation and practice authoring.
+   - [Delivery](../delivery-team/AGENTS.md): local worktrees and integration.
 2. Use those catalogs to identify each agent's responsibility, assignment
    boundaries, role location, and readiness. They provide the basic knowledge
    needed to choose agents; do not preload every agent's instructions or skills.
@@ -32,7 +36,7 @@ for that assignment rather than preloading unrelated agents.
 
 - Turn the feature assignment into bounded tasks for the appropriate agents.
 - Launch those team agents as subagents through the host’s agent execution tools.
-- Launch the tech writer for documentation assignments. Route policy
+- Launch the [tech writer](../ai-team/tech-writer/AGENTS.md) for documentation assignments. Route policy
   questions to the relevant development or security owner before the writer
   changes the requirements.
 - Give each agent its scope, relevant context, dependencies, and acceptance criteria.
@@ -51,18 +55,24 @@ flowchart LR
     I -->|Results or conflicts| G
 ```
 
-1. For write work, launch one integration agent from the delivery catalog using
-   the team-agent configuration. Supply Prime's feature/base decision and the
-   local-feature prerequisite selected by skill composition.
-2. Have the integration agent prepare one feature worktree for the whole feature
-   and a separate task branch/worktree for each worker assignment. Give each
-   worker its scope, dependencies, checks, and library location.
-3. When a worker finishes, direct the integration agent to merge its task branch
-   into the same feature branch. Reuse that feature branch for corrections.
-   Order dependent work and keep feature integration sequential.
-4. Check integration results and route conflicts or failures to their owners.
-5. Have the integration agent clean up finished tasks after validation. Report
-   the feature branch, workspace, combined checks, and unfinished work to Prime.
+1. For write work, launch one [integration agent](../delivery-team/integration-agent/AGENTS.md)
+   using the team-agent configuration. Supply Prime's feature/base decision and
+   [Local Feature Work](../delivery-team/integration-agent/skills/local-feature/SKILL.md)
+   for the Git procedures it will execute.
+2. Before launching workers, assign [workspace setup](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#set-up-workspaces)
+   to that agent: one feature worktree for the entire feature and separate task
+   branches/worktrees. Give workers the returned locations, scopes, dependencies,
+   checks, and library location. Include [task completion](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#finish-task-work)
+   so they know how to finish their branches and report results.
+3. When a worker finishes, assign [branch integration](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#integrate-finished-branches)
+   to the integration agent. Keep merges sequential and in dependency order.
+   Continue using the same feature branch for corrections.
+4. If integration reports conflicts or failing checks, route the applicable
+   [repair procedure](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#resolve-integration-failures)
+   to the responsible worker. Send its finished branch back for integration.
+5. After feature validation passes, assign [cleanup](../delivery-team/integration-agent/skills/local-feature/practices/local-feature-integration.md#complete-and-clean-up)
+   to the integration agent. Return its feature branch, workspace, combined checks,
+   and unfinished work to Prime.
 
 **Prohibited:** have workers update the feature branch concurrently.
 
