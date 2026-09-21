@@ -10,7 +10,8 @@
 - **[local_feature:workspace](practices/local-feature-integration.md#set-up-workspaces)**
   - Preserve existing work; use the selected base branch or current checked-out
     branch, resolving a missing choice without an implicit fetch.
-  - Create or reuse the assigned feature workspace and isolate each write task.
+  - Create or reuse the assigned feature workspace and isolate each write task
+    in a separate linked Git worktree outside the original checkout.
   - Order dependent tasks; supply scopes, branch names, paths, checks, and the
     actual library location. Read-only work needs no write workspace.
 - **[local_feature:completion](practices/local-feature-integration.md#finish-task-work)**

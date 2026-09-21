@@ -3,6 +3,12 @@
 Use ordinary Git branches and worktrees to combine finished tasks into a
 validated local feature branch. Work proceeds from task completion to integration.
 
+Command examples use shell variables supplied for the task: `repo_path`,
+`base_branch`, `feature_branch`, `feature_path`, `task_branch`, and `task_path`.
+Paths are absolute. Branch names follow the project's convention. Feature and
+worker paths are separate directories outside the original checkout; all belong
+to the same Git repository. Replace the variables with the assigned values.
+
 ## Required actions
 
 ### Set up workspaces
@@ -26,6 +32,19 @@ create a task worktree expecting another checkout's pending edits to appear.
 
 **Preferred:** create `task/parser` in its own worktree from the feature branch
 and give its worker the correct source and library paths.
+
+For a new feature and its first task, inspect the repository and create the
+worktrees. Repeat only the task creation for each additional worker, with its
+own task branch and path. Skip creation for an explicitly assigned existing
+worktree after checking its branch with `git branch --show-current`.
+
+```sh
+git -C "$repo_path" status --short
+git -C "$repo_path" worktree list
+git -C "$repo_path" branch --show-current
+git -C "$repo_path" worktree add -b "$feature_branch" "$feature_path" "$base_branch"
+git -C "$repo_path" worktree add -b "$task_branch" "$task_path" "$feature_branch"
+```
 
 ### Finish task work
 
@@ -61,6 +80,21 @@ that their separate passing checks prove the combined feature works.
 **Preferred:** after `task/parser` finishes, merge it into the feature branch and
 validate the result. Then integrate the next completed task in dependency order.
 
+After the task finishes, inspect its worktree and branch changes, then merge
+from the feature worktree. Both status checks must be clean. The three-dot diff
+shows task changes since its shared history with the feature branch.
+
+```sh
+git -C "$task_path" status --short
+git -C "$feature_path" branch --show-current
+git -C "$feature_path" status --short
+git -C "$feature_path" diff "$feature_branch...$task_branch"
+git -C "$feature_path" merge --no-edit -- "$task_branch"
+```
+
+Run the project's assigned validation commands in `feature_path` after the merge.
+Git merge success alone does not establish that those checks passed.
+
 ### Resolve integration failures
 
 - If a merge conflicts, abort it and report the conflicting files. Have the
@@ -77,6 +111,23 @@ remove branches while combined validation is failing.
 **Preferred:** return the conflicting task for repair, then merge the repaired
 branch and check the feature again.
 
+If the feature merge conflicts, list the affected paths before aborting:
+
+```sh
+git -C "$feature_path" diff --name-only --diff-filter=U
+git -C "$feature_path" merge --abort
+git -C "$feature_path" status --short
+```
+
+The task owner performs the repair in its worker worktree:
+
+```sh
+git -C "$task_path" merge --no-edit -- "$feature_branch"
+```
+
+The owner resolves the files, saves the repair on its branch, and reruns task
+checks. Once that task finishes, repeat the normal feature merge and validation.
+
 ### Complete and clean up
 
 1. Verify finished task branches are fully merged using Git's branch comparison,
@@ -92,3 +143,15 @@ branch and check the feature again.
 
 **Preferred:** let Git confirm branches are merged, remove only finished task
 workspaces, and leave the validated feature branch available for review.
+
+For each finished task, confirm its branch appears in the merged-branch list
+and its worktree is clean before running removal commands. Keep the feature
+worktree and branch. Run branch deletion from the feature worktree so Git checks
+integration against the destination branch.
+
+```sh
+git -C "$feature_path" branch --merged "$feature_branch" --list "$task_branch"
+git -C "$task_path" status --short
+git -C "$repo_path" worktree remove "$task_path"
+git -C "$feature_path" branch -d "$task_branch"
+```
