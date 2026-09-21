@@ -59,11 +59,11 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 
 - Gizmo Prime owns the feature scope, base decision, and final acceptance.
 - Team Gizmo assigns the integration agent from the delivery catalog for local
-  write work. It accepts contributions, orders integration, routes repairs,
-  and authorizes cleanup. Keep one active integration agent per feature.
+  write work. It orders integration, routes repairs,
+  and oversees cleanup. Keep one active integration agent per feature.
 - The integration agent owns feature and task workspace setup and is the sole
   feature-branch writer. Implementing agents save changes in their assigned task
-  worktrees and return handoffs through Team Gizmo.
+  worktrees and report task completion to Team Gizmo.
 - Read-only work does not launch an integration agent or create write workspaces.
 - Local completion ends at a validated feature branch. Publishing or PR work
   requires a separately authorized workflow and is outside this role's scope.
@@ -71,6 +71,5 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 **Prohibited:** each worker merges its own branch into the feature while Gizmo
 only collects completion messages.
 
-**Preferred:** workers return task branches; Team Gizmo accepts and orders
-them; the integration agent reports the feature branch and combined checks to Team Gizmo.
+**Preferred:** workers finish their task branches; Team Gizmo orders integration; the integration agent reports the feature branch and combined checks to Team Gizmo.
 Gizmo Prime evaluates that result against the feature objective.

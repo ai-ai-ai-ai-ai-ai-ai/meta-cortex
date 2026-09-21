@@ -1,6 +1,6 @@
 ---
 name: local-feature
-description: Manage local Git feature branches, isolated task worktrees, branch handoffs, integration, and safe cleanup. Use for local repository changes; excludes publishing and pull requests.
+description: Manage local Git feature branches, isolated task worktrees, integration, and safe cleanup. Use for local repository changes; excludes publishing and pull requests.
 ---
 
 # Local Feature Work
@@ -11,7 +11,7 @@ coordination tools. This skill is independent of languages and agent roles.
 ## Required actions
 
 - Read [local feature integration](practices/local-feature-integration.md)
-  before creating task worktrees, handing off task branches, or integrating changes.
+  before creating task worktrees or integrating changes.
 - Use the [rule map](knowledge-graph.md) to locate individual decisions when
   reviewing or changing this practice.
 

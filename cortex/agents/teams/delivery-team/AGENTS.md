@@ -7,8 +7,8 @@ Team Gizmo uses this catalog for local feature integration assignments.
 - **[Integration agent](integration-agent/AGENTS.md)**
   - Status: implemented role instructions.
   - Creates assigned local feature and task workspaces.
-  - Integrates accepted task branches, validates the combined feature, and performs
-    authorized local cleanup.
+  - Integrates finished task branches, validates the combined feature, and performs
+    local cleanup.
   - Returns branch and validation evidence to Team Gizmo.
-  - Excludes product implementation, contribution acceptance, remote publishing,
+  - Excludes product implementation, task coordination, remote publishing,
     pull requests, and merging the feature into the base branch.

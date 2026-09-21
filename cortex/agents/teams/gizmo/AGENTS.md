@@ -46,26 +46,18 @@ for that assignment rather than preloading unrelated agents.
 1. For write work, launch one integration agent from the delivery catalog using
    the team-agent configuration. Supply Prime's feature/base decision and the
    local-feature prerequisite selected by skill composition.
-2. Assign feature and task workspace creation to that agent. Wait for resolved
-   branch and path details before dispatching writers. Supply each writer
-   its bounded scope, dependencies, validation requirements, and actual library
-   location along with those workspace details.
-3. Review task branch handoffs for scope and evidence. Accept or return them for
-   correction; schedule accepted task branches in dependency order for the integration
-   agent. Do not let workers write the feature branch.
-4. Await each integration result before issuing another feature-writing turn.
-   Route conflicts and failed combined checks to their implementation owners.
-   Reassign a frozen task explicitly before its worker resumes changes.
-5. Authorize cleanup only after the common practice's completion conditions are
-   satisfied. Return the feature location, feature branch, accepted task branches, combined
-   validation, and unresolved work to Gizmo Prime.
+2. Have the integration agent create the feature and task workspaces. Give each
+   worker its branch, worktree, scope, dependencies, checks, and library location.
+3. When a worker finishes, direct the integration agent to merge that task branch.
+   Order dependent work and keep feature integration sequential.
+4. Check integration results and route conflicts or failures to their owners.
+5. Have the integration agent clean up finished tasks after validation. Report
+   the feature branch, workspace, combined checks, and unfinished work to Prime.
 
-**Prohibited:** grant two workers simultaneous merge turns or delete a worker's
-branch when its contribution has only been submitted.
+**Prohibited:** have workers update the feature branch concurrently.
 
-**Preferred:** accept a frozen task branch, wait for its integration and checks,
-then schedule the next one. Retain unfinished branches and return failures to
-their owners before authorizing cleanup.
+**Preferred:** let each worker finish its task branch, then have the integration
+agent merge it and report the result before starting the next integration.
 
 Team Gizmo coordinates implementation without replacing its agents or expanding
 the feature scope. Gizmo Prime retains responsibility for the whole feature.
