@@ -47,23 +47,23 @@ for that assignment rather than preloading unrelated agents.
    the team-agent configuration. Supply Prime's feature/base decision and the
    local-feature prerequisite selected by skill composition.
 2. Assign feature and task workspace creation to that agent. Wait for resolved
-   branch, path, and base details before dispatching writers. Supply each writer
+   branch and path details before dispatching writers. Supply each writer
    its bounded scope, dependencies, validation requirements, and actual library
    location along with those workspace details.
-3. Review committed handoffs for scope and evidence. Accept or return them for
-   correction; schedule accepted tips in dependency order for the integration
+3. Review task branch handoffs for scope and evidence. Accept or return them for
+   correction; schedule accepted task branches in dependency order for the integration
    agent. Do not let workers write the feature branch.
 4. Await each integration result before issuing another feature-writing turn.
    Route conflicts and failed combined checks to their implementation owners.
    Reassign a frozen task explicitly before its worker resumes changes.
 5. Authorize cleanup only after the common practice's completion conditions are
-   satisfied. Return the feature location, final head, accepted tips, combined
+   satisfied. Return the feature location, feature branch, accepted task branches, combined
    validation, and unresolved work to Gizmo Prime.
 
 **Prohibited:** grant two workers simultaneous merge turns or delete a worker's
 branch when its contribution has only been submitted.
 
-**Preferred:** accept a fixed contribution, wait for its integration and checks,
+**Preferred:** accept a frozen task branch, wait for its integration and checks,
 then schedule the next one. Retain unfinished branches and return failures to
 their owners before authorizing cleanup.
 

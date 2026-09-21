@@ -46,7 +46,7 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
 - For repository changes, pass the local-feature skill selected by composition.
   Include the feature branch/worktree and each write assignment's task branch,
-  worktree, and base SHA. Resolve library paths independently of task paths.
+  worktree, and base branch. Resolve library paths independently of task paths.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
 - Use the supplied skill-composition instructions to select common prerequisites and specialized skills. Pass the selections and their document locations with each assignment.
@@ -62,7 +62,7 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
   write work. It accepts contributions, orders integration, routes repairs,
   and authorizes cleanup. Keep one active integration agent per feature.
 - The integration agent owns feature and task workspace setup and is the sole
-  feature-branch writer. Implementing agents commit in their assigned task
+  feature-branch writer. Implementing agents save changes in their assigned task
   worktrees and return handoffs through Team Gizmo.
 - Read-only work does not launch an integration agent or create write workspaces.
 - Local completion ends at a validated feature branch. Publishing or PR work
@@ -71,6 +71,6 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 **Prohibited:** each worker merges its own branch into the feature while Gizmo
 only collects completion messages.
 
-**Preferred:** workers return committed handoffs; Team Gizmo accepts and orders
-them; the integration agent reports the combined head and checks to Team Gizmo.
+**Preferred:** workers return task branches; Team Gizmo accepts and orders
+them; the integration agent reports the feature branch and combined checks to Team Gizmo.
 Gizmo Prime evaluates that result against the feature objective.

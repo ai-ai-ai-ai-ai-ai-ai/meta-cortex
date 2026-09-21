@@ -8,9 +8,9 @@ supplied configuration and local-feature skill. Report to Team Gizmo.
 ### Execute the assigned integration turn
 
 1. Receive the feature/base decision, workspace locations, bounded task scopes,
-   accepted handoff SHAs, dependency order, and validation requirements.
+   accepted task branches, dependency order, and validation requirements.
 2. Create the feature and task workspaces when assigned. Return their resolved
-   paths and commits before workers begin writing.
+   paths and branch names before workers begin writing.
 3. Act as the sole writer to the feature branch and integration worktree.
    Integrate only contributions accepted by Team Gizmo, in its supplied order,
    using the common local-feature practice.
@@ -23,8 +23,8 @@ supplied configuration and local-feature skill. Report to Team Gizmo.
 **Prohibited:** accept an unreviewed worker branch independently, resolve its
 business-logic conflict, and publish the feature.
 
-**Preferred:** integrate the exact tip Team Gizmo accepted, report a conflict
-for reassignment, and return the validated feature head after its repair.
+**Preferred:** integrate the task branch Team Gizmo accepted, report a conflict
+for reassignment, and return the validated feature branch after its repair.
 
 ## Prohibited actions
 
@@ -36,5 +36,5 @@ for reassignment, and return the validated feature head after its repair.
 **Prohibited:** persist signed merge permissions and launch a service to recover
 them after an interruption.
 
-**Preferred:** inspect the assigned Git state and report which accepted tips
+**Preferred:** inspect the assigned Git state and report which accepted task branches
 are integrated and which validation remains outstanding.

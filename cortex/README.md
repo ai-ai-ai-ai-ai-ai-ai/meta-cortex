@@ -48,11 +48,11 @@ For repository changes, the [local ownership model](agents/AGENTS.md#local-featu
 assigns feature decisions to Gizmo Prime, contribution acceptance to Team Gizmo,
 and Git mechanics to the delivery team's integration agent.
 The [local-feature skill](skills/repository-automation/local-feature/SKILL.md)
-owns workspace setup, committed handoffs, merge rules, recovery, and cleanup.
+owns workspace setup, branch handoffs, merge rules, recovery, and cleanup.
 
-Workers receive isolated task branches and worktrees. Accepted commits flow
+Workers receive isolated task branches and worktrees. Accepted task branches flow
 through one integration writer into the feature branch. The result is a local
-feature head with combined validation evidence, ready for review or a separately
+feature branch with combined validation evidence, ready for review or a separately
 authorized publishing workflow. Read-only tasks need no write worktrees.
 
 These are instructions executed through the host and ordinary Git. Installing
@@ -62,7 +62,7 @@ Meta-Cortex does not provision worktrees or start an integration service.
 an isolated checkout, then let them merge concurrently into the feature branch.
 
 **Preferred:** issue task worktrees explicitly and have the integration agent
-combine accepted commits in order, returning the resulting head and checks.
+merge accepted task branches in order, returning the feature branch and checks.
 
 ## Execution configuration
 

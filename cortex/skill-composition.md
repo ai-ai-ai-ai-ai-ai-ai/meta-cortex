@@ -14,7 +14,7 @@ locations through delegation so each agent can load its assigned context directl
 
 ## Common prerequisites
 
-- For local repository changes, worktree setup, commit handoffs, integration,
+- For local repository changes, worktree setup, branch handoffs, integration,
   or cleanup, load [local feature work](skills/repository-automation/local-feature/SKILL.md).
   Supply it to coordinators, integration assignments, and every write assignment.
   Read-only tasks do not require a feature workspace.
