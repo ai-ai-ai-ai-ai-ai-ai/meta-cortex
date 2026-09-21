@@ -72,3 +72,89 @@ locations and reports the specific semantic and mechanical checks performed.
 
 **Preferred report:** “Reviewed the changed section against the four practices.
 Its local links resolve; the code example was reviewed but not executed.”
+
+## Executable audits
+
+Use the co-located [scripts](scripts/package.json) for deterministic checks of
+supplied document facts. They provide a local YAML command interface with a
+command catalog; they do not require an MCP server or Loom.
+
+### Prepare and discover
+
+1. Resolve this skill's absolute directory as `skill_dir`.
+2. Copy its scripts to a temporary runtime directory and install the locked
+   dependencies with Bun 1.3.14. Keep dependencies outside the framework so
+   they cannot enter installer bundles or modify an installed library.
+
+   ```sh
+   skill_runtime=$(mktemp -d)
+   cp -R "$skill_dir/scripts/." "$skill_runtime/"
+   cd "$skill_runtime"
+   bun install --frozen-lockfile
+   ```
+
+3. Discover command schemas and complete YAML examples:
+
+   ```sh
+   bun src/ts/cli.ts --request-yaml='version: 1
+   tools:
+     list: {}'
+   ```
+
+4. Adapt a returned `exampleYaml` to the assigned documents and pass it as one
+   quoted `--request-yaml` argument. Responses are YAML on stdout.
+   Exit codes: `0` for discovery or no findings, `1` for findings, `2` for an
+   invalid request or a response exceeding its limit.
+
+**Prohibited:** claim that catalog discovery audited the repository.
+
+**Preferred:** invoke an audit with the relevant facts and report its findings
+separately from semantic review.
+
+### Select a command
+
+- **`articles.audit`:** accepts document paths and ordered semantic blocks.
+  It checks empty H2/H3 articles, more than three consecutive prose blocks,
+  explicitly procedure-labeled sections without ordered actions, and tables.
+  These checks adapt Nook's skill scripts; they do not prove writing quality.
+- **`navigation.audit`:** accepts documents, their owning graph paths and exact
+  heading anchors, and the graphs' owning entries. It checks missing owners,
+  missing entries or targets, missing anchors, foreign ownership, and duplicate
+  target/anchor pairs. Different rule anchors in one document are valid.
+
+Supply the complete document/graph inventory for the scope being checked.
+Only put owning entries in `graphs.entries`; related links and prerequisites
+are not ownership declarations. Paths identify supplied facts, not files to open.
+Use normalized project-relative paths and resolve relative links before passing
+navigation facts. An empty `anchor` means a document-level link.
+
+Article blocks distinguish substantive `paragraph`, `visible-ordered-list`, and
+`structure` content from `transparent` definitions or empty elements. Use
+`density-separator` for image-only paragraphs or thematic breaks, `heading`
+with depth/text, and `table` for rendered Markdown tables. An ordered example
+inside a quote, code block, or footnote is not a `visible-ordered-list` action.
+
+This iteration does not parse Markdown, discover files, generate graphs, check
+HTML, or infer semantic ownership. The caller supplies those facts; omitted or
+incorrect facts limit the evidence. Requests are limited to 64 KiB and responses
+to 256 KiB. The scripts reject unknown fields, versions, duplicate YAML keys,
+anchors, aliases, tags, directives, and multiple YAML documents.
+
+**Prohibited:** send a filename alone and report that its contents were checked.
+
+**Preferred:** supply the document's semantic blocks or navigation inventory,
+inspect the returned findings, and state the audited scope.
+
+### Maintain scripts
+
+- Keep source in `scripts/src/ts` and tests in `scripts/src/test`.
+- Run `bun run verify` in the temporary scripts copy after changing code.
+- Update discovery examples with their request contracts. Every example must
+  remain directly invocable.
+- Preserve [Nook's MIT notice](scripts/LICENSE.nook) with the adapted code.
+- Keep Nook's policy registry, Loom adapters, and agent lifecycle outside this
+  skill. Audit commands only return findings about supplied facts.
+
+**Prohibited:** make an audit dispatch agents or read commands from Markdown.
+
+**Preferred:** keep execution limited to the selected, statically defined audit.

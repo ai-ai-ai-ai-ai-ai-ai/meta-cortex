@@ -32,3 +32,21 @@ jobs:
           components: llvm-tools-preview
       - uses: taiki-e/install-action@cargo-llvm-cov
       - run: cargo llvm-cov --locked --fail-under-lines 90
+
+  skill-scripts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Verify Context Engineering scripts
+        run: |
+          skill_runtime=$(mktemp -d)
+          cp -R cortex/agents/teams/ai-team/tech-writer/skills/context-engineering/scripts/. "$skill_runtime/"
+          cd "$skill_runtime"
+          bun install --frozen-lockfile
+          bun run verify
