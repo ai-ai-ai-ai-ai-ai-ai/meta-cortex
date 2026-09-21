@@ -40,3 +40,7 @@ authorize it to redefine the security policy and rewrite the agent instructions.
 the agent owning the affected implementation, security-policy questions to the security team, and
 instruction changes to the tech writer. Each assignment identifies its
 dependencies on the others.
+
+## Common skills
+
+- [Common coding](common/coding-skill/SKILL.md).

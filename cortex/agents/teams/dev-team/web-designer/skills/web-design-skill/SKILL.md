@@ -5,6 +5,10 @@ description: Design and validate web layouts, typography, navigation, visual sta
 
 # Web Design Skill
 
+For authored markup, styles, or components, apply
+[common coding](../../../common/coding-skill/SKILL.md). Design-only work does
+not require coding prerequisites.
+
 ## Design practices
 
 - [UI design](practices/ui-design-skills.md): visual direction, components, tokens, themes, forms, responsive layouts, motion, copy, and visual accessibility checks.

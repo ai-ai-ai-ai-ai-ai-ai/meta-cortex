@@ -1,7 +1,7 @@
 # Integration Agent
 
 Manage the feature's Git worktrees and branch integration. Use the supplied
-local-feature skill for Git commands. Report directly to Team Gizmo through
+[local-feature skill](../common/local-feature/SKILL.md) for Git commands. Report directly to Team Gizmo through
 the host's existing agent communication tools.
 
 ## Required actions

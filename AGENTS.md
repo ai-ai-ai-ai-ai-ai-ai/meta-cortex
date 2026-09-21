@@ -9,9 +9,10 @@ that framework into consuming projects at `.meta-cortex/`. Keep framework
 instructions generic and keep the root `LICENSE` in place.
 
 Keep each practice with its subject: coding, security, or repository automation.
-Common skills under `cortex/skills/` are language independent and must not
-depend on teams, agents, or specialized skills. Specialized skills extend
-common practices; agent instructions select and compose skills for a task.
+Common skills live under each owning team’s `common/` directory. They are
+language independent and must not depend on agent coordination or specialized
+skills. Specialized skills may link directly to common skills and practices;
+agent instructions select and compose skills for a task.
 Keep one canonical copy of each practice and update all callers when moving it.
 
 For installer changes, apply the framework's

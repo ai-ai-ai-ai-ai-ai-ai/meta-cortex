@@ -3,6 +3,8 @@
 Select skills by the work an assignment contains. Load common prerequisites
 before specialized skills. Pass the selected instructions and resolved document
 locations through delegation so each agent can load its assigned context directly.
+Specialized skills may also link directly to required common skills or practices.
+Load each prerequisite once; dependency links must not restart agent routing.
 
 ## Required actions
 
@@ -15,15 +17,15 @@ locations through delegation so each agent can load its assigned context directl
 ## Common prerequisites
 
 - For local repository changes, worktree setup, integration,
-  or cleanup, load [local feature work](skills/repository-automation/local-feature/SKILL.md).
+  or cleanup, load [local feature work](agents/teams/delivery-team/common/local-feature/SKILL.md).
   Supply it to coordinators, integration assignments, and every write assignment.
   Read-only tasks do not require a feature workspace.
 - For authored code, tests, scripts, build logic, or code review, load
-  [common coding](skills/dev/coding-skill/SKILL.md).
+  [common coding](agents/teams/dev-team/common/coding-skill/SKILL.md).
 - For dependency selection or commodity helpers, also load
-  [common library selection](skills/dev/coding-skill/practices/prefer-popular-libraries.md).
+  [common library selection](agents/teams/dev-team/common/coding-skill/practices/prefer-popular-libraries.md).
 - For security work or secret handling, load
-  [common security](skills/security/security-skill/SKILL.md).
+  [common security](agents/teams/security-team/common/security-skill/SKILL.md).
 
 ## Specialized selections
 

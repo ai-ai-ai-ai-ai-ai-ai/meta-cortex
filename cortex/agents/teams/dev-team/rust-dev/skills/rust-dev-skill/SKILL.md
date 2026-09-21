@@ -8,6 +8,9 @@ description: Apply Rust practices for ownership, workflow states, domain types, 
 Apply these practices to authored Rust product code, tooling, tests, examples,
 and build scripts.
 
+Apply [common coding](../../../common/coding-skill/SKILL.md) before the
+selected language practices. Reuse it if already loaded for this assignment.
+
 ## Practice selection
 
 Read the [knowledge graph](knowledge-graph.md) to select practices and identify

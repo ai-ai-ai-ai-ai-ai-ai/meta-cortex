@@ -9,3 +9,7 @@ Team Gizmo uses this index to route assignments.
 
 Coordinate application and infrastructure changes with the
 development team through Team Gizmo.
+
+## Common skills
+
+- [Common security](common/security-skill/SKILL.md).
