@@ -1,38 +1,59 @@
 import { describe, expect, test } from "bun:test";
 import { Effect, Schema } from "effect";
 import { parse } from "yaml";
-import { SkillApplication, type SkillExecution } from "../ts/application.ts";
-import { ResponseKind } from "../ts/transport.ts";
+import { SkillApplication } from "../ts/application.ts";
+import { type SkillExecution } from "../ts/response.ts";
+import { ProtocolText, type YamlText } from "../ts/protocol-text.ts";
+import { ResponseKind } from "../ts/response.ts";
 import { ArticleFindingCode } from "../ts/article.ts";
 import { NavigationFindingCode } from "../ts/navigation.ts";
 import { FailureCode } from "../ts/failure.ts";
 
+type FindingCode = ArticleFindingCode | NavigationFindingCode;
+type FindingCodes = readonly FindingCode[];
+type YamlExamples = readonly YamlText[];
+
 class SkillProbe {
-  private static readonly findings = Schema.Struct({
-    kind: Schema.Literal(ResponseKind.Findings),
-    findings: Schema.Array(
-      Schema.Struct({ code: Schema.String, file: Schema.String }),
+  private static readonly findingFields = {
+    code: Schema.Union(
+      Schema.Enums(ArticleFindingCode),
+      Schema.Enums(NavigationFindingCode),
     ),
-  });
-  private static readonly catalog = Schema.Struct({
-    catalog: Schema.Struct({
-      commands: Schema.Array(
-        Schema.Struct({ name: Schema.String, exampleYaml: Schema.String }),
-      ),
-    }),
-  });
-  constructor(private readonly yaml: string) {}
+    file: Schema.String,
+  } satisfies Schema.Struct.Fields;
+  private static readonly findingsFields = {
+    kind: Schema.Literal(ResponseKind.Findings),
+    findings: Schema.Array(Schema.Struct(SkillProbe.findingFields)),
+  } satisfies Schema.Struct.Fields;
+  private static readonly findings = Schema.Struct(SkillProbe.findingsFields);
+  private static readonly commandFields = {
+    name: Schema.String,
+    exampleYaml: Schema.String.pipe(Schema.brand("YamlText")),
+  } satisfies Schema.Struct.Fields;
+  private static readonly catalogFields = {
+    commands: Schema.Array(Schema.Struct(SkillProbe.commandFields)),
+  } satisfies Schema.Struct.Fields;
+  private static readonly catalogEnvelopeFields = {
+    catalog: Schema.Struct(SkillProbe.catalogFields),
+  } satisfies Schema.Struct.Fields;
+  private static readonly catalog = Schema.Struct(
+    SkillProbe.catalogEnvelopeFields,
+  );
+  private readonly yaml: YamlText;
+  constructor(yaml: string) {
+    this.yaml = ProtocolText.yaml(yaml);
+  }
   execute(): SkillExecution {
     return Effect.runSync(new SkillApplication(this.yaml).execute());
   }
-  codes(): readonly string[] {
+  codes(): FindingCodes {
     const output = this.execute();
     const response = Schema.decodeUnknownSync(SkillProbe.findings)(
       parse(output.yaml),
     );
     return response.findings.map((finding) => finding.code);
   }
-  examples(): readonly string[] {
+  examples(): YamlExamples {
     const output = this.execute();
     const response = Schema.decodeUnknownSync(SkillProbe.catalog)(
       parse(output.yaml),
@@ -222,7 +243,10 @@ test("response capacity failures are explicit rather than truncated findings", (
 
 test("YAML recovery example is itself a usable discovery request", () => {
   const result = new SkillProbe("bad request").execute();
-  const recoverySchema = Schema.Struct({ recovery: Schema.String });
+  const recoveryFields = {
+    recovery: Schema.String,
+  } satisfies Schema.Struct.Fields;
+  const recoverySchema = Schema.Struct(recoveryFields);
   const response = Schema.decodeUnknownSync(recoverySchema)(parse(result.yaml));
   expect(new SkillProbe(response.recovery).execute().exitCode).toBe(0);
 });

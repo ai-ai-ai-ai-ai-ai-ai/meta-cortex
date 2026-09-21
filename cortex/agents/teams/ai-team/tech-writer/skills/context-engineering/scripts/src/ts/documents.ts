@@ -20,3 +20,7 @@ export class DocumentFields {
     Schema.brand("HeadingAnchor"),
   );
 }
+
+export type DocumentPath = typeof DocumentFields.path.Type;
+export type HeadingAnchor = typeof DocumentFields.anchor.Type;
+export type SourceLine = typeof DocumentFields.line.Type;

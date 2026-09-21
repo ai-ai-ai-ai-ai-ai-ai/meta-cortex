@@ -29,6 +29,7 @@ export class ArticleSchema {
       Schema.brand("HeadingText"),
     ),
   } satisfies Schema.Struct.Fields;
+  static readonly heading = Schema.Struct(ArticleSchema.headingFields);
   private static readonly contentFields = {
     kind: Schema.Literal(
       BlockKind.Paragraph,
@@ -44,7 +45,7 @@ export class ArticleSchema {
     path: DocumentFields.path,
     blocks: Schema.Array(
       Schema.Union(
-        Schema.Struct(ArticleSchema.headingFields),
+        ArticleSchema.heading,
         Schema.Struct(ArticleSchema.contentFields),
       ),
     ).pipe(Schema.maxItems(2000)),
@@ -60,10 +61,7 @@ export type ArticleRequest = typeof ArticleSchema.value.Type;
 
 export type ArticleDocument = ArticleRequest["documents"][number];
 export type ArticleBlock = ArticleDocument["blocks"][number];
-export type ArticleHeading = Extract<
-  ArticleBlock,
-  { readonly kind: BlockKind.Heading }
->;
+export type ArticleHeading = typeof ArticleSchema.heading.Type;
 export type ArticleBlocks = readonly ArticleBlock[];
 export type ArticleFinding = {
   readonly code: ArticleFindingCode;

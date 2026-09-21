@@ -1,6 +1,10 @@
 // Adapts Nook's document-map ownership checks; no Nook topology is retained.
 import { Schema } from "effect";
-import { DocumentFields } from "./documents.ts";
+import {
+  DocumentFields,
+  type DocumentPath,
+  type HeadingAnchor,
+} from "./documents.ts";
 
 export class NavigationSchema {
   private static readonly documentFields = {
@@ -78,10 +82,10 @@ export class NavigationAudit {
       }
     }
     for (const graph of this.request.graphs) {
-      const seen = new Set<string>();
+      const seen = new Map<DocumentPath, Set<HeadingAnchor>>();
       for (const entry of graph.entries) {
-        const key = `${entry.target}#${entry.anchor}`;
-        if (seen.has(key)) {
+        const anchors = seen.get(entry.target);
+        if (anchors && anchors.has(entry.anchor)) {
           const finding: NavigationFinding = {
             code: NavigationFindingCode.DuplicateEntry,
             file: graph.path,
@@ -89,7 +93,11 @@ export class NavigationAudit {
           };
           findings.push(finding);
         }
-        seen.add(key);
+        if (anchors) anchors.add(entry.anchor);
+        else {
+          const initialAnchors: readonly HeadingAnchor[] = [entry.anchor];
+          seen.set(entry.target, new Set(initialAnchors));
+        }
         const document = this.request.documents.find(
           (candidate) => candidate.path === entry.target,
         );

@@ -1,5 +1,8 @@
 import { Effect } from "effect";
 import { SkillApplication } from "./application.ts";
+import { FailurePresentation } from "./response.ts";
+import { FailureCode, SkillFailure } from "./failure.ts";
+import { ProtocolText } from "./protocol-text.ts";
 
 export type CommandArguments = readonly string[];
 export class SkillCli {
@@ -12,14 +15,15 @@ export class SkillCli {
         typeof argument !== "string" ||
         !argument.startsWith("--request-yaml=")
       ) {
-        process.stdout.write(
-          'kind: failure\ncode: usage\nrecovery: "Pass one --request-yaml argument. Discover with version: 1 and tools: {list: {}}."\n',
-        );
-        process.exitCode = 2;
+        const execution = new FailurePresentation(
+          SkillFailure.from(FailureCode.Usage),
+        ).render();
+        process.stdout.write(execution.yaml);
+        process.exitCode = execution.exitCode;
         return;
       }
       const execution = yield* new SkillApplication(
-        argument.slice("--request-yaml=".length),
+        ProtocolText.yaml(argument.slice("--request-yaml=".length)),
       ).execute();
       process.stdout.write(execution.yaml);
       process.exitCode = execution.exitCode;

@@ -1,5 +1,5 @@
 // YAML admission pattern adapted from Nook's executable-skill-host scripts.
-import { Effect, Schema } from "effect";
+import { Cause, Effect, Schema } from "effect";
 import {
   isAlias,
   isMap,
@@ -13,8 +13,17 @@ import {
   type SchemaOptions,
   type ToJSOptions,
 } from "yaml";
-import { SkillRequestSchema, type SkillRequest } from "./catalog.ts";
-import { FailureCode, SkillFailure } from "./failure.ts";
+import { SkillRequestSchema, type SkillRequest } from "./request.ts";
+import {
+  FailureCode,
+  SkillFailure,
+  type HostFailureRequest,
+} from "./failure.ts";
+
+import type { ParseOptions as SchemaParseOptions } from "effect/SchemaAST";
+import type { SkillResponse } from "./response.ts";
+import { ProtocolText, type YamlText } from "./protocol-text.ts";
+type YamlParseOptions = ParseOptions & DocumentOptions & SchemaOptions;
 
 export type PendingYamlNode = {
   readonly node: ParsedNode;
@@ -23,29 +32,31 @@ export type PendingYamlNode = {
 
 export class YamlRequest {
   static readonly maximumBytes = 64 * 1024;
-  private static readonly options: ParseOptions &
-    DocumentOptions &
-    SchemaOptions = {
+  private static readonly options: YamlParseOptions = {
     strict: true,
     uniqueKeys: true,
     version: "1.2",
     schema: "core",
   };
   private static readonly conversion: ToJSOptions = { maxAliasCount: 0 };
-  constructor(private readonly source: string) {}
+  private static readonly admission: SchemaParseOptions = {
+    onExcessProperty: "error",
+  };
+  constructor(private readonly source: YamlText) {}
 
   decode(): Effect.Effect<SkillRequest, SkillFailure> {
     return Effect.gen(this, function* () {
       if (Buffer.byteLength(this.source, "utf8") > YamlRequest.maximumBytes) {
         return yield* Effect.fail(SkillFailure.from(FailureCode.Request));
       }
-      const document = yield* Effect.try({
-        try: () => parseDocument(this.source, YamlRequest.options),
-        catch: () => SkillFailure.from(FailureCode.Yaml),
-      });
+      const document = yield* Effect.try(() =>
+        parseDocument(this.source, YamlRequest.options),
+      ).pipe(Effect.mapError((error) => this.hostFailure(error)));
+      if (document.errors.length > 0 || document.warnings.length > 0) {
+        const diagnostics = [...document.errors, ...document.warnings];
+        return yield* Effect.fail(SkillFailure.fromYaml(diagnostics));
+      }
       if (
-        document.errors.length > 0 ||
-        document.warnings.length > 0 ||
         document.directives.yaml.explicit ||
         Object.keys(document.directives.tags).some(
           (handle) => handle !== "!!",
@@ -58,18 +69,25 @@ export class YamlRequest {
       if (!this.accepts(root))
         return yield* Effect.fail(SkillFailure.from(FailureCode.Yaml));
       // The parser's untyped output stays in this contiguous schema decoder.
-      return yield* Effect.try({
-        try: (): unknown => document.toJS(YamlRequest.conversion),
-        catch: () => SkillFailure.from(FailureCode.Yaml),
-      }).pipe(
-        Effect.flatMap(
-          Schema.decodeUnknown(SkillRequestSchema.value, {
-            onExcessProperty: "error",
-          }),
+      return yield* Effect.try((): unknown =>
+        document.toJS(YamlRequest.conversion),
+      ).pipe(
+        Effect.mapError((error) => this.hostFailure(error)),
+        Effect.flatMap((value) =>
+          Schema.decodeUnknown(
+            SkillRequestSchema.value,
+            YamlRequest.admission,
+          )(value).pipe(
+            Effect.mapError((error) => SkillFailure.fromSchema(error)),
+          ),
         ),
-        Effect.mapError(() => SkillFailure.from(FailureCode.Request)),
       );
     });
+  }
+
+  private hostFailure(error: Cause.UnknownException): SkillFailure {
+    const request: HostFailureRequest = { code: FailureCode.Yaml, error };
+    return SkillFailure.fromHost(request);
   }
 
   private accepts(root: PendingYamlNode): boolean {
@@ -97,13 +115,15 @@ export class YamlRequest {
             !pair.value
           )
             return false;
-          pending.push({ node: pair.key, depth: depth + 1 });
-          pending.push({ node: pair.value, depth: depth + 1 });
+          const key: PendingYamlNode = { node: pair.key, depth: depth + 1 };
+          const value: PendingYamlNode = { node: pair.value, depth: depth + 1 };
+          pending.push(key, value);
         }
       } else if (isSeq(node)) {
         for (const item of node.items) {
           if (!item) return false;
-          pending.push({ node: item, depth: depth + 1 });
+          const child: PendingYamlNode = { node: item, depth: depth + 1 };
+          pending.push(child);
         }
       } else if (!isScalar(node)) return false;
     }
@@ -114,40 +134,21 @@ export class YamlRequest {
 export class YamlResponse {
   static readonly maximumBytes = 256 * 1024;
   constructor(private readonly response: SkillResponse) {}
-  encode(): Effect.Effect<string, SkillFailure> {
+  encode(): Effect.Effect<YamlText, SkillFailure> {
     return Effect.gen(this, function* () {
-      const encoded = yield* Effect.try({
-        try: () => stringify(this.response),
-        catch: () => SkillFailure.from(FailureCode.Response),
-      });
+      const encoded = yield* Effect.try(() => stringify(this.response)).pipe(
+        Effect.mapError((error) => {
+          const request: HostFailureRequest = {
+            code: FailureCode.Response,
+            error,
+          };
+          return SkillFailure.fromHost(request);
+        }),
+      );
       if (Buffer.byteLength(encoded, "utf8") > YamlResponse.maximumBytes) {
         return yield* Effect.fail(SkillFailure.from(FailureCode.Response));
       }
-      return encoded;
+      return ProtocolText.yaml(encoded);
     });
   }
 }
-
-import type { ArticleFindings } from "./article.ts";
-import type { NavigationFindings } from "./navigation.ts";
-import type { SkillCatalog, Command } from "./catalog.ts";
-export enum ResponseKind {
-  Catalog = "catalog",
-  Findings = "findings",
-  Failure = "failure",
-}
-export type SkillResponse =
-  | {
-      readonly kind: ResponseKind.Catalog;
-      readonly catalog: ReturnType<SkillCatalog["describe"]>;
-    }
-  | {
-      readonly kind: ResponseKind.Findings;
-      readonly command: Command;
-      readonly findings: ArticleFindings | NavigationFindings;
-    }
-  | {
-      readonly kind: ResponseKind.Failure;
-      readonly code: FailureCode;
-      readonly recovery: string;
-    };

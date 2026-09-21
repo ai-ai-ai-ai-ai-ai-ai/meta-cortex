@@ -1,25 +1,27 @@
 import { Effect } from "effect";
-import { ArticleAudit, type ArticleDocument } from "./article.ts";
+import { ArticleAudit } from "./article.ts";
 import { NavigationAudit } from "./navigation.ts";
-import { SkillCatalog, Command, type SkillRequest } from "./catalog.ts";
-import { FailureCode, SkillFailure } from "./failure.ts";
+import { ArticleAdmission, NavigationAdmission } from "./admission.ts";
+import { SkillCatalog } from "./catalog.ts";
+import { Command, type SkillRequest } from "./request.ts";
+import type { SkillFailure } from "./failure.ts";
+import { YamlRequest, YamlResponse } from "./transport.ts";
 import {
+  ExitCode,
   ResponseKind,
-  YamlRequest,
-  YamlResponse,
+  FailurePresentation,
+  type SkillExecution,
   type SkillResponse,
-} from "./transport.ts";
-
-export type SkillExecution = {
-  readonly yaml: string;
-  readonly exitCode: number;
-};
+  type ArticleResponse,
+  type NavigationResponse,
+} from "./response.ts";
+import { ProtocolText, type YamlText } from "./protocol-text.ts";
 
 export class SkillApplication {
-  private static readonly invocation =
-    "bun src/ts/cli.ts --request-yaml=<yaml>";
-  constructor(private readonly source: string) {}
-
+  private static readonly invocation = ProtocolText.invocation(
+    "bun agents/teams/ai-team/tech-writer/skills/context-engineering/scripts/src/ts/cli.ts --request-yaml=<yaml>",
+  );
+  constructor(private readonly source: YamlText) {}
   execute(): Effect.Effect<SkillExecution> {
     return new YamlRequest(this.source).decode().pipe(
       Effect.flatMap((request) => this.dispatch(request)),
@@ -30,15 +32,16 @@ export class SkillApplication {
             exitCode:
               response.kind === ResponseKind.Findings &&
               response.findings.length > 0
-                ? 1
-                : 0,
+                ? ExitCode.Findings
+                : ExitCode.Success,
           })),
         ),
       ),
-      Effect.catchAll((failure) => Effect.succeed(this.failure(failure))),
+      Effect.catchAll((failure) =>
+        Effect.succeed(new FailurePresentation(failure).render()),
+      ),
     );
   }
-
   private dispatch(
     request: SkillRequest,
   ): Effect.Effect<SkillResponse, SkillFailure> {
@@ -50,59 +53,20 @@ export class SkillApplication {
       return Effect.succeed(response);
     }
     if ("articles" in request) {
-      const paths = request.articles.audit.documents.map(
-        (document) => document.path,
+      return new ArticleAdmission(request.articles.audit).validate().pipe(
+        Effect.map((admitted): ArticleResponse => ({
+          kind: ResponseKind.Findings,
+          command: Command.Articles,
+          findings: new ArticleAudit(admitted).execute(),
+        })),
       );
-      if (
-        new Set(paths).size !== paths.length ||
-        request.articles.audit.documents.some(
-          (document) => !new ArticleSourceOrder(document).valid(),
-        )
-      ) {
-        return Effect.fail(SkillFailure.from(FailureCode.Request));
-      }
-      const response: SkillResponse = {
+    }
+    return new NavigationAdmission(request.navigation.audit).validate().pipe(
+      Effect.map((admitted): NavigationResponse => ({
         kind: ResponseKind.Findings,
-        command: Command.Articles,
-        findings: new ArticleAudit(request.articles.audit).execute(),
-      };
-      return Effect.succeed(response);
-    }
-    const documents = request.navigation.audit.documents.map(
-      (document) => document.path,
+        command: Command.Navigation,
+        findings: new NavigationAudit(admitted).execute(),
+      })),
     );
-    const graphs = request.navigation.audit.graphs.map((graph) => graph.path);
-    if (
-      new Set(documents).size !== documents.length ||
-      new Set(graphs).size !== graphs.length
-    ) {
-      return Effect.fail(SkillFailure.from(FailureCode.Request));
-    }
-    const response: SkillResponse = {
-      kind: ResponseKind.Findings,
-      command: Command.Navigation,
-      findings: new NavigationAudit(request.navigation.audit).execute(),
-    };
-    return Effect.succeed(response);
-  }
-
-  private failure(failure: SkillFailure): SkillExecution {
-    // Fixed diagnostic text never echoes untrusted YAML, parser excerpts, or secrets.
-    return {
-      yaml: `kind: failure\ncode: ${failure.code}\nrecovery: |\n  version: 1\n  tools:\n    list: {}\n`,
-      exitCode: 2,
-    };
-  }
-}
-
-class ArticleSourceOrder {
-  constructor(private readonly document: ArticleDocument) {}
-  valid(): boolean {
-    let precedingLine = 0;
-    for (const block of this.document.blocks) {
-      if (block.line < precedingLine) return false;
-      precedingLine = block.line;
-    }
-    return true;
   }
 }
