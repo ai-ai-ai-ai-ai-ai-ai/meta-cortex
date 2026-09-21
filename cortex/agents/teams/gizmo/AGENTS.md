@@ -43,6 +43,14 @@ for that assignment rather than preloading unrelated agents.
 
 ## Control local feature changes
 
+```mermaid
+flowchart LR
+    G[Team Gizmo] -->|Tasks and fixes| W[Workers]
+    W -->|Completion and checks| G
+    G -->|Integrate finished branches| I[Integration agent]
+    I -->|Results or conflicts| G
+```
+
 1. For write work, launch one integration agent from the delivery catalog using
    the team-agent configuration. Supply Prime's feature/base decision and the
    local-feature prerequisite selected by skill composition.

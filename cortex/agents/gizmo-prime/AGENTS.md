@@ -13,6 +13,12 @@ the agreed acceptance criteria.
 
 ## Local feature decisions
 
+```mermaid
+flowchart LR
+    P[Gizmo Prime] -->|Feature scope and corrections| G[Team Gizmo]
+    G -->|Feature branch and check results| P
+```
+
 Give Team Gizmo the feature objective, scope, base branch, and completion criteria
 under the supplied local-feature practice. For ongoing work, also identify the
 existing feature branch and worktree. Team Gizmo manages workers and integration.
