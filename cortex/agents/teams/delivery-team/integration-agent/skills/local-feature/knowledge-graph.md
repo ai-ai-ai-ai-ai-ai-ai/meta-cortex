@@ -12,7 +12,9 @@
     branch, resolving a missing choice without an implicit fetch.
   - Use one feature branch/worktree for the entire feature, including corrections.
     Many worker task branches feed that feature branch; isolate each write task
-    in a separate linked Git worktree outside the original checkout.
+    in a separate linked Git worktree outside the original checkout. Verify branch
+    names, clean status, and the worktree mapping; inspect existing paths or
+    branches on creation failure rather than overwriting them.
   - Order dependent tasks; supply scopes, branch names, paths, checks, and the
     actual library location. Read-only work needs no write workspace.
 - **[local_feature:completion](practices/local-feature-integration.md#finish-task-work)**

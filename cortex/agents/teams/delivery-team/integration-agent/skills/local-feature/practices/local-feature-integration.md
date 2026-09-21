@@ -13,42 +13,72 @@ to the same Git repository. Replace the variables with the assigned values.
 
 ### Set up workspaces
 
-1. Inspect existing branches, worktrees, and pending edits. Preserve unrelated work.
-2. Use the base branch selected by the user or project, otherwise the current
-   checked-out branch. Resolve a missing branch choice before proceeding.
-   Do not fetch implicitly for local-only work.
-3. Use one feature branch and integration worktree for the entire feature.
-   Create them once; reuse them for additional tasks and corrections within that
-   feature. Follow the project's branch naming convention.
-4. Create a separate task branch and worktree for each write assignment from
-   the feature branch. Start dependent tasks after their prerequisites are
-   integrated and validated; independent tasks may run concurrently.
-   Multiple task branches feed the same feature branch. A task branch is the
-   assigned worker's contribution to the feature, not another feature branch.
-5. Supply task scope, branch names, workspace paths, and validation requirements.
-   Pass the actual framework library location separately: ignored libraries,
-   dependencies, and pending edits are not copied into new Git worktrees.
-   Read-only tasks need no write branch and must not modify shared workspaces.
+1. Inspect the original checkout. Preserve pending edits; new worktrees will not
+   include them.
 
-**Prohibited:** assume subagent sessions automatically isolate their edits, or
-create a task worktree expecting another checkout's pending edits to appear.
+   ```sh
+   git -C "$repo_path" status --short
+   git -C "$repo_path" worktree list
+   git -C "$repo_path" branch --list
+   ```
 
-**Preferred:** create `task/parser` and `task/ui` in separate worktrees from
-`feature/editor`. Merge both back into `feature/editor`; continue using that
-feature branch for later fixes. Give each worker its source and library paths.
+2. Set `base_branch` to the branch selected by the user or project. If none was
+   selected, use the name printed below. If it prints nothing, resolve the base
+   branch choice before proceeding. Do not fetch implicitly.
 
-For a new feature and its first task, inspect the repository and create the
-worktrees. Repeat only the task creation for each additional worker, with its
-own task branch and path. Skip creation for an explicitly assigned existing
-worktree after checking its branch with `git branch --show-current`.
+   ```sh
+   git -C "$repo_path" branch --show-current
+   ```
 
-```sh
-git -C "$repo_path" status --short
-git -C "$repo_path" worktree list
-git -C "$repo_path" branch --show-current
-git -C "$repo_path" worktree add -b "$feature_branch" "$feature_path" "$base_branch"
-git -C "$repo_path" worktree add -b "$task_branch" "$task_path" "$feature_branch"
-```
+3. For a new feature, create its branch and integration worktree once:
+
+   ```sh
+   git -C "$repo_path" worktree add -b "$feature_branch" "$feature_path" "$base_branch"
+   ```
+
+   For an existing feature, skip creation and use its assigned branch and path.
+   Check that the first command prints `feature_branch` and the second prints
+   nothing. Resolve unexpected changes before starting task work.
+
+   ```sh
+   git -C "$feature_path" branch --show-current
+   git -C "$feature_path" status --short
+   ```
+
+   Keep this same feature branch for the entire feature, including later fixes.
+   If creation fails because a branch or path already exists, inspect it with
+   `git worktree list`; do not overwrite it or choose another feature implicitly.
+
+4. For each worker assignment, set a distinct `task_branch` and `task_path`, then
+   create its linked worktree from the feature branch:
+
+   ```sh
+   git -C "$repo_path" worktree add -b "$task_branch" "$task_path" "$feature_branch"
+   git -C "$task_path" branch --show-current
+   git -C "$task_path" status --short
+   ```
+
+   Confirm the worker branch name and clean status. Repeat this step for each
+   independent task. Create dependent tasks after their prerequisites are
+   integrated and validated. Read-only tasks need no write worktree and must
+   not modify shared workspaces.
+
+5. Confirm the resulting branch-to-worktree mapping:
+
+   ```sh
+   git -C "$repo_path" worktree list
+   ```
+
+   Return the feature branch/path and each task's branch/path. Supply each worker
+   its scope, checks, and actual framework library location. Git does not copy
+   ignored libraries, dependencies, or pending edits into these worktrees.
+
+**Prohibited:** create another feature branch for every worker or reuse one
+worker checkout for several active task branches.
+
+**Preferred:** run feature creation once for `feature/editor`. Repeat task
+creation for `task/parser` and `task/ui`, each with its own path. Both task
+branches will merge into the same `feature/editor` branch.
 
 ### Finish task work
 
