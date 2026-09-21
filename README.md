@@ -48,11 +48,39 @@ for downloadable artifacts.
    meta-cortex init /path/to/project
    ```
 
-3. Review `.meta-cortex/meta-cortex.toml` for models supported by your AI host.
-4. Use a host that reads the project's root `AGENTS.md`.
+3. Choose a model and reasoning effort for Gizmo Prime, Team Gizmo, and team agents.
+   - Models: Luna, Terra, Sol, and Astra. The menu shows their full model IDs.
+   - Efforts: low, medium, high, xhigh, max, and ultra. Luna supports up to max.
+   - Press Enter to accept the highlighted setting, or Esc to cancel without writing files.
+   - Choices are saved in `.meta-cortex/meta-cortex.toml`.
+4. Use a host that supports your choices and reads the project's root `AGENTS.md`.
 
 The executable contains the framework, so initialization works offline.
 Installing or initializing Meta-Cortex does not start agents.
+
+### Initialize without a terminal
+
+For scripts and CI, explicitly accept the bundled role settings:
+
+```sh
+meta-cortex init --non-interactive /path/to/project
+```
+
+Without this flag, a fresh installation requires a terminal for model selection.
+Re-running `init` preserves valid project model settings and does not prompt again.
+Edit `.meta-cortex/meta-cortex.toml` to change them later.
+
+### Inspect a project
+
+```sh
+meta-cortex info
+meta-cortex info /path/to/project
+```
+
+The read-only report shows CLI and installed framework versions, project and
+configuration paths, the `AGENTS.md` connection, and each role's model and effort.
+Older installations without version metadata report an unknown framework version.
+Model settings come from the project file; `info` does not check host availability.
 
 ### What gets installed
 
@@ -99,8 +127,9 @@ Automated framework upgrades are not implemented yet.
 4. Review and reapply your configuration changes.
 
 Repeated initialization succeeds when the installed framework is unchanged and
-matches the executable's bundle. Initialization refuses to overwrite a different
-version, local edits, or symbolic links.
+matches the executable's bundle, allowing valid changes to `meta-cortex.toml`.
+Initialization refuses to overwrite a different version, edited framework files,
+invalid configuration, or symbolic links.
 
 If a filesystem error interrupts initialization, inspect and move the incomplete
 installation before retrying.
