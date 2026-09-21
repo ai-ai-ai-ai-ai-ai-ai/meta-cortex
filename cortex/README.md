@@ -35,6 +35,8 @@ The [agent instructions](agents/AGENTS.md) define the coordination workflow.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
   - Return evidence and unresolved blockers.
+- **[Integration agent](agents/teams/delivery-team/integration-agent/AGENTS.md)**
+  - Manages feature worktrees and merges completed task branches.
 
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
@@ -51,22 +53,23 @@ the host applies those settings.
    - Unsupported settings or missing execution capabilities are reported as blockers.
    - Agents must not silently substitute another configuration.
 
-## Skill composition
+## Skills
 
-[Skill composition](skill-composition.md) selects common prerequisites and
-specialized skills according to the assignment.
+Each role selects its skills. Skills link directly to their prerequisites.
 Each practice has one canonical owner.
 
 - **Common skills**
+  - Live in each owning team’s `common/` directory.
   - Define language-independent practices grouped by subject.
-  - Cover [coding](skills/dev/coding-skill/SKILL.md) and
-    [security](skills/security/security-skill/SKILL.md).
-  - Do not depend on agent roles or team structure.
+  - Cover [coding](agents/teams/dev-team/common/coding-skill/SKILL.md) and
+    [security](agents/teams/security-team/common/security-skill/SKILL.md).
+  - Do not depend on agent coordination or specialized skills.
 - **Specialized skills**
   - Live with their owning agents.
-  - Extend common practices for the relevant language or task.
+  - Extend and directly reference common practices for the relevant language or task.
   - The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)
-    owns Context Engineering and Code Example Authoring for documentation and programming-rule examples.
+    owns Context Engineering, Code Practice Writing, and Delivery Writing for
+    documentation, coding practices, and delivery/Git instructions.
 
 The framework's instructions remain generic.
 Project-specific requirements and architecture belong to the consuming project.

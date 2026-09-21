@@ -5,8 +5,8 @@ code, compiled tooling, and Rust-owned WASM interfaces.
 
 ## Implementation
 
-- Apply [Rust development](skills/rust-dev-skill/SKILL.md) with the common
-  coding and security prerequisites selected for the assignment.
+- Apply [Rust development](skills/rust-dev-skill/SKILL.md), including its linked
+  coding and WASM prerequisites when applicable.
 - Preserve the domain and wire contracts consumed by other languages.
 - Return changed behavior, validation evidence, and unresolved dependencies
   to Team Gizmo. Request coordinated consumer changes when an interface changes.

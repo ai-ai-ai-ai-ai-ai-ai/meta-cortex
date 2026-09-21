@@ -9,9 +9,11 @@ applies to its assignment.
 - [Team Gizmo](teams/gizmo/AGENTS.md) breaks work into assignments and coordinates team agents.
 - Agents in the [development team](teams/dev-team/AGENTS.md) and [security team](teams/security-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
 - The [AI team](teams/ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer subagent.
+- The [delivery team](teams/delivery-team/AGENTS.md) owns local feature integration
+  through its integration agent.
 
-Each agent's `AGENTS.md` describes its role. Keep role responsibilities here
-and technical guidance in linked skills so they can evolve independently.
+Each agent's `AGENTS.md` owns its role responsibilities. Keep technical guidance
+in that role's linked skills so they can evolve independently.
 
 Use the configuration rules and resolved configuration location supplied by
 the entry point before every launch. Pass this context to delegated agents.
@@ -44,7 +46,9 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
-- Use the supplied skill-composition instructions to select common prerequisites and specialized skills. Pass the selections and their document locations with each assignment.
+- Load the skills selected by the assigned role and their linked prerequisites.
+  Read applicable practices in full; reuse prerequisites already loaded for the
+  assignment. Reassess selections when the task changes.
 - Select coding, security, and automation skills according to the assignment. Common skills contain independent subject practices; specialized skills extend them. Agent instructions own task routing, and common skills never route back to agents or teams.
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.
 - Return results and blockers through Team Gizmo to Gizmo Prime; route corrections back to the responsible agent.

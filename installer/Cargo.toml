@@ -1,6 +1,6 @@
 [package]
 name = "meta-cortex"
-version = "0.1.3"
+version = "0.2.0"
 edition = "2024"
 description = "Install the Meta-Cortex development framework in a project"
 license = "Apache-2.0"

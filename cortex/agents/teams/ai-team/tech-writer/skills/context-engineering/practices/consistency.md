@@ -26,54 +26,24 @@ label an intentionally retained older design as historical.
 
 Implementation establishes current behavior; it does not authorize changing policy.
 
-### No backward links
+### Direct dependencies without circular loading
 
-A backlink sends a reader from a loaded document back to an entry point,
-index, or caller that supplied its context. Do not create these links or send
-readers upward through directories to retrieve prerequisites. Load those
-prerequisites at the composition point before specialized documents.
+- Allow relative links, including `../` and `../../`, to required shared skills
+  and practices. Directory direction does not determine dependency validity.
+- Link directly to the canonical subject guidance. Specialized skills may load
+  common prerequisites without sending readers through a coordinator or index.
+- Reuse prerequisites already loaded for the assignment.
+- Keep dependency loading acyclic. Do not send a leaf document back to a caller
+  that reloads the leaf or restarts agent routing.
+- Keep common practices independent of specialized skills and coordination.
+- Update callers and indexes when moving a dependency; do not copy its rules.
 
-- Rely on the context established before the document is loaded.
-- Keep prerequisite context in the entry point or caller that supplies it.
-- Put links to common prerequisites and sibling specializations in their shared
-  composition document. Supply the selected context before loading leaf documents.
-- When both documents need the same guidance, extract it into a canonical
-  document or section that neither caller owns.
-- Link consumers to that authority from their common composition point.
-- Update affected callers and indexes when reorganizing the guidance.
+**Prohibited:** a language skill sends readers back to the root agent entry point,
+which launches coordination and selects that same language skill again.
 
-**Prohibited:** a language practice sends readers back to the root instructions
-for the common coding rules, or copies those rules into its own introduction.
-
-The following Markdown is a deliberately prohibited example, not a live link
-or an instruction to follow:
-
-```markdown
-# Language Practice
-
-Before applying this rule, read [project instructions](../../AGENTS.md)
-and [common coding](../../skills/coding/SKILL.md).
-```
-
-**Preferred:** the composition document loads common coding before the language
-practice. Both remain independent authorities, and the assignment carries the
-selected context. If two practices need a new shared rule, extract it once and
-select it from their common composition point.
-
-This illustrative composition document sits above both skill directories:
-
-```markdown
-# Skill Composition
-
-1. Load [common coding](skills/coding/SKILL.md).
-2. Load [language practices](skills/language/SKILL.md).
-3. Supply both when assigning implementation work.
-```
-
-The language practice starts with its own rule and examples. It does not repeat
-this loading procedure or direct readers back to the composition document.
-
-Changing a relative backlink into an absolute path would leave the same defect.
+**Preferred:** a language skill links directly to its team's common coding skill
+through `../../../common/coding-skill/SKILL.md`. The common skill supplies shared
+practices without loading the language skill or restarting agent coordination.
 
 ### Bounded review
 
@@ -131,12 +101,9 @@ in for another.
 
 ## Prohibited actions
 
-- Do not create backlinks to recover context already supplied by a caller.
-- Do not replace an upward link with an absolute path or a plain-text instruction
-  to reopen the same prerequisite. Move the dependency to the composition point.
-- Do not retain a required dependency as a backlink; reorganize the shared
-  guidance so both documents can reference it directly.
-- Do not copy guidance into multiple documents to avoid a backlink.
+- Do not create circular prerequisite loading or restart agent routing from a leaf.
+- Do not reject a required shared dependency solely because its path contains `../`.
+- Do not copy common guidance into specialized skills to avoid a relative link.
 - Do not retain obsolete instructions as current policy.
 - Do not leave dead links or orphaned index entries after moving documents.
 - Do not promote chat-only scratch notes into durable policy without a concrete need.
@@ -167,7 +134,7 @@ active authority from the catalog.
 1. Compare the changed authorities with relevant runtime contracts.
 2. Verify local links and index destinations.
    - Check link direction against document responsibilities.
-   - Verify that prerequisite context is supplied before each document is loaded.
+   - Verify required prerequisites are supplied or directly linked without circular loading.
    - Confirm shared guidance has one authority referenced by its consumers.
 3. Run the project's applicable documentation checks where available.
 4. Separate semantic review evidence from mechanical check results.

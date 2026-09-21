@@ -20,8 +20,8 @@ the consuming project.
 
 ## Assignment boundaries
 
-Keep implementation with the development owner. Route security architecture
-and review to the security team through Team Gizmo. Route instructions,
+Keep implementation with the development owner. Request independent security
+verification through Team Gizmo. Route instructions,
 specifications, skills, and practice authoring to the AI team's tech writer.
 Cross-team decisions remain with Team Gizmo; this index does not expand an
 agent's assignment.
@@ -40,3 +40,7 @@ authorize it to redefine the security policy and rewrite the agent instructions.
 the agent owning the affected implementation, security-policy questions to the security team, and
 instruction changes to the tech writer. Each assignment identifies its
 dependencies on the others.
+
+## Common skills
+
+- [Common coding](common/coding-skill/SKILL.md).

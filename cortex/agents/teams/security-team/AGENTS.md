@@ -1,11 +1,15 @@
 # Security Team
 
-Agent responsibility map for security work in the consuming project.
-Team Gizmo uses this index to route assignments.
+Provide independent security verification of the consuming project's changes.
+Team Gizmo assigns reviews and routes findings to implementation owners.
 
-| Agent | Responsibility |
-| --- | --- |
-| [Security agent](security-agent/AGENTS.md) | Security architecture, trust boundaries, secret lifecycle, and security review. |
+## Agent catalog
 
-Coordinate application and infrastructure changes with the
-development team through Team Gizmo.
+- **[Security agent](security-agent/AGENTS.md)**
+  - Verifies trust boundaries, required protections, and secret lifecycles.
+  - Returns findings, evidence, and verification results to Team Gizmo.
+  - Owns security verification, not development tasks or implementation skills.
+
+## Common skills
+
+- [Common security](common/security-skill/SKILL.md).
