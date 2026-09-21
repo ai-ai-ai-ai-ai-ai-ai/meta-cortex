@@ -47,7 +47,7 @@ Work continues until the requested outcome is supported by evidence.
 For repository changes, the [local ownership model](agents/AGENTS.md#local-feature-ownership)
 assigns feature decisions to Gizmo Prime, task coordination to Team Gizmo,
 and Git mechanics to the delivery team's integration agent.
-The [local-feature skill](agents/teams/delivery-team/common/local-feature/SKILL.md)
+The integration agent’s [local-feature skill](agents/teams/delivery-team/integration-agent/skills/local-feature/SKILL.md)
 owns workspace setup, merge rules, repairs, and cleanup.
 
 Workers receive isolated task branches and worktrees. When workers finish,
@@ -85,12 +85,12 @@ Each practice has one canonical owner.
 - **Common skills**
   - Live in each owning team’s `common/` directory.
   - Define language-independent practices grouped by subject.
-  - Cover [coding](agents/teams/dev-team/common/coding-skill/SKILL.md),
-    [security](agents/teams/security-team/common/security-skill/SKILL.md), and
-    [local repository work](agents/teams/delivery-team/common/local-feature/SKILL.md).
+  - Cover [coding](agents/teams/dev-team/common/coding-skill/SKILL.md) and
+    [security](agents/teams/security-team/common/security-skill/SKILL.md).
   - Do not depend on agent coordination or specialized skills.
 - **Specialized skills**
-  - Live with their owning agents.
+  - Live with their owning agents, including the integration agent’s
+    [local-feature skill](agents/teams/delivery-team/integration-agent/skills/local-feature/SKILL.md).
   - Extend and directly reference common practices for the relevant language or task.
   - The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)
     owns Context Engineering, Code Practice Writing, and Delivery Writing for

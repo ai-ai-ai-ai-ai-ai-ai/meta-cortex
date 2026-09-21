@@ -16,10 +16,6 @@ Load each prerequisite once; dependency links must not restart agent routing.
 
 ## Common prerequisites
 
-- For local repository changes, worktree setup, integration,
-  or cleanup, load [local feature work](agents/teams/delivery-team/common/local-feature/SKILL.md).
-  Supply it to coordinators, integration assignments, and every write assignment.
-  Read-only tasks do not require a feature workspace.
 - For authored code, tests, scripts, build logic, or code review, load
   [common coding](agents/teams/dev-team/common/coding-skill/SKILL.md).
 - For dependency selection or commodity helpers, also load
@@ -28,6 +24,12 @@ Load each prerequisite once; dependency links must not restart agent routing.
   [common security](agents/teams/security-team/common/security-skill/SKILL.md).
 
 ## Specialized selections
+
+- For local repository changes, load the integration agent's
+  [local-feature skill](agents/teams/delivery-team/integration-agent/skills/local-feature/SKILL.md).
+  Supply its procedures to the integration agent and relevant setup, task
+  completion, or repair context to coordinators and workers. Read-only tasks
+  do not require a feature workspace.
 
 - For documentation assignments, the
   [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)

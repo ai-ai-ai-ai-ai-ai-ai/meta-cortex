@@ -12,7 +12,3 @@ Team Gizmo uses this catalog for local feature integration assignments.
   - Returns branch and validation evidence to Team Gizmo.
   - Excludes product implementation, task coordination, remote publishing,
     pull requests, and merging the feature into the base branch.
-
-## Common skills
-
-- [Local feature work](common/local-feature/SKILL.md).

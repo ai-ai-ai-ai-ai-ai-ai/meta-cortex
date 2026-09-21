@@ -6,7 +6,8 @@ description: Manage local Git feature branches, isolated task worktrees, integra
 # Local Feature Work
 
 Produce a validated local feature branch using ordinary Git and the host's
-coordination tools. This skill is independent of languages and agent roles.
+coordination tools. This skill owns the integration agent’s Git procedures;
+role instructions define assignments and communication.
 
 ## Required actions
 
