@@ -14,6 +14,94 @@ type FindingCode = ArticleFindingCode | NavigationFindingCode;
 type FindingCodes = readonly FindingCode[];
 type YamlExamples = readonly YamlText[];
 
+interface InvalidYamlCase {
+  readonly name: string;
+  readonly yaml: YamlText;
+  readonly expectedCode: FailureCode;
+}
+
+/** Raw wire data preserves syntax defects that serialization would erase. */
+class InvalidYamlFixtures {
+  static readonly cases: readonly InvalidYamlCase[] = [
+    {
+      name: "empty input",
+      yaml: ProtocolText.yaml(""),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "unsupported version",
+      yaml: ProtocolText.yaml("version: 99\ntools: {list: {}}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "unknown command field",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: {}, surprise: true}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "unknown envelope field",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: {}}\nextra: secret"),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "duplicate keys",
+      yaml: ProtocolText.yaml("version: 1\nversion: 1\ntools: {list: {}}"),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "YAML anchor",
+      yaml: ProtocolText.yaml("version: 1\ntools: &tools {list: {}}"),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "YAML alias",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: *tools}"),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "explicit tag",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: !!map {}}"),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "tag directive",
+      yaml: ProtocolText.yaml(
+        "%TAG !e! tag:example.com,2026:\n---\nversion: 1\ntools: {list: {}}",
+      ),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "version directive",
+      yaml: ProtocolText.yaml("%YAML 1.2\n---\nversion: 1\ntools: {list: {}}"),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "multiple documents",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: {}}\n---\nversion: 1"),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "merge key",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: {<<: {}}}"),
+      expectedCode: FailureCode.Yaml,
+    },
+    {
+      name: "multiple commands",
+      yaml: ProtocolText.yaml(
+        "version: 1\ntools: {list: {}}\narticles: {audit: {documents: []}}",
+      ),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "parent path",
+      yaml: ProtocolText.yaml(
+        "version: 1\narticles: {audit: {documents: [{path: ../escape.md, blocks: []}]}}",
+      ),
+      expectedCode: FailureCode.Request,
+    },
+  ];
+}
+
 class SkillProbe {
   private static readonly findingFields = {
     code: Schema.Union(
@@ -95,25 +183,11 @@ describe("discovery and YAML boundary", () => {
     for (const example of probe.examples())
       expect(new SkillProbe(example).execute().exitCode).toBe(0);
   });
-  test.each([
-    "",
-    "version: 99\ntools: {list: {}}",
-    "version: 1\ntools: {list: {}, surprise: true}",
-    "version: 1\ntools: {list: {}}\nextra: secret",
-    "version: 1\nversion: 1\ntools: {list: {}}",
-    "version: 1\ntools: &tools {list: {}}",
-    "version: 1\ntools: {list: *tools}",
-    "version: 1\ntools: {list: !!map {}}",
-    "%TAG !e! tag:example.com,2026:\n---\nversion: 1\ntools: {list: {}}",
-    "%YAML 1.2\n---\nversion: 1\ntools: {list: {}}",
-    "version: 1\ntools: {list: {}}\n---\nversion: 1",
-    "version: 1\ntools: {list: {<<: {}}}",
-    "version: 1\ntools: {list: {}}\narticles: {audit: {documents: []}}",
-    "version: 1\narticles: {audit: {documents: [{path: ../escape.md, blocks: []}]}}",
-  ])("rejects malformed or unsupported input: %s", (yaml) => {
-    const result = new SkillProbe(yaml).execute();
+  test.each([...InvalidYamlFixtures.cases])("rejects $name", (fixture) => {
+    const result = new SkillProbe(fixture.yaml).execute();
     expect(result.exitCode).toBe(2);
     expect(result.yaml).toContain("kind: failure");
+    expect(result.yaml).toContain(`code: ${fixture.expectedCode}`);
     expect(result.yaml).not.toContain("secret");
   });
   test("rejects oversized input and deep YAML", () => {
