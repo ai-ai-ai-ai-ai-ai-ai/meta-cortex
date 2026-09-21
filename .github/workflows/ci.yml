@@ -32,3 +32,21 @@ jobs:
           components: llvm-tools-preview
       - uses: taiki-e/install-action@cargo-llvm-cov
       - run: cargo llvm-cov --locked --fail-under-lines 90
+
+  skill-scripts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Verify Context Engineering scripts
+        run: |
+          cd cortex
+          bun install --frozen-lockfile --ignore-scripts
+          test -z "$(find agents -name node_modules -print -quit)"
+          test -z "$(find agents -name bun.lock -print -quit)"
+          bun run verify
