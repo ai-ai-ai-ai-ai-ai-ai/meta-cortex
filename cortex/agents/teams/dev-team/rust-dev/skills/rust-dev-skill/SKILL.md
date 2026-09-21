@@ -31,8 +31,3 @@ For Rust/WASM interfaces and their consumers, read:
   and [serialization boundaries](practices/boundaries/serialization-boundaries.md).
 - When interpreting failure or absence, [error handling](practices/behavior/error-handling.md)
   and [domain states](practices/modeling/domain-states.md).
-
-## Security prerequisites
-
-- For security work, apply [common security](../../../../security-team/common/security-skill/SKILL.md).
-- For secret handling, also apply [secret lifecycle](../../../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
