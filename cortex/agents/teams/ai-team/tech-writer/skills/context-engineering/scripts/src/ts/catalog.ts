@@ -38,21 +38,21 @@ export class SkillCatalog {
         {
           name: Command.Articles,
           description: ProtocolText.description(
-            "Audit caller-supplied semantic blocks; does not parse Markdown or read files.",
+            "Audit caller-supplied semantic blocks; does not parse Markdown or read files. Example paths are synthetic.",
           ),
           inputSchema: JSONSchema.make(SkillRequestSchema.articles),
           exampleYaml: ProtocolText.yaml(
-            "version: 1\narticles:\n  audit:\n    documents:\n      - path: docs/example.md\n        blocks:\n          - kind: heading\n            depth: 2\n            line: 1\n            text: Overview\n          - kind: paragraph\n            line: 3\n",
+            "version: 1\narticles:\n  audit:\n    documents:\n      - path: examples/article.md\n        blocks:\n          - kind: heading\n            depth: 2\n            line: 1\n            text: Overview\n          - kind: paragraph\n            line: 3\n",
           ),
         },
         {
           name: Command.Navigation,
           description: ProtocolText.description(
-            "Audit owning graph entries against supplied documents and exact heading anchors. Supply the complete inventory for this scope.",
+            "Audit owning graph entries against supplied documents and exact heading anchors. Supply the complete inventory for this scope. Rule names identify entries; distinct rules may share a section. Example paths are synthetic.",
           ),
           inputSchema: JSONSchema.make(SkillRequestSchema.navigation),
           exampleYaml: ProtocolText.yaml(
-            "version: 1\nnavigation:\n  audit:\n    documents:\n      - path: docs/practice.md\n        owner: docs/knowledge-graph.md\n        anchors: [validation]\n    graphs:\n      - path: docs/knowledge-graph.md\n        entries:\n          - target: docs/practice.md\n            anchor: validation\n            line: 3\n",
+            "version: 1\nnavigation:\n  audit:\n    documents:\n      - path: examples/practice.md\n        owner: examples/knowledge-graph.md\n        anchors: [validation]\n    graphs:\n      - path: examples/knowledge-graph.md\n        entries:\n          - rule: practice:validation\n            target: examples/practice.md\n            anchor: validation\n            line: 3\n",
           ),
         },
       ],

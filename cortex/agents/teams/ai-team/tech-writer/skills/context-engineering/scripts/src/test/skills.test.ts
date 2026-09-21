@@ -7,6 +7,7 @@ import { ProtocolText, type YamlText } from "../ts/protocol-text.ts";
 import { ResponseKind } from "../ts/response.ts";
 import { ArticleFindingCode } from "../ts/article.ts";
 import { NavigationFindingCode } from "../ts/navigation.ts";
+import { RepositoryNavigationFixture } from "./repository-navigation-fixture.ts";
 import { FailureCode } from "../ts/failure.ts";
 
 type FindingCode = ArticleFindingCode | NavigationFindingCode;
@@ -62,10 +63,11 @@ class SkillProbe {
   }
 }
 
+// Synthetic facts: these paths are identifiers, not files on disk.
 class ArticleFixture {
   constructor(private readonly blocks: string) {}
   request(): string {
-    return `version: 1\narticles:\n  audit:\n    documents:\n      - path: docs/test.md\n        blocks:\n${this.blocks}`;
+    return `version: 1\narticles:\n  audit:\n    documents:\n      - path: fixtures/article.md\n        blocks:\n${this.blocks}`;
   }
 }
 
@@ -76,11 +78,11 @@ class NavigationFixture {
 navigation:
   audit:
     documents:
-      - path: docs/practice.md
-        owner: docs/graph.md
+      - path: fixtures/practice.md
+        owner: fixtures/knowledge-graph.md
         anchors: [one, two]
     graphs:
-      - path: docs/graph.md
+      - path: fixtures/knowledge-graph.md
         entries: ${this.entries}
 `;
   }
@@ -189,19 +191,19 @@ describe("article audits adapted from Nook", () => {
 describe("navigation without Nook topology", () => {
   test("allows separate rule anchors in the same document", () => {
     const fixture = new NavigationFixture(`
-          - {target: docs/practice.md, anchor: one, line: 1}
-          - {target: docs/practice.md, anchor: two, line: 2}`);
+          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 1}
+          - {rule: practice:second, target: fixtures/practice.md, anchor: two, line: 2}`);
     expect(new SkillProbe(fixture.request()).codes()).toEqual([]);
   });
-  test("detects missing entries, targets, anchors, and exact duplicate entries", () => {
+  test("detects missing entries, targets, anchors, and duplicate rule names", () => {
     expect(
       new SkillProbe(new NavigationFixture("[]").request()).codes(),
     ).toEqual([NavigationFindingCode.MissingEntry]);
     const fixture = new NavigationFixture(`
-          - {target: docs/practice.md, anchor: missing, line: 1}
-          - {target: docs/practice.md, anchor: one, line: 2}
-          - {target: docs/practice.md, anchor: one, line: 3}
-          - {target: docs/missing.md, anchor: '', line: 4}`);
+          - {rule: practice:missing, target: fixtures/practice.md, anchor: missing, line: 1}
+          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 2}
+          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 3}
+          - {rule: practice:absent, target: fixtures/missing.md, anchor: '', line: 4}`);
     expect(new SkillProbe(fixture.request()).codes()).toEqual([
       NavigationFindingCode.MissingAnchor,
       NavigationFindingCode.DuplicateEntry,
@@ -210,11 +212,11 @@ describe("navigation without Nook topology", () => {
   });
   test("reports unknown owner rather than inferring team ownership from paths", () => {
     const fixture = new NavigationFixture(
-      "\n          - {target: docs/practice.md, anchor: one, line: 1}",
+      "\n          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 1}",
     );
     const yaml = fixture
       .request()
-      .replace("owner: docs/graph.md", "owner: other/owner.md");
+      .replace("owner: fixtures/knowledge-graph.md", "owner: other/owner.md");
     expect(new SkillProbe(yaml).codes()).toEqual([
       NavigationFindingCode.MissingOwner,
       NavigationFindingCode.ForeignOwner,
@@ -234,7 +236,7 @@ test("response capacity failures are explicit rather than truncated findings", (
   const fixture = new ArticleFixture(blocks);
   const request = fixture
     .request()
-    .replace("docs/test.md", "a".repeat(3800) + ".md");
+    .replace("fixtures/article.md", "a".repeat(3800) + ".md");
   const result = new SkillProbe(request).execute();
   expect(result.exitCode).toBe(2);
   expect(result.yaml).toContain(FailureCode.Response);
@@ -249,4 +251,54 @@ test("YAML recovery example is itself a usable discovery request", () => {
   const recoverySchema = Schema.Struct(recoveryFields);
   const response = Schema.decodeUnknownSync(recoverySchema)(parse(result.yaml));
   expect(new SkillProbe(response.recovery).execute().exitCode).toBe(0);
+});
+
+test("real TypeScript rules can share their owning section", () => {
+  const yaml = Effect.runSync(
+    new RepositoryNavigationFixture(import.meta.url).request(),
+  );
+  expect(new SkillProbe(yaml).codes()).toEqual([]);
+});
+
+test("a renamed anchor in real graph facts is reported", () => {
+  const yaml = Effect.runSync(
+    new RepositoryNavigationFixture(import.meta.url).request(),
+  );
+  const broken = yaml.replace(
+    "anchor: use-instances-for-owned-behavior",
+    "anchor: missing-section",
+  );
+  expect(new SkillProbe(broken).codes()).toEqual([
+    NavigationFindingCode.MissingAnchor,
+  ]);
+});
+
+test("duplicate rule names are rejected even when their anchors differ", () => {
+  const fixture = new NavigationFixture(`
+          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 1}
+          - {rule: practice:first, target: fixtures/practice.md, anchor: two, line: 2}`);
+  expect(new SkillProbe(fixture.request()).codes()).toEqual([
+    NavigationFindingCode.DuplicateEntry,
+  ]);
+});
+
+test("navigation entries require a nonempty rule name", () => {
+  for (const entry of [
+    "{target: fixtures/practice.md, anchor: one, line: 1}",
+    "{rule: '', target: fixtures/practice.md, anchor: one, line: 1}",
+  ]) {
+    const fixture = new NavigationFixture(`\n          - ${entry}`);
+    expect(new SkillProbe(fixture.request()).execute().exitCode).toBe(2);
+  }
+});
+
+test("duplicate graph inventories are rejected", () => {
+  const yaml = `version: 1
+navigation:
+  audit:
+    documents: []
+    graphs:
+      - {path: fixtures/knowledge-graph.md, entries: []}
+      - {path: fixtures/knowledge-graph.md, entries: []}`;
+  expect(new SkillProbe(yaml).execute().exitCode).toBe(2);
 });

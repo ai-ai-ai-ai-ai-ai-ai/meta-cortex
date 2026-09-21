@@ -121,13 +121,16 @@ separately from semantic review.
   explicitly procedure-labeled sections without ordered actions, and tables.
   These checks adapt Nook's skill scripts; they do not prove writing quality.
 - **`navigation.audit`:** accepts documents, their owning graph paths and exact
-  heading anchors, and the graphs' owning entries. It checks missing owners,
+  heading anchors, and the graphs' named owning entries. It checks missing owners,
   missing entries or targets, missing anchors, foreign ownership, and duplicate
-  target/anchor pairs. Different rule anchors in one document are valid.
+  rule names within a graph. Distinct rules may link to the same section.
 
 Supply the complete document/graph inventory for the scope being checked.
 Only put owning entries in `graphs.entries`; related links and prerequisites
-are not ownership declarations. Paths identify supplied facts, not files to open.
+are not ownership declarations. Each entry supplies its `rule` name, `target`,
+`anchor`, and source `line`. Paths identify supplied facts, not files to open.
+Catalog examples and unit fixtures use synthetic paths; replace them with facts
+from the assigned documents.
 Use normalized project-relative paths and resolve relative links before passing
 navigation facts. An empty `anchor` means a document-level link.
 

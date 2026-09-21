@@ -1,10 +1,6 @@
 // Adapts Nook's document-map ownership checks; no Nook topology is retained.
 import { Schema } from "effect";
-import {
-  DocumentFields,
-  type DocumentPath,
-  type HeadingAnchor,
-} from "./documents.ts";
+import { DocumentFields } from "./documents.ts";
 
 export class NavigationSchema {
   private static readonly documentFields = {
@@ -13,6 +9,11 @@ export class NavigationSchema {
     anchors: Schema.Array(DocumentFields.anchor).pipe(Schema.maxItems(1000)),
   } satisfies Schema.Struct.Fields;
   private static readonly entryFields = {
+    rule: Schema.String.pipe(
+      Schema.minLength(1),
+      Schema.maxLength(512),
+      Schema.brand("RuleName"),
+    ),
     target: DocumentFields.path,
     anchor: DocumentFields.anchor,
     line: DocumentFields.line,
@@ -82,10 +83,9 @@ export class NavigationAudit {
       }
     }
     for (const graph of this.request.graphs) {
-      const seen = new Map<DocumentPath, Set<HeadingAnchor>>();
+      const seen = new Set<NavigationEntry["rule"]>();
       for (const entry of graph.entries) {
-        const anchors = seen.get(entry.target);
-        if (anchors && anchors.has(entry.anchor)) {
+        if (seen.has(entry.rule)) {
           const finding: NavigationFinding = {
             code: NavigationFindingCode.DuplicateEntry,
             file: graph.path,
@@ -93,11 +93,7 @@ export class NavigationAudit {
           };
           findings.push(finding);
         }
-        if (anchors) anchors.add(entry.anchor);
-        else {
-          const initialAnchors: readonly HeadingAnchor[] = [entry.anchor];
-          seen.set(entry.target, new Set(initialAnchors));
-        }
+        seen.add(entry.rule);
         const document = this.request.documents.find(
           (candidate) => candidate.path === entry.target,
         );
