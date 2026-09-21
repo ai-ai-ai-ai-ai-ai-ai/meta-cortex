@@ -1,10 +1,12 @@
 use crate::configuration::{ConfigError, ConfigText, InitMode};
-use crate::information::{EntryPoint, FrameworkVersion, ProjectInfo, Version, VersionError};
+use crate::information::{FrameworkVersion, ProjectInfo, Version, VersionError};
+use crate::integration::{
+    InstructionError, IntegrationOptions, IntegrationRequest, ProjectHarnesses,
+};
 use include_dir::{Dir, include_dir};
 use std::fs;
-use std::io::{self, Write};
+use std::io;
 use std::path::{Path, PathBuf};
-use tempfile::NamedTempFile;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -17,12 +19,14 @@ pub enum InstallError {
     Version(#[from] VersionError),
     #[error("Meta-Cortex is not initialized in {0}; run meta-cortex init")]
     NotInitialized(PathBuf),
+    #[error("could not serialize project information: {0}")]
+    Info(#[from] serde_saphyr::SerializeError),
     #[error("expected an existing project directory: {0}")]
     InvalidProject(PathBuf),
     #[error("refusing to overwrite differing content or a symbolic link: {0}")]
     Conflict(PathBuf),
-    #[error("AGENTS.md has an altered or incomplete Meta-Cortex block: {0}")]
-    InvalidEntry(PathBuf),
+    #[error(transparent)]
+    Instructions(#[from] InstructionError),
 }
 
 pub struct Project {
@@ -31,7 +35,6 @@ pub struct Project {
 
 pub struct Installation {
     project: Project,
-    instructions: Instructions,
     bundle: BundleState,
 }
 
@@ -107,86 +110,6 @@ impl Bundle<'_> {
     }
 }
 
-#[derive(PartialEq, Eq)]
-enum OriginalInstructions {
-    Missing,
-    Existing(Vec<u8>),
-}
-
-struct Instructions {
-    path: PathBuf,
-    original: OriginalInstructions,
-    contents: String,
-}
-
-impl Instructions {
-    const ENTRY: &str = "<!-- meta-cortex:start -->\nRead and follow [.meta-cortex/AGENTS.md](.meta-cortex/AGENTS.md).\n<!-- meta-cortex:end -->";
-
-    fn read(path: PathBuf) -> Result<Self, InstallError> {
-        let original = match fs::symlink_metadata(&path) {
-            Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => {
-                OriginalInstructions::Existing(fs::read(&path)?)
-            }
-            Ok(_) => return Err(InstallError::Conflict(path)),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => OriginalInstructions::Missing,
-            Err(error) => return Err(error.into()),
-        };
-        let text = match &original {
-            OriginalInstructions::Existing(contents) => String::from_utf8(contents.clone())
-                .map_err(|_| InstallError::InvalidEntry(path.clone()))?,
-            OriginalInstructions::Missing => String::default(),
-        };
-        let starts = text.matches("<!-- meta-cortex:start -->").count();
-        let ends = text.matches("<!-- meta-cortex:end -->").count();
-        let contents = match (starts, ends) {
-            (0, 0) => format!(
-                "{text}{}{entry}\n",
-                if text.is_empty() { "" } else { "\n\n" },
-                entry = Self::ENTRY
-            ),
-            (1, 1) if text.contains(Self::ENTRY) => text,
-            _ => return Err(InstallError::InvalidEntry(path)),
-        };
-        Ok(Self {
-            path,
-            original,
-            contents,
-        })
-    }
-
-    fn write(self) -> Result<(), InstallError> {
-        let current = Self::read(self.path.clone())?;
-        if current.original != self.original {
-            return Err(InstallError::Conflict(self.path));
-        }
-        if let OriginalInstructions::Existing(contents) = &self.original
-            && contents == self.contents.as_bytes()
-        {
-            return Ok(());
-        }
-        let parent = self
-            .path
-            .parent()
-            .ok_or_else(|| InstallError::Conflict(self.path.clone()))?;
-        let mut staged = NamedTempFile::new_in(parent)?;
-        staged.write_all(self.contents.as_bytes())?;
-        match self.original {
-            OriginalInstructions::Existing(_) => {
-                staged
-                    .as_file()
-                    .set_permissions(fs::metadata(&self.path)?.permissions())?;
-                staged.persist(&self.path).map_err(|error| error.error)?;
-            }
-            OriginalInstructions::Missing => {
-                staged
-                    .persist_noclobber(&self.path)
-                    .map_err(|error| error.error)?;
-            }
-        }
-        Ok(())
-    }
-}
-
 impl Project {
     const FRAMEWORK: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../cortex");
     const LICENSE: &[u8] = include_bytes!("../../LICENSE");
@@ -216,22 +139,15 @@ impl Project {
             return Err(InstallError::Conflict(path));
         }
         let configuration = ConfigText::from(fs::read_to_string(path)?).parse()?;
-        let instructions = Instructions::read(self.root.join("AGENTS.md"))?;
-        let entry_point = match instructions.original {
-            OriginalInstructions::Existing(contents)
-                if contents == instructions.contents.as_bytes() =>
-            {
-                EntryPoint::Connected
-            }
-            OriginalInstructions::Existing(_) | OriginalInstructions::Missing => {
-                EntryPoint::Missing
-            }
-        };
+        let integrations = ProjectHarnesses {
+            root: self.root.clone(),
+        }
+        .inspect()?;
         Ok(ProjectInfo {
             root: self.root,
             version: FrameworkVersion::read(&destination)?,
             configuration,
-            entry_point,
+            integrations,
         })
     }
 
@@ -255,21 +171,30 @@ impl Project {
             Err(error) if error.kind() == io::ErrorKind::NotFound => BundleState::Absent,
             Err(error) => return Err(error.into()),
         };
-        let instructions = Instructions::read(self.root.join("AGENTS.md"))?;
         Ok(Installation {
             project: self,
-            instructions,
             bundle,
         })
     }
 }
 
+pub struct InitRequest {
+    pub mode: InitMode,
+    pub integration: IntegrationOptions,
+}
+
 impl Installation {
-    pub fn install(self, mode: InitMode) -> Result<InstalledProject, InstallError> {
+    pub fn install(self, request: InitRequest) -> Result<InstalledProject, InstallError> {
         let destination = self.project.root.join(".meta-cortex");
+        let integration = request.integration.plan(IntegrationRequest {
+            project: ProjectHarnesses {
+                root: self.project.root.clone(),
+            },
+            mode: request.mode,
+        })?;
         match self.bundle {
             BundleState::Absent => {
-                let configuration = ConfigText::try_from(mode.configure()?)?;
+                let configuration = ConfigText::try_from(request.mode.configure()?)?;
                 // create_dir claims the destination without replacing an existing entry.
                 fs::create_dir(&destination)?;
                 Project::FRAMEWORK.extract(&destination)?;
@@ -288,7 +213,7 @@ impl Installation {
                 .verify()?;
             }
         }
-        self.instructions.write()?;
+        integration.apply()?;
         Ok(InstalledProject {
             root: self.project.root,
         })
@@ -297,8 +222,11 @@ impl Installation {
 
 #[cfg(test)]
 mod tests {
-    use super::{InstallError, Instructions, Project};
+    use super::{InitRequest, InstallError, Project};
     use crate::configuration::InitMode;
+    use crate::integration::{
+        Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
+    };
     use std::fs;
     use std::os::unix::fs::symlink;
     use tempfile::{TempDir, tempdir};
@@ -315,7 +243,13 @@ mod tests {
         fn install(&self) -> Result<(), InstallError> {
             Project::open(self.directory.path().to_path_buf())?
                 .prepare()?
-                .install(InitMode::Bundled)?;
+                .install(InitRequest {
+                    mode: InitMode::Bundled,
+                    integration: IntegrationOptions {
+                        harness: HarnessChoice::Selected(Harness::Codex),
+                        instructions: InstructionAction::Write,
+                    },
+                })?;
             Ok(())
         }
         fn preserves_and_repeats(self) -> Result<(), InstallError> {
@@ -324,7 +258,8 @@ mod tests {
             self.install()?;
             let first = fs::read_to_string(&agents)?;
             assert!(first.starts_with("# Project rules\n"));
-            assert!(first.contains(Instructions::ENTRY));
+            assert!(first.contains("---\nmeta-cortex: instructions\n---"));
+            assert!(!first.contains("<!--"));
             self.install()?;
             assert_eq!(first, fs::read_to_string(agents)?);
             Ok(())
@@ -403,7 +338,12 @@ mod tests {
                 self.directory.path().join("AGENTS.md"),
                 "<!-- meta-cortex:start -->",
             )?;
-            assert!(matches!(self.install(), Err(InstallError::InvalidEntry(_))));
+            assert!(matches!(
+                self.install(),
+                Err(InstallError::Instructions(InstructionError::InvalidEntry(
+                    _
+                )))
+            ));
             assert!(!self.directory.path().join(".meta-cortex").exists());
             Ok(())
         }

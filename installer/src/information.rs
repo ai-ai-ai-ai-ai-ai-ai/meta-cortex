@@ -1,6 +1,7 @@
 use crate::configuration::Configuration;
+use crate::integration::HarnessInfo;
 use derive_more::{Display, From};
-use std::fmt;
+use serde::Serialize;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -14,14 +15,15 @@ pub enum VersionError {
     InvalidFile(PathBuf),
 }
 
-#[derive(Debug, PartialEq, Eq, From, Display)]
+#[derive(Debug, PartialEq, Eq, From, Display, Serialize)]
 pub struct Version(String);
 
 impl Version {
     pub const CURRENT: &str = env!("CARGO_PKG_VERSION");
 }
 
-#[derive(Debug, PartialEq, Eq, Display)]
+#[derive(Debug, PartialEq, Eq, Display, Serialize)]
+#[serde(tag = "status", content = "value")]
 pub enum FrameworkVersion {
     #[display("{_0}")]
     Recorded(Version),
@@ -49,57 +51,69 @@ impl FrameworkVersion {
     }
 }
 
-#[derive(Display)]
-pub enum EntryPoint {
-    #[display("connected through AGENTS.md")]
-    Connected,
-    #[display("missing Meta-Cortex instructions in AGENTS.md; run meta-cortex init")]
-    Missing,
-}
-
 pub struct ProjectInfo {
     pub root: PathBuf,
     pub version: FrameworkVersion,
     pub configuration: Configuration,
-    pub entry_point: EntryPoint,
+    pub integrations: Vec<HarnessInfo>,
 }
 
-impl fmt::Display for ProjectInfo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let config = &self.configuration;
-        writeln!(
-            f,
-            "Meta-Cortex — development platform for teams of AI agents"
-        )?;
-        writeln!(f, "CLI version: {}", Version::CURRENT)?;
-        writeln!(f, "Framework version: {}", self.version)?;
-        writeln!(f, "Project: {}", self.root.display())?;
-        writeln!(f, "Framework: {}", self.root.join(".meta-cortex").display())?;
-        writeln!(
-            f,
-            "Configuration: {}",
-            self.root.join(".meta-cortex/meta-cortex.toml").display()
-        )?;
-        writeln!(f, "Integration: {}", self.entry_point)?;
-        writeln!(f, "\nConfigured models:")?;
-        writeln!(
-            f,
-            "  Gizmo Prime: {} / {}",
-            config.gizmo_prime.model, config.gizmo_prime.reasoning_effort
-        )?;
-        writeln!(
-            f,
-            "  Team Gizmo: {} / {}",
-            config.team.gizmo.model, config.team.gizmo.reasoning_effort
-        )?;
-        writeln!(
-            f,
-            "  Team agents: {} / {}",
-            config.team.agent.model, config.team.agent.reasoning_effort
-        )?;
-        write!(
-            f,
-            "\nThese are project settings; model availability is determined by your AI host."
-        )
+#[derive(Serialize)]
+struct InfoSchemaVersion(u32);
+
+impl InfoSchemaVersion {
+    const CURRENT: Self = Self(2);
+}
+
+#[derive(Serialize)]
+struct InfoPaths {
+    project: PathBuf,
+    framework: PathBuf,
+    configuration: PathBuf,
+}
+
+#[derive(Serialize)]
+enum ModelAvailability {
+    NotChecked,
+}
+
+#[derive(Serialize)]
+struct InfoReport {
+    schema_version: InfoSchemaVersion,
+    cli_version: Version,
+    framework_version: FrameworkVersion,
+    paths: InfoPaths,
+    integrations: Vec<HarnessInfo>,
+    models: Configuration,
+    model_availability: ModelAvailability,
+}
+
+impl From<ProjectInfo> for InfoReport {
+    fn from(info: ProjectInfo) -> Self {
+        let paths = InfoPaths {
+            framework: info.root.join(".meta-cortex"),
+            configuration: info.root.join(".meta-cortex/meta-cortex.toml"),
+            project: info.root,
+        };
+        Self {
+            schema_version: InfoSchemaVersion::CURRENT,
+            cli_version: Version::from(Version::CURRENT.to_owned()),
+            framework_version: info.version,
+            paths,
+            integrations: info.integrations,
+            models: info.configuration,
+            model_availability: ModelAvailability::NotChecked,
+        }
+    }
+}
+
+#[derive(Display)]
+pub struct InfoYaml(String);
+
+impl TryFrom<ProjectInfo> for InfoYaml {
+    type Error = serde_saphyr::SerializeError;
+
+    fn try_from(info: ProjectInfo) -> Result<Self, Self::Error> {
+        Ok(Self(serde_saphyr::to_string(&InfoReport::from(info))?))
     }
 }
