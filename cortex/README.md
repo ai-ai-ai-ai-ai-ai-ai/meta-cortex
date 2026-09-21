@@ -43,11 +43,11 @@ The [SRE team](agents/teams/sre-team/AGENTS.md) owns portable infrastructure,
 container builds, Kubernetes workloads, and cloud-native operations. Its
 specialized skills are:
 
-- [Docker](agents/teams/sre-team/skills/docker-skill/SKILL.md) for deliberate
+- [Docker](agents/teams/sre-team/docker-specialist/skills/docker-skill/SKILL.md) for deliberate
   image inputs, secret boundaries, and real BuildKit cache evidence.
-- [Kubernetes](agents/teams/sre-team/skills/kubernetes-skill/SKILL.md) for
+- [Kubernetes](agents/teams/sre-team/kubernetes-specialist/skills/kubernetes-skill/SKILL.md) for
   workloads that stay within the cluster runtime boundary.
-- [Cloud-Native](agents/teams/sre-team/skills/cloud-native-skill/SKILL.md) for
+- [Cloud-Native](agents/teams/sre-team/cloud-native/skills/cloud-native-skill/SKILL.md) for
   bounded, observable infrastructure and operational changes.
 
 ## Execution configuration
@@ -65,7 +65,9 @@ the host applies those settings.
 ## Skill composition
 
 [Skill composition](skill-composition.md) selects common prerequisites and
-specialized skills according to the assignment.
+specialized skills according to the assignment. Its [skill placement rule](skill-composition.md#skill-placement)
+keeps specialized skills under owning agents and common generic skills in
+`skills/`.
 Each practice has one canonical owner.
 
 - **Common skills**

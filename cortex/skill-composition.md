@@ -30,18 +30,18 @@ locations through delegation so each agent can load its assigned context directl
   prerequisites when the subject involves security.
 - For Dockerfiles, container builds, BuildKit configuration, or container cache
   evidence, load [common coding](skills/dev/coding-skill/SKILL.md) before the
-  [Docker skill](agents/teams/sre-team/skills/docker-skill/SKILL.md). Also load
+  [Docker skill](agents/teams/sre-team/docker-specialist/skills/docker-skill/SKILL.md). Also load
   [common security](skills/security/security-skill/SKILL.md) when the assignment
   handles credentials, private keys, recovery material, or decrypted payloads.
 - For Kubernetes manifests, workloads, or cluster execution-boundary checks,
   load [common coding](skills/dev/coding-skill/SKILL.md) before the
-  [Kubernetes skill](agents/teams/sre-team/skills/kubernetes-skill/SKILL.md).
+  [Kubernetes skill](agents/teams/sre-team/kubernetes-specialist/skills/kubernetes-skill/SKILL.md).
   Also load [common security](skills/security/security-skill/SKILL.md) when the
   assignment handles credentials, private keys, recovery material, or decrypted
   payloads.
 - For cloud-native infrastructure or operational configuration, load
   [common coding](skills/dev/coding-skill/SKILL.md) before the
-  [cloud-native skill](agents/teams/sre-team/skills/cloud-native-skill/SKILL.md).
+  [cloud-native skill](agents/teams/sre-team/cloud-native/skills/cloud-native-skill/SKILL.md).
   Also load [common security](skills/security/security-skill/SKILL.md) when the
   assignment handles credentials, private keys, recovery material, or decrypted
   payloads.
@@ -73,6 +73,12 @@ For Rust/WASM consumers, including TypeScript and web implementations, load:
 - [Rust error handling](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/behavior/error-handling.md) and
   [domain states](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/modeling/domain-states.md)
   when interpreting Rust failure and absence contracts.
+
+## Skill placement
+
+Team-root skill directories such as `agents/teams/<team>/skills/` are
+prohibited. Place specialized skills under their owning agent directory. Keep
+common generic skills in `skills/`.
 
 ## Validation
 

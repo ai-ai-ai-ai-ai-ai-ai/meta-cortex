@@ -1,7 +1,7 @@
 # Kubernetes Specialist
 
 Own assigned Kubernetes manifests, workload configuration, and cluster
-execution-boundary checks. Load [Kubernetes skill](../skills/kubernetes-skill/SKILL.md)
+execution-boundary checks. Load [Kubernetes skill](skills/kubernetes-skill/SKILL.md)
 for the subject rules, plus the common coding and security prerequisites
 selected for the assignment.
 

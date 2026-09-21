@@ -44,7 +44,7 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
-- Use the supplied skill-composition instructions to select common prerequisites and specialized skills. Pass the selections and their document locations with each assignment.
+- Use the supplied [skill-composition instructions](../skill-composition.md) to select common prerequisites and specialized skills. Follow its linked [skill-placement rule](../skill-composition.md#skill-placement). Pass the selections and their document locations with each assignment.
 - Select coding, security, and automation skills according to the assignment. Common skills contain independent subject practices; specialized skills extend them. Agent instructions own task routing, and common skills never route back to agents or teams.
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.
 - Return results and blockers through Team Gizmo to Gizmo Prime; route corrections back to the responsible agent.

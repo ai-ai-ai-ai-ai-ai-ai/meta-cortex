@@ -1,7 +1,7 @@
 # Docker Specialist
 
 Own assigned Dockerfiles, BuildKit configuration, container build behavior, and
-cache evidence. Load [Docker skill](../skills/docker-skill/SKILL.md) for the
+cache evidence. Load [Docker skill](skills/docker-skill/SKILL.md) for the
 subject rules, plus the common coding and security prerequisites selected for
 the assignment.
 
