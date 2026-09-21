@@ -1,5 +1,7 @@
 # Rust Default Values
 
+## Choose a valid default
+
 Use Rust’s built-in `#[derive(Default)]` when a type has a useful default.
 Do not invent a default for required input or a state that needs validation.
 

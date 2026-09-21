@@ -1,76 +1,99 @@
-# TypeScript Named Call Arguments
+# TypeScript Named Arguments
 
-## Purpose
+Name both the parameter contract and the object passed to it. Apply this to all
+authored production TypeScript/Svelte, including callbacks and local helpers;
+generated declarations are excluded.
 
-In authored TypeScript, object parameter contracts and object call
-arguments must both be named and typed.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-## Scope
+## Name the parameter contract
 
-Applies to all authored production TypeScript and Svelte.
+Use a semantic type, interface, or generated boundary type. Do not inline an
+object, array, tuple, mapped type, map, set, or record in a parameter. Avoid
+Args, CallbackArgs, PutArgs, and names derived from line numbers.
 
-There is no production-source migration allowlist. Every function-valued prop,
-local helper, callback, method, and exported function must use a named semantic
-parameter contract when its parameter is object-shaped.
+**Prohibited:**
 
-Generated bindings are excluded.
+```ts
+// Inside Exporter:
+run(request: { readonly destination: ExportPath }): ExportOutcome;
+```
 
-## Required pattern
+**Preferred:**
 
-Rules:
+```ts
+interface ExportRequest {
+  readonly destination: ExportPath;
+}
+// Inside Exporter:
+run(request: ExportRequest): ExportOutcome;
+```
 
-- Every object-shaped function or method parameter uses a named semantic
-  `type`, `interface`, or Rust-generated boundary type.
-  - Object-shaped includes object literals, mapped types such as `Pick<T, K>`
-    and `Omit<T, K>`, arrays, tuples, maps, sets, and records.
-- Inline object parameter annotations are prohibited, including destructured
-  parameters, local helpers, `T[]`, tuples, `Array<T>`, and
-  `ReadonlyArray<T>`.
-- Generic or operation-only names such as `Args`, `CallbackArgs`, `PutArgs`,
-  and line-number-derived names are prohibited.
-  - The name must identify the domain value or request.
-- Every call argument that is an object must be a named variable or constant.
-  - The name should carry an explicit type such as `ExpectFieldArgs<...>`,
-    `ObjectJsonSchemaArgs`, or `FieldErrorArgs`.
-- Object literals remain allowed:
-  - when constructing that named value; and
-  - when returning a value from a function or `build` callback.
-- Do not bypass the rule with `fn({ ... } as SomeType)`.
-  - Name the value first, then cast if a host boundary truly requires it.
-- Direct object arguments to Svelte's `$state`, `$state.raw`, `$derived`, and
-  `$bindable` compiler runes are the narrow exception.
-  - Moving those values can violate rune placement or freeze reactive capture.
-  - This exception does not apply to `$state.snapshot` or ordinary calls.
-- A function-valued parameter may return an inline object type.
-  - That return value is not the parameter contract.
-  - Object-shaped parameters declared inside the callback still require named
-    semantic contracts.
+## Name and type object arguments
 
-## Enforcement
+Create a named, explicitly typed binding before passing an object. Returning
+an object from a method or build callback remains valid. Do not bypass this
+rule with casts, conditional/assignment expressions, or spread arrays.
 
-Static checks and semantic review must enforce this contract. They must:
+**Prohibited:**
 
-- reject inline object parameter types;
-- require an explicit type on named object-literal arguments;
-- reject generic or operation-only parameter names such as `Args`,
-  `WriteArgs`, `PickArgs`, and `PutArgs`;
-- recursively inspect wrapped and qualified type references;
-- reject inline array and tuple annotations in shorthand and generic form;
-- require named semantic contracts for maps, sets, and records;
-- reject imported generic names as bypasses;
-- reject object-valued parameter defaults, including literals, arrays,
-  constructed class values, named bindings, and object-returning factory calls;
-- inspect enclosing TypeScript syntax and call-site assignment, conditional,
-  logical, or sequence expressions; and
-- inspect statically resolvable object values from spread arrays.
+```ts
+exporter.run({ destination } as ExportRequest);
+```
 
-Apply defaults at the call site or inside the function body after reading the
-named contract.
+**Preferred:**
 
-## Application Checklist
+```ts
+const request: ExportRequest = { destination };
+exporter.run(request);
+```
 
-- [ ] Search the changed package for inline object call arguments.
-- [ ] Search function and method declarations for inline object parameter types.
-- [ ] Prefer exported arg types from the callee module.
-- [ ] Prefer Rust-generated types for domain-owned boundary contracts.
-- [ ] Keep the Web lint task green.
+## Keep object defaults out of parameters
+
+Object-valued defaults are prohibited whether they are literals, arrays,
+constructed instances, named bindings, or factory results. Apply the default
+at the caller or inside the receiving owner.
+
+**Prohibited:**
+
+```ts
+// Inside Exporter:
+run(request: ExportRequest = defaults.build()): ExportOutcome;
+```
+
+**Preferred:**
+
+```ts
+// At the caller:
+const request: ExportRequest = defaults.build();
+exporter.run(request);
+```
+
+## Limit rune exceptions to the compiler forms
+
+Direct object arguments are allowed only for $state, $state.raw, $derived, and
+$bindable, where moving the value can change compiler placement or capture.
+The exception does not cover $state.snapshot or ordinary calls.
+
+**Prohibited:**
+
+```ts
+// Inside a rune-owning component:
+api.submit({ order_id });
+```
+
+**Preferred:**
+
+```ts
+// Inside a rune-owning component:
+let request = $state.raw<OrderRequest>({ order_id });
+api.submit(request);
+```
+
+## Validation
+
+- Check inline object/array/tuple types, including nested callbacks and qualified/wrapped references.
+- Reject imported generic names and object-valued defaults used as bypasses.
+- Inspect conditional/logical/sequence/assignment arguments and resolvable spreads.
+- Prefer the callee’s exported request type or generated domain type; run applicable lint checks.

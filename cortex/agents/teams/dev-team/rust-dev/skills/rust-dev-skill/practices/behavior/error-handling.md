@@ -4,29 +4,17 @@ Preserve the meaning and source of each failure. Propagate typed errors until an
 
 ## Required actions
 
-- When a missing value violates an invariant, add a precise `thiserror` variant.
-  Return `Result<T, DomainError>` and propagate it with `?`.
-- Production code returns, propagates, or explicitly classifies failure.
-- Every fallible test returns a concrete or `anyhow::Result` and propagates with
-  `?`, including locally constructed fixtures.
-- Production libraries, binaries, examples, and build scripts use concrete
-  `thiserror` enums with operation-specific variants and typed sources.
-- Prefer `#[from]` and `?` for direct source-error conversions. Keep `map_err`
-  when adding context or choosing between variants with the same source type.
-- Test crates that use `anyhow` declare it under `[dev-dependencies]`.
-- Use `serde_json::Result<T>` for codecs whose only failure is serde JSON.
+- Return `Result<T, E>`; name application failures with `thiserror` enums.
+- Preserve typed sources. Use `#[from]` and `?` for direct conversions.
+- Use `map_err` only to add context or select the appropriate error variant.
+- Return a typed error when required input is missing or invalid.
+- In tests, return a concrete `Result` or `anyhow::Result` and propagate with `?`.
+- Use `serde_json::Result<T>` when JSON encoding/decoding is the only failure.
 
-- Retain Rust’s standard `Result<T, E>` for fallible operations.
+## Propagate errors instead of panicking
 
-## Prohibited actions
-
-- Do not call `.unwrap()`, `.expect(...)`, or `.expect_err(...)` in authored
-  Rust.
-- Do not use `anyhow` in production libraries, binaries, examples, or build
-  scripts. Restrict it to `#[cfg(test)]` unit tests and integration tests under
-  `tests/`.
-
-## Examples
+Do not use `.unwrap()`, `.expect(...)`, or `.expect_err(...)`, including in tests.
+Production libraries, binaries, examples, and build scripts use concrete errors.
 
 These alternatives convert a boundary string into `RetryCount`.
 
@@ -34,10 +22,12 @@ These alternatives convert a boundary string into `RetryCount`.
 or recover from the expected input error.
 
 ```rust
+use std::num::ParseIntError;
+
 pub struct RetryCount(u16);
 
 impl TryFrom<&str> for RetryCount {
-    type Error = std::num::ParseIntError;
+    type Error = ParseIntError;
 
     fn try_from(raw: &str) -> Result<Self, Self::Error> {
         Ok(Self(raw.parse().unwrap()))
@@ -70,17 +60,97 @@ impl TryFrom<&str> for RetryCount {
 }
 ```
 
+## Add context only when it changes the error
+
+`#[from]` cannot choose between two variants carrying the same source type.
+Use `map_err` at the operation that knows which failure occurred. These method
+fragments belong inside `DocumentFile`, whose `path` is a typed path wrapper.
+`DocumentText` wraps `String` and implements `From<String>`.
+
+**Prohibited:** erase the operation and source into a message.
+
+```rust
+use std::fs;
+
+// Inside impl DocumentFile:
+pub fn read(&self) -> Result<DocumentText, String> {
+    fs::read_to_string(&self.path.value)
+        .map(DocumentText::from)
+        .map_err(|error| error.to_string())
+}
+```
+
+**Preferred:** distinguish reading from writing while preserving the I/O source.
+
+```rust
+use std::{fs, io};
+
+#[derive(Debug, thiserror::Error)]
+pub enum DocumentFileError {
+    #[error("could not read document")]
+    Read(#[source] io::Error),
+    #[error("could not write document")]
+    Write(#[source] io::Error),
+}
+
+// Inside impl DocumentFile:
+pub fn read(&self) -> Result<DocumentText, DocumentFileError> {
+    let text = fs::read_to_string(&self.path.value)
+        .map_err(DocumentFileError::Read)?;
+    Ok(DocumentText::from(text))
+}
+```
+
+For a single direct conversion, use `#[from]` as in `RetryCountError` above;
+do not add `map_err` that repeats the generated conversion.
+
+## Keep `anyhow` in tests
+
+Use concrete errors in production. Tests combining unrelated error families may
+use `anyhow::Result`; declare `anyhow` under `[dev-dependencies]`. Do not substitute
+`Box<dyn std::error::Error>` as a catch-all test error.
+
+These alternatives use the `RetryCount` and `RetryCountError` definitions above.
+
+**Prohibited:** panic during fixture setup or error extraction.
+
+```rust
+#[test]
+fn parses_retry_count() {
+    let count = RetryCount::try_from("3").unwrap();
+    assert_eq!(count.0, 3);
+}
+
+#[test]
+fn rejects_invalid_count() {
+    let _error = RetryCount::try_from("invalid").err().unwrap();
+}
+```
+
+**Preferred:** propagate unexpected failures and assert the expected variant.
+
+```rust
+#[test]
+fn parses_retry_count() -> Result<(), RetryCountError> {
+    let count = RetryCount::try_from("3")?;
+    assert_eq!(count.0, 3);
+    Ok(())
+}
+
+#[test]
+fn rejects_invalid_count() {
+    assert!(matches!(
+        RetryCount::try_from("invalid"),
+        Err(RetryCountError::InvalidNumber(_))
+    ));
+}
+```
+
 ## Validation
 
-- Make fallible Rust tests return `Result<(), E>` and use `?` for setup and
-  verification. Panic shortcuts are prohibited; do not replace one with
-  another or hide it behind a helper.
-- Do not use `Box<dyn std::error::Error>` as a catch-all test error. Return the
-  concrete crate error for one error family, or `anyhow::Result` when the test
-  intentionally combines unrelated error types.
+- Run the affected tests, including expected-error assertions.
 - Run Clippy for all targets with `clippy::expect_used` and
-  `clippy::unwrap_used` denied and workspace `clippy.toml` keeping
-  `allow-expect-in-tests` / `allow-unwrap-in-tests` false. Clippy owns panic
-  shortcuts; do not add a duplicate syn scanner. Run the syntax-aware
-  preflight that rejects production `anyhow` paths and non-dev Cargo
-  dependencies.
+  `clippy::unwrap_used` denied. Keep `allow-expect-in-tests` and
+  `allow-unwrap-in-tests` false in `clippy.toml`.
+- Check that `anyhow` appears only in test code and dev-dependencies. Use the
+  project's preflight when available; do not duplicate Clippy with a custom scanner.

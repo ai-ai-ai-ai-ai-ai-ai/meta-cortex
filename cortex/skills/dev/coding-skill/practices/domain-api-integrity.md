@@ -13,7 +13,10 @@ placing domain decisions on these types.
 
 ### Types and states
 
-- Give every domain value a named type.
+- Give every domain and application value a distinct, meaningful type, including
+  text, numbers, bytes, identifiers, counts, amounts, and durations.
+- Preserve that type in private code and local values as well as public APIs.
+  A descriptive variable name or primitive type alias is not a domain type.
 - Use a nominal newtype, opaque type, enum, or value object when a primitive
   representation has domain meaning.
 - Use an enum or discriminated union for a closed set or named state.
@@ -136,7 +139,22 @@ Compiler-required signatures, traits, generated bindings, and externally fixed
 callbacks may retain their owned shape. Keep adapters thin and delegate to an
 API that follows this contract.
 
-Plaintext user content may remain text when the content itself is the value.
+User content and locale keys also have domain names, such as `MessageBody` and
+`TranslationKey`. Their underlying text stays inside the owning value type.
+
+### Names must survive the API
+
+Raw values force readers to remember what each string or number means and let
+unrelated values be exchanged. Distinct types carry that meaning through the
+system and let type checking reject those substitutions.
+
+**Prohibited:** an invoice stores `id: string`, `customer: string`, and
+`total: number`. Naming the fields does not prevent exchanging the identifiers
+or passing a quantity as the total.
+
+**Preferred:** it stores `InvoiceId`, `CustomerId`, and `InvoiceTotal` values.
+Each type owns its representation and validation; collections and private
+helpers preserve those same types.
 
 ## Validation
 

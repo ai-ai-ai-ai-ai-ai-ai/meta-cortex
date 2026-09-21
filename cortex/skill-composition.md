@@ -48,6 +48,10 @@ locations through delegation so each agent can load its assigned context directl
 For Rust/WASM consumers, including TypeScript and web implementations, load:
 
 - [Rust–TypeScript separation](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/boundaries/rust-typescript-code-separation.md).
+- [WASM contracts](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/boundaries/wasm-contracts.md).
+- [WASM UI integration](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/boundaries/wasm-ui-integration.md) for reactive UI consumers.
+- [Domain types](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/modeling/domain-types.md) and
+  [serialization boundaries](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/boundaries/serialization-boundaries.md) for value and ABI design.
 - [WASM name coherence](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/boundaries/rust-wasm-name-coherence.md).
 - [Rust error handling](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/behavior/error-handling.md) and
   [domain states](agents/teams/dev-team/rust-dev/skills/rust-dev-skill/practices/modeling/domain-states.md)

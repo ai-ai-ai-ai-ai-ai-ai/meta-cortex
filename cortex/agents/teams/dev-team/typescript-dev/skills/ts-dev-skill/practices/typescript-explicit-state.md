@@ -1,233 +1,191 @@
 # TypeScript Explicit State
 
-## Purpose
+Name absence and lifecycle states instead of making callers infer them. Apply
+to authored JS/TS/Svelte, tests, fixtures, demos, configuration, and tooling.
+Generated/dependency/build declarations retain their external contracts.
 
-Make every authored JavaScript, TypeScript, and Svelte absence explicit, so
-callers do not reconstruct a hidden state machine from `undefined`, optional
-fields, booleans, and defensive condition chains.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-## Problem Pattern
+## Name the state and its payload
 
-`T | undefined` is TypeScript's implicit optional-value union, analogous to an
-unnamed Rust `Option<T>`. In authored code it loses the semantic distinction
-between a missing lookup, an idle workflow, a released resource, and a
-contract violation:
+Use a separately named enum-backed union. Keep values that transition together
+on the same variant and expose named transitions rather than mutable handles.
+Enums belong to their coherent vocabulary, not a repository-wide StateKind.
 
-```ts
-let timer: ReturnType<typeof setTimeout> | undefined;
-let started = false;
-```
-
-This permits combinations such as `started === false` with a scheduled timer.
-The code relies on every mutation site preserving an undocumented invariant.
-Zero-argument `$state<T>()`, optional field bags, and several independently
-mutable flags create the same problem.
-
-## Preferred Pattern
-
-- Use a discriminated union for named product, workflow, lifecycle, resource,
-  and component states.
-- Declare the union as a named domain type and reference that type from fields,
-  parameters, returns, and generic containers. Do not embed `A | B`,
-  `DomainType | false`, or another inline alternative in a field.
-- Classify ownership before creating an enum. Authentication, vault, recovery,
-  provider, sync, secret-schema, and other portable product
-  vocabularies belong to `domain-core` and are exposed directly through
-  `wasm-bridge`; TypeScript must not mirror or rename them. Browser protocol,
-  browser lifecycle, and presentation-only vocabularies use a cohesive,
-  meaningfully named TypeScript enum. Union variants reference enum members
-  (`kind: SessionKind.Closed`), never raw string literal types
-  (`kind: "closed"`).
-  Preserve the enum's serialized string values when browser messaging,
-  persistence, or external compatibility requires them.
-- Apply the same enum ownership to closed protocol fields such as `type`,
-  `status`, `phase`, `stage`, `mode`, `action`, and `operation`. A wire format
-  is a reason for string-valued enum members, not a reason to repeat raw string
-  literals throughout authored code.
-- Use enum members in constructors, comparisons, switch cases, and fixtures,
-  not only in the union declaration. Any authored closed string-literal union
-  has the same requirement even when its field is not named `kind` or `type`.
-- Svelte script blocks support runtime TypeScript enums through the required
-  Vite script preprocessor. Put runtime enums consumed by a component instance
-  in a cohesive adjacent `.ts` state module and import them normally. Do not
-  declare the enum in a same-file `<script module>`: Svelte can type-check that
-  cross-script reference while omitting the runtime binding from the instance
-  bundle.
-- Declaring the enum in the instance `<script lang="ts">` fails the same way and
-  is worse, because it type-checks and only breaks at runtime. The preprocessor
-  transpiles the script in isolation, so esbuild inlines every in-script member
-  read to its literal and then drops the now-unused enum object. Member reads in
-  the template are not part of that transform, survive as `Enum.Member`, and
-  throw `ReferenceError: Enum is not defined` on first render. `svelte-check`,
-  `tsc`, and the Vite build all stay green, so only running the component
-  catches it. The adjacent `.ts` module is the requirement, not a preference.
-- Prefer one enum per cohesive state machine or protocol vocabulary. Do not
-  create a repository-wide `StateKind`, `MessageType`, or other generic enum
-  that merely centralizes unrelated strings.
-- Put state-specific values on the variant that owns them.
-- Model application failures with a closed, typed failure kind or outcome.
-  - Derive localized user-facing text from that typed failure only at the
-    presentation edge.
-  - Do not store free-form error strings or parallel error-message slots in
-    application state.
-- Group values that transition together; expose operations such as `start`,
-  `cancel`, `succeed`, and `reset` instead of exposing mutable handles.
-- Put portable domain state and policy in Rust and export typed enums through
-  WASM. Consume the generated enum itself; a differently named TypeScript enum
-  or type alias with the same values is still a forbidden domain mirror. Keep
-  browser lifecycle and visual state in TypeScript/Svelte.
-- Match variants exhaustively. Do not convert a discriminated union back into
-  parallel booleans.
-- Normalize optional external input shape into an explicit union immediately.
-- Use `void` normally as TypeScript's unit/effect type. Function and callback
-  return types, `Promise<void>`, `void | Promise<void>` for a
-  synchronous-or-asynchronous effect, and unary `void expression` for
-  intentionally discarded results are valid and equivalent to Rust `()`, not
-  `Option<T>`.
-- Do not use `void` as unnamed value absence. `Result | void`,
-  `Promise<Result | void>`, parameters, callback results, and other nested
-  value-or-void contracts all need a semantic state union. This is true even
-  when no mutable slot stores the result: the caller still receives unnamed
-  absence rather than unit effect completion.
-- Normalize missing browser, lookup, parser, cache, and DOM results directly
-  into a domain-specific union at the narrow boundary.
-- Normalize external `null` directly into the same explicit union at the
-  boundary; authored `null` is forbidden.
-- Never introduce a generic TypeScript `Option` clone. Names such as
-  `ValueState`, `EMPTY_VALUE`, `presentValue`, `valueState`, `Maybe`,
-  `Present`/`Absent` wrappers, and `valueFromState` merely rename `undefined`;
-  they do not explain why a value is absent or what transition makes it
-  available.
-- Use [TypeScript Effect Workflows](typescript-effect.md) for effectful
-  workflows and keep expected failures in Effect's typed error channel.
-- Keep accumulated codec field issues in the concrete error type.
-- Rust uses its standard Result.
-- Same-prefix closed values almost always belong on a nested object plus an
-  operation enum. Do not flatten `DocumentExportAssemble` /
-  `DocumentExportValidate` into one sibling list. Field allow-lists must be
-  enums, not string sets.
-- Name both the union and its variants for the lifecycle being modeled:
-  `not-loaded/loaded`, `unmounted/mounted`, `idle/scheduled`,
-  `not-selected/selected`, `locked/active`, or more precise domain language.
-- Do not create sentinel strings, fake default objects, non-null assertions,
-  casts, or decorative one-variant wrappers to satisfy the check.
-- Never hide the sentinel behind a string comparison such as
-  `typeof value === "undefined"`. Use a structural property/capability check
-  for external shape, or normalize immediately into a semantic union.
-- Tests must assert the semantic variant, required value, or structural
-  property contract. `toBeUndefined`, `toBeNull`, `toBeDefined`, and equivalent
-  absence matchers preserve the forbidden implicit contract without spelling
-  the value token and are prohibited.
-
-## Nullish operators
-
-Authored JavaScript, TypeScript, and Svelte must not use nullish coalescing
-(`??`) or nullish assignment (`??=`). These operators are nullish checks.
-Authored state must make absence explicit before a value is consumed.
-
-### Required actions
-
-- Model meaningful absence with an enum-backed discriminated union.
-- Make always-present values required fields and initialize them during
-  construction or an explicit state transition.
-- Normalize external absence at the boundary with a structural property or
-  capability check.
-- Use an exhaustive branch on the normalized state at the consumption site.
-- Use a destructuring default only when a boundary contract defines omission
-  as one concrete value.
-- Preserve `false`, `0`, and empty strings as valid values.
-- Evaluate an alternate value only inside the branch that selects it.
-
-### Prohibited actions
-
-- Do not replace a nullish operator with `||` or a truthiness-based branch.
-- Do not add a generic optional-value helper, sentinel, fake default object,
-  compatibility path, or fallback path.
-
-## Scope
-
-Applies to every authored `.js`, `.mjs`, `.cjs`, `.ts`, and `.svelte` file,
-including production source, tests, fixtures, demos, build configuration,
-agent tooling, and CI configuration.
-
-In `.svelte` files, these rules apply equally inside authored `<script>` and
-`<script lang="ts">` blocks.
-
-Generated declarations, dependency/build directories, and generated WASM
-bindings are excluded because they mirror contracts the application does not author.
-
-## Examples
-
-Before:
+**Prohibited:**
 
 ```ts
-let timer: ReturnType<typeof setTimeout> | undefined;
-let started = false;
-```
-
-After:
-
-```ts
-type TrackerState =
-  | { kind: TrackerKind.Stopped }
-  | { kind: TrackerKind.Tracking; timer: ReturnType<typeof setTimeout> };
-```
-
-Before:
-
-```ts
-let result = $state<ImportResult>();
-let loading = $state(false);
-```
-
-After:
-
-```ts
-enum ImportFailureKind {
-  InvalidFile = "invalidFile",
-  UnsupportedVersion = "unsupportedVersion",
+interface DownloadState {
+  readonly started: boolean;
+  readonly result: Download | undefined;
 }
-
-type ImportState =
-  | { kind: ImportKind.Idle }
-  | { kind: ImportKind.Loading }
-  | { kind: ImportKind.Complete; result: ImportResult }
-  | { kind: ImportKind.Failed; failure: ImportFailureKind };
 ```
 
-## Application Checklist
+**Preferred:**
 
-- [ ] Inventory every authored token before editing and classify boundary
-      absence separately from named application state.
-- [ ] Replace modeled `undefined`, optional state fields, zero-argument runes,
-      parameterless `$bindable()` props, value-or-void contracts, and coupled
-      booleans with discriminated unions or truthful concrete input values.
-- [ ] Reject generic optional-value wrappers and require semantic type and
-      variant names at every application-state site.
-- [ ] Replace every raw string-literal discriminant with a member of a
-      cohesive, meaningfully named string enum.
-- [ ] Move portable policy and domain variants to Rust/WASM.
-- [ ] Keep boundary conversion narrow and documented by the surrounding type.
-- [ ] Add transition-focused tests and syntax-aware preflight fixtures.
-- [ ] Run the repository-wide AST preflight and require a zero-result inventory.
+```ts
+enum DownloadKind { Idle = "idle", Running = "running", Complete = "complete" }
+type DownloadState =
+  | { readonly kind: DownloadKind.Idle }
+  | { readonly kind: DownloadKind.Running }
+  | { readonly kind: DownloadKind.Complete; readonly result: Download };
+```
+
+## Use enum members throughout the contract
+
+Use members in constructors, comparisons, switches, and fixtures, including
+closed protocol fields such as type/status/phase/mode/action. Preserve required
+wire string values in the enum. Product/security vocabulary comes from Rust;
+do not mirror or rename it in TypeScript.
+
+**Prohibited:**
+
+```ts
+type PanelState = { readonly kind: "open" } | { readonly kind: "closed" };
+```
+
+**Preferred:**
+
+```ts
+enum PanelKind { Open = "open", Closed = "closed" }
+type PanelState =
+  | { readonly kind: PanelKind.Open }
+  | { readonly kind: PanelKind.Closed };
+```
+
+## Normalize absence at entry
+
+Do not author null/undefined tokens or generic Option/Maybe/Present-Absent
+wrappers. Normalize external browser/DOM/cache/lookup/parser absence with structural
+or capability checks in the boundary decoder. Reject fake defaults, quoted
+sentinel comparisons, non-null assertions, casts, and decorative wrappers.
+
+**Prohibited:**
+
+```ts
+const selected = value ?? fallback;
+if (typeof value === "undefined") { clear(); }
+```
+
+**Preferred:**
+
+```ts
+// Inside a UI owner with an already normalized selection:
+switch (selection.kind) {
+  case SelectionKind.Empty: return this.showEmpty();
+  case SelectionKind.Selected: return this.show(selection.item);
+}
+```
+
+## Keep defaults inside the selected branch
+
+Prohibit ?? and ??=. Do not replace them with || or truthiness. Preserve valid
+false/zero/empty values. Always-present fields are required and initialized.
+A destructuring default is allowed only when the external contract defines
+omission as that exact value; evaluate alternatives only in their selected branch.
+
+**Prohibited:**
+
+```ts
+const delay = rawDelay || defaultDelay; // Replaces a valid zero.
+```
+
+**Preferred:**
+
+```ts
+// Inside the owner, after decoding the external setting:
+switch (setting.kind) {
+  case DelayKind.Specified: return setting.delay;
+  case DelayKind.Default: return defaults.delay;
+}
+```
+
+## Distinguish effects from absent values
+
+Allow void for complete unit returns, callbacks, Promise<void>, synchronous-or-
+asynchronous effects, and unary discard. Reject T | void and nested value-or-void
+contracts. Model value absence explicitly instead.
+
+**Prohibited:**
+
+```ts
+// Inside a reader:
+read(): Promise<Document | void>;
+```
+
+**Preferred:**
+
+```ts
+// Inside a reader:
+read(): Effect.Effect<DocumentRead, ReadFailure>;
+// Inside a pure view owner:
+close(): void;
+```
+
+## Keep failure state typed
+
+Use closed failure kinds/outcomes and localize text at the presentation edge.
+Do not keep parallel error-message slots or collapse variants back to booleans.
+Effect owns expected failures; accumulated codec issues remain concrete and local.
+
+**Prohibited:**
+
+```ts
+interface ImportView { readonly failed: boolean; readonly error: string; }
+```
+
+**Preferred:**
+
+```ts
+enum ImportKind { Idle = "idle", Failed = "failed" }
+type ImportView =
+  | { readonly kind: ImportKind.Idle }
+  | { readonly kind: ImportKind.Failed; readonly failure: ImportFailure };
+```
+
+## Keep component enums in an importable module
+
+Put runtime enums used by Svelte component instances in an adjacent cohesive .ts
+module. Do not define them in either same-file script block. Use the configured
+Vite preprocessor and test actual rendering; a type check alone is not runtime
+evidence. Initialize runes and bindable state explicitly.
+
+**Prohibited:**
+
+```ts
+// Defined inside the component's script instead of its state module:
+enum PanelKind { Open = "open", Closed = "closed" }
+```
+
+**Preferred:**
+
+```ts
+// In the component script; the enum is defined in panel-state.ts:
+import { PanelKind } from "./panel-state";
+```
+
+## Assert states, not absence sentinels
+
+Prohibit toBeUndefined/toBeNull/toBeDefined and equivalent implicit-absence
+matchers. Test the semantic variant, required value, or exact structural property.
+Match transitions exhaustively and keep positive/negative preflight fixtures.
+
+**Prohibited:**
+
+```ts
+expect(selection).toBeUndefined();
+```
+
+**Preferred:**
+
+```ts
+expect(selection.kind).toBe(SelectionKind.Empty);
+```
 
 ## Validation
 
-The AST-backed preflight rejects every executable or type-level `undefined` and
-`null` token, parameterless `$bindable()` defaults, every quoted-sentinel
-comparison, every `T | void` value contract including nested generics and
-returns, every generic optional-state escape hatch, and assertion matchers that
-encode implicit absence in authored JavaScript, TypeScript, and Svelte. It
-accepts complete `void` function and callback returns, `Promise<void>`,
-`void | Promise<void>` effects, and unary discard expressions. The
-Rust-boundary preflight also rejects
-`#[tsify(type = "...")]` field overrides containing `undefined`, `null`, or
-`void`, `Option<T>` fields on `Tsify` exports, and `Option<T>` parameters or
-returns on `wasm_bindgen` exports. Rust-owned domain absence must be a named
-Rust enum before code generation. It also rejects
-raw string literal types on closed unions and discriminant fields (`kind`,
-`type`, `status`, `phase`, `stage`, `mode`, `action`, and `operation`), plus raw
-runtime discriminant constructors and comparisons, while accepting enum member
-types and ignoring comments and unrelated prose strings. Add positive and
-negative fixtures whenever the rule is sharpened. Run the project's formatting
-and application-state checks.
+- Inventory authored tokens, optional fields, zero-argument runes, and parameterless $bindable.
+- Reject null/undefined, quoted sentinels, generic optional wrappers, raw closed discriminants, and nested value-or-void contracts.
+- Reject Rust/WASM Option exports and null/undefined/void type overrides; preserve valid unit effects.
+- Run transition tests, AST preflight where supplied, formatting, and applicable browser checks.

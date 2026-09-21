@@ -1,97 +1,155 @@
 # TypeScript Effect Workflows
 
-## Purpose
+Use Effect v3 for new or materially changed asynchronous, fallible, resource-owning,
+concurrent, service-dependent, or untrusted-decoding workflows. This includes
+tests, scripts, and tooling. Portable product/security policy stays in Rust.
 
-Use Effect v3 to model effectful TypeScript workflows explicitly. Effect keeps
-expected failures, service requirements, resource lifetimes, concurrency, and
-runtime boundaries visible in one composable program.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-Effect does not move portable product or security ownership out of Rust/WASM.
+## Return the workflow, not a running Promise
 
-## Scope
+Internal methods return Effect<Success, Failure, Services>. Keep Effect.run*
+at explicit runtime/UI/browser/worker/framework edges. Lift external Promise
+APIs in adapters; do not introduce neverthrow or hand-rolled Promise failure chains.
 
-This policy applies to authored TypeScript, JavaScript, and Svelte scripts,
-including production code, tests, build scripts, and agent tooling.
+**Prohibited:**
 
-Use Effect for a new or materially changed workflow when it is asynchronous,
-models expected failure, owns a resource lifecycle, coordinates concurrency,
-uses effectful services, or decodes untrusted boundary data.
+```ts
+// Inside an application workflow:
+save(request: SaveRequest): Promise<Receipt> {
+  return Effect.runPromise(this.store.save(request));
+}
+```
 
-Do not use Effect to wrap pure calculations, inert type declarations, or Svelte
-rendering for ceremony. Keep pure calculations as ordinary pure functions.
+**Preferred:**
 
-## Required actions
+```ts
+// Inside the application workflow:
+save(request: SaveRequest): Effect.Effect<Receipt, SaveFailure> {
+  return this.store.save(request);
+}
+```
 
-- Compose effectful workflows with Effect v3.
-  - In TypeScript, describe a workflow as `Effect.Effect<Success, Failure, Services>`.
-  - Keep expected failure types tagged and put them in Effect's error channel.
-  - Propagate or handle those failures at the owner that can classify or
-    present them.
-- Decode untrusted input with Effect Schema at the narrowest TypeScript
-  boundary.
-  - Validate data before application code treats it as a concrete value.
-  - Keep parse failures in the workflow's typed error channel.
-  - Use existing generated Rust/WASM contracts when Rust owns the data model.
-- Use `Context` tags for effectful services and `Layer` values to construct
-  and provide their implementations.
-  - Apply them to dependencies such as browser ports, network clients, clocks,
-    or storage adapters when the workflow needs an effectful dependency.
-  - Keep purely local calculations as ordinary functions.
-- Use `Scope` and `Effect.acquireRelease` for resources whose lifetime needs
-  guaranteed cleanup.
-  - Tie cleanup to the scope that owns the resource.
-- Use Effect's concurrency and observability facilities when workflows need
-  parallel execution, cancellation, coordination, logging, metrics, or tracing.
-  - Keep those concerns inside the Effect workflow that owns them.
-- Keep `Effect.run*` at explicit runtime, UI, browser, worker, or framework
-  entry boundaries.
-  - Keep application workflows as Effect values until they reach that edge.
-  - Adapt the result to the host contract at the edge.
-- Keep feedback loops tight when authoring Effect with an AI assistant.
-  - Use Effect LSP tooling where available.
-  - The official Effect v3 guide recommends this for Effect development.
-- Migrate a materially changed workflow coherently to Effect.
-  - Update the connected callers needed to keep that workflow on one failure
-    model.
-  - Keep external Promise APIs at integration edges and lift them into Effect
-    before internal orchestration.
+## Preserve the typed failure channel
 
-## Prohibited actions
+Expected failures are concrete and tagged. Preserve source errors and handle
+them where the owner can classify, recover, or present them; do not throw or use
+Promise rejection as the application failure model.
 
-- Do not add new `neverthrow` flows or hand-rolled Promise error workflows.
-- Do not mix Effect and `neverthrow` or Promise-based error handling inside one
-  materially changed workflow.
-- Do not use exceptions or Promise rejection as the model for expected
-  application failures.
-- Do not call `Effect.run*` deep inside domain or application orchestration.
-- Do not mirror Rust-owned domain types, product policy, or security rules in
-  TypeScript or Effect Schema.
-- Do not replace a typed Rust/WASM contract with a TypeScript-owned schema or
-  validation rule.
-- Do not wrap pure calculations, declarations, or rendering with Effect when
-  they have no asynchronous, failure, resource, service, concurrency, or
-  boundary-decoding concern.
+**Prohibited:**
 
-## Existing migration debt
+```ts
+// Inside an effectful operation:
+throw failure;
+```
 
-Existing untouched `neverthrow` workflows may remain temporarily as migration
-debt. They must not spread to new code. When a workflow is materially changed,
-migrate that workflow coherently to Effect instead of extending or mixing the
-old abstraction.
+**Preferred:**
 
-This policy does not require a repository-wide migration in unrelated work.
+```ts
+// Inside the same operation:
+return Effect.fail(failure);
+```
 
-## Effect v3 references
+## Decode untrusted input once
 
-- [Getting started](https://effect.website/docs/v3/getting-started) introduces
-  Effect and recommends a tight LLM feedback loop with Effect LSP tooling.
-- [Two types of errors](https://effect.website/docs/v3/error-management/two-error-types)
-  explains typed expected errors and the Effect error channel.
-- [Managing services](https://effect.website/docs/v3/requirements-management/services)
-  explains `Context` service tags and `Layer` dependency construction.
-- [Schema introduction](https://effect.website/docs/v3/schema/introduction)
-  explains decoding and validation with Effect Schema.
-- [Scope](https://effect.website/docs/v3/resource-management/scope) explains
-  scoped finalizers and `Effect.acquireRelease`.
-- [Running effects](https://effect.website/docs/v3/getting-started/running-effects)
-  recommends keeping `Effect.run*` near the program edge.
+Use Effect Schema at the narrow TypeScript transport boundary. Keep decoding
+failures typed; use generated Rust contracts rather than inventing a competing
+Schema model or validation policy for Rust-owned data.
+
+**Prohibited:**
+
+```ts
+// Inside a TS-owned transport decoder:
+return Effect.succeed(raw as PanelRequest);
+```
+
+**Preferred:**
+
+```ts
+// PanelRequestSchema belongs to this TypeScript-owned protocol.
+return Schema.decodeUnknown(PanelRequestSchema.value)(raw);
+```
+
+## Make effectful dependencies explicit
+
+Use Context tags for effectful services and Layers to provide them. Do not use
+service machinery for pure local calculations. This fragment assumes an existing
+DocumentStore tag and live Layer owned by that service.
+
+**Prohibited:**
+
+```ts
+// Inside an application workflow:
+return globalStore.save(request);
+```
+
+**Preferred:**
+
+```ts
+return Effect.gen(function* () {
+  const store = yield* DocumentStore;
+  return yield* store.save(request);
+});
+// At the composition edge, provide DocumentStore.Live with Effect.provide.
+```
+
+## Tie cleanup to the resource scope
+
+Use Scope and acquireRelease for owned resources. Use Effect concurrency,
+cancellation, coordination, and observability inside the owning workflow.
+Do not make cleanup depend on the success path. In this fragment, close returns
+a non-failing cleanup Effect; cleanup failures otherwise need an explicit policy.
+
+**Prohibited:**
+
+```ts
+// Inside a resource-owning effect:
+const resource = yield* port.open();
+yield* resource.write(request);
+yield* resource.close();
+```
+
+**Preferred:**
+
+```ts
+// Inside the resource-owning effect; Scope is supplied at the caller edge:
+const resource = yield* Effect.acquireRelease(
+  port.open(),
+  (resource) => resource.close(),
+);
+yield* resource.write(request);
+```
+
+## Migrate one connected workflow
+
+When materially changing legacy neverthrow/Promise-error work, migrate its
+connected callers to Effect rather than mixing models. Untouched legacy flows
+may remain debt; do not force unrelated migrations. Pure calculations, inert
+types, and rendering need no ceremonial Effect wrappers.
+
+**Prohibited:**
+
+```ts
+// Pure formatting is wrapped only to make everything an Effect:
+return Effect.succeed(label.text);
+```
+
+**Preferred:**
+
+```ts
+// Inside the pure presentation owner:
+return label.text;
+```
+
+## Validation
+
+- Check that expected failures stay typed and run* appears only at execution edges.
+- Test failure propagation, service substitution, interruption, and resource cleanup.
+- Use Effect LSP where available for quick type feedback.
+- Use the supplied Effect v3 contracts; no competing Result/error abstraction.
+
+Effect v3 references: [services](https://effect.website/docs/v3/requirements-management/services),
+[Schema](https://effect.website/docs/v3/schema/introduction),
+[Scope](https://effect.website/docs/v3/resource-management/scope), and
+[runtime edges](https://effect.website/docs/v3/getting-started/running-effects).

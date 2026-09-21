@@ -12,6 +12,9 @@ team-agent model and reasoning effort.
   when writing or verifying examples in those subjects.
 - Preserve the subject owner's requirements. Return unresolved policy decisions
   to Team Gizmo for clarification by that owner.
+- Use the target skill’s rule-level knowledge graph to locate affected namespaced rules
+  and compare related requirements before editing. Synchronize rule summaries,
+  exceptions, sources, and relationships with the practice changes.
 - Keep examples beside the rules they demonstrate and update affected catalogs
   and callers when moving guidance.
 - Return changed documents, link-check results, example-validation evidence,

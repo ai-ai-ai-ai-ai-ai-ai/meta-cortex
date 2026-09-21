@@ -1,105 +1,163 @@
 # Rust WASM Name Coherence
 
-## Purpose
+For contracts the project controls, keep Rust names unchanged in generated
+bindings and TypeScript: `order_id` stays `order_id`. Do not rename for JavaScript
+casing conventions. Each alias forces humans and AI agents to translate names
+instead of following one contract.
 
-Keep Rust WASM callables directly searchable across Rust, generated bindings,
-and TypeScript.
+Fixed external protocols are the narrow exception: preserve Rust conventions
+inside the application and map the required wire names only in the external
+adapter. This exception does not apply to the project's own Rust/WASM/TS API.
 
-## Problem Pattern
+The examples below are alternative fragments. They assume generated types and
+existing domain values; method fragments belong inside their owning `impl`.
 
-A callable `js_name` or case-renaming annotation gives one contract multiple
-names. A reader cannot search one symbol and follow it across the language
-boundary. A plain JavaScript reconstruction passed for a declared
-`#[wasm_bindgen]` class also bypasses the authored Rust object boundary.
+## Preserve imported and exported names
 
-## Preferred Pattern
+Do not introduce import aliases, re-export aliases, or local type aliases.
 
-### Required actions
+**Prohibited:**
 
-- Export functions and methods with their authored Rust names.
-- Let generated JavaScript use `snake_case` for those callables.
-- Import, re-export, and call generated functions with that same `snake_case`
-  name.
-- Preserve sanctioned type-only re-exports through facade modules.
-- Use authored Rust struct fields and enum variants for new generated boundary
-  contracts.
-- Make consumers use the exact names in the generated declaration.
-- Construct exported `#[wasm_bindgen]` objects through their generated classes.
-- Construct `Tsify` `from_wasm_abi` structural DTOs as the generated structural
-  objects declared by that ABI.
-- Prefer direct cross-language coherence over TypeScript naming conventions.
-- Keep `js_name` only for property getters or setters and imported browser APIs.
-- Preserve established persisted and external field names at their narrow wire
-  adapters.
-- Preserve established generated DTO ABI field names, including names that do
-  not match current Rust casing conventions.
-- Identify the schema owner and version for each persisted or external naming
-  contract.
-- Follow the owning schema's documented version and migration policy before
-  changing an established wire name.
-- Treat a change to an established generated DTO field name as an explicit ABI
-  migration. Update every generated-binding consumer and boundary test in that
-  migration.
-- Update generated-binding consumers atomically with a callable rename.
+```ts
+import type { OrderSummary as OrderView } from "@project/wasm";
+export type { OrderSummary as OrderView } from "@project/wasm";
+```
 
-### Prohibited actions
+```ts
+import type { OrderSummary } from "@project/wasm";
+type OrderView = OrderSummary;
+```
 
-- Do not use `as` to restore a casing alias for a generated callable.
-- Do not add `rename_all` merely to convert Rust names into JavaScript casing.
-- Do not remove a serialization rename from an established persisted or
-  external wire contract merely to align casing.
-- Do not rename an established generated DTO field merely to align it with the
-  current authored Rust casing rule.
-- Do not add a second TypeScript interface over a generated Rust contract.
-- Do not reconstruct a declared `#[wasm_bindgen]` class input as a plain object
-  or raw primitive.
-- Do not replace a generated `Tsify` structural DTO with an unnecessary WASM
-  class.
+**Preferred:**
 
-## Scope
+```ts
+import type { OrderSummary } from "@project/wasm";
+export type { OrderSummary } from "@project/wasm";
+```
 
-Applies to:
+## Preserve method and property names
 
-- Authored Rust functions and methods exported through `wasm_bindgen`.
-- Rust-owned fields, enum variants, structs, and generated TypeScript names.
-- TypeScript, JavaScript, and Svelte consumers of those generated exports.
+Do not use `js_name` to change a Rust name for JavaScript consumers. Getters and
+setters preserve the same field name too. Here `OrderId` is a WASM-exported type.
 
-Does not apply to:
+**Prohibited:**
 
-- Exported getter or setter property names.
-- Imported browser or third-party JavaScript APIs.
-- Fixed names owned by a persisted schema or external protocol.
+```rust
+#[wasm_bindgen(getter, js_name = orderId)]
+pub fn order_id(&self) -> OrderId {
+    self.order_id.clone()
+}
+```
 
-## Examples
+```ts
+const order_id = order.orderId;
+```
 
-- Before: `#[wasm_bindgen(js_name = classifyExtensionPersistenceDatabases)]`
-- After: `#[wasm_bindgen] pub fn classify_extension_persistence_databases(...)`
-- TypeScript after: `classify_extension_persistence_databases(...)`
+**Preferred:**
 
-## Application procedure
+```rust
+#[wasm_bindgen(getter)]
+pub fn order_id(&self) -> OrderId {
+    self.order_id.clone()
+}
+```
 
-1. Inventory callable `js_name` attributes in the requested scope.
-2. Distinguish exported callables from properties and imports.
-3. Remove callable renames and update every generated-binding consumer.
-4. Inventory `rename_all` and field-level renames on Rust-owned contracts.
-   Distinguish new contracts from established generated, persisted, and
-   external ABI names.
-   Preserve established names unless an explicit ABI migration or the owning
-   schema's version and migration policy authorizes the change.
-5. Remove generated callable casing aliases from imports and re-exports.
-6. Remove plain-object or raw-value reconstructions of parameters declared as
-   generated classes.
-7. Preserve sanctioned type-only re-exports through local facade modules.
-8. Confirm behavior is unchanged and typed Rust/WASM boundaries remain intact.
-9. Require the syntax-aware preflight inventory to be empty.
+```ts
+const order_id = order.order_id;
+```
+
+## Preserve fields and enum variants
+
+Do not use serialization renames or casing transformations in project-owned contracts. These Serde
+fragments describe a new contract; `OrderId` is an existing serializable newtype.
+
+**Prohibited:**
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OrderSummary {
+    pub order_id: OrderId,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum DeliveryState {
+    AwaitingDispatch,
+    Delivered,
+}
+```
+
+**Preferred:**
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct OrderSummary {
+    pub order_id: OrderId,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum DeliveryState {
+    AwaitingDispatch,
+    Delivered,
+}
+```
+
+Keep those names in consumers. These expressions belong inside a UI method.
+
+**Prohibited:**
+
+```ts
+const { order_id: orderId } = order;
+const view = { orderId: order.order_id };
+```
+
+**Preferred:**
+
+```ts
+const { order_id } = order;
+// Pass the original typed object onward.
+view.render(order);
+```
+
+## Map fixed external names only at the adapter
+
+If a third-party protocol requires `orderId`, keeping both that wire key and
+Rust's `snake_case` requires a mapping. Use `order_id` in Rust and
+`#[serde(rename = "orderId")]` on the external adapter field. Do not disable
+Rust's naming lint or spread `orderId` into the domain and generated application API.
+
+These examples assume a fixed third-party wire contract. They do not authorize
+renaming fields in a new contract the project controls.
+
+**Prohibited:** change Rust naming to match the external protocol.
+
+```rust
+#[allow(non_snake_case)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ExternalOrder {
+    pub orderId: OrderId,
+}
+```
+
+**Preferred:** isolate the unavoidable mapping in the external adapter.
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ExternalOrder {
+    #[serde(rename = "orderId")]
+    pub order_id: OrderId,
+}
+```
+
+Removing this rename would change the wire key and break the protocol. Existing
+persisted or published contracts also require their migration policy before wire
+names change; compatibility mappings stay at that boundary, not in new domain APIs.
 
 ## Validation
 
-- Run the preflight core-ownership tests.
-- Run WASM build and Node tests for generated binding coherence.
-- Assert generated declarations retain the authored Rust names.
-- Construct actual generated WASM classes in boundary tests when the declared
-  parameter type is a `#[wasm_bindgen]` class.
-- Construct generated `Tsify` structural objects in boundary tests when the
-  declared parameter uses `from_wasm_abi`.
-- Run web checks and tests for all consumers.
+- Inspect import/export aliases, local type aliases, `js_name`, `rename`, and
+  `rename_all`. Reject project-owned naming transformations. For each boundary
+  mapping, identify the fixed protocol or established schema that requires it.
+- Regenerate bindings and check exported names against the Rust declarations.
+- Type-check consumers and test any preserved wire names or approved migrations.

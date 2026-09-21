@@ -1,260 +1,186 @@
-# TypeScript Domain Structure
+# TypeScript Domain Types
 
-## Purpose
+Use types that carry domain meaning through private and public code, tests,
+state, collections, and boundaries. Portable product/security types come from
+generated Rust contracts; TypeScript owns browser and presentation vocabulary.
 
-Keep TypeScript domain models typed by meaning, nested, and enum-driven. A raw
-representation does not carry the metadata that makes a domain value safe to
-use. Treat raw domain primitives, inline unions, raw-string field allow-lists,
-and local Result or Maybe copies as forbidden. Use the Web-owned
-[TypeScript Effect Workflows](typescript-effect.md) policy for effectful
-workflows and typed failures.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-This is the TypeScript form of Rust's domain-newtype rule. A domain type must
-make its meaning visible at the declaration, field, parameter, return, and
-boundary where it is used.
+## Preserve value identity
 
-## Domain Type Rule
+Use generated nominal types, opaque types, or value objects for scalars and
+named interfaces for aggregates. A primitive alias is not nominal. User content
+and locale keys need names too. Keep raw representation inside the value owner
+or required external edge; never unwrap merely to cross an application layer.
 
-### Required actions
-
-- Define a named domain type for every authored domain, application, workflow,
-  lifecycle, policy, mode, command, configuration, persistence, and
-  owned-contract value.
-- Use the generated Rust/WASM enum or newtype for portable product and
-  security vocabulary. Do not declare a TypeScript mirror.
-- Use a cohesive TypeScript enum for a browser, lifecycle, or presentation
-  vocabulary owned by TypeScript.
-- Use a branded or opaque type for a scalar with one domain meaning.
-
-  ```ts
-  declare const WorkflowIdBrand: unique symbol;
-  type WorkflowId = string & {
-    readonly [WorkflowIdBrand]: "WorkflowId";
-  };
-  ```
-
-- Use a named interface or value object for a domain aggregate.
-- Declare every legal alternative as a named discriminated union before using
-  it in another domain type.
-- Keep the named union separate from its containing field.
-
-  ```ts
-  enum WorkflowSelectionState {
-    Matched = "matched",
-    Unavailable = "unavailable",
-  }
-
-  type WorkflowSelection =
-    | {
-        readonly state: WorkflowSelectionState.Matched;
-        readonly kind: AuthenticationWorkflowKind;
-      }
-    | { readonly state: WorkflowSelectionState.Unavailable };
-
-  interface AuthenticationWorkflowView {
-    readonly selection: WorkflowSelection;
-  }
-  ```
-
-- Normalize a raw external representation into the named domain type at the
-  narrowest boundary.
-- Preserve the named type through domain calls, state, storage, and WASM
-  adapters.
-- Create branded and opaque values through a named parser or validating
-  factory. Keep the brand token and unchecked construction private.
-- Decode untrusted values at the boundary with Effect Schema when the workflow
-  is effectful. Keep decoding failures in its typed error channel.
-- Propagate or handle Effect failures explicitly; do not throw expected failures.
-- Give actionable failures a stable enum kind or code.
-- Preserve the concrete source error when translating a lower-level failure.
-- Catch a failure only when the current owner adds domain meaning, recovery, or
-  boundary presentation.
-- Put every authored public, private, and nested function on a meaningful
-  class, value object, domain object, fixture, or required framework owner.
-- Use an instance method when the operation depends on owned state.
-- Reserve static methods for narrow builders that construct an owned value.
-- Put validation, execution, and dispatch on meaningful instances.
-- Keep component handlers on a Svelte component only when they belong to that
-  component's state or interaction contract.
-- Model state changes as named transitions from one domain state to a named
-  next state or outcome.
-- Keep advanced-state construction private to the transition that validates
-  it.
-- Expose an operation only from the state owner where that operation is legal.
-- Give every TypeScript-owned persisted or wire schema a named version type.
-- Keep one explicit current writer version and an explicit supported-reader
-  set. Reject unsupported versions with a domain-specific failure.
-- Define an explicit migration before changing a persisted shape.
-- Browser interactions that temporarily receive plaintext must preserve the
-  secret lifecycle requirements supplied with the assignment.
-
-### Prohibited actions
-
-- Do not expose raw primitive values when they carry domain meaning.
-  - This includes `string`, `number`, `boolean`, and other primitives.
-  - This applies to reachable fields, parameters, returns, DTOs, state,
-    collections, tuples, and generic arguments.
-- Do not use an inline union at a domain boundary. This includes fields,
-  parameters, returns, arrays, promises, and generic arguments.
-- Do not write `readonly workflowKind: AuthenticationWorkflowKind | false`.
-  The absence or availability state must be a member of a named union such as
-  `WorkflowSelection`.
-- Do not use `false`, `true`, `null`, `undefined`, empty strings, zero, or
-  sentinel numbers as unnamed domain states.
-- Do not treat `type WorkflowId = string` as a safe newtype. A plain alias does
-  not stop two string-backed domain values from being exchanged.
-- Do not unwrap a domain type merely to pass its primitive representation
-  through another application layer.
-- Do not fabricate a branded or opaque domain value with `as` inside
-  application behavior.
-- Do not export a brand token, unchecked constructor, or writable field that
-  bypasses validation.
-- Do not put domain behavior in generic `Utils` or `Helpers` containers.
-- Do not introduce an unowned top-level or nested free function.
-- Do not treat a file, module, namespace, or directory as function ownership.
-- Do not create an empty class, interface, namespace, or object only to move a
-  free function.
-- Do not throw raw strings or expose generic `Error` as an actionable domain
-  contract.
-- Do not swallow a failure or replace its domain kind with freeform text.
-- Do not silently accept, reinterpret, or overwrite an unsupported schema
-  version.
-- Do not persist or log secret plaintext or retain it after the interaction
-  lifecycle ends.
-- Do not encode a transition by mutating parallel booleans, sentinels, or
-  optional fields.
-- Do not invent instance identity or lifecycle for pure behavior.
-- Do not retain a static execution method by renaming it as a builder.
-
-Raw primitives are allowed only in narrow cases.
-
-- Keep them in private implementation storage.
-- Keep them for plaintext user content whose representation is its meaning.
-- Keep them for locale plumbing.
-- Keep them at a required external, serialization, database, or host boundary.
-- Convert them to named domain types immediately when application behavior
-  begins.
-
-## Forbidden Patterns
-
-Do not ship any of these:
+**Prohibited:**
 
 ```ts
-// Forbidden: raw-string field allow-list
-const ALLOWED = new Set(["stageHostUpdates", "fetchOriginMain"]);
+type PanelId = string;
+interface PanelSelection { readonly id: string; }
+```
 
-// Forbidden: local Optional / Result copies
-type Result<T> = Ok<T> | Err;
-type Maybe<T> = Present<T> | Absent;
+**Preferred:**
 
-// Forbidden: flat same-prefix closed vocabularies
-enum RequestKind {
-  DocumentExportAssemble = "documentExportAssemble",
-  DocumentExportValidate = "documentExportValidate",
-  DocumentExportPublish = "documentExportPublish",
+```ts
+class PanelId {
+  private constructor(private readonly value: string) {}
+  static from(value: string): PanelId { return new PanelId(value); }
+}
+interface PanelSelection { readonly id: PanelId; }
+```
+
+## Construct trusted values at the boundary
+
+The preceding PanelId accepts any string. Constrained values need a validating
+parser/factory. Keep brand tokens and unchecked construction private. Do not
+fabricate brands, expose writable invariant fields, or mirror Rust validation.
+Effectful decoders use Effect Schema with typed failures.
+
+**Prohibited:**
+
+```ts
+const panel_id = raw as PanelId;
+controller.select(panel_id);
+```
+
+**Preferred:**
+
+```ts
+// Inside the adapter; parser returns a typed decoding Effect.
+const panel_id = yield* parser.decode(raw);
+controller.select(panel_id);
+```
+
+## Declare the complete union separately
+
+Use a named union with enum-backed variants; place data only on its owner.
+Do not inline alternatives into fields, generic arguments, arrays, or promises.
+
+**Prohibited:**
+
+```ts
+interface PanelState {
+  readonly selection: PanelId | false;
 }
 ```
 
-Same-prefix names almost always mean a separate object was flattened. Generic
-`Result` / `Maybe` hide domain failure and absence behind reusable holes.
+**Preferred:**
 
-## Required Pattern
+```ts
+enum PanelSelectionKind { Empty = "empty", Selected = "selected" }
+type PanelSelection =
+  | { readonly kind: PanelSelectionKind.Empty }
+  | { readonly kind: PanelSelectionKind.Selected; readonly id: PanelId };
+interface PanelState { readonly selection: PanelSelection; }
+```
 
-- Same prefix → nest. Prefer `documentExport` + `DocumentExportOperation`, not
-  flat `DocumentExportAssemble` / `DocumentExportValidate` /
-  `DocumentExportPublish`.
-- YAML and TypeScript shapes match the nest:
+## Nest vocabulary that shares an owner
 
-  ```yaml
-  documentExport:
-    assemble:
-      sourcePath: "{workspace}/draft.md"
-      outputPath: "{workspace}/archive/document.md"
-      metadata: included
-  ```
+Same-prefix operations belong under a coherent object and operation enum.
+Keep YAML nesting aligned with that structure; do not flatten unrelated request
+fields into one enum. Closed field allow-lists use enum vocabulary, not strings.
 
-- Closed field names are enums typed as `RequestFieldVocabulary<FieldName>`.
-  Pass the enum into unknown-key checks
-  through one named, typed request. Never author
-  `Record<string, string>` or string-set field allow-lists.
-- Closed failure codes are enums. Freeform detail text may accompany an enum
-  code at an I/O boundary; the discriminant itself is never a bare string.
-- Use Effect's typed error channel for expected failures in effectful workflows.
-- Do not introduce `neverthrow` or hand-rolled Promise error workflows for new
-  or materially changed code.
-- Do not invent competing Result or optional-value wrappers.
-- Rust uses its standard Result.
-- YAML decode may accumulate field issues in a **codec-local** type
-  (`DecodeOutcome`, `DecodeStatus`, `FieldIssue`). That type must stay in the
-  codec layer and must not become a repo-wide Result utility.
-- Effectful command and runtime workflows return Effect values with tagged
-  failure types in the typed error channel.
-- Keep `E` concrete, with its domain code and context.
-- Catch foreign exceptions only at the adapter that admits them.
-- Optional request fields that mean a named state become domain unions
-  (`RemoteTask.Specified` / `RemoteTask.Omitted`), never `Maybe<string>`.
-- Domain unions are declared as named types and referenced by name. Do not
-  embed a union in a field declaration.
+**Prohibited:**
 
-## Scope
+```ts
+enum RequestKind {
+  DocumentExportAssemble = "documentExportAssemble",
+  DocumentExportPublish = "documentExportPublish",
+}
+const allowed = new Set(["destination", "format"]);
+```
 
-Applies to:
+**Preferred:**
 
-- All authored TypeScript, including scripts and agent tooling
-- Domain YAML request shapes
+```ts
+enum DocumentExportOperation { Assemble = "assemble", Publish = "publish" }
+interface DocumentExport {
+  readonly operation: DocumentExportOperation;
+  readonly destination: ExportPath;
+}
+interface ExportRequest { readonly documentExport: DocumentExport; }
+enum ExportField { Destination = "destination", Format = "format" }
+// Inside the codec, using its existing named vocabulary request:
+const fields: RequestFieldVocabulary<ExportField> = { vocabulary: ExportField };
+validator.check(fields);
+```
 
-Does not apply to:
+## Version owned persisted formats
 
-- Rust `Result` / `Option`
-- Generated WASM / dependency typings
+Give TypeScript-owned wire/persisted versions a named type, one current writer,
+and an explicit supported-reader set. Reject unsupported versions with a domain
+failure; require a migration before changing shape. Do not silently overwrite
+an unrecognized version.
 
-## Examples
+**Prohibited:**
 
-- Forbidden: `new Set(['stageHostUpdates', ...])`, `result.ts` with
-  `Result` / `Maybe`
-- Required: `enum PrePushField { ... }`, nested `documentExport.assemble`,
-  `DecodeOutcome` only inside codecs, `RuntimeFailure` for runtime failures
+```ts
+// Inside an importer:
+return decoder.current(raw); // Ignores the declared schema version.
+```
 
-## Application Checklist
+**Preferred:**
 
-- [ ] Put every authored function on a meaningful owner. Reject module-only,
-      namespace-only, and catch-all utility ownership.
-- [ ] Search the changed scope for raw primitives in domain fields, parameters,
-      returns, state, DTOs, collections, tuples, and generic arguments.
-- [ ] Give every scalar domain meaning a generated, branded, opaque, enum, or
-      value-object type.
-- [ ] Declare every domain union separately and use its name in containing
-      fields.
-- [ ] Reject primitive sentinels such as `false`, `undefined`, `null`, empty
-      strings, and zero when they stand for a domain state.
-- [ ] Verify each actionable failure has a stable domain kind or code and
-      preserves its concrete source when translated.
-- [ ] Verify each changed TypeScript-owned persisted schema has an explicit
-      version, supported-reader set, unsupported-version failure, and migration
-      decision.
-- [ ] Inventory browser plaintext creation, copies, persistence, logs, and every
-      terminal cleanup transition.
-- [ ] Normalize raw external values immediately at the boundary.
-- [ ] Search for `new Set(['...'])` field allow-lists and replace with field
-      enums.
-- [ ] Search for TypeScript `Result` / `Maybe` / `Present` / `Absent` utilities
-      and delete them.
-- [ ] Nest same-prefix enum members into a parent object plus operation enum.
-- [ ] Keep decode accumulation codec-local; keep runtime failure codes as enums.
-- [ ] Update YAML examples and cortex docs to the nested domain shape.
+```ts
+// Inside the importer; schema is a decoded, validated versioned record.
+switch (schema.version) {
+  case WorkspaceVersion.V1: return migrations.fromV1(schema);
+  case WorkspaceVersion.V2: return decoder.current(schema);
+}
+```
+
+## Keep capabilities behind their transitions
+
+State owners expose only legal operations. Keep advanced construction private
+to validation and use named transitions, not parallel flags. Follow function
+ownership: meaningful instances own execution/validation; static methods only
+build values. Do not invent a lifecycle for a pure calculation.
+
+**Prohibited:**
+
+```ts
+// Caller fabricates an advanced state:
+const approved = raw as ApprovedDraft;
+publisher.publish(approved);
+```
+
+**Preferred:**
+
+```ts
+// Inside the workflow owner:
+const approved = yield* review.approve(draft);
+yield* publisher.publish(approved);
+```
+
+## Keep failures and secrets with their owners
+
+Expected failures use Effect’s concrete tagged error channel with stable enum
+codes and preserved source errors; catch only to classify, recover, or present.
+Do not throw strings, store generic Error as a domain failure, or add Result/Maybe
+utilities. Codec-local accumulated field issues remain local, never a competing
+runtime Result abstraction. Follow supplied secret-lifecycle rules: no plaintext
+logs/persistence and no retained secret after the interaction ends.
+
+**Prohibited:**
+
+```ts
+// Inside a workflow:
+throw "import failed";
+```
+
+**Preferred:**
+
+```ts
+// Inside the same workflow; failure retains its concrete cause and code:
+return Effect.fail(failure);
+```
 
 ## Validation
 
-- Search authored code for raw-string field allow-lists and local Result or Maybe utilities; require zero violations.
-- Run the application-state checks, type checks, and behavior tests for changed code.
-- Preserve browser and security evidence for affected behavior.
-- Technical expertise does not transfer another agent's implementation ownership.
-- Follow the [single-parameter rule](typescript-single-parameter.md).
-
-## Transport and failure requirements
-
-- Keep expected TypeScript failures tagged and in Effect's typed error channel.
-- Validate TypeScript transport fields before constructing the concrete type.
-- Do not throw to propagate authored TypeScript domain or application failures.
-- Do not add a TypeScript failure abstraction that competes with Effect for an
-  effectful workflow.
+- Review nominal identity, named unions, ownership, external conversions, and version rejection.
+- Check nested request/YAML shapes and enum field vocabularies.
+- Reject local Result/Maybe utilities, erased failure sources, and plaintext leaks.
+- Run type/state/behavior checks; preserve browser and security evidence.
+- Follow the supplied single-parameter and Effect rules; generated/dependency types are not authored models.

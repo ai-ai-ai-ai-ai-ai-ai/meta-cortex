@@ -1,109 +1,80 @@
 # Svelte State Modeling
 
-## Purpose
+Make component visual and browser-lifecycle states explicit. Generated external
+declarations remain external; the authored UI normalizes their results.
 
-Keep Svelte rune state explicit by representing meaningful application states
-as discriminated unions instead of implicit `undefined`.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-## Problem Pattern
+## Initialize every modeled rune
 
-Authored web code can use an absent initial value as an unnamed lifecycle
-state:
+Do not use zero-argument $state or implicit absence for a DOM reference that
+authored code uses. A concrete initial value may be used directly; otherwise
+name the lifecycle alternatives. These enums/unions live in the adjacent state
+module and are imported into the component.
 
-```ts
-let selected = $state<Item>();
-```
-
-The declaration silently means `Item | undefined`, so every consumer must
-remember what absence means and which other flags or fields are valid with it.
-
-## Preferred Pattern
-
-Use a discriminated union with named variants:
+**Prohibited:**
 
 ```ts
-enum SelectionKind {
-  NotSelected = "not-selected",
-  Selected = "selected",
-}
-
-type SelectionState =
-  | { kind: SelectionKind.NotSelected }
-  | { kind: SelectionKind.Selected; item: Item };
-
-let selection = $state<SelectionState>({ kind: SelectionKind.NotSelected });
+let selection = $state<SelectedFile>();
 ```
 
-Modeling rules:
-
-- Put data only on the variant that owns it.
-- Group fields that transition together into one union so illegal combinations
-  cannot compile.
-- Keep closed portable domain workflows in Rust/WASM.
-  - Component-local visual and browser lifecycle states may use TypeScript
-    discriminated unions.
-- Optionality does not justify erasing the value's domain type.
-  - Put generated semantic identifiers such as `StoreId` and `PasswordEntryId`
-    inside the explicit variant.
-  - Never widen them to `string` when Rust owns the identifier.
-- Do not encode closed domain workflows as string-literal rune state.
-  - Use generated Rust/WASM enums for authentication, unlock, recovery,
-    provider, and session phases.
-  - Use meaningfully named TypeScript enums for visual component state such as
-    panel, tab, accordion, or form-view selection.
-- Do not use zero-argument `$state<T>()` for modeled state.
-  - DOM element bindings also use a named `unmounted/mounted` state when
-    authored code reads or mutates the reference.
-- Convert browser or generated API absence directly into a semantic state.
-  - Do not normalize one forbidden absence sentinel into another.
-
-Use an explicit initializer when state has a concrete initial value:
+**Preferred:**
 
 ```ts
-let items = $state<Item[]>([]);
+// In file-selection.ts:
+export enum FileSelectionKind { Empty = "empty", Selected = "selected" }
+export type FileSelection =
+  | { readonly kind: FileSelectionKind.Empty }
+  | { readonly kind: FileSelectionKind.Selected; readonly file: File };
+// In the component script, after importing those types:
+let selection = $state<FileSelection>({ kind: FileSelectionKind.Empty });
 ```
 
-## Scope
+## Move related values together
 
-Applies to:
+Group fields that transition together in one union and keep payloads on their
+owner. Do not replace one external absence sentinel with another.
 
-- Authored `.svelte` and `.svelte.ts` files.
-- Component-local visual state and browser-lifecycle state.
+**Prohibited:**
 
-Does not apply to:
+```ts
+let finished = $state(false);
+let result = $state<ImportResult>();
+```
 
-- Generated TypeScript declarations.
-- Optional Rust/WASM DTO fields or domain workflows that should be modeled as
-  Rust enums.
-- Generated external contracts. Authored adapters still convert their result
-  into a named state immediately.
+**Preferred:**
 
-## Examples
+```ts
+// ImportKind and ImportState are declared in the adjacent state module.
+let state = $state<ImportState>({ kind: ImportKind.Idle });
+// Inside the completion handler:
+state = { kind: ImportKind.Complete, result };
+```
 
-- Before: `let result = $state<ImportResult>()`
-- After: `let result = $state<ImportState>({ kind: ImportKind.Idle })`
-- Before: `let selectedFile = $state<File>()`
-- After: `let selection = $state<FileSelection>({ kind: FileSelectionKind.Empty })`
-- Before: `selectedVaultStoreId = $state<string>()`
-- After: `vaultSelection = $state<VaultSelection>({ kind: VaultSelectionKind.NotSelected })`
+## Preserve generated product types
 
-## Application Checklist
+Component panels/tabs/form views may be TypeScript states. Portable product
+workflows belong to Rust/WASM. Keep generated semantic identifiers in their
+variants; optionality does not justify widening them to string.
 
-- [ ] Search authored web sources for zero-argument `$state<T>()`,
-      `$state<T | undefined>`, and assignments that clear state to `undefined`.
-- [ ] Name each meaningful state and move state-owned data onto its variant.
-- [ ] Combine fields that transition together instead of creating parallel
-      optionals and booleans.
-- [ ] Preserve Rust/WASM-owned identifier types instead of widening them to
-      `string`.
-- [ ] Replace domain string-literal unions with generated Rust/WASM enums;
-      use TypeScript enum-backed unions for visual state in Svelte.
-- [ ] Convert DOM, lookup, parser, cache, and external-boundary absence into
-      meaningfully named states at the narrowest authored boundary.
-- [ ] Escalate closed domain-state modeling to Rust/WASM rather than hiding it
-      behind optional TypeScript fields.
+**Prohibited:**
+
+```ts
+type OrderSelection = { readonly order_id: string };
+```
+
+**Preferred:**
+
+```ts
+// OrderId is imported from the generated contract.
+type OrderSelection =
+  | { readonly kind: OrderSelectionKind.Empty }
+  | { readonly kind: OrderSelectionKind.Selected; readonly order_id: OrderId };
+```
 
 ## Validation
 
-Run the syntax-aware TypeScript application-state preflight and
-`git diff --check`, formatting, and the applicable browser checks.
+- Check rune declarations, clearing assignments, DOM-reference lifecycles, and coupled flags.
+- Normalize browser/lookup/parser/cache absence in the boundary decoder.
+- Run application-state checks, formatting, diff checks, and affected browser tests.

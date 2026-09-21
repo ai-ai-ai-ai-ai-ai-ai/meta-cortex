@@ -1,158 +1,83 @@
 # TypeScript Enums Instead of Booleans
 
-## Purpose
+Use meaningful enums for authored domain/application/workflow/lifecycle/policy/
+mode/command/configuration values, even when there are only two cases.
 
-Do not use `boolean` as an authored domain, application, workflow, lifecycle,
-policy, mode, command, configuration, or owned-contract value. Use a cohesive,
-meaningfully named enum even when the value currently has exactly two cases.
+Examples are alternative fragments. Supporting domain types and collaborators
+are supplied by the application; method fragments belong to their named owner.
 
-For state-specific payloads, use a discriminated union whose discriminant is a
-member of that enum. Portable product and security vocabulary belongs in Rust
-and crosses WASM as a generated enum; TypeScript must consume it rather than
-declare a mirror.
+## Name the decision at the call site
 
-## Why Booleans Fail
+Distinct decisions require distinct types. True/False or Yes/No variants merely
+rename bits; Enabled/Disabled is useful only on an enum naming the actual policy.
+Use generated Rust enums for portable/security decisions.
 
-A boolean carries no domain metadata in its value. `true` does not say what is
-enabled, which behavior it selects, or why the state exists.
-
-- **Call sites lose meaning.** `runSync(true)` forces the reader to find the
-  declaration before the argument can be understood.
-- **Mental complexity increases.** Every reader must remember what `true` and
-  `false` mean for each particular value.
-- **Arguments are easy to confuse.** Positional booleans can be swapped without
-  a type error. Putting flags into a named object avoids positional swapping but
-  does not repair the weak state model.
-- **Two cases do not stay two cases.** A third state requires a breaking type,
-  schema, and caller rewrite instead of one new enum variant.
-- **Multiple flags create invalid combinations.** Independent booleans can
-  represent states the application must never enter.
-- **Reviews lose intent.** A changed `true` or `false` literal does not explain
-  the behavior being selected.
-
-## Required Pattern
-
-Enums put the domain meaning into both the type and every value.
-
-- Name the real cases: `Scheduled` and `Forced`, `Hidden` and `Exposed`, or
-  `Capture` and `Propagate`.
-- Do not create decorative `True` / `False`, `Yes` / `No`, or `Enabled` /
-  `Disabled` enums without naming what the states mean.
-- Use distinct enum types for distinct decisions. The type checker must reject
-  accidentally exchanging sync freshness with failure handling.
-- Match enums and discriminated unions exhaustively so a new case identifies
-  every decision point that must change.
-- Put variant-specific data on the discriminated-union member that owns it.
-- Declare the complete discriminated union as a named domain type before using
-  it in a field or parameter. A field must reference `WorkflowSelection`, not
-  embed `AuthenticationWorkflowKind | false`.
-- Do not persist or send a boolean that can be derived from a semantic enum.
-- Use the enum member at constructors, call sites, comparisons, fixtures, and
-  protocol boundaries. Do not erase it back to a boolean for convenience.
-
-Before:
+**Prohibited:**
 
 ```ts
-interface SyncRequest {
-  readonly force: boolean;
-  readonly failFast: boolean;
-}
-
 const request: SyncRequest = { force: true, failFast: false };
-syncWorkflow.run(request);
 ```
 
-After:
+**Preferred:**
 
 ```ts
-enum ProviderSyncFreshness {
-  Scheduled = "scheduled",
-  Forced = "forced",
-}
-
-enum ProviderSyncFailureHandling {
-  Capture = "capture",
-  Propagate = "propagate",
-}
-
-interface SyncRequest {
-  readonly freshness: ProviderSyncFreshness;
-  readonly failureHandling: ProviderSyncFailureHandling;
-}
-
 const request: SyncRequest = {
-  freshness: ProviderSyncFreshness.Forced,
-  failureHandling: ProviderSyncFailureHandling.Capture,
+  freshness: SyncFreshness.Forced,
+  failures: SyncFailureHandling.Capture,
 };
-syncWorkflow.run(request);
 ```
 
-For state with associated data:
+## Model related flags as one state
+
+Put payloads on enum-backed union variants and match exhaustively. Keep the
+union separately named; do not use inline value-or-false fields. Do not serialize
+a boolean derivable from the enum or erase members at calls and fixtures.
+
+**Prohibited:**
 
 ```ts
-enum ImportKind {
-  Idle = "idle",
-  Loading = "loading",
-  Complete = "complete",
+interface UploadState {
+  readonly running: boolean;
+  readonly complete: boolean;
 }
-
-type ImportState =
-  | { readonly kind: ImportKind.Idle }
-  | { readonly kind: ImportKind.Loading }
-  | { readonly kind: ImportKind.Complete; readonly result: ImportResult };
 ```
 
-## Narrow Exceptions
+**Preferred:**
 
-An authored `boolean` requires a concrete reason. Convenience, fewer lines,
-test-only code, or having only two cases today are not reasons.
+```ts
+enum UploadKind { Idle = "idle", Running = "running", Complete = "complete" }
+type UploadState =
+  | { readonly kind: UploadKind.Idle }
+  | { readonly kind: UploadKind.Running }
+  | { readonly kind: UploadKind.Complete; readonly receipt: UploadReceipt };
+```
 
-The allowed cases are intentionally narrow:
+## Contain required boolean contracts
 
-- A language, platform, dependency, or host callback contract requires a
-  boolean, such as an immediately returned predicate. Keep that signature at
-  the boundary.
-- A fixed external protocol owns a boolean field that the application cannot change.
-  Normalize it into a named enum immediately before application policy reads
-  it, and convert back only at the outbound boundary.
-- A private predicate answers a literal yes-or-no query such as `isEmpty()` or
-  `contains()`. Consume the result immediately in control flow. Do not store it
-  as application state or pass it onward as policy, mode, or configuration.
+Keep boolean host/platform signatures at their exact boundary. Fixed external
+fields normalize immediately into named states, and map back only outbound.
+Private mechanical predicates such as contains/isEmpty may be consumed immediately
+as control flow, never stored policy. Document retained public fields/signatures
+and lint exceptions; tests and internal DTOs have no blanket exemption.
 
-Raw browser observations are not a general exception. Once an observation
-enters application behavior, normalize it to an owned browser enum or pass it
-to Rust/WASM for a portable domain decision.
+**Prohibited:**
 
-Every retained public parameter, stored field, or lint suppression involving a
-boolean must document which narrow exception applies. Fixtures, tests, scripts,
-and internal DTOs do not receive a blanket exemption.
+```ts
+// Inside the adapter:
+workflow.run(raw.force);
+```
 
-## Scope
+**Preferred:**
 
-Applies to every authored `.js`, `.mjs`, `.cjs`, `.ts`, and `.svelte` file,
-including production source, tests, fixtures, demos, build configuration,
-agent tooling, and CI configuration.
-
-Generated declarations, dependency/build directories, and generated WASM
-bindings are excluded because they mirror contracts the application does not author.
-
-## Application Checklist
-
-- [ ] Inventory authored boolean fields, parameters, returns, state, and lint
-      suppressions in the changed scope.
-- [ ] Replace every domain, application, workflow, lifecycle, policy, mode,
-      command, configuration, persistence, and owned-contract boolean with a
-      meaningfully named enum.
-- [ ] Replace coupled flags with one discriminated union that represents only
-      legal states.
-- [ ] Consume generated Rust/WASM enums directly for portable vocabulary.
-- [ ] Keep a boolean only for a required boundary or an immediately consumed
-      private predicate, and document the exact exception when it is retained
-      in a public parameter or stored field.
-- [ ] Add exhaustive state and transition tests for every new enum variant.
+```ts
+// Inside the adapter; decoder owns the external flag interpretation:
+const mode = decoder.syncMode(raw.force);
+workflow.run(mode);
+```
 
 ## Validation
 
-Run the application-state checks, the affected package's focused typecheck
-and behavior tests, and formatting. Treat existing boolean-focused lint
-suppressions as migration findings, not as justification for another boolean.
+- Inventory boolean fields, parameters, returns, state, and suppressions.
+- Replace coupled flags and test every new variant/transition.
+- Raw browser observations receive no general exemption; normalize or pass to Rust policy.
+- Run state checks, type/behavior tests, and formatting; old suppressions are migration debt.
