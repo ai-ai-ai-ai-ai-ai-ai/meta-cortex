@@ -53,6 +53,20 @@ specialized skills are:
   bounded, observable infrastructure and operational changes, loaded by the
   Kubernetes specialist for cloud-native assignments.
 
+## Circuit breaker
+
+The entry point loads the [circuit breaker](CIRCUIT-BREAKER.md) before roles and
+skills. Every assignment carries it. Agents check proposed mechanisms before
+implementation; coordinators check assignments and results. The policy includes
+how to stop and recover from a violation.
+
+**Prohibited:** an ordinary handoff grows into encrypted agent channels and
+persistent authority receipts.
+
+**Preferred:** use the host's handoff tools and review the result against the
+assignment. Use a focused second review for a concrete dispute, without a
+permanent observer agent.
+
 ## Execution configuration
 
 [meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for

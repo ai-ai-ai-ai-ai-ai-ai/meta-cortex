@@ -12,10 +12,12 @@ The host provides the models, tools, and execution environment.
 
 For a new user task:
 
-1. Establish the [project context](#project-context).
-2. Read [meta-cortex.toml](meta-cortex.toml) and apply the
+1. Read the [circuit breaker](CIRCUIT-BREAKER.md) before other framework documents.
+   Carry its policy and resolved location through every assignment.
+2. Establish the [project context](#project-context).
+3. Read [meta-cortex.toml](meta-cortex.toml) and apply the
    [agent configuration rules](#agent-configuration).
-3. Read and follow [team instructions](teams/AGENTS.md) to launch Gizmo Prime
+4. Read and follow [team instructions](teams/AGENTS.md) to launch Gizmo Prime
    as a subagent through the host’s agent execution tool. Pass the task context
    into its assignment. That document defines subsequent subagent launches
    and coordination.

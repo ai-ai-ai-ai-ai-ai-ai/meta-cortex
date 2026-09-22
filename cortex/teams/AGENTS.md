@@ -22,8 +22,8 @@ the entry point before every launch. Pass this context to delegated agents.
 For a new user task, read [Gizmo Prime](gizmo-team/agents/gizmo-prime/AGENTS.md) and launch it
 as a subagent through the host’s agent execution tool. This subagent is the
 root coordinator, using its configured model and reasoning effort.
-Carry the user's objective, constraints, acceptance criteria, and
-project context into the assignment.
+Carry the user's objective, constraints, acceptance criteria, project context,
+and the loaded circuit-breaker policy into the assignment.
 Follow-ups stay with the existing coordinator.
 
 ## Working model
@@ -43,6 +43,7 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
   documents with the assignment.
 
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
+- Supply the circuit-breaker policy and its resolved location before role and skill context in every assignment, including nested delegation.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
 - Each agent’s `AGENTS.md` links the skills it uses. Each `SKILL.md` owns that
