@@ -1,4 +1,4 @@
-use super::document::{SectionHeader, SectionKind};
+use super::document::{CursorApplication, SectionHeader, SectionKind};
 use super::{InstructionError, InstructionTarget};
 use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Options, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
@@ -17,7 +17,7 @@ pub struct MarkdownInstructions<'a> {
 enum CursorFrontmatter {
     Rule {
         #[serde(rename = "alwaysApply")]
-        always_apply: bool,
+        always_apply: CursorApplication,
     },
 }
 
@@ -55,7 +55,17 @@ impl Frontmatter {
                         body_offset: range.end,
                     };
                 }
-                _ => return Self::Absent,
+                Event::Start(_)
+                | Event::Code(_)
+                | Event::InlineMath(_)
+                | Event::DisplayMath(_)
+                | Event::Html(_)
+                | Event::InlineHtml(_)
+                | Event::FootnoteReference(_)
+                | Event::SoftBreak
+                | Event::HardBreak
+                | Event::Rule
+                | Event::TaskListMarker(_) => return Self::Absent,
             }
         }
         Self::Absent
@@ -78,7 +88,12 @@ impl MarkdownInstructions<'_> {
         options.strict_booleans = true;
         let metadata: CursorFrontmatter = serde_saphyr::from_str_with_options(&yaml, options)
             .map_err(|_| InstructionError::InvalidEntry(self.target.path()))?;
-        if !matches!(metadata, CursorFrontmatter::Rule { always_apply: true }) {
+        if !matches!(
+            metadata,
+            CursorFrontmatter::Rule {
+                always_apply: CursorApplication::Always
+            }
+        ) {
             return Err(InstructionError::InvalidEntry(self.target.path()));
         }
         Ok(())
@@ -95,7 +110,18 @@ impl MarkdownInstructions<'_> {
                 title,
                 id: "".into(),
             }),
-            event => event,
+            event @ (Event::Start(_)
+            | Event::End(_)
+            | Event::Text(_)
+            | Event::Code(_)
+            | Event::InlineMath(_)
+            | Event::DisplayMath(_)
+            | Event::Html(_)
+            | Event::InlineHtml(_)
+            | Event::FootnoteReference(_)
+            | Event::HardBreak
+            | Event::Rule
+            | Event::TaskListMarker(_)) => event,
         });
         let mut actual = String::new();
         cmark(events, &mut actual)?;
@@ -120,16 +146,18 @@ impl MarkdownInstructions<'_> {
                         .iter()
                         .any(|excluded| excluded.contains(&range.start)) =>
                 {
-                    for line in text.lines() {
-                        if matches!(
-                            serde_saphyr::from_str::<SectionHeader>(line),
-                            Ok(SectionHeader {
-                                section: SectionKind::Instructions
+                    labels.extend(
+                        text.lines()
+                            .filter(|line| {
+                                matches!(
+                                    serde_saphyr::from_str::<SectionHeader>(line),
+                                    Ok(SectionHeader {
+                                        section: SectionKind::Instructions
+                                    })
+                                )
                             })
-                        ) {
-                            labels.push(range.start);
-                        }
-                    }
+                            .map(|_| range.start),
+                    );
                 }
                 Event::Start(Tag::MetadataBlock(_)) | Event::Rule => {
                     if matches!(event, Event::Start(Tag::MetadataBlock(_))) {
@@ -160,12 +188,22 @@ impl MarkdownInstructions<'_> {
                 }
                 Event::Html(_) | Event::InlineHtml(_) => {
                     for marker in [Self::START, Self::END] {
-                        for (offset, _) in self.text[range.clone()].match_indices(marker) {
-                            legacy.push((marker, range.start + offset));
-                        }
+                        legacy.extend(
+                            self.text[range.clone()]
+                                .match_indices(marker)
+                                .map(|(offset, _)| (marker, range.start + offset)),
+                        );
                     }
                 }
-                _ => {}
+                Event::Start(_)
+                | Event::End(_)
+                | Event::Text(_)
+                | Event::InlineMath(_)
+                | Event::DisplayMath(_)
+                | Event::FootnoteReference(_)
+                | Event::SoftBreak
+                | Event::HardBreak
+                | Event::TaskListMarker(_) => {}
             }
         }
         if labels
@@ -207,7 +245,9 @@ impl MarkdownInstructions<'_> {
                 };
                 match appended.managed_block()? {
                     ManagedBlock::Present => Ok(contents),
-                    _ => Err(InstructionError::InvalidEntry(self.target.path())),
+                    ManagedBlock::Absent | ManagedBlock::Legacy(_) => {
+                        Err(InstructionError::InvalidEntry(self.target.path()))
+                    }
                 }
             }
         }

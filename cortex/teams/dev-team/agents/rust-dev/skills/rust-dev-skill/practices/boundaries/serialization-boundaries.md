@@ -40,6 +40,50 @@ Ok(settings)
 Deserialization must also preserve domain validation. Deriving `Deserialize`
 for a constrained newtype must not bypass its validating construction.
 
+## Derive serialization instead of writing boilerplate
+
+- Derive `Serialize` and `Deserialize` for authored data types.
+- Use Serde attributes for supported wire representations.
+- Use `transparent` for scalar newtypes.
+- Use `from`, `try_from`, and `into` for wire conversions.
+- Keep validation in `TryFrom` when input can violate domain invariants.
+- Keep semantic variant mappings in concrete conversion implementations.
+- Do not handwrite `Serialize`, `Deserialize`, visitors, or serialization callbacks when derives and attributes express the contract.
+- Do not move the same boilerplate into `serialize_with`, `deserialize_with`, or a helper module.
+- Do not justify a handwritten serializer merely because the wire type differs from the domain type.
+- For an unsupported contract, document the specific derive limitation and evaluate an established adapter before adding custom machinery.
+- Review these requirements explicitly; the standard Clippy baseline does not enforce them.
+
+**Prohibited:** implement a generic serializer only to forward a mapped primitive.
+
+```rust
+impl serde::Serialize for ApplicationMode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_bool(matches!(self, Self::Always))
+    }
+}
+```
+
+**Preferred:** preserve enum alternatives in contracts the project controls.
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum ApplicationMode {
+    Always,
+    Conditional,
+}
+```
+
+- Return enums from application APIs and preserve them in new serialized contracts.
+- Prohibit `#[serde(into = "bool")]` and enum-to-boolean conversions by default.
+- Apply only the external-interface and backward-compatibility exceptions defined in [domain states](../modeling/domain-states.md#convert-external-records-into-owned-types).
+- A supported Serde attribute does not justify changing an enum into a boolean.
+- Verify the exact wire representation and all mapping branches for an allowed conversion.
+- Follow [Serde's conversion attribute requirements](https://serde.rs/container-attrs.html) when an exception applies.
+
 ## Keep encoding out of application state
 
 Return and store the decoded value. Do not carry JSON or YAML through the

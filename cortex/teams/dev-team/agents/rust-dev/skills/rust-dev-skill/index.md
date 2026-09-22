@@ -151,6 +151,12 @@ boundaries.
   - Consume dependency Option results immediately into a named outcome or typed error.
   - Do not retain/forward them or author Option-returning trait implementations.
 
+- **[domain_states:option_review](practices/modeling/domain-states.md#review-the-option-prohibition)**
+
+  - Review explicit and inferred authored Option uses and dependency-result handling.
+  - Exclude dependency-generated implementations from the authored-code requirement.
+  - Do not ban Option through Clippy or add wrapper modules and lint allowances for derives.
+
 - **[domain_states:required_values](practices/modeling/domain-states.md#require-values-that-cannot-be-absent)**
 
   - Required persisted/signed values remain required.
@@ -171,6 +177,9 @@ boundaries.
 
   - Allow destination-owned From<bool> at external conversion boundaries, or TryFrom
     when conversion can fail.
+  - Prohibit enum-to-bool conversions and serde(into = "bool") by default.
+  - Allow them only for a required external interface or established backward compatibility.
+  - Document the concrete contract at the boundary; keep new owned contracts as enums.
   - This is not permission for boolean application APIs.
 
 - **[domain_states:external_records](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
@@ -192,7 +201,7 @@ boundaries.
 - **[domain_states:no_derived_flags](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
 
   - Do not add is_* methods that merely reveal a variant, decorative True/False
-    variants, or serialized booleans derivable from an enum.
+    variants, or duplicate serialized boolean fields derivable from an enum.
 
 - **[domain_states:variant_payloads](practices/modeling/domain-states.md#put-payloads-on-their-owning-variants)**
 
@@ -559,6 +568,15 @@ boundaries.
   - Preserve validated newtype invariants during Deserialize.
   - An automatic derive must not bypass validating construction.
 
+- **[serialization_boundaries:derive_first](practices/boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate)**
+
+  - Derive serialization and preserve enums in new owned wire contracts.
+  - Apply domain-state exceptions before using boolean conversion attributes.
+  - Prohibit handwritten traits, visitors, and callbacks that duplicate this support.
+  - Keep semantic mappings in concrete conversions and validation in TryFrom.
+  - Document unsupported contracts and evaluate established adapters before custom machinery.
+  - Review manually and test wire values; standard Clippy does not enforce this rule.
+
 - **[serialization_boundaries:typed_storage](practices/boundaries/serialization-boundaries.md#keep-encoding-out-of-application-state)**
 
   - Store and return typed records internally.
@@ -819,6 +837,42 @@ boundaries.
 
 
 ## Tooling
+
+### Rust code checks
+
+- **File:** [Rust code checks](practices/tooling/rust-code-checks.md).
+- **Owns:** Mandatory formatting, compilation, Clippy, warning correction, and check evidence.
+- **Does not own:** Behavioral tests and coverage belong to Rust testing; pipeline implementation belongs to the CI/CD owner.
+- **Related:** [Rust testing](practices/tooling/rust-testing.md), [Paths and imports](practices/tooling/path-imports.md), [Error handling](practices/behavior/error-handling.md).
+
+- **[code_checks:establish](practices/tooling/rust-code-checks.md#establish-repeatable-checks)**
+
+  - Establish repeatable fmt, check, and Clippy gates in existing project tooling.
+  - Cover workspace members, all applicable targets, and supported feature/target
+    configurations; preserve build flags and deny compiler and Clippy warnings.
+  - Coordinate pipeline changes with the CI/CD owner under the active mode.
+
+- **[code_checks:lint_baseline](practices/tooling/rust-code-checks.md#enforce-the-lint-baseline)**
+
+  - Deny targeted boolean, ignored-result/future, replacement-value, unit-error,
+    wildcard-enum, argument-count, and nesting lints alongside existing checks.
+  - Apply the prescribed thresholds; review authored Option usage separately.
+  - Review semantic gaps; Clippy counts receivers and structural nesting.
+
+- **[code_checks:fix_diagnostics](practices/tooling/rust-code-checks.md#fix-diagnostics-before-completion)**
+
+  - Fix formatting and all encountered compilation/lint warnings, including
+    pre-existing ones, then rerun checks after the final edit alongside required tests.
+  - Do not suppress diagnostics or ignore failures to pass checks; repair dependency
+    or generator causes through their owners and report out-of-scope repairs as blockers.
+  - Inspect Cargo and build-script output even when compiler warnings are denied.
+
+- **[code_checks:evidence](practices/tooling/rust-code-checks.md#report-verification-evidence)**
+
+  - Report actual commands, roots, configurations, and results; all three checks
+    must succeed without warnings before completion.
+  - Missing tooling, unverified required configurations, and unresolved diagnostics
+    block verification rather than count as success.
 
 ### Libraries
 

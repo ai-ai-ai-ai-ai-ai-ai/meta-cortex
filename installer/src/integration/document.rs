@@ -20,7 +20,35 @@ pub enum SectionKind {
 #[derive(Serialize)]
 pub struct CursorHeader {
     #[serde(rename = "alwaysApply")]
-    pub always_apply: bool,
+    pub always_apply: CursorApplication,
+}
+
+// External-interface exception: Cursor requires a boolean alwaysApply in .mdc frontmatter.
+// https://cursor.com/docs/rules
+#[derive(Clone, Copy, Serialize, Deserialize)]
+#[serde(from = "bool", into = "bool")]
+pub enum CursorApplication {
+    Always,
+    Conditional,
+}
+
+impl From<bool> for CursorApplication {
+    fn from(always_apply: bool) -> Self {
+        if always_apply {
+            Self::Always
+        } else {
+            Self::Conditional
+        }
+    }
+}
+
+impl From<CursorApplication> for bool {
+    fn from(application: CursorApplication) -> Self {
+        match application {
+            CursorApplication::Always => true,
+            CursorApplication::Conditional => false,
+        }
+    }
 }
 
 impl SectionHeader {
@@ -93,5 +121,18 @@ impl InstructionTarget {
         let mut output = String::new();
         cmark(events.into_iter(), &mut output)?;
         Ok(output)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CursorApplication;
+    use serde_saphyr::{SerializeError, to_string};
+
+    #[test]
+    fn cursor_application_preserves_yaml_boolean_values() -> Result<(), SerializeError> {
+        assert_eq!(to_string(&CursorApplication::Always)?, "true\n");
+        assert_eq!(to_string(&CursorApplication::Conditional)?, "false\n");
+        Ok(())
     }
 }

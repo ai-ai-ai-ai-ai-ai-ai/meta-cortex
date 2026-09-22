@@ -825,6 +825,40 @@ validation. Existing code does not weaken their requirements.
 
 ## Supporting practices
 
+### TypeScript code checks
+
+- **File:** [TypeScript code checks](practices/typescript-code-checks.md).
+- **Owns:** Mandatory formatting, type checking, linting, warning-free builds, and check evidence.
+- **Does not own:** Behavioral coverage belongs to Browser testing; dead-code analysis belongs to Unused code; pipeline implementation belongs to the CI/CD owner.
+- **Related:** [Browser testing](practices/browser-testing.md), [Unused code](practices/web-unused-code.md), [Single parameter](practices/typescript-single-parameter.md).
+
+- **[code_checks:establish](practices/typescript-code-checks.md#establish-repeatable-checks)**
+
+  - Establish all three gates in existing project tooling; preserve the stack,
+    package manager, compiler settings, and existing tests/verification steps.
+  - Cover applicable packages and authored source, tests, tooling, and configuration;
+    use reference-aware, component, or JS checkers where required.
+  - Builds do not replace type checks; run required builds without warnings and
+    make lint warnings fail, using the installed tool's supported options.
+  - Keep generated/vendor files with their owners and coordinate pipeline changes.
+
+- **[code_checks:fix_diagnostics](practices/typescript-code-checks.md#fix-diagnostics-before-completion)**
+
+  - Fix all encountered formatting, type, lint, framework, and build diagnostics,
+    including pre-existing ones, and rerun gates after the final edit.
+  - Review autofixes; retain behavioral tests and unused-code enforcement.
+  - Do not weaken checks or suppress findings to pass; existing external-contract
+    exceptions remain bounded by their owning practices.
+  - Repair dependency/generator causes through their owners; report out-of-scope
+    repairs as blockers rather than accept unresolved warnings.
+
+- **[code_checks:evidence](practices/typescript-code-checks.md#report-verification-evidence)**
+
+  - Report actual commands, roots, configurations, and results; require all gates
+    and required builds to pass without warnings or errors before completion.
+  - Missing tools, unchecked required packages, and remaining diagnostics block
+    verification rather than count as success.
+
 ### Dependency selection
 
 - **File:** [Dependency selection](practices/dependency-selection.md).

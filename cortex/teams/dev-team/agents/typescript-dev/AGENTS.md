@@ -23,6 +23,8 @@ global policy supplied with the assignment.
 ## Implementation and design handoff
 
 - Apply [TypeScript development](skills/ts-dev-skill/SKILL.md).
+- Own establishment and successful execution of its mandatory code checks,
+  including correction of type, build, and lint diagnostics.
 - For browser UI implementation, also apply
   [web design](../web-designer/skills/web-design-skill/SKILL.md).
 - Implement the assigned interface's behavior and state transitions against

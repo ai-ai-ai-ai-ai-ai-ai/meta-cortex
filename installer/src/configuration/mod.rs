@@ -1,10 +1,10 @@
+use thiserror::Error;
 mod selection;
 
 pub use selection::InitMode;
 
 use derive_more::{Display, From};
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 use toml::{de, ser};
 
 #[derive(Debug, Error)]
@@ -89,19 +89,6 @@ pub struct AgentSettings {
     pub reasoning_effort: Effort,
 }
 
-impl AgentSettings {
-    fn validate(self) -> Result<(), ConfigError> {
-        if self.model.efforts().contains(&self.reasoning_effort) {
-            Ok(())
-        } else {
-            Err(ConfigError::UnsupportedEffort {
-                model: self.model,
-                effort: self.reasoning_effort,
-            })
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TeamSettings {
@@ -116,6 +103,19 @@ pub struct Configuration {
     #[serde(rename = "gizmo-prime")]
     pub gizmo_prime: AgentSettings,
     pub team: TeamSettings,
+}
+
+impl AgentSettings {
+    fn validate(self) -> Result<(), ConfigError> {
+        if self.model.efforts().contains(&self.reasoning_effort) {
+            Ok(())
+        } else {
+            Err(ConfigError::UnsupportedEffort {
+                model: self.model,
+                effort: self.reasoning_effort,
+            })
+        }
+    }
 }
 
 impl Configuration {

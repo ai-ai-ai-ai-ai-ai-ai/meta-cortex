@@ -1,3 +1,8 @@
+max-fn-params-bools = 0
+max-struct-bools = 0
+too-many-arguments-threshold = 2
+# Includes enclosing impl/function blocks in addition to control flow.
+excessive-nesting-threshold = 5
 absolute-paths-max-segments = 2
 allow-expect-in-tests = false
 allow-unwrap-in-tests = false

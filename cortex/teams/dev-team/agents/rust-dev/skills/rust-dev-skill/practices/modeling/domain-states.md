@@ -60,6 +60,19 @@ pub fn find(&self, id: &OrderId) -> OrderLookup<'_> {
 }
 ```
 
+### Review the Option prohibition
+
+- Review authored fields, parameters, return types, aliases, and stored locals for `Option`.
+- Check inferred values and dependency-result handling as well as explicit type annotations.
+- Keep immediate matching of dependency-returned values at the boundary.
+- Exclude dependency-generated implementations from this authored-code requirement.
+- Do not configure Clippy's `disallowed_types` to ban `Option`.
+- Do not introduce wrapper modules or lint allowances to accommodate generated `Option` uses.
+
+**Prohibited:** restructure Serde or thiserror declarations solely to suppress this lint.
+
+**Preferred:** retain ordinary derives and review authored code against the no-`Option` rule.
+
 ## Require values that cannot be absent
 
 A required persisted or signed value stays required. Failure belongs in a typed
@@ -118,12 +131,17 @@ sync.run(SyncMode::Forced);
 
 ### Convert external records into owned types
 
-Do not author boolean fields, application parameters, returns, aliases, or stored
-locals, including transport DTOs, tests, and private helpers. Allow `From<bool>`
-on a destination enum to decode an external flag, or `TryFrom` when the
-conversion can fail; this conversion boundary does
-not permit boolean application APIs. Dependency implementations and generated
-external bindings keep their own types.
+- Use enums instead of booleans in authored fields, application parameters, returns, aliases, and stored state.
+- Apply this rule to transport DTOs, tests, and private helpers.
+- Preserve enums in new interfaces and serialized contracts the project controls.
+- Prohibit `#[serde(into = "bool")]`, `From<DomainEnum> for bool`, and equivalent boolean-returning helpers by default.
+- Allow boolean conversion only when a required external interface mandates it or backward compatibility requires an existing boolean contract.
+- Identify the external interface or established compatibility contract beside the conversion.
+- Do not invent a compatibility requirement for a newly designed interface.
+- Keep the conversion at the boundary; application code must still receive and return enums.
+- Decode required boolean input through `From<bool>` on the destination enum, or `TryFrom` when conversion can fail.
+- Encode required boolean output through Serde [conversion attributes](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate).
+- Preserve dependency-owned and generated external binding signatures.
 
 If a dependency returns a record with several booleans, convert the whole record
 at the adapter. Own the conversion on the destination through `From`, or `TryFrom`

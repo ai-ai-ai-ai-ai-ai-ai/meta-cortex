@@ -1,6 +1,6 @@
 ---
 name: rust-dev-skill
-description: Apply Rust practices for ownership, workflow states, domain types, errors, and external boundaries.
+description: Apply Rust practices for mandatory code checks, warning-free compilation, ownership, workflow states, domain types, errors, and external boundaries.
 ---
 
 # Rust Development Skill
@@ -10,6 +10,17 @@ and build scripts.
 
 Apply [programming requirements](../../../../docs/index.md) before the
 selected language practices. Reuse it if already loaded for this assignment.
+
+## Required actions
+
+For every Rust implementation or tooling assignment, load and apply
+[Rust code checks](practices/tooling/rust-code-checks.md). This prerequisite is
+mandatory, independent of the practices selected for the changed code.
+
+**Prohibited:** select only domain-modeling practices and omit code checks.
+
+**Preferred:** establish and run the required checks alongside the selected
+domain-modeling practices.
 
 ## Practice selection
 
