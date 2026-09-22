@@ -24,7 +24,7 @@ assigned worktree.
 Give your host a development task with the framework entry point loaded.
 The host launches Gizmo Prime as a subagent. Gizmo Prime launches Team Gizmo,
 which launches the team subagents needed for the task.
-The [agent instructions](agents/AGENTS.md) define the coordination workflow.
+The [agent instructions](teams/AGENTS.md) define the coordination workflow.
 
 - **Gizmo Prime**
   - Owns the overall outcome.
@@ -35,11 +35,23 @@ The [agent instructions](agents/AGENTS.md) define the coordination workflow.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
   - Return evidence and unresolved blockers.
-- **[Integration agent](agents/teams/delivery-team/integration-agent/AGENTS.md)**
+- **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
   - Manages feature worktrees and merges completed task branches.
 
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
+
+The [SRE team](teams/sre-team/AGENTS.md) owns portable infrastructure,
+container builds, Kubernetes workloads, and cloud-native operations. Its
+specialized skills are:
+
+- [Docker](teams/sre-team/agents/docker-specialist/skills/docker-skill/SKILL.md) for deliberate
+  image inputs, secret boundaries, and real BuildKit cache evidence.
+- [Kubernetes](teams/sre-team/agents/kubernetes-specialist/skills/kubernetes-skill/SKILL.md) for
+  workloads that stay within the cluster runtime boundary.
+- [Cloud-Native](teams/sre-team/agents/kubernetes-specialist/skills/cloud-native-skill/SKILL.md) for
+  bounded, observable infrastructure and operational changes, loaded by the
+  Kubernetes specialist for cloud-native assignments.
 
 ## Execution configuration
 
@@ -53,23 +65,32 @@ the host applies those settings.
    - Unsupported settings or missing execution capabilities are reported as blockers.
    - Agents must not silently substitute another configuration.
 
-## Skills
+## Agent skills
 
-Each role selects its skills. Skills link directly to their prerequisites.
+Each agent’s `AGENTS.md` links its skills. Each skill’s `SKILL.md` contains its
+instructions and prerequisites. Team Gizmo assigns work by responsibility;
+the assigned agent loads its own guidance.
+The tech writer owns [skill organization](teams/ai-team/agents/tech-writer/AGENTS.md#skill-organization),
+including placement and updates to callers when guidance moves.
 Each practice has one canonical owner.
 
-- **Common skills**
-  - Live in each owning team’s `common/` directory.
-  - Define language-independent practices grouped by subject.
-  - Cover [coding](agents/teams/dev-team/common/coding-skill/SKILL.md) and
-    [security](agents/teams/security-team/common/security-skill/SKILL.md).
-  - Do not depend on agent coordination or specialized skills.
-- **Specialized skills**
-  - Live with their owning agents.
-  - Extend and directly reference common practices for the relevant language or task.
-  - The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)
-    owns Context Engineering, Code Practice Writing, and Delivery Writing for
-    documentation, coding practices, and delivery/Git instructions.
+Skills live under their owning agents. An agent may use another agent’s skill
+by linking to its canonical copy from its own instructions. There is no common
+skill category or library-root skill directory.
+
+The [tech writer](teams/ai-team/agents/tech-writer/AGENTS.md) owns Context
+Engineering and Code Practice Writing for documentation and programming examples.
+
+## Team documentation
+
+Teams live directly under `teams/`. Each team groups its agents in `agents/`;
+the Gizmo team contains both coordinators. Shared subject knowledge lives in
+each owning team’s `docs/`, with `index.md` as the entry point. Individual documents retain descriptive names.
+The [development knowledge base](teams/dev-team/docs/index.md)
+owns language-independent programming rules. The
+[security knowledge base](teams/security-team/docs/index.md)
+owns shared secret-handling requirements. Agents link relevant knowledge and
+skills directly; there is no global knowledge directory or selection registry.
 
 The framework's instructions remain generic.
 Project-specific requirements and architecture belong to the consuming project.

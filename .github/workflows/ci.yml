@@ -47,6 +47,6 @@ jobs:
         run: |
           cd cortex
           bun install --frozen-lockfile --ignore-scripts
-          test -z "$(find agents -name node_modules -print -quit)"
-          test -z "$(find agents -name bun.lock -print -quit)"
+          test -z "$(find teams -name node_modules -print -quit)"
+          test -z "$(find teams -name bun.lock -print -quit)"
           bun run verify

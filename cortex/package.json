@@ -3,9 +3,7 @@
   "private": true,
   "packageManager": "bun@1.3.14",
   "workspaces": [
-    "agents/*/skills/*/scripts",
-    "agents/teams/*/*/skills/*/scripts",
-    "agents/teams/*/common/*/scripts"
+    "teams/*/agents/*/skills/*/scripts"
   ],
   "scripts": {
     "verify": "bun run --workspaces verify"
