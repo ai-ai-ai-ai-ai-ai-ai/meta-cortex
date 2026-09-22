@@ -16,7 +16,7 @@ pub enum ConfigError {
     #[error("{model} does not support reasoning effort {effort}")]
     UnsupportedEffort { model: Model, effort: Effort },
     #[error(
-        "model selection requires a terminal; use --non-interactive to accept the bundled settings"
+        "interactive model selection requires a terminal; omit --interactive to use bundled settings"
     )]
     TerminalRequired,
     #[error("initialization cancelled; no project files were written")]

@@ -43,11 +43,11 @@ impl From<bool> for InstructionAction {
 
 #[derive(Args)]
 pub struct IntegrationOptions {
-    /// Harness to connect: codex, claude, cursor, or none. Otherwise ask interactively.
-    #[arg(long, default_value = "ask")]
+    /// Harness to connect: codex, claude, cursor, or none. Default: none, or ask with --interactive.
+    #[arg(long, default_value = "ask", hide_default_value = true)]
     pub harness: HarnessChoice,
-    /// Explicitly write or skip harness instructions; otherwise ask before changing a file.
-    #[arg(long, value_enum, default_value = "ask")]
+    /// Write or skip harness instructions. Default: skip, or ask with --interactive.
+    #[arg(long, value_enum, default_value = "ask", hide_default_value = true)]
     pub instructions: InstructionAction,
 }
 
@@ -60,7 +60,7 @@ impl IntegrationOptions {
     pub fn plan(self, request: IntegrationRequest) -> Result<IntegrationPlan, InstructionError> {
         let choice = match self.harness {
             HarnessChoice::Ask => match request.mode {
-                InitMode::Bundled => return Err(InstructionError::ExplicitChoiceRequired),
+                InitMode::Bundled => HarnessChoice::None,
                 InitMode::Interactive => request.project.choose()?,
             },
             selected @ (HarnessChoice::Selected(_) | HarnessChoice::None) => selected,
@@ -77,7 +77,7 @@ impl IntegrationOptions {
         let action = match self.instructions {
             InstructionAction::Ask => {
                 if matches!(request.mode, InitMode::Bundled) {
-                    return Err(InstructionError::ExplicitChoiceRequired);
+                    return Ok(IntegrationPlan::Skip);
                 }
                 Self::require_terminal()?;
                 target.check_parents()?;
@@ -155,5 +155,33 @@ impl ProjectHarnesses {
             },
             None => Err(InstructionError::Cancelled),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{HarnessChoice, InstructionAction, IntegrationOptions, IntegrationRequest};
+    use crate::configuration::InitMode;
+    use crate::integration::{Harness, InstructionError, IntegrationPlan, ProjectHarnesses};
+    use tempfile::tempdir;
+
+    #[test]
+    fn bundled_mode_skips_unspecified_instructions_without_prompting()
+    -> Result<(), InstructionError> {
+        let directory = tempdir()?;
+        for harness in [HarnessChoice::Ask, HarnessChoice::Selected(Harness::Codex)] {
+            let plan = IntegrationOptions {
+                harness,
+                instructions: InstructionAction::Ask,
+            }
+            .plan(IntegrationRequest {
+                project: ProjectHarnesses {
+                    root: directory.path().to_path_buf(),
+                },
+                mode: InitMode::Bundled,
+            })?;
+            assert!(matches!(plan, IntegrationPlan::Skip));
+        }
+        Ok(())
     }
 }

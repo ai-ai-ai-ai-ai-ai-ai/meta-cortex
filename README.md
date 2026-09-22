@@ -49,35 +49,56 @@ for downloadable artifacts.
    meta-cortex init /path/to/project
    ```
 
-3. Choose Codex, Claude, Cursor, or None. The menu shows detected harness files.
-4. Approve adding instructions to the selected file, or creating it if absent.
-   The default is No; declining still installs the framework.
-5. Choose a model and reasoning effort for Gizmo Prime, Team Gizmo, and team agents.
-   - Models: Luna, Terra, Sol, and Astra. The menu shows their full model IDs.
-   - Efforts: low, medium, high, xhigh, max, and ultra. Luna supports up to max.
-   - Press Enter to accept the highlighted setting, or Esc to cancel without writing files.
-   - Choices are saved in `.meta-cortex/meta-cortex.toml`.
-6. Use the selected harness with models it supports.
+3. Initialization installs `.meta-cortex/` with model and reasoning-effort defaults
+   from the bundled `meta-cortex.toml`, without prompting. Harness instruction files
+   stay untouched unless you request an update.
+4. Edit `.meta-cortex/meta-cortex.toml` if your host needs different settings.
 
 The executable contains the framework, so initialization works offline.
 Installing or initializing Meta-Cortex does not start agents.
 
-### Initialize without a terminal
+### Initialize from agents, scripts, or CI
 
-For scripts and CI, explicitly choose the harness, instruction action, and bundled
-model settings:
+Plain `init` is non-interactive, including when a terminal is available:
 
 ```sh
-meta-cortex init --non-interactive --harness codex --instructions write /path/to/project
+meta-cortex init /path/to/project
+```
+
+To connect a harness and update its instructions explicitly:
+
+```sh
+meta-cortex init --harness codex --instructions write /path/to/project
 ```
 
 Use `--instructions skip` to leave harness files untouched, or `--harness none`
-to install only the framework. Noninteractive initialization requires explicit
-integration choices.
+to install only the framework. Omitted harness and instruction choices default
+to no integration and no instruction changes. `--non-interactive` remains
+supported for existing scripts; it is no longer required.
 
-Interactive initialization asks for a harness and instruction approval on each
-run. Re-running `init` preserves valid project model settings without asking for
-models again. Edit `.meta-cortex/meta-cortex.toml` to change them later.
+Re-running `init` preserves valid project model settings. It does not replace
+an older or modified framework; follow [the replacement procedure](#replace-an-installed-framework).
+
+### Choose settings interactively
+
+Use an explicit opt-in when you want setup prompts:
+
+```sh
+meta-cortex init --interactive
+```
+
+1. Choose Codex, Claude, Cursor, or None. The menu shows detected harness files.
+2. Approve adding instructions to the selected file, or creating it if absent.
+   The default is No; declining still installs the framework.
+3. For a new installation, choose a model and reasoning effort for each role.
+   - Models: Luna, Terra, Sol, and Astra. The menu shows their full model IDs.
+   - Efforts: low, medium, high, xhigh, max, and ultra. Luna supports up to max.
+   - Press Enter to accept the highlighted setting, or Esc to cancel without writing files.
+   - Choices are saved in `.meta-cortex/meta-cortex.toml`.
+
+Interactive mode requires a terminal. It asks for harness integration on each
+run, while preserving existing valid model settings without asking for them again.
+Do not combine `--interactive` and `--non-interactive`.
 
 ### Harness instruction files
 
@@ -87,7 +108,8 @@ models again. Edit `.meta-cortex/meta-cortex.toml` to change them later.
   or `AGENTS.md`. Otherwise creates `.cursor/rules/meta-cortex.mdc` with
   `alwaysApply: true`.
 
-Detection suggests a target; you still choose the harness and approve the change.
+In interactive mode, detection suggests a target and you approve the change.
+In automatic mode, select the harness and pass `--instructions write` to change it.
 Existing instructions are preserved. Repeated initialization updates the same
 managed block without duplicating it. Skipping leaves any existing block in place.
 The managed section uses a YAML header and Markdown delimiters:
@@ -103,7 +125,7 @@ Read and follow [.meta-cortex/AGENTS.md](.meta-cortex/AGENTS.md).
 ```
 
 Initialization replaces the previous HTML-comment markers with this format when
-you approve the instruction update. Other project content stays unchanged.
+you request the instruction update. Other project content stays unchanged.
 Cursor's `alwaysApply` frontmatter remains separate from this section.
 
 Cursor frontmatter is parsed as YAML and must set `alwaysApply: true`. Existing

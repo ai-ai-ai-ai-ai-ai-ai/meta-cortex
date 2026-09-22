@@ -5,6 +5,7 @@ use std::process::Command;
 use std::{fs, io};
 use tempfile::{Builder, TempDir};
 use thiserror::Error;
+use toml::de;
 
 // This is the CLI's external YAML contract, decoded independently of its writer.
 #[derive(Debug, Error)]
@@ -13,6 +14,8 @@ enum InfoCheckError {
     Io(#[from] io::Error),
     #[error(transparent)]
     Yaml(#[from] serde_saphyr::DeserializeError),
+    #[error(transparent)]
+    Toml(#[from] de::Error),
 }
 
 #[derive(Deserialize)]
@@ -69,7 +72,7 @@ struct ReportPaths {
     configuration: PathBuf,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ReportModels {
     #[serde(rename = "gizmo-prime")]
@@ -77,7 +80,7 @@ struct ReportModels {
     team: ReportTeam,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ReportTeam {
     gizmo: ReportAgent,
@@ -262,14 +265,31 @@ impl CliScenario {
         Ok(())
     }
 
-    fn requires_explicit_noninteractive_mode(self) -> io::Result<()> {
-        let result = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
-            .arg("init")
-            .arg(self.project.path())
-            .output()?;
-        assert!(!result.status.success());
-        assert!(String::from_utf8_lossy(&result.stderr).contains("--non-interactive"));
-        assert_eq!(fs::read_dir(self.project.path())?.count(), 0);
+    fn initializes_with_defaults(self) -> Result<(), InfoCheckError> {
+        let config_path = self.project.path().join(".meta-cortex/meta-cortex.toml");
+        fs::write(
+            self.project.path().join("AGENTS.md"),
+            "# Existing instructions\n",
+        )?;
+        for arguments in [vec!["init"], vec!["init", "--non-interactive"]] {
+            let result = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
+                .args(arguments)
+                .current_dir(self.project.path())
+                .output()?;
+            assert!(
+                result.status.success(),
+                "{}",
+                String::from_utf8_lossy(&result.stderr)
+            );
+            let actual: ReportModels = toml::from_str(&fs::read_to_string(&config_path)?)?;
+            let expected: ReportModels =
+                toml::from_str(include_str!("../../cortex/meta-cortex.toml"))?;
+            assert_eq!(actual, expected);
+            assert_eq!(
+                fs::read_to_string(self.project.path().join("AGENTS.md"))?,
+                "# Existing instructions\n"
+            );
+        }
         Ok(())
     }
 
@@ -278,6 +298,7 @@ impl CliScenario {
         command
             .arg("init")
             .arg(self.project.path())
+            .arg("--interactive")
             .env("TERM", "xterm");
         let mut terminal = session::spawn_command(command, Some(10_000))?;
         terminal.exp_string("Harness")?;
@@ -317,6 +338,7 @@ impl CliScenario {
         command
             .arg("init")
             .arg(self.project.path())
+            .arg("--interactive")
             .env("TERM", "xterm");
         let mut terminal = session::spawn_command(command, Some(10_000))?;
         terminal.exp_string("Harness")?;
@@ -347,6 +369,7 @@ impl CliScenario {
             command
                 .arg("init")
                 .arg(self.project.path())
+                .arg("--interactive")
                 .env("TERM", "xterm");
             let mut terminal = session::spawn_command(command, Some(10_000))?;
             terminal.exp_string("Harness")?;
@@ -378,16 +401,9 @@ impl CliScenario {
     }
 
     fn checks_unattended_choices(self) -> io::Result<()> {
-        for choices in [vec![], vec!["--harness", "claude"]] {
-            let result = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
-                .args(["init", "--non-interactive"])
-                .args(choices)
-                .arg(self.project.path())
-                .output()?;
-            assert!(!result.status.success());
-            assert_eq!(fs::read_dir(self.project.path())?.count(), 0);
-        }
         for choices in [
+            vec![],
+            vec!["--harness", "claude"],
             vec!["--harness", "none"],
             vec!["--harness", "cursor", "--instructions", "skip"],
         ] {
@@ -457,13 +473,52 @@ fn info_reads_project_choices_and_init_preserves_them() -> Result<(), InfoCheckE
 }
 
 #[test]
-fn unattended_init_requires_explicit_choice() -> io::Result<()> {
-    CliScenario::create()?.requires_explicit_noninteractive_mode()
+fn plain_init_uses_config_defaults_without_a_terminal() -> Result<(), InfoCheckError> {
+    CliScenario::create()?.initializes_with_defaults()
 }
 
 #[test]
 fn interactive_init_persists_each_role_choice() -> Result<(), TerminalError> {
     CliScenario::create()?.selects_models_in_terminal()
+}
+
+#[test]
+fn plain_init_does_not_prompt_even_in_a_terminal() -> Result<(), TerminalError> {
+    let scenario = CliScenario::create()?;
+    let mut command = Command::new(env!("CARGO_BIN_EXE_meta-cortex"));
+    command
+        .arg("init")
+        .current_dir(scenario.project.path())
+        .env("TERM", "xterm");
+    let mut terminal = session::spawn_command(command, Some(10_000))?;
+    terminal.exp_string("Meta-Cortex is ready")?;
+    terminal.exp_eof()?;
+    assert!(
+        scenario
+            .project
+            .path()
+            .join(".meta-cortex/meta-cortex.toml")
+            .is_file()
+    );
+    assert!(!scenario.project.path().join("AGENTS.md").exists());
+    Ok(())
+}
+
+#[test]
+fn interactive_mode_requires_a_terminal_and_rejects_conflicting_flags() -> io::Result<()> {
+    let scenario = CliScenario::create()?;
+    for arguments in [
+        vec!["init", "--interactive"],
+        vec!["init", "--interactive", "--non-interactive"],
+    ] {
+        let result = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
+            .args(arguments)
+            .current_dir(scenario.project.path())
+            .output()?;
+        assert!(!result.status.success());
+        assert_eq!(fs::read_dir(scenario.project.path())?.count(), 0);
+    }
+    Ok(())
 }
 
 #[test]
@@ -477,6 +532,6 @@ fn declined_instruction_changes_still_install_framework() -> Result<(), Terminal
 }
 
 #[test]
-fn unattended_init_requires_harness_and_write_choices() -> io::Result<()> {
+fn unattended_init_defaults_to_skipping_harness_instructions() -> io::Result<()> {
     CliScenario::create()?.checks_unattended_choices()
 }
