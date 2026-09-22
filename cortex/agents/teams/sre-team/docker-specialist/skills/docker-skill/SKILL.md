@@ -5,7 +5,7 @@ description: Build Docker images with deliberate inputs, secret boundaries, and 
 
 # Docker Skill
 
-Apply the common coding and security prerequisites selected for the assignment.
+Apply the prerequisites loaded by the assigned agent.
 
 - [Docker container and BuildKit practice](practices/docker-container-harness.md): isolate build
   inputs, introduce revision identity at its latest consumer, protect secrets,

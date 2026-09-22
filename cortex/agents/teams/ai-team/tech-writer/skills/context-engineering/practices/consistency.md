@@ -35,7 +35,7 @@ prerequisites through the assigned agent’s instructions before specialized doc
 
 - Rely on the context established before the document is loaded.
 - Keep prerequisite context in the entry point or caller that supplies it.
-- Put links to common prerequisites and sibling specializations in the consuming
+- Put links to prerequisite skills and sibling specializations in the consuming
   agent’s instructions. Load the required context before leaf documents.
 - When both documents need the same guidance, extract it into a canonical
   document or section that neither caller owns.
@@ -43,7 +43,7 @@ prerequisites through the assigned agent’s instructions before specialized doc
 - Update affected callers and indexes when reorganizing the guidance.
 
 **Prohibited:** a language practice sends readers back to the root instructions
-for the common coding rules, or copies those rules into its own introduction.
+for the coding practices rules, or copies those rules into its own introduction.
 
 The following Markdown is a deliberately prohibited example, not a live link
 or an instruction to follow:
@@ -52,10 +52,10 @@ or an instruction to follow:
 # Language Practice
 
 Before applying this rule, read [project instructions](../../AGENTS.md)
-and [common coding](../../skills/coding/SKILL.md).
+and [coding practices](../../skills/coding/SKILL.md).
 ```
 
-**Preferred:** the agent’s instructions load common coding before the language
+**Preferred:** the agent’s instructions load coding practices before the language
 practice. Both remain independent authorities, and the assignment carries the
 selected context. If two practices need a new shared rule, extract it once and
 link it from each consuming agent’s instructions.
@@ -65,7 +65,7 @@ For an agent with a language skill, its `AGENTS.md` names the prerequisites:
 ```markdown
 # Language Agent
 
-1. Load common coding from the library’s common skills.
+1. Load the coding skill linked by this agent’s instructions.
 2. Load [language practices](skills/language/SKILL.md).
 3. Apply both to the assigned implementation work.
 ```

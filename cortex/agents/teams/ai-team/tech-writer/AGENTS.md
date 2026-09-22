@@ -8,10 +8,10 @@ team-agent model and reasoning effort.
 
 - Apply [Context Engineering](skills/context-engineering/SKILL.md) to documentation work.
 - For programming rules, also apply [Code Example Authoring](skills/code-example-authoring/SKILL.md).
-- For programming examples, load [common coding](../../../../skills/dev/coding-skill/SKILL.md)
+- For programming examples, load [coding practices](../../dev-team/rust-dev/skills/coding-skill/SKILL.md)
   and the language practices documented by the agent owning the example’s subject.
 - For security guidance or secret handling, load
-  [common security](../../../../skills/security/security-skill/SKILL.md).
+  [security practices](../../security-team/security-agent/skills/security-skill/SKILL.md).
 - For secret handling, also load
   [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 - Preserve the subject owner's requirements. Return unresolved policy decisions
@@ -26,20 +26,19 @@ team-agent model and reasoning effort.
 
 ### Skill organization
 
-- Place specialized skills under their owning agent directory.
-- Keep common generic skills in `skills/`, relative to the library root.
+- Place every skill under its owning agent directory.
+- Do not create library-root skill directories.
 - Do not create team-root skill directories such as `agents/teams/<team>/skills/`.
 - Keep each practice with its subject and maintain one canonical copy.
-- Keep common skills independent of teams, agents, and specialized skills.
+- Keep technical practices in skills and task ownership in agent instructions.
 - Document each agent’s skills and applicable prerequisites in its own `AGENTS.md`.
 - Update the owning agent’s instructions, catalogs, and links when moving a skill.
 
-**Prohibited:** put a Docker skill in `agents/teams/sre-team/skills/` or make a
-common coding practice depend on an SRE role.
+**Prohibited:** put a Docker skill in `agents/teams/sre-team/skills/` or
+create a library-root `skills/` directory for shared rules.
 
-**Preferred:** put the Docker specialization under the Docker agent, retain
-common coding in the library's `skills/`, and update the Docker agent’s skill
-link when moving it. Gizmo assigns the task without maintaining a skill registry.
+**Preferred:** keep the Docker skill under the Docker agent. When another agent
+needs an existing skill, link its instructions to the owning agent’s copy.
 
 ### Assignment example
 

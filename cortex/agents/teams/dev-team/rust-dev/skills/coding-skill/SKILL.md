@@ -1,14 +1,14 @@
 ---
 name: coding-skill
-description: Common best practices for software development and code review.
+description: Practices for software development and code review.
 ---
 
-# Common Coding Skill
+# Coding Skill
 
 Apply these language-independent practices to the consuming project's authored code.
 
 - Include tests, scripts, build logic, and agent tooling.
-- Keep these practices independent of agents, teams, and specialized skills.
+- Keep technical rules here and task responsibilities in agent instructions.
 - Follow explicit requirements when illustrative examples differ.
 
 ## Required actions

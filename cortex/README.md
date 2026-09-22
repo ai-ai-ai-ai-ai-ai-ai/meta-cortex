@@ -71,16 +71,12 @@ The tech writer owns [skill organization](agents/teams/ai-team/tech-writer/AGENT
 including placement and updates to callers when guidance moves.
 Each practice has one canonical owner.
 
-- **Common skills**
-  - Define language-independent practices grouped by subject.
-  - Cover [coding](skills/dev/coding-skill/SKILL.md) and
-    [security](skills/security/security-skill/SKILL.md).
-  - Do not depend on agent roles or team structure.
-- **Specialized skills**
-  - Live with their owning agents.
-  - Extend common practices for the relevant language or task.
-  - The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md)
-    owns Context Engineering and Code Example Authoring for documentation and programming-rule examples.
+Skills live under their owning agents. An agent may use another agent’s skill
+by linking to its canonical copy from its own instructions. There is no common
+skill category or library-root skill directory.
+
+The [tech writer](agents/teams/ai-team/tech-writer/AGENTS.md) owns Context
+Engineering and Code Example Authoring for documentation and programming examples.
 
 The framework's instructions remain generic.
 Project-specific requirements and architecture belong to the consuming project.

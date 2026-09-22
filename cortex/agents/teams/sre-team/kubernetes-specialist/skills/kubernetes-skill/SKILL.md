@@ -5,7 +5,7 @@ description: Configure Kubernetes workloads that execute directly without nested
 
 # Kubernetes Skill
 
-Apply the common coding and security prerequisites selected for the assignment.
+Apply the prerequisites loaded by the assigned agent.
 
 - [Kubernetes runtime boundary](practices/kubernetes-runtime-boundary.md):
   execute in the selected image and preserve the cluster runtime boundary.

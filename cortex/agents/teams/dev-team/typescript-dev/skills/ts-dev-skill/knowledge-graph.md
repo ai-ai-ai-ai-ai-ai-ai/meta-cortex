@@ -16,7 +16,7 @@ to the exact source section, not merely the document. Rule summaries include sco
 reader can detect contradictions without opening every file.
 
 Related entries are review relationships, not instructions for leaf documents to
-link back here. The assigned agent loads common and cross-language prerequisites
+link back here. The assigned agent loads applicable cross-language prerequisites
 before applying these practices.
 
 For implementation, apply the core practices. Load Domain structure and Explicit
