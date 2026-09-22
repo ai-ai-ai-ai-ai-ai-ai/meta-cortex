@@ -15,6 +15,14 @@ use std::path::{Path, PathBuf};
 pub enum InstallError {
     #[error("filesystem operation failed: {0}")]
     Io(#[from] io::Error),
+    #[error(
+        "missing required framework entry: {path}; the installed .meta-cortex directory is incomplete or from a different framework version. To replace it, back up and move the existing .meta-cortex directory out of the installation path, run meta-cortex init again, then review and reapply your configuration changes"
+    )]
+    MissingFrameworkEntry {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
     #[error(transparent)]
     Configuration(#[from] ConfigError),
     #[error(transparent)]
@@ -160,6 +168,7 @@ mod tests {
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
     use std::fs;
+    use std::io;
     use std::os::unix::fs::symlink;
     use tempfile::{TempDir, tempdir};
 
@@ -330,6 +339,38 @@ mod tests {
             assert!(!self.directory.path().join(".meta-cortex").exists());
             Ok(())
         }
+    }
+    #[test]
+    fn identifies_missing_framework_entries_without_writes() -> Result<(), InstallError> {
+        for missing in ["CIRCUIT-BREAKER.md", "teams", "LICENSE", "meta-cortex.toml"] {
+            let fixture = Fixture::create()?;
+            fixture.install()?;
+            let root = fixture.directory.path().canonicalize()?;
+            let path = root.join(".meta-cortex").join(missing);
+            if path.is_dir() {
+                fs::remove_dir_all(&path)?;
+            } else {
+                fs::remove_file(&path)?;
+            }
+            let instructions = fs::read(root.join("AGENTS.md"))?;
+            let error = fixture
+                .install()
+                .err()
+                .ok_or_else(|| io::Error::other("incomplete framework must not be overwritten"))?;
+            let message = error.to_string();
+            assert!(
+                message.contains("missing required framework entry"),
+                "{message}"
+            );
+            assert!(message.contains(&path.display().to_string()), "{message}");
+            assert!(message.contains("back up"), "{message}");
+            assert!(
+                matches!(error, InstallError::MissingFrameworkEntry { path: missing, source } if missing == path && source.kind() == io::ErrorKind::NotFound)
+            );
+            assert!(!path.exists());
+            assert_eq!(fs::read(root.join("AGENTS.md"))?, instructions);
+        }
+        Ok(())
     }
     #[test]
     fn preserves_root_workspace_dependencies() -> Result<(), InstallError> {

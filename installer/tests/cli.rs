@@ -95,6 +95,35 @@ struct CliScenario {
     project: TempDir,
 }
 
+#[test]
+fn init_explains_incomplete_framework_and_preserves_existing_files() -> io::Result<()> {
+    let scenario = CliScenario::create()?;
+    let framework = scenario.project.path().join(".meta-cortex");
+    fs::create_dir_all(framework.join("agents"))?;
+    fs::write(framework.join("meta-cortex.toml"), "# Keep my settings\n")?;
+    let result = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
+        .arg("init")
+        .current_dir(scenario.project.path())
+        .output()?;
+    assert!(!result.status.success());
+    assert!(result.stdout.is_empty());
+    let message = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        message.contains("missing required framework entry:"),
+        "{message}"
+    );
+    assert!(message.contains(".meta-cortex/"), "{message}");
+    assert!(message.contains("back up and move"), "{message}");
+    assert!(message.contains("run meta-cortex init again"), "{message}");
+    assert_eq!(fs::read_dir(&framework)?.count(), 2);
+    assert_eq!(
+        fs::read_to_string(framework.join("meta-cortex.toml"))?,
+        "# Keep my settings\n"
+    );
+    assert!(!scenario.project.path().join("AGENTS.md").exists());
+    Ok(())
+}
+
 impl CliScenario {
     fn create() -> io::Result<Self> {
         Ok(Self {

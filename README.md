@@ -226,6 +226,12 @@ matches the executable's bundle, allowing valid changes to `meta-cortex.toml`.
 Initialization refuses to overwrite a different version, edited framework files,
 invalid configuration, or symbolic links.
 
+If initialization reports `missing required framework entry`, the existing
+directory is incomplete or uses an older framework layout. The error names the
+missing path. Follow the replacement steps above; upgrading the Homebrew command
+alone does not replace that directory. Initialization leaves the existing files
+in place.
+
 If a filesystem error interrupts initialization, inspect and move the incomplete
 installation before retrying.
 
