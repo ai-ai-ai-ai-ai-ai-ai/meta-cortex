@@ -1,0 +1,17 @@
+fields:
+  - name: name
+    question: What is your name?
+    type: text
+  - name: age
+    question: What is your age in whole years?
+    type: integer
+  - name: environment
+    question: Which environment?
+    options:
+      - Development
+      - Staging
+      - Production
+  - name: notes
+    question: Any notes? Leave blank to skip.
+    type: text
+    required: false

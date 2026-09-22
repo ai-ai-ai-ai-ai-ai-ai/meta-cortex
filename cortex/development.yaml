@@ -1,0 +1,6 @@
+fields:
+  - name: development.mode
+    question: "Development mode: single_agent uses this agent and thread; multi_agent runs the Gizmo team. Which mode?"
+    options:
+      - single_agent
+      - multi_agent
