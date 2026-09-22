@@ -102,7 +102,7 @@ Use one wrapper for each domain meaning.
 ```rust
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, derive_more::From)]
 pub struct FieldIndex {
-    pub value: u32,
+    value: u32,
 }
 
 impl FieldIndex {
@@ -196,13 +196,13 @@ its conversion.
 These call fragments assume an external `read_message()` returning `String` and
 an application-owned `inbox`. This example accepts arbitrary message text.
 
-**Prohibited:** make the application interpret external primitives.
+- **Prohibited:** make the application interpret external primitives.
 
 ```rust
 inbox.receive(external.read_message()); // receive accepts String.
 ```
 
-**Preferred:** convert once, at entry; the application accepts `MessageBody`.
+- **Preferred:** convert once, at entry; the application accepts `MessageBody`.
 
 ```rust
 #[derive(derive_more::From)]

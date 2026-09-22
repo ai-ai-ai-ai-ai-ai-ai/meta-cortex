@@ -17,26 +17,27 @@ the consuming project.
 
 ## Assignment boundaries
 
-Keep implementation with the development owner. Request independent security
-verification through Team Gizmo. Route instructions,
-specifications, skills, and practice authoring to the AI team's tech writer.
+Keep implementation with the development owner. Report security verification
+and documentation needs to the assigning Team Gizmo. Gizmo decides whether to
+assign a security review or instructions, specifications, skills, and practice
+authoring to the AI team's tech writer.
 Cross-team decisions remain with Team Gizmo; this index does not expand an
 agent's assignment.
 
-Assign web design to web-designer and JS/TS behavior and functional tests to
+Team Gizmo assigns web design to web-designer and JS/TS behavior and functional tests to
 typescript-dev. A Svelte file may need both roles; Team Gizmo sequences edits
 to shared components and supplies the design decisions to the implementation owner.
 For work crossing these boundaries, give each agent a bounded assignment and
 explicit dependencies. Pass these boundaries with each assignment; language
 expertise does not authorize taking over another agent's work or feature coordination.
 
-**Prohibited:** assign a developer a credential-storage fix and implicitly
-authorize it to redefine the security policy and rewrite the agent instructions.
+- **Prohibited:** assign a developer a credential-storage fix and implicitly
+  authorize it to redefine the security policy and rewrite the agent instructions.
 
-**Preferred:** Team Gizmo assigns the implementation and regression tests to
-the agent owning the affected implementation, security-policy questions to the security team, and
-instruction changes to the tech writer. Each assignment identifies its
-dependencies on the others.
+- **Preferred:** Team Gizmo assigns the implementation and regression tests to
+  the agent owning the affected implementation, security-policy questions to the security team, and
+  instruction changes to the tech writer. Each assignment identifies its
+  dependencies on the others.
 
 ## Team knowledge
 

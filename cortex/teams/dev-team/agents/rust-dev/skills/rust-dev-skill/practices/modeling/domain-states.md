@@ -133,7 +133,7 @@ and expose its flags through getters.
 The external crate in these fragments owns `external::SyncObservation`, with
 boolean `force` and `upload` fields. We do not redeclare that raw struct.
 
-**Prohibited:** a wrapper carries the untyped policy into application code.
+- **Prohibited:** a wrapper carries the untyped policy into application code.
 
 ```rust
 pub struct SyncRequest {
@@ -141,7 +141,7 @@ pub struct SyncRequest {
 }
 ```
 
-**Preferred:** the owned record names both independent policies.
+- **Preferred:** the owned record names both independent policies.
 
 ```rust
 pub enum UploadMode {

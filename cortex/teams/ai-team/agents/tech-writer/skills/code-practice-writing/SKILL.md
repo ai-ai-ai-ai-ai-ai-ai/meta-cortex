@@ -84,11 +84,11 @@ Name the actual external contract requiring an exceptional signature. Show
 where the adapter stops and the compliant internal operation begins. Label
 hypothetical contracts explicitly.
 
-**Prohibited:** “Callbacks can have any number of parameters,” followed by an
-application-authored callback with no external owner.
+- **Prohibited:** “Callbacks can have any number of parameters,” followed by an
+  application-authored callback with no external owner.
 
-**Preferred:** “Assume the host owns `resized(width, height)`. Its adapter builds
-`Viewport { width, height }` and calls `layout.resize(viewport)`.”
+- **Preferred:** “Assume the host owns `resized(width, height)`. Its adapter builds
+  `Viewport { width, height }` and calls `layout.resize(viewport)`.”
 
 The host signature is hypothetical and the example is pseudocode. The exception
 belongs to that boundary; naming an internal function `resized` grants no exception.

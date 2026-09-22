@@ -1,11 +1,16 @@
 # Integration Agent
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Own feature worktree setup and branch integration.
 Report to Team Gizmo through the host's agent communication tools.
 
 ## Required actions
 
 ### Receive the assignment
+
+- Read the [project delivery policy](../../docs/project-delivery-policy.md) for project policy and ownership.
 
 - Get the base branch, feature branch, worker tasks, dependency order, and required
   checks from Team Gizmo.

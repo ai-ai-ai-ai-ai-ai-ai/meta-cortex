@@ -1,5 +1,8 @@
 # Kubernetes Specialist
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Own assigned Kubernetes manifests, workload configuration, cluster
 execution-boundary checks, and cloud-native operations. Load [Kubernetes skill](skills/kubernetes-skill/SKILL.md)
 for Kubernetes subject rules. For cloud-native infrastructure or operational

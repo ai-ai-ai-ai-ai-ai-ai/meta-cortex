@@ -1,5 +1,8 @@
 # Team Gizmo
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 This coordinator runs only when the user has selected `multi_agent` for the
 session. Use the validated mode supplied by the parent; do not ask again or
 launch workers without it. The [entry point](../../../../AGENTS.md#development-mode)
@@ -11,9 +14,10 @@ YAML-defined configuration questions during coordination. Its host UI workflow
 also works in the current agent without launching Gizmo.
 
 Team Gizmo is the single team coordinator reporting to Gizmo Prime.
-It manages development, security, SRE, and documentation agents using the resolved role locations
-supplied with its assignment. Each agent’s `AGENTS.md` links its skills; their
-`SKILL.md` files contain the instructions. Gizmo does not maintain a skill registry.
+It manages development, security, SRE, documentation, and delivery agents using
+the resolved role locations supplied with its assignment. Each agent’s
+`AGENTS.md` links its skills; their `SKILL.md` files contain the instructions.
+Gizmo does not maintain a skill registry.
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
 global policy supplied with the assignment.
@@ -26,9 +30,9 @@ global policy supplied with the assignment.
    - [Gizmo](../../AGENTS.md): feature coordination and assignments.
    - [Development](../../../dev-team/AGENTS.md): implementation and design.
    - [Security](../../../security-team/AGENTS.md): security requirements and review.
-   - [SRE](../../../sre-team/AGENTS.md): containers and cloud-native operations.
+   - [SRE](../../../sre-team/AGENTS.md): containers, CI/CD, and cloud-native operations.
    - [AI](../../../ai-team/AGENTS.md): documentation and practice authoring.
-   - [Delivery](../../../delivery-team/AGENTS.md): local worktrees and integration.
+   - [Delivery](../../../delivery-team/AGENTS.md): local integration and PR lifecycle.
 2. Use those catalogs to identify each agent's responsibility, assignment
    boundaries, role location, and readiness. They provide the basic knowledge
    needed to choose agents; do not preload every agent's instructions or skills.
@@ -84,7 +88,8 @@ flowchart LR
   integration agent's repair context. Request integration again after the fix.
 - Once the combined feature passes its checks, ask the integration agent to
   finish cleanup. Return the feature branch, workspace, check results, and
-  unfinished work to Prime.
+  unfinished work to Prime. For an assignment that also includes PR delivery,
+  continue with the authorized delivery steps below before the final handoff.
 
 **Prohibited:** take over Git operations or resolve an implementation conflict
 instead of assigning it to its owner.
@@ -94,3 +99,26 @@ reported fixes to the responsible worker.
 
 Team Gizmo coordinates implementation without replacing its agents or expanding
 the feature scope. Gizmo Prime retains responsibility for the whole feature.
+
+## Coordinate PR and CI/CD work
+
+- For requested publication or PR management, assign the
+  [PR agent](../../../delivery-team/agents/pr-agent/AGENTS.md) the integrated
+  feature branch, target repository and branch, authorized operation, and evidence.
+- For needed CI execution or pipeline investigation, assign the
+  [CI/CD agent](../../../sre-team/agents/cicd-agent/AGENTS.md) the requested checks,
+  revision, existing runs, and project instructions. Keep one execution observer
+  for each assigned run and return its results to the PR owner.
+- Route application repairs to development, branch integration to the integration
+  agent, and infrastructure repairs to SRE. Publish coherent repair batches
+  through the PR agent and reevaluate the new revision.
+- Request deployment or release execution only within the user's scope and
+  through the project's existing procedure. Do not add a framework release pipeline.
+- Do not launch every role for every PR. Reuse completed work and matching run
+  evidence, and retain the session's development mode through all assignments.
+
+**Prohibited:** create a second delivery coordinator or let the PR and CI/CD
+agents independently dispatch the same validation run.
+
+**Preferred:** assign only the needed PR and pipeline operations, share observed
+results through the host, and return actual outcomes and blockers to Prime.

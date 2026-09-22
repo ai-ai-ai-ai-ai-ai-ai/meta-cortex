@@ -63,7 +63,7 @@ before application behavior. A project-owned callback receives no exemption.
 **Prohibited:**
 
 ```ts
-// Required host callback, inside WindowAdapter:
+// Hypothetical host-required callback, inside WindowAdapter:
 resized(width: number, height: number): void {
   this.layout.resize(width, height);
 }
@@ -72,7 +72,7 @@ resized(width: number, height: number): void {
 **Preferred:**
 
 ```ts
-// The host requires resized(width, height); only this callback is exempt.
+// Assume a host requires resized(width, height); only this callback is exempt.
 resized(width: number, height: number): void {
   const viewport: Viewport = {
     width: Width.from(width),
@@ -81,6 +81,9 @@ resized(width: number, height: number): void {
   this.layout.resize(viewport);
 }
 ```
+
+This illustrative host contract is hypothetical. An authored callback named
+`resized` does not qualify without an actual external signature requiring it.
 
 ## Do not disguise additional inputs
 

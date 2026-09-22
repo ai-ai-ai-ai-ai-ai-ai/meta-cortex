@@ -29,9 +29,12 @@ use std::time;
 #[derive(derive_more::From)]
 pub struct RetryLimit(u32);
 
+#[derive(derive_more::From)]
+pub struct RetryDelay(time::Duration);
+
 pub struct RetryPolicy {
     pub limit: RetryLimit,
-    pub delay: time::Duration,
+    pub delay: RetryDelay,
 }
 
 impl RetryPolicy {
@@ -49,9 +52,12 @@ use std::time;
 #[derive(derive_more::From)]
 pub struct RetryLimit(u32);
 
+#[derive(derive_more::From)]
+pub struct RetryDelay(time::Duration);
+
 pub struct RetryPolicy {
     pub limit: RetryLimit,
-    pub delay: time::Duration,
+    pub delay: RetryDelay,
 }
 
 impl RetryPolicy {
@@ -65,7 +71,8 @@ let policy = RetryPolicy { limit: RetryLimit::from(3), delay };
 let policy = policy.with_limit(RetryLimit::from(5));
 ```
 
-The previous policy is moved. The returned policy keeps its delay and replaces
+Here `delay` is an existing `RetryDelay`. The previous policy is moved.
+The returned policy keeps its delay and replaces
 only its limit. Neither a conversion trait nor an approval state is needed.
 
 ## Validation

@@ -39,6 +39,21 @@ class InvalidYamlFixtures {
       expectedCode: FailureCode.Request,
     },
     {
+      name: "unknown discovery request field",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: {extra: secret}}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "empty discovery request sequence",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: []}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "nonempty discovery request sequence",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: [secret]}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
       name: "unknown envelope field",
       yaml: ProtocolText.yaml("version: 1\ntools: {list: {}}\nextra: secret"),
       expectedCode: FailureCode.Request,
@@ -167,10 +182,10 @@ navigation:
   audit:
     documents:
       - path: fixtures/practice.md
-        owner: fixtures/knowledge-graph.md
+        owner: fixtures/index.md
         anchors: [one, two]
     graphs:
-      - path: fixtures/knowledge-graph.md
+      - path: fixtures/index.md
         entries: ${this.entries}
 `;
   }
@@ -290,7 +305,7 @@ describe("navigation without Nook topology", () => {
     );
     const yaml = fixture
       .request()
-      .replace("owner: fixtures/knowledge-graph.md", "owner: other/owner.md");
+      .replace("owner: fixtures/index.md", "owner: other/owner.md");
     expect(new SkillProbe(yaml).codes()).toEqual([
       NavigationFindingCode.MissingOwner,
       NavigationFindingCode.ForeignOwner,
@@ -372,7 +387,7 @@ navigation:
   audit:
     documents: []
     graphs:
-      - {path: fixtures/knowledge-graph.md, entries: []}
-      - {path: fixtures/knowledge-graph.md, entries: []}`;
+      - {path: fixtures/index.md, entries: []}
+      - {path: fixtures/index.md, entries: []}`;
   expect(new SkillProbe(yaml).execute().exitCode).toBe(2);
 });

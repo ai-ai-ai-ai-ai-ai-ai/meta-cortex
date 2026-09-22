@@ -1,5 +1,8 @@
 # Tech Writer
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Own the documents assigned by Team Gizmo: agent instructions, specifications,
 skills, practices, and catalogs. Run as a team subagent with the configured
 team-agent model and reasoning effort.
@@ -54,7 +57,13 @@ needs an existing skill, link its instructions to the owning agent’s copy.
 ### Knowledge organization
 
 - Keep shared subject requirements in the owning team’s `docs/`.
-- Use `index.md` as its entry point and descriptive names for individual documents.
+- Keep team `docs/index.md` files limited to navigation links and brief topic
+  summaries. Put shared rules, explanations, procedures, and examples in
+  descriptively named documents.
+- Skill `index.md` files may contain the detailed rule inventories and
+  cross-rule comparisons required by
+  [practice knowledge graphs](skills/context-engineering/practices/knowledge-graphs.md).
+  Keep those summaries synchronized with their canonical source practices.
 - Add subject directories, architecture documents, or specifications only when
   existing content needs them; do not create empty scaffolding.
 - Keep language-independent knowledge outside language-specific skills.
@@ -62,11 +71,12 @@ needs an existing skill, link its instructions to the owning agent’s copy.
 - Keep `AGENTS.md` for roles and `SKILL.md` for skills.
 
 **Prohibited:** put language-independent testing rules under the Rust skill or
-create a global standards directory to hold team-owned knowledge.
+create a global standards directory to hold team-owned knowledge, or write
+operating procedures directly in `docs/index.md`.
 
 **Preferred:** put programming rules in the development team’s knowledge base,
-link them from the relevant agents, and keep Rust-specific instructions in the
-Rust skill. Use the security team’s knowledge base for secret-handling policy.
+link them through a navigation-only index and from relevant agents. Keep
+Rust-specific instructions in the Rust skill. Use the security team’s knowledge base for secret-handling policy.
 
 ### Assignment example
 

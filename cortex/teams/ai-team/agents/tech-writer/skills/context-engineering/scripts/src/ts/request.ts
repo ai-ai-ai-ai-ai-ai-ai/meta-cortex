@@ -12,10 +12,20 @@ export enum Command {
   Navigation = "navigation.audit",
 }
 
+interface EmptyRequestDefinition {
+  readonly key: typeof Schema.String;
+  readonly value: typeof Schema.Never;
+}
+
 export class SkillRequestSchema {
-  private static readonly emptyFields = {} satisfies Schema.Struct.Fields;
+  // Struct({}) accepts any object, including arrays and extra properties.
+  // Discovery takes a mapping with no permitted keys or values.
+  private static readonly emptyRequest: EmptyRequestDefinition = {
+    key: Schema.String,
+    value: Schema.Never,
+  };
   private static readonly toolsFields = {
-    list: Schema.Struct(SkillRequestSchema.emptyFields),
+    list: Schema.Record(SkillRequestSchema.emptyRequest),
   } satisfies Schema.Struct.Fields;
   private static readonly articleFields = {
     audit: ArticleSchema.value,

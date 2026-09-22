@@ -7,14 +7,15 @@ by an agent from another team.
 
 ## Request focused reviews
 
-Request a second review for a concrete dispute. Supply the proposal, requirement,
-and suspected violation. Do not run a permanent observer or intercept every
+Report a concrete dispute to the assigning Gizmo with the proposal, requirement,
+and suspected violation. Gizmo decides whether to assign a focused second review. Do not run a permanent observer or intercept every
 agent message to enforce this document.
 
 **Prohibited:** launch an observer that must approve every worker's tool call.
 
-**Preferred:** ask a reviewer whether the proposed handoff receipt system is
-necessary for the stated requirement. Continue unrelated work.
+**Preferred:** report the disputed handoff receipt system to Gizmo. Gizmo decides
+whether a reviewer should assess its necessity for the stated requirement.
+Continue unrelated assigned work.
 
 ## Securing trusted agent handoffs
 

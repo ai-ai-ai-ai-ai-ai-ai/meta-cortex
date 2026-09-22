@@ -146,10 +146,10 @@ incorrect facts limit the evidence. Requests are limited to 64 KiB and responses
 to 256 KiB. The scripts reject unknown fields, versions, duplicate YAML keys,
 anchors, aliases, tags, directives, and multiple YAML documents.
 
-**Prohibited:** send a filename alone and report that its contents were checked.
+- **Prohibited:** send a filename alone and report that its contents were checked.
 
-**Preferred:** supply the document's semantic blocks or navigation inventory,
-inspect the returned findings, and state the audited scope.
+- **Preferred:** supply the document's semantic blocks or navigation inventory,
+  inspect the returned findings, and state the audited scope.
 
 ### Maintain scripts
 

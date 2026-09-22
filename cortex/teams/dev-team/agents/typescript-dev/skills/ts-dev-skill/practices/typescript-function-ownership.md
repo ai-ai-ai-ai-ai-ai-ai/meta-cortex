@@ -39,6 +39,9 @@ class ExportSession {
 Use static readonly for owned constants and instance fields for mutable state.
 Prohibit module const/let/var, mutable statics, and function-valued globals.
 Parameters, immediate callbacks, and local bindings stay in the owning operation.
+Test-runner callbacks may contain scenario setup, actions, and assertions;
+reusable test helpers belong to fixture or scenario owners under the shared
+[test ownership rule](../../../../../docs/programming/function-ownership.md#operation-placement).
 
 **Prohibited:**
 

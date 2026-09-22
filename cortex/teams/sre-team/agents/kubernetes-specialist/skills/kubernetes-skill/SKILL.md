@@ -8,4 +8,4 @@ description: Configure Kubernetes workloads that execute directly without nested
 - [Kubernetes runtime boundary](practices/kubernetes-runtime-boundary.md):
   execute in the selected image and preserve the cluster runtime boundary.
 
-Read the [knowledge graph](knowledge-graph.md) before editing a related rule.
+Read the [rule index](index.md) before editing a related rule.

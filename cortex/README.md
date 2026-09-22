@@ -27,8 +27,8 @@ using the host's native input UI:
 
 - `single_agent` keeps implementation, checks, and delivery in the current thread
   and agent, with the relevant team docs, circuit breakers, and skills.
-- `multi_agent` launches Gizmo Prime, which launches Team Gizmo and the team
-  subagents needed for the task.
+- `multi_agent` launches Gizmo Prime, which launches Team Gizmo. Team Gizmo
+  launches the team agents needed for the task.
 
 The agent waits for a submitted answer before starting development work. New
 tasks and follow-ups in the same conversation retain the session’s mode; a new
@@ -48,9 +48,15 @@ In multi-agent mode:
   - Checks results and routes corrections to their owners.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
-  - Return evidence and unresolved blockers.
+  - Report evidence and unresolved blockers only to their assigning Team Gizmo.
+    Gizmo decides further assignments and passes evidence between agents.
 - **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
   - Manages feature worktrees and merges completed task branches.
+- **[PR agent](teams/delivery-team/agents/pr-agent/AGENTS.md)**
+  - Publishes feature branches, manages PR feedback and checks, and performs authorized merges.
+- **[CI/CD agent](teams/sre-team/agents/cicd-agent/AGENTS.md)**
+  - Runs project-defined checks, repairs assigned pipeline infrastructure, and executes
+    authorized project deployment procedures.
 
 Each launch includes the [assignment context](teams/AGENTS.md#assignment-context):
 project and library locations, team documentation, applicable circuit breakers,
@@ -70,6 +76,30 @@ specialized skills are:
 - [Cloud-Native](teams/sre-team/agents/kubernetes-specialist/skills/cloud-native-skill/SKILL.md) for
   bounded, observable infrastructure and operational changes, loaded by the
   Kubernetes specialist for cloud-native assignments.
+
+## PR delivery and CI/CD
+
+Request the desired operation: publishing a PR, addressing feedback, checking CI,
+merging, or executing an existing deployment procedure. In single-agent mode,
+the current agent applies the relevant delivery and CI/CD skills. In multi-agent
+mode, Team Gizmo assigns only the specialists needed for the requested work.
+
+[Project delivery policy](teams/delivery-team/docs/project-delivery-policy.md) covers discovery of branch,
+review, merge, and cleanup policy. [Project execution policy](teams/sre-team/docs/project-execution-policy.md)
+covers discovery of execution commands and deployment procedures. Both follow the
+consuming project's instructions and actual workflow definitions.
+
+For example, one project may document `task check`, another `make verify`, and
+another `just test`; the agents use the documented entry point. Meta-Cortex
+introduces no build-system configuration schema or universal command adapter.
+Release pipelines remain project-owned. The CI/CD agent can execute an existing
+one when requested, but the framework does not define its release process.
+
+- **Prohibited:** copy a project's Taskfile commands, squash-only policy, or release
+  workflow into the generic framework and apply it to every consumer.
+
+- **Preferred:** discover this project's supported operations, execute the requested
+  scope, and report observed PR, run, merge, or deployment outcomes.
 
 ## Circuit breaker
 
@@ -128,11 +158,13 @@ Engineering and Code Practice Writing for documentation and programming examples
 
 Teams live directly under `teams/`. Each team groups its agents in `agents/`;
 the Gizmo team contains both coordinators. Shared subject knowledge lives in
-each owning team’s `docs/`, with `index.md` as the entry point. Individual documents retain descriptive names.
-The [development knowledge base](teams/dev-team/docs/index.md)
-owns language-independent programming rules. The
-[security knowledge base](teams/security-team/docs/index.md)
-owns shared secret-handling requirements. Agents link relevant knowledge and
+each owning team’s `docs/`. Its `index.md` contains only navigation links and
+brief topic summaries. Rules, explanations, and examples live in descriptively
+named documents.
+The [development documentation catalog](teams/dev-team/docs/index.md)
+links language-independent programming rules. The
+[security documentation catalog](teams/security-team/docs/index.md)
+links shared secret-handling requirements. Agents link relevant knowledge and
 skills directly; there is no global knowledge directory or selection registry.
 
 The framework's instructions remain generic.

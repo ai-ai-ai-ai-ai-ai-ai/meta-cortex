@@ -17,6 +17,15 @@ Does not apply to:
 - Purely visual design tweaks with no behavioral defect.
 - Instruction-only documentation edits without executable behavior changes.
 
+These requirements apply across programming languages alongside the relevant
+language skill.
+
+**Prohibited:** apply the regression procedure only to Rust while changing the
+same behavior in TypeScript without it.
+
+**Preferred:** use these testing requirements for both implementations, then
+apply each language’s skill to its implementation details.
+
 ## Required actions
 
 ### Testing pyramid
@@ -80,7 +89,8 @@ the implementation changes. Finding the root cause alone is not completion.
      behavioral reason.
    - Verify the regression set and applicable suite pass with the fix.
    - Record the tested revisions, run references, and observed results.
-   - Report unavailable before/after execution capability to the task owner.
+   - Report unavailable before/after execution capability to the assigning Gizmo
+     in multi-agent mode, or to the user in single-agent mode.
    - Keep missing evidence explicit rather than claiming verified protection.
 
 ## Prohibited actions

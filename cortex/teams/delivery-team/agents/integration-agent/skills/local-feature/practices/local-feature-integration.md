@@ -9,6 +9,12 @@ Paths are absolute. Branch names follow the project's convention. Feature and
 worker paths are separate directories outside the original checkout; all belong
 to the same Git repository. Replace the variables with the assigned values.
 
+In multi-agent mode, every report and question goes only to the assigning Team
+Gizmo. Gizmo decides assignments, sequencing, and repairs and passes evidence
+between agents. Worker steps below are performed by the worker assigned by
+Gizmo, not by the integration agent. In single-agent mode, the current agent
+performs these responsibilities locally.
+
 ## Required actions
 
 ### Set up workspaces
@@ -69,8 +75,8 @@ to the same Git repository. Replace the variables with the assigned values.
    git -C "$repo_path" worktree list
    ```
 
-   Return the feature branch/path and each task's branch/path. Supply each worker
-   its scope, checks, and actual framework library location. Git does not copy
+   Return the feature branch/path and each task's branch/path to Team Gizmo.
+   Gizmo supplies each worker its scope, checks, and actual framework library location. Git does not copy
    ignored libraries, dependencies, or pending edits into these worktrees.
 
 **Prohibited:** create another feature branch for every worker or reuse one
@@ -119,7 +125,7 @@ assigned repository-relative file path; `task_message` describes the finished ch
 
    Short status must be empty. If no changes need saving, skip the commit command.
    If content changes after validation, rerun affected checks. Report the branch,
-   completed task, and check results; identify unfinished work or failed checks.
+   completed task, and check results to Team Gizmo; identify unfinished work or failed checks.
 
 **Prohibited:** report completion while final edits remain pending or required
 checks have failed.
@@ -140,7 +146,7 @@ branch and finish each integration before starting the next.
    ```
 
    The first command must print the assigned task branch; the second must print
-   nothing. Return unfinished work to its owner before proceeding.
+   nothing. Report unfinished work to Team Gizmo for a decision before proceeding.
 
 2. Confirm the integration checkout is on `feature_branch` and clean:
 
@@ -161,7 +167,7 @@ branch and finish each integration before starting the next.
    ```
 
    The three-dot comparison shows task changes since its shared history with the
-   feature branch. Return out-of-scope changes to the owner before merging.
+   feature branch. Report out-of-scope changes to Team Gizmo for a decision before merging.
 
 4. Merge the finished task branch into the feature branch:
 
@@ -187,8 +193,8 @@ branch and finish each integration before starting the next.
 6. Run the project's assigned combined validation commands from `feature_path`.
    Report the merged task branch, destination feature branch, commands run, and
    check results. Git merge success and separate task checks do not establish
-   that the combined feature passes. Route failed checks for repair before
-   integrating dependent tasks.
+   that the combined feature passes. Report failed checks to Team Gizmo for a repair decision
+   before integrating dependent tasks.
 
 **Prohibited:** merge several worker branches concurrently or report a passing
 feature based only on a successful Git merge.
@@ -204,7 +210,7 @@ then integrate the next completed branch in dependency order.
    git -C "$feature_path" diff --name-only --diff-filter=U
    ```
 
-   Record these paths for the task owner, then abort this attempted merge:
+   Record these paths for the report to Team Gizmo, then abort this attempted merge:
 
    ```sh
    git -C "$feature_path" merge --abort
@@ -214,7 +220,8 @@ then integrate the next completed branch in dependency order.
    Expect a clean worktree with no merge in progress. If abort fails, retain the
    workspaces and report Git's error and status; do not reset away work.
 
-2. Have the task owner merge the feature branch into its worker branch:
+2. Report the conflicts and Git state to Team Gizmo, which decides the repair
+   assignment. Once assigned, the worker merges the feature branch into its branch:
 
    ```sh
    git -C "$task_path" merge --no-edit -- "$feature_branch"
@@ -227,8 +234,8 @@ then integrate the next completed branch in dependency order.
    git -C "$task_path" diff --name-only --diff-filter=U
    ```
 
-   Resolve application behavior with the responsible owner rather than choosing
-   one side automatically.
+   Report unresolved application behavior to Team Gizmo for a decision rather
+   than choosing one side automatically.
 
 3. For a conflicted worker merge, stage each resolved file using its
    repository-relative `changed_path`, then inspect the resolution:
@@ -247,20 +254,21 @@ then integrate the next completed branch in dependency order.
    git -C "$task_path" status --short
    ```
 
-   Expect clean status. Rerun the worker's checks and report the repaired task.
-   Once it finishes, repeat feature integration and combined validation.
+   Expect clean status. Rerun the worker's checks and report the repaired task
+   to Team Gizmo. When Gizmo supplies the repair result and directs continuation,
+   repeat feature integration and combined validation.
 
 4. If Git merged successfully but combined checks fail, keep the branches and
-   report the failing checks to the task owner. Use the worker repair steps above
-   to incorporate current feature changes if needed, then fix the failed behavior
-   and follow task completion. Do not run `merge --abort` for a completed merge.
+   report the failing checks to Team Gizmo for a repair decision. The assigned
+   worker uses the repair steps above to incorporate current feature changes
+   if needed, fixes the failed behavior, and reports task completion to Gizmo. Do not run `merge --abort` for a completed merge.
    Integrate the repair and rerun checks before dependent tasks or cleanup.
 
 **Prohibited:** discard a side of a domain conflict or remove branches while
 combined validation is failing.
 
-**Preferred:** abort only the conflicted merge, return the affected paths for
-repair, and validate the repaired branch after integrating it.
+**Preferred:** abort only the conflicted merge, report the affected paths to Gizmo
+for a repair decision, and validate the repaired branch after integrating it.
 
 ### Complete and clean up
 

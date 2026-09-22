@@ -1,5 +1,8 @@
 # Rust Developer
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Own assigned Rust implementation, tests, and corrections, including domain
 code, compiled tooling, and Rust-owned WASM interfaces.
 

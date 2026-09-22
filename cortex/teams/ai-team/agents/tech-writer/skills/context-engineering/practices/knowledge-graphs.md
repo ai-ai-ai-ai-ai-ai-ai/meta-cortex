@@ -1,6 +1,6 @@
 # Practice Knowledge Graphs
 
-Use a skill's `knowledge-graph.md` as a rule-level map before editing its
+Use a skill's `index.md` as a rule-level map before editing its
 practices. A file list is not enough: readers need the actual requirements,
 prohibitions, exceptions, and checks to detect contradictions across subjects.
 The source practice remains the authority for explanation and examples.
@@ -81,12 +81,12 @@ full index. Preserve implementation loading requirements when moving an index.
 Leaf practices may link directly to shared prerequisites, including through
 `../` paths, without circular loading or restarting agent routing.
 
-**Prohibited:** permit From<bool> in the practice while the graph still says
-“no boolean parameter under any circumstances.”
+- **Prohibited:** permit From<bool> in the practice while the graph still says
+  “no boolean parameter under any circumstances.”
 
-**Preferred:** preserve the rule name and update its boundary exception, the related
-raw-conversion entry, and their examples together. The graph and source now state
-the same allowed behavior.
+- **Preferred:** preserve the rule name and update its boundary exception, the related
+  raw-conversion entry, and their examples together. The graph and source now state
+  the same allowed behavior.
 
 ## Make conflicts visible
 

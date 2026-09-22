@@ -1,8 +1,9 @@
 # Rust–TypeScript Code Separation
 
-Rust owns portable product data and decisions. TypeScript owns presentation and
-browser lifecycle. A browser API supplies observations; it does not own the
-product decision made from them.
+In projects using Rust/WASM, Rust owns portable product data and decisions.
+TypeScript owns presentation and browser lifecycle. These cross-language rules
+do not require introducing Rust into a TypeScript-only project. A browser API
+supplies observations; it does not own the product decision made from them.
 
 ## Application structure
 

@@ -1,5 +1,8 @@
 # Docker Specialist
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Own assigned Dockerfiles, BuildKit configuration, container build behavior, and
 cache evidence. Load [Docker skill](skills/docker-skill/SKILL.md) for the
 subject rules.

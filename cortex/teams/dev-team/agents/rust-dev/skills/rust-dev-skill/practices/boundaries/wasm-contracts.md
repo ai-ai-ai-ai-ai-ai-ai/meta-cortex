@@ -114,7 +114,7 @@ These alternatives belong in a `SelectedOrder` owner. Its `order` field is an
 owned `Order`; `next` transfers ownership to this owner, is distinct from the
 current object, and no borrower retains the previous object.
 
-**Prohibited:** overwrite the only owner without releasing the prior allocation.
+- **Prohibited:** overwrite the only owner without releasing the prior allocation.
 
 ```ts
 replace(next: Order): void {
@@ -122,7 +122,7 @@ replace(next: Order): void {
 }
 ```
 
-**Preferred:** release the previous object before adopting the replacement.
+- **Preferred:** release the previous object before adopting the replacement.
 
 ```ts
 replace(next: Order): void {

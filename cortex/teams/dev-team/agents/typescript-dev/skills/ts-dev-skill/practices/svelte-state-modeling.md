@@ -55,7 +55,8 @@ state = { kind: ImportKind.Complete, result };
 ## Preserve generated product types
 
 Component panels/tabs/form views may be TypeScript states. Portable product
-workflows belong to Rust/WASM. Keep generated semantic identifiers in their
+workflows belong to Rust when the project uses Rust/WASM, or to the TypeScript
+domain owner otherwise. Keep canonical semantic identifiers in their
 variants; optionality does not justify widening them to string.
 
 **Prohibited:**

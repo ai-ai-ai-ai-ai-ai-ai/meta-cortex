@@ -90,7 +90,9 @@ only its own behavior and has no dependency on address policy.
 - Use a real trait, interface, or equivalent abstraction only when it expresses
   a shared contract.
 - Keep closures local only when they express an immediately used operation.
-- Put test behavior on a focused fixture, harness, builder, or scenario owner.
+- A test-harness entrypoint may contain the scenario's setup, actions, and
+  assertions. Put reusable test behavior on a focused fixture, harness,
+  builder, or scenario owner.
 - Keep required language entrypoints and externally fixed callbacks thin.
   Delegate portable behavior to a meaningful owner.
 - Name the owner for the domain knowledge or capability it holds.
@@ -156,7 +158,14 @@ entrypoint, or framework callback may retain its externally owned shape.
 
 Document the exact external requirement when the boundary is not
 self-evident. Keep the boundary function limited to decoding, delegation, and
-encoding. A conventional name alone does not establish an exception.
+encoding, except for scenario steps and assertions in test-harness entrypoints.
+A conventional name alone does not establish an exception.
+
+- **Prohibited:** use an ordinary free `make_fixture` helper merely because a
+  test calls it, or duplicate a production algorithm inside an assertion.
+
+- **Preferred:** let the harness entrypoint call the production operation and
+  assert its outcome. Put reused setup and behavior on a meaningful fixture owner.
 
 ### Presentation edges
 

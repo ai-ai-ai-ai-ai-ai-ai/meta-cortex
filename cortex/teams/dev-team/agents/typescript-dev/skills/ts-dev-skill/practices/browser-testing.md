@@ -1,7 +1,9 @@
 # Browser Testing
 
-Playwright verifies observable browser integration. Portable algorithms and
-product decisions are tested directly in Rust, not reimplemented in TypeScript.
+The project's browser test tooling verifies observable browser integration.
+The examples use Playwright. Test portable algorithms and product decisions
+directly in their domain owner: Rust for Rust/WASM projects, or TypeScript when
+it owns that domain. Browser tests must not reimplement those algorithms.
 
 Examples are alternative fragments. Supporting domain types and collaborators
 are supplied by the application; method fragments belong to their named owner.
@@ -22,7 +24,7 @@ await expect(page.getByText("Total correct")).toBeVisible();
 **Preferred:**
 
 ```ts
-// In the existing browser scenario, after the Rust calculation tests:
+// In the existing browser scenario, after the domain calculation tests:
 await page.getByRole("button", saveButton).click();
 await expect(page.getByRole("status")).toHaveText(savedMessage);
 ```

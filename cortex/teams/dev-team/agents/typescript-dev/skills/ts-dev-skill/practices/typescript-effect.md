@@ -2,7 +2,8 @@
 
 Use Effect v3 for new or materially changed asynchronous, fallible, resource-owning,
 concurrent, service-dependent, or untrusted-decoding workflows. This includes
-tests, scripts, and tooling. Portable product/security policy stays in Rust.
+tests, scripts, and tooling. In Rust/WASM projects, portable product/security
+policy stays in Rust. Effect does not change the project's domain ownership.
 
 Examples are alternative fragments. Supporting domain types and collaborators
 are supplied by the application; method fragments belong to their named owner.
