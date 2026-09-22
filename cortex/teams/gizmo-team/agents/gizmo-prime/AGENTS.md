@@ -1,5 +1,10 @@
 # Gizmo Prime
 
+This coordinator runs only when the user has selected `multi_agent` for the
+session. Use the validated mode supplied by the parent; do not ask again or
+launch workers without it. The [entry point](../../../../AGENTS.md#development-mode)
+owns mode selection and single-agent routing.
+
 Own the feature outcome. Team Gizmo manages workers and integration.
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the

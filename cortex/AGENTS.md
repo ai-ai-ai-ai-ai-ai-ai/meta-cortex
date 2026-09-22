@@ -15,7 +15,8 @@ For a new user task:
 1. Read the [circuit breaker](CIRCUIT-BREAKER.md) before other framework documents.
    Carry its policy and resolved location through every assignment.
 2. Establish the [project context](#project-context).
-3. Collect the [development mode](#development-mode) before launching any agent.
+3. Resolve the session’s [development mode](#development-mode) before planning
+   or implementing the task and before launching any agent.
 4. In multi-agent mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
    [agent configuration rules](#agent-configuration).
 5. In multi-agent mode, read and follow [team instructions](teams/AGENTS.md) to launch Gizmo Prime
@@ -26,12 +27,19 @@ For a new user task:
 ### Development mode
 
 The current agent uses the [native user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
-with [development.yaml](development.yaml). Ask for `development.mode` at the
-start of each new development task, then retain the validated choice for that
-task's follow-ups and pass it through assignments. Do not re-prompt for each
-message or subagent assignment. An explicit mode already supplied by the user
-(including a request to work without subagents) answers this field; validate it
-without asking again. Never treat the host's preselected option as an answer.
+with [development.yaml](development.yaml). At the start of every new user-facing
+session, ask the user to choose `development.mode` through the native input UI.
+Wait for a submitted, validated answer before choosing the execution path.
+Do not infer a choice from an earlier session, repository settings, or the host's
+preselected option. Do not launch Gizmos while this question is pending.
+
+A session is the current user-facing conversation/thread. Retain its selected
+mode across new tasks, follow-ups, turn boundaries, and context compaction in
+that conversation. Include it in continuation context and every assignment.
+Do not ask again for each message, task, or delegated agent. A new user-facing
+conversation asks again; a delegated agent inherits the parent session's choice
+and does not start another configuration flow. If the choice is lost and cannot
+be recovered from session context, ask rather than guess.
 
 - `single_agent`: use the current agent and thread. Do not spawn Gizmos, workers,
   reviewers, or integration subagents. Read the relevant team and role
@@ -42,7 +50,7 @@ without asking again. Never treat the host's preselected option as an answer.
   technical requirements still apply. Keep the current host model/settings.
 - `multi_agent`: use the existing Gizmo workflow and configured role settings.
 
-The returned `answers["development.mode"]` is the task's `development.mode`.
+The returned `answers["development.mode"]` is the session's `development.mode`.
 It is not a persisted model setting. Do not rewrite `meta-cortex.toml` or save
 user answers to the repository. Cancelled, unavailable, invalid, or pending
 configuration must not launch agents or continue dependent development work.
@@ -53,7 +61,8 @@ agents running when switching to single-agent mode.
 using workers after the user chooses `single_agent`.
 
 **Preferred:** validate `single_agent`, load the relevant team context locally,
-and implement and verify the task in this thread.
+and implement and verify the task in this thread. A later task in the same
+session keeps that choice; a new session asks again.
 
 ### Project context
 

@@ -188,9 +188,9 @@ write the error to stderr, and leave stdout empty.
 ## Use Meta-Cortex
 
 Give your AI host a development task in the initialized project.
-In Codex, the current agent asks whether to use `single_agent` (this thread and
-agent) or `multi_agent` (Gizmo coordination), unless you already supplied the
-choice. The task retains that choice for follow-ups. Configuration uses native
+In Codex, the current agent asks at the start of every new session whether to use
+`single_agent` (this thread and agent) or `multi_agent` (Gizmo coordination).
+Tasks and follow-ups in that conversation retain the choice. Configuration uses native
 questions and the library's Bun helper; see the
 [setup and configuration instructions](cortex/README.md#execution-configuration).
 Read the [framework guide](cortex/README.md) for project context, agent

@@ -19,7 +19,7 @@ the entry point before every launch. Pass this context to delegated agents.
 
 ## Start with Gizmo Prime
 
-First resolve the [development mode](../AGENTS.md#development-mode) at the entry
+First resolve the session’s [development mode](../AGENTS.md#development-mode) at the entry
 point. In `single_agent` mode, the current agent applies the assignment context
 locally and performs the work; the launch and delegation instructions below
 apply only to `multi_agent` mode.
@@ -66,7 +66,8 @@ Before launching an agent, the delegating agent resolves the following from the
 active library and supplies them in the launch instructions:
 
 - Objective, scope, dependencies, acceptance criteria, and expected evidence.
-- The validated development mode; assigned agents never repeat configuration collection.
+- The validated session development mode; assigned agents inherit it and never
+  repeat configuration collection.
 - Project root, library root, working directory, and relevant project instructions.
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.
 - The assigned agent’s team directory and team `AGENTS.md`.
