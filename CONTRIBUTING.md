@@ -4,9 +4,9 @@
 
 ### Source responsibilities
 
-- **Framework: [cortex/](cortex/)**
+- **Framework: [cortex/](cortex)**
   - Contains the distributable instructions, roles, skills, and configuration.
-- **Installer: [installer/](installer/)**
+- **Installer: [installer/](installer)**
   - Contains the Rust CLI.
   - Embeds the framework at build time.
 - **License: [LICENSE](LICENSE)**

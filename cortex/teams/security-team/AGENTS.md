@@ -1,0 +1,16 @@
+# Security Team
+
+Agent responsibility map for security work in the consuming project.
+Team Gizmo uses this index to route assignments.
+
+| Agent | Responsibility |
+| --- | --- |
+| [Security agent](agents/security-agent/AGENTS.md) | Security architecture, trust boundaries, secret lifecycle, and security review. |
+
+Coordinate application and infrastructure changes with the
+development team through Team Gizmo.
+
+## Team knowledge
+
+The [knowledge base](docs/index.md) holds the team’s shared subject
+requirements. Agents link the relevant knowledge alongside their own skills.
