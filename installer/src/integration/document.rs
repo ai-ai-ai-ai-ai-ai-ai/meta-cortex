@@ -23,6 +23,8 @@ pub struct CursorHeader {
     pub always_apply: CursorApplication,
 }
 
+// External-interface exception: Cursor requires a boolean alwaysApply in .mdc frontmatter.
+// https://cursor.com/docs/rules
 #[derive(Clone, Copy, Serialize, Deserialize)]
 #[serde(from = "bool", into = "bool")]
 pub enum CursorApplication {

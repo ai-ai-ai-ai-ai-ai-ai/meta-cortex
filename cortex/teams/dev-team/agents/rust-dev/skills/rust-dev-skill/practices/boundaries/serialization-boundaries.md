@@ -67,35 +67,22 @@ impl serde::Serialize for ApplicationMode {
 }
 ```
 
-**Preferred:** derive serialization and declare the required external representation.
+**Preferred:** preserve enum alternatives in contracts the project controls.
 
 ```rust
-#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
-#[serde(from = "bool", into = "bool")]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum ApplicationMode {
     Always,
     Conditional,
 }
-
-impl From<bool> for ApplicationMode {
-    fn from(always: bool) -> Self {
-        if always { Self::Always } else { Self::Conditional }
-    }
-}
-
-impl From<ApplicationMode> for bool {
-    fn from(mode: ApplicationMode) -> Self {
-        match mode {
-            ApplicationMode::Always => true,
-            ApplicationMode::Conditional => false,
-        }
-    }
-}
 ```
 
-- Limit the boolean conversion to an existing external boolean contract under [domain states](../modeling/domain-states.md#convert-external-records-into-owned-types).
-- Verify the exact wire representation and all mapping branches.
-- Follow [Serde's conversion attribute requirements](https://serde.rs/container-attrs.html); `into` requires `Clone` and `Into`.
+- Return enums from application APIs and preserve them in new serialized contracts.
+- Prohibit `#[serde(into = "bool")]` and enum-to-boolean conversions by default.
+- Apply only the external-interface and backward-compatibility exceptions defined in [domain states](../modeling/domain-states.md#convert-external-records-into-owned-types).
+- A supported Serde attribute does not justify changing an enum into a boolean.
+- Verify the exact wire representation and all mapping branches for an allowed conversion.
+- Follow [Serde's conversion attribute requirements](https://serde.rs/container-attrs.html) when an exception applies.
 
 ## Keep encoding out of application state
 

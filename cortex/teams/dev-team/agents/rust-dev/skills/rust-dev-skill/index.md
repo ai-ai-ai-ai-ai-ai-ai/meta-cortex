@@ -177,8 +177,9 @@ boundaries.
 
   - Allow destination-owned From<bool> at external conversion boundaries, or TryFrom
     when conversion can fail.
-  - Allow From<DomainEnum> for bool only for an existing external boolean wire contract
-    through Serde conversion attributes.
+  - Prohibit enum-to-bool conversions and serde(into = "bool") by default.
+  - Allow them only for a required external interface or established backward compatibility.
+  - Document the concrete contract at the boundary; keep new owned contracts as enums.
   - This is not permission for boolean application APIs.
 
 - **[domain_states:external_records](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
@@ -569,7 +570,8 @@ boundaries.
 
 - **[serialization_boundaries:derive_first](practices/boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate)**
 
-  - Derive serialization and use Serde attributes for supported wire representations.
+  - Derive serialization and preserve enums in new owned wire contracts.
+  - Apply domain-state exceptions before using boolean conversion attributes.
   - Prohibit handwritten traits, visitors, and callbacks that duplicate this support.
   - Keep semantic mappings in concrete conversions and validation in TryFrom.
   - Document unsupported contracts and evaluate established adapters before custom machinery.
