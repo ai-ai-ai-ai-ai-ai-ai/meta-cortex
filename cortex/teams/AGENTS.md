@@ -15,8 +15,9 @@ applies to its assignment.
 Each agent's `AGENTS.md` owns its role responsibilities. Keep technical guidance
 in that role's linked skills so they can evolve independently.
 
-Use the [configuration rules](../AGENTS.md#agent-configuration) and resolved configuration location supplied by
-the entry point before every launch. Pass this context to delegated agents.
+Read and apply the shared [agent configuration rules](gizmo-team/docs/agent-configuration.md)
+before every launch, using the resolved configuration location supplied by the
+entry point. Pass this context to delegated agents.
 
 ## Start with Gizmo Prime
 

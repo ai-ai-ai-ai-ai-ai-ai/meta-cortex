@@ -15,7 +15,8 @@ global policy supplied with the assignment.
 
 ## Required actions
 
-- Launch one Team Gizmo using its resolved role location from the supplied agent directory.
+- Launch one Team Gizmo using its resolved role location from the supplied agent directory
+  and the shared [agent configuration rules](../../docs/agent-configuration.md).
 - Supply the [assignment context](../../../AGENTS.md#assignment-context) when launching Team Gizmo,
   including its team documentation when present and applicable circuit breakers.
 - Route implementation work through Team Gizmo.

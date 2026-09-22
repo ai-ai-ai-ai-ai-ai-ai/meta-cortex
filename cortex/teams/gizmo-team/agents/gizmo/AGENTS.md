@@ -57,7 +57,7 @@ for that assignment rather than preloading unrelated agents.
 
 - Turn the feature assignment into bounded tasks for the appropriate agents.
 - Launch those team agents through the host’s agent execution tools using the
-  entry point's [agent configuration rules](../../../../AGENTS.md#agent-configuration).
+  shared [agent configuration rules](../../docs/agent-configuration.md).
 - Launch the [tech writer](../../../ai-team/agents/tech-writer/AGENTS.md) for documentation assignments. Route policy
   questions to the relevant development or security owner before the writer
   changes the requirements.

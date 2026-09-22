@@ -3,6 +3,11 @@
 Own feature coordination and assignments across teams. Both coordinators run as
 subagents, with their distinct execution settings from the framework configuration.
 
+## Knowledge
+
+Read the [documentation index](docs/index.md) and apply the shared
+[agent configuration rules](docs/agent-configuration.md) when launching agents.
+
 ## Agent catalog
 
 - **[Gizmo Prime](agents/gizmo-prime/AGENTS.md)**

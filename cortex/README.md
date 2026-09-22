@@ -129,7 +129,7 @@ tool. Answers stay in session context rather than a repository configuration fil
 
 [meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for
 each delegated role in multi-agent mode. Single-agent mode keeps the current
-host settings. The [configuration rules](AGENTS.md#agent-configuration) define how
+host settings. The [configuration rules](teams/gizmo-team/docs/agent-configuration.md) define how
 the host applies those settings.
 
 1. Check that the configured models and reasoning efforts are supported by your host.
