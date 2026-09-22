@@ -42,6 +42,73 @@ workspace verified; it can succeed with warnings and omit other members.
 **Preferred:** wire all three checks into the existing verification entry point,
 deny warnings, and run each supported configuration required by the project.
 
+### Enforce the lint baseline
+
+- Add these settings to each package's `Cargo.toml`.
+- For shared workspace settings, use `[workspace.lints]` and opt every member into `[lints] workspace = true`.
+- Keep the [Option prohibition](../modeling/domain-states.md#enforce-the-option-prohibition-with-clippy) configured alongside this baseline.
+- Keep generated-code exceptions limited to the scope permitted by that practice.
+
+```toml
+[lints.rust]
+unused_must_use = "deny"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+absolute_paths = "deny"
+disallowed_types = "deny"
+fn_params_excessive_bools = "deny"
+struct_excessive_bools = "deny"
+let_underscore_must_use = "deny"
+let_underscore_future = "deny"
+return_self_not_must_use = "deny"
+result_unit_err = "deny"
+wildcard_enum_match_arm = "deny"
+too_many_arguments = "deny"
+excessive_nesting = "deny"
+```
+
+- Add these thresholds to the project's `clippy.toml`.
+- Preserve its `disallowed-types` configuration.
+
+```toml
+absolute-paths-max-segments = 2
+allow-expect-in-tests = false
+allow-unwrap-in-tests = false
+max-fn-params-bools = 0
+max-struct-bools = 0
+too-many-arguments-threshold = 2
+excessive-nesting-threshold = 5
+```
+
+- Enforce [domain states](../modeling/domain-states.md) with the targeted boolean lints.
+- Keep direct boolean parameters and struct fields at zero.
+- Review boolean aliases, enum payloads, return values, containers, and stored locals manually.
+- Preserve the permitted `From<bool>` boundary conversions.
+- Do not claim these lints enforce a complete boolean ban.
+- Enforce [error handling](../behavior/error-handling.md) with `result_unit_err`, `unused_must_use`, and `let_underscore_must_use`.
+- Handle fallible results instead of discarding them.
+- Review private APIs and error meaning manually; `result_unit_err` primarily checks public APIs.
+- Await or explicitly manage asynchronous work instead of discarding futures with `let _`.
+- Mark methods returning replacement `Self` values with `#[must_use]` under [owned updates](../behavior/owned-updates.md).
+- Review fallible replacement methods manually; `return_self_not_must_use` does not cover every wrapper around `Self`.
+- Name enum alternatives explicitly in `match` arms.
+- Use partial matching only when permitted by [exhaustive matching](../modeling/domain-states.md#match-decisions-exhaustively).
+- Review [API inputs](../behavior/api-inputs.md) for the one-nonreceiver-parameter limit.
+- Set the argument threshold to two because Clippy counts `self`.
+- Check associated and free functions manually; two nonreceiver parameters still pass this threshold.
+- Use the nesting threshold of five as a structural backstop.
+- Review decision depth separately under [function ownership](../../../../../../docs/programming/function-ownership.md).
+- Account for enclosing modules, implementations, and function blocks in Clippy's nesting count.
+- Do not equate five structural levels with five nested decisions.
+- Do not raise thresholds or add allowances merely to pass the baseline.
+- Verify these settings against the project's toolchain before reporting enforcement.
+
+**Prohibited:** assume a passing Clippy run proves that every domain rule is satisfied.
+
+**Preferred:** enforce the mechanical checks and review the documented gaps.
+
 ### Fix diagnostics before completion
 
 - Require compilation to produce no warnings.

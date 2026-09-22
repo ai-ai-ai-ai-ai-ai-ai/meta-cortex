@@ -1,7 +1,7 @@
 use super::{InstructionError, InstructionTarget};
 use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Tag, TagEnd};
 use pulldown_cmark_to_cmark::cmark;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 
 // Derives emit sibling implementations using Option. Keep authored types denied.
 #[allow(
@@ -33,7 +33,33 @@ pub enum SectionKind {
 #[derive(Serialize)]
 pub struct CursorHeader {
     #[serde(rename = "alwaysApply")]
-    pub always_apply: bool,
+    pub always_apply: CursorApplication,
+}
+
+#[derive(Deserialize)]
+#[serde(from = "bool")]
+pub enum CursorApplication {
+    Always,
+    Conditional,
+}
+
+impl From<bool> for CursorApplication {
+    fn from(always_apply: bool) -> Self {
+        if always_apply {
+            Self::Always
+        } else {
+            Self::Conditional
+        }
+    }
+}
+
+impl Serialize for CursorApplication {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_bool(matches!(self, Self::Always))
+    }
 }
 
 impl SectionHeader {

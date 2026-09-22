@@ -21,11 +21,23 @@ serde-saphyr = { version = "1.3.0", default-features = false, features = ["deser
 pulldown-cmark = { version = "0.13.4", default-features = false }
 pulldown-cmark-to-cmark = "22.0.1"
 
+[lints.rust]
+unused_must_use = "deny"
+
 [lints.clippy]
 unwrap_used = "deny"
 expect_used = "deny"
 absolute_paths = "deny"
 disallowed_types = "deny"
+fn_params_excessive_bools = "deny"
+struct_excessive_bools = "deny"
+let_underscore_must_use = "deny"
+let_underscore_future = "deny"
+return_self_not_must_use = "deny"
+result_unit_err = "deny"
+wildcard_enum_match_arm = "deny"
+too_many_arguments = "deny"
+excessive_nesting = "deny"
 
 [package.metadata.dist]
 dist = true

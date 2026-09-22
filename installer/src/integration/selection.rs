@@ -63,7 +63,7 @@ impl IntegrationOptions {
                 InitMode::Bundled => return Err(InstructionError::ExplicitChoiceRequired),
                 InitMode::Interactive => request.project.choose()?,
             },
-            selected => selected,
+            selected @ (HarnessChoice::Selected(_) | HarnessChoice::None) => selected,
         };
         let harness = match choice {
             HarnessChoice::None => return Ok(IntegrationPlan::Skip),
@@ -104,7 +104,7 @@ impl IntegrationOptions {
                     None => return Err(InstructionError::Cancelled),
                 }
             }
-            action => action,
+            action @ (InstructionAction::Write | InstructionAction::Skip) => action,
         };
         match action {
             InstructionAction::Write => {

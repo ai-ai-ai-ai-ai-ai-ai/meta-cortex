@@ -10,7 +10,7 @@ pub use selection::{IntegrationOptions, IntegrationRequest};
 
 use clap::ValueEnum;
 use derive_more::Display;
-use document::CursorHeader;
+use document::{CursorApplication, CursorHeader};
 use instructions::PreparedInstructions;
 use markdown::MarkdownInstructions;
 use pulldown_cmark_to_cmark::Error as MarkdownError;
@@ -146,7 +146,10 @@ impl InstructionTarget {
             .extension()
             .and_then(|extension| extension.to_str())
         {
-            Some("mdc") => CursorHeader { always_apply: true }.render(),
+            Some("mdc") => CursorHeader {
+                always_apply: CursorApplication::Always,
+            }
+            .render(),
             Some(_) | None => Ok(String::default()),
         }
     }

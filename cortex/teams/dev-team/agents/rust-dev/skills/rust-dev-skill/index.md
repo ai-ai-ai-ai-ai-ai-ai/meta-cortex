@@ -846,6 +846,13 @@ boundaries.
     configurations; preserve build flags and deny compiler and Clippy warnings.
   - Coordinate pipeline changes with the CI/CD owner under the active mode.
 
+- **[code_checks:lint_baseline](practices/tooling/rust-code-checks.md#enforce-the-lint-baseline)**
+
+  - Deny targeted boolean, ignored-result/future, replacement-value, unit-error,
+    wildcard-enum, argument-count, and nesting lints alongside existing checks.
+  - Apply the prescribed thresholds and preserve scoped generated-code exceptions.
+  - Review semantic gaps; Clippy counts receivers and structural nesting.
+
 - **[code_checks:fix_diagnostics](practices/tooling/rust-code-checks.md#fix-diagnostics-before-completion)**
 
   - Fix formatting and all encountered compilation/lint warnings, including
