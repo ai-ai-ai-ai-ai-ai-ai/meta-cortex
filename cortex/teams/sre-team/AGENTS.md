@@ -1,7 +1,9 @@
 # Site Reliability Engineering Team
 
 Team Gizmo uses this directory to select owners for containers, cluster
-workloads, and cloud-native operations.
+workloads, CI/CD, and cloud-native operations. Apply the
+[SRE knowledge](docs/index.md) to discover the consuming project’s execution
+contract. In single-agent mode, the current agent uses the relevant role directly.
 
 ## Agent catalog
 
@@ -9,6 +11,12 @@ workloads, and cloud-native operations.
   - Dockerfiles, BuildKit builds, cache design, and container build evidence.
 - **[Kubernetes specialist](agents/kubernetes-specialist/AGENTS.md)**
   - Kubernetes workload manifests, execution-boundary review, and cloud-native operations.
+
+- **[CI/CD agent](agents/cicd-agent/AGENTS.md)**
+  - Status: implemented role instructions and CI/CD Operations skill.
+  - Runs existing checks, investigates failures, and repairs assigned workflow infrastructure.
+  - Executes authorized deployments and releases through existing project procedures.
+  - Excludes PR management, product fixes, build-system selection, and defining release pipelines.
 
 ## Assignment boundaries
 

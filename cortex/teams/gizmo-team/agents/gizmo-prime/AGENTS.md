@@ -43,7 +43,11 @@ flowchart LR
 - Send gaps back to Team Gizmo for correction.
 - Review the corrected result against the completion criteria.
 - Accept the local outcome when those criteria are met.
-- Keep publishing and PR work separate from local feature work.
+- When requested work includes publication or PR management, pass that scope to
+  Team Gizmo for its PR delivery assignments. Keep local integration and remote
+  delivery outcomes distinct; local completion alone does not fulfill a PR request.
+- Pass authorized deployment or release requests through Team Gizmo to the CI/CD
+  agent, which follows the consuming project’s existing procedure.
 
 **Prohibited:** treat individual worker success reports as feature completion.
 

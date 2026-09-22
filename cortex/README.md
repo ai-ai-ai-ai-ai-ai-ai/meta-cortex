@@ -51,6 +51,11 @@ In multi-agent mode:
   - Return evidence and unresolved blockers.
 - **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
   - Manages feature worktrees and merges completed task branches.
+- **[PR agent](teams/delivery-team/agents/pr-agent/AGENTS.md)**
+  - Publishes feature branches, manages PR feedback and checks, and performs authorized merges.
+- **[CI/CD agent](teams/sre-team/agents/cicd-agent/AGENTS.md)**
+  - Runs project-defined checks, repairs assigned pipeline infrastructure, and executes
+    authorized project deployment procedures.
 
 Each launch includes the [assignment context](teams/AGENTS.md#assignment-context):
 project and library locations, team documentation, applicable circuit breakers,
@@ -70,6 +75,30 @@ specialized skills are:
 - [Cloud-Native](teams/sre-team/agents/kubernetes-specialist/skills/cloud-native-skill/SKILL.md) for
   bounded, observable infrastructure and operational changes, loaded by the
   Kubernetes specialist for cloud-native assignments.
+
+## PR delivery and CI/CD
+
+Request the desired operation: publishing a PR, addressing feedback, checking CI,
+merging, or executing an existing deployment procedure. In single-agent mode,
+the current agent applies the relevant delivery and CI/CD skills. In multi-agent
+mode, Team Gizmo assigns only the specialists needed for the requested work.
+
+[Delivery knowledge](teams/delivery-team/docs/index.md) owns discovery of branch,
+review, merge, and cleanup policy. [SRE knowledge](teams/sre-team/docs/index.md)
+owns discovery of execution commands and deployment procedures. Both follow the
+consuming project's instructions and actual workflow definitions.
+
+For example, one project may document `task check`, another `make verify`, and
+another `just test`; the agents use the documented entry point. Meta-Cortex
+introduces no build-system configuration schema or universal command adapter.
+Release pipelines remain project-owned. The CI/CD agent can execute an existing
+one when requested, but the framework does not define its release process.
+
+**Prohibited:** copy a project's Taskfile commands, squash-only policy, or release
+workflow into the generic framework and apply it to every consumer.
+
+**Preferred:** discover this project's supported operations, execute the requested
+scope, and report observed PR, run, merge, or deployment outcomes.
 
 ## Circuit breaker
 
