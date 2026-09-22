@@ -83,9 +83,9 @@ merging, or executing an existing deployment procedure. In single-agent mode,
 the current agent applies the relevant delivery and CI/CD skills. In multi-agent
 mode, Team Gizmo assigns only the specialists needed for the requested work.
 
-[Delivery knowledge](teams/delivery-team/docs/index.md) owns discovery of branch,
-review, merge, and cleanup policy. [SRE knowledge](teams/sre-team/docs/index.md)
-owns discovery of execution commands and deployment procedures. Both follow the
+[Project delivery policy](teams/delivery-team/docs/project-delivery-policy.md) covers discovery of branch,
+review, merge, and cleanup policy. [Project execution policy](teams/sre-team/docs/project-execution-policy.md)
+covers discovery of execution commands and deployment procedures. Both follow the
 consuming project's instructions and actual workflow definitions.
 
 For example, one project may document `task check`, another `make verify`, and
@@ -157,11 +157,13 @@ Engineering and Code Practice Writing for documentation and programming examples
 
 Teams live directly under `teams/`. Each team groups its agents in `agents/`;
 the Gizmo team contains both coordinators. Shared subject knowledge lives in
-each owning team’s `docs/`, with `index.md` as the entry point. Individual documents retain descriptive names.
-The [development knowledge base](teams/dev-team/docs/index.md)
-owns language-independent programming rules. The
-[security knowledge base](teams/security-team/docs/index.md)
-owns shared secret-handling requirements. Agents link relevant knowledge and
+each owning team’s `docs/`. Its `index.md` contains only navigation links and
+brief topic summaries. Rules, explanations, and examples live in descriptively
+named documents.
+The [development documentation catalog](teams/dev-team/docs/index.md)
+links language-independent programming rules. The
+[security documentation catalog](teams/security-team/docs/index.md)
+links shared secret-handling requirements. Agents link relevant knowledge and
 skills directly; there is no global knowledge directory or selection registry.
 
 The framework's instructions remain generic.

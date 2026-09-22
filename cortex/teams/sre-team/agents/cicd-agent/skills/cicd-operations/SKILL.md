@@ -5,7 +5,7 @@ description: Discover and run existing project CI checks, inspect GitHub Actions
 
 # CI/CD Operations
 
-Apply the [SRE knowledge](../../../../docs/index.md) and
+Apply the [project execution policy](../../../../docs/project-execution-policy.md) and
 [operations circuit breaker](../../../../CIRCUIT-BREAKER.md) before execution.
 Use existing project commands and the host's provider tools. For GitHub Actions,
 use the GitHub connector or installed `gh` CLI with access to the requested
@@ -15,7 +15,7 @@ repository. Missing tools or credentials are explicit blockers.
 
 ### Execute the requested validation
 
-1. Discover the project execution contract using the SRE knowledge. Resolve the
+1. Discover the project execution contract using the project execution policy. Resolve the
    check scope, source branch or revision, workflow, inputs, and execution venue.
    Do not run local substitutes when hosted results are required.
 2. Inspect existing matching runs before dispatching. Reuse a run that covers

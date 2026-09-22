@@ -10,7 +10,8 @@ instructions generic and keep the root `LICENSE` in place.
 
 Keep each practice with its subject: programming, security, or repository automation.
 Put shared subject knowledge in the owning team’s `docs/`, with an
-`index.md` entry point. Keep individual documents descriptively named.
+`index.md` navigation catalog containing only links and brief topic summaries.
+Keep rules, explanations, and examples in descriptively named documents.
 Teams live in `cortex/teams/`; each team groups its agents under `agents/`.
 Both Gizmo coordinators belong to `gizmo-team`.
 Skills live under their owning agents. Do not create library-root or team-level

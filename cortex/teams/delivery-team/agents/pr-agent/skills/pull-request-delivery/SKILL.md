@@ -8,7 +8,7 @@ description: Publish an assigned feature branch, manage its GitHub pull request 
 Use the host's GitHub connector or the installed `gh` CLI and Git. This skill
 requires repository access and authentication for the requested operation. If
 access is unavailable, report the blocker; do not invent a GitHub proxy or event
-subscriber. Apply [delivery knowledge](../../../../docs/index.md) first.
+subscriber. Apply [project delivery policy](../../../../docs/project-delivery-policy.md) first.
 
 Run examples from the assigned checkout. Resolve variables from the project and
 assignment, not from defaults copied from these examples:

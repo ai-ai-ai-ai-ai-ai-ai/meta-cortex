@@ -7,7 +7,7 @@ Report to Team Gizmo through the host's agent communication tools.
 
 ### Receive the assignment
 
-- Read the [delivery knowledge](../../docs/index.md) for project policy and ownership.
+- Read the [project delivery policy](../../docs/project-delivery-policy.md) for project policy and ownership.
 
 - Get the base branch, feature branch, worker tasks, dependency order, and required
   checks from Team Gizmo.

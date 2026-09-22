@@ -54,7 +54,9 @@ needs an existing skill, link its instructions to the owning agent’s copy.
 ### Knowledge organization
 
 - Keep shared subject requirements in the owning team’s `docs/`.
-- Use `index.md` as its entry point and descriptive names for individual documents.
+- Use `index.md` only as a navigation catalog of links and brief topic summaries.
+- Keep rules, explanations, procedures, and examples in descriptively named
+  documents; indexes link their canonical owners instead of containing guidance.
 - Add subject directories, architecture documents, or specifications only when
   existing content needs them; do not create empty scaffolding.
 - Keep language-independent knowledge outside language-specific skills.
@@ -62,11 +64,12 @@ needs an existing skill, link its instructions to the owning agent’s copy.
 - Keep `AGENTS.md` for roles and `SKILL.md` for skills.
 
 **Prohibited:** put language-independent testing rules under the Rust skill or
-create a global standards directory to hold team-owned knowledge.
+create a global standards directory to hold team-owned knowledge, or write
+operating procedures directly in `docs/index.md`.
 
 **Preferred:** put programming rules in the development team’s knowledge base,
-link them from the relevant agents, and keep Rust-specific instructions in the
-Rust skill. Use the security team’s knowledge base for secret-handling policy.
+link them through a navigation-only index and from relevant agents. Keep
+Rust-specific instructions in the Rust skill. Use the security team’s knowledge base for secret-handling policy.
 
 ### Assignment example
 

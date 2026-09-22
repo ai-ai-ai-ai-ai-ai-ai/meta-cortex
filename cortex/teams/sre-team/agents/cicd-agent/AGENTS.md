@@ -8,7 +8,7 @@ In single-agent mode, the current agent applies this role directly.
 
 - Apply the [operations circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
   global policy supplied with the assignment.
-- Read the [SRE knowledge](../../docs/index.md) and load
+- Read the [project execution policy](../../docs/project-execution-policy.md) and load
   [CI/CD Operations](skills/cicd-operations/SKILL.md).
 - Receive the requested checks or operation, project workspace, source ref,
   existing run information, and relevant project execution instructions.

@@ -9,6 +9,12 @@ Every secret-bearing value has an explicit owner, purpose, lifetime, and
 destruction event. Encryption at rest does not justify an unbounded plaintext
 lifetime in memory.
 
+**Prohibited:** apply secret redaction only to one language while another logs
+the same credential.
+
+**Preferred:** apply the same secret-lifecycle requirements at both boundaries,
+using the relevant implementation skills for language-specific handling.
+
 ## Required actions
 
 - Decrypt only the smallest value required for the current operation.

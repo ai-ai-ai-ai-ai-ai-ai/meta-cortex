@@ -17,6 +17,15 @@ Does not apply to:
 - Purely visual design tweaks with no behavioral defect.
 - Instruction-only documentation edits without executable behavior changes.
 
+These requirements apply across programming languages alongside the relevant
+language skill.
+
+**Prohibited:** apply the regression procedure only to Rust while changing the
+same behavior in TypeScript without it.
+
+**Preferred:** use these testing requirements for both implementations, then
+apply each language’s skill to its implementation details.
+
 ## Required actions
 
 ### Testing pyramid

@@ -7,7 +7,7 @@ applies this role directly.
 
 ## Required actions
 
-- Read the [delivery knowledge](../../docs/index.md) and load
+- Read the [project delivery policy](../../docs/project-delivery-policy.md) and load
   [Pull Request Delivery](skills/pull-request-delivery/SKILL.md).
 - Receive the project and library roots, feature workspace and branch, target
   repository and branch, requested operation, and existing validation evidence.
