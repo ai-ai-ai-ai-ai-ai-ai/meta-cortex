@@ -4,17 +4,19 @@
 
 ### Establish repeatable checks
 
-Establish mandatory formatting, type-checking, and lint gates for the consuming
-project. Inspect its package manifests, lockfile, workspace layout, TypeScript
-configurations, framework, and existing verification commands first. Extend the
-existing project-owned check entry point when a gate is missing. Use the chosen
-package manager and locally installed tools; preserve the project's formatter,
-linter, framework, and compiler settings. Coordinate pipeline changes with the
-CI/CD owner under the active development mode.
+- Establish mandatory formatting, type-checking, and lint gates for the consuming project.
+- Inspect the project's package manifests, lockfile, workspace layout, TypeScript
+  configurations, framework, and verification commands first.
+- Extend the existing project-owned check entry point when a gate is missing.
+- Use the chosen package manager and locally installed tools.
+- Preserve the project's formatter, linter, framework, and compiler settings.
+- Coordinate pipeline changes with the CI/CD owner under the active development mode.
 
-For a package already using npm, Prettier, TypeScript, and ESLint, this example
-`package.json` fragment defines the three gates. Merge it into existing scripts;
-do not replace existing tests or other verification steps.
+This `package.json` fragment assumes the package already uses npm, Prettier,
+TypeScript, and ESLint.
+
+- Merge these gates into the existing scripts.
+- Preserve existing tests and other verification steps.
 
 ```json
 {
@@ -27,18 +29,22 @@ do not replace existing tests or other verification steps.
 }
 ```
 
-Cover all applicable workspace packages and authored source, tests, tooling,
-and configuration. Use project-reference-aware commands for referenced projects
-and the framework's checker for component files; plain `tsc` does not check
-Svelte or Vue templates. In JavaScript projects, use the existing JS/framework
-checker or establish suitable `checkJs` coverage. Keep generated and vendor
-files under their owning tools rather than linting them as authored source.
-
-A transpiler or bundler build does not replace type checking. Run the project's
-required build separately and require warning-free output. Make lint warnings
-fail verification, using `--max-warnings 0` for ESLint or the installed linter's
-equivalent. Apply framework warning-failure options where supported and inspect
-output for warnings that do not affect exit status.
+- Cover all applicable workspace packages.
+- Include authored source, tests, tooling, and configuration.
+- Use project-reference-aware commands for referenced projects.
+- Use the framework's checker for component files.
+  - Plain `tsc` does not check Svelte or Vue templates.
+- Use the existing JS/framework checker in JavaScript projects.
+  - Establish suitable `checkJs` coverage when no checker exists.
+- Keep generated and vendor files under their owning tools.
+  - Do not lint them as authored source.
+- Run type checking even when a transpiler or bundler build succeeds.
+- Run the project's required build separately.
+- Require warning-free build output.
+- Make lint warnings fail verification.
+  - Use `--max-warnings 0` for ESLint or the installed linter's equivalent.
+- Apply framework warning-failure options where supported.
+- Inspect output for warnings that do not affect exit status.
 
 **Prohibited:** treat a successful bundler build as proof of type correctness,
 or run ESLint with its default warning threshold and accept remaining warnings.
@@ -48,19 +54,25 @@ and lint with zero warnings, then run the required build and tests.
 
 ### Fix diagnostics before completion
 
-Fix formatting violations, type errors, and all encountered lint, framework,
-and build warnings, including pre-existing diagnostics. Correct their causes,
-then rerun the gates after the final edit. Formatter or linter autofixes require
-review and a subsequent check. Keep behavioral tests and
-[unused-code enforcement](web-unused-code.md) alongside these gates.
-
-Do not weaken compiler settings, disable rules, expand ignores, add type-check
-suppression comments, hide output, or swallow failure exit codes merely to pass.
-Existing narrow external-contract exceptions remain governed by their owning
-practices; they do not authorize new warning bypasses. Repair dependency and
-generated-code diagnostics through their owning dependency or generator. Report
-out-of-scope corrections for coordinated repair; unresolved warnings still block
-successful completion.
+- Fix formatting violations and type errors.
+- Fix all encountered lint, framework, and build warnings.
+  - Include pre-existing diagnostics.
+- Correct each diagnostic's cause.
+- Rerun the gates after the final edit.
+- Review formatter and linter autofixes.
+  - Run the checks again afterward.
+- Keep behavioral tests alongside these gates.
+- Apply [unused-code enforcement](web-unused-code.md) alongside these gates.
+- Do not weaken checks merely to pass.
+  - Do not weaken compiler settings, disable rules, or expand ignores.
+  - Do not add type-check suppression comments for that purpose.
+  - Do not hide output or swallow failure exit codes.
+- Apply existing narrow external-contract exceptions only as their owning practices permit.
+  - These exceptions do not authorize new warning bypasses.
+- Repair dependency diagnostics through the owning dependency.
+- Repair generated-code diagnostics through the owning generator.
+- Report out-of-scope corrections for coordinated repair.
+- Do not report successful completion while warnings remain unresolved.
 
 ```sh
 # Prohibited: hide warnings and turn lint failure into success.
@@ -80,10 +92,13 @@ then rerun formatting, type checking, lint, and the required build/tests.
 
 ### Report verification evidence
 
-Report the actual commands, package/workspace roots, checked configurations,
-and results. Completion requires successful formatting, type checking, linting,
-and required builds with no warnings or errors. Missing tools, failed checks,
-unverified required packages, and remaining diagnostics are blockers, not passes.
+- Report the commands actually run.
+- Identify the package/workspace roots and configurations checked.
+- Report the results actually verified.
+- Require formatting, type checking, linting, and required builds to pass before completion.
+  - Require no warnings or errors.
+- Report missing tools and failed checks as blockers.
+- Report unverified required packages and remaining diagnostics as blockers.
 
 **Prohibited:** “TypeScript verified” after checking only the application package
 while the required tooling package still has lint warnings.
