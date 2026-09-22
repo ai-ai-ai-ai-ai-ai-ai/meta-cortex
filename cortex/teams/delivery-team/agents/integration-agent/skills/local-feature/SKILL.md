@@ -13,7 +13,7 @@ role instructions define assignments and communication.
 
 - Read [local feature integration](practices/local-feature-integration.md)
   before creating task worktrees or integrating changes.
-- Use the [rule map](knowledge-graph.md) to locate individual decisions when
+- Use the [rule map](index.md) to locate individual decisions when
   reviewing or changing this practice.
 
 **Prohibited:** treat a request to prepare local changes as permission to push

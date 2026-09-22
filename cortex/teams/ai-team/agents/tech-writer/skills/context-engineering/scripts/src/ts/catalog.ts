@@ -52,7 +52,7 @@ export class SkillCatalog {
           ),
           inputSchema: JSONSchema.make(SkillRequestSchema.navigation),
           exampleYaml: ProtocolText.yaml(
-            "version: 1\nnavigation:\n  audit:\n    documents:\n      - path: examples/practice.md\n        owner: examples/knowledge-graph.md\n        anchors: [validation]\n    graphs:\n      - path: examples/knowledge-graph.md\n        entries:\n          - rule: practice:validation\n            target: examples/practice.md\n            anchor: validation\n            line: 3\n",
+            "version: 1\nnavigation:\n  audit:\n    documents:\n      - path: examples/practice.md\n        owner: examples/index.md\n        anchors: [validation]\n    graphs:\n      - path: examples/index.md\n        entries:\n          - rule: practice:validation\n            target: examples/practice.md\n            anchor: validation\n            line: 3\n",
           ),
         },
       ],

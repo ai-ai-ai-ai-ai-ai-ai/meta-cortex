@@ -1,6 +1,6 @@
 # Practice Knowledge Graphs
 
-Use a skill's `knowledge-graph.md` as a rule-level map before editing its
+Use a skill's `index.md` as a rule-level map before editing its
 practices. A file list is not enough: readers need the actual requirements,
 prohibitions, exceptions, and checks to detect contradictions across subjects.
 The source practice remains the authority for explanation and examples.

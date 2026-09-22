@@ -9,4 +9,4 @@ description: Build Docker images with deliberate inputs, secret boundaries, and 
   inputs, introduce revision identity at its latest consumer, protect secrets,
   and validate cache wiring with real builds.
 
-Read the [knowledge graph](knowledge-graph.md) before editing a related rule.
+Read the [rule index](index.md) before editing a related rule.

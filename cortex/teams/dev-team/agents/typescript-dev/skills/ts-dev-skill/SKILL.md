@@ -14,7 +14,7 @@ selected language practices. Reuse it if already loaded for this assignment.
 
 ## Practice selection
 
-Read the [knowledge graph](knowledge-graph.md) to select practices and identify
+Read the [rule index](index.md) to select practices and identify
 rule ownership and individual requirements. Follow its loading requirements and
 read the selected practices in full. Before changing a rule, inspect its owner and affected related practices;
 update the same namespaced rules, summaries, exceptions, and section links whenever the

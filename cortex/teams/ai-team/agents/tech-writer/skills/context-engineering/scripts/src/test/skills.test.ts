@@ -167,10 +167,10 @@ navigation:
   audit:
     documents:
       - path: fixtures/practice.md
-        owner: fixtures/knowledge-graph.md
+        owner: fixtures/index.md
         anchors: [one, two]
     graphs:
-      - path: fixtures/knowledge-graph.md
+      - path: fixtures/index.md
         entries: ${this.entries}
 `;
   }
@@ -290,7 +290,7 @@ describe("navigation without Nook topology", () => {
     );
     const yaml = fixture
       .request()
-      .replace("owner: fixtures/knowledge-graph.md", "owner: other/owner.md");
+      .replace("owner: fixtures/index.md", "owner: other/owner.md");
     expect(new SkillProbe(yaml).codes()).toEqual([
       NavigationFindingCode.MissingOwner,
       NavigationFindingCode.ForeignOwner,
@@ -372,7 +372,7 @@ navigation:
   audit:
     documents: []
     graphs:
-      - {path: fixtures/knowledge-graph.md, entries: []}
-      - {path: fixtures/knowledge-graph.md, entries: []}`;
+      - {path: fixtures/index.md, entries: []}
+      - {path: fixtures/index.md, entries: []}`;
   expect(new SkillProbe(yaml).execute().exitCode).toBe(2);
 });

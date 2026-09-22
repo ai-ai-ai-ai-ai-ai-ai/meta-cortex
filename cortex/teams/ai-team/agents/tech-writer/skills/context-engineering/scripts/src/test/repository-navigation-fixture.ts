@@ -13,7 +13,7 @@ export class RepositoryNavigationFixture {
         this.moduleUrl,
       );
       const practicePath = "practices/typescript-function-ownership.md";
-      const graph = readFileSync(new URL("knowledge-graph.md", skill), "utf8");
+      const graph = readFileSync(new URL("index.md", skill), "utf8");
       const practice = readFileSync(new URL(practicePath, skill), "utf8");
       const anchor = "use-instances-for-owned-behavior";
       expect(practice.split("\n")).toContain(
@@ -21,7 +21,7 @@ export class RepositoryNavigationFixture {
       );
       const prefix = "teams/dev-team/agents/typescript-dev/skills/ts-dev-skill";
       const target = `${prefix}/${practicePath}`;
-      const owner = `${prefix}/knowledge-graph.md`;
+      const owner = `${prefix}/index.md`;
       const rules = [
         "function_ownership:instances",
         "function_ownership:meaningful_state",
