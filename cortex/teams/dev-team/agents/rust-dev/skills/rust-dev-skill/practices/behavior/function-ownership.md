@@ -135,8 +135,10 @@ action. Keep validation and workflow transitions intact.
 ## Keep required free functions at the boundary
 
 Language entrypoints, test-harness entries, and callbacks required by an external
-framework may remain free functions. Delegate their behavior to an owning type;
-ordinary helpers do not inherit the exception.
+framework may remain free functions. Delegate application behavior to an owning
+type. Test-harness entries may contain their scenario's setup, actions, and
+assertions; reusable test helpers still belong to fixture owners. Ordinary
+helpers do not inherit the entrypoint exception.
 
 **Prohibited:** `main` delegates to another unowned helper.
 
@@ -154,17 +156,26 @@ fn run_application() {
 
 ```rust
 fn main() {
-    let application = Application { message: String::from("Ready") };
+    let application = Application { message: MessageBody::from(String::from("Ready")) };
     application.run();
 }
 
+#[derive(derive_more::From)]
+pub struct MessageBody(String);
+
+impl MessageBody {
+    pub fn print(&self) {
+        println!("{}", self.0);
+    }
+}
+
 pub struct Application {
-    message: String,
+    message: MessageBody,
 }
 
 impl Application {
     pub fn run(self) {
-        println!("{}", self.message);
+        self.message.print();
     }
 }
 ```
@@ -187,13 +198,13 @@ recognized automatically, use a per-function checked expectation with an
 `FFI boundary:` or `framework boundary:` reason naming the required edge.
 Never suppress ownership across a crate, module, or type.
 
-**Prohibited:** add a blanket `allow` or exempt helpers because a framework
-calls one function in the module.
+- **Prohibited:** add a blanket `allow` or exempt helpers because a framework
+  calls one function in the module.
 
-**Preferred:** exempt only the required callback, document its external contract,
-and keep the delegated behavior on its owning type. Check that lint fixtures
-reject lookalike helpers, missing reasons, and blanket suppressions; retain
-separate behavior tests.
+- **Preferred:** exempt only the required callback, document its external contract,
+  and keep the delegated behavior on its owning type. Check that lint fixtures
+  reject lookalike helpers, missing reasons, and blanket suppressions; retain
+  separate behavior tests.
 
 Migrate one cohesive flow at a time. Inventory its free functions and construction
 paths, preserve public ABI and wire contracts unless their change is assigned,

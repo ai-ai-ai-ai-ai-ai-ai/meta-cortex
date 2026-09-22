@@ -14,12 +14,12 @@ for writing decisions, and concrete scenarios for behavior or procedures.
 - Let one pair cover several statements only when all explain the same decision
   and the example demonstrates each of them.
 
-**Prohibited:** “Handle failures properly and keep documentation clean.”
+- **Prohibited:** “Handle failures properly and keep documentation clean.”
 
 This combines two subjects without specifying an action for either.
 
-**Preferred:** “When an example has not been executed, label it unverified.
-Do not describe it as passing.”
+- **Preferred:** “When an example has not been executed, label it unverified.
+  Do not describe it as passing.”
 
 The condition and required report are explicit. Documentation layout belongs
 in a separate section with its own example.
@@ -36,9 +36,9 @@ in a separate section with its own example.
 For the execution-reporting rule above, assume the author inspected an example
 but did not run it.
 
-**Prohibited:** “The example passes.”
+- **Prohibited:** “The example passes.”
 
-**Preferred:** “Reviewed the example's parameter types; execution is unverified.”
+- **Preferred:** “Reviewed the example's parameter types; execution is unverified.”
 
 Both report on the same review. The preferred report separates the evidence
 obtained from the evidence still missing. If execution later succeeds, a report
@@ -48,7 +48,10 @@ does not establish that its behavior was tested.
 ### Keep examples with their authority
 
 - Keep the rule and its examples in one owning practice.
-- Let catalogs select that practice without repeating its requirements or pairs.
+- Keep team documentation catalogs limited to links and brief summaries.
+- Skill knowledge graphs may summarize requirements, exceptions, and cross-rule
+  comparisons under the [knowledge-graph rules](knowledge-graphs.md). The source
+  practice remains authoritative; a summary must not introduce a new policy.
 - Require a pair when a catalog entry introduces a new rule; move that rule
   into its owning practice instead of expanding the catalog.
 
@@ -58,7 +61,9 @@ unless it was run. Bad: ‘passes.’ Good: ‘execution unverified.’”
 **Preferred catalog entry:** “Execution reports: evidence labels and unverified
 examples,” linked to the owning practice containing the rule and pair.
 
-The catalog identifies what to load. The practice supplies the explanation.
+The team catalog identifies what to load. The practice supplies the explanation.
+A skill graph can include a synchronized rule summary and a comparison example
+to expose interactions between existing rules.
 
 ## Prohibited actions
 
@@ -81,10 +86,10 @@ For each substantive section, identify its decision and its pair. Verify that
 the pair demonstrates every requirement in that section and that the preferred
 example complies with them.
 
-**Prohibited review:** “Every section has an example, so the document is clear.”
+- **Prohibited review:** “Every section has an example, so the document is clear.”
 
-**Preferred review:** “The failure-reporting section requires naming missing
-checks. Its preferred example names browser validation as unexecuted.”
+- **Preferred review:** “The failure-reporting section requires naming missing
+  checks. Its preferred example names browser validation as unexecuted.”
 
 The review must connect the example to the rule; counting code blocks or labels
 does not establish that connection.

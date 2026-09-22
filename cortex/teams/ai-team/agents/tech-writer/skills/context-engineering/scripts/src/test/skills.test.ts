@@ -39,6 +39,21 @@ class InvalidYamlFixtures {
       expectedCode: FailureCode.Request,
     },
     {
+      name: "unknown discovery request field",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: {extra: secret}}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "empty discovery request sequence",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: []}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
+      name: "nonempty discovery request sequence",
+      yaml: ProtocolText.yaml("version: 1\ntools: {list: [secret]}"),
+      expectedCode: FailureCode.Request,
+    },
+    {
       name: "unknown envelope field",
       yaml: ProtocolText.yaml("version: 1\ntools: {list: {}}\nextra: secret"),
       expectedCode: FailureCode.Request,

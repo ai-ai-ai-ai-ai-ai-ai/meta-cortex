@@ -36,8 +36,9 @@ type DownloadState =
 
 Use members in constructors, comparisons, switches, and fixtures, including
 closed protocol fields such as type/status/phase/mode/action. Preserve required
-wire string values in the enum. Product/security vocabulary comes from Rust;
-do not mirror or rename it in TypeScript.
+wire string values in the enum. In Rust/WASM projects, product/security vocabulary
+comes from Rust; do not mirror or rename it in TypeScript. TypeScript-owned
+domains define their vocabulary in TypeScript.
 
 **Prohibited:**
 
@@ -147,8 +148,8 @@ type ImportView =
 ## Keep component enums in an importable module
 
 Put runtime enums used by Svelte component instances in an adjacent cohesive .ts
-module. Do not define them in either same-file script block. Use the configured
-Vite preprocessor and test actual rendering; a type check alone is not runtime
+module. Do not define them in either same-file script block. Use the project's
+configured Svelte preprocessing and test actual rendering; a type check alone is not runtime
 evidence. Initialize runes and bindable state explicitly.
 
 **Prohibited:**

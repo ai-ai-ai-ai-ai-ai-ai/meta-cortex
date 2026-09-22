@@ -1,8 +1,10 @@
 # TypeScript Domain Types
 
 Use types that carry domain meaning through private and public code, tests,
-state, collections, and boundaries. Portable product/security types come from
-generated Rust contracts; TypeScript owns browser and presentation vocabulary.
+state, collections, and boundaries. In Rust/WASM projects, portable
+product/security types come from generated Rust contracts; TypeScript owns
+browser and presentation vocabulary. Otherwise, TypeScript may own the project's
+domain types and rules as well.
 
 Examples are alternative fragments. Supporting domain types and collaborators
 are supplied by the application; method fragments belong to their named owner.

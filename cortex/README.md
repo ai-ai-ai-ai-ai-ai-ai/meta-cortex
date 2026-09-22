@@ -95,11 +95,11 @@ introduces no build-system configuration schema or universal command adapter.
 Release pipelines remain project-owned. The CI/CD agent can execute an existing
 one when requested, but the framework does not define its release process.
 
-**Prohibited:** copy a project's Taskfile commands, squash-only policy, or release
-workflow into the generic framework and apply it to every consumer.
+- **Prohibited:** copy a project's Taskfile commands, squash-only policy, or release
+  workflow into the generic framework and apply it to every consumer.
 
-**Preferred:** discover this project's supported operations, execute the requested
-scope, and report observed PR, run, merge, or deployment outcomes.
+- **Preferred:** discover this project's supported operations, execute the requested
+  scope, and report observed PR, run, merge, or deployment outcomes.
 
 ## Circuit breaker
 

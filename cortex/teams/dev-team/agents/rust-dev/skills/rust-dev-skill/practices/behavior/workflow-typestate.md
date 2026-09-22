@@ -88,24 +88,38 @@ implementations. Callers can construct only the draft publication.
 
 ```rust
 pub mod publishing {
-    use std::{fs, io, path::PathBuf};
+    use std::{fs, io, path};
+
+    #[derive(derive_more::From)]
+    pub struct DraftText(String);
+
+    pub struct DocumentText(String);
+
+    #[derive(derive_more::From)]
+    pub struct DocumentPath(path::PathBuf);
+
+    impl DocumentPath {
+        pub fn display(&self) -> path::Display<'_> {
+            self.0.display()
+        }
+    }
 
     pub struct Publication<State> {
         state: State,
     }
 
     pub struct Draft {
-        pub content: String,
-        pub destination: PathBuf,
+        pub content: DraftText,
+        pub destination: DocumentPath,
     }
 
     pub struct Validated {
-        content: String,
-        destination: PathBuf,
+        content: DocumentText,
+        destination: DocumentPath,
     }
 
     pub struct Published {
-        destination: PathBuf,
+        destination: DocumentPath,
     }
 
     #[derive(Debug, thiserror::Error)]
@@ -122,15 +136,23 @@ pub mod publishing {
         }
     }
 
+    impl TryFrom<DraftText> for DocumentText {
+        type Error = PublishError;
+
+        fn try_from(draft: DraftText) -> Result<Self, Self::Error> {
+            if draft.0.trim().is_empty() {
+                return Err(PublishError::EmptyDocument);
+            }
+            Ok(Self(draft.0))
+        }
+    }
+
     impl TryFrom<Draft> for Validated {
         type Error = PublishError;
 
         fn try_from(draft: Draft) -> Result<Self, Self::Error> {
-            if draft.content.trim().is_empty() {
-                return Err(PublishError::EmptyDocument);
-            }
-
             let Draft { content, destination } = draft;
+            let content = DocumentText::try_from(content)?;
             Ok(Self { content, destination })
         }
     }
@@ -145,13 +167,13 @@ pub mod publishing {
     impl Publication<Validated> {
         pub fn publish(self) -> Result<Publication<Published>, PublishError> {
             let Validated { content, destination } = self.state;
-            fs::write(&destination, content)?;
+            fs::write(&destination.0, content.0)?;
             Ok(Publication { state: Published { destination } })
         }
     }
 
     impl Publication<Published> {
-        pub fn destination(&self) -> &PathBuf {
+        pub fn destination(&self) -> &DocumentPath {
             &self.state.destination
         }
     }
@@ -165,20 +187,30 @@ validated data; only publication methods wrap advanced states in the workflow.
 ### Run the pipeline
 
 ```rust
-use publishing::{Draft, Publication, PublishError};
+use std::path;
+use publishing::{DocumentPath, Draft, DraftText, Publication, PublishError};
 
 fn main() -> Result<(), PublishError> {
     let draft = Draft {
-        content: String::from("Release notes"),
-        destination: "release-notes.md".into(),
+        content: DraftText::from(String::from("Release notes")),
+        destination: DocumentPath::from(path::PathBuf::from("release-notes.md")),
     };
+    PublicationCommand { draft }.run()
+}
 
-    let publication = Publication::from(draft);
-    let publication = publication.validate()?;
-    let publication = publication.publish()?;
+struct PublicationCommand {
+    draft: Draft,
+}
 
-    println!("Published to {}", publication.destination().display());
-    Ok(())
+impl PublicationCommand {
+    fn run(self) -> Result<(), PublishError> {
+        let publication = Publication::from(self.draft);
+        let publication = publication.validate()?;
+        let publication = publication.publish()?;
+
+        println!("Published to {}", publication.destination().display());
+        Ok(())
+    }
 }
 ```
 
@@ -190,6 +222,9 @@ the next valid operations. Validation and I/O failures return typed errors.
 
 This example writes a file; it does not guarantee atomic writes or durable
 storage. Check runtime permissions and freshness at the actual effect boundary.
+It requires `thiserror` and `derive_more` with its `from` feature. Draft text and
+destination paths retain their named types; only the file adapter exposes their
+representations to `fs::write`.
 
 ## Validation
 

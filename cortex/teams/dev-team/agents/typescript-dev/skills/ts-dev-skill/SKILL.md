@@ -9,6 +9,12 @@ These rules cover authored TypeScript,
 JavaScript, Svelte scripts, tests, configuration, and agent tooling. Generated
 bindings and dependency code retain their externally owned contracts.
 
+Use the consuming project's languages, UI stack, and execution commands.
+TypeScript may own domain and security behavior in TypeScript projects. When
+the project uses Rust/WASM for portable product or security logic, preserve that
+ownership and consume its generated contracts. Load Svelte-specific practices
+only for Svelte code; they do not authorize replacing another UI framework.
+
 Apply [programming requirements](../../../../docs/index.md) before the
 selected language practices. Reuse it if already loaded for this assignment.
 

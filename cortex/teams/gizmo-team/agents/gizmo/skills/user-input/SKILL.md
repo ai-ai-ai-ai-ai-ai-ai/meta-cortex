@@ -82,8 +82,8 @@ This skill cannot override host restrictions on when questions may be asked.
 When a higher-priority host rule disallows the required prompt, report that
 configuration is blocked unless the user has already supplied a valid choice.
 
-**Prohibited:** end the turn while waiting for the mode answer, or treat a
-50-second timeout as choosing `single_agent`.
+- **Prohibited:** end the turn while waiting for the mode answer, or treat a
+  50-second timeout as choosing `single_agent`.
 
-**Preferred:** keep the pending request active through interruptible waits; on
-explicit cancellation, stop collection and leave the original task paused.
+- **Preferred:** keep the pending request active through interruptible waits; on
+  explicit cancellation, stop collection and leave the original task paused.

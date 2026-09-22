@@ -31,13 +31,13 @@ For work crossing these boundaries, give each agent a bounded assignment and
 explicit dependencies. Pass these boundaries with each assignment; language
 expertise does not authorize taking over another agent's work or feature coordination.
 
-**Prohibited:** assign a developer a credential-storage fix and implicitly
-authorize it to redefine the security policy and rewrite the agent instructions.
+- **Prohibited:** assign a developer a credential-storage fix and implicitly
+  authorize it to redefine the security policy and rewrite the agent instructions.
 
-**Preferred:** Team Gizmo assigns the implementation and regression tests to
-the agent owning the affected implementation, security-policy questions to the security team, and
-instruction changes to the tech writer. Each assignment identifies its
-dependencies on the others.
+- **Preferred:** Team Gizmo assigns the implementation and regression tests to
+  the agent owning the affected implementation, security-policy questions to the security team, and
+  instruction changes to the tech writer. Each assignment identifies its
+  dependencies on the others.
 
 ## Team knowledge
 

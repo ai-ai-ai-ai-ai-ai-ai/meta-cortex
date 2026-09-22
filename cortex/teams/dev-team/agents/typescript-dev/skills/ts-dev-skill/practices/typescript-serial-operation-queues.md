@@ -1,7 +1,8 @@
 # TypeScript Serial Operation Queues
 
 Use Effect v3 for authored serial workflows. Keep scheduling in TypeScript and
-portable product policy in Rust. External Promise APIs belong only at adapters;
+portable product policy in its domain owner, which is Rust in Rust/WASM projects.
+External Promise APIs belong only at adapters;
 do not build an internal Promise-tail failure model alongside Effect.
 
 ## Keep the queue and results typed
@@ -95,10 +96,10 @@ jobs admitted before it have finished, even if some failed. It does not promise
 that concurrent producers have stopped. A live barrier has no job-failure channel;
 scope cancellation still interrupts it.
 
-**Prohibited:** check that the pending queue is empty while a job is still running.
+- **Prohibited:** check that the pending queue is empty while a job is still running.
 
-**Preferred:** process a barrier after preceding jobs through the same single
-consumer and complete its Deferred only when the barrier is reached.
+- **Preferred:** process a barrier after preceding jobs through the same single
+  consumer and complete its Deferred only when the barrier is reached.
 
 Do not reset by replacing a tail and abandoning callers. Recovery must settle or
 interrupt admitted jobs and release the old scoped consumer before admitting work

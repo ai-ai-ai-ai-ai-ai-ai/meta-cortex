@@ -21,6 +21,8 @@ export interface WorkflowRequest {
   readonly form: Form;
   readonly input: InputRequest;
 }
+export type TerminalStatus =
+  Status.Complete | Status.Cancelled | Status.Unavailable;
 export type WorkflowResult =
   | {
       readonly version: ProtocolVersion.V1;
@@ -31,7 +33,7 @@ export type WorkflowResult =
     }
   | {
       readonly version: ProtocolVersion.V1;
-      readonly status: Status.Complete | Status.Cancelled | Status.Unavailable;
+      readonly status: TerminalStatus;
       readonly state: InputState;
       readonly issues: readonly FieldIssue[];
     };

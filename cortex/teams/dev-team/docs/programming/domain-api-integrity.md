@@ -128,7 +128,9 @@ ABI, browser, and host edges. Validate and convert them immediately.
 An externally fixed boolean field retains its transport shape. Convert it to
 the semantic enum before domain policy reads it.
 
-A mechanical predicate may return a boolean for immediate control flow.
+A mechanical predicate may return a boolean for immediate control flow only
+when the owning language policy permits authored predicates. A language may
+restrict this further to immediate consumption of dependency predicates.
 Named domain decisions return semantic enums or discriminated outcomes, even
 when they have two alternatives. Do not pass a mechanical boolean onward as
 a domain-state, policy, mode, or command parameter.
@@ -136,8 +138,10 @@ a domain-state, policy, mode, or command parameter.
 ### Fixed edge contracts
 
 Compiler-required signatures, traits, generated bindings, and externally fixed
-callbacks may retain their owned shape. Keep adapters thin and delegate to an
-API that follows this contract.
+callbacks may retain their owned shape within the owning language's boundary
+exceptions. A general boundary exception does not waive a more specific
+prohibition on an authored contract. Keep adapters thin and delegate to an API
+that follows this contract.
 
 User content and locale keys also have domain names, such as `MessageBody` and
 `TranslationKey`. Their underlying text stays inside the owning value type.

@@ -9,17 +9,24 @@ Do not invent a default for required input or a state that needs validation.
 
 Derive `Default` when every field’s default is the intended starting value.
 Write a manual implementation only when the type needs different defaults.
+Both alternatives use the same domain value for search text. An empty value is
+valid; the private representation stays inside its value type.
+
+```rust
+#[derive(Default)]
+pub struct SearchText(String);
+```
 
 **Prohibited:** handwrite what the derive already provides.
 
 ```rust
 pub struct SearchQuery {
-    pub text: String,
+    pub text: SearchText,
 }
 
 impl Default for SearchQuery {
     fn default() -> Self {
-        Self { text: String::default() }
+        Self { text: SearchText::default() }
     }
 }
 
@@ -31,7 +38,7 @@ let query = SearchQuery::default();
 ```rust
 #[derive(Default)]
 pub struct SearchQuery {
-    pub text: String,
+    pub text: SearchText,
 }
 
 let query = SearchQuery::default();

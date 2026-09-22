@@ -4,6 +4,9 @@
 
 Do not define `new` constructors. They hide field assignments behind another
 function, making construction harder to read and reason about.
+This restriction targets trivial construction. Preserve validating conversions,
+invariant-enforcing fallible constructors, and legal capability transitions;
+they must not expose unchecked fields merely to permit a literal.
 
 ## Single field: derive From
 
@@ -76,5 +79,7 @@ pub struct Transfer {
 let transfer = Transfer { source, destination, amount};
 ```
 
-Validated workflow states still require their state transitions; do not expose
-private fields to bypass them.
+Validated aggregates and workflow states still require their validating owner
+or legal transition. A named fallible constructor may accept one typed request
+when it enforces an aggregate invariant; renaming a trivial constructor does not
+qualify. Follow the [domain construction rules](domain-types.md#aggregate-construction).

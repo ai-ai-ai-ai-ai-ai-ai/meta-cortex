@@ -245,6 +245,8 @@ boundaries.
 
   - Do not define new constructors or rename trivial construction to create.
   - Construction must keep field assignments visible.
+  - Preserve validating conversions, invariant-enforcing fallible constructors,
+    and legal capability transitions.
 
 - **[struct_construction:derive_from](practices/modeling/struct-construction.md#single-field-derive-from)**
 
@@ -260,6 +262,8 @@ boundaries.
 
   - Use named struct literals for multiple independent fields.
   - Do not expose private validated capability fields to permit literals.
+  - A named fallible constructor may accept one typed request to enforce an
+    aggregate invariant; a renamed trivial constructor is still prohibited.
 
 
 ### Default values
@@ -333,7 +337,9 @@ boundaries.
 
   - Allow free compiler entrypoints, test-harness entries, and required external
     callbacks only at their exact boundary.
-  - Delegate to an owner, not another free helper.
+  - Delegate application behavior to an owner, not another free helper.
+  - Test entrypoints may contain scenario setup, actions, and assertions; reusable
+    test helpers belong to fixture owners.
 
 - **[function_ownership:external_requirements](practices/behavior/function-ownership.md#keep-required-free-functions-at-the-boundary)**
 
@@ -607,7 +613,8 @@ boundaries.
 
 - **[code_separation:ownership](practices/boundaries/rust-typescript-code-separation.md#application-structure)**
 
-  - Rust owns portable product data/decisions.
+  - In Rust/WASM projects, Rust owns portable product data/decisions.
+  - This cross-language rule does not require Rust in TypeScript-only projects.
   - TypeScript owns presentation and browser lifecycle.
   - The bridge owns JS conversion and storage/provider adapters.
 
@@ -730,7 +737,8 @@ boundaries.
 
 - **[wasm_ui_integration:svelte_state](practices/boundaries/wasm-ui-integration.md#svelte)**
 
-  - In Svelte, snapshot reactive DTOs at the rune-owning caller, use $state.raw for
+  - In Svelte, snapshot reactive DTOs at the rune-owning caller and bind them to
+    explicitly typed locals before ordinary API calls. Use $state.raw for
     replace-only DTOs, and restrict .svelte.ts to modules owning runes.
 
 - **[wasm_ui_integration:svelte_boundaries](practices/boundaries/wasm-ui-integration.md#svelte)**
@@ -962,6 +970,8 @@ boundaries.
 
   - Keep unit tests inline in the focused implementation module.
   - Crate tests/ integration files exercise public boundaries, not relabeled unit tests.
+  - Test-harness entrypoints may contain scenario steps and assertions; reusable
+    test helpers remain on fixtures and never duplicate production algorithms.
 
 - **[testing:no_size_evasion](practices/tooling/rust-testing.md#split-production-ownership-before-tests)**
 

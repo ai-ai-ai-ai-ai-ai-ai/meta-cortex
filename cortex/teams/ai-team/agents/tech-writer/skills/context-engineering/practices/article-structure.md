@@ -67,7 +67,10 @@ step names the evidence produced.
 - Use enclosed lists keyed by bold primary items for repeated fields.
 - Keep explanations as named properties beneath the corresponding entry.
 - Use code blocks for literal syntax, commands, and examples.
-- Link to authoritative rules instead of duplicating them in lookup material.
+- Link to authoritative rules instead of creating independently maintained
+  policies in lookup material. Skill knowledge graphs may include synchronized
+  rule summaries and cross-rule comparisons under the
+  [knowledge-graph rules](knowledge-graphs.md).
 
 **Prohibited:** “Error handling: use typed failures; never unwrap; here is the entire error policy again.”
 
@@ -161,9 +164,9 @@ mechanism for hiding instructions or rendering a prohibited structure.
 Mechanical checks can detect syntax defects.
 Semantic review must establish that the chosen structure fits the content.
 
-**Prohibited review:** “The document has headings, so its structure passes.”
+- **Prohibited review:** “The document has headings, so its structure passes.”
 
-**Preferred review:** “The import section uses ordered actions, its failure
-branch stays beneath decoding, and the updated catalog targets the new heading.”
+- **Preferred review:** “The import section uses ordered actions, its failure
+  branch stays beneath decoding, and the updated catalog targets the new heading.”
 
 Heading presence is a syntax fact; useful grouping requires semantic review.

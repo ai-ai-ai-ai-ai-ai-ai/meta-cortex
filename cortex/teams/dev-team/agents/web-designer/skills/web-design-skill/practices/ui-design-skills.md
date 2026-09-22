@@ -1,4 +1,4 @@
-# Svelte UI Design
+# Web UI Design
 
 Ship deliberate, calm, trustworthy interfaces without weakening product
 truth or security boundaries. This is the canonical UI design authority.
@@ -16,9 +16,9 @@ Before editing:
 2. Select the product or interface specification for the assigned interaction.
 3. Inspect the real target at runtime when possible.
 4. Inspect an incumbent source of visual truth:
-   - the owning application's `app.css`;
-   - the nearest shared `lib/components/ui/` primitive;
-   - a comparable shipping Svelte component; or
+   - the owning application's stylesheet or token definitions;
+   - the nearest shared UI primitive;
+   - a comparable shipping component in the project's framework; or
    - existing light and dark rendered states.
 5. State the surface, user task, retained interface pattern, visual direction, and
    interaction priority.
@@ -40,20 +40,31 @@ only when two materially different directions remain plausible.
 - Preserve established routes, analytics contracts, and interaction semantics
   unless the task scope changes them.
 
+**Prohibited:** replace an established React component system because an example
+uses Svelte paths.
+
+**Preferred:** inspect the project's existing components and tokens, then state
+how the assigned interaction fits that system.
+
 ## Components, Tokens, And Themes
 
 - Reuse `Button`, `Card`, `Select`, separators, and nearby shared components.
 - Extend repeated primitive variants instead of duplicating utility strings.
-- Use semantic tokens such as `bg-background`, `text-foreground`, `bg-card`,
-  `text-muted-foreground`, `border-border`, `bg-primary`, and
-  `text-destructive`.
-- Preserve the radius scale rooted at `--radius: 0.375rem`.
+- Use the project's semantic tokens. In a Tailwind project, examples include
+  `bg-background`, `text-foreground`, `border-border`, and `text-destructive`;
+  these names are illustrative, not required project structure.
+- Preserve the project's established radius scale.
 - Use hard-coded color only for semantics or third-party identity that tokens
   cannot express.
-- Support the existing light and `.dark` themes. Do not add another theme
+- Support the existing themes and their selectors. Do not add another theme
   mechanism or flip theme per section.
 - Create distinction with hierarchy, rhythm, typography, and state before new
   accent colors.
+
+**Prohibited:** hard-code a new radius and color palette for one dialog.
+
+**Preferred:** use the existing dialog primitive and semantic tokens across
+the project's supported themes.
 
 ## Hierarchy, Forms, And States
 
@@ -77,10 +88,15 @@ only when two materially different directions remain plausible.
 - Never polish only the successful static state while leaving real failure or
   recovery paths unfinished.
 
+**Prohibited:** remove a field's label and show validation errors only in a toast.
+
+**Preferred:** keep the label, place the error beside the field, and preserve
+focus so the user can correct the value.
+
 ## Responsive Behavior And Motion
 
 - Inspect phone, compact desktop, and normal desktop sizes.
-- Collapse multi-column product layouts deliberately below `768px`.
+- Collapse multi-column layouts at the project's content-driven breakpoints.
 - Keep practical tap targets at least 44 by 44 CSS pixels.
 - Keep dialogs, forms, and actions inside the visual viewport.
 - Account for browser zoom, translation expansion, and long user-provided names.
@@ -93,7 +109,12 @@ only when two materially different directions remain plausible.
 - Honor `prefers-reduced-motion`.
 - Do not add perpetual motion to security, recovery, or dense Operate surfaces.
 - Do not use custom cursors, scroll hijacking, magnetic buttons, or decorative
-  parallax in the vault product.
+  parallax in security, recovery, or dense operational surfaces.
+
+**Prohibited:** clip a form's overflowing actions on a narrow viewport.
+
+**Preferred:** reflow the actions, preserve usable targets, and verify the form
+with zoom and long translated labels.
 
 ## Anti-Slop Rules
 
@@ -106,10 +127,16 @@ only when two materially different directions remain plausible.
   weather strips, version stamps, or scroll instructions.
 - Avoid repeated eyebrow labels and repeated section layouts.
 - Keep heroes to one headline, concise support, and at most two actions.
-- Point production extension calls to action to the Chrome Web Store.
+- Point production extension calls to action to the project's official store
+  listing for the target browser.
   Manual ZIP loading belongs only to development or preview guidance.
 - Generate bitmaps only when a surface genuinely needs one. Reuse code-native
   controls, icons, diagrams, and project brand assets.
+
+**Prohibited:** invent testimonials or security certifications to fill a landing page.
+
+**Preferred:** use verified product behavior, approved assets, and the correct
+distribution link for the target browser.
 
 ## Copy And Accessibility
 
@@ -122,13 +149,24 @@ only when two materially different directions remain plausible.
 - Never use color alone for lock, sync, success, error, or destructive state.
 - Re-read copy for clarity, factual truth, and translation expansion.
 
+**Prohibited:** communicate a failed operation only by changing an icon to red.
+
+**Preferred:** pair the visual state with an accessible, actionable message and
+verify keyboard focus and contrast.
+
 ## Validation
 
 1. Inspect the real rendered flow before editing when possible.
 2. Apply the assigned layout, markup, and styling changes.
-3. Inspect every changed state in light and dark themes.
+3. Inspect every changed state in the project's supported themes.
 4. Inspect representative phone and desktop widths.
 5. Capture the changed visual states and report defects with reproduction steps.
 6. Run formatting and the applicable visual and accessibility checks.
 
 Any applicable failed directive means the UI is not ready.
+
+**Prohibited:** declare the interaction ready after inspecting only its initial
+desktop screenshot.
+
+**Preferred:** inspect the changed success and failure states at representative
+widths and report the visual and accessibility checks actually performed.

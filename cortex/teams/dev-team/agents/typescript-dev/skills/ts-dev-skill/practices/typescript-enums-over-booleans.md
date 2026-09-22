@@ -10,7 +10,8 @@ are supplied by the application; method fragments belong to their named owner.
 
 Distinct decisions require distinct types. True/False or Yes/No variants merely
 rename bits; Enabled/Disabled is useful only on an enum naming the actual policy.
-Use generated Rust enums for portable/security decisions.
+Use generated Rust enums for Rust-owned portable/security decisions. Define
+TypeScript-owned domain vocabulary in its TypeScript owner.
 
 **Prohibited:**
 
@@ -79,5 +80,5 @@ workflow.run(mode);
 
 - Inventory boolean fields, parameters, returns, state, and suppressions.
 - Replace coupled flags and test every new variant/transition.
-- Raw browser observations receive no general exemption; normalize or pass to Rust policy.
+- Raw browser observations receive no general exemption; normalize them or pass them to the project's domain policy owner.
 - Run state checks, type/behavior tests, and formatting; old suppressions are migration debt.

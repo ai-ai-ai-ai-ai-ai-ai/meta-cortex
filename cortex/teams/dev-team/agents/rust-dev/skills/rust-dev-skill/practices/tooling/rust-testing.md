@@ -87,8 +87,9 @@ mod tests {
 }
 ```
 
-Test functions are test-harness entrypoints. Keep reusable test helpers on
-their owning fixture types.
+Test functions are test-harness entrypoints and may contain scenario setup,
+actions, and assertions. Keep reusable test helpers on their owning fixture
+types; do not recreate production algorithms in either location.
 
 ### Integration tests exercise public APIs
 
@@ -121,21 +122,11 @@ fn public_api_rejects_zero() {
 The 1,000-line file limit includes inline tests. Split distinct production
 abstractions, then colocate each one's tests; extracting tests is not a size fix.
 
-**Prohibited:**
+**Prohibited:** retain policy and limit logic in an oversized `retry_policy.rs`
+and move only its tests to `retry_policy_tests.rs` to lower the count.
 
-```text
-src/
-  retry_policy.rs        # Policy and limit logic; tests extracted to fit.
-  retry_policy_tests.rs
-```
-
-**Preferred:**
-
-```text
-src/
-  retry_policy.rs       # Policy logic and its inline tests.
-  retry_limit.rs        # Limit validation and its inline tests.
-```
+**Preferred:** separate policy behavior into `retry_policy.rs` and limit
+validation into `retry_limit.rs`, with each owner's tests inline in its module.
 
 ## Regression tests precede the fix
 

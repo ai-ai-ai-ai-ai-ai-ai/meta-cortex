@@ -119,9 +119,9 @@ navigation tree or arbitrary grouping acceptable.
 Literal code examples retain their syntax.
 Do not use code fences to disguise prohibited document structure.
 
-**Prohibited review:** “The prose is shorter, so it is clear.”
+- **Prohibited review:** “The prose is shorter, so it is clear.”
 
-**Preferred review:** “Separated the author and reviewer actions, kept the
-failure branch beneath decoding, and found no tables or copied directory trees.”
+- **Preferred review:** “Separated the author and reviewer actions, kept the
+  failure branch beneath decoding, and found no tables or copied directory trees.”
 
 Report an out-of-scope grouping defect instead of rewriting that document.

@@ -31,8 +31,9 @@ api.inspect_order(order);
 Use [Svelte’s raw state and snapshots](https://svelte.dev/docs/svelte/$state)
 at the UI boundary.
 
-- For reactive structural DTOs, pass `$state.snapshot(value)` directly from the
-  rune-owning caller at the API boundary.
+- For reactive structural DTOs, take `$state.snapshot(value)` in the rune-owning
+  caller at the API boundary. Bind the snapshot to an explicitly typed local
+  before passing it to an ordinary API call.
 - Keep replace-only DTO state in `$state.raw` so ordinary TypeScript adapters
   receive plain values.
 - Use `.svelte.ts` only for modules that own runes such as `$state`, `$derived`,
@@ -51,7 +52,8 @@ api.submit(JSON.parse(JSON.stringify(request)) as OrderRequest);
 **Preferred:** snapshot at the UI caller, leaving the adapter independent of Svelte.
 
 ```ts
-api.submit($state.snapshot(request));
+const snapshot: OrderRequest = $state.snapshot(request);
+api.submit(snapshot);
 ```
 
 For replace-only state, retain a plain DTO from the start:

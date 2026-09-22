@@ -21,7 +21,10 @@ link back here. Apply the relevant cross-language practices when the assignment 
 For implementation, apply the core practices. Load Domain structure and Explicit
 state together. Load Effect workflows before effectful work; it also governs
 Serial operation queues. Select task-specific and supporting practices when their
-subjects are involved. Read selected practices in full, including exceptions and
+subjects are involved; Svelte practices apply only to Svelte projects. Preserve
+the project’s stack and command runner. Rust ownership applies when the project
+uses Rust/WASM; TypeScript may own domains otherwise. Read selected practices in
+full, including exceptions and
 validation. Existing code does not weaken their requirements.
 
 ## Core practices
@@ -50,6 +53,8 @@ validation. Existing code does not weaken their requirements.
   - Put constants on their owner as static readonly and mutable state on instances.
   - Prohibit free functions, module const/let/var, function-valued global constants, and
     mutable statics.
+  - Test-runner callbacks may contain scenario steps and assertions; put reusable
+    test helpers on fixture or scenario owners.
 
 - **[function_ownership:component_scope](practices/typescript-function-ownership.md#keep-component-ownership-local)**
 
@@ -120,6 +125,8 @@ validation. Existing code does not weaken their requirements.
 
   - Every object-shaped parameter uses a semantic named type/interface/generated
     contract, including mapped types, arrays, tuples, sets, maps, and records.
+  - Apply to authored source, tests, configuration, and tooling; generated
+    declarations are excluded.
 
 - **[named_args:typed_bindings](practices/typescript-named-args.md#name-and-type-object-arguments)**
 
@@ -174,8 +181,9 @@ validation. Existing code does not weaken their requirements.
 
 - **[domain_structure:vocabulary_ownership](practices/typescript-domain-structure.md#preserve-value-identity)**
 
-  - Consume generated Rust/WASM portable product/security vocabulary.
-  - TypeScript owns browser/lifecycle/presentation enums, not domain mirrors.
+  - In Rust/WASM projects, consume generated portable product/security vocabulary
+    and keep browser/lifecycle/presentation enums in TypeScript.
+  - TypeScript may own domain vocabulary in other projects; do not mirror Rust-owned contracts.
 
 - **[domain_structure:nominal_identity](practices/typescript-domain-structure.md#preserve-value-identity)**
 
@@ -279,7 +287,8 @@ validation. Existing code does not weaken their requirements.
 
 - **[explicit_state:vocabulary_ownership](practices/typescript-explicit-state.md#use-enum-members-throughout-the-contract)**
 
-  - Put portable product states in Rust/WASM and consume original generated enums.
+  - In Rust/WASM projects, put portable product states in Rust and consume original
+    generated enums. TypeScript-owned domains define their states in TypeScript.
   - Keep browser protocol/lifecycle/presentation vocabularies in cohesive TypeScript
     enums.
 
@@ -393,7 +402,8 @@ validation. Existing code does not weaken their requirements.
 - **[enums_over_booleans:distinct_decisions](practices/typescript-enums-over-booleans.md#name-the-decision-at-the-call-site)**
 
   - Use distinct enum types for distinct policies, enum-backed unions for payloads, and
-    generated Rust enums for portable/security vocabulary.
+    generated Rust enums for Rust-owned portable/security vocabulary.
+  - Keep TypeScript-owned domain vocabulary in its TypeScript owner.
 
 - **[enums_over_booleans:no_decorative_enums](practices/typescript-enums-over-booleans.md#name-the-decision-at-the-call-site)**
 
@@ -420,7 +430,8 @@ validation. Existing code does not weaken their requirements.
 - **[enums_over_booleans:observations](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
   - Raw observations do not exempt application policy.
-  - Normalize into owned browser enums or delegate portable decisions to Rust.
+  - Normalize observations into named states and delegate portable decisions to the
+    project’s domain owner.
 
 - **[enums_over_booleans:exception_evidence](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
@@ -503,7 +514,8 @@ validation. Existing code does not weaken their requirements.
 
   - Keep pure calculations, inert declarations, and rendering free of ceremonial Effect
     wrappers.
-  - Effect does not move portable policy out of Rust.
+  - Effect preserves the project’s domain ownership, including Rust-owned policy in
+    Rust/WASM projects.
 
 - **[effect:typed_failures](practices/typescript-effect.md#preserve-the-typed-failure-channel)**
 
@@ -565,58 +577,56 @@ validation. Existing code does not weaken their requirements.
 
 - **[browser_implementation:stack](practices/browser-implementation.md#use-the-existing-ui-stack)**
 
-  - Use the prescribed Svelte 5 runes, Vite/Bun Taskfile workflows, Tailwind v4 semantic
-    app.css variables, and shared application UI primitives.
+  - Use the project’s UI framework, package manager, design tokens, primitives, and
+    documented build commands. Apply Svelte 5 runes only to Svelte 5 consumers.
 
 - **[browser_implementation:ui_libraries](practices/browser-implementation.md#use-the-existing-ui-stack)**
 
-  - Use tailwind-variants/tailwind-merge/cn for variants, @lucide/svelte for ordinary
-    icons, and CSS/tw-animate-css/Svelte-native motion.
+  - Reuse the project’s component, icon, and motion libraries; do not prescribe
+    Tailwind, Vite, Bun, or Taskfile to projects that have not selected them.
 
 - **[browser_implementation:no_parallel_stack](practices/browser-implementation.md#use-the-existing-ui-stack)**
 
-  - Do not add React/Next/JSX/TSX/React-only packages, shadcn React, or parallel
-    components.
-  - Inspect package.json and justify dependencies instead of adding design/motion
-    packages the stack replaces.
+  - Do not introduce a parallel UI system or replace the command runner incidentally.
+  - Inspect project instructions and package.json before selecting dependencies.
 
 - **[browser_implementation:impeccable](practices/browser-implementation.md#use-the-existing-ui-stack)**
 
   - Impeccable is opt-in only when explicitly requested by name.
   - Never automatically install/load/run it.
 
-- **[browser_implementation:component_contracts](practices/browser-implementation.md#let-svelte-own-rendering-and-interactions)**
+- **[browser_implementation:component_contracts](practices/browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions)**
 
   - Keep markup readable and components thin.
   - Use typed props/generated bindings, semantic keyed collections, semantic HTML before
     ARIA patches, and package event conventions.
 
-- **[browser_implementation:explicit_state](practices/browser-implementation.md#let-svelte-own-rendering-and-interactions)**
+- **[browser_implementation:explicit_state](practices/browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions)**
 
-  - Follow explicit-state rules in Svelte, with immediate external normalization rather
+  - Follow explicit-state rules in UI components, with immediate external normalization rather
     than authored null/undefined.
 
 - **[browser_implementation:cleanup](practices/browser-implementation.md#release-lifecycle-resources)**
 
-  - Return effect cleanup for listeners/observers/timers/animation state.
-  - Keep continuous pointer/scroll values outside component-wide rune state, using
-    CSS/observers/narrow actions.
+  - Use framework lifecycle cleanup for listeners/observers/timers/animation state;
+    return cleanup from $effect in Svelte.
+  - Keep continuous pointer/scroll values outside broad component state, using
+    CSS, observers, or narrow adapters.
 
 - **[browser_implementation:controllers](practices/browser-implementation.md#release-lifecycle-resources)**
 
-  - Keep application-wide state/effects in existing .svelte.ts controllers rather than
-    React-style stores.
+  - Reuse the project’s state ownership pattern, including existing .svelte.ts
+    controllers in Svelte projects; do not add a second store architecture.
 
-- **[browser_implementation:rust_ownership](practices/browser-implementation.md#let-svelte-own-rendering-and-interactions)**
+- **[browser_implementation:rust_ownership](practices/browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions)**
 
-  - Preserve core → WASM → presentation ownership.
-  - Rust owns validation/authorization/crypto/product shaping/durable decisions while
-    Svelte handles UI/browser lifecycle.
+  - Preserve core → WASM → presentation ownership in Rust/WASM projects.
+  - Otherwise, keep domain decisions in their project-defined owner, which may be
+    TypeScript. Components consume those decisions.
 
 - **[browser_implementation:secret_surfaces](practices/browser-implementation.md#keep-secrets-out-of-incidental-surfaces)**
 
-  - Do not mirror Rust DTOs/enums or expose secrets through URLs/logs/attributes/test
-    IDs/analytics/fallback markup.
+  - Do not expose secrets through URLs/logs/attributes/test IDs/analytics/hidden markup.
   - Never persist plaintext in convenience state.
 
 - **[browser_implementation:disclosure_and_passkeys](practices/browser-implementation.md#keep-secrets-out-of-incidental-surfaces)**
@@ -633,13 +643,13 @@ validation. Existing code does not weaken their requirements.
 
 - **[browser_implementation:translations](practices/browser-implementation.md#translate-visible-and-accessible-text)**
 
-  - Route every visible/accessibility string through shared Rust-owned translation
-    catalogs, preserve locale parity, and forbid hidden inline-English fallbacks/ARIA
-    strings.
+  - Route visible/accessibility strings through the project’s translation catalogs,
+    preserve all supported locales, and forbid hidden inline-English fallbacks.
+  - Retain Rust-owned catalogs where supplied; do not require Rust for localization.
 
 - **[browser_implementation:validation](practices/browser-implementation.md#validation)**
 
-  - Add focused Playwright UI-demo coverage and formatting/UI checks.
+  - Add focused browser coverage with the project’s tooling and run formatting/UI checks.
   - Inspect app logs before editing after a browser failure.
 
 
@@ -663,8 +673,9 @@ validation. Existing code does not weaken their requirements.
 
 - **[svelte_state_modeling:generated_types](practices/svelte-state-modeling.md#preserve-generated-product-types)**
 
-  - Keep portable workflows in Rust/WASM, consume generated enums/identifiers without
-    widening to string, and use TS enums only for visual/browser lifecycle state.
+  - Keep portable workflows with the project’s domain owner: Rust in Rust/WASM
+    projects, or TypeScript otherwise.
+  - Preserve canonical enums/identifiers without widening them to string.
 
 - **[svelte_state_modeling:external_absence](practices/svelte-state-modeling.md#move-related-values-together)**
 
@@ -687,9 +698,9 @@ validation. Existing code does not weaken their requirements.
 
 - **[browser_testing:browser_boundary](practices/browser-testing.md#test-the-boundary-that-can-fail)**
 
-  - Use Playwright for observable user/browser/extension integration, persistence,
-    visibility, clipboard/download/multitab/origin behavior.
-  - Test portable algorithms in Rust.
+  - Use the project’s browser tooling for observable user/browser/extension
+    integration, persistence, visibility, clipboard/download/multitab/origin behavior.
+  - Test portable algorithms in their Rust or TypeScript domain owner.
 
 - **[browser_testing:suite_gates](practices/browser-testing.md#validation)**
 
@@ -794,7 +805,8 @@ validation. Existing code does not weaken their requirements.
 
 - **[serial_operation_queues:scheduling](practices/typescript-serial-operation-queues.md#keep-the-queue-and-results-typed)**
 
-  - Keep scheduling in TypeScript and policy in Rust.
+  - Keep scheduling in TypeScript and policy in its domain owner, which is Rust in
+    Rust/WASM projects.
   - Choose capacity/backpressure and retain richer priority/cancellation/expiry/close
     schedulers where required.
 
@@ -919,10 +931,10 @@ Check what was moved from a component into an adjacent module.
 Distinguish guidance for an existing framework consumer from authority to replace the
 implementation stack.
 
-- **Prohibited:** Introduce React because the supplied WASM guidance explains React
-  integration.
-- **Preferred:** Use the prescribed Svelte stack for this skill. Apply React or Vue
-  integration guidance only to an existing consumer within its assigned scope.
+- **Prohibited:** Replace an existing Svelte interface with React because the supplied
+  WASM guidance explains React integration.
+- **Preferred:** Preserve the project’s selected stack and commands. Apply Svelte, React,
+  or Vue guidance to its matching consumer within the assigned scope.
 
 **Compare:**
 

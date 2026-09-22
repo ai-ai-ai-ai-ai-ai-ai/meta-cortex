@@ -1,8 +1,8 @@
 # TypeScript Named Arguments
 
-Name both the parameter contract and the object passed to it. Apply this to all
-authored production TypeScript/Svelte, including callbacks and local helpers;
-generated declarations are excluded.
+Name both the parameter contract and the object passed to it. Apply this to
+authored TypeScript/JavaScript/Svelte, tests, configuration, and tooling,
+including callbacks and local helpers. Generated declarations are excluded.
 
 Examples are alternative fragments. Supporting domain types and collaborators
 are supplied by the application; method fragments belong to their named owner.

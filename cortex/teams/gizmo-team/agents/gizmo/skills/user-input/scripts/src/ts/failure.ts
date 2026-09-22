@@ -19,13 +19,14 @@ export enum SourceKind {
   Schema = "schema",
   Yaml = "yaml",
 }
+export type YamlDiagnostic = YAMLError | YAMLWarning;
 export type FailureSource =
   | { readonly kind: SourceKind.Policy }
   | { readonly kind: SourceKind.Host; readonly error: Cause.UnknownException }
   | { readonly kind: SourceKind.Schema; readonly error: ParseError }
   | {
       readonly kind: SourceKind.Yaml;
-      readonly errors: readonly (YAMLError | YAMLWarning)[];
+      readonly errors: readonly YamlDiagnostic[];
     };
 export interface FailureContext extends FailureDetail {
   readonly source: FailureSource;

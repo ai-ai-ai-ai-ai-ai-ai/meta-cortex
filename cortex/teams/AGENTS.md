@@ -49,12 +49,12 @@ their assigned scope; coordination decisions belong to their Gizmo.
 Use ordinary host communication tools. In single-agent mode, the current agent
 performs the responsibilities locally without agent messages or launches.
 
-**Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
-the integration agent sends a conflict directly to a developer.
+- **Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
+  the integration agent sends a conflict directly to a developer.
 
-**Preferred:** the agent reports the failure and evidence to its Team Gizmo.
-Gizmo decides the next step, assigns any repair, and supplies the resulting
-evidence to agents that need it.
+- **Preferred:** the agent reports the failure and evidence to its Team Gizmo.
+  Gizmo decides the next step, assigns any repair, and supplies the resulting
+  evidence to agents that need it.
 
 ## Working model
 

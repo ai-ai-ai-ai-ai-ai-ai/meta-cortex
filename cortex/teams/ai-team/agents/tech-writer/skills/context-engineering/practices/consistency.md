@@ -144,9 +144,9 @@ active authority from the catalog.
 A full review also reports retained historical references.
 Clearly labeled historical archives do not need to describe current behavior.
 
-**Prohibited review:** “The knowledge base is consistent” after checking one link.
+- **Prohibited review:** “The knowledge base is consistent” after checking one link.
 
-**Preferred review:** “Checked the changed rule against the decoder and its catalog.
-The links resolve; the unknown-version behavior still violates the specification.”
+- **Preferred review:** “Checked the changed rule against the decoder and its catalog.
+  The links resolve; the unknown-version behavior still violates the specification.”
 
 A full review also identifies retained historical documents as historical.
