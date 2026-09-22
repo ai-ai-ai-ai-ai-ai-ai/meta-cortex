@@ -27,8 +27,8 @@ using the host's native input UI:
 
 - `single_agent` keeps implementation, checks, and delivery in the current thread
   and agent, with the relevant team docs, circuit breakers, and skills.
-- `multi_agent` launches Gizmo Prime, which launches Team Gizmo and the team
-  subagents needed for the task.
+- `multi_agent` launches Gizmo Prime, which launches Team Gizmo. Team Gizmo
+  launches the team agents needed for the task.
 
 The agent waits for a submitted answer before starting development work. New
 tasks and follow-ups in the same conversation retain the session’s mode; a new
@@ -48,7 +48,8 @@ In multi-agent mode:
   - Checks results and routes corrections to their owners.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
-  - Return evidence and unresolved blockers.
+  - Report evidence and unresolved blockers only to their assigning Team Gizmo.
+    Gizmo decides further assignments and passes evidence between agents.
 - **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
   - Manages feature worktrees and merges completed task branches.
 - **[PR agent](teams/delivery-team/agents/pr-agent/AGENTS.md)**

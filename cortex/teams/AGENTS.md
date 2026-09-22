@@ -32,10 +32,34 @@ Carry the user's objective, constraints, acceptance criteria, project context,
 and the loaded circuit-breaker policy into the assignment.
 Follow-ups stay with the existing coordinator.
 
+## Communication and decisions
+
+In multi-agent mode, team agents report results, blockers, questions, repair
+needs, and recommendations only to their assigning Team Gizmo. They do not
+contact peers, request work from another agent, launch subagents, or assign work.
+Team Gizmo decides whether further work is needed, selects its owner, and passes
+relevant evidence with that assignment. Reading another role's skill does not
+authorize contacting that agent.
+
+Team Gizmo reports to Gizmo Prime; Gizmo Prime reports to the current host agent.
+Decisions and assignments travel back down the same hierarchy. Gizmo Prime does
+not bypass Team Gizmo to direct workers. Agents retain technical judgment within
+their assigned scope; coordination decisions belong to their Gizmo.
+
+Use ordinary host communication tools. In single-agent mode, the current agent
+performs the responsibilities locally without agent messages or launches.
+
+**Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
+the integration agent sends a conflict directly to a developer.
+
+**Preferred:** the agent reports the failure and evidence to its Team Gizmo.
+Gizmo decides the next step, assigns any repair, and supplies the resulting
+evidence to agents that need it.
+
 ## Working model
 
-Use the host's agent execution tools to launch subagents with their linked
-role instructions and task context. Reading a role document does not launch
+Coordinators use the host's agent execution tools to launch their assigned
+subagents with their linked role instructions and task context. Reading a role document does not launch
 a subagent. Report unavailable subagent execution capabilities as blockers.
 
 - Pass this team directory and its resolved document locations to coordinators.
@@ -44,29 +68,31 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
   and any incomplete-role status, so Team Gizmo can select agents from these summaries.
 - Gizmo Prime launches the single Team Gizmo as a subagent.
 - Team Gizmo launches the team agents needed for its assignments as subagents.
-- Assign instructions, specifications, skills, practices, and catalog edits to
-  the tech writer subagent. Pass the subject owner's requirements and affected
+- Team Gizmo assigns instructions, specifications, skills, practices, and catalog
+  edits to the tech writer subagent. Pass the subject owner's requirements and affected
   documents with the assignment.
 
 - Prepare every launch using the [assignment context](#assignment-context) below,
-  including launches by Gizmo Prime and nested delegation.
+  including launches by Gizmo Prime and Team Gizmo.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
 - Each agent’s `AGENTS.md` links the skills it uses. Each `SKILL.md` owns that
   skill’s instructions and prerequisites. Agents load their skills themselves;
   coordinators assign responsibilities.
-- Route skill organization and placement changes to the tech writer under its
+- Team Gizmo assigns skill organization and placement changes to the tech writer under its
   [skill organization rules](ai-team/agents/tech-writer/AGENTS.md#skill-organization).
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.
-- Return results and blockers through Team Gizmo to Gizmo Prime; route corrections back to the responsible agent.
+- Team agents report only to Team Gizmo, which decides corrections and assignments and reports to Gizmo Prime.
 - Keep work within the user's request. Completion means the requested outcome is supported by evidence, with limitations stated clearly.
 
 ## Assignment context
 
-Before launching an agent, the delegating agent resolves the following from the
-active library and supplies them in the launch instructions:
+Before launching an agent, the host agent or Gizmo coordinator resolves the
+following from the active library and supplies them in the launch instructions:
 
 - Objective, scope, dependencies, acceptance criteria, and expected evidence.
+- The assigning host agent or coordinator's identity and report destination, with the
+  [communication and decisions](#communication-and-decisions) rules.
 - The validated session development mode; assigned agents inherit it and never
   repeat configuration collection.
 - Project root, library root, working directory, and relevant project instructions.
@@ -94,8 +120,9 @@ The receiving agent must, before starting work:
 3. Read its own role instructions and follow its linked skills.
 4. Report any required context it cannot access before doing dependent work.
 
-Carry the same requirements through nested assignments and load newly relevant
-documents when scope changes. The skill’s own `SKILL.md` still owns its technical
+Coordinators carry the same requirements through their assignments. Agents
+report scope changes to their Gizmo for a decision and load newly relevant
+documents for the resulting assignment. The skill’s own `SKILL.md` still owns its technical
 instructions; this handoff does not select or duplicate skill contents.
 
 **Prohibited:** launch a TypeScript agent with only “implement this component”

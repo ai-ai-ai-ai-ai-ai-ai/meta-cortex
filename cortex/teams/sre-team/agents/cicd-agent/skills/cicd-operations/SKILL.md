@@ -11,6 +11,10 @@ Use existing project commands and the host's provider tools. For GitHub Actions,
 use the GitHub connector or installed `gh` CLI with access to the requested
 repository. Missing tools or credentials are explicit blockers.
 
+In multi-agent mode, report all outcomes, questions, and work outside the assigned
+scope only to the assigning Team Gizmo. Gizmo decides further work and routing.
+In single-agent mode, perform the applicable responsibilities locally.
+
 ## Required actions
 
 ### Execute the requested validation
@@ -35,7 +39,7 @@ repository. Missing tools or credentials are explicit blockers.
 6. Collect the full requested check inventory and terminal outcomes. Preserve
    failed, cancelled, skipped, and missing results instead of collapsing them
    into success. Return run URLs, tested revision, check outcomes, and relevant
-   artifacts to the caller; the PR owner evaluates merge readiness.
+   artifacts to the assigning Team Gizmo, which decides the next step.
 
 **Prohibited:** report validation passed when a workflow was merely dispatched,
 when it tested an older head, or when only a build completed without tests.
@@ -47,8 +51,8 @@ result, with a link to the run and any checks still unresolved.
 
 1. Read failed-job logs and the relevant test reports or artifacts. Distinguish
    an application defect from workflow, runner, permission, or artifact wiring.
-2. Return application failures to their owner with the diagnostic and reproduction
-   context. For assigned infrastructure repairs, inspect the affected project
+2. Report application failures with diagnostic and reproduction context to the
+   assigning Team Gizmo for a repair decision. For assigned infrastructure repairs, inspect the affected project
    files and load the applicable programming or specialist skill before editing.
 3. Preserve trust boundaries for forks, secrets, environments, and artifacts.
    Use [security knowledge](../../../../../security-team/docs/index.md) when the

@@ -1,5 +1,8 @@
 # Team Gizmo
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 This coordinator runs only when the user has selected `multi_agent` for the
 session. Use the validated mode supplied by the parent; do not ask again or
 launch workers without it. The [entry point](../../../../AGENTS.md#development-mode)

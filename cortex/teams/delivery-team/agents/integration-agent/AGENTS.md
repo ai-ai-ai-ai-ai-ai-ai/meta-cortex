@@ -1,5 +1,8 @@
 # Integration Agent
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Own feature worktree setup and branch integration.
 Report to Team Gizmo through the host's agent communication tools.
 

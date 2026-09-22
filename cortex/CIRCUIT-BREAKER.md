@@ -53,7 +53,7 @@ provides it; I'll use that operation and test replacement failure.”
 2. Say “Circuit breaker tripped,” name the mechanism, and identify the rule.
 3. Replace it with the smallest existing workflow that meets the requirement.
 4. Remove violating changes within the assigned write scope. Report violations
-   outside that scope to their owner; preserve unrelated work.
+   outside that scope to the assigning Gizmo for a decision in multi-agent mode; preserve unrelated work.
 5. Continue the task. Existing code and passing tests do not exempt a violation.
 
 **Prohibited:** finish an unnecessary mechanism because its tests pass, or
@@ -61,7 +61,7 @@ delete another agent’s work to remove it.
 
 **Preferred:** name the violated rule, remove the mechanism within the assigned
 write scope, use the existing supported operation, and report out-of-scope
-corrections to their owner.
+corrections to the assigning Gizmo in multi-agent mode.
 
 ## Prohibited actions
 
@@ -86,4 +86,5 @@ security. Product security does not justify securing routine agent coordination.
 because “the circuit breaker says security is overengineering.”
 
 **Preferred:** protect customer accounts with the required authentication and
-secret-handling controls. Let internal agents communicate through the host.
+secret-handling controls. Internal agents use the host and follow the
+[communication hierarchy](teams/AGENTS.md#communication-and-decisions).

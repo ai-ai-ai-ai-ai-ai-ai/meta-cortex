@@ -26,12 +26,12 @@ the current agent uses the relevant role and skill directly.
 ## Assignment boundaries
 
 Keep local integration with the integration agent and remote PR mechanics with
-the PR agent. Request the SRE CI/CD agent for pipeline execution or repairs when
-needed. Required checks, reviews, merge strategy, and cleanup follow the consuming
-project; this team does not prescribe a target branch or build system.
+the PR agent. Agents report pipeline execution or repair needs to their assigning
+Team Gizmo, which decides whether to assign the SRE CI/CD agent. Required checks, reviews,
+merge strategy, and cleanup follow the consuming project; this team does not prescribe a target branch or build system.
 
 **Prohibited:** require every PR to launch integration and CI/CD agents even when
 an integrated branch and matching validation results are already available.
 
-**Preferred:** assign the missing delivery work and reuse existing branch and
+**Preferred:** Team Gizmo assigns the missing delivery work and reuses existing branch and
 run evidence after verifying that it applies to the current PR.

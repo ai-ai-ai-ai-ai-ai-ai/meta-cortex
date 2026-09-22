@@ -17,13 +17,14 @@ the consuming project.
 
 ## Assignment boundaries
 
-Keep implementation with the development owner. Request independent security
-verification through Team Gizmo. Route instructions,
-specifications, skills, and practice authoring to the AI team's tech writer.
+Keep implementation with the development owner. Report security verification
+and documentation needs to the assigning Team Gizmo. Gizmo decides whether to
+assign a security review or instructions, specifications, skills, and practice
+authoring to the AI team's tech writer.
 Cross-team decisions remain with Team Gizmo; this index does not expand an
 agent's assignment.
 
-Assign web design to web-designer and JS/TS behavior and functional tests to
+Team Gizmo assigns web design to web-designer and JS/TS behavior and functional tests to
 typescript-dev. A Svelte file may need both roles; Team Gizmo sequences edits
 to shared components and supplies the design decisions to the implementation owner.
 For work crossing these boundaries, give each agent a bounded assignment and

@@ -98,7 +98,7 @@ Each role setting specifies both values:
   - Configuration: `[gizmo-prime]`.
 - **Team Gizmo**
   - Configuration: `[team.gizmo]`.
-- **Team agents and their subagents**
+- **Team agents**
   - Configuration: `[team.agent]`.
 
 Before each subagent launch, including Gizmo Prime:

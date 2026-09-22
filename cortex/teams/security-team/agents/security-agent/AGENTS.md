@@ -1,5 +1,8 @@
 # Security Agent
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Independently verify the security of the assigned feature. Report findings to
 Team Gizmo; development agents own implementation and fixes.
 

@@ -15,12 +15,12 @@
     in a separate linked Git worktree outside the original checkout. Verify branch
     names, clean status, and the worktree mapping; inspect existing paths or
     branches on creation failure rather than overwriting them.
-  - Order dependent tasks; supply scopes, branch names, paths, checks, and the
-    actual library location. Read-only work needs no write workspace.
+  - Report workspace mappings to Team Gizmo; Gizmo orders tasks and supplies
+    scopes, branch names, paths, checks, and the actual library location. Read-only work needs no write workspace.
 - **[local_feature:completion](practices/local-feature-integration.md#finish-task-work)**
   - Inspect and stage assigned files explicitly, save them on the task branch,
     and validate finished content.
-  - Finish with a clean worktree and report completion or outstanding problems.
+  - Finish with a clean worktree and report completion or outstanding problems to Team Gizmo.
 - **[local_feature:integration](practices/local-feature-integration.md#integrate-finished-branches)**
   - Integrate finished branches in dependency order with one feature writer.
   - Use a clean feature worktree and resolve unfinished Git operations first.
@@ -28,8 +28,9 @@
     incompatible merge policy rather than substituting squash or history rewriting.
   - Validate combined changes and report merged tasks and check results.
 - **[local_feature:repair](practices/local-feature-integration.md#resolve-integration-failures)**
-  - Abort conflicted merges and return them to their owners for task-branch
-    repair. Resolve and stage conflicting files before finishing the worker merge.
+  - Abort conflicted merges and report them to Team Gizmo for a repair decision.
+    Gizmo assigns task-branch repairs; workers report their results to Gizmo.
+    Resolve and stage conflicting files before finishing the worker merge.
     Do not abort an already completed merge when combined checks fail.
   - Retain branches on failure; integrate repairs and revalidate before dependent
     work or cleanup. Preserve and report Git state if an operation cannot finish.

@@ -29,7 +29,8 @@ required checks and reviews before an authorized merge.
 ### Preserve work ownership
 
 Local integration, PR management, and CI execution have distinct owners. Pass
-ordinary branch, revision, PR, and run information through the host; these are
+ordinary branch, revision, PR, and run information to the assigning Gizmo through
+the host. Gizmo decides the next assignment and passes relevant evidence; these are
 work evidence, not credentials or an authorization protocol.
 
 - The integration owner prepares and integrates the feature branch locally.
@@ -42,5 +43,6 @@ work evidence, not credentials or an authorization protocol.
 **Prohibited:** create a staging branch, custom handoff registry, and another
 manager loop merely to move an integrated feature into a PR.
 
-**Preferred:** pass the integrated feature branch and check results to the PR
-owner, which returns the PR outcome and remaining work.
+**Preferred:** the integration agent reports the feature branch and check results
+to Team Gizmo. Gizmo decides whether to assign PR work and supplies that evidence
+to the PR agent, which reports the outcome and remaining work back to Gizmo.

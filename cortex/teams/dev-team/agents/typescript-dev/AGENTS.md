@@ -1,5 +1,8 @@
 # TypeScript Developer
 
+Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
+rules for your assigned place in the Gizmo hierarchy.
+
 Own assigned TypeScript and JavaScript implementation: browser components,
 application state, browser APIs, services, libraries, repository tooling, and
 functional tests. This includes Svelte scripts and component behavior.

@@ -25,6 +25,10 @@ file tools or a safely quoted heredoc; pass its path with `--body-file`. Never
 interpolate retrieved text into executable shell code. Examples are individual
 operations, not a script to run from top to bottom without checking results.
 
+In multi-agent mode, report all outcomes, questions, and work outside the assigned
+scope only to the assigning Team Gizmo. Gizmo decides further work and routing.
+In single-agent mode, perform the applicable responsibilities locally.
+
 ## Required actions
 
 ### Publish and maintain the feature PR
@@ -32,7 +36,7 @@ operations, not a script to run from top to bottom without checking results.
 1. Resolve the assigned repository, remote, feature branch, target branch, and
    authorized operation from project context. Fetch the relevant remote refs.
 2. Inspect the workspace and committed feature diff. Preserve unrelated edits.
-   For divergence or integration repairs, return the local work to its owner;
+   For divergence or integration repairs, report the need to the assigning Gizmo for a decision;
    do not force-push or silently change the feature's scope.
 3. Push the assigned branch once per coherent implementation or repair batch.
    Resolve its actual published head after the push.
@@ -91,7 +95,7 @@ gh pr edit "$pr_number" --repo "$pr_repo" \
 **Preferred:** publish the coherent repair to the existing PR and update its
 summary and validation evidence for the new revision.
 
-### Observe checks and route repairs
+### Observe checks and report repair needs
 
 1. Resolve the required checks and review rules from the target repository and
    project instructions. Read the PR's current head and mergeability.
@@ -101,15 +105,16 @@ summary and validation evidence for the new revision.
 3. Observe automatically triggered checks before requesting more execution.
    For manual validation, retries, or pipeline investigation, use
    [CI/CD Operations](../../../../../sre-team/agents/cicd-agent/skills/cicd-operations/SKILL.md).
-   In multi-agent mode, request the CI/CD agent through Team Gizmo when needed.
-   Keep one execution observer for an assigned run; reuse its results.
+   In multi-agent mode, report execution needs to Team Gizmo, which decides
+   whether to assign CI/CD work and selects one execution observer per run.
+   Reuse results supplied by Gizmo.
 4. Wait through the existing host's status/watch tools using bounded,
    interruptible waits. Gather the whole required check set, including failed,
    cancelled, missing, or pending checks. Report blockers without calling a
    partial inventory green. Accept skipped or neutral results only when the
    project's applicable policy explicitly permits them.
-5. Read actionable review feedback. Route product fixes, integration conflicts,
-   and infrastructure failures to their respective owners. Do not change code
+5. Read actionable review feedback. Report product defects, integration conflicts,
+   and infrastructure failures to the assigning Gizmo for a repair decision. Do not change code
    merely to satisfy an incorrect suggestion; report the reasoning. Post replies
    or resolve threads only within the authorized review-response assignment,
    after verifying the action or explanation addresses the feedback.
@@ -159,16 +164,16 @@ dispatch, rerun, and log commands belong to the CI/CD Operations skill.
 **Prohibited:** report a PR ready because one test suite passed while another
 required check is missing, or retry a failing product test until it happens to pass.
 
-**Preferred:** return all observed failures with run URLs and diagnostics, route
-repairs to their owners, and verify the resulting revision's required checks.
+**Preferred:** return all observed failures with run URLs and diagnostics, let
+Gizmo decide repair assignments, and verify the resulting revision's required checks.
 
 ### Merge and verify the outcome
 
 1. Confirm merge is authorized by the user or current assignment. Refresh the
    PR head, target, checks, review state, and mergeability immediately before it.
 2. If the feature head changed, reevaluate the replacement revision. If the
-   target advanced, follow the project's update or merge-queue policy; send
-   necessary branch integration to its owner and repeat invalidated checks.
+   target advanced, follow the project's update or merge-queue policy; report
+   necessary branch integration to Gizmo for assignment and repeat invalidated checks.
 3. Merge through GitHub using the permitted strategy and current-head guard
    where supported. Honor required reviews, environment gates, and merge queues;
    do not use administrator bypasses. A queued merge is still pending.
@@ -176,7 +181,7 @@ repairs to their owners, and verify the resulting revision's required checks.
    reported merge result is included there; a closed PR is not sufficient.
 5. Delete the merged remote feature branch only when project cleanup policy and
    assignment scope call for it. Leave protected, shared, or still-needed
-   branches intact. Return remaining local workspace cleanup to its owner.
+   branches intact. Report remaining local workspace cleanup to Gizmo for assignment.
 6. Report the PR URL, evaluated head, required-check and review results, actual
    merge result, and cleanup outcome. Report cleanup failures separately from a
    successful merge; do not repeat the merge to repair cleanup.
