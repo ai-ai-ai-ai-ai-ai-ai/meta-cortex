@@ -20,6 +20,22 @@ team-agent model and reasoning effort.
 - Return changed documents, link-check results, example-validation evidence,
   and unresolved inconsistencies to Team Gizmo.
 
+### Skill organization
+
+- Place specialized skills under their owning agent directory.
+- Keep common generic skills in `skills/`, relative to the library root.
+- Do not create team-root skill directories such as `agents/teams/<team>/skills/`.
+- Keep each practice with its subject and maintain one canonical copy.
+- Keep common skills independent of teams, agents, and specialized skills.
+- Update role loaders, selection rules, catalogs, and links when moving a skill.
+
+**Prohibited:** put a Docker skill in `agents/teams/sre-team/skills/` or make a
+common coding practice depend on an SRE role.
+
+**Preferred:** put the Docker specialization under the Docker agent, retain
+common coding in the library's `skills/`, and update the coordinator's selection
+link and the agent's loader when moving it.
+
 ### Assignment example
 
 **Prohibited:** an assignment to explain error handling changes the application's

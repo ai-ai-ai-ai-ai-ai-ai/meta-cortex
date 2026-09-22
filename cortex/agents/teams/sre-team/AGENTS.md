@@ -14,7 +14,7 @@ workloads, and cloud-native operations.
 
 Select the smallest specialist scope that owns the requested infrastructure
 behavior. Each role loads its specialized skill or skills and the common coding
-or security prerequisites selected by [skill composition](../../../skill-composition.md).
+or security prerequisites supplied by Team Gizmo.
 Application behavior, product domain rules, and user-facing design remain with
 their owning teams. Team Gizmo retains cross-team coordination and delivery
 decisions.

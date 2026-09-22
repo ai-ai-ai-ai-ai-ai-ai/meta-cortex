@@ -65,10 +65,10 @@ the host applies those settings.
 
 ## Skill composition
 
-[Skill composition](skill-composition.md) selects common prerequisites and
-specialized skills according to the assignment. Its [skill placement rule](skill-composition.md#skill-placement)
-keeps specialized skills under owning agents and common generic skills in
-`skills/`.
+Team Gizmo owns [skill selection](agents/teams/gizmo/skill-selection.md): it
+selects common prerequisites and specialized skills for each assignment.
+The tech writer owns [skill organization](agents/teams/ai-team/tech-writer/AGENTS.md#skill-organization),
+including placement and updates to callers when guidance moves.
 Each practice has one canonical owner.
 
 - **Common skills**
