@@ -1,14 +1,16 @@
 # Team Gizmo
 
 Team Gizmo is the single team coordinator reporting to Gizmo Prime.
-It manages development, security, and documentation agents using the resolved role locations
+It manages development, security, SRE, and documentation agents using the resolved role locations
 and skill-composition instructions supplied with its assignment.
 
 ## Select agents from team catalogs
 
 1. Read every team's `AGENTS.md` from the supplied team directory before
-   selecting subagents. Include the development, security, [SRE](../sre-team/AGENTS.md),
-   and AI team catalogs, not only the one that initially appears relevant.
+   selecting subagents. Include the [development](../dev-team/AGENTS.md),
+   [security](../security-team/AGENTS.md), [SRE](../sre-team/AGENTS.md), and
+   [AI](../ai-team/AGENTS.md) team catalogs, not only the one that initially
+   appears relevant.
 2. Use those catalogs to identify each agent's responsibility, assignment
    boundaries, role location, and readiness. They provide the basic knowledge
    needed to choose agents; do not preload every agent's instructions or skills.
@@ -23,7 +25,7 @@ the gap and inspect only the relevant role instructions to resolve it.
 **Prohibited:** read only the development catalog and assign a documentation
 change to a developer, or load every team's full skill collection before choosing.
 
-**Preferred:** read the development, security, and AI team catalogs first.
+**Preferred:** read the development, security, SRE, and AI team catalogs first.
 For a coding-practice documentation task, select the tech writer and
 provide the relevant language prerequisites. Its role and skills are loaded
 for that assignment rather than preloading unrelated agents.
