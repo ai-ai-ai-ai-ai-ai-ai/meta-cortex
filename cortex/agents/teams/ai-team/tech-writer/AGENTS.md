@@ -31,7 +31,9 @@ team-agent model and reasoning effort.
 - Do not create team-root skill directories such as `agents/teams/<team>/skills/`.
 - Keep each practice with its subject and maintain one canonical copy.
 - Keep technical practices in skills and task ownership in agent instructions.
-- Document each agent’s skills and applicable prerequisites in its own `AGENTS.md`.
+- Link the agent’s skills from its `AGENTS.md`.
+- Keep each skill’s instructions and prerequisites in its own `SKILL.md`; link
+  detailed practices from there instead of copying them into agent instructions.
 - Update the owning agent’s instructions, catalogs, and links when moving a skill.
 
 **Prohibited:** put a Docker skill in `agents/teams/sre-team/skills/` or

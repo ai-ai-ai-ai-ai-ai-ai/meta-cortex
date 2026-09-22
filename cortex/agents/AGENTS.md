@@ -44,8 +44,9 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
-- Each agent’s `AGENTS.md` defines its skills, prerequisite order, and applicable
-  conditions. Agents load that guidance themselves; coordinators assign responsibilities.
+- Each agent’s `AGENTS.md` links the skills it uses. Each `SKILL.md` owns that
+  skill’s instructions and prerequisites. Agents load their skills themselves;
+  coordinators assign responsibilities.
 - Route skill organization and placement changes to the tech writer under its
   [skill organization rules](teams/ai-team/tech-writer/AGENTS.md#skill-organization).
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.

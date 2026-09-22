@@ -2,8 +2,8 @@
 
 Team Gizmo is the single team coordinator reporting to Gizmo Prime.
 It manages development, security, SRE, and documentation agents using the resolved role locations
-supplied with its assignment. Each agent’s `AGENTS.md` defines the skills and
-prerequisites that agent loads; Gizmo does not maintain a skill registry.
+supplied with its assignment. Each agent’s `AGENTS.md` links its skills; their
+`SKILL.md` files contain the instructions. Gizmo does not maintain a skill registry.
 
 ## Select agents from team catalogs
 

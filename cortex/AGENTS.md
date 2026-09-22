@@ -41,7 +41,7 @@ Apply the consuming project's context throughout the task:
 - Implement changes and run validation within the assigned project scope.
 - Pass project context, configuration rules, the configuration file location,
   and the agent directory through every delegation. Each assigned agent loads
-  the skills and prerequisites defined by its own instructions.
+  the skills linked from its own instructions and follows their `SKILL.md` files.
 
 ### Agent configuration
 

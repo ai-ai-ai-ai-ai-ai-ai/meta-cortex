@@ -65,8 +65,9 @@ the host applies those settings.
 
 ## Agent skills
 
-Each agent’s `AGENTS.md` defines its skills and prerequisites. Team Gizmo
-assigns work by responsibility; the assigned agent loads its own guidance.
+Each agent’s `AGENTS.md` links its skills. Each skill’s `SKILL.md` contains its
+instructions and prerequisites. Team Gizmo assigns work by responsibility;
+the assigned agent loads its own guidance.
 The tech writer owns [skill organization](agents/teams/ai-team/tech-writer/AGENTS.md#skill-organization),
 including placement and updates to callers when guidance moves.
 Each practice has one canonical owner.
