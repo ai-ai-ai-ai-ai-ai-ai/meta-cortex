@@ -8,6 +8,8 @@ global policy supplied with the assignment.
 ## Required actions
 
 - Launch one Team Gizmo using its resolved role location from the supplied agent directory.
+- Supply the [assignment context](../../../AGENTS.md#assignment-context) when launching Team Gizmo,
+  including its team documentation when present and applicable circuit breakers.
 - Route implementation work through Team Gizmo.
 - Resolve feature-level ambiguity and decisions spanning agent responsibilities.
 - Report the outcome, validation results, and unresolved blockers.

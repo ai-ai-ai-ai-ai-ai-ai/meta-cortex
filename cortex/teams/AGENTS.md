@@ -42,8 +42,8 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
   the tech writer subagent. Pass the subject owner's requirements and affected
   documents with the assignment.
 
-- Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
-- Supply the circuit-breaker policy and its resolved location before role and skill context in every assignment, including nested delegation.
+- Prepare every launch using the [assignment context](#assignment-context) below,
+  including launches by Gizmo Prime and nested delegation.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
 - Each agent’s `AGENTS.md` links the skills it uses. Each `SKILL.md` owns that
@@ -54,3 +54,47 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.
 - Return results and blockers through Team Gizmo to Gizmo Prime; route corrections back to the responsible agent.
 - Keep work within the user's request. Completion means the requested outcome is supported by evidence, with limitations stated clearly.
+
+## Assignment context
+
+Before launching an agent, the delegating agent resolves the following from the
+active library and supplies them in the launch instructions:
+
+- Objective, scope, dependencies, acceptance criteria, and expected evidence.
+- Project root, library root, working directory, and relevant project instructions.
+- The global `CIRCUIT-BREAKER.md` policy and its resolved path.
+- The assigned agent’s team directory and team `AGENTS.md`.
+- The team’s `CIRCUIT-BREAKER.md`, when present, plus any other team rules that
+  apply to the assignment’s subject.
+- The team’s `docs/` directory, its `index.md` when present, and the documents
+  relevant to the assignment. Include referenced subject documents from other
+  teams when the task depends on them.
+- The assigned agent’s own `AGENTS.md` and the execution configuration context.
+
+Include the policies in the supplied context or require the receiving agent to
+read their resolved files before any task work. Do not assume parent-session
+memory, a directory name, or an inherited conversation includes their contents.
+Identify an absent team documentation directory or team circuit breaker as
+absent; do not invent a file or omit the global policy. An existing required
+file that cannot be read is a context blocker, not an absent optional file.
+
+The receiving agent must, before starting work:
+
+1. Read the global and applicable team circuit-breaker rules.
+2. Read its team instructions and documentation index, then the relevant team
+   documents and referenced subject requirements in full.
+3. Read its own role instructions and follow its linked skills.
+4. Report any required context it cannot access before doing dependent work.
+
+Carry the same requirements through nested assignments and load newly relevant
+documents when scope changes. The skill’s own `SKILL.md` still owns its technical
+instructions; this handoff does not select or duplicate skill contents.
+
+**Prohibited:** launch a TypeScript agent with only “implement this component”
+and its role path, assuming it already knows the development team’s programming
+rules and circuit breaker.
+
+**Preferred:** supply the project and library roots, global and development-team
+circuit breakers, team instructions, documentation index and relevant programming
+documents, and the TypeScript role. Require the agent to read them in the order
+above before editing the component.

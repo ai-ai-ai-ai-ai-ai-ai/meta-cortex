@@ -38,6 +38,10 @@ The [agent instructions](teams/AGENTS.md) define the coordination workflow.
 - **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
   - Manages feature worktrees and merges completed task branches.
 
+Each launch includes the [assignment context](teams/AGENTS.md#assignment-context):
+project and library locations, team documentation, applicable circuit breakers,
+and the agent’s role instructions. The receiving agent reads that context before
+starting work; parent-session memory is not assumed.
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
 
