@@ -20,6 +20,7 @@ Choose one installation method.
 **Homebrew**
 
 ```sh
+brew tap ai-ai-ai-ai-ai-ai-ai/tap
 brew install ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 ```
 
