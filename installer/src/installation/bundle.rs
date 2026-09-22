@@ -2,8 +2,8 @@ use super::InstallError;
 use crate::configuration::ConfigText;
 use crate::information::{FrameworkVersion, Version};
 use include_dir::{Dir, include_dir};
-use std::fs;
 use std::path::{Path, PathBuf};
+use std::{fs, io};
 
 pub(super) struct Bundle<'a> {
     pub(super) directory: &'a Dir<'a>,
@@ -31,7 +31,7 @@ impl Bundle<'_> {
     }
 
     pub(super) fn verify(&self) -> Result<(), InstallError> {
-        let metadata = fs::symlink_metadata(&self.destination)?;
+        let metadata = Self::required_metadata(&self.destination)?;
         if !metadata.is_dir() || metadata.file_type().is_symlink() {
             return Err(InstallError::Conflict(self.destination.clone()));
         }
@@ -49,7 +49,7 @@ impl Bundle<'_> {
                 }
                 .verify()?,
                 include_dir::DirEntry::File(file) => {
-                    let metadata = fs::symlink_metadata(&path)?;
+                    let metadata = Self::required_metadata(&path)?;
                     if !metadata.is_file() || metadata.file_type().is_symlink() {
                         return Err(InstallError::Conflict(path));
                     }
@@ -64,7 +64,7 @@ impl Bundle<'_> {
         let mut expected = self.directory.entries().len();
         if self.directory.path().as_os_str().is_empty() {
             let license = self.destination.join("LICENSE");
-            let metadata = fs::symlink_metadata(&license)?;
+            let metadata = Self::required_metadata(&license)?;
             if !metadata.is_file()
                 || metadata.file_type().is_symlink()
                 || fs::read(&license)? != Self::LICENSE
@@ -98,5 +98,18 @@ impl Bundle<'_> {
             return Err(InstallError::Conflict(self.destination.clone()));
         }
         Ok(())
+    }
+
+    fn required_metadata(path: &Path) -> Result<fs::Metadata, InstallError> {
+        fs::symlink_metadata(path).map_err(|source| {
+            if source.kind() == io::ErrorKind::NotFound {
+                InstallError::MissingFrameworkEntry {
+                    path: path.to_path_buf(),
+                    source,
+                }
+            } else {
+                InstallError::Io(source)
+            }
+        })
     }
 }

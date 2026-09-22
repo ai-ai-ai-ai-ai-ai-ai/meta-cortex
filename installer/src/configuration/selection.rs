@@ -11,11 +11,11 @@ pub enum InitMode {
 
 // clap owns the boolean flag; application behavior uses a named mode.
 impl From<bool> for InitMode {
-    fn from(non_interactive: bool) -> Self {
-        if non_interactive {
-            Self::Bundled
-        } else {
+    fn from(interactive: bool) -> Self {
+        if interactive {
             Self::Interactive
+        } else {
+            Self::Bundled
         }
     }
 }

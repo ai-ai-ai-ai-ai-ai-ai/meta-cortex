@@ -38,12 +38,10 @@ pub enum InstructionError {
     #[error("initialization cancelled; no project files were written")]
     Cancelled,
     #[error(
-        "harness selection requires a terminal; use --non-interactive --harness <codex|claude|cursor> --instructions <write|skip>, or --harness none"
+        "interactive harness selection requires a terminal; omit --interactive to install with defaults, or supply --harness <codex|claude|cursor> --instructions <write|skip>"
     )]
     TerminalRequired,
-    #[error(
-        "non-interactive initialization requires --harness <codex|claude|cursor|none> and --instructions <write|skip> when selecting a harness"
-    )]
+    #[error("instruction selection was not resolved; use --instructions <write|skip>")]
     ExplicitChoiceRequired,
     #[error("harness selection failed: {0}")]
     Prompt(#[from] dialoguer::Error),

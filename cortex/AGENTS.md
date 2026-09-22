@@ -18,7 +18,7 @@ For a new user task:
 3. Resolve the session’s [development mode](#development-mode) before planning
    or implementing the task and before launching any agent.
 4. In multi-agent mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
-   [agent configuration rules](#agent-configuration).
+   [agent configuration rules](teams/gizmo-team/docs/agent-configuration.md).
 5. In multi-agent mode, read and follow [team instructions](teams/AGENTS.md) to launch Gizmo Prime
    as a subagent through the host’s agent execution tool. Pass the task context
    into its assignment. That document defines subsequent subagent launches
@@ -89,33 +89,7 @@ Apply the consuming project's context throughout the task:
   and the team directory through every delegation. Each assigned agent loads
   the skills linked from its own instructions and follows their `SKILL.md` files.
 
-### Agent configuration
-
-[meta-cortex.toml](meta-cortex.toml) owns model and reasoning-effort choices.
-Each role setting specifies both values:
-
-- **Gizmo Prime**
-  - Configuration: `[gizmo-prime]`.
-- **Team Gizmo**
-  - Configuration: `[team.gizmo]`.
-- **Team agents**
-  - Configuration: `[team.agent]`.
-
-Before each subagent launch, including Gizmo Prime:
-
-1. Read the configuration and select the setting for the role.
-   - If the configuration is missing, invalid, or unsupported by the host,
-     report the specific blocker. Do not silently substitute settings.
-2. Pass `model` and `reasoning_effort` explicitly to the host's agent execution
-   tool. Adapt parameter names to that tool.
-   - Reuse an existing Gizmo Prime session only if its settings match.
-   - Otherwise, launch Gizmo Prime as a subagent with the configured settings through a capable host.
-
-Reading the configuration does not change an already-running session.
-
 ## Prohibited actions
 
 - Do not assume the project root is the library root or its immediate parent.
 - Do not change the Meta-Cortex library unless the task concerns its rules, skills, roles, or configuration.
-- Do not introduce execution defaults or per-agent overrides. Skills have no execution settings.
-- Do not duplicate model choices in role instructions or delegation prompts.

@@ -4,7 +4,7 @@ mod installation;
 mod integration;
 
 use clap::builder::{BoolishValueParser, TypedValueParser};
-use clap::{ArgAction, Parser, Subcommand};
+use clap::{Arg, ArgAction, Parser, Subcommand};
 use configuration::InitMode;
 use information::InfoYaml;
 use installation::{InitRequest, InstallError, Project};
@@ -21,14 +21,19 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Install the framework and choose how to connect your AI harness.
+    /// Install the framework with bundled defaults, without prompting.
+    #[command(arg(Arg::new("non-interactive")
+        .long("non-interactive")
+        .help("Use bundled defaults without prompts (the default; retained for compatibility)")
+        .action(ArgAction::SetTrue)
+        .conflicts_with("interactive")))]
     Init {
         /// Existing project directory.
         #[arg(default_value = ".")]
         project: PathBuf,
-        /// Skip prompts and use bundled settings for a new installation.
+        /// Interactively choose harness integration and model settings.
         #[arg(long, action = ArgAction::SetTrue, value_parser = BoolishValueParser::new().map(InitMode::from))]
-        non_interactive: InitMode,
+        interactive: InitMode,
         #[command(flatten)]
         integration: IntegrationOptions,
     },
@@ -45,11 +50,11 @@ impl Cli {
         match self.command {
             Command::Init {
                 project,
-                non_interactive,
+                interactive,
                 integration,
             } => {
                 let installed = Project::open(project)?.prepare()?.install(InitRequest {
-                    mode: non_interactive,
+                    mode: interactive,
                     integration,
                 })?;
                 println!("Meta-Cortex is ready in {}", installed.path().display());
