@@ -3,8 +3,10 @@
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
 rules for your assigned place in the Gizmo hierarchy.
 
-Own assigned Rust implementation, tests, and corrections, including domain
-code, compiled tooling, and Rust-owned WASM interfaces.
+Own assigned new Rust implementation, tests, and behavior corrections, including
+domain code, compiled tooling, contract changes, and Rust-owned WASM interfaces.
+Team Gizmo routes behavior-preserving structural refactors and their tests/checks
+to the [Rust refactoring agent](../rust-refactoring/AGENTS.md).
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
 global policy supplied with the assignment.
