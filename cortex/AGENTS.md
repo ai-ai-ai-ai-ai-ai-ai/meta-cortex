@@ -3,7 +3,7 @@
 Meta-Cortex is a composable development platform that organizes teams of agents
 to turn ideas and requirements into working software. Projects include it as
 an AI library. Its agents, rules, skills, and configuration form one framework.
-Meta-Cortex runs its agent roles as subagents through the host’s execution tools.
+Meta-Cortex can run in the current agent or delegate through the host’s execution tools.
 The host provides the models, tools, and execution environment.
 
 ## Required actions
@@ -15,12 +15,54 @@ For a new user task:
 1. Read the [circuit breaker](CIRCUIT-BREAKER.md) before other framework documents.
    Carry its policy and resolved location through every assignment.
 2. Establish the [project context](#project-context).
-3. Read [meta-cortex.toml](meta-cortex.toml) and apply the
+3. Resolve the session’s [development mode](#development-mode) before planning
+   or implementing the task and before launching any agent.
+4. In multi-agent mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
    [agent configuration rules](#agent-configuration).
-4. Read and follow [team instructions](teams/AGENTS.md) to launch Gizmo Prime
+5. In multi-agent mode, read and follow [team instructions](teams/AGENTS.md) to launch Gizmo Prime
    as a subagent through the host’s agent execution tool. Pass the task context
    into its assignment. That document defines subsequent subagent launches
    and coordination.
+
+### Development mode
+
+The current agent uses the [native user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
+with [development.yaml](development.yaml). At the start of every new user-facing
+session, ask the user to choose `development.mode` through the native input UI.
+Wait for a submitted, validated answer before choosing the execution path.
+Do not infer a choice from an earlier session, repository settings, or the host's
+preselected option. Do not launch Gizmos while this question is pending.
+
+A session is the current user-facing conversation/thread. Retain its selected
+mode across new tasks, follow-ups, turn boundaries, and context compaction in
+that conversation. Include it in continuation context and every assignment.
+Do not ask again for each message, task, or delegated agent. A new user-facing
+conversation asks again; a delegated agent inherits the parent session's choice
+and does not start another configuration flow. If the choice is lost and cannot
+be recovered from session context, ask rather than guess.
+
+- `single_agent`: use the current agent and thread. Do not spawn Gizmos, workers,
+  reviewers, or integration subagents. Read the relevant team and role
+  instructions, team docs, circuit breakers, and skills using the
+  [assignment context](teams/AGENTS.md#assignment-context) requirements locally.
+  The current agent performs implementation, validation, and delivery. Delegation
+  and coordinator-only routing requirements apply only in multi-agent mode;
+  technical requirements still apply. Keep the current host model/settings.
+- `multi_agent`: use the existing Gizmo workflow and configured role settings.
+
+The returned `answers["development.mode"]` is the session's `development.mode`.
+It is not a persisted model setting. Do not rewrite `meta-cortex.toml` or save
+user answers to the repository. Cancelled, unavailable, invalid, or pending
+configuration must not launch agents or continue dependent development work.
+Apply an explicit user mode change before further work; do not leave delegated
+agents running when switching to single-agent mode.
+
+**Prohibited:** launch Gizmo Prime before asking for a mode, then continue
+using workers after the user chooses `single_agent`.
+
+**Preferred:** validate `single_agent`, load the relevant team context locally,
+and implement and verify the task in this thread. A later task in the same
+session keeps that choice; a new session asks again.
 
 ### Project context
 

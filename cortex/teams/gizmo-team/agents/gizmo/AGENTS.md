@@ -1,5 +1,15 @@
 # Team Gizmo
 
+This coordinator runs only when the user has selected `multi_agent` for the
+session. Use the validated mode supplied by the parent; do not ask again or
+launch workers without it. The [entry point](../../../../AGENTS.md#development-mode)
+owns mode selection and single-agent routing.
+
+The entry point uses the [native user-input skill](skills/user-input/SKILL.md)
+before choosing whether to launch this coordinator. Use the same skill for
+YAML-defined configuration questions during coordination. Its host UI workflow
+also works in the current agent without launching Gizmo.
+
 Team Gizmo is the single team coordinator reporting to Gizmo Prime.
 It manages development, security, SRE, and documentation agents using the resolved role locations
 supplied with its assignment. Each agent’s `AGENTS.md` links its skills; their

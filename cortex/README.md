@@ -22,9 +22,23 @@ assigned worktree.
 ## Agent coordination
 
 Give your host a development task with the framework entry point loaded.
-The host launches Gizmo Prime as a subagent. Gizmo Prime launches Team Gizmo,
-which launches the team subagents needed for the task.
+At the start of each new session, the current agent asks for a [development mode](AGENTS.md#development-mode)
+using the host's native input UI:
+
+- `single_agent` keeps implementation, checks, and delivery in the current thread
+  and agent, with the relevant team docs, circuit breakers, and skills.
+- `multi_agent` launches Gizmo Prime, which launches Team Gizmo and the team
+  subagents needed for the task.
+
+The agent waits for a submitted answer before starting development work. New
+tasks and follow-ups in the same conversation retain the session’s mode; a new
+conversation asks again. Delegated agents inherit the choice. Cancelling configuration stops
+the task; a missing native UI is reported as a blocker. Codex uses
+`request_user_input_async` when available; the host controls whether choices
+appear as buttons or a dropdown.
+
 The [agent instructions](teams/AGENTS.md) define the coordination workflow.
+In multi-agent mode:
 
 - **Gizmo Prime**
   - Owns the overall outcome.
@@ -75,8 +89,17 @@ permanent observer agent.
 
 ## Execution configuration
 
+The [development form](development.yaml) defines the session-mode question. The
+[user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
+includes a generic YAML form helper, an example, and usage instructions. It
+requires Bun 1.3.14 and the library's workspace dependencies; install once from
+the library root with `bun install --frozen-lockfile --ignore-scripts`. The helper
+validates data locally, while the current agent calls the host's native question
+tool. Answers stay in session context rather than a repository configuration file.
+
 [meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for
-each role. The [configuration rules](AGENTS.md#agent-configuration) define how
+each delegated role in multi-agent mode. Single-agent mode keeps the current
+host settings. The [configuration rules](AGENTS.md#agent-configuration) define how
 the host applies those settings.
 
 1. Check that the configured models and reasoning efforts are supported by your host.
