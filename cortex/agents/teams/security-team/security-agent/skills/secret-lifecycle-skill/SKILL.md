@@ -5,7 +5,8 @@ description: Implement and review secret lifetimes across Rust, WASM, TypeScript
 
 # Secret Lifecycle Skill
 
-Apply this skill after the assigned agent has loaded security practices.
+Read [secret lifecycle](practices/secret-lifecycle.md) for ownership, storage,
+redaction, lifetime, and cleanup requirements.
 For each affected boundary, read the applicable practice:
 
 - [Rust secret lifecycle](practices/rust-secret-lifecycle.md): validated secret types, redaction, zeroization, and capability ownership.

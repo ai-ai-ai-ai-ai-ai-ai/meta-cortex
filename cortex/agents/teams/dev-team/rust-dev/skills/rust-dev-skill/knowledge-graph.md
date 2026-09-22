@@ -16,12 +16,21 @@ to the exact source section, not merely the document. Rule summaries include sco
 reader can detect contradictions without opening every file.
 
 Related entries are review relationships, not instructions for leaf documents to
-link back here. The assigned agent loads applicable cross-language prerequisites
-before applying these practices.
+link back here. Apply the relevant cross-language practices when the assignment crosses that boundary.
 
 For implementation, select entries covering the decisions being changed and load
 those practices in full. Include related subjects when the change crosses their
 boundaries.
+
+## Implementation practices
+
+For Rust implementation, apply:
+
+- [Function ownership](practices/fundamentals/function-ownership.md).
+- [Domain API integrity](practices/fundamentals/domain-api-integrity.md).
+- [Source file size](practices/fundamentals/source-file-size.md).
+- [Testing and regression](practices/fundamentals/testing-pyramid-and-regression.md).
+- [Library selection](practices/fundamentals/prefer-popular-libraries.md) when choosing dependencies or commodity helpers.
 
 ## Modeling
 

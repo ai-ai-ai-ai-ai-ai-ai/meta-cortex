@@ -43,7 +43,7 @@ prerequisites through the assigned agent’s instructions before specialized doc
 - Update affected callers and indexes when reorganizing the guidance.
 
 **Prohibited:** a language practice sends readers back to the root instructions
-for the coding practices rules, or copies those rules into its own introduction.
+for prerequisite rules, or copies those rules into its own introduction.
 
 The following Markdown is a deliberately prohibited example, not a live link
 or an instruction to follow:
@@ -52,12 +52,11 @@ or an instruction to follow:
 # Language Practice
 
 Before applying this rule, read [project instructions](../../AGENTS.md)
-and [coding practices](../../skills/coding/SKILL.md).
+and reload its instructions.
 ```
 
-**Preferred:** the agent’s instructions load coding practices before the language
-practice. Both remain independent authorities, and the assignment carries the
-selected context. If two practices need a new shared rule, extract it once and
+**Preferred:** the agent links its language skill, whose `SKILL.md` names its
+practices and prerequisites. If two practices need a new shared rule, extract it once and
 link it from each consuming agent’s instructions.
 
 For an agent with a language skill, its `AGENTS.md` names the prerequisites:
@@ -65,9 +64,8 @@ For an agent with a language skill, its `AGENTS.md` names the prerequisites:
 ```markdown
 # Language Agent
 
-1. Load the coding skill linked by this agent’s instructions.
-2. Load [language practices](skills/language/SKILL.md).
-3. Apply both to the assigned implementation work.
+1. Load [language practices](skills/language/SKILL.md).
+2. Follow that skill’s instructions for the assigned implementation work.
 ```
 
 The language practice starts with its own rule and examples. It does not repeat

@@ -8,10 +8,8 @@ team-agent model and reasoning effort.
 
 - Apply [Context Engineering](skills/context-engineering/SKILL.md) to documentation work.
 - For programming rules, also apply [Code Example Authoring](skills/code-example-authoring/SKILL.md).
-- For programming examples, load [coding practices](../../dev-team/rust-dev/skills/coding-skill/SKILL.md)
-  and the language practices documented by the agent owning the example’s subject.
-- For security guidance or secret handling, load
-  [security practices](../../security-team/security-agent/skills/security-skill/SKILL.md).
+- For programming examples, use the language skill documented by the agent
+  owning the example’s subject.
 - For secret handling, also load
   [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 - Preserve the subject owner's requirements. Return unresolved policy decisions

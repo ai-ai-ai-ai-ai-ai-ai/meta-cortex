@@ -6,16 +6,12 @@ functional tests. This includes Svelte scripts and component behavior.
 
 ## Skills
 
-- Load [coding practices](../rust-dev/skills/coding-skill/SKILL.md) before
-  implementation, tests, scripts, build logic, or code review.
-- For security work or secret handling, load
-  [security practices](../../security-team/security-agent/skills/security-skill/SKILL.md).
 - For secret handling, also load
   [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 
 ## Implementation and design handoff
 
-- Apply [TypeScript development](skills/ts-dev-skill/SKILL.md) after coding practices.
+- Apply [TypeScript development](skills/ts-dev-skill/SKILL.md).
 - For browser UI implementation, also apply
   [web design](../web-designer/skills/web-design-skill/SKILL.md).
 - Implement the assigned interface's behavior and state transitions against

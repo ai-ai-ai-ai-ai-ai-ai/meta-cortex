@@ -6,10 +6,6 @@ the markup and CSS that express them.
 
 ## Skills
 
-- Load [coding practices](../rust-dev/skills/coding-skill/SKILL.md) before
-  implementation, tests, scripts, build logic, or code review.
-- For security work or secret handling, load
-  [security practices](../../security-team/security-agent/skills/security-skill/SKILL.md).
 - For secret handling, also load
   [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 
