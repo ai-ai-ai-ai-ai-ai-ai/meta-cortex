@@ -38,6 +38,10 @@ The [agent instructions](teams/AGENTS.md) define the coordination workflow.
 - **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
   - Manages feature worktrees and merges completed task branches.
 
+Each launch includes the [assignment context](teams/AGENTS.md#assignment-context):
+project and library locations, team documentation, applicable circuit breakers,
+and the agent’s role instructions. The receiving agent reads that context before
+starting work; parent-session memory is not assumed.
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
 
@@ -52,6 +56,22 @@ specialized skills are:
 - [Cloud-Native](teams/sre-team/agents/kubernetes-specialist/skills/cloud-native-skill/SKILL.md) for
   bounded, observable infrastructure and operational changes, loaded by the
   Kubernetes specialist for cloud-native assignments.
+
+## Circuit breaker
+
+The entry point loads the [circuit breaker](CIRCUIT-BREAKER.md) before roles and
+skills. Every assignment carries it. Agents check proposed mechanisms before
+implementation; coordinators check assignments and results. The global policy
+owns precedence, scope checks, recovery, and preservation of product security.
+Subject-specific rules live in the owning teams’ `CIRCUIT-BREAKER.md`
+documents, linked from the global policy and each affected agent.
+
+**Prohibited:** an ordinary handoff grows into encrypted agent channels and
+persistent authority receipts.
+
+**Preferred:** use the host's handoff tools and review the result against the
+assignment. Use a focused second review for a concrete dispute, without a
+permanent observer agent.
 
 ## Execution configuration
 

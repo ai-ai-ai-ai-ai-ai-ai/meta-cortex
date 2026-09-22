@@ -42,3 +42,8 @@ dependencies on the others.
 
 The [knowledge base](docs/index.md) holds the team’s shared subject
 requirements. Agents link the relevant knowledge alongside their own skills.
+
+## Team circuit breaker
+
+Apply the [subject-specific circuit breaker](CIRCUIT-BREAKER.md) to this
+team’s assignments.

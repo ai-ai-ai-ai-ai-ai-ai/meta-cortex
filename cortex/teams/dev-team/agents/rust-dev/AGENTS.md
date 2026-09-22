@@ -3,6 +3,9 @@
 Own assigned Rust implementation, tests, and corrections, including domain
 code, compiled tooling, and Rust-owned WASM interfaces.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Knowledge
 
 - For programming, tests, scripts, build logic, or code review, apply the

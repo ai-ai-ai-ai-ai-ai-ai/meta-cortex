@@ -5,6 +5,9 @@ It manages development, security, SRE, and documentation agents using the resolv
 supplied with its assignment. Each agent’s `AGENTS.md` links its skills; their
 `SKILL.md` files contain the instructions. Gizmo does not maintain a skill registry.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Select agents from team catalogs
 
 1. Read every team's `AGENTS.md` from the supplied team directory before
@@ -21,8 +24,9 @@ supplied with its assignment. Each agent’s `AGENTS.md` links its skills; their
    needed to choose agents; do not preload every agent's instructions or skills.
 3. Match the required outcomes to the cataloged responsibilities and select
    the agents needed for the assignment.
-4. Launch the selected agents with their role locations and task context.
-   Each subagent reads its own role instructions and applicable skills.
+4. Prepare the [assignment context](../../../AGENTS.md#assignment-context) for each selected agent,
+   including its team documentation and applicable circuit breakers.
+5. Launch the agent with explicit instructions to read that context before work.
 
 If a catalog lacks information needed to distinguish responsibilities, report
 the gap and inspect only the relevant role instructions to resolve it.
@@ -42,7 +46,8 @@ for that assignment rather than preloading unrelated agents.
 - Launch the [tech writer](../../../ai-team/agents/tech-writer/AGENTS.md) for documentation assignments. Route policy
   questions to the relevant development or security owner before the writer
   changes the requirements.
-- Give each agent its scope, relevant project context, dependencies, and acceptance criteria.
+- Supply the complete [assignment context](../../../AGENTS.md#assignment-context) with every launch
+  and require the receiving agent to load it before work.
 - Coordinate independent work concurrently when supported; order overlapping or dependent work.
 - Preserve clear ownership and resolve conflicts between agent contributions.
 - Check each result against its assignment and route corrections to its owner.

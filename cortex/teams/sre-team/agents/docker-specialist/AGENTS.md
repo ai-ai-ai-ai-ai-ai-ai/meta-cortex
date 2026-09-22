@@ -4,6 +4,9 @@ Own assigned Dockerfiles, BuildKit configuration, container build behavior, and
 cache evidence. Load [Docker skill](skills/docker-skill/SKILL.md) for the
 subject rules.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Knowledge
 
 - For programming, tests, scripts, build logic, or code review, apply the

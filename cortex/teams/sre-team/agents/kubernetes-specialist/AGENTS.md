@@ -6,6 +6,9 @@ for Kubernetes subject rules. For cloud-native infrastructure or operational
 configuration, also load [Cloud-native skill](skills/cloud-native-skill/SKILL.md)
 for its subject rules.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Knowledge
 
 - For programming, tests, scripts, build logic, or code review, apply the
