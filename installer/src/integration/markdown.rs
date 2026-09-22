@@ -2,7 +2,6 @@ use super::document::{SectionHeader, SectionKind};
 use super::{InstructionError, InstructionTarget};
 use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Options, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
-use serde::Deserialize;
 use serde_saphyr::Options as YamlOptions;
 use std::ops::Range;
 
@@ -12,14 +11,26 @@ pub struct MarkdownInstructions<'a> {
 }
 
 // Untagged decoding retains YAML types rather than coercing quoted strings to bools.
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum CursorFrontmatter {
-    Rule {
-        #[serde(rename = "alwaysApply")]
-        always_apply: bool,
-    },
+// Derives emit sibling implementations using Option. Keep authored types denied.
+#[allow(
+    clippy::disallowed_types,
+    reason = "Serde generates Option internally; authored declarations deny this lint"
+)]
+mod cursor {
+    use serde::Deserialize;
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    pub(super) enum CursorFrontmatter {
+        Rule {
+            #[serde(rename = "alwaysApply")]
+            always_apply: bool,
+        },
+    }
 }
+
+use cursor::CursorFrontmatter;
 
 enum ManagedBlock {
     Absent,

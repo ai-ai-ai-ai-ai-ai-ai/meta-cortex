@@ -151,6 +151,18 @@ boundaries.
   - Consume dependency Option results immediately into a named outcome or typed error.
   - Do not retain/forward them or author Option-returning trait implementations.
 
+- **[domain_states:option_lint](practices/modeling/domain-states.md#enforce-the-option-prohibition-with-clippy)**
+
+  - Add core::option::Option to disallowed-types at each Clippy configuration boundary
+    and deny clippy::disallowed_types for every applicable crate.
+  - Preserve existing settings and ensure workspace members inherit shared lints.
+  - Isolate incompatible derives in declaration-only modules with reasoned allowances;
+    explicitly deny the lint on each authored type and keep behavior outside.
+  - Verify authored Option fields still fail; do not disable the crate-wide lint or
+    replace required derives to evade it.
+  - Run all-target Clippy with warnings denied; review inferred stored values and
+    dependency-result handling separately because the lint is not complete enforcement.
+
 - **[domain_states:required_values](practices/modeling/domain-states.md#require-values-that-cannot-be-absent)**
 
   - Required persisted/signed values remain required.

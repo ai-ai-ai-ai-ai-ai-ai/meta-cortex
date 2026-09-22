@@ -1,95 +1,120 @@
 use rexpect::{error::Error as TerminalError, session};
-use serde::Deserialize;
-use std::path::PathBuf;
 use std::process::Command;
 use std::{fs, io};
 use tempfile::{Builder, TempDir};
-use thiserror::Error;
 
 // This is the CLI's external YAML contract, decoded independently of its writer.
-#[derive(Debug, Error)]
-enum InfoCheckError {
-    #[error(transparent)]
-    Io(#[from] io::Error),
-    #[error(transparent)]
-    Yaml(#[from] serde_saphyr::DeserializeError),
+// Derives emit sibling implementations using Option. Keep authored types denied.
+#[allow(
+    clippy::disallowed_types,
+    reason = "Serde and thiserror generates Option internally; authored declarations deny this lint"
+)]
+mod reports {
+    use serde::Deserialize;
+    use std::io;
+    use std::path::PathBuf;
+    use thiserror::Error;
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, Error)]
+    pub(super) enum InfoCheckError {
+        #[error(transparent)]
+        Io(#[from] io::Error),
+        #[error(transparent)]
+        Yaml(#[from] serde_saphyr::DeserializeError),
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(super) struct InfoDocument {
+        pub(super) schema_version: u32,
+        pub(super) cli_version: String,
+        pub(super) framework_version: ReportVersion,
+        pub(super) paths: ReportPaths,
+        pub(super) integrations: Vec<ReportIntegration>,
+        pub(super) models: ReportModels,
+        pub(super) model_availability: ModelAvailability,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, PartialEq, Eq, Deserialize)]
+    #[serde(tag = "status", content = "value")]
+    pub(super) enum ReportVersion {
+        Recorded(String),
+        Legacy,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, PartialEq, Eq, Deserialize)]
+    pub(super) enum Integration {
+        Connected,
+        Missing,
+        Conflict,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, PartialEq, Eq, Deserialize)]
+    pub(super) enum ReportHarness {
+        Codex,
+        Claude,
+        Cursor,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(super) struct ReportIntegration {
+        pub(super) harness: ReportHarness,
+        pub(super) path: PathBuf,
+        pub(super) status: Integration,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, PartialEq, Eq, Deserialize)]
+    pub(super) enum ModelAvailability {
+        NotChecked,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(super) struct ReportPaths {
+        pub(super) project: PathBuf,
+        pub(super) framework: PathBuf,
+        pub(super) configuration: PathBuf,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(super) struct ReportModels {
+        #[serde(rename = "gizmo-prime")]
+        pub(super) gizmo_prime: ReportAgent,
+        pub(super) team: ReportTeam,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(super) struct ReportTeam {
+        pub(super) gizmo: ReportAgent,
+        pub(super) agent: ReportAgent,
+    }
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, PartialEq, Eq, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    pub(super) struct ReportAgent {
+        pub(super) model: String,
+        pub(super) reasoning_effort: String,
+    }
 }
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct InfoDocument {
-    schema_version: u32,
-    cli_version: String,
-    framework_version: ReportVersion,
-    paths: ReportPaths,
-    integrations: Vec<ReportIntegration>,
-    models: ReportModels,
-    model_availability: ModelAvailability,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(tag = "status", content = "value")]
-enum ReportVersion {
-    Recorded(String),
-    Legacy,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-enum Integration {
-    Connected,
-    Missing,
-    Conflict,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-enum ReportHarness {
-    Codex,
-    Claude,
-    Cursor,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportIntegration {
-    harness: ReportHarness,
-    path: PathBuf,
-    status: Integration,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-enum ModelAvailability {
-    NotChecked,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportPaths {
-    project: PathBuf,
-    framework: PathBuf,
-    configuration: PathBuf,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportModels {
-    #[serde(rename = "gizmo-prime")]
-    gizmo_prime: ReportAgent,
-    team: ReportTeam,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportTeam {
-    gizmo: ReportAgent,
-    agent: ReportAgent,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportAgent {
-    model: String,
-    reasoning_effort: String,
-}
+use reports::{
+    InfoCheckError, InfoDocument, Integration, ModelAvailability, ReportAgent, ReportHarness,
+    ReportVersion,
+};
 
 struct CliScenario {
     project: TempDir,

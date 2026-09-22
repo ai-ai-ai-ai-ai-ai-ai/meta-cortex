@@ -19,37 +19,51 @@ use serde_saphyr::SerializeError;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
-use thiserror::Error;
 
-#[derive(Debug, Error)]
-pub enum InstructionError {
-    #[error("could not serialize instruction metadata: {0}")]
-    Yaml(#[from] SerializeError),
-    #[error("could not render instructions: {0}")]
-    Markdown(#[from] MarkdownError),
-    #[error("instruction file operation failed: {0}")]
-    Io(#[from] io::Error),
-    #[error("refusing to overwrite differing content or a symbolic link: {0}")]
-    Conflict(PathBuf),
-    #[error(
-        "instruction file has an altered or incomplete Meta-Cortex block, invalid UTF-8, or unsupported Cursor frontmatter: {0}"
-    )]
-    InvalidEntry(PathBuf),
-    #[error("initialization cancelled; no project files were written")]
-    Cancelled,
-    #[error(
-        "harness selection requires a terminal; use --non-interactive --harness <codex|claude|cursor> --instructions <write|skip>, or --harness none"
-    )]
-    TerminalRequired,
-    #[error(
-        "non-interactive initialization requires --harness <codex|claude|cursor|none> and --instructions <write|skip> when selecting a harness"
-    )]
-    ExplicitChoiceRequired,
-    #[error("harness selection failed: {0}")]
-    Prompt(#[from] dialoguer::Error),
-    #[error("invalid harness choice; choose codex, claude, cursor, or none")]
-    InvalidHarness,
+// Derives emit sibling implementations using Option. Keep authored types denied.
+#[allow(
+    clippy::disallowed_types,
+    reason = "thiserror generates Option internally; authored declarations deny this lint"
+)]
+mod errors {
+    use super::{MarkdownError, SerializeError};
+    use std::io;
+    use std::path::PathBuf;
+    use thiserror::Error;
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, Error)]
+    pub enum InstructionError {
+        #[error("could not serialize instruction metadata: {0}")]
+        Yaml(#[from] SerializeError),
+        #[error("could not render instructions: {0}")]
+        Markdown(#[from] MarkdownError),
+        #[error("instruction file operation failed: {0}")]
+        Io(#[from] io::Error),
+        #[error("refusing to overwrite differing content or a symbolic link: {0}")]
+        Conflict(PathBuf),
+        #[error(
+            "instruction file has an altered or incomplete Meta-Cortex block, invalid UTF-8, or unsupported Cursor frontmatter: {0}"
+        )]
+        InvalidEntry(PathBuf),
+        #[error("initialization cancelled; no project files were written")]
+        Cancelled,
+        #[error(
+            "harness selection requires a terminal; use --non-interactive --harness <codex|claude|cursor> --instructions <write|skip>, or --harness none"
+        )]
+        TerminalRequired,
+        #[error(
+            "non-interactive initialization requires --harness <codex|claude|cursor|none> and --instructions <write|skip> when selecting a harness"
+        )]
+        ExplicitChoiceRequired,
+        #[error("harness selection failed: {0}")]
+        Prompt(#[from] dialoguer::Error),
+        #[error("invalid harness choice; choose codex, claude, cursor, or none")]
+        InvalidHarness,
+    }
 }
+
+pub use errors::InstructionError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum, Display, Serialize)]
 pub enum Harness {

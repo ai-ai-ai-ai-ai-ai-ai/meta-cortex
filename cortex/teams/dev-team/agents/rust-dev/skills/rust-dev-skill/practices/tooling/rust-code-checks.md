@@ -25,6 +25,7 @@ cargo clippy --workspace --all-targets -- -D warnings
   - `--all-targets` does not cover every target triple or enable every feature.
   - Check mutually exclusive features separately instead of blindly adding `--all-features`.
 - Preserve required toolchain and build flags.
+- Apply the [Option lint configuration](../modeling/domain-states.md#enforce-the-option-prohibition-with-clippy).
 - Deny compiler warnings during compilation as well as Clippy.
   - Use the project's existing lint configuration or compiler flags.
 

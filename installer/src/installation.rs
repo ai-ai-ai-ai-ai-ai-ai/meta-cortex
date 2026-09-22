@@ -1,33 +1,49 @@
+mod bundle;
+
 use crate::configuration::{ConfigError, ConfigText, InitMode};
-use crate::information::{FrameworkVersion, ProjectInfo, Version, VersionError};
+use crate::information::{FrameworkVersion, ProjectInfo, VersionError};
 use crate::integration::{
     InstructionError, IntegrationOptions, IntegrationRequest, ProjectHarnesses,
 };
-use include_dir::{Dir, include_dir};
+use bundle::Bundle;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use thiserror::Error;
 
-#[derive(Debug, Error)]
-pub enum InstallError {
-    #[error("filesystem operation failed: {0}")]
-    Io(#[from] io::Error),
-    #[error(transparent)]
-    Configuration(#[from] ConfigError),
-    #[error(transparent)]
-    Version(#[from] VersionError),
-    #[error("Meta-Cortex is not initialized in {0}; run meta-cortex init")]
-    NotInitialized(PathBuf),
-    #[error("could not serialize project information: {0}")]
-    Info(#[from] serde_saphyr::SerializeError),
-    #[error("expected an existing project directory: {0}")]
-    InvalidProject(PathBuf),
-    #[error("refusing to overwrite differing content or a symbolic link: {0}")]
-    Conflict(PathBuf),
-    #[error(transparent)]
-    Instructions(#[from] InstructionError),
+// Derives emit sibling implementations using Option. Keep authored types denied.
+#[allow(
+    clippy::disallowed_types,
+    reason = "thiserror generates Option internally; authored declarations deny this lint"
+)]
+mod errors {
+    use super::{ConfigError, InstructionError, VersionError};
+    use std::io;
+    use std::path::PathBuf;
+    use thiserror::Error;
+
+    #[deny(clippy::disallowed_types)]
+    #[derive(Debug, Error)]
+    pub enum InstallError {
+        #[error("filesystem operation failed: {0}")]
+        Io(#[from] io::Error),
+        #[error(transparent)]
+        Configuration(#[from] ConfigError),
+        #[error(transparent)]
+        Version(#[from] VersionError),
+        #[error("Meta-Cortex is not initialized in {0}; run meta-cortex init")]
+        NotInitialized(PathBuf),
+        #[error("could not serialize project information: {0}")]
+        Info(#[from] serde_saphyr::SerializeError),
+        #[error("expected an existing project directory: {0}")]
+        InvalidProject(PathBuf),
+        #[error("refusing to overwrite differing content or a symbolic link: {0}")]
+        Conflict(PathBuf),
+        #[error(transparent)]
+        Instructions(#[from] InstructionError),
+    }
 }
+
+pub use errors::InstallError;
 
 pub struct Project {
     root: PathBuf,
@@ -53,79 +69,7 @@ enum BundleState {
     Identical,
 }
 
-struct Bundle<'a> {
-    directory: &'a Dir<'a>,
-    destination: PathBuf,
-}
-
-impl Bundle<'_> {
-    fn verify(&self) -> Result<(), InstallError> {
-        let metadata = fs::symlink_metadata(&self.destination)?;
-        if !metadata.is_dir() || metadata.file_type().is_symlink() {
-            return Err(InstallError::Conflict(self.destination.clone()));
-        }
-        for entry in self.directory.entries() {
-            let path = self.destination.join(
-                entry
-                    .path()
-                    .file_name()
-                    .ok_or_else(|| InstallError::Conflict(self.destination.clone()))?,
-            );
-            match entry {
-                include_dir::DirEntry::Dir(directory) => Bundle {
-                    directory,
-                    destination: path,
-                }
-                .verify()?,
-                include_dir::DirEntry::File(file) => {
-                    let metadata = fs::symlink_metadata(&path)?;
-                    if !metadata.is_file() || metadata.file_type().is_symlink() {
-                        return Err(InstallError::Conflict(path));
-                    }
-                    if file.path() == Path::new("meta-cortex.toml") {
-                        ConfigText::from(fs::read_to_string(&path)?).parse()?;
-                    } else if fs::read(&path)? != file.contents() {
-                        return Err(InstallError::Conflict(path));
-                    }
-                }
-            }
-        }
-        let mut expected = self.directory.entries().len();
-        if self.directory.path().as_os_str().is_empty() {
-            expected += 1; // LICENSE is distributed beside the framework.
-            match FrameworkVersion::read(&self.destination)? {
-                FrameworkVersion::Legacy => {}
-                FrameworkVersion::Recorded(version) => {
-                    if version != Version::from(Version::CURRENT.to_owned()) {
-                        return Err(InstallError::Conflict(self.destination.clone()));
-                    }
-                    expected += 1;
-                }
-            }
-        }
-        let mut actual = 0;
-        for entry in fs::read_dir(&self.destination)? {
-            let entry = entry?;
-            if self.directory.path().as_os_str().is_empty() && entry.file_name() == "node_modules" {
-                // The library's Bun workspace owns this local, unbundled directory.
-                if !entry.file_type()?.is_dir() {
-                    return Err(InstallError::Conflict(entry.path()));
-                }
-                continue;
-            }
-            actual += 1;
-        }
-        if actual != expected {
-            return Err(InstallError::Conflict(self.destination.clone()));
-        }
-        Ok(())
-    }
-}
-
 impl Project {
-    const FRAMEWORK: Dir<'_> = include_dir!("$META_CORTEX_BUNDLE");
-    const LICENSE: &[u8] = include_bytes!("../../LICENSE");
-
     pub fn open(path: PathBuf) -> Result<Self, InstallError> {
         if !path.is_dir() {
             return Err(InstallError::InvalidProject(path));
@@ -168,16 +112,10 @@ impl Project {
         let bundle = match fs::symlink_metadata(&destination) {
             Ok(_) => {
                 Bundle {
-                    directory: &Project::FRAMEWORK,
+                    directory: &Bundle::FRAMEWORK,
                     destination: destination.clone(),
                 }
                 .verify()?;
-                let license = destination.join("LICENSE");
-                if fs::symlink_metadata(&license)?.file_type().is_symlink()
-                    || fs::read(&license)? != Project::LICENSE
-                {
-                    return Err(InstallError::Conflict(license));
-                }
                 BundleState::Identical
             }
             Err(error) if error.kind() == io::ErrorKind::NotFound => BundleState::Absent,
@@ -207,19 +145,15 @@ impl Installation {
         match self.bundle {
             BundleState::Absent => {
                 let configuration = ConfigText::try_from(request.mode.configure()?)?;
-                // create_dir claims the destination without replacing an existing entry.
-                fs::create_dir(&destination)?;
-                Project::FRAMEWORK.extract(&destination)?;
-                fs::write(destination.join("LICENSE"), Project::LICENSE)?;
-                fs::write(
-                    destination.join("meta-cortex.toml"),
-                    configuration.as_bytes(),
-                )?;
-                fs::write(destination.join(FrameworkVersion::FILE), Version::CURRENT)?;
+                Bundle {
+                    directory: &Bundle::FRAMEWORK,
+                    destination,
+                }
+                .install(configuration)?;
             }
             BundleState::Identical => {
                 Bundle {
-                    directory: &Project::FRAMEWORK,
+                    directory: &Bundle::FRAMEWORK,
                     destination,
                 }
                 .verify()?;
@@ -310,6 +244,29 @@ mod tests {
             fs::write(&path, "custom")?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             assert_eq!(fs::read_to_string(path)?, "custom");
+            Ok(())
+        }
+        fn rejects_license_changed_after_prepare(self) -> Result<(), InstallError> {
+            self.install()?;
+            let prepared = Project::open(self.directory.path().to_path_buf())?.prepare()?;
+            let license = self
+                .directory
+                .path()
+                .canonicalize()?
+                .join(".meta-cortex/LICENSE");
+            fs::write(&license, "changed after preparation")?;
+            let agents = self.directory.path().join("AGENTS.md");
+            fs::remove_file(&agents)?;
+            let result = prepared.install(InitRequest {
+                mode: InitMode::Bundled,
+                integration: IntegrationOptions {
+                    harness: HarnessChoice::Selected(Harness::Codex),
+                    instructions: InstructionAction::Write,
+                },
+            });
+            assert!(matches!(result, Err(InstallError::Conflict(path)) if path == license));
+            assert_eq!(fs::read_to_string(license)?, "changed after preparation");
+            assert!(!agents.exists());
             Ok(())
         }
         fn rejects_symlink(self) -> Result<(), InstallError> {
@@ -403,6 +360,10 @@ mod tests {
     #[test]
     fn rejects_modified_framework() -> Result<(), InstallError> {
         Fixture::create()?.rejects_modified_bundle()
+    }
+    #[test]
+    fn rejects_license_changed_after_preparation() -> Result<(), InstallError> {
+        Fixture::create()?.rejects_license_changed_after_prepare()
     }
     #[test]
     fn rejects_symbolic_link() -> Result<(), InstallError> {
