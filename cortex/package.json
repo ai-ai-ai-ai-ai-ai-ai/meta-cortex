@@ -1,0 +1,11 @@
+{
+  "name": "@meta-cortex/skill-workspace",
+  "private": true,
+  "packageManager": "bun@1.3.14",
+  "workspaces": [
+    "teams/*/agents/*/skills/*/scripts"
+  ],
+  "scripts": {
+    "verify": "bun run --workspaces verify"
+  }
+}

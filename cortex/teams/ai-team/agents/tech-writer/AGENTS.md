@@ -12,11 +12,16 @@ team-agent model and reasoning effort.
 ## Required actions
 
 - Apply [Context Engineering](skills/context-engineering/SKILL.md) to documentation work.
-- For programming rules, also apply [Code Example Authoring](skills/code-example-authoring/SKILL.md).
-- For programming examples, use the language skill documented by the agent
-  owning the example’s subject.
-- For secret handling, also load
-  [secret lifecycle](../../../security-team/agents/security-agent/skills/secret-lifecycle-skill/SKILL.md).
+- For programming rules, executable command examples, or delivery documentation, also apply
+  [Code Practice Writing](skills/code-practice-writing/SKILL.md).
+- For delivery-agent instructions and Git workflow documentation, then apply
+  [Delivery Writing](skills/delivery-writing/SKILL.md) and use
+  [Local Feature Work](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md) for Git correctness.
+- For programming examples, load [programming requirements](../../../dev-team/docs/index.md)
+  and the relevant language skill: [Rust](../../../dev-team/agents/rust-dev/skills/rust-dev-skill/SKILL.md)
+  or [TypeScript](../../../dev-team/agents/typescript-dev/skills/ts-dev-skill/SKILL.md). Apply their boundary prerequisites too.
+- For security documentation, apply [security requirements](../../../security-team/docs/index.md).
+  For secret handling, also load [secret lifecycle](../../../security-team/agents/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 - Preserve the subject owner's requirements. Return unresolved policy decisions
   to Team Gizmo for clarification by that owner.
 - Use the target skill’s rule-level knowledge graph to locate affected namespaced rules
@@ -68,8 +73,8 @@ Rust skill. Use the security team’s knowledge base for secret-handling policy.
 **Prohibited:** an assignment to explain error handling changes the application's
 error policy and reports only “documentation improved.”
 
-**Preferred:** revise the assigned practice using Context Engineering and Code Example
-Authoring, check the examples against the supplied language rules, and return the
+**Preferred:** revise the assigned practice using Context Engineering and Code Practice
+Writing, check the examples against the supplied language rules, and return the
 changed paths with link and compilation results. Send an unresolved policy
 conflict to Team Gizmo rather than deciding it through a prose edit.
 

@@ -8,9 +8,11 @@ applies to its assignment.
 - The [Gizmo team](gizmo-team/AGENTS.md) contains Gizmo Prime and Team Gizmo, which own feature coordination and agent assignments.
 - Agents in the [development team](dev-team/AGENTS.md), [security team](security-team/AGENTS.md), and [SRE team](sre-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
 - The [AI team](ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer subagent.
+- The [delivery team](delivery-team/AGENTS.md) owns local feature integration
+  through its integration agent.
 
-Each agent's `AGENTS.md` describes its role. Keep role responsibilities here
-and technical guidance in linked skills so they can evolve independently.
+Each agent's `AGENTS.md` owns its role responsibilities. Keep technical guidance
+in that role's linked skills so they can evolve independently.
 
 Use the configuration rules and resolved configuration location supplied by
 the entry point before every launch. Pass this context to delegated agents.

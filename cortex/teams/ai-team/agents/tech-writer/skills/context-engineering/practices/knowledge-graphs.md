@@ -78,7 +78,8 @@ Catalog each practice once as an owning entry. Related links and cross-rule
 references may repeat, but identify one canonical owner for each decision.
 Keep the skill entry point linked to the graph instead of maintaining another
 full index. Preserve implementation loading requirements when moving an index.
-Leaf practices must not link backward to recover prerequisites.
+Leaf practices may link directly to shared prerequisites, including through
+`../` paths, without circular loading or restarting agent routing.
 
 **Prohibited:** permit From<bool> in the practice while the graph still says
 “no boolean parameter under any circumstances.”
@@ -109,7 +110,7 @@ both source facts and explicitly mark the conflict as unresolved.
   validation requirement against the graph. Every distinct decision must be
   represented; file-count parity does not establish rule completeness.
 - Verify unique names, one owning entry per practice, valid source/related links and section anchors,
-  no stale paths, and no backward context links.
+  no stale paths, and no circular prerequisite loading.
 - Compare changed summaries with their sources, including negative examples and
   limits. Check related rule names for conflicting scopes or exceptions.
 - Report mechanical results separately from the semantic coverage review and
@@ -127,7 +128,7 @@ the queue and Effect requirements still need a documented boundary decision.”
 Use heading-derived anchors and validate the actual heading, including duplicate
 heading suffixes. Put the rule and its examples under a focused heading when an
 existing section is too broad. Update callers whenever a heading changes. Do not
-add HTML anchors, numeric codes, or backlinks just to manufacture a target.
+add HTML anchors, numeric codes, or circular links just to manufacture a target.
 
 **Prohibited:** a numbered code linked only to the document root.
 

@@ -36,6 +36,8 @@ Apply the consuming project's context throughout the task:
 - Read its `AGENTS.md` and applicable directory instructions, requirements, and architecture before planning.
 - Resolve Markdown links relative to the document containing them.
 - Resolve source paths, manifests, tests, and commands against the consuming project or assigned project worktree.
+- Pass the resolved library location separately from each task worktree.
+  An ignored installed library may remain in the original checkout.
 - Interpret "the project" and "the repository" in skills as the consuming project.
 - Map architectural examples to the project's actual packages and paths while preserving their rules.
 - Implement changes and run validation within the assigned project scope.

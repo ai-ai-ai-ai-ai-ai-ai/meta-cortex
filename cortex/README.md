@@ -35,6 +35,8 @@ The [agent instructions](teams/AGENTS.md) define the coordination workflow.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
   - Return evidence and unresolved blockers.
+- **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
+  - Manages feature worktrees and merges completed task branches.
 
 Agents read the project's instructions and relevant code before acting.
 Work continues until the requested outcome is supported by evidence.
@@ -77,7 +79,7 @@ by linking to its canonical copy from its own instructions. There is no common
 skill category or library-root skill directory.
 
 The [tech writer](teams/ai-team/agents/tech-writer/AGENTS.md) owns Context
-Engineering and Code Example Authoring for documentation and programming examples.
+Engineering and Code Practice Writing for documentation and programming examples.
 
 ## Team documentation
 
