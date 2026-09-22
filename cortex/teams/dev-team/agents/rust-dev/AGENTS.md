@@ -22,6 +22,8 @@ global policy supplied with the assignment.
 ## Implementation
 
 - Apply [Rust development](skills/rust-dev-skill/SKILL.md).
+- Own establishment and successful execution of its mandatory code checks,
+  including correction of compilation and lint warnings.
 - Preserve the domain and wire contracts consumed by other languages.
 - Return changed behavior, validation evidence, and unresolved dependencies
   to Team Gizmo. Request coordinated consumer changes when an interface changes.

@@ -1,6 +1,6 @@
 ---
 name: ts-dev-skill
-description: Apply TypeScript rules for named APIs, explicit state, concrete domain types, Effect workflows, and browser implementation.
+description: Apply TypeScript rules for mandatory code checks, warning-free builds, named APIs, explicit state, concrete domain types, Effect workflows, and browser implementation.
 ---
 
 # TypeScript Development Skill
@@ -17,6 +17,16 @@ only for Svelte code; they do not authorize replacing another UI framework.
 
 Apply [programming requirements](../../../../docs/index.md) before the
 selected language practices. Reuse it if already loaded for this assignment.
+
+## Required actions
+
+For every TypeScript or JavaScript implementation or tooling assignment, load
+and apply [TypeScript code checks](practices/typescript-code-checks.md). This
+prerequisite is mandatory, independent of the selected implementation practices.
+
+**Prohibited:** select only browser practices and omit type checking and linting.
+
+**Preferred:** establish and run the required checks alongside browser validation.
 
 ## Practice selection
 

@@ -820,6 +820,35 @@ boundaries.
 
 ## Tooling
 
+### Rust code checks
+
+- **File:** [Rust code checks](practices/tooling/rust-code-checks.md).
+- **Owns:** Mandatory formatting, compilation, Clippy, warning correction, and check evidence.
+- **Does not own:** Behavioral tests and coverage belong to Rust testing; pipeline implementation belongs to the CI/CD owner.
+- **Related:** [Rust testing](practices/tooling/rust-testing.md), [Paths and imports](practices/tooling/path-imports.md), [Error handling](practices/behavior/error-handling.md).
+
+- **[code_checks:establish](practices/tooling/rust-code-checks.md#establish-repeatable-checks)**
+
+  - Establish repeatable fmt, check, and Clippy gates in existing project tooling.
+  - Cover workspace members, all applicable targets, and supported feature/target
+    configurations; preserve build flags and deny compiler and Clippy warnings.
+  - Coordinate pipeline changes with the CI/CD owner under the active mode.
+
+- **[code_checks:fix_diagnostics](practices/tooling/rust-code-checks.md#fix-diagnostics-before-completion)**
+
+  - Fix formatting and all encountered compilation/lint warnings, including
+    pre-existing ones, then rerun checks after the final edit alongside required tests.
+  - Do not suppress diagnostics or ignore failures to pass checks; repair dependency
+    or generator causes through their owners and report out-of-scope repairs as blockers.
+  - Inspect Cargo and build-script output even when compiler warnings are denied.
+
+- **[code_checks:evidence](practices/tooling/rust-code-checks.md#report-verification-evidence)**
+
+  - Report actual commands, roots, configurations, and results; all three checks
+    must succeed without warnings before completion.
+  - Missing tooling, unverified required configurations, and unresolved diagnostics
+    block verification rather than count as success.
+
 ### Libraries
 
 - **File:** [Libraries](practices/tooling/libraries.md).
