@@ -4,6 +4,9 @@ Own assigned TypeScript and JavaScript implementation: browser components,
 application state, browser APIs, services, libraries, repository tooling, and
 functional tests. This includes Svelte scripts and component behavior.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Knowledge
 
 - For programming, tests, scripts, build logic, or code review, apply the

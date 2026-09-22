@@ -2,6 +2,9 @@
 
 Own the feature outcome. Team Gizmo manages workers and integration.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Required actions
 
 - Launch one Team Gizmo using its resolved role location from the supplied agent directory.

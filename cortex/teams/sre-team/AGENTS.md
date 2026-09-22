@@ -22,3 +22,8 @@ decisions.
 Return changed paths, validation evidence, and unresolved dependencies to Team
 Gizmo. Keep provider-specific choices in the consuming project's instructions;
 the distributable roles and skills remain portable.
+
+## Team circuit breaker
+
+Apply the [subject-specific circuit breaker](CIRCUIT-BREAKER.md) to this
+team’s assignments.

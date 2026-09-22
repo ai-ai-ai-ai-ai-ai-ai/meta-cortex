@@ -57,8 +57,10 @@ specialized skills are:
 
 The entry point loads the [circuit breaker](CIRCUIT-BREAKER.md) before roles and
 skills. Every assignment carries it. Agents check proposed mechanisms before
-implementation; coordinators check assignments and results. The policy includes
-how to stop and recover from a violation.
+implementation; coordinators check assignments and results. The global policy
+owns precedence, scope checks, recovery, and preservation of product security.
+Subject-specific rules live in the owning teams’ `CIRCUIT-BREAKER.md`
+documents, linked from the global policy and each affected agent.
 
 **Prohibited:** an ordinary handoff grows into encrypted agent channels and
 persistent authority receipts.

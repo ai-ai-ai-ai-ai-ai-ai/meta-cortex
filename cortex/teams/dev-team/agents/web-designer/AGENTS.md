@@ -4,6 +4,9 @@ Own assigned UI/UX design, navigation, layout, typography, styling, responsive
 presentation, and visual validation. Deliver design decisions and, when assigned,
 the markup and CSS that express them.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Knowledge
 
 - For programming, tests, scripts, build logic, or code review, apply the

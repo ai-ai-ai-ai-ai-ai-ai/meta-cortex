@@ -5,6 +5,9 @@ It manages development, security, SRE, and documentation agents using the resolv
 supplied with its assignment. Each agent’s `AGENTS.md` links its skills; their
 `SKILL.md` files contain the instructions. Gizmo does not maintain a skill registry.
 
+Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
+global policy supplied with the assignment.
+
 ## Select agents from team catalogs
 
 1. Read every team's `AGENTS.md` from the supplied team directory before
