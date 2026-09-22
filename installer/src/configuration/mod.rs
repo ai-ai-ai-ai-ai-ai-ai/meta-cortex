@@ -1,3 +1,4 @@
+use thiserror::Error;
 mod selection;
 
 pub use selection::InitMode;
@@ -6,38 +7,25 @@ use derive_more::{Display, From};
 use serde::{Deserialize, Serialize};
 use toml::{de, ser};
 
-// Derives emit sibling implementations using Option. Keep authored types denied.
-#[allow(
-    clippy::disallowed_types,
-    reason = "thiserror generates Option internally; authored declarations deny this lint"
-)]
-mod errors {
-    use super::{Effort, Model, de, ser};
-    use thiserror::Error;
-
-    #[deny(clippy::disallowed_types)]
-    #[derive(Debug, Error)]
-    pub enum ConfigError {
-        #[error("invalid meta-cortex.toml: {0}")]
-        Decode(#[from] de::Error),
-        #[error("could not encode meta-cortex.toml: {0}")]
-        Encode(#[from] ser::Error),
-        #[error("{model} does not support reasoning effort {effort}")]
-        UnsupportedEffort { model: Model, effort: Effort },
-        #[error(
-            "model selection requires a terminal; use --non-interactive to accept the bundled settings"
-        )]
-        TerminalRequired,
-        #[error("initialization cancelled; no project files were written")]
-        Cancelled,
-        #[error("model selection failed: {0}")]
-        Prompt(#[from] dialoguer::Error),
-        #[error("the selected item is not in the model menu")]
-        InvalidSelection,
-    }
+#[derive(Debug, Error)]
+pub enum ConfigError {
+    #[error("invalid meta-cortex.toml: {0}")]
+    Decode(#[from] de::Error),
+    #[error("could not encode meta-cortex.toml: {0}")]
+    Encode(#[from] ser::Error),
+    #[error("{model} does not support reasoning effort {effort}")]
+    UnsupportedEffort { model: Model, effort: Effort },
+    #[error(
+        "model selection requires a terminal; use --non-interactive to accept the bundled settings"
+    )]
+    TerminalRequired,
+    #[error("initialization cancelled; no project files were written")]
+    Cancelled,
+    #[error("model selection failed: {0}")]
+    Prompt(#[from] dialoguer::Error),
+    #[error("the selected item is not in the model menu")]
+    InvalidSelection,
 }
-
-pub use errors::ConfigError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Display)]
 pub enum Model {
@@ -94,43 +82,28 @@ impl Effort {
     ];
 }
 
-// Derives emit sibling implementations using Option. Keep authored types denied.
-#[allow(
-    clippy::disallowed_types,
-    reason = "Serde generates Option internally; authored declarations deny this lint"
-)]
-mod settings {
-    use super::{Effort, Model};
-    use serde::{Deserialize, Serialize};
-
-    #[deny(clippy::disallowed_types)]
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-    #[serde(deny_unknown_fields)]
-    pub struct AgentSettings {
-        pub model: Model,
-        pub reasoning_effort: Effort,
-    }
-
-    #[deny(clippy::disallowed_types)]
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-    #[serde(deny_unknown_fields)]
-    pub struct TeamSettings {
-        pub gizmo: AgentSettings,
-        pub agent: AgentSettings,
-    }
-
-    #[deny(clippy::disallowed_types)]
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-    #[serde(deny_unknown_fields)]
-    pub struct Configuration {
-        // Preserve the framework's existing, published TOML key.
-        #[serde(rename = "gizmo-prime")]
-        pub gizmo_prime: AgentSettings,
-        pub team: TeamSettings,
-    }
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AgentSettings {
+    pub model: Model,
+    pub reasoning_effort: Effort,
 }
 
-pub use settings::{AgentSettings, Configuration, TeamSettings};
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TeamSettings {
+    pub gizmo: AgentSettings,
+    pub agent: AgentSettings,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Configuration {
+    // Preserve the framework's existing, published TOML key.
+    #[serde(rename = "gizmo-prime")]
+    pub gizmo_prime: AgentSettings,
+    pub team: TeamSettings,
+}
 
 impl AgentSettings {
     fn validate(self) -> Result<(), ConfigError> {

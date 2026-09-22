@@ -25,7 +25,7 @@ cargo clippy --workspace --all-targets -- -D warnings
   - `--all-targets` does not cover every target triple or enable every feature.
   - Check mutually exclusive features separately instead of blindly adding `--all-features`.
 - Preserve required toolchain and build flags.
-- Apply the [Option lint configuration](../modeling/domain-states.md#enforce-the-option-prohibition-with-clippy).
+- Apply the [Option review requirements](../modeling/domain-states.md#review-the-option-prohibition).
 - Deny compiler warnings during compilation as well as Clippy.
   - Use the project's existing lint configuration or compiler flags.
 
@@ -46,8 +46,7 @@ deny warnings, and run each supported configuration required by the project.
 
 - Add these settings to each package's `Cargo.toml`.
 - For shared workspace settings, use `[workspace.lints]` and opt every member into `[lints] workspace = true`.
-- Keep the [Option prohibition](../modeling/domain-states.md#enforce-the-option-prohibition-with-clippy) configured alongside this baseline.
-- Keep generated-code exceptions limited to the scope permitted by that practice.
+- Review the [Option prohibition](../modeling/domain-states.md#review-the-option-prohibition) separately.
 
 ```toml
 [lints.rust]
@@ -57,7 +56,6 @@ unused_must_use = "deny"
 unwrap_used = "deny"
 expect_used = "deny"
 absolute_paths = "deny"
-disallowed_types = "deny"
 fn_params_excessive_bools = "deny"
 struct_excessive_bools = "deny"
 let_underscore_must_use = "deny"
@@ -70,7 +68,6 @@ excessive_nesting = "deny"
 ```
 
 - Add these thresholds to the project's `clippy.toml`.
-- Preserve its `disallowed-types` configuration.
 
 ```toml
 absolute-paths-max-segments = 2

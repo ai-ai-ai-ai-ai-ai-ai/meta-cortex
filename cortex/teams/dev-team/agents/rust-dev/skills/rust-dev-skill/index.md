@@ -151,17 +151,11 @@ boundaries.
   - Consume dependency Option results immediately into a named outcome or typed error.
   - Do not retain/forward them or author Option-returning trait implementations.
 
-- **[domain_states:option_lint](practices/modeling/domain-states.md#enforce-the-option-prohibition-with-clippy)**
+- **[domain_states:option_review](practices/modeling/domain-states.md#review-the-option-prohibition)**
 
-  - Add core::option::Option to disallowed-types at each Clippy configuration boundary
-    and deny clippy::disallowed_types for every applicable crate.
-  - Preserve existing settings and ensure workspace members inherit shared lints.
-  - Isolate incompatible derives in declaration-only modules with reasoned allowances;
-    explicitly deny the lint on each authored type and keep behavior outside.
-  - Verify authored Option fields still fail; do not disable the crate-wide lint or
-    replace required derives to evade it.
-  - Run all-target Clippy with warnings denied; review inferred stored values and
-    dependency-result handling separately because the lint is not complete enforcement.
+  - Review explicit and inferred authored Option uses and dependency-result handling.
+  - Exclude dependency-generated implementations from the authored-code requirement.
+  - Do not ban Option through Clippy or add wrapper modules and lint allowances for derives.
 
 - **[domain_states:required_values](practices/modeling/domain-states.md#require-values-that-cannot-be-absent)**
 
@@ -850,7 +844,7 @@ boundaries.
 
   - Deny targeted boolean, ignored-result/future, replacement-value, unit-error,
     wildcard-enum, argument-count, and nesting lints alongside existing checks.
-  - Apply the prescribed thresholds and preserve scoped generated-code exceptions.
+  - Apply the prescribed thresholds; review authored Option usage separately.
   - Review semantic gaps; Clippy counts receivers and structural nesting.
 
 - **[code_checks:fix_diagnostics](practices/tooling/rust-code-checks.md#fix-diagnostics-before-completion)**

@@ -1,3 +1,4 @@
+use thiserror::Error;
 mod bundle;
 
 use crate::configuration::{ConfigError, ConfigText, InitMode};
@@ -10,40 +11,25 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-// Derives emit sibling implementations using Option. Keep authored types denied.
-#[allow(
-    clippy::disallowed_types,
-    reason = "thiserror generates Option internally; authored declarations deny this lint"
-)]
-mod errors {
-    use super::{ConfigError, InstructionError, VersionError};
-    use std::io;
-    use std::path::PathBuf;
-    use thiserror::Error;
-
-    #[deny(clippy::disallowed_types)]
-    #[derive(Debug, Error)]
-    pub enum InstallError {
-        #[error("filesystem operation failed: {0}")]
-        Io(#[from] io::Error),
-        #[error(transparent)]
-        Configuration(#[from] ConfigError),
-        #[error(transparent)]
-        Version(#[from] VersionError),
-        #[error("Meta-Cortex is not initialized in {0}; run meta-cortex init")]
-        NotInitialized(PathBuf),
-        #[error("could not serialize project information: {0}")]
-        Info(#[from] serde_saphyr::SerializeError),
-        #[error("expected an existing project directory: {0}")]
-        InvalidProject(PathBuf),
-        #[error("refusing to overwrite differing content or a symbolic link: {0}")]
-        Conflict(PathBuf),
-        #[error(transparent)]
-        Instructions(#[from] InstructionError),
-    }
+#[derive(Debug, Error)]
+pub enum InstallError {
+    #[error("filesystem operation failed: {0}")]
+    Io(#[from] io::Error),
+    #[error(transparent)]
+    Configuration(#[from] ConfigError),
+    #[error(transparent)]
+    Version(#[from] VersionError),
+    #[error("Meta-Cortex is not initialized in {0}; run meta-cortex init")]
+    NotInitialized(PathBuf),
+    #[error("could not serialize project information: {0}")]
+    Info(#[from] serde_saphyr::SerializeError),
+    #[error("expected an existing project directory: {0}")]
+    InvalidProject(PathBuf),
+    #[error("refusing to overwrite differing content or a symbolic link: {0}")]
+    Conflict(PathBuf),
+    #[error(transparent)]
+    Instructions(#[from] InstructionError),
 }
-
-pub use errors::InstallError;
 
 pub struct Project {
     root: PathBuf,

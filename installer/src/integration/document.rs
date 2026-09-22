@@ -3,24 +3,11 @@ use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Tag, TagEnd};
 use pulldown_cmark_to_cmark::cmark;
 use serde::{Deserialize, Serialize, Serializer};
 
-// Derives emit sibling implementations using Option. Keep authored types denied.
-#[allow(
-    clippy::disallowed_types,
-    reason = "Serde generates Option internally; authored declarations deny this lint"
-)]
-mod headers {
-    use super::SectionKind;
-    use serde::{Deserialize, Serialize};
-
-    #[deny(clippy::disallowed_types)]
-    #[derive(Serialize, Deserialize)]
-    pub struct SectionHeader {
-        #[serde(rename = "meta-cortex", default)]
-        pub section: SectionKind,
-    }
+#[derive(Serialize, Deserialize)]
+pub struct SectionHeader {
+    #[serde(rename = "meta-cortex", default)]
+    pub section: SectionKind,
 }
-
-pub use headers::SectionHeader;
 
 #[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

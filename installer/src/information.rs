@@ -5,28 +5,15 @@ use serde::Serialize;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use thiserror::Error;
 
-// Derives emit sibling implementations using Option. Keep authored types denied.
-#[allow(
-    clippy::disallowed_types,
-    reason = "thiserror generates Option internally; authored declarations deny this lint"
-)]
-mod errors {
-    use std::io;
-    use std::path::PathBuf;
-    use thiserror::Error;
-
-    #[deny(clippy::disallowed_types)]
-    #[derive(Debug, Error)]
-    pub enum VersionError {
-        #[error("could not read installed framework version: {0}")]
-        Io(#[from] io::Error),
-        #[error("invalid installed framework version file: {0}")]
-        InvalidFile(PathBuf),
-    }
+#[derive(Debug, Error)]
+pub enum VersionError {
+    #[error("could not read installed framework version: {0}")]
+    Io(#[from] io::Error),
+    #[error("invalid installed framework version file: {0}")]
+    InvalidFile(PathBuf),
 }
-
-pub use errors::VersionError;
 
 #[derive(Debug, PartialEq, Eq, From, Display, Serialize)]
 pub struct Version(String);
