@@ -4,15 +4,15 @@
 
 ### Establish repeatable checks
 
-Establish formatting, compilation, and Clippy checks for the consuming Rust
-project. Inspect its manifests, toolchain, Cargo configuration, and existing
-verification commands first. Extend the existing project-owned check entry point
-when any check is missing; keep the commands reproducible for later work.
-Reuse existing automation. Pipeline changes belong with the CI/CD owner under
-the active development mode.
+- Establish formatting, compilation, and Clippy checks for the consuming Rust project.
+- Inspect the project's manifests, toolchain, Cargo configuration, and verification commands first.
+- Extend the existing project-owned check entry point when a check is missing.
+- Keep check commands reproducible for later work.
+- Reuse existing automation.
+- Keep pipeline changes with the CI/CD owner under the active development mode.
+- Run checks from each applicable Cargo workspace or standalone crate root.
 
-Run from each applicable Cargo workspace or standalone crate root. The baseline
-is:
+Baseline commands:
 
 ```sh
 cargo fmt --all --check
@@ -20,12 +20,13 @@ cargo check --workspace --all-targets
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-All three checks are mandatory. Include the project's supported target and
-feature configurations; `--all-targets` does not cover every target triple or
-enable every feature. Check mutually exclusive features separately instead of
-blindly adding `--all-features`. Preserve required toolchain and build flags.
-Use the project's existing lint configuration or compiler flags to deny compiler
-warnings during compilation as well as Clippy.
+- Run all three checks.
+- Include the project's supported target and feature configurations.
+  - `--all-targets` does not cover every target triple or enable every feature.
+  - Check mutually exclusive features separately instead of blindly adding `--all-features`.
+- Preserve required toolchain and build flags.
+- Deny compiler warnings during compilation as well as Clippy.
+  - Use the project's existing lint configuration or compiler flags.
 
 For example, in a project that uses `RUSTFLAGS` and does not set
 `CARGO_ENCODED_RUSTFLAGS`, preserve existing flags while denying warnings:
@@ -42,12 +43,15 @@ deny warnings, and run each supported configuration required by the project.
 
 ### Fix diagnostics before completion
 
-Compilation must produce no warnings. Treat every compiler or Clippy warning
-as unfinished work, including pre-existing warnings encountered by the required
-checks. Correct the cause, then rerun the checks after the final edit. Run
-`cargo fmt --all` to repair formatting and verify with `--check` afterward.
-These checks supplement the tests required by
-[Rust testing](rust-testing.md); compilation does not execute tests.
+- Require compilation to produce no warnings.
+- Treat every compiler or Clippy warning as unfinished work.
+  - Include pre-existing warnings encountered by the required checks.
+- Correct each diagnostic's cause.
+- Rerun the checks after the final edit.
+- Run `cargo fmt --all` to repair formatting.
+  - Verify the result with `--check` afterward.
+- Also run the tests required by [Rust testing](rust-testing.md).
+  - Compilation does not execute tests.
 
 **Prohibited:** leave an unused import and accept a successful compile with
 `warning: unused import`, or silence it using `#[allow(unused_imports)]`.
@@ -55,11 +59,13 @@ These checks supplement the tests required by
 **Preferred:** remove the unused import, format the result, and rerun compilation
 and Clippy with warnings denied.
 
-Do not hide diagnostics with lint allowances, warning caps, suppressed output,
-or ignored exit codes merely to pass checks. Fix dependency or generated-code
-warnings through their owning dependency or generator. If a correction is outside
-the assigned scope, report the blocker for coordinated repair; unresolved
-warnings do not qualify as successful completion.
+- Do not hide diagnostics merely to pass checks.
+  - Do not add lint allowances or warning caps for that purpose.
+  - Do not suppress output or ignore failure exit codes.
+- Fix dependency warnings through the owning dependency.
+- Fix generated-code warnings through the owning generator.
+- Report corrections outside the assigned scope as blockers for coordinated repair.
+- Do not report successful completion while warnings remain unresolved.
 
 ```sh
 # Prohibited: suppress diagnostics or turn a failed check into success.
@@ -74,16 +80,20 @@ cargo fmt --all --check &&
   cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-The preferred sequence assumes compiler warnings are denied by the project's
-existing configuration. Review command output too: Cargo and build-script
-warnings are not necessarily promoted by compiler lint settings.
+The preferred sequence assumes the project's existing configuration denies
+compiler warnings.
+
+- Review command output for Cargo and build-script warnings.
+  - Compiler lint settings do not necessarily promote these warnings to errors.
 
 ### Report verification evidence
 
-Report the commands, workspace roots, target/feature configurations, and results
-actually verified. Completion requires successful formatting, compilation, and
-Clippy checks with no warnings. Missing tools, unavailable targets, failed
-checks, and unresolved diagnostics are blockers, not passing results.
+- Report the commands actually run.
+- Identify the workspace roots and target/feature configurations checked.
+- Report the results actually verified.
+- Require formatting, compilation, and Clippy checks to pass without warnings before completion.
+- Report missing tools and unavailable targets as blockers.
+- Report failed checks and unresolved diagnostics as blockers.
 
 **Prohibited:** “Checks passed” after running only formatting, or “build passed”
 while its output still contains warnings.
