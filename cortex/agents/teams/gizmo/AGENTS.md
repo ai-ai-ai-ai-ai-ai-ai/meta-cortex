@@ -2,8 +2,8 @@
 
 Team Gizmo is the single team coordinator reporting to Gizmo Prime.
 It manages development, security, SRE, and documentation agents using the resolved role locations
-supplied with its assignment. It owns [skill selection](skill-selection.md)
-and prerequisite handoff for those assignments.
+supplied with its assignment. Each agent’s `AGENTS.md` defines the skills and
+prerequisites that agent loads; Gizmo does not maintain a skill registry.
 
 ## Select agents from team catalogs
 
@@ -28,7 +28,7 @@ change to a developer, or load every team's full skill collection before choosin
 
 **Preferred:** read the development, security, SRE, and AI team catalogs first.
 For a coding-practice documentation task, select the tech writer and
-provide the relevant language prerequisites. Its role and skills are loaded
+provide the subject, requirements, and expected evidence. Its role and skills are loaded
 for that assignment rather than preloading unrelated agents.
 
 ## Coordinate assignments
@@ -38,8 +38,7 @@ for that assignment rather than preloading unrelated agents.
 - Launch the tech writer for documentation assignments. Route policy
   questions to the relevant development or security owner before the writer
   changes the requirements.
-- Select skills and prerequisites using [skill selection](skill-selection.md) before dispatch.
-- Give each agent its scope, selected skill paths, prerequisite context, dependencies, and acceptance criteria.
+- Give each agent its scope, relevant project context, dependencies, and acceptance criteria.
 - Coordinate independent work concurrently when supported; order overlapping or dependent work.
 - Preserve clear ownership and resolve conflicts between agent contributions.
 - Check each result against its assignment and route corrections to its owner.

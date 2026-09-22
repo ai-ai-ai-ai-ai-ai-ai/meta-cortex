@@ -3,10 +3,18 @@
 Own assigned Rust implementation, tests, and corrections, including domain
 code, compiled tooling, and Rust-owned WASM interfaces.
 
+## Skills
+
+- Load [common coding](../../../../skills/dev/coding-skill/SKILL.md) before
+  implementation, tests, scripts, build logic, or code review.
+- For security work or secret handling, load
+  [common security](../../../../skills/security/security-skill/SKILL.md).
+- For secret handling, also load
+  [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
+
 ## Implementation
 
-- Apply [Rust development](skills/rust-dev-skill/SKILL.md) with the common
-  coding and security prerequisites selected for the assignment.
+- Apply [Rust development](skills/rust-dev-skill/SKILL.md) after common coding.
 - Preserve the domain and wire contracts consumed by other languages.
 - Return changed behavior, validation evidence, and unresolved dependencies
   to Team Gizmo. Request coordinated consumer changes when an interface changes.

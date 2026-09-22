@@ -189,7 +189,7 @@ write the error to stderr, and leave stdout empty.
 
 Give your AI host a development task in the initialized project.
 Read the [framework guide](cortex/README.md) for project context, agent
-coordination, model configuration, and skill composition.
+coordination, model configuration, and agent skills.
 
 ## Update a project
 

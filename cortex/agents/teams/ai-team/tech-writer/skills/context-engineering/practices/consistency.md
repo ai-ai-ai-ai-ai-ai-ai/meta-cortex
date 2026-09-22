@@ -31,15 +31,15 @@ Implementation establishes current behavior; it does not authorize changing poli
 A backlink sends a reader from a loaded document back to an entry point,
 index, or caller that supplied its context. Do not create these links or send
 readers upward through directories to retrieve prerequisites. Load those
-prerequisites at the composition point before specialized documents.
+prerequisites through the assigned agent’s instructions before specialized documents.
 
 - Rely on the context established before the document is loaded.
 - Keep prerequisite context in the entry point or caller that supplies it.
-- Put links to common prerequisites and sibling specializations in their shared
-  composition document. Supply the selected context before loading leaf documents.
+- Put links to common prerequisites and sibling specializations in the consuming
+  agent’s instructions. Load the required context before leaf documents.
 - When both documents need the same guidance, extract it into a canonical
   document or section that neither caller owns.
-- Link consumers to that authority from their common composition point.
+- Link each consuming agent’s instructions to that authority.
 - Update affected callers and indexes when reorganizing the guidance.
 
 **Prohibited:** a language practice sends readers back to the root instructions
@@ -55,23 +55,23 @@ Before applying this rule, read [project instructions](../../AGENTS.md)
 and [common coding](../../skills/coding/SKILL.md).
 ```
 
-**Preferred:** the composition document loads common coding before the language
+**Preferred:** the agent’s instructions load common coding before the language
 practice. Both remain independent authorities, and the assignment carries the
 selected context. If two practices need a new shared rule, extract it once and
-select it from their common composition point.
+link it from each consuming agent’s instructions.
 
-This illustrative composition document sits above both skill directories:
+For an agent with a language skill, its `AGENTS.md` names the prerequisites:
 
 ```markdown
-# Skill Composition
+# Language Agent
 
-1. Load [common coding](skills/coding/SKILL.md).
+1. Load common coding from the library’s common skills.
 2. Load [language practices](skills/language/SKILL.md).
-3. Supply both when assigning implementation work.
+3. Apply both to the assigned implementation work.
 ```
 
 The language practice starts with its own rule and examples. It does not repeat
-this loading procedure or direct readers back to the composition document.
+this loading procedure or direct readers back to the agent’s instructions.
 
 Changing a relative backlink into an absolute path would leave the same defect.
 
@@ -133,7 +133,7 @@ in for another.
 
 - Do not create backlinks to recover context already supplied by a caller.
 - Do not replace an upward link with an absolute path or a plain-text instruction
-  to reopen the same prerequisite. Move the dependency to the composition point.
+  to reopen the same prerequisite. Declare the dependency in the consuming agent’s instructions.
 - Do not retain a required dependency as a backlink; reorganize the shared
   guidance so both documents can reference it directly.
 - Do not copy guidance into multiple documents to avoid a backlink.

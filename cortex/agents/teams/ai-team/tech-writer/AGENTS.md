@@ -8,8 +8,12 @@ team-agent model and reasoning effort.
 
 - Apply [Context Engineering](skills/context-engineering/SKILL.md) to documentation work.
 - For programming rules, also apply [Code Example Authoring](skills/code-example-authoring/SKILL.md).
-- Use the coding, language, and security prerequisites supplied with the assignment
-  when writing or verifying examples in those subjects.
+- For programming examples, load [common coding](../../../../skills/dev/coding-skill/SKILL.md)
+  and the language practices documented by the agent owning the example’s subject.
+- For security guidance or secret handling, load
+  [common security](../../../../skills/security/security-skill/SKILL.md).
+- For secret handling, also load
+  [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 - Preserve the subject owner's requirements. Return unresolved policy decisions
   to Team Gizmo for clarification by that owner.
 - Use the target skill’s rule-level knowledge graph to locate affected namespaced rules
@@ -27,14 +31,15 @@ team-agent model and reasoning effort.
 - Do not create team-root skill directories such as `agents/teams/<team>/skills/`.
 - Keep each practice with its subject and maintain one canonical copy.
 - Keep common skills independent of teams, agents, and specialized skills.
-- Update role loaders, selection rules, catalogs, and links when moving a skill.
+- Document each agent’s skills and applicable prerequisites in its own `AGENTS.md`.
+- Update the owning agent’s instructions, catalogs, and links when moving a skill.
 
 **Prohibited:** put a Docker skill in `agents/teams/sre-team/skills/` or make a
 common coding practice depend on an SRE role.
 
 **Preferred:** put the Docker specialization under the Docker agent, retain
-common coding in the library's `skills/`, and update the coordinator's selection
-link and the agent's loader when moving it.
+common coding in the library's `skills/`, and update the Docker agent’s skill
+link when moving it. Gizmo assigns the task without maintaining a skill registry.
 
 ### Assignment example
 

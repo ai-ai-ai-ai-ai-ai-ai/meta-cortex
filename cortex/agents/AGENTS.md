@@ -38,13 +38,14 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Gizmo Prime launches the single Team Gizmo as a subagent.
 - Team Gizmo launches the team agents needed for its assignments as subagents.
 - Assign instructions, specifications, skills, practices, and catalog edits to
-  the tech writer subagent. Pass the subject owner's requirements and the
-  applicable coding or security prerequisites with the assignment.
+  the tech writer subagent. Pass the subject owner's requirements and affected
+  documents with the assignment.
 
 - Each assignment names its objective, scope, dependencies, and expected evidence, and carries the library root, project root, assigned working directory, and relevant project instructions.
 - Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
 - Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
-- Team Gizmo owns [skill selection](teams/gizmo/skill-selection.md). Pass its selected prerequisites, skills, and resolved document locations with each assignment.
+- Each agent’s `AGENTS.md` defines its skills, prerequisite order, and applicable
+  conditions. Agents load that guidance themselves; coordinators assign responsibilities.
 - Route skill organization and placement changes to the tech writer under its
   [skill organization rules](teams/ai-team/tech-writer/AGENTS.md#skill-organization).
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.

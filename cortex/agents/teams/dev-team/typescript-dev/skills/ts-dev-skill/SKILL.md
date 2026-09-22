@@ -5,8 +5,7 @@ description: Apply TypeScript rules for named APIs, explicit state, concrete dom
 
 # TypeScript Development Skill
 
-Apply the selected practices with the prerequisites supplied by the
-assignment’s skill composition. These rules cover authored TypeScript,
+Apply these practices after the prerequisites loaded by the assigned agent. These rules cover authored TypeScript,
 JavaScript, Svelte scripts, tests, configuration, and agent tooling. Generated
 bindings and dependency code retain their externally owned contracts.
 

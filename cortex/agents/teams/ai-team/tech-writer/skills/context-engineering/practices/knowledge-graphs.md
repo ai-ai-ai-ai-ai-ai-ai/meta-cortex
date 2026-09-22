@@ -51,7 +51,7 @@ policy. It does not create a second independently editable policy.
 1. Read the target skill's entry point and complete knowledge graph.
 2. Locate the affected rule names and their canonical owners. Read those practices
    in full, including examples that can contradict the stated rule.
-3. Read related rules and the prerequisites supplied by the assignment. Compare
+3. Read related rules and the prerequisites loaded for the assignment. Compare
    their scope, exceptions, and validation obligations.
 4. Extend the existing owner. Create a practice only for a distinct subject with
    an explicit boundary; add its rules to the graph in the same change.

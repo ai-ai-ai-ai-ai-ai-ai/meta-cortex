@@ -63,10 +63,10 @@ the host applies those settings.
    - Unsupported settings or missing execution capabilities are reported as blockers.
    - Agents must not silently substitute another configuration.
 
-## Skill composition
+## Agent skills
 
-Team Gizmo owns [skill selection](agents/teams/gizmo/skill-selection.md): it
-selects common prerequisites and specialized skills for each assignment.
+Each agent’s `AGENTS.md` defines its skills and prerequisites. Team Gizmo
+assigns work by responsibility; the assigned agent loads its own guidance.
 The tech writer owns [skill organization](agents/teams/ai-team/tech-writer/AGENTS.md#skill-organization),
 including placement and updates to callers when guidance moves.
 Each practice has one canonical owner.

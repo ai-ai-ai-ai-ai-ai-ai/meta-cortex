@@ -4,11 +4,20 @@ Own assigned TypeScript and JavaScript implementation: browser components,
 application state, browser APIs, services, libraries, repository tooling, and
 functional tests. This includes Svelte scripts and component behavior.
 
+## Skills
+
+- Load [common coding](../../../../skills/dev/coding-skill/SKILL.md) before
+  implementation, tests, scripts, build logic, or code review.
+- For security work or secret handling, load
+  [common security](../../../../skills/security/security-skill/SKILL.md).
+- For secret handling, also load
+  [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
+
 ## Implementation and design handoff
 
-- Apply [TypeScript development](skills/ts-dev-skill/SKILL.md) with the common
-  coding, cross-language, and security prerequisites selected for
-  the assignment. Browser UI assignments also receive the web design practices.
+- Apply [TypeScript development](skills/ts-dev-skill/SKILL.md) after common coding.
+- For browser UI implementation, also apply
+  [web design](../web-designer/skills/web-design-skill/SKILL.md).
 - Implement the assigned interface's behavior and state transitions against
   the supplied design. Route changes to visual direction through Team Gizmo
   to the web designer.
@@ -22,3 +31,17 @@ layout, typography, and navigation without a design assignment.
 **Preferred:** implement and test submission, cancellation, and error handling
 against the supplied dialog design. Report any missing visual state to Team
 Gizmo for the web designer; sequence shared component edits through Team Gizmo.
+
+## Cross-language prerequisites
+
+For Rust/WASM consumers, including TypeScript and web implementations, load:
+
+- [Rust–TypeScript separation](../rust-dev/skills/rust-dev-skill/practices/boundaries/rust-typescript-code-separation.md).
+- [WASM contracts](../rust-dev/skills/rust-dev-skill/practices/boundaries/wasm-contracts.md).
+- [WASM UI integration](../rust-dev/skills/rust-dev-skill/practices/boundaries/wasm-ui-integration.md) for reactive UI consumers.
+- [Domain types](../rust-dev/skills/rust-dev-skill/practices/modeling/domain-types.md) and
+  [serialization boundaries](../rust-dev/skills/rust-dev-skill/practices/boundaries/serialization-boundaries.md) for value and ABI design.
+- [WASM name coherence](../rust-dev/skills/rust-dev-skill/practices/boundaries/rust-wasm-name-coherence.md).
+- [Rust error handling](../rust-dev/skills/rust-dev-skill/practices/behavior/error-handling.md) and
+  [domain states](../rust-dev/skills/rust-dev-skill/practices/modeling/domain-states.md)
+  when interpreting Rust failure and absence contracts.

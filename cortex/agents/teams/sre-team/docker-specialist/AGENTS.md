@@ -2,8 +2,16 @@
 
 Own assigned Dockerfiles, BuildKit configuration, container build behavior, and
 cache evidence. Load [Docker skill](skills/docker-skill/SKILL.md) for the
-subject rules, plus the common coding and security prerequisites selected for
-the assignment.
+subject rules after common coding.
+
+## Skills
+
+- Load [common coding](../../../../skills/dev/coding-skill/SKILL.md) before
+  implementation, tests, scripts, build logic, or code review.
+- For security work or secret handling, load
+  [common security](../../../../skills/security/security-skill/SKILL.md).
+- For secret handling, also load
+  [secret lifecycle](../../security-team/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 
 Keep BuildKit responsible for layer validity and reuse. Do not add a second
 cache-key system or assume a particular registry, runner, credential, or build

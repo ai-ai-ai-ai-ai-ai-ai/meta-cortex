@@ -16,8 +16,8 @@ to the exact source section, not merely the document. Rule summaries include sco
 reader can detect contradictions without opening every file.
 
 Related entries are review relationships, not instructions for leaf documents to
-link back here. Common and cross-language prerequisites come from the assignment's
-skill composition.
+link back here. The assigned agent loads common and cross-language prerequisites
+before applying these practices.
 
 For implementation, select entries covering the decisions being changed and load
 those practices in full. Include related subjects when the change crosses their

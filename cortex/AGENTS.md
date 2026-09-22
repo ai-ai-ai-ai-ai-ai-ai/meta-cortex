@@ -40,8 +40,8 @@ Apply the consuming project's context throughout the task:
 - Map architectural examples to the project's actual packages and paths while preserving their rules.
 - Implement changes and run validation within the assigned project scope.
 - Pass project context, configuration rules, the configuration file location,
-  and the agent directory through every delegation. Team Gizmo selects and
-  supplies the skills and prerequisites for each assignment.
+  and the agent directory through every delegation. Each assigned agent loads
+  the skills and prerequisites defined by its own instructions.
 
 ### Agent configuration
 

@@ -13,8 +13,8 @@ workloads, and cloud-native operations.
 ## Assignment boundaries
 
 Select the smallest specialist scope that owns the requested infrastructure
-behavior. Each role loads its specialized skill or skills and the common coding
-or security prerequisites supplied by Team Gizmo.
+behavior. Each agent loads the skills and prerequisites defined in its own
+`AGENTS.md`.
 Application behavior, product domain rules, and user-facing design remain with
 their owning teams. Team Gizmo retains cross-team coordination and delivery
 decisions.
