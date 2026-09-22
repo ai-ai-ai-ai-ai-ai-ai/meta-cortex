@@ -91,7 +91,8 @@ meta-cortex init --interactive
 2. Approve adding instructions to the selected file, or creating it if absent.
    The default is No; declining still installs the framework.
 3. For a new installation, choose a model and reasoning effort for each role.
-   - Models: Luna, Terra, Sol, and Astra. The menu shows their full model IDs.
+   - Models: Luna, Terra, Sol, and Astra. The menu shows full model IDs,
+     including `gpt-6-luna`.
    - Efforts: low, medium, high, xhigh, max, and ultra. Luna supports up to max.
    - Press Enter to accept the highlighted setting, or Esc to cancel without writing files.
    - Choices are saved in `.meta-cortex/meta-cortex.toml`.
@@ -170,15 +171,15 @@ integrations:
     status: Connected
 models:
   gizmo-prime:
-    model: gpt-5.6-terra
-    reasoning_effort: low
+    model: gpt-6-luna
+    reasoning_effort: max
   team:
     gizmo:
-      model: gpt-5.6-terra
-      reasoning_effort: low
+      model: gpt-6-luna
+      reasoning_effort: max
     agent:
-      model: gpt-5.6-luna
-      reasoning_effort: xhigh
+      model: gpt-6-luna
+      reasoning_effort: max
 model_availability: NotChecked
 ```
 
