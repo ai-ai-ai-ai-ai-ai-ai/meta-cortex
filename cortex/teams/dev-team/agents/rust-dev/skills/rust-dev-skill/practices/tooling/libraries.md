@@ -18,6 +18,7 @@ and conversion implementations, or use `println!` as application logging.
 
 **Preferred:** declare the libraries and use their derives and structured events.
 Normal CLI output may still use `println!`.
+Apply the [derive-first serialization requirements](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate) when selecting Serde attributes and conversions.
 
 ```toml
 [dependencies]

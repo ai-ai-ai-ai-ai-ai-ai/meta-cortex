@@ -84,6 +84,7 @@ excessive-nesting-threshold = 5
 - Review boolean aliases, enum payloads, return values, containers, and stored locals manually.
 - Preserve the permitted `From<bool>` boundary conversions.
 - Do not claim these lints enforce a complete boolean ban.
+- Review [serialization implementations and callbacks](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate) for prohibited handwritten boilerplate.
 - Enforce [error handling](../behavior/error-handling.md) with `result_unit_err`, `unused_must_use`, and `let_underscore_must_use`.
 - Handle fallible results instead of discarding them.
 - Review private APIs and error meaning manually; `result_unit_err` primarily checks public APIs.

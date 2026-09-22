@@ -134,8 +134,10 @@ sync.run(SyncMode::Forced);
 Do not author boolean fields, application parameters, returns, aliases, or stored
 locals, including transport DTOs, tests, and private helpers. Allow `From<bool>`
 on a destination enum to decode an external flag, or `TryFrom` when the
-conversion can fail; this conversion boundary does
-not permit boolean application APIs. Dependency implementations and generated
+conversion can fail. Allow `From<DomainEnum> for bool` only to encode an existing
+external boolean contract through Serde
+[conversion attributes](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate).
+These conversions do not permit boolean application APIs. Dependency implementations and generated
 external bindings keep their own types.
 
 If a dependency returns a record with several booleans, convert the whole record

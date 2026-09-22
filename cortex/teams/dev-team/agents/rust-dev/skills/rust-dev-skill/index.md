@@ -177,6 +177,8 @@ boundaries.
 
   - Allow destination-owned From<bool> at external conversion boundaries, or TryFrom
     when conversion can fail.
+  - Allow From<DomainEnum> for bool only for an existing external boolean wire contract
+    through Serde conversion attributes.
   - This is not permission for boolean application APIs.
 
 - **[domain_states:external_records](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
@@ -198,7 +200,7 @@ boundaries.
 - **[domain_states:no_derived_flags](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
 
   - Do not add is_* methods that merely reveal a variant, decorative True/False
-    variants, or serialized booleans derivable from an enum.
+    variants, or duplicate serialized boolean fields derivable from an enum.
 
 - **[domain_states:variant_payloads](practices/modeling/domain-states.md#put-payloads-on-their-owning-variants)**
 
@@ -564,6 +566,14 @@ boundaries.
 
   - Preserve validated newtype invariants during Deserialize.
   - An automatic derive must not bypass validating construction.
+
+- **[serialization_boundaries:derive_first](practices/boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate)**
+
+  - Derive serialization and use Serde attributes for supported wire representations.
+  - Prohibit handwritten traits, visitors, and callbacks that duplicate this support.
+  - Keep semantic mappings in concrete conversions and validation in TryFrom.
+  - Document unsupported contracts and evaluate established adapters before custom machinery.
+  - Review manually and test wire values; standard Clippy does not enforce this rule.
 
 - **[serialization_boundaries:typed_storage](practices/boundaries/serialization-boundaries.md#keep-encoding-out-of-application-state)**
 

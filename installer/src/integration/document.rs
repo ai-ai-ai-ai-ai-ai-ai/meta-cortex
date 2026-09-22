@@ -1,7 +1,7 @@
 use super::{InstructionError, InstructionTarget};
 use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Tag, TagEnd};
 use pulldown_cmark_to_cmark::cmark;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct SectionHeader {
@@ -23,8 +23,8 @@ pub struct CursorHeader {
     pub always_apply: CursorApplication,
 }
 
-#[derive(Deserialize)]
-#[serde(from = "bool")]
+#[derive(Clone, Copy, Serialize, Deserialize)]
+#[serde(from = "bool", into = "bool")]
 pub enum CursorApplication {
     Always,
     Conditional,
@@ -40,12 +40,12 @@ impl From<bool> for CursorApplication {
     }
 }
 
-impl Serialize for CursorApplication {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_bool(matches!(self, Self::Always))
+impl From<CursorApplication> for bool {
+    fn from(application: CursorApplication) -> Self {
+        match application {
+            CursorApplication::Always => true,
+            CursorApplication::Conditional => false,
+        }
     }
 }
 
@@ -119,5 +119,18 @@ impl InstructionTarget {
         let mut output = String::new();
         cmark(events.into_iter(), &mut output)?;
         Ok(output)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CursorApplication;
+    use serde_saphyr::{SerializeError, to_string};
+
+    #[test]
+    fn cursor_application_preserves_yaml_boolean_values() -> Result<(), SerializeError> {
+        assert_eq!(to_string(&CursorApplication::Always)?, "true\n");
+        assert_eq!(to_string(&CursorApplication::Conditional)?, "false\n");
+        Ok(())
     }
 }
