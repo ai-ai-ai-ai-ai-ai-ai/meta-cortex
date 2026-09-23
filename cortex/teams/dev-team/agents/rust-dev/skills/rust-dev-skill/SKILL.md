@@ -34,6 +34,11 @@ application fields as raw strings because compilation passes.
 **Preferred:** load the modeling rules, classify the metadata fields, preserve
 their wire format with domain types, and run the required checks.
 
+For versioned contracts, apply [supported schema revisions](practices/modeling/domain-types.md#model-supported-schema-revisions-explicitly):
+name supported identities, bind differing payload shapes to their versions, and
+review migration dispatch exhaustively. Distinguish these from open runtime
+[update counters](practices/modeling/domain-types.md#distinguish-schema-revisions-from-update-counters).
+
 ## Practice selection
 
 Read the [rule index](index.md) to select practices and identify

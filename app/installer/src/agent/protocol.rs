@@ -122,8 +122,9 @@ struct RequestHeader {
 impl Request {
     pub fn decode(text: &str) -> Result<Self, AgentError> {
         let header: RequestHeader = serde_saphyr::from_str(text)?;
-        ProtocolVersion::try_from(header.version)?;
-        Ok(serde_saphyr::from_str(text)?)
+        match ProtocolVersion::try_from(header.version)? {
+            ProtocolVersion::V1 => Ok(serde_saphyr::from_str(text)?),
+        }
     }
 
     pub async fn execute(self) -> Result<Reply, AgentError> {

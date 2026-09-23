@@ -51,6 +51,8 @@ impl Catalog {
         let coordinator = AgentId::try_from("gizmo".to_owned())?;
         let worker = AgentId::try_from("reviewer".to_owned())?;
         let ttl = LeaseSeconds::try_from(600)?;
+        let claimed_revision = Revision::INITIAL.advance()?;
+        let heartbeat_revision = claimed_revision.advance()?;
         let examples = [
             CommandExample {
                 description: CommandSummary::from(
@@ -148,7 +150,7 @@ impl Catalog {
                 operation: Operation::Update(WorkerUpdate {
                     feature: feature.clone(),
                     task: task.clone(),
-                    expected_revision: Revision::try_from(2)?,
+                    expected_revision: claimed_revision,
                     agent: worker,
                     attempt: Attempt::try_from(1)?,
                     action: WorkerAction::Heartbeat { ttl_seconds: ttl },
@@ -161,7 +163,7 @@ impl Catalog {
                 operation: Operation::Coordinate(CoordinatorUpdate {
                     feature,
                     task,
-                    expected_revision: Revision::try_from(3)?,
+                    expected_revision: heartbeat_revision,
                     actor: coordinator,
                     action: CoordinatorAction::Requeue {
                         reason: Note::try_from(

@@ -134,11 +134,16 @@ in full. Include related subjects when the change crosses their boundaries.
     independent fields.
   - Validation must not expose restricted fields.
 
-- **[domain_types:versions](practices/modeling/domain-types.md#version-newtype)**
+- **[domain_types:versions](practices/modeling/domain-types.md#model-supported-schema-revisions-explicitly)**
 
-  - Give independent schema versions distinct types, validate supported ranges when
-    parsing, retain supported old versions, and require a migration before advancing the
-    current wire shape.
+  - Name each supported schema revision; use exhaustive version dispatch and separate
+    payload types for differing shapes. Reject unsupported wire values at entry.
+  - Retain documented migration support before advancing the current version.
+
+- **[domain_types:update_revisions](practices/modeling/domain-types.md#distinguish-schema-revisions-from-update-counters)**
+
+  - Keep optimistic-lock revisions as open validated counters; use observed tokens
+    and named domain transitions instead of guessed numeric fixtures.
 
 - **[domain_types:named_records](practices/modeling/domain-types.md#replace-positional-tuples-with-named-records)**
 

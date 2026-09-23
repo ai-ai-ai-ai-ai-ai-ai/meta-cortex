@@ -43,9 +43,9 @@ to identifiers, counts, versions, and wire strings.
 the wire. They must never be swapped. Newtypes make intent explicit and turn
 mix-ups into compile errors.
 
-When a project carries multiple schema versions, give each version its own type.
-For example, event and envelope versions have different meanings. Check each
-supported range at parsing rather than scattering raw integer comparisons.
+Give independent version families distinct types. Model released schema versions
+and their payloads using [explicit supported revisions](#model-supported-schema-revisions-explicitly);
+validate external version numbers at the parsing boundary.
 
 ### WASM / JS boundary
 
@@ -382,25 +382,136 @@ pub struct StoreId(String);
 Wire JSON stays unchanged; the Rust API is typed. Validate through `TryFrom`
 when invariants matter. Deserialization must preserve the same validation.
 
-### Version newtype
+### Model supported schema revisions explicitly
+
+Give every supported released schema revision a named enum variant or typed
+associated constant. Construct known versions by name, never by parsing a numeric
+literal such as `SchemaVersion::try_from(3)?`. Prefer closed enums when decoding,
+projection, or migration must handle every supported version exhaustively.
+Keep numeric conversion at external boundaries; reject unsupported input there.
+
+These alternative fragments assume Serde derive and existing domain payload
+types. Both compile; the first hides a finite version choice inside a number.
+
+**Prohibited:** author a known schema revision through runtime validation.
 
 ```rust
-pub struct VaultEventSchemaVersion(u32);
+pub struct EventSchemaVersion(u32);
+impl TryFrom<u32> for EventSchemaVersion {
+    type Error = UnsupportedEventVersion;
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            1..=2 => Ok(Self(value)),
+            _ => Err(UnsupportedEventVersion),
+        }
+    }
+}
+let version = EventSchemaVersion::try_from(2)?;
+```
 
-impl VaultEventSchemaVersion {
-    pub const V1: Self = Self(1);
-    pub const CURRENT: Self = Self::V1;
+**Preferred:** enumerate the supported identities and isolate the wire mapping.
+
+```rust
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(try_from = "u32", into = "u32")]
+pub enum EventSchemaVersion { V1, V2 }
+
+impl EventSchemaVersion {
+    pub const CURRENT: Self = Self::V2;
+}
+impl TryFrom<u32> for EventSchemaVersion {
+    type Error = UnsupportedEventVersion;
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(Self::V1),
+            2 => Ok(Self::V2),
+            _ => Err(UnsupportedEventVersion),
+        }
+    }
+}
+impl From<EventSchemaVersion> for u32 {
+    fn from(version: EventSchemaVersion) -> Self {
+        match version {
+            EventSchemaVersion::V1 => 1,
+            EventSchemaVersion::V2 => 2,
+        }
+    }
+}
+let version = EventSchemaVersion::V2;
+```
+
+A constant or unit variant names a value; it does not make its payload a different
+Rust type. Give differing released shapes independent concrete records. Bind
+version selection to its payload with enum variants or existing typestate; do not
+allow a free version field to label the wrong body. The following alternatives
+assume validated `MessageBody` and `AgentId` domain types.
+
+**Prohibited:** the tag and payload can disagree.
+
+```rust
+pub struct EventBody { pub message: MessageBody }
+pub struct VersionedEvent {
+    pub version: EventSchemaVersion,
+    pub body: EventBody,
 }
 ```
 
-When a breaking wire shape ships, add `V2`, keep `V1` deserializable, and branch in projection/import — never bump `CURRENT` without a migration path. Future shape:
+**Preferred:** each version owns its shape; consumers match exhaustively.
+These are internal types. Preserve an established numeric wire format in its
+adapter rather than changing it to Serde's default enum representation.
 
 ```rust
-enum VersionedVaultEventBody {
-    V1(VaultEventBodyV1),
-    V2(VaultEventBodyV2),
+pub struct EventBodyV1 { pub message: MessageBody }
+pub struct EventBodyV2 { pub message: MessageBody, pub actor: AgentId }
+pub enum VersionedEvent {
+    V1(EventBodyV1),
+    V2(EventBodyV2),
 }
+impl VersionedEvent {
+    pub fn message(&self) -> &MessageBody {
+        match self {
+            Self::V1(body) => &body.message,
+            Self::V2(body) => &body.message,
+        }
+    }
+}
+// VersionedEvent::V1(body_v2) is a type error, even if its fields overlap.
 ```
+
+Retain a documented bounded set of supported revisions when the product requires
+it (for example, the latest 100). Keep each retained decoder and migration typed;
+reject retired/future revisions explicitly. Never reinterpret an old payload as
+`CURRENT`, reuse its identity, or advance `CURRENT` without handling the retained
+versions. Do not create 100 speculative schemas. With only one shipped shape,
+a single supported variant suffices until another shape exists.
+
+### Distinguish schema revisions from update counters
+
+A task's optimistic-lock revision is an open runtime counter, not a released
+schema identity. Keep it as a validated domain newtype; do not enumerate every
+update or cap it to a schema-retention window. Use named initial values and domain
+transitions in examples, and observed revisions in actual updates. These fragments
+assume the existing Workbench `Revision` type and a decoded `task` record.
+
+**Prohibited:** guess the revision needed by a later update.
+
+```rust
+let expected_revision = Revision::try_from(3)?;
+```
+
+**Preferred:** retain the observed token; derive illustrative transitions by name.
+
+```rust
+let expected_revision = task.revision;
+// For a standalone catalog example without a running task:
+let claimed_revision = Revision::INITIAL.advance()?;
+let heartbeat_revision = claimed_revision.advance()?;
+```
+
+A conversion from an external database/wire counter still validates at runtime.
+Invalid-input and overflow tests may supply raw boundary values deliberately;
+valid fixtures use domain transitions. Compile-time version identities do not
+prove runtime concurrency freshness: retain revision comparisons in transactions.
 
 ## External raw values
 
@@ -553,3 +664,8 @@ while reviewing identifiers but skipping its help fields and example tuples.
 reviewed, structured help is normalized into typed components, atomic prose uses
 distinct newtypes, and rendering preserves the required wire contract. Report
 consumer test results separately.
+
+For changed version contracts, review named supported identities, exhaustive
+version dispatch, distinct payload types for differing shapes, and the retained
+migration paths. Test unknown/retired rejection and wire compatibility separately
+from compile-time payload checks; a passing compiler cannot prove freshness.

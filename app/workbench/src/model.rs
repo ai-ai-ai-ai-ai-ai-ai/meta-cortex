@@ -325,7 +325,7 @@ mod tests {
             Err(LedgerError::DependencyPending)
         ));
         assert!(matches!(
-            task.require_revision(Revision::try_from(2)?),
+            task.require_revision(task.revision.advance()?),
             Err(LedgerError::Conflict)
         ));
         task.require_revision(Revision::INITIAL)?;

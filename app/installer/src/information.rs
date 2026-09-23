@@ -58,11 +58,22 @@ pub struct ProjectInfo {
     pub integrations: Vec<HarnessInfo>,
 }
 
-#[derive(Serialize)]
-struct InfoSchemaVersion(u32);
+#[derive(Clone, Serialize)]
+#[serde(into = "u32")]
+enum InfoSchemaVersion {
+    V2,
+}
 
 impl InfoSchemaVersion {
-    const CURRENT: Self = Self(2);
+    const CURRENT: Self = Self::V2;
+}
+
+impl From<InfoSchemaVersion> for u32 {
+    fn from(version: InfoSchemaVersion) -> Self {
+        match version {
+            InfoSchemaVersion::V2 => 2,
+        }
+    }
 }
 
 #[derive(Serialize)]

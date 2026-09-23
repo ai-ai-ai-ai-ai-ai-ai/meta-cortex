@@ -14,21 +14,29 @@ impl LedgerSchema {
             .next()
             .await?
             .ok_or(LedgerError::Invalid("missing database version"))?;
-        let version = StorageVersion::try_from(row.get::<i64>(0)?)?;
+        let mut version = StorageVersion::try_from(row.get::<i64>(0)?)?;
         drop(rows);
-        if version == StorageVersion::EMPTY {
-            tx.execute("CREATE TABLE feature (singleton INTEGER PRIMARY KEY CHECK(singleton = 1), document TEXT NOT NULL) STRICT", ()).await?;
-            tx.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, revision INTEGER NOT NULL CHECK(revision > 0), document TEXT NOT NULL) STRICT", ()).await?;
-            tx.execute("CREATE TABLE events (task_id TEXT NOT NULL, revision INTEGER NOT NULL, document TEXT NOT NULL) STRICT", ()).await?;
-            tx.execute("PRAGMA user_version = 1", ()).await?;
-        }
-        if version == StorageVersion::EMPTY || version == StorageVersion::DOCUMENTS {
-            tx.execute(
-                "CREATE UNIQUE INDEX events_task_revision ON events(task_id, revision)",
-                (),
-            )
-            .await?;
-            tx.execute("PRAGMA user_version = 2", ()).await?;
+        loop {
+            version = match version {
+                StorageVersion::Empty => {
+                    tx.execute("CREATE TABLE feature (singleton INTEGER PRIMARY KEY CHECK(singleton = 1), document TEXT NOT NULL) STRICT", ()).await?;
+                    tx.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, revision INTEGER NOT NULL CHECK(revision > 0), document TEXT NOT NULL) STRICT", ()).await?;
+                    tx.execute("CREATE TABLE events (task_id TEXT NOT NULL, revision INTEGER NOT NULL, document TEXT NOT NULL) STRICT", ()).await?;
+                    StorageVersion::DocumentsV1
+                }
+                StorageVersion::DocumentsV1 => {
+                    tx.execute(
+                        "CREATE UNIQUE INDEX events_task_revision ON events(task_id, revision)",
+                        (),
+                    )
+                    .await?;
+                    StorageVersion::IndexedV2
+                }
+                StorageVersion::IndexedV2 => break,
+            };
+            // PRAGMA assignments cannot bind parameters; render the closed version enum.
+            tx.execute(&format!("PRAGMA user_version = {version}"), ())
+                .await?;
         }
         tx.commit().await?;
         Ok(())

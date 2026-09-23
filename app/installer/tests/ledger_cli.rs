@@ -9,7 +9,7 @@ use meta_cortex_workbench::values::{
     AgentId, Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision,
     TaskId,
 };
-use meta_cortex_workbench::versions::ProtocolVersion;
+use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
@@ -81,7 +81,7 @@ struct RequestYaml(String);
 // An independent consumer of the CLI's versioned YAML response.
 #[derive(Debug, Deserialize)]
 struct Response {
-    version: u32,
+    version: ProtocolVersion,
     result: Outcome,
 }
 #[derive(Debug, Deserialize)]
@@ -122,12 +122,12 @@ struct InfoPaths {
 #[derive(Debug, Deserialize)]
 struct LedgerInfo {
     path: PathBuf,
-    storage_version: u32,
+    storage_version: StorageVersion,
 }
 #[derive(Debug, Deserialize)]
 struct Task {
     id: String,
-    revision: u32,
+    revision: Revision,
     attempt: u32,
     state: State,
     last_update: u64,
@@ -217,7 +217,7 @@ impl Scenario {
                 String::from_utf8_lossy(&result.stderr)
             )
         })?;
-        assert_eq!(response.version, 1);
+        assert_eq!(response.version, ProtocolVersion::V1);
         match &response.result {
             Outcome::Success(_) => assert_eq!(result.status.code(), Some(0), "{response:?}"),
             Outcome::Error(_) => assert_eq!(result.status.code(), Some(2), "{response:?}"),
@@ -291,7 +291,7 @@ impl Scenario {
         Ok(WorkerUpdate {
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
-            expected_revision: Revision::try_from(2)?,
+            expected_revision: Revision::INITIAL.advance()?,
             agent: AgentId::try_from("worker".to_owned())?,
             attempt: Attempt::try_from(1)?,
             action: WorkerAction::Heartbeat {
@@ -303,7 +303,7 @@ impl Scenario {
         Ok(CoordinatorUpdate {
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
-            expected_revision: Revision::try_from(2)?,
+            expected_revision: Revision::INITIAL.advance()?,
             actor: AgentId::try_from("gizmo".to_owned())?,
             action,
         })
@@ -322,7 +322,7 @@ impl Scenario {
     fn status(&self) -> anyhow::Result<Vec<TaskView>> {
         match self.run(Operation::Status(Self::feature()?))? {
             Reply::Status { ledger, tasks } => {
-                assert_eq!(ledger.storage_version, 2);
+                assert_eq!(ledger.storage_version, StorageVersion::IndexedV2);
                 Ok(tasks)
             }
             other @ (Reply::Features(_)
@@ -342,7 +342,7 @@ impl Scenario {
 fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     let scenario = Scenario::create()?;
     let ledger = scenario.init(FeatureId::try_from("feature".to_owned())?)?;
-    assert_eq!(ledger.storage_version, 2);
+    assert_eq!(ledger.storage_version, StorageVersion::IndexedV2);
     assert_eq!(
         scenario
             .init(FeatureId::try_from("feature".to_owned())?)?
@@ -379,14 +379,14 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         match result.result {
             Outcome::Error(error) => assert_eq!(error.code, "conflict"),
             Outcome::Success(Reply::Task(task)) => {
-                assert_eq!(task.revision, 2);
+                assert_eq!(task.revision, Revision::INITIAL.advance()?);
                 assert_eq!(task.attempt, 1);
             }
             Outcome::Success(other) => bail!("{other:?}"),
         }
     }
     match scenario.run(Operation::Get(Scenario::query()?))? {
-        Reply::TaskView(view) => assert_eq!(view.task.revision, 2),
+        Reply::TaskView(view) => assert_eq!(view.task.revision, Revision::INITIAL.advance()?),
         other @ (Reply::Features(_)
         | Reply::FrameworkInitialized { .. }
         | Reply::FrameworkInfo { .. }
@@ -400,7 +400,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     let before = scenario.status()?.remove(0).task;
     scenario.run(Operation::Update(Scenario::heartbeat()?))?;
     let after = scenario.status()?.remove(0);
-    assert_eq!(after.task.revision, 3);
+    assert_eq!(after.task.revision, before.revision.advance()?);
     assert_eq!(after.task.last_progress, before.last_progress);
     assert!(after.task.last_update >= before.last_update);
     assert_eq!(after.lease, "current");
@@ -414,7 +414,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         Reply::History(events) => {
             assert_eq!(events.len(), 3);
             assert_eq!(events[0].kind, "created");
-            assert_eq!(events[2].task.revision, 3);
+            assert_eq!(events[2].task.revision, after.task.revision);
         }
         other @ (Reply::Features(_)
         | Reply::FrameworkInitialized { .. }
@@ -451,12 +451,14 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
             previous_execution: StoppedExecution::StoppedOrFinished,
         },
     )?))?;
+    let requeued_revision = scenario.status()?.remove(0).task.revision;
     scenario.run(Operation::Claim(ClaimTask {
-        expected_revision: Revision::try_from(3)?,
+        expected_revision: requeued_revision,
         ..Scenario::claim()?
     }))?;
+    let reclaimed_revision = scenario.status()?.remove(0).task.revision;
     let stale = WorkerUpdate {
-        expected_revision: Revision::try_from(4)?,
+        expected_revision: reclaimed_revision,
         ..Scenario::heartbeat()?
     };
     assert_eq!(
@@ -464,16 +466,17 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
         "assignment_changed"
     );
     scenario.run(Operation::Update(WorkerUpdate {
-        expected_revision: Revision::try_from(4)?,
+        expected_revision: reclaimed_revision,
         attempt: Attempt::try_from(2)?,
         action: WorkerAction::Ready {
             progress: Scenario::progress(Note::try_from("Reviewed".to_owned())?),
         },
         ..Scenario::heartbeat()?
     }))?;
+    let ready_revision = scenario.status()?.remove(0).task.revision;
     let commit = CommitId::try_from(scenario.git(&["rev-parse", "HEAD"])?)?;
     scenario.run(Operation::Coordinate(CoordinatorUpdate {
-        expected_revision: Revision::try_from(5)?,
+        expected_revision: ready_revision,
         ..Scenario::coordinate(CoordinatorAction::Integrate { commit })?
     }))?;
     assert!(matches!(
@@ -530,9 +533,10 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
         },
         ..Scenario::heartbeat()?
     }))?;
+    let checkpoint_revision = worker.status()?.remove(0).task.revision;
     let ready = || -> anyhow::Result<Operation> {
         Ok(Operation::Update(WorkerUpdate {
-            expected_revision: Revision::try_from(3)?,
+            expected_revision: checkpoint_revision,
             action: WorkerAction::Ready {
                 progress: Scenario::progress(Note::try_from("Ready".to_owned())?),
             },
@@ -543,9 +547,10 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     assert_eq!(worker.failure(ready()?)?.code, "invalid_request");
     fs::remove_file(worker.directory.path().join("unfinished.txt"))?;
     worker.run(ready()?)?;
+    let ready_revision = worker.status()?.remove(0).task.revision;
     let integrate = || -> anyhow::Result<Operation> {
         Ok(Operation::Coordinate(CoordinatorUpdate {
-            expected_revision: Revision::try_from(4)?,
+            expected_revision: ready_revision,
             ..Scenario::coordinate(CoordinatorAction::Integrate {
                 commit: commit.clone(),
             })?
@@ -686,7 +691,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
     assert_eq!(
         scenario
             .failure(Operation::Claim(ClaimTask {
-                expected_revision: Revision::try_from(3)?,
+                expected_revision: view.task.revision,
                 ..Scenario::claim()?
             }))?
             .code,
@@ -724,7 +729,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         "invalid_request"
     );
     scenario.run(Operation::Coordinate(CoordinatorUpdate {
-        expected_revision: Revision::try_from(3)?,
+        expected_revision: view.task.revision,
         ..Scenario::coordinate(CoordinatorAction::Cancel {
             reason: Note::try_from("Scope removed".to_owned())?,
         })?

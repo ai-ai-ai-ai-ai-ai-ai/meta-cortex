@@ -1,6 +1,7 @@
 use anyhow::{Context, bail};
 use meta_cortex_workbench::request::{ClaimTask, CreateTask, InitFeature, WorkerUpdate};
 use meta_cortex_workbench::values::{FeatureId, TaskId};
+use meta_cortex_workbench::versions::StorageVersion;
 use meta_cortex_workbench::{Ledger, LedgerError, Workbench};
 use std::env;
 use std::fs;
@@ -87,7 +88,11 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                     .await?;
                 let conn = db.connect()?;
                 conn.execute("DROP INDEX events_task_revision", ()).await?;
-                conn.execute("PRAGMA user_version=1", ()).await?;
+                conn.execute(
+                    &format!("PRAGMA user_version={}", StorageVersion::DocumentsV1),
+                    (),
+                )
+                .await?;
             }
             let ledger = scenario.open().await?;
             assert_eq!(ledger.status().await?.len(), 1);
@@ -99,7 +104,12 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                     .await?;
                 let conn = db.connect()?;
                 let mut rows = conn.query("PRAGMA user_version", ()).await?;
-                assert_eq!(rows.next().await?.context("version")?.get::<i64>(0)?, 2);
+                assert_eq!(
+                    StorageVersion::try_from(
+                        rows.next().await?.context("version")?.get::<i64>(0)?
+                    )?,
+                    StorageVersion::IndexedV2
+                );
                 drop(rows);
                 conn.execute("PRAGMA user_version=99", ()).await?;
             }
