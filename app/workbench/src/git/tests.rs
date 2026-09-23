@@ -1,6 +1,6 @@
 use super::{GitWorktree, Repository};
 use crate::LedgerError;
-use crate::values::{BranchNameParse, CommitIdParse};
+use crate::values::{BranchName, CommitId};
 use std::fs;
 use std::path::Path;
 
@@ -24,10 +24,7 @@ fn git_library_preserves_checkpoint_and_worktree_checks() -> anyhow::Result<()> 
         let root = repository.find_commit(root_id)?;
         let worktree = GitWorktree::from(project.clone());
         let checkpoint = worktree.head()?;
-        let branch = match BranchNameParse::from("codex/feature".to_owned()) {
-            BranchNameParse::Parsed(branch) => branch,
-            BranchNameParse::Invalid(error) => return Err(error.into()),
-        };
+        let branch = BranchName::try_from("codex/feature".to_owned())?;
         worktree.require_branch(&branch)?;
         worktree.require_clean()?;
         worktree.require_ancestor(&checkpoint)?;
@@ -42,18 +39,12 @@ fn git_library_preserves_checkpoint_and_worktree_checks() -> anyhow::Result<()> 
         worktree.require_ancestor(&checkpoint)?;
         let sibling =
             repository.commit(None, &signature, &signature, "sibling", &tree, &[&root])?;
-        let unrelated = match CommitIdParse::from(sibling.to_string()) {
-            CommitIdParse::Parsed(commit) => commit,
-            CommitIdParse::Invalid(error) => return Err(error.into()),
-        };
+        let unrelated = CommitId::try_from(sibling.to_string())?;
         assert!(matches!(
             worktree.require_ancestor(&unrelated),
             Err(LedgerError::Git(_))
         ));
-        let other_branch = match BranchNameParse::from("codex/other".to_owned()) {
-            BranchNameParse::Parsed(branch) => branch,
-            BranchNameParse::Invalid(error) => return Err(error.into()),
-        };
+        let other_branch = BranchName::try_from("codex/other".to_owned())?;
         assert!(matches!(
             worktree.require_branch(&other_branch),
             Err(LedgerError::Invalid(_))

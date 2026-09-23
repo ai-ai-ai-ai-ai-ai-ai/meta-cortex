@@ -9,9 +9,9 @@ Preserve the meaning and source of each failure. Propagate typed errors until an
   including [empty free-form text](../modeling/domain-states.md#represent-empty-prose-as-a-value).
 - Preserve typed sources. Use `#[from]` and `?` for direct conversions.
 - Use `map_err` only to add context or select the appropriate error variant.
-- Classify constrained primitive-wrapper input with explicit enums; reject invalid
-  classifications where the operation requires a usable value. Do not conceal
-  classification behind `TryFrom`, `FromStr`, or a renamed `Result` constructor.
+- Return `Result<Value, ConcreteError>` for direct parsing and constrained-wrapper
+  validation. Normalize structured successful values; do not duplicate `Result`
+  with a `Parsed`/`Invalid` enum.
 - In tests, return a concrete `Result` or `anyhow::Result` and propagate with `?`.
 - Use `serde_json::Result<T>` when JSON encoding/decoding is the only failure.
 
@@ -21,10 +21,9 @@ Do not use `.unwrap()`, `.expect(...)`, or `.expect_err(...)`, including in test
 Production libraries, binaries, examples, and build scripts use concrete errors.
 
 These alternatives convert a boundary string into the numeric `RetryCount`.
-This is a genuine representation conversion and may return `Result`. It is not
-classification of a string-backed ID: those APIs must return
-[explicit parse states](../modeling/domain-types.md#classify-primitive-wrapper-input-with-explicit-states),
-with any `Result` adaptation isolated at the external boundary.
+Like validation of a string-backed ID, this conversion returns `Result` with a
+concrete error. Apply [structure-aware parsing](../modeling/domain-types.md#parse-according-to-domain-structure)
+when the successful value has independently meaningful components.
 
 **Prohibited:** malformed input becomes a panic, so the caller cannot classify
 or recover from the expected input error.

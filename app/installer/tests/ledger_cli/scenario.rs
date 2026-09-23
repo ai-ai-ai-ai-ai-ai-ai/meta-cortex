@@ -10,8 +10,7 @@ use meta_cortex_workbench::request::{
     TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    Attempt, BranchNameParse, CommitId, CommitIdParse, Extensions, FeatureId, FeatureIdParse,
-    LeaseSeconds, Note, Revision, TaskIdParse,
+    Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use std::io::Write;
@@ -62,10 +61,7 @@ impl Scenario<RepositoryReady> {
         Ok(InitFeature {
             feature,
             objective: Note::from("Example feature".to_owned()),
-            branch: match BranchNameParse::from("codex/feature".to_owned()) {
-                BranchNameParse::Parsed(value) => value,
-                BranchNameParse::Invalid(error) => return Err(error.into()),
-            },
+            branch: BranchName::try_from("codex/feature".to_owned())?,
             worktree: self.directory.path().to_owned(),
         })
     }
@@ -162,10 +158,7 @@ impl<Setup> Scenario<Setup> {
     }
     pub(super) fn head(&self) -> anyhow::Result<CommitId> {
         let oid = self.repository()?.head()?.peel_to_commit()?.id();
-        match CommitIdParse::from(oid.to_string()) {
-            CommitIdParse::Parsed(value) => Ok(value),
-            CommitIdParse::Invalid(error) => Err(error.into()),
-        }
+        Ok(CommitId::try_from(oid.to_string())?)
     }
 }
 
@@ -302,18 +295,12 @@ impl Examples {
     pub(super) fn query() -> anyhow::Result<TaskQuery> {
         Ok(TaskQuery {
             feature: Self::feature()?.feature,
-            task: match TaskIdParse::from("task".to_owned()) {
-                TaskIdParse::Parsed(value) => value,
-                TaskIdParse::Invalid(error) => return Err(error.into()),
-            },
+            task: TaskId::try_from("task".to_owned())?,
         })
     }
     pub(super) fn feature() -> anyhow::Result<FeatureQuery> {
         Ok(FeatureQuery {
-            feature: match FeatureIdParse::from("feature".to_owned()) {
-                FeatureIdParse::Parsed(value) => value,
-                FeatureIdParse::Invalid(error) => return Err(error.into()),
-            },
+            feature: FeatureId::try_from("feature".to_owned())?,
         })
     }
 }

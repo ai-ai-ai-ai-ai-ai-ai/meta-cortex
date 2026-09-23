@@ -76,14 +76,14 @@ in full. Include related subjects when the change crosses their boundaries.
   - Required persisted or signed values use validated required newtypes.
   - Preserve validation during deserialization.
 
-- **[domain_types:parse_states](practices/modeling/domain-types.md#classify-primitive-wrapper-input-with-explicit-states)**
+- **[domain_types:parsing](practices/modeling/domain-types.md#parse-according-to-domain-structure)**
 
-  - Prohibit primitive-wrapper TryFrom/FromStr and equivalent hidden-Result APIs;
-    classify input through enums naming success and every rejection state.
-  - Match classifications in callers, catalogs, and fixtures; no into_result shortcut
-    or serialization detour. Keep validated payloads private.
-  - Genuine representation conversion and I/O retain typed Result errors. Serde's
-    enum-to-value adapter only maps states to its required Result interface.
+  - Inspect strings for internal domain structure; use typed fields for components
+    and enums for genuine alternatives. Atomic IDs need no artificial structure.
+  - Return Result with concrete errors for direct parsing and validation, including
+    constrained wrappers; prohibit duplicate Parsed/Invalid outcome enums.
+  - Keep validated fields private and reuse TryFrom/FromStr conversions in callers
+    and Serde without duplicating validation or changing the wire shape.
 
 - **[domain_types:closed_vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum)**
 
@@ -104,7 +104,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[domain_types:external_conversions](practices/modeling/domain-types.md#external-raw-values)**
 
   - Convert uncontrolled external primitives and records immediately through
-    destination-owned From classification, or TryFrom for genuine representation conversion.
+    destination-owned From when infallible, or TryFrom for fallible parsing and validation.
   - Conversion parameters may be raw, but application contracts may not.
 
 - **[domain_types:external_records](practices/modeling/domain-types.md#external-raw-values)**
@@ -115,7 +115,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[domain_types:conversion_traits](practices/modeling/domain-types.md#standard-conversions)**
 
   - Use From for infallible conversion/classification and TryFrom with a concrete
-    error for genuine representation conversion, not primitive-wrapper validation.
+    error for fallible parsing and validation, including constrained wrappers.
   - Do not panic, discard meaning, or default invalid input to force From.
 
 - **[domain_types:operation_boundaries](practices/modeling/domain-types.md#standard-conversions)**
@@ -347,7 +347,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[struct_construction:derive_from](practices/modeling/struct-construction.md#single-field-derive-from)**
 
   - Derive derive_more::From with its from feature for infallible single-field wrappers.
-  - Constrained wrappers use explicit classification enums; keep their fields private.
+  - Constrained wrappers use TryFrom/FromStr returning Result; keep their fields private.
 
 - **[struct_construction:initial_state](practices/modeling/struct-construction.md#single-field-derive-from)**
 
@@ -674,8 +674,8 @@ in full. Include related subjects when the change crosses their boundaries.
   - Derive serialization and preserve enums in new owned wire contracts.
   - Apply domain-state exceptions before using boolean conversion attributes.
   - Prohibit handwritten traits, visitors, and callbacks that duplicate this support.
-  - Classify raw wrapper input in an enum; Serde may use an enum-to-value TryFrom
-    adapter to satisfy its required Result interface, never a raw-input validator.
+  - Reuse the domain validating conversion with serde(try_from = "String") or
+    the actual wire type; do not introduce a result-shaped parse enum.
   - Document unsupported contracts and evaluate established adapters before custom machinery.
   - Review manually and test wire values; standard Clippy does not enforce this rule.
 
@@ -1240,7 +1240,7 @@ Check whether construction is infallible, requires validation, or performs an op
 - **Prohibited:** Derive `From` for a constrained value to avoid reporting validation
   errors, or put consuming-domain policy on the source type.
 - **Preferred:** The destination owns `From` for infallible conversion/classification and `TryFrom`
-  for genuine representation conversion. Constrained wrappers use explicit enums;
+  for fallible parsing and validation, including constrained wrappers;
   context-dependent policy stays a named operation.
 
 **Compare:**

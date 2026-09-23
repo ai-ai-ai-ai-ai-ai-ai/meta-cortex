@@ -1,5 +1,4 @@
 use super::{LedgerError, StorageVersion};
-use crate::versions::StorageVersionParse;
 use sea_query::{
     ColumnDef, Expr, ExprTrait, Iden, Index, SqliteQueryBuilder, Table, TableCreateStatement,
 };
@@ -43,32 +42,21 @@ enum DatabasePragma {
     UserVersion,
 }
 
-enum DatabaseVersion {
-    Missing,
-    Read(StorageVersionParse),
-    Failed(turso::Error),
-}
-
 pub struct LedgerSchema;
 
 impl LedgerSchema {
     async fn version(connection: &Connection) -> Result<StorageVersion, LedgerError> {
-        let mut version = DatabaseVersion::Missing;
+        let mut version = Err(LedgerError::Invalid("missing database version"));
         connection
             .pragma_query(&DatabasePragma::UserVersion.to_string(), |row| {
-                version = match row.get::<i64>(0) {
-                    Ok(value) => DatabaseVersion::Read(StorageVersionParse::from(value)),
-                    Err(error) => DatabaseVersion::Failed(error),
-                };
+                version = row
+                    .get::<i64>(0)
+                    .map_err(LedgerError::from)
+                    .and_then(|value| StorageVersion::try_from(value).map_err(LedgerError::from));
                 Ok(())
             })
             .await?;
-        match version {
-            DatabaseVersion::Missing => Err(LedgerError::Invalid("missing database version")),
-            DatabaseVersion::Read(StorageVersionParse::Parsed(version)) => Ok(version),
-            DatabaseVersion::Failed(error) => Err(error.into()),
-            DatabaseVersion::Read(StorageVersionParse::Invalid(error)) => Err(error.into()),
-        }
+        version
     }
 
     pub async fn migrate(connection: &mut Connection) -> Result<(), LedgerError> {

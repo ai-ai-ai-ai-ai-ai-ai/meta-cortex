@@ -13,7 +13,7 @@ use meta_cortex_workbench::request::{
     StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    Attempt, BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision, TaskIdParse,
+    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
@@ -76,18 +76,8 @@ pub struct CatalogYaml(String);
 
 impl Catalog {
     pub fn discover() -> Result<Self, AgentError> {
-        let feature = match FeatureIdParse::from("example".to_owned()) {
-            FeatureIdParse::Parsed(value) => value,
-            FeatureIdParse::Invalid(error) => {
-                return Err(LedgerError::from(error).into());
-            }
-        };
-        let task = match TaskIdParse::from("review".to_owned()) {
-            TaskIdParse::Parsed(value) => value,
-            TaskIdParse::Invalid(error) => {
-                return Err(LedgerError::from(error).into());
-            }
-        };
+        let feature = FeatureId::try_from("example".to_owned()).map_err(LedgerError::from)?;
+        let task = TaskId::try_from("review".to_owned()).map_err(LedgerError::from)?;
         let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
         let worker = AgentId::Development(DevelopmentAgent::RustDev);
         let ttl = LeaseSeconds::TEN_MINUTES;
@@ -120,12 +110,8 @@ impl Catalog {
                 operation: Operation::Feature(FeatureOperation::Initialize(InitFeature {
                     feature: feature.clone(),
                     objective: Note::from("Implement the feature".to_owned()),
-                    branch: match BranchNameParse::from("codex/example".to_owned()) {
-                        BranchNameParse::Parsed(value) => value,
-                        BranchNameParse::Invalid(error) => {
-                            return Err(LedgerError::from(error).into());
-                        }
-                    },
+                    branch: BranchName::try_from("codex/example".to_owned())
+                        .map_err(LedgerError::from)?,
                     worktree: PathBuf::from("/absolute/project"),
                 })),
             },

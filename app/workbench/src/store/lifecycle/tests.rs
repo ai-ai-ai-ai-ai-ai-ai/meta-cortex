@@ -4,7 +4,7 @@ use crate::git::Repository;
 use crate::request::InitFeature;
 use crate::store::schema::FeatureTable;
 use crate::store::sql::SqlStatement;
-use crate::values::{BranchNameParse, FeatureIdParse, Note};
+use crate::values::{BranchName, FeatureId, Note};
 use sea_query::Query;
 use tokio::runtime;
 use turso::Builder;
@@ -20,14 +20,8 @@ fn failed_feature_preparation_preserves_existing_data() -> anyhow::Result<()> {
     let tree = git.find_tree(tree_id)?;
     git.commit(Some("HEAD"), &signature, &signature, "initial", &tree, &[])?;
     let repository = Repository::discover(directory.path())?;
-    let feature = match FeatureIdParse::from("feature".to_owned()) {
-        FeatureIdParse::Parsed(feature) => feature,
-        FeatureIdParse::Invalid(error) => return Err(error.into()),
-    };
-    let branch = match BranchNameParse::from("codex/feature".to_owned()) {
-        BranchNameParse::Parsed(branch) => branch,
-        BranchNameParse::Invalid(error) => return Err(error.into()),
-    };
+    let feature = FeatureId::try_from("feature".to_owned())?;
+    let branch = BranchName::try_from("codex/feature".to_owned())?;
     runtime::Builder::new_current_thread()
         .enable_time()
         .build()?
@@ -82,10 +76,7 @@ fn failed_feature_preparation_preserves_existing_data() -> anyhow::Result<()> {
             .await?;
             let connection = database.connect()?;
             let mut mismatched = info.feature;
-            mismatched.id = match FeatureIdParse::from("another-feature".to_owned()) {
-                FeatureIdParse::Parsed(feature) => feature,
-                FeatureIdParse::Invalid(error) => return Err(error.into()),
-            };
+            mismatched.id = FeatureId::try_from("another-feature".to_owned())?;
             SqlStatement::build(
                 Query::update()
                     .table(FeatureTable::Table)

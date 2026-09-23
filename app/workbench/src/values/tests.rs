@@ -1,8 +1,7 @@
 use super::{
-    Attempt, AttemptParse, AttemptParseError, BranchName, BranchNameParse, BranchNameParseError,
-    CommitId, CommitIdParse, CommitIdParseError, FeatureId, FeatureIdParse, IdentifierParseError,
-    LeaseSeconds, LeaseSecondsParse, LeaseSecondsParseError, Note, Revision, RevisionParse,
-    RevisionParseError, TaskId, TaskIdParse, Timestamp, TimestampParse, TimestampParseError,
+    Attempt, AttemptParseError, BranchName, BranchNameParseError, CommitId, CommitIdParseError,
+    FeatureId, IdentifierParseError, LeaseSeconds, LeaseSecondsParseError, Note, Revision,
+    RevisionParseError, TaskId, Timestamp, TimestampParseError,
 };
 use schemars::schema_for;
 use serde::Deserialize;
@@ -51,7 +50,7 @@ fn notes_still_require_string_input() {
     }
 }
 #[test]
-fn identifiers_classify_each_rejection_and_preserve_valid_text() -> anyhow::Result<()> {
+fn identifiers_return_typed_errors_and_preserve_valid_text() -> anyhow::Result<()> {
     struct InvalidIdentifier {
         text: String,
         reason: IdentifierParseError,
@@ -78,27 +77,15 @@ fn identifiers_classify_each_rejection_and_preserve_valid_text() -> anyhow::Resu
             reason: IdentifierParseError::InvalidCharacters,
         },
     ] {
-        assert_eq!(
-            FeatureIdParse::from(input.text.clone()),
-            FeatureIdParse::Invalid(input.reason)
-        );
-        assert_eq!(
-            TaskIdParse::from(input.text.clone()),
-            TaskIdParse::Invalid(input.reason)
-        );
+        assert_eq!(FeatureId::try_from(input.text.clone()), Err(input.reason));
+        assert_eq!(TaskId::try_from(input.text.clone()), Err(input.reason));
         let encoded = serde_json::to_string(&input.text)?;
         assert!(serde_json::from_str::<FeatureId>(&encoded).is_err());
         assert!(serde_json::from_str::<TaskId>(&encoded).is_err());
     }
     for text in ["review-1_A.b".to_owned(), "a".repeat(128)] {
-        let feature = match FeatureIdParse::from(text.clone()) {
-            FeatureIdParse::Parsed(feature) => feature,
-            FeatureIdParse::Invalid(error) => return Err(error.into()),
-        };
-        let task = match TaskIdParse::from(text.clone()) {
-            TaskIdParse::Parsed(task) => task,
-            TaskIdParse::Invalid(error) => return Err(error.into()),
-        };
+        let feature = FeatureId::try_from(text.clone())?;
+        let task = TaskId::try_from(text.clone())?;
         assert_eq!(feature.to_string(), text);
         assert_eq!(task.to_string(), text);
         let encoded = serde_json::to_string(&text)?;
@@ -111,7 +98,7 @@ fn identifiers_classify_each_rejection_and_preserve_valid_text() -> anyhow::Resu
 }
 
 #[test]
-fn branch_classification_does_not_hide_empty_dash_or_whitespace() -> anyhow::Result<()> {
+fn branch_validation_reports_empty_dash_and_whitespace() -> anyhow::Result<()> {
     struct InvalidBranch {
         text: &'static str,
         reason: BranchNameParseError,
@@ -135,15 +122,12 @@ fn branch_classification_does_not_hide_empty_dash_or_whitespace() -> anyhow::Res
         },
     ] {
         assert_eq!(
-            BranchNameParse::from(input.text.to_owned()),
-            BranchNameParse::Invalid(input.reason)
+            BranchName::try_from(input.text.to_owned()),
+            Err(input.reason)
         );
         assert!(serde_json::from_str::<BranchName>(&serde_json::to_string(input.text)?).is_err());
     }
-    let branch = match BranchNameParse::from("codex/feature".to_owned()) {
-        BranchNameParse::Parsed(branch) => branch,
-        BranchNameParse::Invalid(error) => return Err(error.into()),
-    };
+    let branch = BranchName::try_from("codex/feature".to_owned())?;
     assert_eq!(branch.to_string(), "codex/feature");
     assert_eq!(
         serde_json::from_str::<BranchName>(&serde_json::to_string(&branch)?)?,
@@ -153,23 +137,20 @@ fn branch_classification_does_not_hide_empty_dash_or_whitespace() -> anyhow::Res
 }
 
 #[test]
-fn commit_classification_checks_length_hex_and_normalizes_case() -> anyhow::Result<()> {
+fn commit_parsing_checks_length_hex_and_normalizes_case() -> anyhow::Result<()> {
     assert_eq!(
-        CommitIdParse::from("abc".to_owned()),
-        CommitIdParse::Invalid(CommitIdParseError::InvalidLength)
+        CommitId::try_from("abc".to_owned()),
+        Err(CommitIdParseError::InvalidLength)
     );
     assert_eq!(
-        CommitIdParse::from("z".repeat(40)),
-        CommitIdParse::Invalid(CommitIdParseError::InvalidHex)
+        CommitId::try_from("z".repeat(40)),
+        Err(CommitIdParseError::InvalidHex)
     );
     for text in ["abc".to_owned(), "z".repeat(40)] {
         assert!(serde_json::from_str::<CommitId>(&serde_json::to_string(&text)?).is_err());
     }
     for length in [40, 64] {
-        let commit = match CommitIdParse::from("A".repeat(length)) {
-            CommitIdParse::Parsed(commit) => commit,
-            CommitIdParse::Invalid(error) => return Err(error.into()),
-        };
+        let commit = CommitId::try_from("A".repeat(length))?;
         assert_eq!(commit.to_string(), "a".repeat(length));
         assert_eq!(
             serde_json::from_str::<CommitId>(&serde_json::to_string(&commit)?)?,
@@ -180,44 +161,26 @@ fn commit_classification_checks_length_hex_and_normalizes_case() -> anyhow::Resu
 }
 
 #[test]
-fn numeric_classifications_preserve_zero_and_range_meaning() -> anyhow::Result<()> {
+fn numeric_validation_preserves_zero_and_range_meaning() -> anyhow::Result<()> {
+    assert_eq!(Revision::try_from(0), Err(RevisionParseError::NonPositive));
+    assert_eq!(Revision::try_from(1), Ok(Revision::INITIAL));
+    assert_eq!(Attempt::try_from(-1), Err(AttemptParseError::Negative));
+    assert_eq!(Attempt::try_from(0), Ok(Attempt::UNCLAIMED));
     assert_eq!(
-        RevisionParse::from(0),
-        RevisionParse::Invalid(RevisionParseError::NonPositive)
+        Timestamp::try_from(-1),
+        Err(TimestampParseError::BeforeEpoch)
+    );
+    assert_eq!(Timestamp::try_from(0), Ok(Timestamp(0)));
+    assert_eq!(
+        LeaseSeconds::try_from(0),
+        Err(LeaseSecondsParseError::NonPositive)
     );
     assert_eq!(
-        RevisionParse::from(1),
-        RevisionParse::Parsed(Revision::INITIAL)
-    );
-    assert_eq!(
-        AttemptParse::from(-1),
-        AttemptParse::Invalid(AttemptParseError::Negative)
-    );
-    assert_eq!(
-        AttemptParse::from(0),
-        AttemptParse::Parsed(Attempt::UNCLAIMED)
-    );
-    assert_eq!(
-        TimestampParse::from(-1),
-        TimestampParse::Invalid(TimestampParseError::BeforeEpoch)
-    );
-    assert_eq!(
-        TimestampParse::from(0),
-        TimestampParse::Parsed(Timestamp(0))
-    );
-    assert_eq!(
-        LeaseSecondsParse::from(0),
-        LeaseSecondsParse::Invalid(LeaseSecondsParseError::NonPositive)
-    );
-    assert_eq!(
-        LeaseSecondsParse::from(86401),
-        LeaseSecondsParse::Invalid(LeaseSecondsParseError::TooLong)
+        LeaseSeconds::try_from(86401),
+        Err(LeaseSecondsParseError::TooLong)
     );
     for seconds in [1, 600, 86400] {
-        let lease = match LeaseSecondsParse::from(seconds) {
-            LeaseSecondsParse::Parsed(lease) => lease,
-            LeaseSecondsParse::Invalid(error) => return Err(error.into()),
-        };
+        let lease = LeaseSeconds::try_from(seconds)?;
         assert_eq!(
             serde_json::from_str::<LeaseSeconds>(&serde_json::to_string(&lease)?)?,
             lease
@@ -231,7 +194,7 @@ fn numeric_classifications_preserve_zero_and_range_meaning() -> anyhow::Result<(
 }
 
 #[test]
-fn schema_describes_wire_scalars_not_internal_parse_states() -> anyhow::Result<()> {
+fn schema_preserves_scalar_wire_types() -> anyhow::Result<()> {
     #[derive(Deserialize)]
     struct ScalarSchema {
         #[serde(rename = "type")]

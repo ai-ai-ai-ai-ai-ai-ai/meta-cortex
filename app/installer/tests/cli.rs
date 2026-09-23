@@ -22,25 +22,9 @@ struct InfoDocument {
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(try_from = "ReportSchemaVersionParse")]
+#[serde(try_from = "u32")]
 enum ReportSchemaVersion {
     V3,
-}
-
-#[derive(Deserialize)]
-#[serde(from = "u32")]
-enum ReportSchemaVersionParse {
-    Parsed(ReportSchemaVersion),
-    Unsupported,
-}
-
-impl From<u32> for ReportSchemaVersionParse {
-    fn from(version: u32) -> Self {
-        match version {
-            3 => Self::Parsed(ReportSchemaVersion::V3),
-            _ => Self::Unsupported,
-        }
-    }
 }
 
 #[derive(Debug, Error)]
@@ -49,14 +33,13 @@ enum ReportSchemaVersionError {
     Unsupported,
 }
 
-// Serde boundary adapter; classification already selected an explicit outcome.
-impl TryFrom<ReportSchemaVersionParse> for ReportSchemaVersion {
+impl TryFrom<u32> for ReportSchemaVersion {
     type Error = ReportSchemaVersionError;
 
-    fn try_from(parsed: ReportSchemaVersionParse) -> Result<Self, Self::Error> {
-        match parsed {
-            ReportSchemaVersionParse::Parsed(version) => Ok(version),
-            ReportSchemaVersionParse::Unsupported => Err(ReportSchemaVersionError::Unsupported),
+    fn try_from(version: u32) -> Result<Self, Self::Error> {
+        match version {
+            3 => Ok(Self::V3),
+            _ => Err(ReportSchemaVersionError::Unsupported),
         }
     }
 }

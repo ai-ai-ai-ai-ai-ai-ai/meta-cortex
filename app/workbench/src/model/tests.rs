@@ -2,8 +2,7 @@ use super::{Checkpoint, ClaimAt, LeaseHealth, Progress, Task, TaskState, WorkerA
 use crate::LedgerError;
 use crate::agents::{AgentId, DevelopmentAgent};
 use crate::values::{
-    Attempt, CommitIdParse, Extensions, FeatureIdParse, LeaseSecondsParse, Note, Revision,
-    TaskIdParse, TimestampParse,
+    Attempt, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
 };
 use crate::versions::RecordVersion;
 use std::collections::BTreeMap;
@@ -12,14 +11,8 @@ struct Scenario;
 
 impl Scenario {
     fn task() -> anyhow::Result<Task> {
-        let id = match TaskIdParse::from("task".to_owned()) {
-            TaskIdParse::Parsed(id) => id,
-            TaskIdParse::Invalid(error) => return Err(error.into()),
-        };
-        let feature = match FeatureIdParse::from("feature".to_owned()) {
-            FeatureIdParse::Parsed(id) => id,
-            FeatureIdParse::Invalid(error) => return Err(error.into()),
-        };
+        let id = TaskId::try_from("task".to_owned())?;
+        let feature = FeatureId::try_from("feature".to_owned())?;
         let now = Scenario::claim()?.now;
         let mut extensions = BTreeMap::new();
         extensions.insert("custom".to_owned(), serde_json::json!([1, "note"]));
@@ -51,14 +44,8 @@ impl Scenario {
     fn claim() -> anyhow::Result<ClaimAt> {
         Ok(ClaimAt {
             agent: AgentId::Development(DevelopmentAgent::RustDev),
-            ttl: match LeaseSecondsParse::from(10) {
-                LeaseSecondsParse::Parsed(value) => value,
-                LeaseSecondsParse::Invalid(error) => return Err(error.into()),
-            },
-            now: match TimestampParse::from(1000) {
-                TimestampParse::Parsed(value) => value,
-                TimestampParse::Invalid(error) => return Err(error.into()),
-            },
+            ttl: LeaseSeconds::try_from(10)?,
+            now: Timestamp::try_from(1000)?,
         })
     }
 }
@@ -86,16 +73,10 @@ fn typed_round_trip_and_lifecycle() -> anyhow::Result<()> {
     task.ready(WorkerAt {
         agent: &agent,
         attempt: Attempt::UNCLAIMED.advance()?,
-        now: match TimestampParse::from(2000) {
-            TimestampParse::Parsed(value) => value,
-            TimestampParse::Invalid(error) => return Err(error.into()),
-        },
+        now: Timestamp::try_from(2000)?,
     })?;
     assert!(matches!(task.state, TaskState::Ready { .. }));
-    task.integrate(match CommitIdParse::from("a".repeat(40)) {
-        CommitIdParse::Parsed(value) => value,
-        CommitIdParse::Invalid(error) => return Err(error.into()),
-    })?;
+    task.integrate(CommitId::try_from("a".repeat(40))?)?;
     task.require_dependency()?;
     assert!(matches!(
         task.requeue(),
@@ -106,11 +87,7 @@ fn typed_round_trip_and_lifecycle() -> anyhow::Result<()> {
         Err(LedgerError::InvalidTransition)
     ));
     assert_eq!(
-        task.view(match TimestampParse::from(50000) {
-            TimestampParse::Parsed(value) => value,
-            TimestampParse::Invalid(error) => return Err(error.into()),
-        })
-        .lease,
+        task.view(Timestamp::try_from(50000)?).lease,
         LeaseHealth::NotRunning
     );
     Ok(())
@@ -122,31 +99,18 @@ fn expiry_and_reassignment_reject_stale_attempts() -> anyhow::Result<()> {
     task.claim(Scenario::claim()?)?;
     let agent = AgentId::Development(DevelopmentAgent::RustDev);
     assert_eq!(
-        task.clone()
-            .view(match TimestampParse::from(10000) {
-                TimestampParse::Parsed(value) => value,
-                TimestampParse::Invalid(error) => return Err(error.into()),
-            })
-            .lease,
+        task.clone().view(Timestamp::try_from(10000)?).lease,
         LeaseHealth::Current
     );
     assert_eq!(
-        task.clone()
-            .view(match TimestampParse::from(11000) {
-                TimestampParse::Parsed(value) => value,
-                TimestampParse::Invalid(error) => return Err(error.into()),
-            })
-            .lease,
+        task.clone().view(Timestamp::try_from(11000)?).lease,
         LeaseHealth::Expired
     );
     assert!(matches!(
         task.worker(WorkerAt {
             agent: &agent,
             attempt: Attempt::UNCLAIMED.advance()?,
-            now: match TimestampParse::from(11000) {
-                TimestampParse::Parsed(value) => value,
-                TimestampParse::Invalid(error) => return Err(error.into()),
-            }
+            now: Timestamp::try_from(11000)?
         }),
         Err(LedgerError::Expired)
     ));
@@ -156,10 +120,7 @@ fn expiry_and_reassignment_reject_stale_attempts() -> anyhow::Result<()> {
         task.worker(WorkerAt {
             agent: &agent,
             attempt: Attempt::UNCLAIMED.advance()?,
-            now: match TimestampParse::from(2000) {
-                TimestampParse::Parsed(value) => value,
-                TimestampParse::Invalid(error) => return Err(error.into()),
-            }
+            now: Timestamp::try_from(2000)?
         }),
         Err(LedgerError::AssignmentChanged)
     ));
@@ -168,10 +129,7 @@ fn expiry_and_reassignment_reject_stale_attempts() -> anyhow::Result<()> {
         task.worker(WorkerAt {
             agent: &stranger,
             attempt: Attempt::UNCLAIMED.advance()?.advance()?,
-            now: match TimestampParse::from(2000) {
-                TimestampParse::Parsed(value) => value,
-                TimestampParse::Invalid(error) => return Err(error.into()),
-            }
+            now: Timestamp::try_from(2000)?
         }),
         Err(LedgerError::AssignmentChanged)
     ));

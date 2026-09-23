@@ -1,6 +1,5 @@
 use super::{
-    ProtocolVersion, ProtocolVersionParse, RecordVersion, RecordVersionParse, StorageVersion,
-    StorageVersionParse, VersionFamily, VersionNumber, VersionParseError,
+    ProtocolVersion, RecordVersion, StorageVersion, VersionFamily, VersionNumber, VersionParseError,
 };
 
 #[test]
@@ -43,36 +42,27 @@ fn decoders_reject_unknown_or_non_numeric_versions() {
 fn unknown_versions_retain_family_and_original_number() {
     let unknown = 99;
     assert_eq!(
-        ProtocolVersionParse::from(unknown),
-        ProtocolVersionParse::Invalid(VersionParseError::Unsupported {
+        ProtocolVersion::try_from(unknown),
+        Err(VersionParseError::Unsupported {
             schema: VersionFamily::Command,
             version: VersionNumber::from(unknown),
         })
     );
     assert_eq!(
-        RecordVersionParse::from(unknown),
-        RecordVersionParse::Invalid(VersionParseError::Unsupported {
+        RecordVersion::try_from(unknown),
+        Err(VersionParseError::Unsupported {
             schema: VersionFamily::Record,
             version: VersionNumber::from(unknown),
         })
     );
     assert_eq!(
-        StorageVersionParse::from(unknown),
-        StorageVersionParse::Invalid(VersionParseError::Unsupported {
+        StorageVersion::try_from(unknown),
+        Err(VersionParseError::Unsupported {
             schema: VersionFamily::Database,
             version: VersionNumber::from(unknown),
         })
     );
-    assert_eq!(
-        ProtocolVersionParse::from(1),
-        ProtocolVersionParse::Parsed(ProtocolVersion::V1)
-    );
-    assert_eq!(
-        RecordVersionParse::from(1),
-        RecordVersionParse::Parsed(RecordVersion::V1)
-    );
-    assert_eq!(
-        StorageVersionParse::from(2),
-        StorageVersionParse::Parsed(StorageVersion::IndexedV2)
-    );
+    assert_eq!(ProtocolVersion::try_from(1), Ok(ProtocolVersion::V1));
+    assert_eq!(RecordVersion::try_from(1), Ok(RecordVersion::V1));
+    assert_eq!(StorageVersion::try_from(2), Ok(StorageVersion::IndexedV2));
 }

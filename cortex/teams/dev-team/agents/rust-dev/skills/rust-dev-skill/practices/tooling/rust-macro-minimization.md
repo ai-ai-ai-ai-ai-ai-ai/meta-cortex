@@ -101,21 +101,18 @@ pub enum RetryLimitError {
 macro_rules! reject_zero {
     ($value:expr) => {
         if $value == 0 {
-            return Self::Invalid(RetryLimitError::Zero);
+            return Err(RetryLimitError::Zero);
         }
     };
 }
 
 pub struct RetryLimit(u16);
-pub enum RetryLimitParse {
-    Parsed(RetryLimit),
-    Invalid(RetryLimitError),
-}
 
-impl From<u16> for RetryLimitParse {
-    fn from(raw: u16) -> Self {
+impl TryFrom<u16> for RetryLimit {
+    type Error = RetryLimitError;
+    fn try_from(raw: u16) -> Result<Self, Self::Error> {
         reject_zero!(raw);
-        Self::Parsed(RetryLimit(raw))
+        Ok(Self(raw))
     }
 }
 ```
@@ -124,17 +121,14 @@ impl From<u16> for RetryLimitParse {
 
 ```rust
 pub struct RetryLimit(u16);
-pub enum RetryLimitParse {
-    Parsed(RetryLimit),
-    Invalid(RetryLimitError),
-}
 
-impl From<u16> for RetryLimitParse {
-    fn from(raw: u16) -> Self {
+impl TryFrom<u16> for RetryLimit {
+    type Error = RetryLimitError;
+    fn try_from(raw: u16) -> Result<Self, Self::Error> {
         if raw == 0 {
-            return Self::Invalid(RetryLimitError::Zero);
+            return Err(RetryLimitError::Zero);
         }
-        Self::Parsed(RetryLimit(raw))
+        Ok(Self(raw))
     }
 }
 ```

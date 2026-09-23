@@ -137,18 +137,15 @@ pub mod publishing {
         }
     }
 
-    pub enum DocumentTextParse {
-        Empty,
-        Text(DocumentText),
-    }
+    impl TryFrom<DraftText> for DocumentText {
+        type Error = PublishError;
 
-    impl From<DraftText> for DocumentTextParse {
-        fn from(draft: DraftText) -> Self {
+        fn try_from(draft: DraftText) -> Result<Self, Self::Error> {
             let DraftText(text) = draft;
             if text.trim().is_empty() {
-                Self::Empty
+                Err(PublishError::EmptyDocument)
             } else {
-                Self::Text(DocumentText(text))
+                Ok(Self(text))
             }
         }
     }
@@ -158,10 +155,7 @@ pub mod publishing {
 
         fn try_from(draft: Draft) -> Result<Self, Self::Error> {
             let Draft { content, destination } = draft;
-            let content = match DocumentTextParse::from(content) {
-                DocumentTextParse::Text(content) => content,
-                DocumentTextParse::Empty => return Err(PublishError::EmptyDocument),
-            };
+            let content = DocumentText::try_from(content)?;
             Ok(Self { content, destination })
         }
     }

@@ -5,10 +5,10 @@ use meta_cortex_workbench::request::{
     ClaimTask, CreateTask, InitFeature, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision, TaskIdParse,
+    BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use meta_cortex_workbench::versions::{
-    StorageVersion, StorageVersionParse, VersionFamily, VersionNumber, VersionParseError,
+    StorageVersion, VersionFamily, VersionNumber, VersionParseError,
 };
 use meta_cortex_workbench::{Ledger, LedgerError, Workbench};
 use sea_query::{Expr, Iden, Index, Query, SqliteQueryBuilder};
@@ -52,12 +52,6 @@ enum DatabasePragma {
     UserVersion,
 }
 
-enum DatabaseVersion {
-    Missing,
-    Read(StorageVersionParse),
-    Failed(turso::Error),
-}
-
 struct Scenario {
     directory: TempDir,
 }
@@ -81,22 +75,13 @@ impl Scenario {
         let workbench = Workbench::discover(self.directory.path())?;
         let mut ledger = workbench
             .initialize(InitFeature {
-                feature: match FeatureIdParse::from("feature".to_owned()) {
-                    FeatureIdParse::Parsed(value) => value,
-                    FeatureIdParse::Invalid(error) => return Err(error.into()),
-                },
+                feature: FeatureId::try_from("feature".to_owned())?,
                 objective: Note::from("Example feature".to_owned()),
-                branch: match BranchNameParse::from("codex/feature".to_owned()) {
-                    BranchNameParse::Parsed(value) => value,
-                    BranchNameParse::Invalid(error) => return Err(error.into()),
-                },
+                branch: BranchName::try_from("codex/feature".to_owned())?,
                 worktree: self.directory.path().to_path_buf(),
             })
             .await?;
-        let task = match TaskIdParse::from("task".to_owned()) {
-            TaskIdParse::Parsed(task) => task,
-            TaskIdParse::Invalid(error) => return Err(error.into()),
-        };
+        let task = TaskId::try_from("task".to_owned())?;
         let task = CreateTask {
             feature: ledger.info().feature.id,
             task,
@@ -117,30 +102,23 @@ impl Scenario {
         Ok(ledger)
     }
 
-    async fn version(connection: &Connection) -> anyhow::Result<StorageVersionParse> {
-        let mut version = DatabaseVersion::Missing;
+    async fn version(connection: &Connection) -> anyhow::Result<VersionNumber> {
+        let mut version = Err(anyhow::anyhow!("missing database version"));
         connection
             .pragma_query(&DatabasePragma::UserVersion.to_string(), |row| {
-                version = match row.get::<i64>(0) {
-                    Ok(value) => DatabaseVersion::Read(StorageVersionParse::from(value)),
-                    Err(error) => DatabaseVersion::Failed(error),
-                };
+                version = row
+                    .get::<i64>(0)
+                    .map(VersionNumber::from)
+                    .map_err(Into::into);
                 Ok(())
             })
             .await?;
-        match version {
-            DatabaseVersion::Missing => bail!("missing database version"),
-            DatabaseVersion::Read(version) => Ok(version),
-            DatabaseVersion::Failed(error) => Err(error.into()),
-        }
+        version
     }
 
     async fn open(&self) -> Result<Ledger, LedgerError> {
         Workbench::discover(self.directory.path())?
-            .open(match FeatureIdParse::from("feature".to_owned()) {
-                FeatureIdParse::Parsed(value) => value,
-                FeatureIdParse::Invalid(error) => return Err(error.into()),
-            })
+            .open(FeatureId::try_from("feature".to_owned())?)
             .await
     }
 }
@@ -161,8 +139,18 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                     .build()
                     .await?;
                 let conn = db.connect()?;
-                conn.execute(Index::drop().name(EventIndex::EventsTaskRevision.to_string()).to_string(SqliteQueryBuilder), ()).await?;
-                conn.pragma_update(&DatabasePragma::UserVersion.to_string(), StorageVersion::DocumentsV1).await?;
+                conn.execute(
+                    Index::drop()
+                        .name(EventIndex::EventsTaskRevision.to_string())
+                        .to_string(SqliteQueryBuilder),
+                    (),
+                )
+                .await?;
+                conn.pragma_update(
+                    &DatabasePragma::UserVersion.to_string(),
+                    StorageVersion::DocumentsV1,
+                )
+                .await?;
             }
             let ledger = scenario.open().await?;
             assert_eq!(ledger.status().await?.len(), 1);
@@ -173,8 +161,15 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                     .build()
                     .await?;
                 let conn = db.connect()?;
-                assert_eq!(Scenario::version(&conn).await?, StorageVersionParse::Parsed(StorageVersion::IndexedV2));
-                conn.pragma_update(&DatabasePragma::UserVersion.to_string(), VersionNumber::from(99)).await?;
+                assert_eq!(
+                    Scenario::version(&conn).await?,
+                    VersionNumber::from(i64::from(StorageVersion::IndexedV2))
+                );
+                conn.pragma_update(
+                    &DatabasePragma::UserVersion.to_string(),
+                    VersionNumber::from(99),
+                )
+                .await?;
             }
             assert!(matches!(
                 scenario.open().await,
@@ -188,9 +183,7 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                 .build()
                 .await?;
             let conn = db.connect()?;
-            assert!(matches!(Scenario::version(&conn).await?, StorageVersionParse::Invalid(VersionParseError::Unsupported {
-                schema: VersionFamily::Database, version
-            }) if version == VersionNumber::from(99)));
+            assert_eq!(Scenario::version(&conn).await?, VersionNumber::from(99));
             anyhow::Ok(())
         })
 }

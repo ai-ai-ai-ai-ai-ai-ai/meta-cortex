@@ -9,86 +9,52 @@ use thiserror::Error;
 #[derive(
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
 )]
-#[serde(try_from = "TaskIdParse")]
+#[serde(try_from = "String")]
 #[schemars(with = "String")]
 pub struct TaskId(String);
 
-/// Complete classification of the external representation of a TaskId.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "String")]
-pub enum TaskIdParse {
-    Parsed(TaskId),
-    Invalid(IdentifierParseError),
-}
+impl TryFrom<String> for TaskId {
+    type Error = IdentifierParseError;
 
-impl From<String> for TaskIdParse {
-    fn from(value: String) -> Self {
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
-            return Self::Invalid(IdentifierParseError::Empty);
+            return Err(IdentifierParseError::Empty);
         }
         if value.len() > 128 {
-            return Self::Invalid(IdentifierParseError::TooLong);
+            return Err(IdentifierParseError::TooLong);
         }
         if !value
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c))
         {
-            return Self::Invalid(IdentifierParseError::InvalidCharacters);
+            return Err(IdentifierParseError::InvalidCharacters);
         }
-        Self::Parsed(TaskId(value))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<TaskIdParse> for TaskId {
-    type Error = IdentifierParseError;
-    fn try_from(parsed: TaskIdParse) -> Result<Self, Self::Error> {
-        match parsed {
-            TaskIdParse::Parsed(value) => Ok(value),
-            TaskIdParse::Invalid(error) => Err(error),
-        }
+        Ok(TaskId(value))
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "FeatureIdParse")]
+#[serde(try_from = "String")]
 #[schemars(with = "String")]
 pub struct FeatureId(String);
 
-/// Complete classification of the external representation of a FeatureId.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "String")]
-pub enum FeatureIdParse {
-    Parsed(FeatureId),
-    Invalid(IdentifierParseError),
-}
+impl TryFrom<String> for FeatureId {
+    type Error = IdentifierParseError;
 
-impl From<String> for FeatureIdParse {
-    fn from(value: String) -> Self {
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
-            return Self::Invalid(IdentifierParseError::Empty);
+            return Err(IdentifierParseError::Empty);
         }
         if value.len() > 128 {
-            return Self::Invalid(IdentifierParseError::TooLong);
+            return Err(IdentifierParseError::TooLong);
         }
         if !value
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c))
         {
-            return Self::Invalid(IdentifierParseError::InvalidCharacters);
+            return Err(IdentifierParseError::InvalidCharacters);
         }
-        Self::Parsed(FeatureId(value))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<FeatureIdParse> for FeatureId {
-    type Error = IdentifierParseError;
-    fn try_from(parsed: FeatureIdParse) -> Result<Self, Self::Error> {
-        match parsed {
-            FeatureIdParse::Parsed(value) => Ok(value),
-            FeatureIdParse::Invalid(error) => Err(error),
-        }
+        Ok(FeatureId(value))
     }
 }
 
@@ -126,82 +92,48 @@ impl From<Note> for String {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "BranchNameParse")]
+#[serde(try_from = "String")]
 #[schemars(with = "String")]
 pub struct BranchName(String);
 
-/// Complete classification of the external representation of a BranchName.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "String")]
-pub enum BranchNameParse {
-    Parsed(BranchName),
-    Invalid(BranchNameParseError),
-}
+impl TryFrom<String> for BranchName {
+    type Error = BranchNameParseError;
 
-impl From<String> for BranchNameParse {
-    fn from(value: String) -> Self {
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.is_empty() {
-            return Self::Invalid(BranchNameParseError::Empty);
+            return Err(BranchNameParseError::Empty);
         }
         if value.starts_with('-') {
-            return Self::Invalid(BranchNameParseError::LeadingDash);
+            return Err(BranchNameParseError::LeadingDash);
         }
         if value.contains(char::is_whitespace) {
-            return Self::Invalid(BranchNameParseError::Whitespace);
+            return Err(BranchNameParseError::Whitespace);
         }
-        Self::Parsed(BranchName(value))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<BranchNameParse> for BranchName {
-    type Error = BranchNameParseError;
-    fn try_from(parsed: BranchNameParse) -> Result<Self, Self::Error> {
-        match parsed {
-            BranchNameParse::Parsed(value) => Ok(value),
-            BranchNameParse::Invalid(error) => Err(error),
-        }
+        Ok(BranchName(value))
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "CommitIdParse")]
+#[serde(try_from = "String")]
 #[schemars(with = "String")]
 pub struct CommitId(String);
 
-/// Complete classification of the external representation of a CommitId.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "String")]
-pub enum CommitIdParse {
-    Parsed(CommitId),
-    Invalid(CommitIdParseError),
-}
+impl TryFrom<String> for CommitId {
+    type Error = CommitIdParseError;
 
-impl From<String> for CommitIdParse {
-    fn from(value: String) -> Self {
+    fn try_from(value: String) -> Result<Self, Self::Error> {
         if !matches!(value.len(), 40 | 64) {
-            return Self::Invalid(CommitIdParseError::InvalidLength);
+            return Err(CommitIdParseError::InvalidLength);
         }
         if !value.bytes().all(|c| c.is_ascii_hexdigit()) {
-            return Self::Invalid(CommitIdParseError::InvalidHex);
+            return Err(CommitIdParseError::InvalidHex);
         }
-        Self::Parsed(CommitId(value.to_ascii_lowercase()))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<CommitIdParse> for CommitId {
-    type Error = CommitIdParseError;
-    fn try_from(parsed: CommitIdParse) -> Result<Self, Self::Error> {
-        match parsed {
-            CommitIdParse::Parsed(value) => Ok(value),
-            CommitIdParse::Invalid(error) => Err(error),
-        }
+        Ok(CommitId(value.to_ascii_lowercase()))
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "RevisionParse")]
+#[serde(try_from = "i64")]
 #[schemars(with = "i64")]
 pub struct Revision(i64);
 
@@ -216,31 +148,14 @@ impl Revision {
     }
 }
 
-/// Complete classification of the external representation of a Revision.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "i64")]
-pub enum RevisionParse {
-    Parsed(Revision),
-    Invalid(RevisionParseError),
-}
-
-impl From<i64> for RevisionParse {
-    fn from(value: i64) -> Self {
-        if value < 1 {
-            return Self::Invalid(RevisionParseError::NonPositive);
-        }
-        Self::Parsed(Revision(value))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<RevisionParse> for Revision {
+impl TryFrom<i64> for Revision {
     type Error = RevisionParseError;
-    fn try_from(parsed: RevisionParse) -> Result<Self, Self::Error> {
-        match parsed {
-            RevisionParse::Parsed(value) => Ok(value),
-            RevisionParse::Invalid(error) => Err(error),
+
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        if value < 1 {
+            return Err(RevisionParseError::NonPositive);
         }
+        Ok(Revision(value))
     }
 }
 
@@ -252,7 +167,7 @@ impl From<Revision> for i64 {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "AttemptParse")]
+#[serde(try_from = "i64")]
 #[schemars(with = "i64")]
 pub struct Attempt(i64);
 
@@ -267,38 +182,21 @@ impl Attempt {
     }
 }
 
-/// Complete classification of the external representation of a Attempt.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "i64")]
-pub enum AttemptParse {
-    Parsed(Attempt),
-    Invalid(AttemptParseError),
-}
-
-impl From<i64> for AttemptParse {
-    fn from(value: i64) -> Self {
-        if value < 0 {
-            return Self::Invalid(AttemptParseError::Negative);
-        }
-        Self::Parsed(Attempt(value))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<AttemptParse> for Attempt {
+impl TryFrom<i64> for Attempt {
     type Error = AttemptParseError;
-    fn try_from(parsed: AttemptParse) -> Result<Self, Self::Error> {
-        match parsed {
-            AttemptParse::Parsed(value) => Ok(value),
-            AttemptParse::Invalid(error) => Err(error),
+
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        if value < 0 {
+            return Err(AttemptParseError::Negative);
         }
+        Ok(Attempt(value))
     }
 }
 
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
 )]
-#[serde(try_from = "TimestampParse")]
+#[serde(try_from = "i64")]
 #[schemars(with = "i64")]
 pub struct Timestamp(i64);
 
@@ -319,36 +217,19 @@ impl Timestamp {
     }
 }
 
-/// Complete classification of the external representation of a Timestamp.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "i64")]
-pub enum TimestampParse {
-    Parsed(Timestamp),
-    Invalid(TimestampParseError),
-}
-
-impl From<i64> for TimestampParse {
-    fn from(value: i64) -> Self {
-        if value < 0 {
-            return Self::Invalid(TimestampParseError::BeforeEpoch);
-        }
-        Self::Parsed(Timestamp(value))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<TimestampParse> for Timestamp {
+impl TryFrom<i64> for Timestamp {
     type Error = TimestampParseError;
-    fn try_from(parsed: TimestampParse) -> Result<Self, Self::Error> {
-        match parsed {
-            TimestampParse::Parsed(value) => Ok(value),
-            TimestampParse::Invalid(error) => Err(error),
+
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
+        if value < 0 {
+            return Err(TimestampParseError::BeforeEpoch);
         }
+        Ok(Timestamp(value))
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "LeaseSecondsParse")]
+#[serde(try_from = "i64")]
 #[schemars(with = "i64")]
 pub struct LeaseSeconds(i64);
 
@@ -356,34 +237,17 @@ impl LeaseSeconds {
     pub const TEN_MINUTES: Self = Self(600);
 }
 
-/// Complete classification of the external representation of a LeaseSeconds.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "i64")]
-pub enum LeaseSecondsParse {
-    Parsed(LeaseSeconds),
-    Invalid(LeaseSecondsParseError),
-}
+impl TryFrom<i64> for LeaseSeconds {
+    type Error = LeaseSecondsParseError;
 
-impl From<i64> for LeaseSecondsParse {
-    fn from(value: i64) -> Self {
+    fn try_from(value: i64) -> Result<Self, Self::Error> {
         if value < 1 {
-            return Self::Invalid(LeaseSecondsParseError::NonPositive);
+            return Err(LeaseSecondsParseError::NonPositive);
         }
         if value > 86400 {
-            return Self::Invalid(LeaseSecondsParseError::TooLong);
+            return Err(LeaseSecondsParseError::TooLong);
         }
-        Self::Parsed(LeaseSeconds(value))
-    }
-}
-
-// Serde requires Result; application callers match the classification directly.
-impl TryFrom<LeaseSecondsParse> for LeaseSeconds {
-    type Error = LeaseSecondsParseError;
-    fn try_from(parsed: LeaseSecondsParse) -> Result<Self, Self::Error> {
-        match parsed {
-            LeaseSecondsParse::Parsed(value) => Ok(value),
-            LeaseSecondsParse::Invalid(error) => Err(error),
-        }
+        Ok(LeaseSeconds(value))
     }
 }
 

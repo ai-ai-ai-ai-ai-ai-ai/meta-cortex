@@ -27,12 +27,6 @@ pub enum Version {
     V0_6_2,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum VersionParse {
-    Parsed(Version),
-    Invalid(VersionTextError),
-}
-
 #[derive(Debug, PartialEq, Eq, Error)]
 pub enum VersionTextError {
     #[error("version text must not be empty")]
@@ -43,24 +37,26 @@ pub enum VersionTextError {
     Unsupported,
 }
 
-impl From<String> for VersionParse {
-    fn from(text: String) -> Self {
+impl TryFrom<String> for Version {
+    type Error = VersionTextError;
+
+    fn try_from(text: String) -> Result<Self, Self::Error> {
         let text = text.trim();
         if text.is_empty() {
-            return Self::Invalid(VersionTextError::Empty);
+            return Err(VersionTextError::Empty);
         }
         if text.contains(char::is_whitespace) {
-            return Self::Invalid(VersionTextError::Whitespace);
+            return Err(VersionTextError::Whitespace);
         }
         Self::release(text)
     }
 }
 
-impl VersionParse {
-    const fn release(text: &str) -> Self {
+impl Version {
+    const fn release(text: &str) -> Result<Self, VersionTextError> {
         match text.as_bytes() {
-            b"0.6.2" => Self::Parsed(Version::V0_6_2),
-            _ => Self::Invalid(VersionTextError::Unsupported),
+            b"0.6.2" => Ok(Version::V0_6_2),
+            _ => Err(VersionTextError::Unsupported),
         }
     }
 }
@@ -72,9 +68,9 @@ impl From<Version> for &'static str {
 }
 
 impl Version {
-    pub const CURRENT: Self = match VersionParse::release(env!("CARGO_PKG_VERSION")) {
-        VersionParse::Parsed(version) => version,
-        VersionParse::Invalid(_) => {
+    pub const CURRENT: Self = match Self::release(env!("CARGO_PKG_VERSION")) {
+        Ok(version) => version,
+        Err(_) => {
             panic!("declare the Cargo package release in Version and its wire mappings")
         }
     };
@@ -91,12 +87,7 @@ impl Version {
         match fs::symlink_metadata(&path) {
             Ok(metadata) if metadata.is_file() && !metadata.file_type().is_symlink() => {
                 let text = fs::read_to_string(&path)?;
-                match VersionParse::from(text) {
-                    VersionParse::Parsed(version) => Ok(version),
-                    VersionParse::Invalid(reason) => {
-                        Err(VersionError::InvalidText { path, reason })
-                    }
-                }
+                Self::try_from(text).map_err(|reason| VersionError::InvalidText { path, reason })
             }
             Ok(_) => Err(VersionError::InvalidFile(path)),
             Err(error) => Err(error.into()),

@@ -1,4 +1,4 @@
-use super::{Version, VersionParse, VersionTextError};
+use super::{Version, VersionTextError};
 
 #[test]
 fn current_version_matches_cargo_package_version() {
@@ -7,17 +7,17 @@ fn current_version_matches_cargo_package_version() {
 }
 
 #[test]
-fn installed_version_classifies_text_and_preserves_wire_format() -> serde_json::Result<()> {
+fn installed_version_returns_typed_errors_and_preserves_wire_format() -> serde_json::Result<()> {
     for text in ["", " ", "\n\t"] {
         assert_eq!(
-            VersionParse::from(text.to_owned()),
-            VersionParse::Invalid(VersionTextError::Empty)
+            Version::try_from(text.to_owned()),
+            Err(VersionTextError::Empty)
         );
     }
     for text in ["1 2", "1\n2"] {
         assert_eq!(
-            VersionParse::from(text.to_owned()),
-            VersionParse::Invalid(VersionTextError::Whitespace)
+            Version::try_from(text.to_owned()),
+            Err(VersionTextError::Whitespace)
         );
     }
     for text in [
@@ -29,20 +29,14 @@ fn installed_version_classifies_text_and_preserves_wire_format() -> serde_json::
         "v0.6.2",
     ] {
         assert_eq!(
-            VersionParse::from(text.to_owned()),
-            VersionParse::Invalid(VersionTextError::Unsupported)
+            Version::try_from(text.to_owned()),
+            Err(VersionTextError::Unsupported)
         );
     }
     assert_eq!(Version::CURRENT, Version::V0_6_2);
     let text = Version::V0_6_2.as_str().to_owned();
-    assert_eq!(
-        VersionParse::from(text.clone()),
-        VersionParse::Parsed(Version::CURRENT)
-    );
-    assert_eq!(
-        VersionParse::from(format!("{text}\n")),
-        VersionParse::Parsed(Version::CURRENT)
-    );
+    assert_eq!(Version::try_from(text.clone()), Ok(Version::CURRENT));
+    assert_eq!(Version::try_from(format!("{text}\n")), Ok(Version::CURRENT));
     assert_eq!(
         serde_json::to_string(&Version::CURRENT)?,
         serde_json::to_string(&text)?

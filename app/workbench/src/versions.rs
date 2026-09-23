@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "ProtocolVersionParse", into = "i64")]
+#[serde(try_from = "i64", into = "i64")]
 #[schemars(with = "i64")]
 pub enum ProtocolVersion {
     V1,
@@ -22,18 +22,13 @@ impl From<ProtocolVersion> for i64 {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "i64")]
-pub enum ProtocolVersionParse {
-    Parsed(ProtocolVersion),
-    Invalid(VersionParseError),
-}
+impl TryFrom<i64> for ProtocolVersion {
+    type Error = VersionParseError;
 
-impl From<i64> for ProtocolVersionParse {
-    fn from(version: i64) -> Self {
+    fn try_from(version: i64) -> Result<Self, Self::Error> {
         match version {
-            1 => Self::Parsed(ProtocolVersion::V1),
-            _ => Self::Invalid(VersionParseError::Unsupported {
+            1 => Ok(ProtocolVersion::V1),
+            _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::Command,
                 version: VersionNumber::from(version),
             }),
@@ -41,19 +36,8 @@ impl From<i64> for ProtocolVersionParse {
     }
 }
 
-// Serde adapter only; callers inspect ProtocolVersionParse.
-impl TryFrom<ProtocolVersionParse> for ProtocolVersion {
-    type Error = VersionParseError;
-    fn try_from(parsed: ProtocolVersionParse) -> Result<Self, Self::Error> {
-        match parsed {
-            ProtocolVersionParse::Parsed(version) => Ok(version),
-            ProtocolVersionParse::Invalid(error) => Err(error),
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "RecordVersionParse", into = "i64")]
+#[serde(try_from = "i64", into = "i64")]
 #[schemars(with = "i64")]
 pub enum RecordVersion {
     V1,
@@ -71,18 +55,13 @@ impl From<RecordVersion> for i64 {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "i64")]
-pub enum RecordVersionParse {
-    Parsed(RecordVersion),
-    Invalid(VersionParseError),
-}
+impl TryFrom<i64> for RecordVersion {
+    type Error = VersionParseError;
 
-impl From<i64> for RecordVersionParse {
-    fn from(version: i64) -> Self {
+    fn try_from(version: i64) -> Result<Self, Self::Error> {
         match version {
-            1 => Self::Parsed(RecordVersion::V1),
-            _ => Self::Invalid(VersionParseError::Unsupported {
+            1 => Ok(RecordVersion::V1),
+            _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::Record,
                 version: VersionNumber::from(version),
             }),
@@ -90,19 +69,8 @@ impl From<i64> for RecordVersionParse {
     }
 }
 
-// Serde adapter only; callers inspect RecordVersionParse.
-impl TryFrom<RecordVersionParse> for RecordVersion {
-    type Error = VersionParseError;
-    fn try_from(parsed: RecordVersionParse) -> Result<Self, Self::Error> {
-        match parsed {
-            RecordVersionParse::Parsed(version) => Ok(version),
-            RecordVersionParse::Invalid(error) => Err(error),
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize)]
-#[serde(try_from = "StorageVersionParse", into = "i64")]
+#[serde(try_from = "i64", into = "i64")]
 pub enum StorageVersion {
     #[display("0")]
     Empty,
@@ -116,34 +84,18 @@ impl StorageVersion {
     pub const CURRENT: Self = Self::IndexedV2;
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(from = "i64")]
-pub enum StorageVersionParse {
-    Parsed(StorageVersion),
-    Invalid(VersionParseError),
-}
+impl TryFrom<i64> for StorageVersion {
+    type Error = VersionParseError;
 
-impl From<i64> for StorageVersionParse {
-    fn from(version: i64) -> Self {
+    fn try_from(version: i64) -> Result<Self, Self::Error> {
         match version {
-            0 => Self::Parsed(StorageVersion::Empty),
-            1 => Self::Parsed(StorageVersion::DocumentsV1),
-            2 => Self::Parsed(StorageVersion::IndexedV2),
-            _ => Self::Invalid(VersionParseError::Unsupported {
+            0 => Ok(StorageVersion::Empty),
+            1 => Ok(StorageVersion::DocumentsV1),
+            2 => Ok(StorageVersion::IndexedV2),
+            _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::Database,
                 version: VersionNumber::from(version),
             }),
-        }
-    }
-}
-
-// Serde adapter only; callers inspect StorageVersionParse.
-impl TryFrom<StorageVersionParse> for StorageVersion {
-    type Error = VersionParseError;
-    fn try_from(parsed: StorageVersionParse) -> Result<Self, Self::Error> {
-        match parsed {
-            StorageVersionParse::Parsed(version) => Ok(version),
-            StorageVersionParse::Invalid(error) => Err(error),
         }
     }
 }

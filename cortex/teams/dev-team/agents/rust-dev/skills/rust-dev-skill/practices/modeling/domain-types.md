@@ -88,7 +88,7 @@ pub struct OrderLine {
 }
 ```
 
-These wrappers are infallible examples. Use [explicit parse states](#classify-primitive-wrapper-input-with-explicit-states)
+These wrappers are infallible examples. Use [typed parsing results](#parse-according-to-domain-structure)
 when the domain restricts the value. Named enums represent states; do not use
 primitive sentinels to encode them.
 
@@ -195,9 +195,9 @@ by name. Runtime input may require validation; closed choices use variants, open
 text uses domain values, and stable scalar quantities use named typed constants.
 
 These call-site alternatives assume the owning `LeaseSeconds` type validates
-external durations through a `LeaseSecondsParse` enum and declares
-`pub const TEN_MINUTES: Self = Self(600)` inside its implementation. The prohibited call illustrates the superseded API; the preferred call avoids
-reclassifying a known, reusable domain quantity.
+external durations through `TryFrom<i64>` and declares
+`pub const TEN_MINUTES: Self = Self(600)` inside its implementation. The preferred
+call avoids revalidating a known, reusable domain quantity.
 
 **Prohibited:** reconstruct a known quantity through runtime validation.
 
@@ -381,7 +381,7 @@ impl FieldIndex {
 ```
 
 - Use `From<Primitive>` for an infallible single-field wrapper.
-- Use an [explicit classification enum](#classify-primitive-wrapper-input-with-explicit-states) for constrained wrapper input. Empty free-form prose
+- Use an [validating conversion returning `Result`](#parse-according-to-domain-structure) for constrained wrapper input. Empty free-form prose
   uses [infallible state classification](domain-states.md#represent-empty-prose-as-a-value),
   not a validation error.
 - Add associated constants only for common values with stable meaning.
@@ -393,37 +393,40 @@ impl FieldIndex {
 - Keep a named `value` field when the serialized contract must retain the
   wrapper shape.
 
-### Classify primitive-wrapper input with explicit states
+### Parse according to domain structure
 
-**Prohibit `FeatureId::try_from("example".to_owned())?` and equivalent
-`TryFrom<String>`, `TryFrom<&str>`, or `FromStr` APIs for string-backed domain
-wrappers.** Classify the string with infallible `From` into a domain enum naming
-all states. Constrained numeric wrappers follow the same rule for range/state
-classification. Renaming the constructor to `parse`, returning `Result` under
-another name, or adding `.into_result()?` does not satisfy this requirement.
+Before parsing text, inspect what it represents. Normalize independently meaningful
+components into typed fields; use enums for actual alternatives in that domain.
+An address can contain a street and city, with different shapes for street and
+post-office-box addresses. An atomic task ID has no such internal components.
+Punctuation alone does not establish domain structure; do not invent fields for
+opaque IDs or arbitrary prose.
 
-**Prohibited:** this API compiles but hides classification behind failure propagation.
-Assume `InvalidTaskId` is a concrete error and `input: String` comes from the edge.
+Direct parsing and validation return `Result<Value, ConcreteError>` through
+`TryFrom`, `FromStr`, or an owning parse method. This includes constrained string
+wrappers, numeric ranges, and supported-version lookup. Do not add a
+`Parsed(Value) / Invalid(Error)` enum that merely renames `Result`. A structured
+value's parser also returns `Result`; its successful value carries the components
+and meaningful alternatives. Keep validated fields private and propagate with `?`.
+
+**Prohibited:** a result-shaped enum adds no domain information.
+This fragment assumes the validated `TaskId` and `IdentifierParseError` below.
 
 ```rust
-pub struct TaskId(String);
-impl TryFrom<String> for TaskId {
-    type Error = InvalidTaskId;
-    fn try_from(text: String) -> Result<Self, Self::Error> {
-        if text.is_empty() { Err(InvalidTaskId) } else { Ok(Self(text)) }
-    }
+pub enum TaskIdParse {
+    Parsed(TaskId),
+    Invalid(IdentifierParseError),
 }
-let task = TaskId::try_from(input)?;
 ```
 
-**Preferred:** classification always returns a named state; only `Parsed` carries
-an ID. This example uses `thiserror`; the caller returns a concrete error that
-can wrap `IdentifierParseError`.
+**Preferred:** direct validation returns the domain value or a concrete error.
+This complete type definition uses `thiserror`.
 
 ```rust
+#[derive(Debug, PartialEq, Eq)]
 pub struct TaskId(String);
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, Eq, thiserror::Error)]
 pub enum IdentifierParseError {
     #[error("identifier must not be empty")]
     Empty,
@@ -433,48 +436,63 @@ pub enum IdentifierParseError {
     InvalidCharacters,
 }
 
-pub enum TaskIdParse {
-    Parsed(TaskId),
-    Invalid(IdentifierParseError),
-}
+impl TryFrom<String> for TaskId {
+    type Error = IdentifierParseError;
 
-impl From<String> for TaskIdParse {
-    fn from(text: String) -> Self {
+    fn try_from(text: String) -> Result<Self, Self::Error> {
         if text.is_empty() {
-            return Self::Invalid(IdentifierParseError::Empty);
+            return Err(IdentifierParseError::Empty);
         }
         if text.len() > 128 {
-            return Self::Invalid(IdentifierParseError::TooLong);
+            return Err(IdentifierParseError::TooLong);
         }
         if !text.bytes().all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c)) {
-            return Self::Invalid(IdentifierParseError::InvalidCharacters);
+            return Err(IdentifierParseError::InvalidCharacters);
         }
-        Self::Parsed(TaskId(text))
+        Ok(Self(text))
     }
 }
-
-let task = match TaskIdParse::from(input) {
-    TaskIdParse::Parsed(task) => task,
-    TaskIdParse::Invalid(error) => return Err(error.into()),
-};
 ```
 
-Valid empty prose uses `Note::Empty` / `Note::Text`, not an invalid ID's error
-model. Known catalogs use closed variants. Do not classify invalid IDs as usable
-IDs, invent fallback values, or expose private validated fields.
+Callers use `let task = TaskId::try_from(input)?;` in a function whose error can
+carry `IdentifierParseError`. Serde reuses the same validating conversion through
+[its conversion attribute](../boundaries/serialization-boundaries.md#reuse-validating-conversions-in-serde).
+Do not create separate validation paths for application code and deserialization.
 
-The exception is a real representation conversion: text to a number, decoding
-YAML, or integer narrowing can return `Result<T, ConcreteError>`. Those operations
-can fail to produce the requested representation. Merely checking the length or
-characters of a string already held by a string wrapper is classification.
-I/O and validated workflow operations also keep their typed `Result` contracts.
+**Prohibited:** an address wrapper hides components needed by delivery behavior.
 
-Serde's required `Result` interface is isolated in an enum-to-value adapter,
-shown in [serialization boundaries](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate).
-It must exhaustively map the already-classified enum, never validate raw input
-again. Application code, catalog examples, and fixtures match the enum directly;
-they must not call that adapter, use `?` to hide the classification, or round-trip
-through serialization to obtain a validated value.
+```rust
+pub struct Address(String);
+```
+
+**Preferred:** retain components and meaningful address alternatives.
+These illustrative types assume `derive_more` with its `from` feature. They show
+ownership, not a universal address grammar; a parser for the supported input format
+returns `Result<Address, AddressParseError>` and validates its components.
+
+```rust
+#[derive(derive_more::From)]
+pub struct Street(String);
+#[derive(derive_more::From)]
+pub struct City(String);
+#[derive(derive_more::From)]
+pub struct PostOfficeBoxNumber(String);
+
+pub struct StreetAddress {
+    pub street: Street,
+    pub city: City,
+}
+
+pub enum Address {
+    Street(StreetAddress),
+    PostOfficeBox { number: PostOfficeBoxNumber, city: City },
+}
+```
+
+A single supported address shape needs only a struct. Do not invent alternatives
+just to introduce an enum. Known catalogs still use closed variants, and valid
+empty prose may retain a meaningful `Note::Empty` / `Note::Text` state. Neither is
+a parse-result wrapper. Never treat rejected input as a usable ID or a default.
 
 ### Access wrappers through patterns or domain methods
 
@@ -597,9 +615,9 @@ pub struct StoreId(String);
 ```
 
 Wire JSON stays unchanged; the Rust API is typed. If the string is constrained,
-classify it through explicit parse states and use the
-[Serde adapter](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate)
-to reject invalid states. A transparent derive alone would bypass classification.
+validate it through `TryFrom` and use the
+[Serde conversion attribute](../boundaries/serialization-boundaries.md#reuse-validating-conversions-in-serde)
+to reject invalid input. A transparent derive alone would bypass validation.
 
 ### Model supported schema revisions explicitly
 
@@ -633,35 +651,19 @@ let version = EventSchemaVersion::try_from(2)?;
 
 ```rust
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(try_from = "EventVersionParse", into = "u32")]
+#[serde(try_from = "u32", into = "u32")]
 pub enum EventSchemaVersion { V1, V2 }
-
-#[derive(serde::Deserialize)]
-#[serde(from = "u32")]
-pub enum EventVersionParse {
-    Parsed(EventSchemaVersion),
-    Unsupported(UnsupportedEventVersion),
-}
 
 impl EventSchemaVersion {
     pub const CURRENT: Self = Self::V2;
 }
-impl From<u32> for EventVersionParse {
-    fn from(value: u32) -> Self {
-        match value {
-            1 => Self::Parsed(EventSchemaVersion::V1),
-            2 => Self::Parsed(EventSchemaVersion::V2),
-            _ => Self::Unsupported(UnsupportedEventVersion),
-        }
-    }
-}
-// Serde adapter only; application callers match EventVersionParse.
-impl TryFrom<EventVersionParse> for EventSchemaVersion {
+impl TryFrom<u32> for EventSchemaVersion {
     type Error = UnsupportedEventVersion;
-    fn try_from(parsed: EventVersionParse) -> Result<Self, Self::Error> {
-        match parsed {
-            EventVersionParse::Parsed(version) => Ok(version),
-            EventVersionParse::Unsupported(error) => Err(error),
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(Self::V1),
+            2 => Ok(Self::V2),
+            _ => Err(UnsupportedEventVersion),
         }
     }
 }
@@ -758,7 +760,7 @@ Successful parsing of an application/framework release must return a declared
 release enum, not a validated string or a general semantic-version record.
 Syntax validity does not establish membership in the supported release set.
 Declare each supported identity in code and reject unknown/retired releases
-through explicit parse states. Keep wire text only at the metadata boundary.
+with a concrete error in `Result`. Keep wire text only at the metadata boundary.
 
 These complete alternatives assume a Cargo package at version `2.4.0`. Both
 compile; the first accepts invented versions as application releases.
@@ -767,14 +769,16 @@ compile; the first accepts invented versions as application releases.
 
 ```rust
 pub struct AppRelease(String);
-pub enum ReleaseParse { Parsed(AppRelease), Invalid }
-impl From<String> for ReleaseParse {
-    fn from(text: String) -> Self {
+#[derive(Debug)]
+pub struct InvalidRelease;
+impl TryFrom<String> for AppRelease {
+    type Error = InvalidRelease;
+    fn try_from(text: String) -> Result<Self, Self::Error> {
         let text = text.trim();
         if text.is_empty() || text.contains(char::is_whitespace) {
-            return Self::Invalid;
+            return Err(InvalidRelease);
         }
-        Self::Parsed(AppRelease(text.to_owned()))
+        Ok(Self(text.to_owned()))
     }
 }
 ```
@@ -786,25 +790,27 @@ bump until its identity is declared. The wire renderer matches exhaustively.
 ```rust
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AppRelease { V2_4_0 }
-pub enum ReleaseParse { Parsed(AppRelease), Unsupported }
+#[derive(Debug, PartialEq, Eq)]
+pub struct UnsupportedRelease;
 
-impl ReleaseParse {
-    pub const fn classify(text: &str) -> Self {
+impl AppRelease {
+    pub const fn parse(text: &str) -> Result<Self, UnsupportedRelease> {
         match text.as_bytes() {
-            b"2.4.0" => Self::Parsed(AppRelease::V2_4_0),
-            _ => Self::Unsupported,
+            b"2.4.0" => Ok(Self::V2_4_0),
+            _ => Err(UnsupportedRelease),
         }
     }
 }
-impl From<String> for ReleaseParse {
-    fn from(text: String) -> Self {
-        Self::classify(text.trim())
+impl TryFrom<String> for AppRelease {
+    type Error = UnsupportedRelease;
+    fn try_from(text: String) -> Result<Self, Self::Error> {
+        Self::parse(text.trim())
     }
 }
 impl AppRelease {
-    pub const CURRENT: Self = match ReleaseParse::classify(env!("CARGO_PKG_VERSION")) {
-        ReleaseParse::Parsed(release) => release,
-        ReleaseParse::Unsupported => panic!("declare the package release in AppRelease"),
+    pub const CURRENT: Self = match Self::parse(env!("CARGO_PKG_VERSION")) {
+        Ok(release) => release,
+        Err(_) => panic!("declare the package release in AppRelease"),
     };
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -860,9 +866,9 @@ prove runtime concurrency freshness: retain revision comparisons in transactions
 ## External raw values
 
 Uncontrolled external APIs may return primitives or raw records. Accept those
-values in destination-owned `From<Raw>` conversions. Constrained primitive wrappers
-use an explicit classification enum; genuine representation conversions may use
-`TryFrom<Raw>` with a typed error. Convert immediately at the adapter, then pass only the typed
+values in destination-owned conversions: `From<Raw>` when infallible,
+`TryFrom<Raw>` with a concrete error when validation or parsing can fail.
+Convert immediately at the adapter, then pass only the typed
 result into application code. Raw conversion parameters are allowed; raw
 application contracts are not.
 
@@ -891,8 +897,8 @@ let body = MessageBody::from(external.read_message());
 inbox.receive(body);
 ```
 
-For constrained wrapper input, match the classification and handle each rejection
-explicitly. Do not panic, replace invalid input with a default, or make invalid
+For constrained wrapper input, propagate a typed error or match it where recovery
+depends on the rejection reason. Do not panic, replace invalid input with a default, or make invalid
 states usable as validated identifiers.
 
 ## Standard conversions
@@ -905,9 +911,9 @@ conversion.
 
 - Use `From<T>` for a direct, infallible, value-preserving conversion from one
   input value.
-- Use `TryFrom<T>` for genuine representation conversions, such as text to a
-  number or narrowing an integer. Return a concrete error. It is prohibited for
-  classifying primitive wrappers; use the explicit-state rule below instead.
+- Use `TryFrom<T>` or `FromStr` for fallible parsing and validation, including
+  constrained wrappers, text to a number, and integer narrowing. Return a concrete
+  error; normalize structured successful values according to the domain.
 - Implement `From` or `TryFrom` on the destination type. Use their provided
   `Into` or `TryInto` implementations at suitable call sites.
 - Preserve private validated construction inside the owning classifier or conversion.
@@ -991,9 +997,8 @@ its import edits.
    closed choice, open domain content, private newtype
    storage, or an exact external contract. Use an enum or distinct newtype for
    application values; identify the external owner for a retained raw edge.
-3. Reject primitive-wrapper `TryFrom`/`FromStr` and equivalent hidden-`Result`
-   APIs. Verify exhaustive classification, concrete rejection variants, and the
-   narrowly scoped Serde adapter. Inspect construction and call sites to ensure the named type survives until
+3. Reject result-shaped parse enums that duplicate `Result`. Verify structured
+   successful values, concrete errors, and Serde reuse of the validating conversion. Inspect construction and call sites to ensure the named type survives until
    the actual encoding boundary. Check that serialization preserves the intended
    wire contract. Reject numeric field access, including inside wrapper methods;
    use patterns or domain methods instead. Replace positional aggregates with
