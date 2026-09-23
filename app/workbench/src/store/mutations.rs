@@ -14,6 +14,11 @@ struct TaskChange<'a> {
     now: Timestamp,
 }
 
+struct EventDetails {
+    kind: EventKind,
+    note: Note,
+}
+
 impl Ledger {
     pub async fn claim(&mut self, input: ClaimTask) -> Result<Task, LedgerError> {
         let tx = self
@@ -162,7 +167,7 @@ impl TaskChange<'_> {
     }
 
     fn coordinate(mut self, input: CoordinatorUpdate) -> Result<Event, LedgerError> {
-        let (kind, note) = match input.action {
+        let details = match input.action {
             CoordinatorAction::Integrate { commit } => {
                 self.repository.integrated(IntegrationCheck {
                     feature: self.feature,
@@ -170,29 +175,37 @@ impl TaskChange<'_> {
                     commit: &commit,
                 })?;
                 self.task.integrate(commit)?;
-                (
-                    EventKind::Integrated,
-                    Note::try_from("Integration recorded by the integration owner".to_owned())?,
-                )
+                EventDetails {
+                    kind: EventKind::Integrated,
+                    note: Note::try_from(
+                        "Integration recorded by the integration owner".to_owned(),
+                    )?,
+                }
             }
             CoordinatorAction::Requeue {
                 reason,
                 previous_execution: _,
             } => {
                 self.task.requeue()?;
-                (EventKind::Requeued, reason)
+                EventDetails {
+                    kind: EventKind::Requeued,
+                    note: reason,
+                }
             }
             CoordinatorAction::Cancel { reason } => {
                 self.task.cancel(reason.clone())?;
-                (EventKind::Cancelled, reason)
+                EventDetails {
+                    kind: EventKind::Cancelled,
+                    note: reason,
+                }
             }
         };
         self.task.last_update = self.now;
         Ok(Event {
             version: RecordVersion::CURRENT,
-            kind,
+            kind: details.kind,
             actor: input.actor,
-            note,
+            note: details.note,
             task: self.task,
         })
     }

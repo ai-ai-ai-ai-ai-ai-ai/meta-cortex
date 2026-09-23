@@ -58,9 +58,10 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[domain_types:metadata_meaning](practices/modeling/domain-types.md#classify-metadata-by-meaning)**
 
   - Use enums for closed choices and distinct newtypes for help text, metadata,
-    diagnostics, and examples, including static and private serialized fields.
+    and diagnostics, including static and private serialized fields.
   - Preserve existing string wire shapes with transparent newtypes; do not encode
     paragraphs as enum variants or use one generic text wrapper for unrelated meanings.
+  - Structured examples follow Serialization boundaries' typed construction rule.
 
 - **[domain_types:validated_records](practices/modeling/domain-types.md#construction-and-representation)**
 
@@ -122,6 +123,13 @@ in full. Include related subjects when the change crosses their boundaries.
   - Give independent schema versions distinct types, validate supported ranges when
     parsing, retain supported old versions, and require a migration before advancing the
     current wire shape.
+
+- **[domain_types:named_records](practices/modeling/domain-types.md#replace-positional-tuples-with-named-records)**
+
+  - Replace positional multi-value tuples with named domain structs throughout
+    application code and fixtures; match existing records directly.
+  - Unit and single-field newtypes are distinct; contain dependency-required
+    tuples at the exact adapter boundary.
 
 - **[domain_types:api_inventory](practices/modeling/domain-types.md#domain-api-enforcement)**
 
@@ -585,6 +593,15 @@ in full. Include related subjects when the change crosses their boundaries.
   - Preserve validated newtype invariants during Deserialize.
   - An automatic derive must not bypass validating construction.
 
+- **[serialization_boundaries:typed_construction](practices/boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values)**
+
+  - Construct known JSON/YAML from structs and enums, including catalog examples
+    and valid fixtures; encode only at I/O.
+  - Prohibit string assembly, replacement, and encode-then-parse construction;
+    text wrappers do not provide schema safety.
+  - Keep malformed inputs raw at the decoder and dynamic values inside explicitly
+    open extensions.
+
 - **[serialization_boundaries:derive_first](practices/boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate)**
 
   - Derive serialization and preserve enums in new owned wire contracts.
@@ -630,7 +647,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[serialization_boundaries:typed_tests](practices/boundaries/serialization-boundaries.md#test-the-typed-contract)**
 
   - Test concrete typed round trips and invalid-input rejection.
-  - Use raw JSON only for malformed/unknown input or exact property presence, never
+  - Use raw JSON/YAML only for malformed/unknown input or exact property presence, never
     instead of a typed domain assertion.
 
 - **[serialization_boundaries:validation](practices/boundaries/serialization-boundaries.md#validation)**

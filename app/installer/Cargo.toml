@@ -33,3 +33,4 @@ dist = true
 [dev-dependencies]
 anyhow.workspace = true
 rexpect = "0.7.1"
+serde_json = "1.0.151"

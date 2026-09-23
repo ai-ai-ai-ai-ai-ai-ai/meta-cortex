@@ -93,6 +93,26 @@ struct Response {
     result: Outcome,
 }
 
+struct CommandResult {
+    outcome: Outcome,
+    exit: ExitCode,
+}
+
+impl From<Result<Reply, AgentError>> for CommandResult {
+    fn from(result: Result<Reply, AgentError>) -> Self {
+        match result {
+            Ok(reply) => Self {
+                outcome: Outcome::Success(Box::new(reply)),
+                exit: ExitCode::SUCCESS,
+            },
+            Err(error) => Self {
+                outcome: Outcome::Error(Failure::from(&error)),
+                exit: ExitCode::from(2),
+            },
+        }
+    }
+}
+
 pub struct AgentCli;
 
 impl AgentCli {
@@ -123,13 +143,10 @@ impl AgentCli {
     }
 
     fn report(result: Result<Reply, AgentError>) -> ExitCode {
-        let (outcome, exit) = match result {
-            Ok(reply) => (Outcome::Success(Box::new(reply)), ExitCode::SUCCESS),
-            Err(error) => (Outcome::Error(Failure::from(&error)), ExitCode::from(2)),
-        };
+        let result = CommandResult::from(result);
         match serde_saphyr::to_string(&Response {
             version: ProtocolVersion::CURRENT,
-            result: outcome,
+            result: result.outcome,
         }) {
             Ok(output) => print!("{output}"),
             Err(error) => {
@@ -137,6 +154,6 @@ impl AgentCli {
                 return ExitCode::from(2);
             }
         }
-        exit
+        result.exit
     }
 }

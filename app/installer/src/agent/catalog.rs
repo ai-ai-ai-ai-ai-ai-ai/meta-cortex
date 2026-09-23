@@ -1,9 +1,20 @@
 use super::AgentError;
-use super::protocol::Request;
+use super::protocol::{
+    AgentHarness, AgentInstructions, EmptyArguments, FrameworkInit, Operation, Request,
+};
 use derive_more::{Display, From};
+use meta_cortex_workbench::model::{Progress, Workspace};
+use meta_cortex_workbench::request::{
+    ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
+    StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
+};
+use meta_cortex_workbench::values::{
+    AgentId, Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+};
 use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
 use serde::Serialize;
+use std::path::PathBuf;
 
 #[derive(Serialize)]
 pub struct Catalog {
@@ -43,123 +54,151 @@ impl TransportGuide {
 #[serde(transparent)]
 struct CommandSummary(&'static str);
 
-#[derive(From)]
-struct ExampleOperationYaml(&'static str);
-
 struct CommandExample {
     description: CommandSummary,
-    operation: ExampleOperationYaml,
+    operation: Operation,
 }
 
 #[derive(Display, From)]
 pub struct CatalogYaml(String);
 
-impl TryFrom<ExampleOperationYaml> for Request {
-    type Error = AgentError;
-
-    fn try_from(value: ExampleOperationYaml) -> Result<Self, Self::Error> {
-        let operation = value
-            .0
-            .lines()
-            .map(|line| format!("  {line}\n"))
-            .collect::<String>();
-        Ok(serde_saphyr::from_str(&format!(
-            "version: 1\nproject: /absolute/project\noperation:\n{operation}"
-        ))?)
-    }
-}
-
 impl Catalog {
     pub fn discover() -> Result<Self, AgentError> {
+        let feature = FeatureId::try_from("example".to_owned())?;
+        let task = TaskId::try_from("review".to_owned())?;
+        let coordinator = AgentId::try_from("gizmo".to_owned())?;
+        let worker = AgentId::try_from("reviewer".to_owned())?;
+        let ttl = LeaseSeconds::try_from(600)?;
         let examples = [
             CommandExample {
                 description: CommandSummary::from(
                     "Discover existing feature IDs and database paths after a coordinator restart.",
                 ),
-                operation: ExampleOperationYaml::from("name: ledger.features\narguments: {}"),
+                operation: Operation::Features(EmptyArguments {}),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Install the bundled framework without interactive prompts.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: framework.init\narguments: {harness: none, instructions: skip}",
-                ),
+                operation: Operation::FrameworkInit(FrameworkInit {
+                    harness: AgentHarness::None,
+                    instructions: AgentInstructions::Skip,
+                }),
             },
             CommandExample {
                 description: CommandSummary::from("Inspect the installed framework and models."),
-                operation: ExampleOperationYaml::from("name: framework.info\narguments: {}"),
+                operation: Operation::FrameworkInfo(EmptyArguments {}),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Initialize or reopen this feature's isolated ledger after preparing its branch and worktree.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: ledger.init\narguments:\n  feature: example\n  objective: Implement the feature\n  branch: codex/example\n  worktree: /absolute/project",
-                ),
+                operation: Operation::Initialize(InitFeature {
+                    feature: feature.clone(),
+                    objective: Note::try_from("Implement the feature".to_owned())?,
+                    branch: BranchName::try_from("codex/example".to_owned())?,
+                    worktree: PathBuf::from("/absolute/project"),
+                }),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Read all tasks, current revisions, continuation notes, and lease health for one feature.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: ledger.status\narguments: {feature: example}",
-                ),
+                operation: Operation::Status(FeatureQuery {
+                    feature: feature.clone(),
+                }),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Record a bounded assignment before launching its worker. Dependencies must already exist.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: task.create\narguments:\n  feature: example\n  task: review\n  actor: gizmo\n  objective: Review the feature\n  acceptance: [Report actionable findings]\n  dependencies: []\n  workspace: {kind: read_only}\n  progress:\n    summary: Awaiting assignment\n    findings: []\n    next_steps: [Read the diff]\n    checks: []\n    extensions: {}",
-                ),
+                operation: Operation::Create(CreateTask {
+                    feature: feature.clone(),
+                    task: task.clone(),
+                    actor: coordinator.clone(),
+                    objective: Note::try_from("Review the feature".to_owned())?,
+                    acceptance: vec![Note::try_from("Report actionable findings".to_owned())?],
+                    dependencies: Vec::new(),
+                    workspace: Workspace::ReadOnly,
+                    progress: Progress {
+                        summary: Note::try_from("Awaiting assignment".to_owned())?,
+                        findings: Vec::new(),
+                        next_steps: vec![Note::try_from("Read the diff".to_owned())?],
+                        checks: Vec::new(),
+                        extensions: Extensions::default(),
+                    },
+                }),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Read a task before changing it. Use the returned revision and attempt.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: task.get\narguments: {feature: example, task: review}",
-                ),
+                operation: Operation::Get(TaskQuery {
+                    feature: feature.clone(),
+                    task: task.clone(),
+                }),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Read the append-only task history, including previous attempts.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: task.history\narguments: {feature: example, task: review}",
-                ),
+                operation: Operation::History(TaskQuery {
+                    feature: feature.clone(),
+                    task: task.clone(),
+                }),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Claim a queued task atomically. All dependencies must be integrated.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: task.claim\narguments: {feature: example, task: review, expected_revision: 1, agent: reviewer, ttl_seconds: 600}",
-                ),
+                operation: Operation::Claim(ClaimTask {
+                    feature: feature.clone(),
+                    task: task.clone(),
+                    expected_revision: Revision::INITIAL,
+                    agent: worker.clone(),
+                    ttl_seconds: ttl,
+                }),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Worker operation: heartbeat, progress, checkpoint, or ready. The schema below describes each action. Timestamps are Unix milliseconds; TTL is 1–86400 seconds.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: task.update\narguments:\n  feature: example\n  task: review\n  expected_revision: 2\n  agent: reviewer\n  attempt: 1\n  action: {kind: heartbeat, ttl_seconds: 600}",
-                ),
+                operation: Operation::Update(WorkerUpdate {
+                    feature: feature.clone(),
+                    task: task.clone(),
+                    expected_revision: Revision::try_from(2)?,
+                    agent: worker,
+                    attempt: Attempt::try_from(1)?,
+                    action: WorkerAction::Heartbeat { ttl_seconds: ttl },
+                }),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Coordinator operation: integrate, requeue, or cancel. Requeue only after inspecting/stopping the previous execution.",
                 ),
-                operation: ExampleOperationYaml::from(
-                    "name: task.coordinate\narguments:\n  feature: example\n  task: review\n  expected_revision: 3\n  actor: gizmo\n  action:\n    kind: requeue\n    reason: Previous worker exited; resume from its recorded progress\n    previous_execution: stopped_or_finished",
-                ),
+                operation: Operation::Coordinate(CoordinatorUpdate {
+                    feature,
+                    task,
+                    expected_revision: Revision::try_from(3)?,
+                    actor: coordinator,
+                    action: CoordinatorAction::Requeue {
+                        reason: Note::try_from(
+                            "Previous worker exited; resume from its recorded progress".to_owned(),
+                        )?,
+                        previous_execution: StoppedExecution::StoppedOrFinished,
+                    },
+                }),
             },
         ];
         let mut commands = Vec::new();
         for example in examples {
             commands.push(CommandDescription {
                 description: example.description,
-                example: Request::try_from(example.operation)?,
+                example: Request {
+                    version: ProtocolVersion::CURRENT,
+                    project: PathBuf::from("/absolute/project"),
+                    operation: example.operation,
+                },
             });
         }
         Ok(Self {

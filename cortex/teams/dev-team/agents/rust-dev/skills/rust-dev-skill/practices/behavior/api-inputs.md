@@ -76,6 +76,8 @@ impl RetryPolicy {
 
 A tuple is one syntactic parameter, but independent inputs remain positional.
 Changing the container does not satisfy the named-request requirement.
+The [domain aggregate rule](../modeling/domain-types.md#replace-positional-tuples-with-named-records)
+also covers locals, returns, match results, and fixtures.
 These fragments assume a `TransferService` that owns access to the account ledger
 and executes a transfer. This operation changes balances; it is not a conversion.
 

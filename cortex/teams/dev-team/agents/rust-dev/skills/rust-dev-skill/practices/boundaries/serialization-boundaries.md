@@ -40,6 +40,43 @@ Ok(settings)
 Deserialization must also preserve domain validation. Deriving `Deserialize`
 for a constrained newtype must not bypass its validating construction.
 
+## Construct known documents from typed values
+
+Build authored JSON/YAML requests, configuration, catalog examples, and valid
+test fixtures from their concrete structs and enums. Serialize once at the I/O
+edge. Do not assemble documents through interpolation, concatenation, templates,
+indentation helpers, or string replacement. Parsing the assembled string back
+into a typed value is too late; wrapping it in a newtype is not schema safety.
+
+These alternative fragments use `DeliverySettings` above and assume
+`serde_saphyr` with its `serialize` and `deserialize` features. They belong in a
+fallible output adapter. Both compile; only the second models the document before
+encoding it.
+
+**Prohibited:** maintain the schema and enum spelling in a string template.
+
+```rust
+let mode = "Shipment";
+let yaml = format!("delivery_mode: {mode}\n");
+let settings: DeliverySettings = serde_saphyr::from_str(&yaml)?;
+let output = serde_saphyr::to_string(&settings)?;
+```
+
+**Preferred:** the compiler checks fields and alternatives; Serde owns escaping.
+
+```rust
+let settings = DeliverySettings {
+    delivery_mode: DeliveryMode::Shipment,
+};
+let output = serde_saphyr::to_string(&settings)?;
+```
+
+External input and deliberately malformed/unknown test documents remain raw
+at the decoding boundary. Open extension payloads may use dynamic values only
+where the contract explicitly permits arbitrary content; they do not make the
+surrounding known schema dynamic. Keep valid fixtures typed, including variants
+created for conflict, stale revision, or invalid transition tests.
+
 ## Derive serialization instead of writing boilerplate
 
 - Derive `Serialize` and `Deserialize` for authored data types.
@@ -194,7 +231,7 @@ Ok(settings)
 ## Test the typed contract
 
 For known schemas, round-trip the concrete type and assert its fields or variants.
-Use raw JSON only when testing malformed/unknown input or exact property presence;
+Use raw JSON/YAML only when testing malformed/unknown input or exact property presence;
 that inspection does not replace a typed round trip.
 
 These tests use the first `DeliverySettings` definition.
@@ -235,6 +272,8 @@ fn rejects_unknown_delivery_mode() {
 ## Validation
 
 - Check that application APIs expose typed values, not encoded text or erased bags.
+- Inspect authored document construction, including catalogs and fixtures, for
+  string assembly hidden behind wrappers or subsequent deserialization.
 - Inspect ABI overrides and dependency conversions for hidden untyped contracts.
 - Run typed round-trip and invalid-input tests; regenerate and type-check bindings
   when the exported contract changes.

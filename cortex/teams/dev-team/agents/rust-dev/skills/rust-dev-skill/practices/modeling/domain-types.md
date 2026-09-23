@@ -17,7 +17,7 @@ Give each domain value a distinct type. Preserve its meaning through constructio
   Add a newtype when the domain has no existing one.
 - Use named domain newtypes in all parameters, returns, fields, constants,
   and local domain values, including private code and tests.
-- Apply the rule recursively through results, collections, tuples, generics, aliases, and bounds.
+- Apply the rule recursively through results, collections, aggregates, generics, aliases, and bounds.
 - Keep primitive representations inside their owning newtype or at an external
   edge that requires them. Convert boundary input immediately.
 - Wrap user content and locale keys too; their names express different meanings.
@@ -141,6 +141,9 @@ The help wrappers preserve existing string wire fields. `RequestSource` models
 a closed choice; do not turn whole help paragraphs into enum variants just
 because only one paragraph currently exists. A scalar alias or one generic
 `Text` wrapper for unrelated meanings still permits the original mix-up.
+Structured JSON/YAML examples are records, not help prose: follow
+[typed document construction](../boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values)
+instead of wrapping their encoded source text.
 
 ### Single-field primitive wrapper
 
@@ -195,6 +198,42 @@ let credential = Credential {
 
 - Do not implement `From<(A, B, C)>` for independent aggregate fields.
 - Do not expose state-capability fields merely to permit aggregate literals.
+
+### Replace positional tuples with named records
+
+Use domain structs with named fields for multi-value data, including locals,
+returns, match results, collections, constants, and test fixtures. Typed tuple
+elements still leave their roles positional. Multi-field tuple structs and
+aliases do not fix this. Match an existing record directly instead of assembling
+its fields into a temporary tuple.
+
+These alternative fragments assume existing `EventKind` and `EventNote` types
+and corresponding `kind` and `note` values. Both compile; only the named record
+satisfies this practice.
+
+**Prohibited:** application data depends on tuple positions.
+
+```rust
+let details: (EventKind, EventNote) = (kind, note);
+let (kind, note) = details;
+```
+
+**Preferred:** give the aggregate and its fields domain meaning.
+
+```rust
+struct EventDetails {
+    kind: EventKind,
+    note: EventNote,
+}
+
+let details = EventDetails { kind, note };
+let EventDetails { kind, note } = details;
+```
+
+Unit `()` and single-field nominal newtypes such as `EventNote(String)` do not
+represent positional multi-value data. Where a dependency requires a tuple,
+consume or produce it at that exact adapter boundary; keep named records inside
+the application. This is not an exception for application-authored tuple APIs.
 
 ### Serde-transparent string newtype
 
@@ -356,7 +395,10 @@ its import edits.
    application values; identify the external owner for a retained raw edge.
 3. Inspect construction and call sites to ensure the named type survives until
    the actual encoding boundary. Check that serialization preserves the intended
-   wire contract.
+   wire contract. Replace positional aggregates with named records and apply
+   [typed document construction](../boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values)
+   to JSON/YAML examples and fixtures; a wrapper around encoded text does not
+   model its schema.
 4. Report the reviewed scope, corrections, and any remaining exceptions separately
    from compiler, Clippy, and test results. An unreviewed scope is not verified.
 

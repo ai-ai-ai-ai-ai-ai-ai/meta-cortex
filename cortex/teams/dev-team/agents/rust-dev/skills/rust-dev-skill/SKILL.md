@@ -20,6 +20,10 @@ and apply [domain types](practices/modeling/domain-types.md),
 mandatory, independent of the selected implementation practices. Complete the
 [domain-type review](practices/modeling/domain-types.md#validation) before handoff.
 
+For authored JSON/YAML, including catalogs and test fixtures, also load
+[serialization boundaries](practices/boundaries/serialization-boundaries.md).
+Apply its typed construction rule before choosing a text wrapper.
+
 **Prohibited:** select only code checks for a CLI metadata change and leave its
 application fields as raw strings because compilation passes.
 

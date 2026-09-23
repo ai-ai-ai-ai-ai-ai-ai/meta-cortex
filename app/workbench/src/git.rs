@@ -140,9 +140,15 @@ impl Repository {
 
     pub fn ready(&self, input: ReadyCheck<'_>) -> Result<(), LedgerError> {
         self.require_workspace(input.workspace)?;
-        match (input.workspace, input.checkpoint) {
-            (Workspace::ReadOnly, Checkpoint::Unrecorded) => Ok(()),
-            (Workspace::Git { path, .. }, Checkpoint::Git { commit }) => {
+        match input {
+            ReadyCheck {
+                workspace: Workspace::ReadOnly,
+                checkpoint: Checkpoint::Unrecorded,
+            } => Ok(()),
+            ReadyCheck {
+                workspace: Workspace::Git { path, .. },
+                checkpoint: Checkpoint::Git { commit },
+            } => {
                 let git = GitWorktree::from(path.clone());
                 git.require_clean()?;
                 if git.head()? != *commit {
@@ -152,8 +158,14 @@ impl Repository {
                 }
                 Ok(())
             }
-            (Workspace::ReadOnly, Checkpoint::Git { .. })
-            | (Workspace::Git { .. }, Checkpoint::Unrecorded) => Err(LedgerError::Invalid(
+            ReadyCheck {
+                workspace: Workspace::ReadOnly,
+                checkpoint: Checkpoint::Git { .. },
+            }
+            | ReadyCheck {
+                workspace: Workspace::Git { .. },
+                checkpoint: Checkpoint::Unrecorded,
+            } => Err(LedgerError::Invalid(
                 "checkpoint does not match task workspace",
             )),
         }
