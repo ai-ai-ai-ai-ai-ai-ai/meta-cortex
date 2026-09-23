@@ -23,6 +23,12 @@ and apply [domain types](practices/modeling/domain-types.md),
 mandatory, independent of the selected implementation practices. Complete the
 [domain-type review](practices/modeling/domain-types.md#validation) before handoff.
 
+Keep unit tests inline in their implementation file under `#[cfg(test)] mod tests`.
+Do not extract them into separate files. Keep ordinary production `mod`/`pub mod`
+declarations; the module-layout prohibition applies to `mod.rs` filenames only.
+Crate-level integration tests retain their own files, as defined by
+[test placement](practices/tooling/rust-testing.md#test-placement).
+
 Prohibit authored `&mut self` value-update methods, including private collection
 helpers. Consume `mut self`, return the updated owner, and use the returned value
 at each caller. Local mutation inside that owned method is permitted. Retain a

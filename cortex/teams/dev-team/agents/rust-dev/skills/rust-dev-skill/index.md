@@ -1182,17 +1182,19 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[testing:colocation](practices/tooling/rust-testing.md#test-placement)**
 
-  - Keep unit tests in `<module>/tests.rs`, declared with `#[cfg(test)] mod tests;`
-    in the implementation file; keep test helpers in test modules.
+  - Keep unit tests and helpers inline under `#[cfg(test)] mod tests` in their
+    implementation file; prohibit separate unit-test files and path/include workarounds.
+  - Keep normal production mod/pub mod declarations; banning mod.rs filenames
+    does not require extracting inline unit tests.
   - Crate tests/ integration files exercise public boundaries, not relabeled unit tests.
   - Test-harness entrypoints may contain scenario steps and assertions; reusable
     test helpers remain on fixtures and never duplicate production algorithms.
 
 - **[testing:no_size_evasion](practices/tooling/rust-testing.md#split-production-ownership-before-tests)**
 
-  - Keep production ownership focused and tests in each owner's child directory.
-  - Apply the 1,000-line limit independently to implementation and test files;
-    separating tests does not excuse oversized production abstractions.
+  - Keep production ownership focused and unit tests inline with each owner.
+  - Include inline tests in the 1,000-line limit; split production responsibilities
+    rather than extracting tests to evade the limit.
 
 - **[testing:coverage](practices/tooling/rust-testing.md#90-rust-line-coverage-floor)**
 
@@ -1346,10 +1348,10 @@ routine code.
 
 Review fixture setup and test placement when adding tests to meet the coverage floor.
 
-- **Prohibited:** Use `unwrap()` in fixture setup or leave an oversized production abstraction
-  after moving its tests.
+- **Prohibited:** Use `unwrap()` in fixture setup or extract unit tests to get the
+  implementation file below the size limit.
 - **Preferred:** Propagate setup errors from fallible tests. Split production ownership
-  and keep tests in named child files before measuring combined coverage.
+  and keep tests inline with each owner before measuring combined coverage.
 
 **Compare:**
 

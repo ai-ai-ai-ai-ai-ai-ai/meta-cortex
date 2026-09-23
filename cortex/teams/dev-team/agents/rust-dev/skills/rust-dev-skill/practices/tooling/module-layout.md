@@ -47,8 +47,9 @@ the `mod` keyword.
 
 The convention also applies recursively: `agent/worker.rs` owns children under
 `agent/worker/`. Crate entry points retain `lib.rs` and `main.rs`; integration
-test entry points retain their normal names. Put unit test bodies in named
-child files as required by [test placement](rust-testing.md#test-placement).
+test entry points retain their normal names. Keep unit tests inline in their
+implementation files as required by [test placement](rust-testing.md#test-placement).
+Do not interpret named module files as a requirement to extract inline tests.
 Dependency-owned and generated source layouts retain their external ownership.
 
 ## Preserve resolution when moving modules

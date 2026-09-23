@@ -55,49 +55,43 @@ place checks at their owning layer:
 
 ## Test placement
 
-Keep unit tests and test-only helpers in named child module files, separate from
-implementation bodies. The implementation retains `#[cfg(test)] mod tests;`;
-`<module>/tests.rs` holds the tests and accesses private items through `super`.
-Use ordinary module declarations and the [named module layout](module-layout.md).
-Do not introduce `mod.rs` or widen production visibility to move tests.
-Executable documentation examples may remain in API doc comments.
+Keep unit tests and their helpers in an inline `#[cfg(test)] mod tests { ... }`
+at the bottom of the implementation file they exercise. Access private items
+through `super`. Do not extract unit tests into `tests.rs`, `<module>/tests.rs`,
+or another file loaded through `mod tests;`, `#[path]`, or `include!`.
+
+Normal `mod child;` and `pub mod child;` declarations still connect production
+modules. The [module-layout rule](module-layout.md) prohibits the filename
+`mod.rs`; it does not prohibit module declarations or require test extraction.
+Keep visibility appropriate to the public API. Executable documentation examples
+may remain in API doc comments.
 
 **Prohibited — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
-mod tests {
-    // Test bodies mixed into the implementation file.
-    #[test]
-    fn rejects_zero() {
-        assert_eq!(super::RetryLimit::try_from(0), Err(super::RetryLimitError::Zero));
-    }
-}
+mod tests; // Loads tests from a separate file.
 ```
 
 **Preferred — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
-mod tests;
-```
+mod tests {
+    use super::{RetryLimit, RetryLimitError};
 
-**Preferred — `src/retry_limit/tests.rs`:**
+    #[test]
+    fn rejects_zero() {
+        assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+    }
 
-```rust
-use super::{RetryLimit, RetryLimitError};
+    #[test]
+    fn accepts_positive_limit() -> Result<(), RetryLimitError> {
+        let limit = RetryLimit::try_from(3)?;
 
-#[test]
-fn rejects_zero() {
-    assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
-}
-
-#[test]
-fn accepts_positive_limit() -> Result<(), RetryLimitError> {
-    let limit = RetryLimit::try_from(3)?;
-
-    assert_eq!(limit, RetryLimit(3));
-    Ok(())
+        assert_eq!(limit, RetryLimit(3));
+        Ok(())
+    }
 }
 ```
 
@@ -133,16 +127,15 @@ fn public_api_rejects_zero() {
 
 ### Split production ownership before tests
 
-The 1,000-line file limit applies to implementation and test files independently.
-Separate test files do not excuse oversized production abstractions. Split
-distinct production owners and keep each owner's tests in its child directory.
+The 1,000-line file limit includes inline unit tests. Split distinct production
+owners into cohesive modules, each with its own inline tests. Do not extract
+unit tests to lower the implementation file's line count.
 
 **Prohibited:** retain policy and limit logic in an oversized `retry_policy.rs`
-and treat moving its tests as sufficient while the implementation remains oversized.
+and move only its tests to a separate file to lower the count.
 
 **Preferred:** separate policy behavior into `retry_policy.rs` and limit
-validation into `retry_limit.rs`, with tests in `retry_policy/tests.rs` and
-`retry_limit/tests.rs` respectively.
+validation into `retry_limit.rs`, with each owner's unit tests inline in its file.
 
 ## Regression tests precede the fix
 
