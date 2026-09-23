@@ -24,6 +24,11 @@ For every TypeScript or JavaScript implementation or tooling assignment, load
 and apply [TypeScript code checks](practices/typescript-code-checks.md). This
 prerequisite is mandatory, independent of the selected implementation practices.
 
+For any YAML-producing code, load and apply
+[typed YAML construction](practices/typescript-domain-structure.md#serialize-yaml-from-typed-values)
+before implementation or review. This includes static discovery/recovery examples
+and valid fixtures; string construction is prohibited.
+
 **Prohibited:** select only browser practices and omit type checking and linting.
 
 **Preferred:** establish and run the required checks alongside browser validation.

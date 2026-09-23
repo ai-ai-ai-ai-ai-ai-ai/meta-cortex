@@ -613,7 +613,8 @@ in full. Include related subjects when the change crosses their boundaries.
 
   - Construct known JSON/YAML from structs and enums, including catalog examples
     and valid fixtures; encode only at I/O.
-  - Prohibit string assembly, replacement, and encode-then-parse construction;
+  - Prohibit YAML string literals/fragments, string assembly, replacement, and
+    encode-then-parse construction, including static discovery examples;
     text wrappers do not provide schema safety.
   - Keep malformed inputs raw at the decoder and dynamic values inside explicitly
     open extensions.

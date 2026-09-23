@@ -1,3 +1,8 @@
+import { stringify } from "yaml";
+import {
+  SkillRequestDocument,
+  type SkillRequestWire,
+} from "./request-document.ts";
 import type { ArticleFindings } from "./article.ts";
 import type { NavigationFindings } from "./navigation.ts";
 import type { CommandCatalog } from "./catalog.ts";
@@ -45,17 +50,17 @@ export interface SkillExecution {
 export class FailurePresentation {
   constructor(private readonly failure: SkillFailure) {}
   render(): SkillExecution {
+    const recovery: SkillRequestWire = {
+      version: ProtocolVersion.V1,
+      tools: { list: {} },
+    };
     const response: FailureResponse = {
       kind: ResponseKind.Failure,
       code: this.failure.code,
-      recovery: ProtocolText.yaml(
-        `version: ${ProtocolVersion.V1}\ntools:\n  list: {}`,
-      ),
+      recovery: new SkillRequestDocument(recovery).encode(),
     };
     return {
-      yaml: ProtocolText.yaml(
-        `kind: ${response.kind}\ncode: ${response.code}\nrecovery: |\n  ${response.recovery.replaceAll("\n", "\n  ")}\n`,
-      ),
+      yaml: ProtocolText.yaml(stringify(response)),
       exitCode: ExitCode.Invalid,
     };
   }

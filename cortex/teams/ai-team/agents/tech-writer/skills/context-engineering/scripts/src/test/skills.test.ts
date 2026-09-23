@@ -1,11 +1,17 @@
+import { ProtocolVersion, SkillRequestSchema } from "../ts/request.ts";
+import {
+  SkillRequestDocument,
+  type SkillRequestWire,
+} from "../ts/request-document.ts";
 import { describe, expect, test } from "bun:test";
 import { Effect, Schema } from "effect";
 import { parse } from "yaml";
+import { YamlRequest } from "../ts/transport.ts";
 import { SkillApplication } from "../ts/application.ts";
 import { type SkillExecution } from "../ts/response.ts";
 import { ProtocolText, type YamlText } from "../ts/protocol-text.ts";
 import { ResponseKind } from "../ts/response.ts";
-import { ArticleFindingCode } from "../ts/article.ts";
+import { ArticleFindingCode, BlockKind } from "../ts/article.ts";
 import { NavigationFindingCode } from "../ts/navigation.ts";
 import { RepositoryNavigationFixture } from "./repository-navigation-fixture.ts";
 import { FailureCode } from "../ts/failure.ts";
@@ -13,6 +19,12 @@ import { FailureCode } from "../ts/failure.ts";
 type FindingCode = ArticleFindingCode | NavigationFindingCode;
 type FindingCodes = readonly FindingCode[];
 type YamlExamples = readonly YamlText[];
+type ArticleWire = typeof SkillRequestSchema.articles.Encoded;
+type ArticleBlocksWire =
+  ArticleWire["articles"]["audit"]["documents"][number]["blocks"];
+type NavigationWire = typeof SkillRequestSchema.navigation.Encoded;
+type NavigationEntriesWire =
+  NavigationWire["navigation"]["audit"]["graphs"][number]["entries"];
 
 interface InvalidYamlCase {
   readonly name: string;
@@ -147,6 +159,9 @@ class SkillProbe {
   constructor(yaml: string) {
     this.yaml = ProtocolText.yaml(yaml);
   }
+  static forRequest(request: SkillRequestWire): SkillProbe {
+    return new SkillProbe(new SkillRequestDocument(request).encode());
+  }
   execute(): SkillExecution {
     return Effect.runSync(new SkillApplication(this.yaml).execute());
   }
@@ -168,32 +183,47 @@ class SkillProbe {
 
 // Synthetic facts: these paths are identifiers, not files on disk.
 class ArticleFixture {
-  constructor(private readonly blocks: string) {}
-  request(): string {
-    return `version: 1\narticles:\n  audit:\n    documents:\n      - path: fixtures/article.md\n        blocks:\n${this.blocks}`;
+  constructor(private readonly blocks: ArticleBlocksWire) {}
+  request(): ArticleWire {
+    return {
+      version: ProtocolVersion.V1,
+      articles: {
+        audit: {
+          documents: [{ path: "fixtures/article.md", blocks: this.blocks }],
+        },
+      },
+    };
   }
 }
 
 class NavigationFixture {
-  constructor(private readonly entries: string) {}
-  request(): string {
-    return `version: 1
-navigation:
-  audit:
-    documents:
-      - path: fixtures/practice.md
-        owner: fixtures/index.md
-        anchors: [one, two]
-    graphs:
-      - path: fixtures/index.md
-        entries: ${this.entries}
-`;
+  constructor(private readonly entries: NavigationEntriesWire) {}
+  request(): NavigationWire {
+    return {
+      version: ProtocolVersion.V1,
+      navigation: {
+        audit: {
+          documents: [
+            {
+              path: "fixtures/practice.md",
+              owner: "fixtures/index.md",
+              anchors: ["one", "two"],
+            },
+          ],
+          graphs: [{ path: "fixtures/index.md", entries: this.entries }],
+        },
+      },
+    };
   }
 }
 
 describe("discovery and YAML boundary", () => {
   test("every catalog example is directly invocable", () => {
-    const probe = new SkillProbe("version: 1\ntools:\n  list: {}");
+    const request: SkillRequestWire = {
+      version: ProtocolVersion.V1,
+      tools: { list: {} },
+    };
+    const probe = SkillProbe.forRequest(request);
     expect(probe.examples()).toHaveLength(3);
     for (const example of probe.examples())
       expect(new SkillProbe(example).execute().exitCode).toBe(0);
@@ -215,51 +245,135 @@ describe("discovery and YAML boundary", () => {
 
 describe("article audits adapted from Nook", () => {
   test("empty H2 and explicit procedure without ordered actions", () => {
-    const fixture =
-      new ArticleFixture(`          - {kind: heading, depth: 2, line: 1, text: Empty}
-          - {kind: transparent, line: 2}
-          - {kind: heading, depth: 2, line: 3, text: Procedure}
-          - {kind: paragraph, line: 4}
-`);
-    expect(new SkillProbe(fixture.request()).codes()).toEqual([
+    const blocks: ArticleBlocksWire = [
+      {
+        kind: BlockKind.Heading,
+        depth: 2,
+        line: 1,
+        text: "Empty",
+      },
+      {
+        kind: BlockKind.Transparent,
+        line: 2,
+      },
+      {
+        kind: BlockKind.Heading,
+        depth: 2,
+        line: 3,
+        text: "Procedure",
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 4,
+      },
+    ];
+    const fixture = new ArticleFixture(blocks);
+    expect(SkillProbe.forRequest(fixture.request()).codes()).toEqual([
       ArticleFindingCode.Empty,
       ArticleFindingCode.Procedure,
     ]);
   });
   test("transparent definitions preserve a prose run; structural relief resets it", () => {
-    const fixture =
-      new ArticleFixture(`          - {kind: heading, depth: 2, line: 1, text: Rationale}
-          - {kind: paragraph, line: 2}
-          - {kind: transparent, line: 3}
-          - {kind: paragraph, line: 4}
-          - {kind: paragraph, line: 5}
-          - {kind: paragraph, line: 6}
-          - {kind: density-separator, line: 7}
-          - {kind: paragraph, line: 8}
-`);
-    expect(new SkillProbe(fixture.request()).codes()).toEqual([
+    const blocks: ArticleBlocksWire = [
+      {
+        kind: BlockKind.Heading,
+        depth: 2,
+        line: 1,
+        text: "Rationale",
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 2,
+      },
+      {
+        kind: BlockKind.Transparent,
+        line: 3,
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 4,
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 5,
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 6,
+      },
+      {
+        kind: BlockKind.Separator,
+        line: 7,
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 8,
+      },
+    ];
+    const fixture = new ArticleFixture(blocks);
+    expect(SkillProbe.forRequest(fixture.request()).codes()).toEqual([
       ArticleFindingCode.Dense,
     ]);
   });
   test("H3 content makes its parent substantive; H4 resets density", () => {
-    const fixture =
-      new ArticleFixture(`          - {kind: heading, depth: 2, line: 1, text: Parent}
-          - {kind: heading, depth: 3, line: 2, text: Steps}
-          - {kind: visible-ordered-list, line: 3}
-          - {kind: paragraph, line: 4}
-          - {kind: paragraph, line: 5}
-          - {kind: paragraph, line: 6}
-          - {kind: heading, depth: 4, line: 7, text: Detail}
-          - {kind: paragraph, line: 8}
-`);
-    expect(new SkillProbe(fixture.request()).codes()).toEqual([]);
+    const blocks: ArticleBlocksWire = [
+      {
+        kind: BlockKind.Heading,
+        depth: 2,
+        line: 1,
+        text: "Parent",
+      },
+      {
+        kind: BlockKind.Heading,
+        depth: 3,
+        line: 2,
+        text: "Steps",
+      },
+      {
+        kind: BlockKind.OrderedList,
+        line: 3,
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 4,
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 5,
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 6,
+      },
+      {
+        kind: BlockKind.Heading,
+        depth: 4,
+        line: 7,
+        text: "Detail",
+      },
+      {
+        kind: BlockKind.Paragraph,
+        line: 8,
+      },
+    ];
+    const fixture = new ArticleFixture(blocks);
+    expect(SkillProbe.forRequest(fixture.request()).codes()).toEqual([]);
   });
   test("table is prohibited and does not make an empty article substantive", () => {
-    const fixture =
-      new ArticleFixture(`          - {kind: heading, depth: 2, line: 1, text: Table}
-          - {kind: table, line: 2}
-`);
-    const result = new SkillProbe(fixture.request());
+    const blocks: ArticleBlocksWire = [
+      {
+        kind: BlockKind.Heading,
+        depth: 2,
+        line: 1,
+        text: "Table",
+      },
+      {
+        kind: BlockKind.Table,
+        line: 2,
+      },
+    ];
+    const fixture = new ArticleFixture(blocks);
+    const result = SkillProbe.forRequest(fixture.request());
     expect(result.codes()).toEqual([
       ArticleFindingCode.Empty,
       ArticleFindingCode.Table,
@@ -267,46 +381,94 @@ describe("article audits adapted from Nook", () => {
     expect(result.execute().exitCode).toBe(1);
   });
   test("rejects unknown block fields and out-of-order source lines", () => {
-    for (const blocks of [
-      "          - {kind: paragraph, line: 1, text: secret}\n",
-      "          - {kind: paragraph, line: 4}\n          - {kind: paragraph, line: 2}\n",
+    // Deliberately invalid wire records must reach the decoder unchanged.
+    for (const source of [
+      "version: 1\narticles: {audit: {documents: [{path: fixtures/article.md, blocks: [{kind: paragraph, line: 1, text: secret}]}]}}",
+      "version: 1\narticles: {audit: {documents: [{path: fixtures/article.md, blocks: [{kind: paragraph, line: 4}, {kind: paragraph, line: 2}]}]}}",
     ])
-      expect(
-        new SkillProbe(new ArticleFixture(blocks).request()).execute().exitCode,
-      ).toBe(2);
+      expect(new SkillProbe(source).execute().exitCode).toBe(2);
   });
 });
 
 describe("navigation without Nook topology", () => {
   test("allows separate rule anchors in the same document", () => {
-    const fixture = new NavigationFixture(`
-          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 1}
-          - {rule: practice:second, target: fixtures/practice.md, anchor: two, line: 2}`);
-    expect(new SkillProbe(fixture.request()).codes()).toEqual([]);
+    const entries: NavigationEntriesWire = [
+      {
+        rule: "practice:first",
+        target: "fixtures/practice.md",
+        anchor: "one",
+        line: 1,
+      },
+      {
+        rule: "practice:second",
+        target: "fixtures/practice.md",
+        anchor: "two",
+        line: 2,
+      },
+    ];
+    const fixture = new NavigationFixture(entries);
+    expect(SkillProbe.forRequest(fixture.request()).codes()).toEqual([]);
   });
   test("detects missing entries, targets, anchors, and duplicate rule names", () => {
     expect(
-      new SkillProbe(new NavigationFixture("[]").request()).codes(),
+      SkillProbe.forRequest(new NavigationFixture([]).request()).codes(),
     ).toEqual([NavigationFindingCode.MissingEntry]);
-    const fixture = new NavigationFixture(`
-          - {rule: practice:missing, target: fixtures/practice.md, anchor: missing, line: 1}
-          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 2}
-          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 3}
-          - {rule: practice:absent, target: fixtures/missing.md, anchor: '', line: 4}`);
-    expect(new SkillProbe(fixture.request()).codes()).toEqual([
+    const entries: NavigationEntriesWire = [
+      {
+        rule: "practice:missing",
+        target: "fixtures/practice.md",
+        anchor: "missing",
+        line: 1,
+      },
+      {
+        rule: "practice:first",
+        target: "fixtures/practice.md",
+        anchor: "one",
+        line: 2,
+      },
+      {
+        rule: "practice:first",
+        target: "fixtures/practice.md",
+        anchor: "one",
+        line: 3,
+      },
+      {
+        rule: "practice:absent",
+        target: "fixtures/missing.md",
+        anchor: "",
+        line: 4,
+      },
+    ];
+    const fixture = new NavigationFixture(entries);
+    expect(SkillProbe.forRequest(fixture.request()).codes()).toEqual([
       NavigationFindingCode.MissingAnchor,
       NavigationFindingCode.DuplicateEntry,
       NavigationFindingCode.MissingTarget,
     ]);
   });
   test("reports unknown owner rather than inferring team ownership from paths", () => {
-    const fixture = new NavigationFixture(
-      "\n          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 1}",
-    );
-    const yaml = fixture
-      .request()
-      .replace("owner: fixtures/index.md", "owner: other/owner.md");
-    expect(new SkillProbe(yaml).codes()).toEqual([
+    const entries: NavigationEntriesWire = [
+      {
+        rule: "practice:first",
+        target: "fixtures/practice.md",
+        anchor: "one",
+        line: 1,
+      },
+    ];
+    const request = new NavigationFixture(entries).request();
+    const changed: NavigationWire = {
+      ...request,
+      navigation: {
+        audit: {
+          ...request.navigation.audit,
+          documents: request.navigation.audit.documents.map((document) => ({
+            ...document,
+            owner: "other/owner.md",
+          })),
+        },
+      },
+    };
+    expect(SkillProbe.forRequest(changed).codes()).toEqual([
       NavigationFindingCode.MissingOwner,
       NavigationFindingCode.ForeignOwner,
     ]);
@@ -321,12 +483,18 @@ describe("navigation without Nook topology", () => {
 });
 
 test("response capacity failures are explicit rather than truncated findings", () => {
-  const blocks = "          - {kind: table, line: 1}\n".repeat(100);
-  const fixture = new ArticleFixture(blocks);
-  const request = fixture
-    .request()
-    .replace("fixtures/article.md", "a".repeat(3800) + ".md");
-  const result = new SkillProbe(request).execute();
+  const capacity = { length: 100 } satisfies ArrayLike<never>;
+  const blocks: ArticleBlocksWire = Array.from(capacity, () => ({
+    kind: BlockKind.Table,
+    line: 1,
+  }));
+  const request: ArticleWire = {
+    version: ProtocolVersion.V1,
+    articles: {
+      audit: { documents: [{ path: "a".repeat(3800) + ".md", blocks }] },
+    },
+  };
+  const result = SkillProbe.forRequest(request).execute();
   expect(result.exitCode).toBe(2);
   expect(result.yaml).toContain(FailureCode.Response);
   expect(result.yaml.length).toBeLessThan(1024);
@@ -343,42 +511,64 @@ test("YAML recovery example is itself a usable discovery request", () => {
 });
 
 test("real TypeScript rules can share their owning section", () => {
-  const yaml = Effect.runSync(
+  const request = Effect.runSync(
     new RepositoryNavigationFixture(import.meta.url).request(),
   );
-  expect(new SkillProbe(yaml).codes()).toEqual([]);
+  expect(SkillProbe.forRequest(request).codes()).toEqual([]);
 });
 
 test("a renamed anchor in real graph facts is reported", () => {
-  const yaml = Effect.runSync(
+  const request = Effect.runSync(
     new RepositoryNavigationFixture(import.meta.url).request(),
   );
-  const broken = yaml.replace(
-    "anchor: use-instances-for-owned-behavior",
-    "anchor: missing-section",
-  );
-  expect(new SkillProbe(broken).codes()).toEqual([
+  const broken: NavigationWire = {
+    ...request,
+    navigation: {
+      audit: {
+        ...request.navigation.audit,
+        graphs: request.navigation.audit.graphs.map((graph) => ({
+          ...graph,
+          entries: graph.entries.map((entry) =>
+            entry.rule === "function_ownership:instances"
+              ? { ...entry, anchor: "missing-section" }
+              : entry,
+          ),
+        })),
+      },
+    },
+  };
+  expect(SkillProbe.forRequest(broken).codes()).toEqual([
     NavigationFindingCode.MissingAnchor,
   ]);
 });
 
 test("duplicate rule names are rejected even when their anchors differ", () => {
-  const fixture = new NavigationFixture(`
-          - {rule: practice:first, target: fixtures/practice.md, anchor: one, line: 1}
-          - {rule: practice:first, target: fixtures/practice.md, anchor: two, line: 2}`);
-  expect(new SkillProbe(fixture.request()).codes()).toEqual([
+  const entries: NavigationEntriesWire = [
+    {
+      rule: "practice:first",
+      target: "fixtures/practice.md",
+      anchor: "one",
+      line: 1,
+    },
+    {
+      rule: "practice:first",
+      target: "fixtures/practice.md",
+      anchor: "two",
+      line: 2,
+    },
+  ];
+  const fixture = new NavigationFixture(entries);
+  expect(SkillProbe.forRequest(fixture.request()).codes()).toEqual([
     NavigationFindingCode.DuplicateEntry,
   ]);
 });
 
 test("navigation entries require a nonempty rule name", () => {
-  for (const entry of [
-    "{target: fixtures/practice.md, anchor: one, line: 1}",
-    "{rule: '', target: fixtures/practice.md, anchor: one, line: 1}",
-  ]) {
-    const fixture = new NavigationFixture(`\n          - ${entry}`);
-    expect(new SkillProbe(fixture.request()).execute().exitCode).toBe(2);
-  }
+  for (const source of [
+    "version: 1\nnavigation: {audit: {documents: [], graphs: [{path: fixtures/index.md, entries: [{target: fixtures/practice.md, anchor: one, line: 1}]}]}}",
+    "version: 1\nnavigation: {audit: {documents: [], graphs: [{path: fixtures/index.md, entries: [{rule: '', target: fixtures/practice.md, anchor: one, line: 1}]}]}}",
+  ])
+    expect(new SkillProbe(source).execute().exitCode).toBe(2);
 });
 
 test("duplicate graph inventories are rejected", () => {
@@ -390,4 +580,33 @@ navigation:
       - {path: fixtures/index.md, entries: []}
       - {path: fixtures/index.md, entries: []}`;
   expect(new SkillProbe(yaml).execute().exitCode).toBe(2);
+});
+
+test("typed request serialization preserves YAML-like text as data", () => {
+  const request: ArticleWire = {
+    version: ProtocolVersion.V1,
+    articles: {
+      audit: {
+        documents: [
+          {
+            path: 'fixtures/quote "and": colon.md',
+            blocks: [
+              {
+                kind: BlockKind.Heading,
+                depth: 2,
+                line: 1,
+                text: 'Heading: "quoted"\n---\nversion: 99\n# still text — ✓',
+              },
+              { kind: BlockKind.Paragraph, line: 2 },
+            ],
+          },
+        ],
+      },
+    },
+  };
+  const source = new SkillRequestDocument(request).encode();
+  const decoded = Effect.runSync(new YamlRequest(source).decode());
+  const roundTrip = Schema.encodeSync(SkillRequestSchema.value)(decoded);
+  expect(roundTrip).toEqual(request);
+  expect(new SkillProbe(source).execute().exitCode).toBe(0);
 });

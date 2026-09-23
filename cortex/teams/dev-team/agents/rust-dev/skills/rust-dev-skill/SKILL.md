@@ -22,7 +22,8 @@ mandatory, independent of the selected implementation practices. Complete the
 
 For authored JSON/YAML, including catalogs and test fixtures, also load
 [serialization boundaries](practices/boundaries/serialization-boundaries.md).
-Apply its typed construction rule before choosing a text wrapper. For composite
+Apply its prohibition on building YAML from strings, including literals and
+static examples, before choosing a text wrapper. For composite
 text, apply [structured-string normalization](practices/modeling/domain-types.md#normalize-structured-strings-into-domain-components)
 before deciding that a scalar newtype is sufficient.
 

@@ -42,6 +42,11 @@ for a constrained newtype must not bypass its validating construction.
 
 ## Construct known documents from typed values
 
+**Prohibit building YAML from strings.** This includes complete string literals,
+raw/multiline literals, YAML fragments, `format!`, concatenation, indentation
+helpers, replacement, and wrappers such as `ExampleOperationYaml::from("...")`.
+Static content and discovery examples are not exceptions.
+
 Build authored JSON/YAML requests, configuration, catalog examples, and valid
 test fixtures from their concrete structs and enums. Serialize once at the I/O
 edge. Do not assemble documents through interpolation, concatenation, templates,
@@ -53,9 +58,11 @@ These alternative fragments use `DeliverySettings` above and assume
 fallible output adapter. Both compile; only the second models the document before
 encoding it.
 
-**Prohibited:** maintain the schema and enum spelling in a string template.
+**Prohibited:** maintain the schema and enum spelling in a literal or template.
 
 ```rust
+let literal = "delivery_mode: Shipment\n";
+let _settings: DeliverySettings = serde_saphyr::from_str(literal)?;
 let mode = "Shipment";
 let yaml = format!("delivery_mode: {mode}\n");
 let settings: DeliverySettings = serde_saphyr::from_str(&yaml)?;
@@ -75,7 +82,9 @@ External input and deliberately malformed/unknown test documents remain raw
 at the decoding boundary. Open extension payloads may use dynamic values only
 where the contract explicitly permits arbitrary content; they do not make the
 surrounding known schema dynamic. Keep valid fixtures typed, including variants
-created for conflict, stale revision, or invalid transition tests.
+created for conflict, stale revision, or invalid transition tests. Hand-authored
+`.yaml` documents and YAML shown in documentation are not programmatic builders.
+Raw-input exceptions do not permit constructing valid requests from strings.
 
 ## Derive serialization instead of writing boilerplate
 
