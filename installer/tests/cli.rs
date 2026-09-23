@@ -162,9 +162,13 @@ impl CliScenario {
             String::from_utf8_lossy(&installed.stderr)
         );
         let config_path = self.project.path().join(".meta-cortex/meta-cortex.toml");
+        let initial = fs::read_to_string(&config_path)?;
         let customized = format!(
             "# Keep my choices and comments\n{}",
-            fs::read_to_string(&config_path)?.replace("gpt-5.6-terra", "gpt-5.6-sol")
+            initial.replace(
+                "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"",
+                "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\""
+            )
         );
         fs::write(&config_path, &customized)?;
         // Explicit integration choices keep unattended reinitialization noninteractive.
@@ -215,16 +219,16 @@ impl CliScenario {
         assert_eq!(
             output.models.gizmo_prime,
             ReportAgent {
-                model: "gpt-5.6-sol".to_owned(),
-                reasoning_effort: "low".to_owned()
+                model: "gpt-6-luna".to_owned(),
+                reasoning_effort: "max".to_owned()
             }
         );
         assert_eq!(output.models.team.gizmo, output.models.gizmo_prime);
         assert_eq!(
             output.models.team.agent,
             ReportAgent {
-                model: "gpt-5.6-luna".to_owned(),
-                reasoning_effort: "xhigh".to_owned()
+                model: "gpt-5.6-sol".to_owned(),
+                reasoning_effort: "high".to_owned()
             }
         );
         let root = self.project.path().canonicalize()?;
@@ -306,17 +310,17 @@ impl CliScenario {
         terminal.exp_string("instructions")?;
         terminal.send_line("y")?;
         terminal.exp_string("Gizmo Prime model")?;
-        terminal.send_line("j")?; // Terra -> Sol.
+        terminal.send_line("k")?; // GPT-6 Luna -> GPT-5.6 Sol.
         terminal.exp_string("Gizmo Prime reasoning effort")?;
-        terminal.send_line("jj")?; // Low -> High.
+        terminal.send_line("kk")?; // Max -> High.
         terminal.exp_string("Team Gizmo model")?;
-        terminal.send_line("jj")?; // Terra -> Astra.
+        terminal.send_line("j")?; // GPT-6 Luna -> GPT-6 Astra.
         terminal.exp_string("Team Gizmo reasoning effort")?;
-        terminal.send_line("k")?; // Low -> Ultra (wrap).
+        terminal.send_line("j")?; // Max -> Ultra.
         terminal.exp_string("Team agents model")?;
-        terminal.send_line("")?; // Luna.
+        terminal.send_line("")?; // GPT-6 Luna.
         terminal.exp_string("Team agents reasoning effort")?;
-        terminal.send_line("j")?; // Xhigh -> Max.
+        terminal.send_line("")?; // Max.
         terminal.exp_string("Meta-Cortex is ready")?;
         terminal.exp_eof()?;
         let config = fs::read_to_string(self.project.path().join(".meta-cortex/meta-cortex.toml"))?;
@@ -327,7 +331,7 @@ impl CliScenario {
             config.contains("[team.gizmo]\nmodel = \"gpt-6-astra\"\nreasoning_effort = \"ultra\"")
         );
         assert!(
-            config.contains("[team.agent]\nmodel = \"gpt-5.6-luna\"\nreasoning_effort = \"max\"")
+            config.contains("[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"")
         );
         Ok(())
     }
