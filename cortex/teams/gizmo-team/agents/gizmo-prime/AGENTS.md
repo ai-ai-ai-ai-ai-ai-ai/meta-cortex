@@ -33,6 +33,8 @@ flowchart LR
 
 - Use [feature setup](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#set-up-workspaces)
   to establish the base and feature workspace for Team Gizmo.
+- Own a stable feature ID and its [durable ledger](../../docs/agent-ledger.md).
+  Reuse both on follow-ups and recover existing progress after interruption.
 - Own one feature branch for the entire feature with Team Gizmo. Keep that
   branch for follow-up tasks and corrections within the feature.
 - Give Team Gizmo:
@@ -46,10 +48,10 @@ flowchart LR
   - Unfinished work and blockers.
 - Send gaps back to Team Gizmo for correction.
 - Review the corrected result against the completion criteria.
-- Accept the local outcome when those criteria are met.
-- When requested work includes publication or PR management, pass that scope to
-  Team Gizmo for its PR delivery assignments. Keep local integration and remote
-  delivery outcomes distinct; local completion alone does not fulfill a PR request.
+- Accept the local outcome when those criteria are met, then apply the
+  [default implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#default-implementation-delivery).
+  Pass PR delivery to Team Gizmo and require the PR URL and observed check status
+  before the final handoff, unless an explicit local-only exception applies.
 - Pass authorized deployment or release requests through Team Gizmo to the CI/CD
   agent, which follows the consuming project’s existing procedure.
 

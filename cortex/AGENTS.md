@@ -48,6 +48,8 @@ be recovered from session context, ask rather than guess.
   The current agent performs implementation, validation, and delivery. Delegation
   and coordinator-only routing requirements apply only in multi-agent mode;
   technical requirements still apply. Keep the current host model/settings.
+  Complete implementation through the [project delivery policy](teams/delivery-team/docs/project-delivery-policy.md#default-implementation-delivery),
+  including its default PR handoff and explicit local-only exceptions.
 - `multi_agent`: use the existing Gizmo workflow and configured role settings.
 
 The returned `answers["development.mode"]` is the session's `development.mode`.

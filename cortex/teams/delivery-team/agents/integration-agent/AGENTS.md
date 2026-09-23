@@ -54,6 +54,14 @@ Report to Team Gizmo through the host's agent communication tools.
 - Do not take over Team Gizmo's coordination or the workers' implementation.
 - Do not publish or manage PRs through this role; its scope is local integration.
 
-**Prohibited:** open a PR as an implicit next step after integration.
+**Prohibited:** have the integration role take over the PR role's remote operations.
 
-**Preferred:** return the completed local feature to Team Gizmo.
+**Preferred:** return the completed local feature to Team Gizmo for the PR
+handoff defined by the project delivery policy. In single-agent mode, continue
+with the PR skill after completing this role's local work.
+
+## Durable feature progress
+
+Apply the [feature ledger integration skill](skills/agent-ledger/SKILL.md) when
+preparing feature workspaces, recording integration, and preserving recovery data.
+Team Gizmo retains task assignment and reassignment decisions.

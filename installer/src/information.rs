@@ -78,7 +78,7 @@ enum ModelAvailability {
 }
 
 #[derive(Serialize)]
-struct InfoReport {
+pub struct InfoReport {
     schema_version: InfoSchemaVersion,
     cli_version: Version,
     framework_version: FrameworkVersion,

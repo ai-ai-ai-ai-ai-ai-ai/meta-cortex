@@ -40,3 +40,13 @@ leases. Keep ordinary revision, scope, input, and integration-lock checks.
 
 **Preferred:** verify that tests ran on the intended revision and the diff stays
 within the assignment.
+
+## Durable task progress
+
+The [agent ledger](docs/agent-ledger.md) records requested task progress and
+recovery state. Its revisions and attempts prevent stale updates; its expiration
+reports activity. These fields are not credentials or trusted-handoff security.
+Do not add authentication or message receipts around this local workflow.
+
+**Preferred:** inspect an expired assignment, preserve its Git work, and record
+a coordinator-directed reassignment through the existing ledger.

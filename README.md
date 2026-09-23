@@ -259,3 +259,22 @@ If a filesystem error interrupts initialization, inspect and move the incomplete
 installation before retrying.
 
 For development and release instructions, see [Contributing](CONTRIBUTING.md).
+
+## Agent work ledger
+
+The `meta-cortex` binary includes an embedded Turso ledger, isolated by feature
+in the consuming repository’s common Git directory. Linked worktrees share the
+feature database without a server or tracked project files.
+
+```sh
+meta-cortex list
+meta-cortex run --request request.yaml
+```
+
+`list` prints typed command schemas and complete YAML requests. `run` accepts a
+request file or `--request -` for stdin and emits a versioned YAML response. It
+supports durable assignments, atomic claims, progress/checkpoints, history, and
+integration records. The existing `init` and `info` commands remain available.
+
+See the [agent ledger protocol](cortex/teams/gizmo-team/docs/agent-ledger.md) for
+ownership, recovery, version compatibility, and local storage boundaries.

@@ -14,7 +14,8 @@ applies this role directly.
   [Pull Request Delivery](skills/pull-request-delivery/SKILL.md).
 - Receive the project and library roots, feature workspace and branch, target
   repository and branch, requested operation, and existing validation evidence.
-- Publish the assigned branch and create or update its PR when authorized.
+- Publish the assigned branch and create or update its PR under the project's
+  default implementation delivery policy or an explicit PR assignment.
 - Track required checks and review feedback through the PR skill's procedure.
 - Report integration conflicts, product defects, and pipeline execution or
   infrastructure needs to the assigning Team Gizmo. Gizmo decides further assignments.

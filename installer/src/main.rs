@@ -1,8 +1,11 @@
+mod agent;
 mod configuration;
 mod information;
 mod installation;
 mod integration;
+mod ledger;
 
+use agent::AgentCli;
 use clap::builder::{BoolishValueParser, TypedValueParser};
 use clap::{Arg, ArgAction, Parser, Subcommand};
 use configuration::InitMode;
@@ -21,6 +24,13 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Discover agent commands, typed schemas, and complete YAML requests.
+    List,
+    /// Execute a strictly typed YAML agent request; use - for stdin.
+    Run {
+        #[arg(long, default_value = "-")]
+        request: PathBuf,
+    },
     /// Install the framework with bundled defaults, without prompting.
     #[command(arg(Arg::new("non-interactive")
         .long("non-interactive")
@@ -46,8 +56,10 @@ enum Command {
 }
 
 impl Cli {
-    fn run(self) -> Result<(), InstallError> {
+    fn run(self) -> Result<ExitCode, InstallError> {
         match self.command {
+            Command::List => Ok(AgentCli::list()),
+            Command::Run { request } => Ok(AgentCli::run(request)),
             Command::Init {
                 project,
                 interactive,
@@ -58,12 +70,12 @@ impl Cli {
                     integration,
                 })?;
                 println!("Meta-Cortex is ready in {}", installed.path().display());
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             }
             Command::Info { project } => {
                 let yaml = InfoYaml::try_from(Project::open(project)?.info()?)?;
                 print!("{yaml}");
-                Ok(())
+                Ok(ExitCode::SUCCESS)
             }
         }
     }
@@ -71,7 +83,7 @@ impl Cli {
 
 fn main() -> ExitCode {
     match Cli::parse().run() {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(code) => code,
         Err(error) => {
             eprintln!("error: {error}");
             ExitCode::FAILURE

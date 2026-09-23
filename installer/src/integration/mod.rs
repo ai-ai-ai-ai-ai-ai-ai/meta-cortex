@@ -5,7 +5,6 @@ mod markdown;
 mod selection;
 
 pub use instructions::InstructionStatus;
-#[cfg(test)]
 pub use selection::{HarnessChoice, InstructionAction};
 pub use selection::{IntegrationOptions, IntegrationRequest};
 

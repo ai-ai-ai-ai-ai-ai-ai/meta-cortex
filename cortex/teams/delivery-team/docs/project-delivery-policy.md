@@ -5,6 +5,33 @@ consuming project owns its branch, review, validation, and merge policies.
 
 ## Required actions
 
+### Default implementation delivery
+
+An implementation request includes committing the validated feature, pushing its
+branch, and creating or updating its pull request. Continue through that delivery
+without requiring the user to separately ask for a PR. Apply this default in both
+development modes; the PR role owns remote operations in multi-agent mode.
+
+- Honor an explicit local-only, no-push, or no-PR instruction from the user or
+  consuming project. Discussion and read-only review do not imply implementation
+  or publication.
+- Resolve the repository and target from project context. If authentication,
+  repository access, or a necessary target decision is unavailable, report the
+  actual delivery blocker instead of declaring the feature complete locally.
+- Reuse a matching open PR. Follow the consuming project's PR template and
+  draft policy; create a ready-for-review PR when the implementation and required
+  local validation are complete unless that policy calls for a draft.
+- Finish with the PR URL, published revision, and observed check status. Attach
+  the PR through the host when supported. Pending CI remains pending.
+- Opening a PR does not authorize merging, releasing, or deploying it. Those
+  operations retain their own user or project authorization requirements.
+
+**Prohibited:** finish an implementation with only a local branch because the
+user did not repeat “open a PR,” or publish after an explicit local-only request.
+
+**Preferred:** validate the feature, commit and push its branch, create or update
+the PR, and return its link with the actual check status.
+
 ### Resolve project delivery policy
 
 Read the project's `AGENTS.md` and its linked delivery instructions. Inspect the

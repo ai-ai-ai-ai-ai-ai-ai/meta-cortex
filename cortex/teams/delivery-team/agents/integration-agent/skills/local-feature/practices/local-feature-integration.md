@@ -90,6 +90,9 @@ branches will merge into the same `feature/editor` branch.
 
 The worker runs these steps in its assigned task worktree. `changed_path` is one
 assigned repository-relative file path; `task_message` describes the finished change.
+During longer work, save recoverable milestones and publish progress through the
+[agent ledger protocol](../../../../../../gizmo-team/docs/agent-ledger.md).
+The steps below establish final readiness.
 
 1. Check the branch and inspect pending changes:
 
@@ -126,6 +129,8 @@ assigned repository-relative file path; `task_message` describes the finished ch
    Short status must be empty. If no changes need saving, skip the commit command.
    If content changes after validation, rerun affected checks. Report the branch,
    completed task, and check results to Team Gizmo; identify unfinished work or failed checks.
+   Record the final checkpoint and durable readiness through the ledger before
+   sending the completion notification.
 
 **Prohibited:** report completion while final edits remain pending or required
 checks have failed.
@@ -194,7 +199,8 @@ branch and finish each integration before starting the next.
    Report the merged task branch, destination feature branch, commands run, and
    check results. Git merge success and separate task checks do not establish
    that the combined feature passes. Report failed checks to Team Gizmo for a repair decision
-   before integrating dependent tasks.
+   before integrating dependent tasks. After successful combined validation,
+   record the integrated task through the [feature ledger skill](../../agent-ledger/SKILL.md).
 
 **Prohibited:** merge several worker branches concurrently or report a passing
 feature based only on a successful Git merge.

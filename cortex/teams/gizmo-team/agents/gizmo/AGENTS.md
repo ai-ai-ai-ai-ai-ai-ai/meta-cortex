@@ -55,6 +55,9 @@ for that assignment rather than preloading unrelated agents.
 
 ## Coordinate assignments
 
+- Read and follow the [agent ledger protocol](../../docs/agent-ledger.md).
+  Recover existing status before scheduling work. Record bounded tasks before
+  launching workers and pass their feature/task IDs with every assignment.
 - Turn the feature assignment into bounded tasks for the appropriate agents.
 - Launch those team agents through the host’s agent execution tools using the
   shared [agent configuration rules](../../docs/agent-configuration.md).
@@ -83,14 +86,16 @@ flowchart LR
   worker assignments, dependency order, and required checks.
 - Assign workspace preparation to that agent. Give workers the returned branch
   names and paths, their task scope, checks, and library location.
+- Read durable readiness even when a final worker message is missing.
 - When a worker finishes, tell the integration agent which task branch to
   integrate next. Order tasks by dependency and wait for each integration result.
 - Route reported conflicts or failed checks to the responsible worker with the
   integration agent's repair context. Request integration again after the fix.
 - Once the combined feature passes its checks, ask the integration agent to
   finish cleanup. Return the feature branch, workspace, check results, and
-  unfinished work to Prime. For an assignment that also includes PR delivery,
-  continue with the authorized delivery steps below before the final handoff.
+  unfinished work to Prime. Continue through the
+  [default implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#default-implementation-delivery)
+  before the final handoff unless the user or consuming project requests local-only work.
 
 **Prohibited:** take over Git operations or resolve an implementation conflict
 instead of assigning it to its owner.
@@ -103,7 +108,7 @@ the feature scope. Gizmo Prime retains responsibility for the whole feature.
 
 ## Coordinate PR and CI/CD work
 
-- For requested publication or PR management, assign the
+- For implementation delivery under that policy, or explicitly requested PR management, assign the
   [PR agent](../../../delivery-team/agents/pr-agent/AGENTS.md) the integrated
   feature branch, target repository and branch, authorized operation, and evidence.
 - For needed CI execution or pipeline investigation, assign the

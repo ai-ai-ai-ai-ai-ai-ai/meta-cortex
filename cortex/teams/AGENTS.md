@@ -47,6 +47,10 @@ Decisions and assignments travel back down the same hierarchy. Gizmo Prime does
 not bypass Team Gizmo to direct workers. Agents retain technical judgment within
 their assigned scope; coordination decisions belong to their Gizmo.
 
+Persist assignments and progress through the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
+Host messages notify the assigning coordinator; they are not the only record of work.
+All assigned agents may read their feature ledger while retaining this decision hierarchy.
+
 Use ordinary host communication tools. In single-agent mode, the current agent
 performs the responsibilities locally without agent messages or launches.
 
@@ -92,6 +96,10 @@ Before launching an agent, the host agent or Gizmo coordinator resolves the
 following from the active library and supplies them in the launch instructions:
 
 - Objective, scope, dependencies, acceptance criteria, and expected evidence.
+- For task workers after feature initialization: stable feature ID, task ID,
+  ledger location, and the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
+  Record the assignment before launching its worker. Coordinator and workspace
+  bootstrap assignments establish this context before task workers launch.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
 - The validated session development mode; assigned agents inherit it and never
