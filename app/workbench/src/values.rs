@@ -103,7 +103,8 @@ pub struct Revision(i64);
 impl Revision {
     pub const INITIAL: Self = Self(1);
     pub fn advance(self) -> Result<Self, LedgerError> {
-        self.0
+        let Self(value) = self;
+        value
             .checked_add(1)
             .map(Self)
             .ok_or(LedgerError::Invalid("revision overflow"))
@@ -122,7 +123,8 @@ impl TryFrom<i64> for Revision {
 
 impl From<Revision> for i64 {
     fn from(value: Revision) -> Self {
-        value.0
+        let Revision(revision) = value;
+        revision
     }
 }
 
@@ -133,7 +135,8 @@ pub struct Attempt(i64);
 impl Attempt {
     pub const UNCLAIMED: Self = Self(0);
     pub fn advance(self) -> Result<Self, LedgerError> {
-        self.0
+        let Self(value) = self;
+        value
             .checked_add(1)
             .map(Self)
             .ok_or(LedgerError::Invalid("attempt overflow"))
@@ -164,8 +167,10 @@ impl Timestamp {
         ))
     }
     pub fn expires(self, ttl: LeaseSeconds) -> Result<Self, LedgerError> {
-        self.0
-            .checked_add(ttl.0 * 1000)
+        let Self(timestamp) = self;
+        let LeaseSeconds(seconds) = ttl;
+        timestamp
+            .checked_add(seconds * 1000)
             .map(Self)
             .ok_or(LedgerError::Invalid("timestamp overflow"))
     }

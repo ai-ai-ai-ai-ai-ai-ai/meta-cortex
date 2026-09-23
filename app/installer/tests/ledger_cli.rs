@@ -194,6 +194,7 @@ impl Scenario {
         )?))
     }
     fn start_yaml(request: RequestYaml) -> anyhow::Result<Child> {
+        let RequestYaml(text) = request;
         let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
             .args(["run", "--request", "-"])
             .stdin(Stdio::piped())
@@ -204,7 +205,7 @@ impl Scenario {
             .stdin
             .take()
             .context("stdin")?
-            .write_all(request.0.as_bytes())?;
+            .write_all(text.as_bytes())?;
         Ok(child)
     }
     fn collect(child: Child) -> anyhow::Result<Response> {
@@ -663,7 +664,8 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         evidence: Note::try_from("Waiting".to_owned())?,
     }];
     // Extensions are the explicitly open, task-specific portion of this schema.
-    progress.extensions.0.insert(
+    let Extensions(entries) = &mut progress.extensions;
+    entries.insert(
         "details".to_owned(),
         serde_json::json!({"arbitrary": [1, true, null]}),
     );

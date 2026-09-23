@@ -139,12 +139,14 @@ pub struct ConfigText(String);
 
 impl ConfigText {
     pub fn parse(&self) -> Result<Configuration, ConfigError> {
-        let config: Configuration = toml::from_str(&self.0)?;
+        let Self(text) = self;
+        let config: Configuration = toml::from_str(text)?;
         config.validate()
     }
 
     pub fn as_bytes(&self) -> &[u8] {
-        self.0.as_bytes()
+        let Self(text) = self;
+        text.as_bytes()
     }
 }
 

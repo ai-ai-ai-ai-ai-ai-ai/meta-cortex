@@ -18,9 +18,10 @@ pub struct GitWorktree(pub PathBuf);
 
 impl GitWorktree {
     fn output(&self, arguments: &[&str]) -> Result<String, LedgerError> {
+        let Self(path) = self;
         let output = Command::new("git")
             .arg("-C")
-            .arg(&self.0)
+            .arg(path)
             .args(arguments)
             .output()?;
         if !output.status.success() {

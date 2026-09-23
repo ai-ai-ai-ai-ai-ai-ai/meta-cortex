@@ -120,6 +120,14 @@ in full. Include related subjects when the change crosses their boundaries.
   - Choose transparent serialization only when the wire must remain primitive.
   - Retain the wrapper shape when the wire requires a value field.
 
+- **[domain_types:wrapper_access](practices/modeling/domain-types.md#access-wrappers-through-patterns-or-domain-methods)**
+
+  - Prohibit numeric field access throughout authored code, including wrapper
+    implementations, conversions, tests, and adapters.
+  - Use meaningful destructuring patterns or domain methods that retain domain
+    types; preserve privacy and keep primitive extraction at its owning boundary.
+  - Retain approved derives and the existing prohibition on application tuples.
+
 - **[domain_types:aggregates](practices/modeling/domain-types.md#aggregate-construction)**
 
   - Construct multi-field aggregates with named literals and reject From<(A, B, C)> for

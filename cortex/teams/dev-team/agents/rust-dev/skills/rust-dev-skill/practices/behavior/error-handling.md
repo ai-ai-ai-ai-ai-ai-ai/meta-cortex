@@ -117,8 +117,8 @@ These alternatives use the `RetryCount` and `RetryCountError` definitions above.
 ```rust
 #[test]
 fn parses_retry_count() {
-    let count = RetryCount::try_from("3").unwrap();
-    assert_eq!(count.0, 3);
+    let RetryCount(count) = RetryCount::try_from("3").unwrap();
+    assert_eq!(count, 3);
 }
 
 #[test]
@@ -132,8 +132,8 @@ fn rejects_invalid_count() {
 ```rust
 #[test]
 fn parses_retry_count() -> Result<(), RetryCountError> {
-    let count = RetryCount::try_from("3")?;
-    assert_eq!(count.0, 3);
+    let RetryCount(count) = RetryCount::try_from("3")?;
+    assert_eq!(count, 3);
     Ok(())
 }
 

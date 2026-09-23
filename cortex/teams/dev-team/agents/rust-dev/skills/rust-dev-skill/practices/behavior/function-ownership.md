@@ -165,7 +165,8 @@ pub struct MessageBody(String);
 
 impl MessageBody {
     pub fn print(&self) {
-        println!("{}", self.0);
+        let Self(message) = self;
+        println!("{message}");
     }
 }
 

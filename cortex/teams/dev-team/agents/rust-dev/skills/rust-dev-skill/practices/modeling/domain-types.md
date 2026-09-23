@@ -259,6 +259,55 @@ impl FieldIndex {
 - Keep a named `value` field when the serialized contract must retain the
   wrapper shape.
 
+### Access wrappers through patterns or domain methods
+
+Prohibit positional field access such as `value.0`, `self.0`, and `value.1` in
+all authored Rust, including owning implementations, conversions, tests, and
+adapters. Destructure legitimate wrappers with meaningful bindings, or call a
+named domain method. Accessor implementations follow the same rule.
+
+These alternative fragments assume an existing `TaskId` domain type and
+`pub struct TaskReference(TaskId)`, with a `value: TaskReference`. The patterns
+belong inside the wrapper's owning module, where its private representation is
+accessible. All alternatives compile; positional access violates this practice.
+
+**Prohibited:** the field's position hides its domain meaning.
+
+```rust
+let id = value.0;
+```
+
+**Preferred:** name the inner domain value through a pattern.
+
+```rust
+let TaskReference(id) = value;
+```
+
+**Preferred:** callers use a domain method that preserves the inner type.
+
+```rust
+impl TaskReference {
+    pub fn id(&self) -> &TaskId {
+        let Self(id) = self;
+        id
+    }
+}
+
+let id = value.id();
+```
+
+Use borrowed patterns when ownership must remain with the wrapper, such as
+`let TaskReference(id) = &value`. Keep primitive destructuring inside the owning
+implementation or a required external adapter; this rule does not authorize
+leaking raw representations or making private fields public. A domain method
+should expose meaning or behavior, not a generic escape hatch for internals.
+
+Single-field newtypes remain valid. Destructure dependency-required tuples at
+their adapter boundary; do not introduce application tuples to use this syntax.
+The [named-record rule](#replace-positional-tuples-with-named-records) still
+owns multi-value aggregates. Approved derives may generate representation access;
+review authored code without replacing derives merely to change their expansion.
+
 ### Aggregate construction
 
 Construct aggregates with named fields.
@@ -484,7 +533,9 @@ its import edits.
    application values; identify the external owner for a retained raw edge.
 3. Inspect construction and call sites to ensure the named type survives until
    the actual encoding boundary. Check that serialization preserves the intended
-   wire contract. Replace positional aggregates with named records and apply
+   wire contract. Reject numeric field access, including inside wrapper methods;
+   use patterns or domain methods instead. Replace positional aggregates with
+   named records and apply
    [typed document construction](../boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values)
    to JSON/YAML examples and fixtures; a wrapper around encoded text does not
    model its schema.

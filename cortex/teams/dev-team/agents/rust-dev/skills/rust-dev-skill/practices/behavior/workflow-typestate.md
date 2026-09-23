@@ -100,7 +100,8 @@ pub mod publishing {
 
     impl DocumentPath {
         pub fn display(&self) -> path::Display<'_> {
-            self.0.display()
+            let Self(path) = self;
+            path.display()
         }
     }
 
@@ -140,10 +141,11 @@ pub mod publishing {
         type Error = PublishError;
 
         fn try_from(draft: DraftText) -> Result<Self, Self::Error> {
-            if draft.0.trim().is_empty() {
+            let DraftText(text) = draft;
+            if text.trim().is_empty() {
                 return Err(PublishError::EmptyDocument);
             }
-            Ok(Self(draft.0))
+            Ok(Self(text))
         }
     }
 
@@ -167,7 +169,9 @@ pub mod publishing {
     impl Publication<Validated> {
         pub fn publish(self) -> Result<Publication<Published>, PublishError> {
             let Validated { content, destination } = self.state;
-            fs::write(&destination.0, content.0)?;
+            let DocumentPath(path) = &destination;
+            let DocumentText(text) = content;
+            fs::write(path, text)?;
             Ok(Publication { state: Published { destination } })
         }
     }
