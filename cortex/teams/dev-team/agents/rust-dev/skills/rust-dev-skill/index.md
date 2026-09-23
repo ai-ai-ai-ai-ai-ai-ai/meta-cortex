@@ -914,6 +914,14 @@ in full. Include related subjects when the change crosses their boundaries.
   - Generate examples from the enum, update callers/docs together, and require a
     concrete external contract for any unavoidable adapter.
 
+- **[wasm_name_coherence:command_groups](practices/boundaries/rust-wasm-name-coherence.md#group-operations-by-their-owning-domain)**
+
+  - Aggregate related operations in domain-specific enums carried by enclosing
+    group variants; do not flatten repeated prefixes/suffixes or allow arbitrary
+    group/operation pairs.
+  - Preserve groups through requests, schemas, discovery, and consumers; dispatch
+    exhaustively through the owning enum and reject mismatched groups at decoding.
+
 - **[wasm_name_coherence:external_names](practices/boundaries/rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter)**
 
   - For a fixed external protocol, retain Rust naming and map its exact wire key only in

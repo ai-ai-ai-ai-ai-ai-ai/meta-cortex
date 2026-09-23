@@ -13,13 +13,13 @@ agent's use of the ledger alongside its existing Git workspace procedure.
 
 1. Discover the installed executable with `meta-cortex list`. If unavailable or
    incompatible, report the actual failure to Gizmo before launching untracked work.
-2. After preparing the feature workspace, initialize `InitializeFeature` using Gizmo's
+2. After preparing the feature workspace, initialize `Feature / Initialize` using Gizmo's
    stable feature ID, objective, branch, and absolute worktree path.
 3. Return the ledger path and feature ID with the task branch/worktree mappings.
    Team Gizmo records each assignment before launching the worker.
 4. Before integration, read the task's durable readiness and recorded checkpoint.
    Follow the local-feature skill for merging and combined validation.
-5. Read the task again and record `CoordinateTask` with the latest revision,
+5. Read the task again and record `Task / Coordinate` with the latest revision,
    `action.kind: integrate`, and the verified feature HEAD. A failed ledger
    update leaves the Git work intact; inspect both before retrying.
 6. Preserve the ledger when cleaning completed worker worktrees. Report failures

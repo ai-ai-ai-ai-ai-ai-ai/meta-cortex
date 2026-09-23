@@ -84,10 +84,15 @@ struct Request {
     operation: Operation,
 }
 #[derive(Serialize)]
-#[serde(tag = "name", content = "arguments")]
+#[serde(tag = "group", content = "command")]
 enum Operation {
-    InitializeFramework(Initialization),
-    GetFrameworkInfo(EmptyArguments),
+    Framework(FrameworkOperation),
+}
+#[derive(Serialize)]
+#[serde(tag = "name", content = "arguments")]
+enum FrameworkOperation {
+    Initialize(Initialization),
+    Info(EmptyArguments),
 }
 #[derive(Serialize)]
 struct EmptyArguments {}
@@ -170,7 +175,9 @@ impl CliScenario {
         Ok(response.result)
     }
     fn initialize(&self, initialization: Initialization) -> anyhow::Result<()> {
-        match self.call(Operation::InitializeFramework(initialization))? {
+        match self.call(Operation::Framework(FrameworkOperation::Initialize(
+            initialization,
+        )))? {
             Outcome::Success(reply) => match reply {
                 Reply::FrameworkInitialized { project } => {
                     assert_eq!(project, self.project.path().canonicalize()?)
@@ -182,7 +189,9 @@ impl CliScenario {
         Ok(())
     }
     fn info(&self) -> anyhow::Result<InfoDocument> {
-        match self.call(Operation::GetFrameworkInfo(EmptyArguments {}))? {
+        match self.call(Operation::Framework(FrameworkOperation::Info(
+            EmptyArguments {},
+        )))? {
             Outcome::Success(reply) => match reply {
                 Reply::FrameworkInfo(info) => Ok(*info),
                 Reply::FrameworkInitialized { .. } => bail!("expected information"),
@@ -196,7 +205,9 @@ impl CliScenario {
 fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Result<()> {
     let scenario = CliScenario::create()?;
     assert!(matches!(
-        scenario.call(Operation::GetFrameworkInfo(EmptyArguments {}))?,
+        scenario.call(Operation::Framework(FrameworkOperation::Info(
+            EmptyArguments {}
+        )))?,
         Outcome::Error(_)
     ));
     assert_eq!(fs::read_dir(scenario.project.path())?.count(), 0);
@@ -242,12 +253,16 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(fs::read(root.join("AGENTS.md"))?, guidance);
     fs::remove_file(root.join(".meta-cortex/.version"))?;
     assert!(matches!(
-        scenario.call(Operation::GetFrameworkInfo(EmptyArguments {}))?,
+        scenario.call(Operation::Framework(FrameworkOperation::Info(
+            EmptyArguments {}
+        )))?,
         Outcome::Error(_)
     ));
     fs::write(&config, "broken = [")?;
     assert!(matches!(
-        scenario.call(Operation::GetFrameworkInfo(EmptyArguments {}))?,
+        scenario.call(Operation::Framework(FrameworkOperation::Info(
+            EmptyArguments {}
+        )))?,
         Outcome::Error(_)
     ));
     Ok(())
@@ -283,16 +298,18 @@ fn incomplete_framework_is_reported_without_overwriting_files() -> anyhow::Resul
     let framework = scenario.project.path().join(".meta-cortex");
     fs::create_dir_all(framework.join("agents"))?;
     fs::write(framework.join("meta-cortex.toml"), "# Keep my settings\n")?;
-    let Outcome::Error(error) = scenario.call(Operation::InitializeFramework(Initialization {
-        harness: Harness::None,
-        instructions: Instructions::Skip,
-    }))?
+    let Outcome::Error(error) = scenario.call(Operation::Framework(
+        FrameworkOperation::Initialize(Initialization {
+            harness: Harness::None,
+            instructions: Instructions::Skip,
+        }),
+    ))?
     else {
         bail!("expected incomplete framework failure")
     };
     assert!(error.message.contains("missing required framework entry:"));
     assert!(error.message.contains("back up and move"));
-    assert!(error.message.contains("InitializeFramework"));
+    assert!(error.message.contains("Framework / Initialize"));
     assert_eq!(fs::read_dir(&framework)?.count(), 2);
     assert_eq!(
         fs::read_to_string(framework.join("meta-cortex.toml"))?,
@@ -311,10 +328,12 @@ fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
     assert!(text.contains("run"));
     let scenario = CliScenario::create()?;
     fs::remove_dir(scenario.project.path())?;
-    let Outcome::Error(error) = scenario.call(Operation::InitializeFramework(Initialization {
-        harness: Harness::None,
-        instructions: Instructions::Skip,
-    }))?
+    let Outcome::Error(error) = scenario.call(Operation::Framework(
+        FrameworkOperation::Initialize(Initialization {
+            harness: Harness::None,
+            instructions: Instructions::Skip,
+        }),
+    ))?
     else {
         bail!("expected missing project error")
     };

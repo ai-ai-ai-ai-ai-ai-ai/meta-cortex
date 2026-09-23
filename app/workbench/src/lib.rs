@@ -93,7 +93,7 @@ pub enum LedgerError {
     DependencyPending,
     #[error("Git operation failed: {0}")]
     Git(String),
-    #[error("ledger has not been initialized; run InitializeFeature")]
+    #[error("ledger has not been initialized; run Feature / Initialize")]
     Uninitialized,
     #[error("file operation failed: {0}")]
     Io(#[from] io::Error),

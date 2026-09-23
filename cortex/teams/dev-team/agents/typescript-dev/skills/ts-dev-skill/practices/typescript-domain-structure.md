@@ -130,16 +130,21 @@ the raw string return is confined to the external output adapter.
 ```ts
 import { stringify } from "yaml";
 
-enum CommandName { InitializeFramework = "InitializeFramework" }
+enum OperationGroup { Framework = "Framework" }
+enum FrameworkCommand { Initialize = "Initialize" }
 enum Harness { None = "none" }
 enum InstructionAction { Skip = "skip" }
 interface InitArguments {
   readonly harness: Harness;
   readonly instructions: InstructionAction;
 }
-interface FrameworkInitRequest {
-  readonly name: CommandName.InitializeFramework;
+interface FrameworkInitCommand {
+  readonly name: FrameworkCommand.Initialize;
   readonly arguments: InitArguments;
+}
+interface FrameworkInitRequest {
+  readonly group: OperationGroup.Framework;
+  readonly command: FrameworkInitCommand;
 }
 ```
 
@@ -150,12 +155,12 @@ not fix construction.
 ```ts
 // Inside the output adapter:
 encode(): string {
-  return "name: InitializeFramework\narguments: {harness: none, instructions: skip}";
+  return "group: Framework\ncommand: {name: Initialize, arguments: {harness: none, instructions: skip}}";
 }
 
 // Another prohibited implementation:
 encode(): string {
-  return `name: ${this.request.name}\narguments: {harness: ${this.request.arguments.harness}, instructions: ${this.request.arguments.instructions}}`;
+  return `group: ${this.request.group}\ncommand: {name: ${this.request.command.name}, arguments: {harness: ${this.request.command.arguments.harness}, instructions: ${this.request.command.arguments.instructions}}}`;
 }
 ```
 
@@ -171,8 +176,11 @@ class FrameworkInitYaml {
 }
 
 const request: FrameworkInitRequest = {
-  name: CommandName.InitializeFramework,
-  arguments: { harness: Harness.None, instructions: InstructionAction.Skip },
+  group: OperationGroup.Framework,
+  command: {
+    name: FrameworkCommand.Initialize,
+    arguments: { harness: Harness.None, instructions: InstructionAction.Skip },
+  },
 };
 const yaml = new FrameworkInitYaml(request).encode();
 ```

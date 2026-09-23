@@ -27,20 +27,39 @@ struct Request {
     operation: Operation,
 }
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
+#[serde(tag = "group", content = "command", deny_unknown_fields)]
 enum Operation {
-    ListFeatures(EmptyArguments),
-    InitializeFramework(FrameworkInit),
-    GetFrameworkInfo(EmptyArguments),
-    InitializeFeature(InitFeature),
-    GetFeatureStatus(FeatureQuery),
-    CreateTask(CreateTask),
-    GetTask(TaskQuery),
-    GetTaskHistory(TaskQuery),
-    ClaimTask(ClaimTask),
-    UpdateTask(WorkerUpdate),
-    CoordinateTask(CoordinatorUpdate),
+    Framework(FrameworkOperation),
+    Feature(FeatureOperation),
+    Task(TaskOperation),
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
+enum FrameworkOperation {
+    Initialize(FrameworkInit),
+    Info(EmptyArguments),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
+enum FeatureOperation {
+    Initialize(InitFeature),
+    List(EmptyArguments),
+    Status(FeatureQuery),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
+enum TaskOperation {
+    Create(CreateTask),
+    Get(TaskQuery),
+    History(TaskQuery),
+    Claim(ClaimTask),
+    Update(WorkerUpdate),
+    Coordinate(CoordinatorUpdate),
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct EmptyArguments {}
@@ -229,28 +248,25 @@ impl Scenario {
         }
     }
     fn init(&self, feature: FeatureId) -> anyhow::Result<LedgerInfo> {
-        let reply = self.run(Operation::InitializeFeature(InitFeature {
-            feature,
-            objective: Note::from("Example feature".to_owned()),
-            branch: match BranchNameParse::from("codex/feature".to_owned()) {
-                BranchNameParse::Parsed(value) => value,
-                BranchNameParse::Invalid(error) => return Err(error.into()),
+        let reply = self.run(Operation::Feature(FeatureOperation::Initialize(
+            InitFeature {
+                feature,
+                objective: Note::from("Example feature".to_owned()),
+                branch: match BranchNameParse::from("codex/feature".to_owned()) {
+                    BranchNameParse::Parsed(value) => value,
+                    BranchNameParse::Invalid(error) => return Err(error.into()),
+                },
+                worktree: self.directory.path().to_owned(),
             },
-            worktree: self.directory.path().to_owned(),
-        }))?;
-        match reply {
-            Reply::Ledger(info) => Ok(info),
-            other @ (Reply::Features(_)
-            | Reply::FrameworkInitialized { .. }
-            | Reply::FrameworkInfo { .. }
-            | Reply::Task(_)
-            | Reply::TaskView(_)
-            | Reply::Status { .. }
-            | Reply::History(_)) => bail!("{other:?}"),
-        }
+        )))?;
+        let Reply::Ledger(info) = reply else {
+            bail!("unexpected initialization reply: {reply:?}");
+        };
+        Ok(info)
     }
+
     fn create_task(&self) -> anyhow::Result<Reply> {
-        self.run(Operation::CreateTask(Self::task()?))
+        self.run(Operation::Task(TaskOperation::Create(Self::task()?)))
     }
     fn task() -> anyhow::Result<CreateTask> {
         let TaskQuery { feature, task } = Self::query()?;
@@ -325,21 +341,14 @@ impl Scenario {
         })
     }
     fn status(&self) -> anyhow::Result<Vec<TaskView>> {
-        match self.run(Operation::GetFeatureStatus(Self::feature()?))? {
-            Reply::Status { ledger, tasks } => {
-                assert_eq!(ledger.storage_version, StorageVersion::IndexedV2);
-                Ok(tasks)
-            }
-            other @ (Reply::Features(_)
-            | Reply::FrameworkInitialized { .. }
-            | Reply::FrameworkInfo { .. }
-            | Reply::Ledger(_)
-            | Reply::Task(_)
-            | Reply::TaskView(_)
-            | Reply::History(_)) => {
-                bail!("{other:?}")
-            }
-        }
+        let reply = self.run(Operation::Feature(FeatureOperation::Status(
+            Self::feature()?
+        )))?;
+        let Reply::Status { ledger, tasks } = reply else {
+            bail!("unexpected status reply: {reply:?}");
+        };
+        assert_eq!(ledger.storage_version, StorageVersion::IndexedV2);
+        Ok(tasks)
     }
 }
 
@@ -370,8 +379,8 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         | Reply::Status { .. }
         | Reply::History(_)) => bail!("{other:?}"),
     }
-    let first = scenario.start(Operation::ClaimTask(Scenario::claim()?))?;
-    let second = scenario.start(Operation::ClaimTask(Scenario::claim()?))?;
+    let first = scenario.start(Operation::Task(TaskOperation::Claim(Scenario::claim()?)))?;
+    let second = scenario.start(Operation::Task(TaskOperation::Claim(Scenario::claim()?)))?;
     let results = [Scenario::collect(first)?, Scenario::collect(second)?];
     assert_eq!(
         results
@@ -398,7 +407,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             Outcome::Success(other) => bail!("{other:?}"),
         }
     }
-    match scenario.run(Operation::GetTask(Scenario::query()?))? {
+    match scenario.run(Operation::Task(TaskOperation::Get(Scenario::query()?)))? {
         Reply::TaskView(view) => assert_eq!(view.task.revision, Revision::INITIAL.advance()?),
         other @ (Reply::Features(_)
         | Reply::FrameworkInitialized { .. }
@@ -411,7 +420,9 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         }
     }
     let before = scenario.status()?.remove(0).task;
-    scenario.run(Operation::UpdateTask(Scenario::heartbeat()?))?;
+    scenario.run(Operation::Task(TaskOperation::Update(
+        Scenario::heartbeat()?
+    )))?;
     let after = scenario.status()?.remove(0);
     assert_eq!(after.task.revision, before.revision.advance()?);
     assert_eq!(after.task.last_progress, before.last_progress);
@@ -419,11 +430,13 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     assert_eq!(after.lease, "current");
     assert_eq!(
         scenario
-            .failure(Operation::UpdateTask(Scenario::heartbeat()?))?
+            .failure(Operation::Task(TaskOperation::Update(
+                Scenario::heartbeat()?
+            )))?
             .code,
         "conflict"
     );
-    match scenario.run(Operation::GetTaskHistory(Scenario::query()?))? {
+    match scenario.run(Operation::Task(TaskOperation::History(Scenario::query()?)))? {
         Reply::History(events) => {
             assert_eq!(events.len(), 3);
             assert_eq!(events[0].kind, "created");
@@ -450,13 +463,13 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     }
     assert_eq!(
         scenario
-            .failure(Operation::GetTask(TaskQuery {
+            .failure(Operation::Task(TaskOperation::Get(TaskQuery {
                 feature: match FeatureIdParse::from("other-feature".to_owned()) {
                     FeatureIdParse::Parsed(value) => value,
                     FeatureIdParse::Invalid(error) => return Err(error.into()),
                 },
                 ..Scenario::query()?
-            }))?
+            })))?
             .code,
         "not_found"
     );
@@ -469,44 +482,48 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
     let scenario = Scenario::create()?;
     scenario.init(Scenario::feature()?.feature)?;
     scenario.create_task()?;
-    scenario.run(Operation::ClaimTask(Scenario::claim()?))?;
-    scenario.run(Operation::CoordinateTask(Scenario::coordinate(
-        CoordinatorAction::Requeue {
+    scenario.run(Operation::Task(TaskOperation::Claim(Scenario::claim()?)))?;
+    scenario.run(Operation::Task(TaskOperation::Coordinate(
+        Scenario::coordinate(CoordinatorAction::Requeue {
             reason: Note::from("Worker exited".to_owned()),
             previous_execution: StoppedExecution::StoppedOrFinished,
-        },
-    )?))?;
+        })?,
+    )))?;
     let requeued_revision = scenario.status()?.remove(0).task.revision;
-    scenario.run(Operation::ClaimTask(ClaimTask {
+    scenario.run(Operation::Task(TaskOperation::Claim(ClaimTask {
         expected_revision: requeued_revision,
         ..Scenario::claim()?
-    }))?;
+    })))?;
     let reclaimed_revision = scenario.status()?.remove(0).task.revision;
     let stale = WorkerUpdate {
         expected_revision: reclaimed_revision,
         ..Scenario::heartbeat()?
     };
     assert_eq!(
-        scenario.failure(Operation::UpdateTask(stale))?.code,
+        scenario
+            .failure(Operation::Task(TaskOperation::Update(stale)))?
+            .code,
         "assignment_changed"
     );
-    scenario.run(Operation::UpdateTask(WorkerUpdate {
+    scenario.run(Operation::Task(TaskOperation::Update(WorkerUpdate {
         expected_revision: reclaimed_revision,
         attempt: Attempt::UNCLAIMED.advance()?.advance()?,
         action: WorkerAction::Ready {
             progress: Scenario::progress(Note::from("Reviewed".to_owned())),
         },
         ..Scenario::heartbeat()?
-    }))?;
+    })))?;
     let ready_revision = scenario.status()?.remove(0).task.revision;
     let commit = match CommitIdParse::from(scenario.git(&["rev-parse", "HEAD"])?) {
         CommitIdParse::Parsed(value) => value,
         CommitIdParse::Invalid(error) => return Err(error.into()),
     };
-    scenario.run(Operation::CoordinateTask(CoordinatorUpdate {
-        expected_revision: ready_revision,
-        ..Scenario::coordinate(CoordinatorAction::Integrate { commit })?
-    }))?;
+    scenario.run(Operation::Task(TaskOperation::Coordinate(
+        CoordinatorUpdate {
+            expected_revision: ready_revision,
+            ..Scenario::coordinate(CoordinatorAction::Integrate { commit })?
+        },
+    )))?;
     assert!(matches!(
         scenario.status()?.remove(0).task.state,
         State::Integrated
@@ -529,7 +546,9 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     let worker = Scenario {
         directory: worker_dir,
     };
-    match worker.run(Operation::GetFeatureStatus(Scenario::feature()?))? {
+    match worker.run(Operation::Feature(FeatureOperation::Status(
+        Scenario::feature()?,
+    )))? {
         Reply::Status { ledger: found, .. } => assert_eq!(found.path, ledger.path),
         other @ (Reply::Features(_)
         | Reply::FrameworkInitialized { .. }
@@ -541,7 +560,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
             bail!("{other:?}")
         }
     }
-    scenario.run(Operation::CreateTask(CreateTask {
+    scenario.run(Operation::Task(TaskOperation::Create(CreateTask {
         workspace: Workspace::Git {
             branch: match BranchNameParse::from("codex/worker".to_owned()) {
                 BranchNameParse::Parsed(value) => value,
@@ -550,8 +569,8 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
             path: worker.directory.path().to_owned(),
         },
         ..Scenario::task()?
-    }))?;
-    worker.run(Operation::ClaimTask(Scenario::claim()?))?;
+    })))?;
+    worker.run(Operation::Task(TaskOperation::Claim(Scenario::claim()?)))?;
     fs::write(worker.directory.path().join("result.txt"), "result\n")?;
     worker.git(&["add", "result.txt"])?;
     worker.git(&["commit", "-m", "checkpoint"])?;
@@ -559,23 +578,23 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
         CommitIdParse::Parsed(value) => value,
         CommitIdParse::Invalid(error) => return Err(error.into()),
     };
-    worker.run(Operation::UpdateTask(WorkerUpdate {
+    worker.run(Operation::Task(TaskOperation::Update(WorkerUpdate {
         action: WorkerAction::Checkpoint {
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
             commit: commit.clone(),
             progress: Scenario::progress(Note::from("File added".to_owned())),
         },
         ..Scenario::heartbeat()?
-    }))?;
+    })))?;
     let checkpoint_revision = worker.status()?.remove(0).task.revision;
     let ready = || -> anyhow::Result<Operation> {
-        Ok(Operation::UpdateTask(WorkerUpdate {
+        Ok(Operation::Task(TaskOperation::Update(WorkerUpdate {
             expected_revision: checkpoint_revision,
             action: WorkerAction::Ready {
                 progress: Scenario::progress(Note::from("Ready".to_owned())),
             },
             ..Scenario::heartbeat()?
-        }))
+        })))
     };
     fs::write(worker.directory.path().join("unfinished.txt"), "unfinished")?;
     assert_eq!(worker.failure(ready()?)?.code, "invalid_request");
@@ -583,12 +602,14 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     worker.run(ready()?)?;
     let ready_revision = worker.status()?.remove(0).task.revision;
     let integrate = || -> anyhow::Result<Operation> {
-        Ok(Operation::CoordinateTask(CoordinatorUpdate {
-            expected_revision: ready_revision,
-            ..Scenario::coordinate(CoordinatorAction::Integrate {
-                commit: commit.clone(),
-            })?
-        }))
+        Ok(Operation::Task(TaskOperation::Coordinate(
+            CoordinatorUpdate {
+                expected_revision: ready_revision,
+                ..Scenario::coordinate(CoordinatorAction::Integrate {
+                    commit: commit.clone(),
+                })?
+            },
+        )))
     };
     assert_eq!(scenario.failure(integrate()?)?.code, "invalid_request");
     scenario.git(&["merge", "--ff-only", "codex/worker"])?;
@@ -607,7 +628,14 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         version: ProtocolVersion,
         invocation: InvocationGuide,
         transport: TransportGuide,
-        commands: Vec<CommandDescription>,
+        commands: CommandGroups,
+    }
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct CommandGroups {
+        framework: Vec<CommandDescription>,
+        feature: Vec<CommandDescription>,
+        task: Vec<CommandDescription>,
     }
     #[derive(Debug, PartialEq, Deserialize, From)]
     #[serde(transparent)]
@@ -644,29 +672,44 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         catalog.transport,
         TransportGuide::from("One YAML request and response per process; local tool discovery/calls, no MCP server or JSON-RPC session. Exit 0: success; exit 2: structured error. list/--help discover the CLI.".to_owned())
     );
-    assert_eq!(catalog.commands.len(), 11);
-    assert!(
-        catalog
-            .commands
-            .iter()
-            .all(|c| c.description != CommandSummary::from(String::new()))
-    );
-    for command in catalog.commands {
+    let CommandGroups {
+        framework,
+        feature,
+        task,
+    } = catalog.commands;
+    assert_eq!([framework.len(), feature.len(), task.len()], [2, 3, 6]);
+    for command in &framework {
+        assert!(matches!(command.example.operation, Operation::Framework(_)));
+    }
+    for command in &feature {
+        assert!(matches!(command.example.operation, Operation::Feature(_)));
+    }
+    for command in &task {
+        assert!(matches!(command.example.operation, Operation::Task(_)));
+    }
+    for command in framework.into_iter().chain(feature).chain(task) {
+        assert_ne!(command.description, CommandSummary::from(String::new()));
         assert_eq!(command.example.version, ProtocolVersion::CURRENT);
         assert_eq!(command.example.project, PathBuf::from("/absolute/project"));
     }
     let scenario = Scenario::create()?;
     for request in [
         "version: 1\nproject: .\noperation: {name: nope, arguments: {}}",
+        // A known leaf under the wrong group must not dispatch.
+        "version: 1\nproject: .\noperation: {group: Framework, command: {name: Claim, arguments: {feature: f, task: t, expected_revision: 1, agent: {team: Development, role: RustDev}, ttl_seconds: 600}}}",
+        "version: 1\nproject: .\noperation: {group: Task, command: {name: List, arguments: {}}}",
+        "version: 1\nproject: .\noperation: {group: Unknown, command: {name: List, arguments: {}}}",
+        "version: 1\nproject: .\noperation: {group: Feature, command: {name: List, arguments: {}, typo: 1}}",
+        "version: 1\nproject: .\noperation: {group: Feature, command: {name: List, arguments: {}}, typo: 1}",
         // Superseded aliases and automatic casing are not command identities.
         "version: 1\nproject: .\noperation: {name: framework.info, arguments: {}}",
         "version: 1\nproject: .\noperation: {name: get_framework_info, arguments: {}}",
         "version: 1\nproject: .\noperation: {name: ledger.features, arguments: {}}",
-        "version: 1\nproject: .\noperation: {name: ClaimTask, arguments: {feature: f, task: t, expected_revision: 1, agent: worker, ttl_seconds: 600}}",
-        "version: 1\nproject: .\noperation: {name: ClaimTask, arguments: {feature: f, task: t, expected_revision: 1, agent: {team: Sre, role: RustDev}, ttl_seconds: 600}}",
-        "version: 1\nproject: .\noperation: {name: ClaimTask, arguments: {feature: f, task: t, expected_revision: 0, agent: {team: Development, role: RustDev}, ttl_seconds: 1}}",
-        "version: 1\nproject: .\noperation: {name: GetFeatureStatus, arguments: {feature: f, typo: 1}}",
-        "version: 1\nproject: .\noperation: {name: GetFeatureStatus, arguments: {feature: f, feature: g}}",
+        "version: 1\nproject: .\noperation: {group: Task, command: {name: Claim, arguments: {feature: f, task: t, expected_revision: 1, agent: worker, ttl_seconds: 600}}}",
+        "version: 1\nproject: .\noperation: {group: Task, command: {name: Claim, arguments: {feature: f, task: t, expected_revision: 1, agent: {team: Sre, role: RustDev}, ttl_seconds: 600}}}",
+        "version: 1\nproject: .\noperation: {group: Task, command: {name: Claim, arguments: {feature: f, task: t, expected_revision: 0, agent: {team: Development, role: RustDev}, ttl_seconds: 1}}}",
+        "version: 1\nproject: .\noperation: {group: Feature, command: {name: Status, arguments: {feature: f, typo: 1}}}",
+        "version: 1\nproject: .\noperation: {group: Feature, command: {name: Status, arguments: {feature: f, feature: g}}}",
     ] {
         let response =
             Scenario::collect(Scenario::start_yaml(RequestYaml::from(request.to_owned()))?)?;
@@ -677,12 +720,12 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
     }
     assert_eq!(
         scenario
-            .failure(Operation::GetFeatureStatus(FeatureQuery {
+            .failure(Operation::Feature(FeatureOperation::Status(FeatureQuery {
                 feature: match FeatureIdParse::from("missing".to_owned()) {
                     FeatureIdParse::Parsed(value) => value,
                     FeatureIdParse::Invalid(error) => return Err(error.into()),
                 }
-            }))?
+            })))?
             .code,
         "not_found"
     );
@@ -696,11 +739,13 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
     scenario.create_task()?;
     assert_eq!(
         scenario
-            .failure(Operation::UpdateTask(Scenario::heartbeat()?))?
+            .failure(Operation::Task(TaskOperation::Update(
+                Scenario::heartbeat()?
+            )))?
             .code,
         "conflict"
     );
-    scenario.run(Operation::ClaimTask(Scenario::claim()?))?;
+    scenario.run(Operation::Task(TaskOperation::Claim(Scenario::claim()?)))?;
     let mut progress = Scenario::progress(Note::from(
         "Investigated: \"quotes\"\nNext line — details".to_owned(),
     ));
@@ -717,7 +762,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         "details".to_owned(),
         serde_json::json!({"arbitrary": [1, true, null]}),
     );
-    scenario.run(Operation::UpdateTask(WorkerUpdate {
+    scenario.run(Operation::Task(TaskOperation::Update(WorkerUpdate {
         action: WorkerAction::Progress {
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
             phase: Phase::Blocked {
@@ -726,17 +771,19 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
             progress: progress.clone(),
         },
         ..Scenario::heartbeat()?
-    }))?;
-    let Reply::TaskView(view) = scenario.run(Operation::GetTask(Scenario::query()?))? else {
+    })))?;
+    let Reply::TaskView(view) =
+        scenario.run(Operation::Task(TaskOperation::Get(Scenario::query()?)))?
+    else {
         bail!("task view")
     };
     assert_eq!(view.task.progress, progress);
     assert_eq!(
         scenario
-            .failure(Operation::ClaimTask(ClaimTask {
+            .failure(Operation::Task(TaskOperation::Claim(ClaimTask {
                 expected_revision: view.task.revision,
                 ..Scenario::claim()?
-            }))?
+            })))?
             .code,
         "invalid_state"
     );
@@ -753,26 +800,28 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
             ..Scenario::task()?
         })
     };
-    scenario.run(Operation::CreateTask(dependent()?))?;
+    scenario.run(Operation::Task(TaskOperation::Create(dependent()?)))?;
     assert_eq!(
         scenario
-            .failure(Operation::ClaimTask(ClaimTask {
+            .failure(Operation::Task(TaskOperation::Claim(ClaimTask {
                 task: match TaskIdParse::from("dependent".to_owned()) {
                     TaskIdParse::Parsed(value) => value,
                     TaskIdParse::Invalid(error) => return Err(error.into()),
                 },
                 ..Scenario::claim()?
-            }))?
+            })))?
             .code,
         "dependency_pending"
     );
     assert_eq!(
-        scenario.failure(Operation::CreateTask(dependent()?))?.code,
+        scenario
+            .failure(Operation::Task(TaskOperation::Create(dependent()?)))?
+            .code,
         "conflict"
     );
     assert_eq!(
         scenario
-            .failure(Operation::CreateTask(CreateTask {
+            .failure(Operation::Task(TaskOperation::Create(CreateTask {
                 task: match TaskIdParse::from("self-reference".to_owned()) {
                     TaskIdParse::Parsed(value) => value,
                     TaskIdParse::Invalid(error) => return Err(error.into()),
@@ -782,16 +831,18 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
                     TaskIdParse::Invalid(error) => return Err(error.into()),
                 }],
                 ..Scenario::task()?
-            }))?
+            })))?
             .code,
         "invalid_request"
     );
-    scenario.run(Operation::CoordinateTask(CoordinatorUpdate {
-        expected_revision: view.task.revision,
-        ..Scenario::coordinate(CoordinatorAction::Cancel {
-            reason: Note::from("Scope removed".to_owned()),
-        })?
-    }))?;
+    scenario.run(Operation::Task(TaskOperation::Coordinate(
+        CoordinatorUpdate {
+            expected_revision: view.task.revision,
+            ..Scenario::coordinate(CoordinatorAction::Cancel {
+                reason: Note::from("Scope removed".to_owned()),
+            })?
+        },
+    )))?;
     assert!(
         scenario
             .status()?
@@ -804,7 +855,10 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
 #[test]
 fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
     let scenario = Scenario::create()?;
-    let Reply::Features(empty) = scenario.run(Operation::ListFeatures(EmptyArguments {}))? else {
+    let Reply::Features(empty) = scenario.run(Operation::Feature(FeatureOperation::List(
+        EmptyArguments {},
+    )))?
+    else {
         bail!("feature list")
     };
     assert!(empty.is_empty());
@@ -813,39 +867,47 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
         FeatureIdParse::Parsed(value) => value,
         FeatureIdParse::Invalid(error) => return Err(error.into()),
     })?;
-    let Reply::Features(features) = scenario.run(Operation::ListFeatures(EmptyArguments {}))?
+    let Reply::Features(features) = scenario.run(Operation::Feature(FeatureOperation::List(
+        EmptyArguments {},
+    )))?
     else {
         bail!("feature list")
     };
     assert_eq!(features.len(), 2);
     assert!(features.iter().any(|item| item.path == first.path));
-    let Reply::FrameworkInitialized { project } =
-        scenario.run(Operation::InitializeFramework(FrameworkInit {
+    let Reply::FrameworkInitialized { project } = scenario.run(Operation::Framework(
+        FrameworkOperation::Initialize(FrameworkInit {
             harness: Harness::None,
             instructions: Instructions::Skip,
-        }))?
+        }),
+    ))?
     else {
         bail!("framework initialization")
     };
     assert_eq!(project, scenario.directory.path().canonicalize()?);
-    let Reply::FrameworkInfo { paths } =
-        scenario.run(Operation::GetFrameworkInfo(EmptyArguments {}))?
+    let Reply::FrameworkInfo { paths } = scenario.run(Operation::Framework(
+        FrameworkOperation::Info(EmptyArguments {}),
+    ))?
     else {
         bail!("framework info")
     };
     assert_eq!(paths.project, project);
     assert!(paths.framework.join("AGENTS.md").is_file());
     for harness in [Harness::Codex, Harness::Claude, Harness::Cursor] {
-        scenario.run(Operation::InitializeFramework(FrameworkInit {
-            harness,
-            instructions: Instructions::Write,
-        }))?;
+        scenario.run(Operation::Framework(FrameworkOperation::Initialize(
+            FrameworkInit {
+                harness,
+                instructions: Instructions::Write,
+            },
+        )))?;
     }
     let request_file = scenario.directory.path().join("request.yaml");
     fs::write(
         &request_file,
         serde_saphyr::to_string(
-            &scenario.request(Operation::GetFeatureStatus(Scenario::feature()?)),
+            &scenario.request(Operation::Feature(FeatureOperation::Status(
+                Scenario::feature()?,
+            ))),
         )?,
     )?;
     let output = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
@@ -860,7 +922,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
     ));
     fs::write(
         &request_file,
-        "version: 99\nproject: .\noperation: {name: GetFrameworkInfo, arguments: {}}",
+        "version: 99\nproject: .\noperation: {group: Framework, command: {name: Info, arguments: {}}}",
     )?;
     let output = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
         .args(["run", "--request"])
@@ -878,24 +940,26 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
 #[test]
 fn empty_notes_survive_cli_storage_and_history() -> anyhow::Result<()> {
     let scenario = Scenario::create()?;
-    scenario.run(Operation::InitializeFeature(InitFeature {
-        objective: Note::Empty,
-        feature: Scenario::feature()?.feature,
-        branch: match BranchNameParse::from("codex/feature".to_owned()) {
-            BranchNameParse::Parsed(value) => value,
-            BranchNameParse::Invalid(error) => return Err(error.into()),
+    scenario.run(Operation::Feature(FeatureOperation::Initialize(
+        InitFeature {
+            objective: Note::Empty,
+            feature: Scenario::feature()?.feature,
+            branch: match BranchNameParse::from("codex/feature".to_owned()) {
+                BranchNameParse::Parsed(value) => value,
+                BranchNameParse::Invalid(error) => return Err(error.into()),
+            },
+            worktree: scenario.directory.path().to_owned(),
         },
-        worktree: scenario.directory.path().to_owned(),
-    }))?;
+    )))?;
     let empty_progress = Scenario::progress(Note::Empty);
-    scenario.run(Operation::CreateTask(CreateTask {
+    scenario.run(Operation::Task(TaskOperation::Create(CreateTask {
         objective: Note::Empty,
         acceptance: vec![Note::Empty],
         progress: empty_progress.clone(),
         ..Scenario::task()?
-    }))?;
-    scenario.run(Operation::ClaimTask(Scenario::claim()?))?;
-    scenario.run(Operation::UpdateTask(WorkerUpdate {
+    })))?;
+    scenario.run(Operation::Task(TaskOperation::Claim(Scenario::claim()?)))?;
+    scenario.run(Operation::Task(TaskOperation::Update(WorkerUpdate {
         action: WorkerAction::Progress {
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
             phase: Phase::Blocked {
@@ -904,16 +968,19 @@ fn empty_notes_survive_cli_storage_and_history() -> anyhow::Result<()> {
             progress: empty_progress.clone(),
         },
         ..Scenario::heartbeat()?
-    }))?;
+    })))?;
     let task = scenario.status()?.remove(0).task;
     assert_eq!(task.progress, empty_progress);
-    scenario.run(Operation::CoordinateTask(CoordinatorUpdate {
-        expected_revision: task.revision,
-        ..Scenario::coordinate(CoordinatorAction::Cancel {
-            reason: Note::Empty,
-        })?
-    }))?;
-    let Reply::History(events) = scenario.run(Operation::GetTaskHistory(Scenario::query()?))?
+    scenario.run(Operation::Task(TaskOperation::Coordinate(
+        CoordinatorUpdate {
+            expected_revision: task.revision,
+            ..Scenario::coordinate(CoordinatorAction::Cancel {
+                reason: Note::Empty,
+            })?
+        },
+    )))?;
+    let Reply::History(events) =
+        scenario.run(Operation::Task(TaskOperation::History(Scenario::query()?)))?
     else {
         bail!("history")
     };

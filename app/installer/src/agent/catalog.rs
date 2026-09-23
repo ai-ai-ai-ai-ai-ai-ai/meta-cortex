@@ -1,7 +1,8 @@
 use super::AgentError;
 use super::discovery::{InvocationGuide, TransportGuide};
 use super::protocol::{
-    AgentHarness, AgentInstructions, EmptyArguments, FrameworkInit, Operation, Request,
+    AgentHarness, AgentInstructions, EmptyArguments, FeatureOperation, FrameworkInit,
+    FrameworkOperation, Operation, Request, TaskOperation,
 };
 use derive_more::{Display, From};
 use meta_cortex_workbench::LedgerError;
@@ -24,8 +25,33 @@ pub struct Catalog {
     version: ProtocolVersion,
     invocation: InvocationGuide,
     transport: TransportGuide,
-    commands: Vec<CommandDescription>,
+    commands: CommandGroups,
     request_schema: Schema,
+}
+
+#[derive(Default, Serialize)]
+struct CommandGroups {
+    framework: Vec<CommandDescription>,
+    feature: Vec<CommandDescription>,
+    task: Vec<CommandDescription>,
+}
+
+impl CommandGroups {
+    fn insert(&mut self, example: CommandExample) {
+        let commands = match &example.operation {
+            Operation::Framework(_) => &mut self.framework,
+            Operation::Feature(_) => &mut self.feature,
+            Operation::Task(_) => &mut self.task,
+        };
+        commands.push(CommandDescription {
+            description: example.description,
+            example: Request {
+                version: ProtocolVersion::CURRENT,
+                project: PathBuf::from("/absolute/project"),
+                operation: example.operation,
+            },
+        });
+    }
 }
 
 #[derive(Serialize)]
@@ -70,26 +96,26 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Discover existing feature IDs and database paths after a coordinator restart.",
                 ),
-                operation: Operation::ListFeatures(EmptyArguments {}),
+                operation: Operation::Feature(FeatureOperation::List(EmptyArguments {})),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Install the bundled framework without interactive prompts.",
                 ),
-                operation: Operation::InitializeFramework(FrameworkInit {
+                operation: Operation::Framework(FrameworkOperation::Initialize(FrameworkInit {
                     harness: AgentHarness::None,
                     instructions: AgentInstructions::Skip,
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from("Inspect the installed framework and models."),
-                operation: Operation::GetFrameworkInfo(EmptyArguments {}),
+                operation: Operation::Framework(FrameworkOperation::Info(EmptyArguments {})),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Initialize or reopen this feature's isolated ledger after preparing its branch and worktree.",
                 ),
-                operation: Operation::InitializeFeature(InitFeature {
+                operation: Operation::Feature(FeatureOperation::Initialize(InitFeature {
                     feature: feature.clone(),
                     objective: Note::from("Implement the feature".to_owned()),
                     branch: match BranchNameParse::from("codex/example".to_owned()) {
@@ -99,21 +125,21 @@ impl Catalog {
                         }
                     },
                     worktree: PathBuf::from("/absolute/project"),
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Read all tasks, current revisions, continuation notes, and lease health for one feature.",
                 ),
-                operation: Operation::GetFeatureStatus(FeatureQuery {
+                operation: Operation::Feature(FeatureOperation::Status(FeatureQuery {
                     feature: feature.clone(),
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Record a bounded assignment before launching its worker. Dependencies must already exist.",
                 ),
-                operation: Operation::CreateTask(CreateTask {
+                operation: Operation::Task(TaskOperation::Create(CreateTask {
                     feature: feature.clone(),
                     task: task.clone(),
                     actor: coordinator,
@@ -128,56 +154,56 @@ impl Catalog {
                         checks: Vec::new(),
                         extensions: Extensions::default(),
                     },
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Read a task before changing it. Use the returned revision and attempt.",
                 ),
-                operation: Operation::GetTask(TaskQuery {
+                operation: Operation::Task(TaskOperation::Get(TaskQuery {
                     feature: feature.clone(),
                     task: task.clone(),
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Read the append-only task history, including previous attempts.",
                 ),
-                operation: Operation::GetTaskHistory(TaskQuery {
+                operation: Operation::Task(TaskOperation::History(TaskQuery {
                     feature: feature.clone(),
                     task: task.clone(),
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Claim a queued task atomically. All dependencies must be integrated.",
                 ),
-                operation: Operation::ClaimTask(ClaimTask {
+                operation: Operation::Task(TaskOperation::Claim(ClaimTask {
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: Revision::INITIAL,
                     agent: worker,
                     ttl_seconds: ttl,
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Worker operation: heartbeat, progress, checkpoint, or ready. The schema below describes each action. Timestamps are Unix milliseconds; TTL is 1–86400 seconds.",
                 ),
-                operation: Operation::UpdateTask(WorkerUpdate {
+                operation: Operation::Task(TaskOperation::Update(WorkerUpdate {
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: claimed_revision,
                     agent: worker,
                     attempt: Attempt::UNCLAIMED.advance()?,
                     action: WorkerAction::Heartbeat { ttl_seconds: ttl },
-                }),
+                })),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Coordinator operation: integrate, requeue, or cancel. Requeue only after inspecting/stopping the previous execution.",
                 ),
-                operation: Operation::CoordinateTask(CoordinatorUpdate {
+                operation: Operation::Task(TaskOperation::Coordinate(CoordinatorUpdate {
                     feature,
                     task,
                     expected_revision: heartbeat_revision,
@@ -188,19 +214,12 @@ impl Catalog {
                         ),
                         previous_execution: StoppedExecution::StoppedOrFinished,
                     },
-                }),
+                })),
             },
         ];
-        let mut commands = Vec::new();
+        let mut commands = CommandGroups::default();
         for example in examples {
-            commands.push(CommandDescription {
-                description: example.description,
-                example: Request {
-                    version: ProtocolVersion::CURRENT,
-                    project: PathBuf::from("/absolute/project"),
-                    operation: example.operation,
-                },
-            });
+            commands.insert(example);
         }
         Ok(Self {
             version: ProtocolVersion::CURRENT,

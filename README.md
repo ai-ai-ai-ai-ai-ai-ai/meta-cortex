@@ -42,10 +42,12 @@ Create `request.yaml` with an existing project directory and explicit harness ch
 version: 1
 project: /path/to/project
 operation:
-  name: InitializeFramework
-  arguments:
-    harness: codex
-    instructions: write
+  group: Framework
+  command:
+    name: Initialize
+    arguments:
+      harness: codex
+      instructions: write
 ```
 
 Then run:
@@ -103,8 +105,10 @@ Save an inspection request as `info.yaml`:
 version: 1
 project: /path/to/project
 operation:
-  name: GetFrameworkInfo
-  arguments: {}
+  group: Framework
+  command:
+    name: Info
+    arguments: {}
 ```
 
 ```sh
@@ -237,7 +241,7 @@ Automated framework upgrades are not implemented yet.
 
 1. Back up the project's `.meta-cortex/` directory.
 2. Move the existing directory out of the installation path.
-3. Run a `InitializeFramework` YAML request with the new executable.
+3. Run a `Framework / Initialize` YAML request with the new executable.
 4. Review and reapply your configuration changes.
 
 Repeated initialization succeeds when the installed framework is unchanged and
