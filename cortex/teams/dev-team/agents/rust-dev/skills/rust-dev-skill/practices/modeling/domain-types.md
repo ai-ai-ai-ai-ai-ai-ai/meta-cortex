@@ -95,6 +95,53 @@ primitive sentinels to encode them.
 The following fragments illustrate construction and wire shapes. Serde examples
 assume its derive imports; aggregate examples assume existing domain types.
 
+### Classify metadata by meaning
+
+Use enums for closed choices and distinct newtypes for text. Static help text,
+CLI discovery, diagnostics, examples, and private serialization records are
+application values too. `&'static str`, `Serialize`, or placement at an output
+boundary does not exempt an authored field from this rule.
+
+**Prohibited:** these help fields compile, but their values are interchangeable.
+
+```rust
+pub struct CommandHelp {
+    pub invocation: &'static str,
+    pub transport: &'static str,
+}
+```
+
+**Preferred:** keep help text distinct from a machine-readable choice. These
+alternative declarations assume Serde derive and `derive_more`'s `from` feature.
+
+```rust
+#[derive(serde::Serialize, derive_more::From)]
+#[serde(transparent)]
+pub struct InvocationGuide(&'static str);
+
+#[derive(serde::Serialize, derive_more::From)]
+#[serde(transparent)]
+pub struct TransportGuide(&'static str);
+
+#[derive(serde::Serialize)]
+pub struct CommandHelp {
+    pub invocation: InvocationGuide,
+    pub transport: TransportGuide,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RequestSource {
+    File,
+    Stdin,
+}
+```
+
+The help wrappers preserve existing string wire fields. `RequestSource` models
+a closed choice; do not turn whole help paragraphs into enum variants just
+because only one paragraph currently exists. A scalar alias or one generic
+`Text` wrapper for unrelated meanings still permits the original mix-up.
+
 ### Single-field primitive wrapper
 
 Use one wrapper for each domain meaning.
@@ -298,7 +345,28 @@ use validated construction instead of these infallible conversions.
 
 ## Validation
 
-- Inventory primitive domain values in public and private code, including
-  locals, constants, text, bytes, and nested collections.
-- Use `raw_numeric_public_api` where available for the public numeric subset;
-  passing it does not verify the broader rule.
+Before handoff, review the changed code and each touched aggregate, including
+unchanged sibling fields. For a refactor, review the moved code rather than only
+its import edits.
+
+1. Inventory fields, parameters, returns, locals, constants, examples, and tests,
+   including private code and primitives nested inside collections or aliases.
+2. Classify each value as a closed choice, open domain content, private newtype
+   storage, or an exact external contract. Use an enum or distinct newtype for
+   application values; identify the external owner for a retained raw edge.
+3. Inspect construction and call sites to ensure the named type survives until
+   the actual encoding boundary. Check that serialization preserves the intended
+   wire contract.
+4. Report the reviewed scope, corrections, and any remaining exceptions separately
+   from compiler, Clippy, and test results. An unreviewed scope is not verified.
+
+Use `raw_numeric_public_api` where available for the public numeric subset;
+passing it does not verify strings, metadata, private fields, or the broader rule.
+Text searches can locate candidates but cannot establish semantic compliance.
+
+**Prohibited:** report a discovery catalog as type-safe because Clippy passes,
+while reviewing identifiers but skipping its help fields and example tuples.
+
+**Preferred:** report that the catalog's fields and example construction were
+reviewed, help text uses distinct newtypes, raw representation stays inside those
+types or encoding, and existing YAML consumers still pass their checks.

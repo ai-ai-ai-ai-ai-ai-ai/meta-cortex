@@ -12,6 +12,9 @@ for Rust practices, checks, and boundary requirements.
 ## Baseline
 
 - Inspect focused tests and affected public, wire, and Rust-owned WASM boundaries.
+- Apply the Rust skill's mandatory modeling prerequisites and
+  [domain-type review](../../../rust-dev/skills/rust-dev-skill/practices/modeling/domain-types.md#validation)
+  to moved code and touched aggregates; existing code is not automatically compliant.
 - Record the behavior, domain decisions, and contracts the refactor must preserve.
 - Route an intended behavior or contract change through Team Gizmo to rust-dev.
 

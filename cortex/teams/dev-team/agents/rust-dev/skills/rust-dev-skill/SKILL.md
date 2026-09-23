@@ -13,14 +13,18 @@ selected language practices. Reuse it if already loaded for this assignment.
 
 ## Required actions
 
-For every Rust implementation or tooling assignment, load and apply
-[Rust code checks](practices/tooling/rust-code-checks.md). This prerequisite is
-mandatory, independent of the practices selected for the changed code.
+For every Rust implementation, refactoring, review, or tooling assignment, load
+and apply [domain types](practices/modeling/domain-types.md),
+[domain states](practices/modeling/domain-states.md), and
+[Rust code checks](practices/tooling/rust-code-checks.md). These prerequisites are
+mandatory, independent of the selected implementation practices. Complete the
+[domain-type review](practices/modeling/domain-types.md#validation) before handoff.
 
-**Prohibited:** select only domain-modeling practices and omit code checks.
+**Prohibited:** select only code checks for a CLI metadata change and leave its
+application fields as raw strings because compilation passes.
 
-**Preferred:** establish and run the required checks alongside the selected
-domain-modeling practices.
+**Preferred:** load the modeling rules, classify the metadata fields, preserve
+their wire format with domain types, and run the required checks.
 
 ## Practice selection
 

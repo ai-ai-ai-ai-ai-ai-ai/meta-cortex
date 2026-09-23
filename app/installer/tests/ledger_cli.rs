@@ -1,4 +1,6 @@
 use anyhow::{Context, bail};
+use derive_more::From;
+use meta_cortex_workbench::versions::ProtocolVersion;
 use serde::Deserialize;
 use std::fs;
 use std::io::Write;
@@ -365,12 +367,23 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
 fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
     #[derive(Deserialize)]
     struct Catalog {
-        version: u32,
+        version: ProtocolVersion,
+        invocation: InvocationGuide,
+        transport: TransportGuide,
         commands: Vec<CommandDescription>,
     }
+    #[derive(Debug, PartialEq, Deserialize, From)]
+    #[serde(transparent)]
+    struct InvocationGuide(String);
+    #[derive(Debug, PartialEq, Deserialize, From)]
+    #[serde(transparent)]
+    struct TransportGuide(String);
+    #[derive(Debug, PartialEq, Deserialize, From)]
+    #[serde(transparent)]
+    struct CommandSummary(String);
     #[derive(Deserialize)]
     struct CommandDescription {
-        description: String,
+        description: CommandSummary,
     }
     let output = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
         .arg("list")
@@ -381,9 +394,24 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         String::from_utf8_lossy(&output.stdout)
     );
     let catalog: Catalog = serde_saphyr::from_str(&String::from_utf8(output.stdout)?)?;
-    assert_eq!(catalog.version, 1);
+    assert_eq!(catalog.version, ProtocolVersion::CURRENT);
+    assert_eq!(
+        catalog.invocation,
+        InvocationGuide::from(
+            "meta-cortex run --request request.yaml (or --request - for stdin)".to_owned()
+        )
+    );
+    assert_eq!(
+        catalog.transport,
+        TransportGuide::from("One YAML request and response per process; local tool discovery/calls, no MCP server or JSON-RPC session. Exit 0: success; exit 2: structured error. Legacy init/info remain available; list/--help discover the CLI.".to_owned())
+    );
     assert_eq!(catalog.commands.len(), 11);
-    assert!(catalog.commands.iter().all(|c| !c.description.is_empty()));
+    assert!(
+        catalog
+            .commands
+            .iter()
+            .all(|c| c.description != CommandSummary::from(String::new()))
+    );
     let scenario = Scenario::create()?;
     for request in [
         "name: nope\narguments: {}",

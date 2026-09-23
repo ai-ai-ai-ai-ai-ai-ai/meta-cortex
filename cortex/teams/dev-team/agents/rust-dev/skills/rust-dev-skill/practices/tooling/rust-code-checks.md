@@ -26,6 +26,9 @@ cargo clippy --workspace --all-targets -- -D warnings
   - Check mutually exclusive features separately instead of blindly adding `--all-features`.
 - Preserve required toolchain and build flags.
 - Apply the [Option review requirements](../modeling/domain-states.md#review-the-option-prohibition).
+- Complete the [domain-type review](../modeling/domain-types.md#validation),
+  including private metadata and touched aggregates. Passing the mechanical
+  gates does not complete that review.
 - Deny compiler warnings during compilation as well as Clippy.
   - Use the project's existing lint configuration or compiler flags.
 
@@ -157,6 +160,8 @@ compiler warnings.
 - Report the commands actually run.
 - Identify the workspace roots and target/feature configurations checked.
 - Report the results actually verified.
+- Report the [domain-type review](../modeling/domain-types.md#validation) scope
+  and unresolved findings separately from mechanical check results.
 - Require formatting, compilation, and Clippy checks to pass without warnings before completion.
 - Report missing tools and unavailable targets as blockers.
 - Report failed checks and unresolved diagnostics as blockers.

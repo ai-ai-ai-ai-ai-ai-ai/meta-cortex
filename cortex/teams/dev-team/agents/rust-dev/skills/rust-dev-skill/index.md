@@ -18,9 +18,10 @@ reader can detect contradictions without opening every file.
 Related entries are review relationships, not instructions for leaf documents to
 link back here. Apply the relevant cross-language practices when the assignment crosses that boundary.
 
-For implementation, select entries covering the decisions being changed and load
-those practices in full. Include related subjects when the change crosses their
-boundaries.
+For implementation, refactoring, review, and tooling, always load Domain types,
+Domain states, and Rust code checks as required by the skill entry point. Select
+additional entries covering the decisions being changed and load those practices
+in full. Include related subjects when the change crosses their boundaries.
 
 ## Modeling
 
@@ -53,6 +54,13 @@ boundaries.
 
   - Keep primitive representation inside its owning value or a required external edge.
   - User text and locale keys also require meaningful domain types.
+
+- **[domain_types:metadata_meaning](practices/modeling/domain-types.md#classify-metadata-by-meaning)**
+
+  - Use enums for closed choices and distinct newtypes for help text, metadata,
+    diagnostics, and examples, including static and private serialized fields.
+  - Preserve existing string wire shapes with transparent newtypes; do not encode
+    paragraphs as enum variants or use one generic text wrapper for unrelated meanings.
 
 - **[domain_types:validated_records](practices/modeling/domain-types.md#construction-and-representation)**
 
@@ -127,6 +135,15 @@ boundaries.
   - Scope any required serialization/database/FFI lint expectation to the exact item and
     document the edge, never blanket-suppress a crate/module/type.
 
+
+- **[domain_types:semantic_review](practices/modeling/domain-types.md#validation)**
+
+  - Before handoff, inventory changed code and touched aggregates, including
+    siblings, private fields, constants, examples, tests, and moved code.
+  - Classify choices, open content, representation storage, and exact external
+    contracts; preserve named values through construction and encoding.
+  - Report semantic review scope and exceptions separately from mechanical checks;
+    numeric lints and text searches do not establish full compliance.
 
 ### Domain states
 
@@ -851,6 +868,7 @@ boundaries.
   - Cover workspace members, all applicable targets, and supported feature/target
     configurations; preserve build flags and deny compiler and Clippy warnings.
   - Coordinate pipeline changes with the CI/CD owner under the active mode.
+  - Complete the mandatory domain-type review as well as mechanical gates.
 
 - **[code_checks:lint_baseline](practices/tooling/rust-code-checks.md#enforce-the-lint-baseline)**
 
@@ -873,6 +891,7 @@ boundaries.
     must succeed without warnings before completion.
   - Missing tooling, unverified required configurations, and unresolved diagnostics
     block verification rather than count as success.
+  - Report semantic domain-review scope and unresolved findings separately.
 
 ### Libraries
 

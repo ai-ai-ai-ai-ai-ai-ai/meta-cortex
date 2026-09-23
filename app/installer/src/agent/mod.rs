@@ -97,7 +97,7 @@ pub struct AgentCli;
 
 impl AgentCli {
     pub fn list() -> ExitCode {
-        match Catalog::render() {
+        match Catalog::discover().and_then(|catalog| catalog.render()) {
             Ok(output) => {
                 print!("{output}");
                 ExitCode::SUCCESS
