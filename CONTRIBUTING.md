@@ -4,6 +4,9 @@
 
 ### Source responsibilities
 
+- **Rust workspace: [app/Cargo.toml](app/Cargo.toml)**
+  - Owns dependency versions, shared features, pins, and local crate paths.
+  - Member manifests select their dependencies with `workspace = true`.
 - **Framework: [cortex/](cortex)**
   - Contains the distributable instructions, roles, skills, and configuration.
 - **Installer: [app/installer/](app/installer)**
