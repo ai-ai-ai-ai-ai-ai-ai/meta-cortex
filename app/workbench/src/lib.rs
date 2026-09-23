@@ -93,7 +93,7 @@ pub enum LedgerError {
     #[error("dependency is not ready or integrated")]
     DependencyPending,
     #[error("Git operation failed: {0}")]
-    Git(String),
+    Git(#[from] git2::Error),
     #[error("ledger has not been initialized; run Feature / Initialize")]
     Uninitialized,
     #[error("file operation failed: {0}")]

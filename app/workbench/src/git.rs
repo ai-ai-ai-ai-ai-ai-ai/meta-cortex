@@ -3,11 +3,10 @@ use super::model::{Checkpoint, Feature, Workspace};
 use super::values::{BranchName, CommitId, FeatureId};
 use crate::values::{CommitIdParse, FeatureIdParse};
 use derive_more::From;
+use git2::{Branch, Oid, StatusOptions};
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::str;
 
 #[derive(Clone)]
 pub struct Repository {
@@ -18,34 +17,27 @@ pub struct Repository {
 pub struct GitWorktree(pub PathBuf);
 
 impl GitWorktree {
-    fn output(&self, arguments: &[&str]) -> Result<String, LedgerError> {
+    fn open(&self) -> Result<git2::Repository, LedgerError> {
         let Self(path) = self;
-        let output = Command::new("git")
-            .arg("-C")
-            .arg(path)
-            .args(arguments)
-            .output()?;
-        if !output.status.success() {
-            return Err(LedgerError::Git(
-                String::from_utf8_lossy(&output.stderr).trim().to_owned(),
-            ));
-        }
-        Ok(str::from_utf8(&output.stdout)
-            .map_err(|_| LedgerError::Invalid("Git returned non-UTF-8 output"))?
-            .trim_end()
-            .to_owned())
+        Ok(git2::Repository::discover(path)?)
     }
 
     pub fn head(&self) -> Result<CommitId, LedgerError> {
-        match CommitIdParse::from(self.output(&["rev-parse", "--verify", "HEAD^{commit}"])?) {
+        let oid = self.open()?.head()?.peel_to_commit()?.id();
+        match CommitIdParse::from(oid.to_string()) {
             CommitIdParse::Parsed(commit) => Ok(commit),
             CommitIdParse::Invalid(error) => Err(error.into()),
         }
     }
 
     pub fn require_branch(&self, branch: &BranchName) -> Result<(), LedgerError> {
-        self.output(&["check-ref-format", "--branch", &branch.to_string()])?;
-        if self.output(&["symbolic-ref", "--short", "HEAD"])? != branch.to_string() {
+        let name = branch.to_string();
+        if !Branch::name_is_valid(&name)? {
+            return Err(git2::Error::from_str("invalid Git branch name").into());
+        }
+        let repository = self.open()?;
+        let head = repository.head()?;
+        if !head.is_branch() || Branch::wrap(head).name()? != Some(name.as_str()) {
             return Err(LedgerError::Invalid(
                 "worktree is not on its assigned branch",
             ));
@@ -54,12 +46,25 @@ impl GitWorktree {
     }
 
     pub fn require_ancestor(&self, commit: &CommitId) -> Result<(), LedgerError> {
-        self.output(&["merge-base", "--is-ancestor", &commit.to_string(), "HEAD"])?;
+        let repository = self.open()?;
+        let ancestor = repository
+            .find_commit(Oid::from_str_ext(
+                &commit.to_string(),
+                repository.object_format(),
+            )?)?
+            .id();
+        let head = repository.head()?.peel_to_commit()?.id();
+        // libgit2's descendant check excludes equality; Git's is-ancestor includes it.
+        if head != ancestor && !repository.graph_descendant_of(head, ancestor)? {
+            return Err(git2::Error::from_str("checkpoint is not an ancestor of HEAD").into());
+        }
         Ok(())
     }
 
     pub fn require_clean(&self) -> Result<(), LedgerError> {
-        if !self.output(&["status", "--porcelain"])?.is_empty() {
+        let mut options = StatusOptions::new();
+        options.include_untracked(true).recurse_untracked_dirs(true);
+        if !self.open()?.statuses(Some(&mut options))?.is_empty() {
             return Err(LedgerError::Invalid("worktree has uncommitted changes"));
         }
         Ok(())
@@ -94,13 +99,9 @@ impl Repository {
     }
 
     pub fn discover(project: &Path) -> Result<Self, LedgerError> {
-        let git = GitWorktree::from(project.to_path_buf());
-        let common_dir = PathBuf::from(git.output(&[
-            "rev-parse",
-            "--path-format=absolute",
-            "--git-common-dir",
-        ])?)
-        .canonicalize()?;
+        let common_dir = git2::Repository::discover(project)?
+            .commondir()
+            .canonicalize()?;
         Ok(Self { common_dir })
     }
 
@@ -207,4 +208,102 @@ pub struct IntegrationCheck<'a> {
     pub feature: &'a Feature,
     pub checkpoint: &'a Checkpoint,
     pub commit: &'a CommitId,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{GitWorktree, Repository};
+    use crate::LedgerError;
+    use crate::values::{BranchNameParse, CommitIdParse};
+    use std::fs;
+    use std::path::Path;
+
+    #[test]
+    fn git_library_preserves_checkpoint_and_worktree_checks() -> anyhow::Result<()> {
+        for format in [git2::ObjectFormat::Sha1, git2::ObjectFormat::Sha256] {
+            let directory = tempfile::tempdir()?;
+            let project = directory.path().join("project with spaces 🦀");
+            let mut options = git2::RepositoryInitOptions::new();
+            options.initial_head("codex/feature").object_format(format);
+            let repository = git2::Repository::init_opts(&project, &options)?;
+            fs::write(project.join("tracked.txt"), "initial")?;
+            let mut index = repository.index()?;
+            index.add_path(Path::new("tracked.txt"))?;
+            index.write()?;
+            let tree_id = index.write_tree()?;
+            let tree = repository.find_tree(tree_id)?;
+            let signature = git2::Signature::now("Git Test", "git@example.invalid")?;
+            let root_id =
+                repository.commit(Some("HEAD"), &signature, &signature, "root", &tree, &[])?;
+            let root = repository.find_commit(root_id)?;
+            let worktree = GitWorktree::from(project.clone());
+            let checkpoint = worktree.head()?;
+            let branch = match BranchNameParse::from("codex/feature".to_owned()) {
+                BranchNameParse::Parsed(branch) => branch,
+                BranchNameParse::Invalid(error) => return Err(error.into()),
+            };
+            worktree.require_branch(&branch)?;
+            worktree.require_clean()?;
+            worktree.require_ancestor(&checkpoint)?;
+            repository.commit(
+                Some("HEAD"),
+                &signature,
+                &signature,
+                "child",
+                &tree,
+                &[&root],
+            )?;
+            worktree.require_ancestor(&checkpoint)?;
+            let sibling =
+                repository.commit(None, &signature, &signature, "sibling", &tree, &[&root])?;
+            let unrelated = match CommitIdParse::from(sibling.to_string()) {
+                CommitIdParse::Parsed(commit) => commit,
+                CommitIdParse::Invalid(error) => return Err(error.into()),
+            };
+            assert!(matches!(
+                worktree.require_ancestor(&unrelated),
+                Err(LedgerError::Git(_))
+            ));
+            let other_branch = match BranchNameParse::from("codex/other".to_owned()) {
+                BranchNameParse::Parsed(branch) => branch,
+                BranchNameParse::Invalid(error) => return Err(error.into()),
+            };
+            assert!(matches!(
+                worktree.require_branch(&other_branch),
+                Err(LedgerError::Invalid(_))
+            ));
+            repository.set_head_detached(root_id)?;
+            assert!(matches!(
+                worktree.require_branch(&branch),
+                Err(LedgerError::Invalid(_))
+            ));
+            repository.set_head("refs/heads/codex/feature")?;
+            fs::write(repository.path().join("info/exclude"), "ignored.txt\n")?;
+            fs::write(project.join("ignored.txt"), "ignored")?;
+            worktree.require_clean()?;
+            fs::create_dir(project.join("nested"))?;
+            fs::write(project.join("nested/untracked.txt"), "untracked")?;
+            assert!(matches!(
+                worktree.require_clean(),
+                Err(LedgerError::Invalid(_))
+            ));
+            fs::remove_file(project.join("nested/untracked.txt"))?;
+            fs::write(project.join("tracked.txt"), "modified")?;
+            assert!(matches!(
+                worktree.require_clean(),
+                Err(LedgerError::Invalid(_))
+            ));
+            index.add_path(Path::new("tracked.txt"))?;
+            index.write()?;
+            assert!(matches!(
+                worktree.require_clean(),
+                Err(LedgerError::Invalid(_))
+            ));
+            assert_eq!(
+                Repository::discover(&project.join("nested"))?.common_dir,
+                repository.commondir().canonicalize()?
+            );
+        }
+        Ok(())
+    }
 }

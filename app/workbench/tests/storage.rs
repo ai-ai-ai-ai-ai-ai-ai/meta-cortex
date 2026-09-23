@@ -67,23 +67,13 @@ impl Scenario {
         let scenario = Self {
             directory: tempfile::tempdir()?,
         };
-        for args in [
-            vec!["init", "-b", "codex/feature"],
-            vec!["config", "user.name", "Workbench Test"],
-            vec!["config", "user.email", "workbench@example.invalid"],
-            vec!["commit", "--allow-empty", "-m", "initial"],
-        ] {
-            let result = Command::new("git")
-                .arg("-C")
-                .arg(scenario.directory.path())
-                .args(args)
-                .output()?;
-            assert!(
-                result.status.success(),
-                "{}",
-                String::from_utf8_lossy(&result.stderr)
-            );
-        }
+        let mut options = git2::RepositoryInitOptions::new();
+        options.initial_head("codex/feature");
+        let repository = git2::Repository::init_opts(scenario.directory.path(), &options)?;
+        let signature = git2::Signature::now("Workbench Test", "workbench@example.invalid")?;
+        let tree_id = repository.index()?.write_tree()?;
+        let tree = repository.find_tree(tree_id)?;
+        repository.commit(Some("HEAD"), &signature, &signature, "initial", &tree, &[])?;
         Ok(scenario)
     }
 

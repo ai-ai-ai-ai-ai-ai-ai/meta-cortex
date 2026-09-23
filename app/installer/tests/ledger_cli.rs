@@ -7,14 +7,14 @@ use meta_cortex_workbench::request::{
     StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    Attempt, BranchNameParse, CommitIdParse, Extensions, FeatureId, FeatureIdParse, LeaseSeconds,
-    Note, Revision, TaskIdParse,
+    Attempt, BranchNameParse, CommitId, CommitIdParse, Extensions, FeatureId, FeatureIdParse,
+    LeaseSeconds, Note, Revision, TaskIdParse,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use tempfile::TempDir;
 
@@ -173,24 +173,24 @@ impl Scenario {
         let scenario = Self {
             directory: tempfile::tempdir()?,
         };
-        scenario.git(&["init", "-b", "codex/feature"])?;
-        scenario.git(&["config", "user.name", "Ledger Test"])?;
-        scenario.git(&["config", "user.email", "ledger@example.invalid"])?;
-        scenario.git(&["commit", "--allow-empty", "-m", "initial"])?;
+        let mut options = git2::RepositoryInitOptions::new();
+        options.initial_head("codex/feature");
+        let repository = git2::Repository::init_opts(scenario.directory.path(), &options)?;
+        let signature = git2::Signature::now("Ledger Test", "ledger@example.invalid")?;
+        let tree_id = repository.index()?.write_tree()?;
+        let tree = repository.find_tree(tree_id)?;
+        repository.commit(Some("HEAD"), &signature, &signature, "initial", &tree, &[])?;
         Ok(scenario)
     }
-    fn git(&self, args: &[&str]) -> anyhow::Result<String> {
-        let result = Command::new("git")
-            .arg("-C")
-            .arg(self.directory.path())
-            .args(args)
-            .output()?;
-        assert!(
-            result.status.success(),
-            "{}",
-            String::from_utf8_lossy(&result.stderr)
-        );
-        Ok(String::from_utf8(result.stdout)?.trim().to_owned())
+    fn repository(&self) -> anyhow::Result<git2::Repository> {
+        Ok(git2::Repository::open(self.directory.path())?)
+    }
+    fn head(&self) -> anyhow::Result<CommitId> {
+        let oid = self.repository()?.head()?.peel_to_commit()?.id();
+        match CommitIdParse::from(oid.to_string()) {
+            CommitIdParse::Parsed(value) => Ok(value),
+            CommitIdParse::Invalid(error) => Err(error.into()),
+        }
     }
     fn request(&self, operation: Operation) -> Request {
         Request {
@@ -473,7 +473,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             .code,
         "not_found"
     );
-    assert!(scenario.git(&["status", "--porcelain"])?.is_empty());
+    assert!(scenario.repository()?.statuses(None)?.is_empty());
     Ok(())
 }
 
@@ -514,10 +514,7 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
         ..Scenario::heartbeat()?
     })))?;
     let ready_revision = scenario.status()?.remove(0).task.revision;
-    let commit = match CommitIdParse::from(scenario.git(&["rev-parse", "HEAD"])?) {
-        CommitIdParse::Parsed(value) => value,
-        CommitIdParse::Invalid(error) => return Err(error.into()),
-    };
+    let commit = scenario.head()?;
     scenario.run(Operation::Task(TaskOperation::Coordinate(
         CoordinatorUpdate {
             expected_revision: ready_revision,
@@ -536,13 +533,14 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     let scenario = Scenario::create()?;
     let ledger = scenario.init(Scenario::feature()?.feature)?;
     let worker_dir = tempfile::tempdir()?;
-    scenario.git(&[
-        "worktree",
-        "add",
-        "-b",
-        "codex/worker",
-        worker_dir.path().to_str().context("path")?,
-    ])?;
+    // libgit2 creates the worktree directory itself.
+    fs::remove_dir(worker_dir.path())?;
+    let repository = scenario.repository()?;
+    let base = repository.head()?.peel_to_commit()?;
+    let branch = repository.branch("codex/worker", &base, false)?;
+    let mut options = git2::WorktreeAddOptions::new();
+    options.reference(Some(branch.get()));
+    repository.worktree("worker", worker_dir.path(), Some(&options))?;
     let worker = Scenario {
         directory: worker_dir,
     };
@@ -572,12 +570,23 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     })))?;
     worker.run(Operation::Task(TaskOperation::Claim(Scenario::claim()?)))?;
     fs::write(worker.directory.path().join("result.txt"), "result\n")?;
-    worker.git(&["add", "result.txt"])?;
-    worker.git(&["commit", "-m", "checkpoint"])?;
-    let commit = match CommitIdParse::from(worker.git(&["rev-parse", "HEAD"])?) {
-        CommitIdParse::Parsed(value) => value,
-        CommitIdParse::Invalid(error) => return Err(error.into()),
-    };
+    let worker_repository = worker.repository()?;
+    let mut index = worker_repository.index()?;
+    index.add_path(Path::new("result.txt"))?;
+    index.write()?;
+    let tree_id = index.write_tree()?;
+    let tree = worker_repository.find_tree(tree_id)?;
+    let parent = worker_repository.head()?.peel_to_commit()?;
+    let signature = git2::Signature::now("Ledger Test", "ledger@example.invalid")?;
+    worker_repository.commit(
+        Some("HEAD"),
+        &signature,
+        &signature,
+        "checkpoint",
+        &tree,
+        &[&parent],
+    )?;
+    let commit = worker.head()?;
     worker.run(Operation::Task(TaskOperation::Update(WorkerUpdate {
         action: WorkerAction::Checkpoint {
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
@@ -612,7 +621,12 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
         )))
     };
     assert_eq!(scenario.failure(integrate()?)?.code, "invalid_request");
-    scenario.git(&["merge", "--ff-only", "codex/worker"])?;
+    let target = repository.find_commit(worker_repository.head()?.peel_to_commit()?.id())?;
+    assert!(repository.graph_descendant_of(target.id(), base.id())?);
+    repository.checkout_tree(target.as_object(), None)?;
+    repository
+        .head()?
+        .set_target(target.id(), "fast-forward test feature")?;
     scenario.run(integrate()?)?;
     assert_eq!(
         fs::read_to_string(scenario.directory.path().join("result.txt"))?,
