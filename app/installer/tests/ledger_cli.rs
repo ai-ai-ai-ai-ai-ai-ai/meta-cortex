@@ -5,13 +5,16 @@ use scenario::{Cli, Examples, Scenario};
 use anyhow::{Context, bail};
 use derive_more::From;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
-use meta_cortex_workbench::model::{Assignment, Check, CheckOutcome, Phase, Progress, Workspace};
+use meta_cortex_workbench::model::{
+    Assignment, Check, CheckOutcome, EventKind, LeaseHealth, Phase, Progress, Workspace,
+};
 use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
     StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    Attempt, BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision, TaskIdParse,
+    Attempt, BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision, TaskId,
+    TaskIdParse, Timestamp,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use serde::{Deserialize, Serialize};
@@ -136,12 +139,12 @@ struct LedgerInfo {
 }
 #[derive(Debug, Deserialize)]
 struct Task {
-    id: String,
+    id: TaskId,
     revision: Revision,
-    attempt: u32,
+    attempt: Attempt,
     state: State,
-    last_update: u64,
-    last_progress: u64,
+    last_update: Timestamp,
+    last_progress: Timestamp,
     progress: Progress,
 }
 #[derive(Debug, Deserialize)]
@@ -156,12 +159,12 @@ enum State {
 #[derive(Debug, Deserialize)]
 struct TaskView {
     task: Task,
-    lease: String,
+    lease: LeaseHealth,
 }
 #[derive(Debug, Deserialize)]
 struct Event {
     actor: AgentId,
-    kind: String,
+    kind: EventKind,
     note: Note,
     task: Task,
 }
@@ -192,7 +195,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     };
     assert_ne!(scenario.ledger().path, other.path);
     let scenario = scenario.create_task(Examples::task()?)?;
-    assert_eq!(scenario.created_task().id, "task");
+    assert_eq!(scenario.created_task().id, Examples::query()?.task);
     assert!(matches!(scenario.created_task().state, State::Queued));
     let first = scenario
         .client()
@@ -214,7 +217,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             Outcome::Error(error) => assert_eq!(error.code, "conflict"),
             Outcome::Success(Reply::Task(task)) => {
                 assert_eq!(task.revision, Revision::INITIAL.advance()?);
-                assert_eq!(task.attempt, 1);
+                assert_eq!(task.attempt, Attempt::UNCLAIMED.advance()?);
                 let State::Active { assignment } = task.state else {
                     bail!("claimed task must retain its active assignment")
                 };
@@ -251,7 +254,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     assert_eq!(after.task.revision, before.revision.advance()?);
     assert_eq!(after.task.last_progress, before.last_progress);
     assert!(after.task.last_update >= before.last_update);
-    assert_eq!(after.lease, "current");
+    assert_eq!(after.lease, LeaseHealth::Current);
     assert_eq!(
         scenario
             .client()
@@ -267,7 +270,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     {
         Reply::History(events) => {
             assert_eq!(events.len(), 3);
-            assert_eq!(events[0].kind, "created");
+            assert_eq!(events[0].kind, EventKind::Created);
             assert_eq!(events[0].actor, AgentId::Gizmo(GizmoAgent::Gizmo));
             assert_eq!(
                 events[1].actor,

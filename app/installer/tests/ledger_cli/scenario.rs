@@ -119,7 +119,7 @@ impl Scenario<FeatureReady> {
         if input.feature != self.state.feature {
             bail!("task belongs to another feature");
         }
-        let id = input.task.to_string();
+        let id = input.task.clone();
         let reply = self
             .client()
             .run(Operation::Task(TaskOperation::Create(input)))?;
