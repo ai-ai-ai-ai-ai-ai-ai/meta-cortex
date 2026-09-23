@@ -136,6 +136,12 @@ no background TTL process. Status computes expiration when queried.
    `ledger.status`. Use `ledger.features` to rediscover feature IDs and paths
    when the coordinator context is lost. Inspect `last_update`, `last_progress`, the lease health,
    current checkpoint, and continuation notes. Read `task.history` when needed.
+   Recover session mode and delivery choices from the
+   [assignment context](../../AGENTS.md#assignment-context). An integrated ledger
+   task does not imply PR delivery is complete. Apply the
+   [delivery policy](../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
+   before the final handoff; collect any missing session choice through the entry
+   point rather than inferring it from an existing branch or ledger.
 2. For expired or stalled work, inspect the host execution and its worktree.
    Stop the previous execution or establish that it finished before reassignment.
    Long tests may still be running even when no heartbeat arrives.

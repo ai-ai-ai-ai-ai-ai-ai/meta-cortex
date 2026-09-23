@@ -164,9 +164,7 @@ impl TaskChange<'_> {
     }
 
     fn coordinate(mut self, input: CoordinatorUpdate) -> Result<Event, LedgerError> {
-        let kind;
-        let note;
-        match input.action {
+        let (kind, note) = match input.action {
             CoordinatorAction::Integrate { commit } => {
                 self.repository.integrated(IntegrationCheck {
                     feature: self.feature,
@@ -174,23 +172,23 @@ impl TaskChange<'_> {
                     commit: &commit,
                 })?;
                 self.task.integrate(commit)?;
-                kind = EventKind::Integrated;
-                note = Note::try_from("Integration recorded by the integration owner".to_owned())?;
+                (
+                    EventKind::Integrated,
+                    Note::try_from("Integration recorded by the integration owner".to_owned())?,
+                )
             }
             CoordinatorAction::Requeue {
                 reason,
                 previous_execution: _,
             } => {
                 self.task.requeue()?;
-                kind = EventKind::Requeued;
-                note = reason;
+                (EventKind::Requeued, reason)
             }
             CoordinatorAction::Cancel { reason } => {
                 self.task.cancel(reason.clone())?;
-                kind = EventKind::Cancelled;
-                note = reason;
+                (EventKind::Cancelled, reason)
             }
-        }
+        };
         self.task.last_update = self.now;
         Ok(Event {
             version: RecordVersion::CURRENT,

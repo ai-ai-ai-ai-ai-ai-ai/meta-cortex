@@ -15,7 +15,7 @@ For a new user task:
 1. Read the [circuit breaker](CIRCUIT-BREAKER.md) before other framework documents.
    Carry its policy and resolved location through every assignment.
 2. Establish the [project context](#project-context).
-3. Resolve the session’s [development mode](#development-mode) before planning
+3. Resolve the session’s [mode and delivery choices](#development-mode) before planning
    or implementing the task and before launching any agent.
 4. In multi-agent mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
    [agent configuration rules](teams/gizmo-team/docs/agent-configuration.md).
@@ -28,18 +28,20 @@ For a new user task:
 
 The current agent uses the [native user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 with [development.yaml](development.yaml). At the start of every new user-facing
-session, ask the user to choose `development.mode` through the native input UI.
-Wait for a submitted, validated answer before choosing the execution path.
+session, collect `development.mode` and `development.delivery` through the native
+input UI. Validate an explicit choice already supplied in the current session
+without asking the user to repeat it. Wait for both validated answers before
+choosing the execution and delivery paths.
 Do not infer a choice from an earlier session, repository settings, or the host's
-preselected option. Do not launch Gizmos while this question is pending.
+preselected option. Do not launch Gizmos while either question is pending.
 
 A session is the current user-facing conversation/thread. Retain its selected
-mode across new tasks, follow-ups, turn boundaries, and context compaction in
-that conversation. Include it in continuation context and every assignment.
+mode and delivery choice across new tasks, follow-ups, turn boundaries, and context
+compaction in that conversation. Include both in continuation context and every assignment.
 Do not ask again for each message, task, or delegated agent. A new user-facing
-conversation asks again; a delegated agent inherits the parent session's choice
-and does not start another configuration flow. If the choice is lost and cannot
-be recovered from session context, ask rather than guess.
+conversation collects both again; a delegated agent inherits the parent session's
+choices and does not start another configuration flow. If a choice is lost and
+cannot be recovered from session context, ask only for that missing choice.
 
 - `single_agent`: use the current agent and thread. Do not spawn Gizmos, workers,
   reviewers, or integration subagents. Read the relevant team and role
@@ -48,23 +50,30 @@ be recovered from session context, ask rather than guess.
   The current agent performs implementation, validation, and delivery. Delegation
   and coordinator-only routing requirements apply only in multi-agent mode;
   technical requirements still apply. Keep the current host model/settings.
-  Complete implementation through the [project delivery policy](teams/delivery-team/docs/project-delivery-policy.md#default-implementation-delivery),
-  including its default PR handoff and explicit local-only exceptions.
+  Complete implementation using the selected delivery path in the
+  [project delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery).
 - `multi_agent`: use the existing Gizmo workflow and configured role settings.
 
-The returned `answers["development.mode"]` is the session's `development.mode`.
-It is not a persisted model setting. Do not rewrite `meta-cortex.toml` or save
+The returned `answers["development.mode"]` and `answers["development.delivery"]`
+are the session settings. `create_pr` is the recommended first delivery option;
+`local_only` keeps work local. The [delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
+defines their completion requirements. A recommended or preselected option is
+not a submitted answer; a missing delivery choice must remain pending.
+
+These choices are not persisted model settings. Do not rewrite `meta-cortex.toml` or save
 user answers to the repository. Cancelled, unavailable, invalid, or pending
 configuration must not launch agents or continue dependent development work.
-Apply an explicit user mode change before further work; do not leave delegated
-agents running when switching to single-agent mode.
+Apply explicit user changes before further affected work, retaining the other
+choice. Pass changes to active agents; do not leave delegated agents running
+when switching to single-agent mode. A task-specific override applies to that
+task without silently replacing the session preference.
 
 **Prohibited:** launch Gizmo Prime before asking for a mode, then continue
 using workers after the user chooses `single_agent`.
 
-**Preferred:** validate `single_agent`, load the relevant team context locally,
-and implement and verify the task in this thread. A later task in the same
-session keeps that choice; a new session asks again.
+**Preferred:** validate `single_agent` and `create_pr`, load the relevant team
+context locally, and implement, verify, and publish the PR in this thread. A later
+task in the same session keeps both choices; a new session collects them again.
 
 ### Project context
 

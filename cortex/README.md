@@ -22,17 +22,24 @@ assigned worktree.
 ## Agent coordination
 
 Give your host a development task with the framework entry point loaded.
-At the start of each new session, the current agent asks for a [development mode](AGENTS.md#development-mode)
-using the host's native input UI:
+At the start of each new session, the current agent collects
+[mode and delivery choices](AGENTS.md#development-mode) using the host's native
+input UI. Choose the agent mode:
 
 - `single_agent` keeps implementation, checks, and delivery in the current thread
   and agent, with the relevant team docs, circuit breakers, and skills.
 - `multi_agent` launches Gizmo Prime, which launches Team Gizmo. Team Gizmo
   launches the team agents needed for the task.
 
-The agent waits for a submitted answer before starting development work. New
-tasks and follow-ups in the same conversation retain the session’s mode; a new
-conversation asks again. Delegated agents inherit the choice. Cancelling configuration stops
+Then choose delivery: `create_pr` (recommended) commits and pushes the validated
+feature and creates or updates its PR; `local_only` keeps work local without
+pushing or creating a PR. The [delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
+defines completion for both paths.
+
+The agent waits for both validated answers before starting development work,
+reusing explicit choices already supplied in the current session. New tasks and
+follow-ups in the same conversation retain both choices; a new conversation
+collects them again. Delegated agents inherit them. Cancelling configuration stops
 the task; a missing native UI is reported as a blocker. Codex uses
 `request_user_input_async` when available; the host controls whether choices
 appear as buttons or a dropdown.
@@ -79,8 +86,11 @@ specialized skills are:
 
 ## PR delivery and CI/CD
 
-Request the desired operation: publishing a PR, addressing feedback, checking CI,
-merging, or executing an existing deployment procedure. In single-agent mode,
+With `create_pr`, implementation continues through PR creation or update without
+a separate request. With `local_only`, it completes locally. You can override the
+delivery choice for a task or change the session preference explicitly. Request
+additional operations such as addressing feedback, checking CI, merging, or
+executing an existing deployment procedure when needed. In single-agent mode,
 the current agent applies the relevant delivery and CI/CD skills. In multi-agent
 mode, Team Gizmo assigns only the specialists needed for the requested work.
 
@@ -119,7 +129,7 @@ permanent observer agent.
 
 ## Execution configuration
 
-The [development form](development.yaml) defines the session-mode question. The
+The [development form](development.yaml) defines the session mode and delivery questions. The
 [user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 includes a generic YAML form helper, an example, and usage instructions. It
 requires Bun 1.3.14 and the library's workspace dependencies; install once from

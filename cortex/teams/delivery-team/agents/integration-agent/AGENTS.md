@@ -56,9 +56,10 @@ Report to Team Gizmo through the host's agent communication tools.
 
 **Prohibited:** have the integration role take over the PR role's remote operations.
 
-**Preferred:** return the completed local feature to Team Gizmo for the PR
-handoff defined by the project delivery policy. In single-agent mode, continue
-with the PR skill after completing this role's local work.
+**Preferred:** return the completed local feature to Team Gizmo for the selected
+delivery path. Under `create_pr`, continue to the PR role; in single-agent mode,
+apply the PR skill locally. Under `local_only`, finish with the validated local
+outcome. Apply the project delivery policy and any task-specific override.
 
 ## Durable feature progress
 

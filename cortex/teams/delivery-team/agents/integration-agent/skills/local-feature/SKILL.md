@@ -21,6 +21,7 @@ role instructions define assignments and communication.
 **Prohibited:** have the integration role take over remote publishing, or publish
 despite an explicit local-only instruction.
 
-**Preferred:** return the validated feature branch to Gizmo for the PR role's
-next step under [default implementation delivery](../../../../docs/project-delivery-policy.md#default-implementation-delivery).
-In single-agent mode, switch to the PR skill after completing local integration.
+**Preferred:** return the validated feature branch to Gizmo for
+[configured implementation delivery](../../../../docs/project-delivery-policy.md#configured-implementation-delivery).
+Under `create_pr`, continue to the PR role; in single-agent mode, apply the PR
+skill locally. Under `local_only`, finish with the validated local outcome.

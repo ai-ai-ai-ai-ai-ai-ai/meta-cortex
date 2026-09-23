@@ -21,7 +21,7 @@ entry point. Pass this context to delegated agents.
 
 ## Start with Gizmo Prime
 
-First resolve the session’s [development mode](../AGENTS.md#development-mode) at the entry
+First resolve the session’s [mode and delivery choices](../AGENTS.md#development-mode) at the entry
 point. In `single_agent` mode, the current agent applies the assignment context
 locally and performs the work; the launch and delegation instructions below
 apply only to `multi_agent` mode.
@@ -102,8 +102,9 @@ following from the active library and supplies them in the launch instructions:
   bootstrap assignments establish this context before task workers launch.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
-- The validated session development mode; assigned agents inherit it and never
-  repeat configuration collection.
+- The validated session `development.mode` and `development.delivery`, plus any
+  task-specific override; assigned agents inherit them and never repeat
+  configuration collection.
 - Project root, library root, working directory, and relevant project instructions.
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.
 - The assigned agent’s team directory and team `AGENTS.md`.
