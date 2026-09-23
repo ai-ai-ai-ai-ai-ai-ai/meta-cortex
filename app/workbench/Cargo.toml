@@ -13,6 +13,7 @@ thiserror.workspace = true
 serde.workspace = true
 derive_more.workspace = true
 schemars.workspace = true
+sea-query.workspace = true
 serde_json.workspace = true
 turso.workspace = true
 

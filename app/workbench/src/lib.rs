@@ -13,6 +13,7 @@ pub mod versions;
 
 use git::Repository;
 use request::InitFeature;
+use sea_query::error;
 use std::path::Path;
 use std::{io, time::SystemTimeError};
 use store::{InitializeLedger, OpenLedger};
@@ -97,6 +98,10 @@ pub enum LedgerError {
     Uninitialized,
     #[error("file operation failed: {0}")]
     Io(#[from] io::Error),
+    #[error("unsupported Workbench SQL binding type")]
+    UnsupportedSqlBinding,
+    #[error("SQL construction failed: {0}")]
+    SqlBuild(#[from] error::Error),
     #[error("database operation failed: {0}")]
     Database(#[from] turso::Error),
     #[error("invalid stored document: {0}")]

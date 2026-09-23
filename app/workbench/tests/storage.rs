@@ -11,6 +11,7 @@ use meta_cortex_workbench::versions::{
     StorageVersion, StorageVersionParse, VersionFamily, VersionNumber, VersionParseError,
 };
 use meta_cortex_workbench::{Ledger, LedgerError, Workbench};
+use sea_query::{Expr, Iden, Index, Query, SqliteQueryBuilder};
 use std::env;
 use std::fs;
 use std::future;
@@ -20,6 +21,42 @@ use std::thread;
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
 use tokio::runtime::Builder;
+use turso::Connection;
+use turso::transaction::TransactionBehavior;
+
+// Independent identifiers for compatibility and deliberate-corruption fixtures.
+#[derive(Iden)]
+enum TaskTable {
+    #[iden = "tasks"]
+    Table,
+    Document,
+    Revision,
+}
+
+#[derive(Iden)]
+enum EventTable {
+    #[iden = "events"]
+    Table,
+    TaskId,
+    Revision,
+    Document,
+}
+
+#[derive(Iden)]
+enum EventIndex {
+    EventsTaskRevision,
+}
+
+#[derive(Iden)]
+enum DatabasePragma {
+    UserVersion,
+}
+
+enum DatabaseVersion {
+    Missing,
+    Read(StorageVersionParse),
+    Failed(turso::Error),
+}
 
 struct Scenario {
     directory: TempDir,
@@ -90,6 +127,24 @@ impl Scenario {
         Ok(ledger)
     }
 
+    async fn version(connection: &Connection) -> anyhow::Result<StorageVersionParse> {
+        let mut version = DatabaseVersion::Missing;
+        connection
+            .pragma_query(&DatabasePragma::UserVersion.to_string(), |row| {
+                version = match row.get::<i64>(0) {
+                    Ok(value) => DatabaseVersion::Read(StorageVersionParse::from(value)),
+                    Err(error) => DatabaseVersion::Failed(error),
+                };
+                Ok(())
+            })
+            .await?;
+        match version {
+            DatabaseVersion::Missing => bail!("missing database version"),
+            DatabaseVersion::Read(version) => Ok(version),
+            DatabaseVersion::Failed(error) => Err(error.into()),
+        }
+    }
+
     async fn open(&self) -> Result<Ledger, LedgerError> {
         Workbench::discover(self.directory.path())?
             .open(match FeatureIdParse::from("feature".to_owned()) {
@@ -116,12 +171,8 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                     .build()
                     .await?;
                 let conn = db.connect()?;
-                conn.execute("DROP INDEX events_task_revision", ()).await?;
-                conn.execute(
-                    &format!("PRAGMA user_version={}", StorageVersion::DocumentsV1),
-                    (),
-                )
-                .await?;
+                conn.execute(Index::drop().name(EventIndex::EventsTaskRevision.to_string()).to_string(SqliteQueryBuilder), ()).await?;
+                conn.pragma_update(&DatabasePragma::UserVersion.to_string(), StorageVersion::DocumentsV1).await?;
             }
             let ledger = scenario.open().await?;
             assert_eq!(ledger.status().await?.len(), 1);
@@ -132,18 +183,8 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                     .build()
                     .await?;
                 let conn = db.connect()?;
-                let mut rows = conn.query("PRAGMA user_version", ()).await?;
-                assert_eq!(
-                    match StorageVersionParse::from(
-                        rows.next().await?.context("version")?.get::<i64>(0)?
-                    ) {
-                        StorageVersionParse::Parsed(value) => value,
-                        StorageVersionParse::Invalid(error) => return Err(error.into()),
-                    },
-                    StorageVersion::IndexedV2
-                );
-                drop(rows);
-                conn.execute("PRAGMA user_version=99", ()).await?;
+                assert_eq!(Scenario::version(&conn).await?, StorageVersionParse::Parsed(StorageVersion::IndexedV2));
+                conn.pragma_update(&DatabasePragma::UserVersion.to_string(), VersionNumber::from(99)).await?;
             }
             assert!(matches!(
                 scenario.open().await,
@@ -157,8 +198,9 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                 .build()
                 .await?;
             let conn = db.connect()?;
-            let mut rows = conn.query("PRAGMA user_version", ()).await?;
-            assert_eq!(rows.next().await?.context("version")?.get::<i64>(0)?, 99);
+            assert!(matches!(Scenario::version(&conn).await?, StorageVersionParse::Invalid(VersionParseError::Unsupported {
+                schema: VersionFamily::Database, version
+            }) if version == VersionNumber::from(99)));
             anyhow::Ok(())
         })
 }
@@ -194,20 +236,37 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;
-            let connection = database.connect()?;
-            connection.execute("BEGIN IMMEDIATE", ()).await?;
-            connection
-                .execute(
-                    "UPDATE tasks SET document = 'uncommitted corruption', revision = 999",
-                    (),
-                )
+            let mut connection = database.connect()?;
+            let tx = connection
+                .transaction_with_behavior(TransactionBehavior::Immediate)
                 .await?;
-            connection
-                .execute(
-                    "INSERT INTO events VALUES ('task', 999, 'uncommitted event')",
-                    (),
-                )
-                .await?;
+            // Deliberately invalid persisted documents; SeaQuery still owns SQL syntax.
+            tx.execute(
+                Query::update()
+                    .table(TaskTable::Table)
+                    .value(TaskTable::Document, "uncommitted corruption")
+                    .value(TaskTable::Revision, 999)
+                    .to_string(SqliteQueryBuilder),
+                (),
+            )
+            .await?;
+            tx.execute(
+                Query::insert()
+                    .into_table(EventTable::Table)
+                    .columns([
+                        EventTable::TaskId,
+                        EventTable::Revision,
+                        EventTable::Document,
+                    ])
+                    .values([
+                        Expr::val("task"),
+                        Expr::val(999),
+                        Expr::val("uncommitted event"),
+                    ])?
+                    .to_string(SqliteQueryBuilder),
+                (),
+            )
+            .await?;
             fs::write(signal, "transaction open")?;
             future::pending::<anyhow::Result<()>>().await
         })

@@ -1098,6 +1098,21 @@ in full. Include related subjects when the change crosses their boundaries.
   - Review relative paths and semantic context separately.
 
 
+### Typed SQL construction
+
+- **File:** [Typed SQL construction](practices/boundaries/typed-sql.md).
+- **Owns:** Typed schema/query construction, identifiers, binding, and driver boundaries.
+- **Related:** [Dependency selection](practices/tooling/dependency-selection.md), [Domain types](practices/modeling/domain-types.md).
+
+- **[typed_sql:construction](practices/boundaries/typed-sql.md)**
+
+  - Use established builders/ORMs and identifier enums for schemas, migrations,
+    queries, and fixtures; never assemble SQL as application text.
+  - Bind runtime values, use driver transaction/settings APIs, and isolate only
+    documented fixed dialect tokens unsupported by the builder.
+  - Verify actual database constraints and transactions; builder types alone do
+    not prove schema compatibility or application correctness.
+
 ### Dependency selection
 
 - **File:** [Dependency selection](practices/tooling/dependency-selection.md).

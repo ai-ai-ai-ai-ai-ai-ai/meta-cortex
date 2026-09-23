@@ -79,7 +79,10 @@ impl From<&AgentError> for Failure {
                 LedgerError::UnsupportedVersion(_) => ErrorCode::UnsupportedVersion,
                 LedgerError::Git(_) => ErrorCode::Git,
                 LedgerError::Io(_) | LedgerError::Clock(_) => ErrorCode::Io,
-                LedgerError::Database(_) | LedgerError::Json(_) => ErrorCode::Storage,
+                LedgerError::Database(_)
+                | LedgerError::Json(_)
+                | LedgerError::SqlBuild(_)
+                | LedgerError::UnsupportedSqlBinding => ErrorCode::Storage,
             },
         };
         Self {

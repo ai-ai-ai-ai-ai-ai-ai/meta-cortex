@@ -21,6 +21,10 @@ and apply [domain types](practices/modeling/domain-types.md),
 mandatory, independent of the selected implementation practices. Complete the
 [domain-type review](practices/modeling/domain-types.md#validation) before handoff.
 
+For SQL schemas, queries, migrations, and database fixtures, load
+[typed SQL construction](practices/boundaries/typed-sql.md). Use an established
+builder/ORM and bind runtime values; do not author SQL strings.
+
 For authored JSON/YAML, including catalogs and test fixtures, also load
 [serialization boundaries](practices/boundaries/serialization-boundaries.md).
 For command protocols and discovery catalogs, also load

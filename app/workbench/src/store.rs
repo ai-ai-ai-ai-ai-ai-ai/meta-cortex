@@ -1,5 +1,6 @@
 mod mutations;
 mod schema;
+mod sql;
 
 use super::LedgerError;
 use super::git::Repository;
@@ -8,14 +9,16 @@ use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskState, TaskV
 use super::request::{CreateTask, InitFeature};
 use super::values::{Attempt, FeatureId, Revision, TaskId, Timestamp};
 use super::versions::{RecordVersion, StorageVersion};
-use schema::LedgerSchema;
+use schema::{EventTable, FeatureTable, LedgerSchema, TaskTable};
+use sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
 use serde::Serialize;
+use sql::SqlStatement;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use turso::transaction::TransactionBehavior;
-use turso::{Builder, Connection, params};
+use turso::{Builder, Connection};
 
 pub struct Ledger {
     connection: Connection,
@@ -77,10 +80,19 @@ impl Ledger {
         let tx = connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
-        tx.execute(
-            "INSERT OR IGNORE INTO feature (singleton, document) VALUES (1, ?1)",
-            [serde_json::to_string(&feature)?],
-        )
+        SqlStatement::build(
+            Query::insert()
+                .into_table(FeatureTable::Table)
+                .columns([FeatureTable::Singleton, FeatureTable::Document])
+                .values([1.into(), serde_json::to_string(&feature)?.into()])?
+                .on_conflict(
+                    OnConflict::column(FeatureTable::Singleton)
+                        .do_nothing()
+                        .to_owned(),
+                )
+                .to_owned(),
+        )?
+        .execute(&tx)
         .await?;
         let stored = Documents { connection: &tx }.feature().await?;
         if stored != feature {
@@ -174,16 +186,20 @@ impl Ledger {
             checkpoint: Checkpoint::Unrecorded,
             progress: input.progress,
         };
-        let changed = tx
-            .execute(
-                "INSERT OR IGNORE INTO tasks (id, revision, document) VALUES (?1, ?2, ?3)",
-                params![
-                    task.id.to_string(),
-                    i64::from(task.revision),
-                    serde_json::to_string(&task)?
-                ],
-            )
-            .await?;
+        let changed = SqlStatement::build(
+            Query::insert()
+                .into_table(TaskTable::Table)
+                .columns([TaskTable::Id, TaskTable::Revision, TaskTable::Document])
+                .values([
+                    task.id.to_string().into(),
+                    i64::from(task.revision).into(),
+                    serde_json::to_string(&task)?.into(),
+                ])?
+                .on_conflict(OnConflict::column(TaskTable::Id).do_nothing().to_owned())
+                .to_owned(),
+        )?
+        .execute(&tx)
+        .await?;
         if changed != 1 {
             return Err(LedgerError::AlreadyExists);
         }
@@ -210,10 +226,15 @@ impl Ledger {
     }
 
     pub async fn status(&self) -> Result<Vec<TaskView>, LedgerError> {
-        let mut rows = self
-            .connection
-            .query("SELECT document FROM tasks ORDER BY id", ())
-            .await?;
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .column(TaskTable::Document)
+                .from(TaskTable::Table)
+                .order_by(TaskTable::Id, Order::Asc)
+                .to_owned(),
+        )?
+        .query(&self.connection)
+        .await?;
         let now = Timestamp::now()?;
         let mut tasks = Vec::new();
         while let Some(row) = rows.next().await? {
@@ -229,13 +250,16 @@ impl Ledger {
         }
         .task(id)
         .await?;
-        let mut rows = self
-            .connection
-            .query(
-                "SELECT document FROM events WHERE task_id = ?1 ORDER BY revision",
-                [id.to_string()],
-            )
-            .await?;
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .column(EventTable::Document)
+                .from(EventTable::Table)
+                .and_where(Expr::col(EventTable::TaskId).eq(id.to_string()))
+                .order_by(EventTable::Revision, Order::Asc)
+                .to_owned(),
+        )?
+        .query(&self.connection)
+        .await?;
         let mut events = Vec::new();
         while let Some(row) = rows.next().await? {
             events.push(serde_json::from_str(&row.get::<String>(0)?)?);
@@ -246,52 +270,68 @@ impl Ledger {
 
 impl Documents<'_> {
     async fn feature(&self) -> Result<Feature, LedgerError> {
-        let mut rows = self
-            .connection
-            .query("SELECT document FROM feature WHERE singleton = 1", ())
-            .await?;
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .column(FeatureTable::Document)
+                .from(FeatureTable::Table)
+                .and_where(Expr::col(FeatureTable::Singleton).eq(1))
+                .to_owned(),
+        )?
+        .query(self.connection)
+        .await?;
         let row = rows.next().await?.ok_or(LedgerError::Uninitialized)?;
         Ok(serde_json::from_str(&row.get::<String>(0)?)?)
     }
 
     async fn task(&self, id: &TaskId) -> Result<Task, LedgerError> {
-        let mut rows = self
-            .connection
-            .query("SELECT document FROM tasks WHERE id = ?1", [id.to_string()])
-            .await?;
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .column(TaskTable::Document)
+                .from(TaskTable::Table)
+                .and_where(Expr::col(TaskTable::Id).eq(id.to_string()))
+                .to_owned(),
+        )?
+        .query(self.connection)
+        .await?;
         let row = rows.next().await?.ok_or(LedgerError::NotFound)?;
         Ok(serde_json::from_str(&row.get::<String>(0)?)?)
     }
 
     async fn event(&self, event: &Event) -> Result<(), LedgerError> {
-        self.connection
-            .execute(
-                "INSERT INTO events (task_id, revision, document) VALUES (?1, ?2, ?3)",
-                params![
-                    event.task.id.to_string(),
-                    i64::from(event.task.revision),
-                    serde_json::to_string(event)?
-                ],
-            )
-            .await?;
+        SqlStatement::build(
+            Query::insert()
+                .into_table(EventTable::Table)
+                .columns([
+                    EventTable::TaskId,
+                    EventTable::Revision,
+                    EventTable::Document,
+                ])
+                .values([
+                    event.task.id.to_string().into(),
+                    i64::from(event.task.revision).into(),
+                    serde_json::to_string(event)?.into(),
+                ])?
+                .to_owned(),
+        )?
+        .execute(self.connection)
+        .await?;
         Ok(())
     }
 
     async fn save(&self, mut event: Event) -> Result<Task, LedgerError> {
         let previous = event.task.revision;
         event.task.revision = previous.advance()?;
-        let changed = self
-            .connection
-            .execute(
-                "UPDATE tasks SET revision = ?1, document = ?2 WHERE id = ?3 AND revision = ?4",
-                params![
-                    i64::from(event.task.revision),
-                    serde_json::to_string(&event.task)?,
-                    event.task.id.to_string(),
-                    i64::from(previous)
-                ],
-            )
-            .await?;
+        let changed = SqlStatement::build(
+            Query::update()
+                .table(TaskTable::Table)
+                .value(TaskTable::Revision, i64::from(event.task.revision))
+                .value(TaskTable::Document, serde_json::to_string(&event.task)?)
+                .and_where(Expr::col(TaskTable::Id).eq(event.task.id.to_string()))
+                .and_where(Expr::col(TaskTable::Revision).eq(i64::from(previous)))
+                .to_owned(),
+        )?
+        .execute(self.connection)
+        .await?;
         if changed != 1 {
             return Err(LedgerError::Conflict);
         }
