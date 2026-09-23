@@ -6,18 +6,59 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use tempfile::{Builder, TempDir};
+use thiserror::Error;
 
 // This is the CLI's external YAML contract, decoded independently of its writer.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct InfoDocument {
-    schema_version: u32,
+    schema_version: ReportSchemaVersion,
     cli_version: ReportVersion,
     framework_version: ReportVersion,
     paths: ReportPaths,
     integrations: Vec<ReportIntegration>,
     models: ReportModels,
     model_availability: ModelAvailability,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[serde(try_from = "ReportSchemaVersionParse")]
+enum ReportSchemaVersion {
+    V3,
+}
+
+#[derive(Deserialize)]
+#[serde(from = "u32")]
+enum ReportSchemaVersionParse {
+    Parsed(ReportSchemaVersion),
+    Unsupported,
+}
+
+impl From<u32> for ReportSchemaVersionParse {
+    fn from(version: u32) -> Self {
+        match version {
+            3 => Self::Parsed(ReportSchemaVersion::V3),
+            _ => Self::Unsupported,
+        }
+    }
+}
+
+#[derive(Debug, Error)]
+enum ReportSchemaVersionError {
+    #[error("unsupported report schema version")]
+    Unsupported,
+}
+
+// Serde boundary adapter; classification already selected an explicit outcome.
+impl TryFrom<ReportSchemaVersionParse> for ReportSchemaVersion {
+    type Error = ReportSchemaVersionError;
+
+    fn try_from(parsed: ReportSchemaVersionParse) -> Result<Self, Self::Error> {
+        match parsed {
+            ReportSchemaVersionParse::Parsed(version) => Ok(version),
+            ReportSchemaVersionParse::Unsupported => Err(ReportSchemaVersionError::Unsupported),
+        }
+    }
 }
 
 // Independent decoder for the established semantic-release strings in report schema 3.
@@ -238,7 +279,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
         instructions: Instructions::Write,
     })?;
     let info = scenario.info()?;
-    assert_eq!(info.schema_version, 3);
+    assert_eq!(info.schema_version, ReportSchemaVersion::V3);
     assert_eq!(info.cli_version, ReportVersion::V0_6_2);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
@@ -362,4 +403,28 @@ fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
         assert!(output.stdout.is_empty());
     }
     Ok(())
+}
+
+#[test]
+fn report_consumer_rejects_undeclared_or_malformed_versions() {
+    for input in ["0", "1", "2", "4", "-1", "3.5", "\"4\"", "null"] {
+        assert!(
+            serde_saphyr::from_str::<ReportSchemaVersion>(input).is_err(),
+            "{input}"
+        );
+    }
+    for input in [
+        "arbitrary",
+        "0.0.1",
+        "0.6.3",
+        "0.6.2-beta.1",
+        "v0.6.2",
+        "6",
+        "null",
+    ] {
+        assert!(
+            serde_saphyr::from_str::<ReportVersion>(input).is_err(),
+            "{input}"
+        );
+    }
 }

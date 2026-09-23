@@ -632,7 +632,7 @@ let version = EventSchemaVersion::try_from(2)?;
 **Preferred:** enumerate the supported identities and isolate the wire mapping.
 
 ```rust
-#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(try_from = "EventVersionParse", into = "u32")]
 pub enum EventSchemaVersion { V1, V2 }
 
@@ -675,6 +675,37 @@ impl From<EventSchemaVersion> for u32 {
 }
 let version = EventSchemaVersion::V2;
 ```
+
+Apply the same version contract to independent consumers, tests, and fixtures.
+A typed producer does not justify primitive version fields in its reader. These
+alternative consumer records use the `EventSchemaVersion` above; both compile,
+but only the preferred decoder rejects unsupported numeric versions at entry.
+
+**Prohibited:** a consumer accepts any number as a known schema revision.
+
+```rust
+#[derive(serde::Deserialize)]
+pub struct EventHeader {
+    pub schema_version: u32,
+}
+```
+
+**Preferred:** the consumer retains the closed version type after decoding.
+
+```rust
+#[derive(serde::Deserialize)]
+pub struct EventHeader {
+    pub schema_version: EventSchemaVersion,
+}
+```
+
+Assert `header.schema_version == EventSchemaVersion::V2` in consumer tests,
+not equality with a raw numeric literal. Raw numeric input belongs only in the
+wire classifier or deliberately malformed/unsupported decoder fixtures.
+Application release fields follow the same rule through their
+[declared release enum](#enumerate-supported-application-releases). When the domain
+instead accepts arbitrary external semantic versions, use a maintained semantic
+version library at that boundary; a whitespace-checked string is not a parser.
 
 A constant or unit variant names a value; it does not make its payload a different
 Rust type. Give differing released shapes independent concrete records. Bind

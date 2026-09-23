@@ -163,6 +163,8 @@ in full. Include related subjects when the change crosses their boundaries.
 
   - Name each supported schema revision; use exhaustive version dispatch and separate
     payload types for differing shapes. Reject unsupported wire values at entry.
+  - Keep independent consumer/test version fields typed; primitive wire values stay
+    in boundary classifiers and invalid fixtures, not decoded application records.
   - Retain documented migration support before advancing the current version.
 
 - **[domain_types:release_versions](practices/modeling/domain-types.md#enumerate-supported-application-releases)**
