@@ -868,10 +868,10 @@ in full. Include related subjects when the change crosses their boundaries.
   - Borrowed samples do not grant cleanup ownership.
 
 
-### WASM name coherence
+### WASM and command name coherence
 
 - **File:** [WASM name coherence](practices/boundaries/rust-wasm-name-coherence.md).
-- **Owns:** Cross-language symbol names and fixed external wire-name exceptions.
+- **Owns:** Cross-language symbol names, command identities, and fixed external wire-name exceptions.
 - **Does not own:** Value representations belong to Domain types; decoding mechanics belong to Serialization boundaries.
 - **Related:** [Domain types](practices/modeling/domain-types.md), [Serialization boundaries](practices/boundaries/serialization-boundaries.md).
 
@@ -895,6 +895,14 @@ in full. Include related subjects when the change crosses their boundaries.
 
   - Do not add serde rename/rename_all to project-owned schemas, rebuild case-renamed
     objects, or rename destructured fields.
+
+- **[wasm_name_coherence:command_names](practices/boundaries/rust-wasm-name-coherence.md#preserve-command-identities)**
+
+  - Use descriptive Rust variants directly as command identities in YAML/JSON,
+    discovery, and consumers; no invented dotted aliases or casing transforms.
+  - Load this rule for CLI/discovery work even without WASM or TypeScript.
+  - Generate examples from the enum, update callers/docs together, and require a
+    concrete external contract for any unavoidable adapter.
 
 - **[wasm_name_coherence:external_names](practices/boundaries/rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter)**
 

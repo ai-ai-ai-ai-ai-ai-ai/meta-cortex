@@ -130,7 +130,7 @@ the raw string return is confined to the external output adapter.
 ```ts
 import { stringify } from "yaml";
 
-enum CommandName { FrameworkInit = "framework.init" }
+enum CommandName { InitializeFramework = "InitializeFramework" }
 enum Harness { None = "none" }
 enum InstructionAction { Skip = "skip" }
 interface InitArguments {
@@ -138,7 +138,7 @@ interface InitArguments {
   readonly instructions: InstructionAction;
 }
 interface FrameworkInitRequest {
-  readonly name: CommandName.FrameworkInit;
+  readonly name: CommandName.InitializeFramework;
   readonly arguments: InitArguments;
 }
 ```
@@ -150,7 +150,7 @@ not fix construction.
 ```ts
 // Inside the output adapter:
 encode(): string {
-  return "name: framework.init\narguments: {harness: none, instructions: skip}";
+  return "name: InitializeFramework\narguments: {harness: none, instructions: skip}";
 }
 
 // Another prohibited implementation:
@@ -171,7 +171,7 @@ class FrameworkInitYaml {
 }
 
 const request: FrameworkInitRequest = {
-  name: CommandName.FrameworkInit,
+  name: CommandName.InitializeFramework,
   arguments: { harness: Harness.None, instructions: InstructionAction.Skip },
 };
 const yaml = new FrameworkInitYaml(request).encode();

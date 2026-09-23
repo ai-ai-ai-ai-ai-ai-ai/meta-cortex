@@ -58,15 +58,15 @@ meta-cortex run --request - <<'LEDGER_REQUEST'
 version: 1
 project: /absolute/project
 operation:
-  name: ledger.status
+  name: GetFeatureStatus
   arguments:
     feature: example-feature
 LEDGER_REQUEST
 ```
 
 This is a local discovery-and-call interface, similar to skill scripts. It is
-not an MCP JSON-RPC server. Existing `init` and `info` commands remain available;
-`framework.init` and `framework.info` provide their noninteractive YAML forms.
+not an MCP JSON-RPC server. `InitializeFramework` and `GetFrameworkInfo` run
+through the same typed YAML interface. `list` and `run` are the CLI commands.
 
 Requests reject unknown commands, fields, enum values, duplicate fields,
 unsupported versions, malformed IDs, and out-of-range TTLs. YAML/JSON are wire
@@ -83,17 +83,17 @@ current revision and attempt from the previous response.
 Prepare the feature branch and worktree using the delivery team's existing Git
 workflow. The ledger records these resources; it does not create or merge them.
 
-1. The integration agent runs `ledger.init` with the feature ID, objective,
+1. The integration agent runs `InitializeFeature` with the feature ID, objective,
    feature branch, and absolute feature worktree. Repeating an identical
    initialization reopens it; conflicting metadata is rejected.
-2. Team Gizmo runs `task.create` before launching each worker. Supply its
+2. Team Gizmo runs `CreateTask` before launching each worker. Supply its
    objective, at least one acceptance criterion, dependencies, initial continuation
    notes, and either a Git workspace or `kind: read_only`. Dependencies must
    already exist; self-dependencies and duplicates are rejected.
-3. The worker reads `task.get` and runs `task.claim` with its catalog agent identity,
+3. The worker reads `GetTask` and runs `ClaimTask` with its catalog agent identity,
    expected revision, and TTL. A claim succeeds only for a queued task whose
    dependencies are integrated. The result contains its new attempt and revision.
-4. While working, the worker runs `task.update` at meaningful milestones and
+4. While working, the worker runs `UpdateTask` at meaningful milestones and
    before a potentially long operation. Choose the action from the catalog:
    - `heartbeat` renews activity and expiration without claiming meaningful progress.
    - `progress` records findings, next steps, checks, and a working or blocked phase.
@@ -101,7 +101,7 @@ workflow. The ledger records these resources; it does not create or merge them.
    - `ready` records the final result before sending the completion notification.
 5. Team Gizmo reads durable readiness and directs the integration agent. After
    merging and running the assigned combined checks, that agent records
-   `task.coordinate` with `action.kind: integrate` and the feature HEAD.
+   `CoordinateTask` with `action.kind: integrate` and the feature HEAD.
 
 `agent` and `actor` use the fixed identities of the bundled agent catalog, such
 as `gizmo`, `rust-dev`, and `integration-agent`. The CLI discovery schema lists
@@ -145,9 +145,9 @@ A lease expiring is an observation, not proof the worker has stopped. There is
 no background TTL process. Status computes expiration when queried.
 
 1. On startup, after interruption, and before assigning more work, Gizmo reads
-   `ledger.status`. Use `ledger.features` to rediscover feature IDs and paths
+   `GetFeatureStatus`. Use `ListFeatures` to rediscover feature IDs and paths
    when the coordinator context is lost. Inspect `last_update`, `last_progress`, the lease health,
-   current checkpoint, and continuation notes. Read `task.history` when needed.
+   current checkpoint, and continuation notes. Read `GetTaskHistory` when needed.
    Recover session mode and delivery choices from the
    [assignment context](../../AGENTS.md#assignment-context). An integrated ledger
    task does not imply PR delivery is complete. Apply the
@@ -157,7 +157,7 @@ no background TTL process. Status computes expiration when queried.
 2. For expired or stalled work, inspect the host execution and its worktree.
    Stop the previous execution or establish that it finished before reassignment.
    Long tests may still be running even when no heartbeat arrives.
-3. Record `task.coordinate` with `action.kind: requeue`, a reason, and
+3. Record `CoordinateTask` with `action.kind: requeue`, a reason, and
    `previous_execution: stopped_or_finished`. This is the coordinator's explicit
    acknowledgement, not an automatic host check. Preserve the branch, checkpoint,
    progress, and history.

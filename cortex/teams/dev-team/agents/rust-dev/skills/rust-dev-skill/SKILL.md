@@ -23,6 +23,10 @@ mandatory, independent of the selected implementation practices. Complete the
 
 For authored JSON/YAML, including catalogs and test fixtures, also load
 [serialization boundaries](practices/boundaries/serialization-boundaries.md).
+For command protocols and discovery catalogs, also load
+[command name coherence](practices/boundaries/rust-wasm-name-coherence.md#preserve-command-identities),
+even when the task has no WASM or TypeScript boundary. Use descriptive variants
+directly; do not invent a second wire-name vocabulary.
 Apply its prohibition on building YAML from strings, including literals and
 static examples, before choosing a text wrapper. For composite
 text, apply [structured-string normalization](practices/modeling/domain-types.md#normalize-structured-strings-into-domain-components)

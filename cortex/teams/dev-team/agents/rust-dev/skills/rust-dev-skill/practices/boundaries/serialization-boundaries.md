@@ -1,7 +1,10 @@
 # Rust Serialization Boundaries
 
 Decode at the external edge. Pass typed values through the application; encode
-again only when an external API requires it.
+again only when an external API requires it. For project-owned command identities,
+apply [name coherence](rust-wasm-name-coherence.md#preserve-command-identities):
+use the exact descriptive Rust variant in YAML/JSON and discovery, without an
+invented `rename` or `rename_all` mapping.
 
 ## Decode known schemas into their types
 

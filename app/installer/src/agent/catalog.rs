@@ -70,26 +70,26 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Discover existing feature IDs and database paths after a coordinator restart.",
                 ),
-                operation: Operation::Features(EmptyArguments {}),
+                operation: Operation::ListFeatures(EmptyArguments {}),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Install the bundled framework without interactive prompts.",
                 ),
-                operation: Operation::FrameworkInit(FrameworkInit {
+                operation: Operation::InitializeFramework(FrameworkInit {
                     harness: AgentHarness::None,
                     instructions: AgentInstructions::Skip,
                 }),
             },
             CommandExample {
                 description: CommandSummary::from("Inspect the installed framework and models."),
-                operation: Operation::FrameworkInfo(EmptyArguments {}),
+                operation: Operation::GetFrameworkInfo(EmptyArguments {}),
             },
             CommandExample {
                 description: CommandSummary::from(
                     "Initialize or reopen this feature's isolated ledger after preparing its branch and worktree.",
                 ),
-                operation: Operation::Initialize(InitFeature {
+                operation: Operation::InitializeFeature(InitFeature {
                     feature: feature.clone(),
                     objective: Note::from("Implement the feature".to_owned()),
                     branch: match BranchNameParse::from("codex/example".to_owned()) {
@@ -105,7 +105,7 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Read all tasks, current revisions, continuation notes, and lease health for one feature.",
                 ),
-                operation: Operation::Status(FeatureQuery {
+                operation: Operation::GetFeatureStatus(FeatureQuery {
                     feature: feature.clone(),
                 }),
             },
@@ -113,7 +113,7 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Record a bounded assignment before launching its worker. Dependencies must already exist.",
                 ),
-                operation: Operation::Create(CreateTask {
+                operation: Operation::CreateTask(CreateTask {
                     feature: feature.clone(),
                     task: task.clone(),
                     actor: coordinator,
@@ -134,7 +134,7 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Read a task before changing it. Use the returned revision and attempt.",
                 ),
-                operation: Operation::Get(TaskQuery {
+                operation: Operation::GetTask(TaskQuery {
                     feature: feature.clone(),
                     task: task.clone(),
                 }),
@@ -143,7 +143,7 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Read the append-only task history, including previous attempts.",
                 ),
-                operation: Operation::History(TaskQuery {
+                operation: Operation::GetTaskHistory(TaskQuery {
                     feature: feature.clone(),
                     task: task.clone(),
                 }),
@@ -152,7 +152,7 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Claim a queued task atomically. All dependencies must be integrated.",
                 ),
-                operation: Operation::Claim(ClaimTask {
+                operation: Operation::ClaimTask(ClaimTask {
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: Revision::INITIAL,
@@ -164,7 +164,7 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Worker operation: heartbeat, progress, checkpoint, or ready. The schema below describes each action. Timestamps are Unix milliseconds; TTL is 1–86400 seconds.",
                 ),
-                operation: Operation::Update(WorkerUpdate {
+                operation: Operation::UpdateTask(WorkerUpdate {
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: claimed_revision,
@@ -177,7 +177,7 @@ impl Catalog {
                 description: CommandSummary::from(
                     "Coordinator operation: integrate, requeue, or cancel. Requeue only after inspecting/stopping the previous execution.",
                 ),
-                operation: Operation::Coordinate(CoordinatorUpdate {
+                operation: Operation::CoordinateTask(CoordinatorUpdate {
                     feature,
                     task,
                     expected_revision: heartbeat_revision,

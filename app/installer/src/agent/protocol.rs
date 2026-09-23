@@ -24,28 +24,17 @@ pub struct Request {
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "name", content = "arguments", deny_unknown_fields)]
 pub enum Operation {
-    #[serde(rename = "framework.init")]
-    FrameworkInit(FrameworkInit),
-    #[serde(rename = "framework.info")]
-    FrameworkInfo(EmptyArguments),
-    #[serde(rename = "ledger.init")]
-    Initialize(InitFeature),
-    #[serde(rename = "ledger.features")]
-    Features(EmptyArguments),
-    #[serde(rename = "ledger.status")]
-    Status(FeatureQuery),
-    #[serde(rename = "task.create")]
-    Create(CreateTask),
-    #[serde(rename = "task.get")]
-    Get(TaskQuery),
-    #[serde(rename = "task.history")]
-    History(TaskQuery),
-    #[serde(rename = "task.claim")]
-    Claim(ClaimTask),
-    #[serde(rename = "task.update")]
-    Update(WorkerUpdate),
-    #[serde(rename = "task.coordinate")]
-    Coordinate(CoordinatorUpdate),
+    InitializeFramework(FrameworkInit),
+    GetFrameworkInfo(EmptyArguments),
+    InitializeFeature(InitFeature),
+    ListFeatures(EmptyArguments),
+    GetFeatureStatus(FeatureQuery),
+    CreateTask(CreateTask),
+    GetTask(TaskQuery),
+    GetTaskHistory(TaskQuery),
+    ClaimTask(ClaimTask),
+    UpdateTask(WorkerUpdate),
+    CoordinateTask(CoordinatorUpdate),
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -129,7 +118,7 @@ impl Request {
 
     pub async fn execute(self) -> Result<Reply, AgentError> {
         match self.operation {
-            Operation::FrameworkInit(input) => {
+            Operation::InitializeFramework(input) => {
                 let project = Project::open(self.project)?
                     .prepare()?
                     .install(InitRequest {
@@ -139,24 +128,24 @@ impl Request {
                     project: project.path().to_path_buf(),
                 })
             }
-            Operation::FrameworkInfo(_) => Ok(Reply::FrameworkInfo(InfoReport::from(
+            Operation::GetFrameworkInfo(_) => Ok(Reply::FrameworkInfo(InfoReport::from(
                 Project::open(self.project)?.info()?,
             ))),
-            Operation::Initialize(input) => {
+            Operation::InitializeFeature(input) => {
                 let workbench = Workbench::discover(&self.project)?;
                 Ok(Reply::Ledger(workbench.initialize(input).await?.info()))
             }
-            Operation::Features(_) => {
+            Operation::ListFeatures(_) => {
                 let workbench = Workbench::discover(&self.project)?;
                 Ok(Reply::Features(workbench.features().await?))
             }
-            operation @ (Operation::Status(_)
-            | Operation::Create(_)
-            | Operation::Get(_)
-            | Operation::History(_)
-            | Operation::Claim(_)
-            | Operation::Update(_)
-            | Operation::Coordinate(_)) => {
+            operation @ (Operation::GetFeatureStatus(_)
+            | Operation::CreateTask(_)
+            | Operation::GetTask(_)
+            | Operation::GetTaskHistory(_)
+            | Operation::ClaimTask(_)
+            | Operation::UpdateTask(_)
+            | Operation::CoordinateTask(_)) => {
                 let workbench = Workbench::discover(&self.project)?;
                 let feature = operation.feature()?.clone();
                 let mut ledger = workbench.open(feature).await?;
@@ -169,16 +158,16 @@ impl Request {
 impl Operation {
     fn feature(&self) -> Result<&FeatureId, AgentError> {
         match self {
-            Self::Status(input) => Ok(&input.feature),
-            Self::Create(input) => Ok(&input.feature),
-            Self::Get(input) | Self::History(input) => Ok(&input.feature),
-            Self::Claim(input) => Ok(&input.feature),
-            Self::Update(input) => Ok(&input.feature),
-            Self::Coordinate(input) => Ok(&input.feature),
-            Self::Initialize(_)
-            | Self::Features(_)
-            | Self::FrameworkInit(_)
-            | Self::FrameworkInfo(_) => {
+            Self::GetFeatureStatus(input) => Ok(&input.feature),
+            Self::CreateTask(input) => Ok(&input.feature),
+            Self::GetTask(input) | Self::GetTaskHistory(input) => Ok(&input.feature),
+            Self::ClaimTask(input) => Ok(&input.feature),
+            Self::UpdateTask(input) => Ok(&input.feature),
+            Self::CoordinateTask(input) => Ok(&input.feature),
+            Self::InitializeFeature(_)
+            | Self::ListFeatures(_)
+            | Self::InitializeFramework(_)
+            | Self::GetFrameworkInfo(_) => {
                 Err(LedgerError::Invalid("operation does not open an existing ledger").into())
             }
         }
@@ -186,20 +175,20 @@ impl Operation {
 
     async fn execute(self, ledger: &mut Ledger) -> Result<Reply, AgentError> {
         match self {
-            Self::Status(_) => Ok(Reply::Status {
+            Self::GetFeatureStatus(_) => Ok(Reply::Status {
                 ledger: ledger.info(),
                 tasks: ledger.status().await?,
             }),
-            Self::Create(input) => Ok(Reply::Task(ledger.create(input).await?)),
-            Self::Get(input) => Ok(Reply::TaskView(ledger.task(&input.task).await?)),
-            Self::History(input) => Ok(Reply::History(ledger.history(&input.task).await?)),
-            Self::Claim(input) => Ok(Reply::Task(ledger.claim(input).await?)),
-            Self::Update(input) => Ok(Reply::Task(ledger.update(input).await?)),
-            Self::Coordinate(input) => Ok(Reply::Task(ledger.coordinate(input).await?)),
-            Self::Initialize(_)
-            | Self::Features(_)
-            | Self::FrameworkInit(_)
-            | Self::FrameworkInfo(_) => {
+            Self::CreateTask(input) => Ok(Reply::Task(ledger.create(input).await?)),
+            Self::GetTask(input) => Ok(Reply::TaskView(ledger.task(&input.task).await?)),
+            Self::GetTaskHistory(input) => Ok(Reply::History(ledger.history(&input.task).await?)),
+            Self::ClaimTask(input) => Ok(Reply::Task(ledger.claim(input).await?)),
+            Self::UpdateTask(input) => Ok(Reply::Task(ledger.update(input).await?)),
+            Self::CoordinateTask(input) => Ok(Reply::Task(ledger.coordinate(input).await?)),
+            Self::InitializeFeature(_)
+            | Self::ListFeatures(_)
+            | Self::InitializeFramework(_)
+            | Self::GetFrameworkInfo(_) => {
                 Err(LedgerError::Invalid("operation cannot run on an open ledger").into())
             }
         }

@@ -14,7 +14,7 @@ pub enum InstallError {
     #[error("filesystem operation failed: {0}")]
     Io(#[from] io::Error),
     #[error(
-        "missing required framework entry: {path}; the installed .meta-cortex directory is incomplete or from a different framework version. To replace it, back up and move the existing .meta-cortex directory out of the installation path, run framework.init through meta-cortex run again, then review and reapply your configuration changes"
+        "missing required framework entry: {path}; the installed .meta-cortex directory is incomplete or from a different framework version. To replace it, back up and move the existing .meta-cortex directory out of the installation path, run InitializeFramework through meta-cortex run again, then review and reapply your configuration changes"
     )]
     MissingFrameworkEntry {
         path: PathBuf,
@@ -25,7 +25,9 @@ pub enum InstallError {
     Configuration(#[from] ConfigError),
     #[error(transparent)]
     Version(#[from] VersionError),
-    #[error("Meta-Cortex is not initialized in {0}; run framework.init through meta-cortex run")]
+    #[error(
+        "Meta-Cortex is not initialized in {0}; run InitializeFramework through meta-cortex run"
+    )]
     NotInitialized(PathBuf),
     #[error("expected an existing project directory: {0}")]
     InvalidProject(PathBuf),

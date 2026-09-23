@@ -1,9 +1,10 @@
-# Rust WASM Name Coherence
+# Rust WASM and Command Name Coherence
 
 For contracts the project controls, keep Rust names unchanged in generated
 bindings and TypeScript: `order_id` stays `order_id`. Do not rename for JavaScript
 casing conventions. Each alias forces humans and AI agents to translate names
-instead of following one contract.
+instead of following one contract. Project-owned command identities follow the
+same rule through Rust, discovery schemas, YAML/JSON, and consumers.
 
 Fixed external protocols are the narrow exception: preserve Rust conventions
 inside the application and map the required wire names only in the external
@@ -119,6 +120,49 @@ const { order_id } = order;
 // Pass the original typed object onward.
 view.render(order);
 ```
+
+## Preserve command identities
+
+Choose a descriptive Rust variant, then serialize that exact name. Do not invent
+dotted aliases, shorten the wire name, or apply a casing transformation merely
+for appearance. This applies to command catalogs, request examples, and consumers.
+An existing internal alias is not evidence of an external protocol requirement.
+
+These complete alternative enums assume Serde derive. Both compile, but only the
+preferred declaration exposes one command identity across code and the wire.
+
+**Prohibited:** unrelated code and wire spellings require a translation table.
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "name", content = "arguments")]
+pub enum Operation {
+    #[serde(rename = "framework.init")]
+    Init(InitializeFramework),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct InitializeFramework {}
+```
+
+**Preferred:** the variant explains the operation and owns its serialized name.
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "name", content = "arguments")]
+pub enum Operation {
+    InitializeFramework(InitializeFramework),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct InitializeFramework {}
+```
+
+The preferred request uses `name: InitializeFramework`. Generate discovery and
+examples from the enum rather than maintaining a second command-name registry.
+Update callers and documentation together. A fixed external contract may require
+an adapter; identify that contract explicitly. Do not introduce legacy aliases
+for an unpublished command design the user has asked to replace.
 
 ## Map fixed external names only at the adapter
 
