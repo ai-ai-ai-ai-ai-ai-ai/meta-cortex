@@ -11,7 +11,9 @@ Give each domain value a distinct type. Preserve its meaning through constructio
   Group related vocabulary there; do not add domain files directly to the core
   crate's `src` root. Re-export stable public types through `lib.rs`.
 
-- Required persisted or signed values use required validated newtypes.
+- Required identities and signed values use required validated newtypes.
+  Free-form prose follows the [empty-text state rule](domain-states.md#represent-empty-prose-as-a-value);
+  persistence alone does not justify rejecting empty text.
 - Represent typed domain values with existing core newtypes such as
   `OrderId`, `CustomerId`, `Quantity`, `OrderTotal`, and `MessageBody`.
   Add a newtype when the domain has no existing one.
@@ -249,7 +251,9 @@ impl FieldIndex {
 ```
 
 - Use `From<Primitive>` for an infallible single-field wrapper.
-- Use `TryFrom` when conversion validates the value.
+- Use `TryFrom` for genuine format/invariant failures. Empty free-form prose
+  uses [infallible state classification](domain-states.md#represent-empty-prose-as-a-value),
+  not a validation error.
 - Add associated constants only for common values with stable meaning.
 - Keep dynamic values on the normal conversion path.
 - Preserve the wrapper through domain and WASM calls.

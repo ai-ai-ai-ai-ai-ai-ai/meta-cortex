@@ -52,17 +52,36 @@ impl TryFrom<String> for AgentId {
     }
 }
 
+// Preserve the established string wire format; emptiness is a domain state.
 #[derive(Clone, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "String")]
-pub struct Note(String);
+#[serde(from = "String", into = "String")]
+pub enum Note {
+    #[display("")]
+    Empty,
+    #[display("{_0}")]
+    Text(NoteText),
+}
 
-impl TryFrom<String> for Note {
-    type Error = LedgerError;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        if value.trim().is_empty() {
-            return Err(LedgerError::Invalid("notes must not be blank"));
+// Construction belongs to Note so Text cannot contain an empty string.
+#[derive(Clone, Debug, PartialEq, Eq, Display)]
+pub struct NoteText(String);
+
+impl From<String> for Note {
+    fn from(value: String) -> Self {
+        if value.is_empty() {
+            Self::Empty
+        } else {
+            Self::Text(NoteText(value))
         }
-        Ok(Self(value))
+    }
+}
+
+impl From<Note> for String {
+    fn from(note: Note) -> Self {
+        match note {
+            Note::Empty => Self::new(),
+            Note::Text(NoteText(text)) => text,
+        }
     }
 }
 
@@ -205,3 +224,38 @@ impl TryFrom<i64> for LeaseSeconds {
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema, From)]
 #[serde(transparent)]
 pub struct Extensions(pub BTreeMap<String, serde_json::Value>);
+
+#[cfg(test)]
+mod tests {
+    use super::Note;
+
+    #[test]
+    fn note_states_preserve_string_wire_values() -> serde_json::Result<()> {
+        assert_eq!(Note::from(String::new()), Note::Empty);
+        assert_eq!(Note::Empty.to_string(), "");
+        assert_eq!(String::from(Note::Empty), "");
+        for text in ["", " ", "\t\n", "Progress: \"ready\"\n次の作業"] {
+            let note = Note::from(text.to_owned());
+            match &note {
+                Note::Empty => assert_eq!(text, ""),
+                Note::Text(content) => {
+                    assert!(!text.is_empty());
+                    assert_eq!(content.to_string(), text);
+                }
+            }
+            let encoded = serde_json::to_string(&note)?;
+            assert_eq!(encoded, serde_json::to_string(text)?);
+            assert_eq!(serde_json::from_str::<Note>(&encoded)?, note);
+            assert_eq!(note.to_string(), text);
+            assert_eq!(String::from(note), text);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn notes_still_require_string_input() {
+        for invalid in ["null", "42", "{}", "[]", "true"] {
+            assert!(serde_json::from_str::<Note>(invalid).is_err());
+        }
+    }
+}

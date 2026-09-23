@@ -87,7 +87,7 @@ workflow. The ledger records these resources; it does not create or merge them.
    feature branch, and absolute feature worktree. Repeating an identical
    initialization reopens it; conflicting metadata is rejected.
 2. Team Gizmo runs `task.create` before launching each worker. Supply its
-   objective, nonempty acceptance criteria, dependencies, initial continuation
+   objective, at least one acceptance criterion, dependencies, initial continuation
    notes, and either a Git workspace or `kind: read_only`. Dependencies must
    already exist; self-dependencies and duplicates are rejected.
 3. The worker reads `task.get` and runs `task.claim` with its owner name,
@@ -102,6 +102,10 @@ workflow. The ledger records these resources; it does not create or merge them.
 5. Team Gizmo reads durable readiness and directs the integration agent. After
    merging and running the assigned combined checks, that agent records
    `task.coordinate` with `action.kind: integrate` and the feature HEAD.
+
+Prose fields accept empty strings and preserve whitespace exactly. A required
+field must still be supplied as a string; omitting it or supplying `null` is a
+decoding error. The acceptance list must contain at least one entry.
 
 Workers use their returned revision for the next update. Every successful change
 increments that revision and atomically appends the resulting task snapshot to

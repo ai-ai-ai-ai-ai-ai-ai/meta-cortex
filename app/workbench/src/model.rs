@@ -348,7 +348,7 @@ mod tests {
             Err(LedgerError::InvalidTransition)
         ));
         assert!(matches!(
-            task.cancel(Note::try_from("cancel".to_owned())?),
+            task.cancel(Note::from("cancel".to_owned())),
             Err(LedgerError::InvalidTransition)
         ));
         assert_eq!(
@@ -398,7 +398,7 @@ mod tests {
             }),
             Err(LedgerError::AssignmentChanged)
         ));
-        task.cancel(Note::try_from("No longer needed".to_owned())?)?;
+        task.cancel(Note::from("No longer needed".to_owned()))?;
         assert!(matches!(task.state, TaskState::Cancelled { .. }));
         Ok(())
     }

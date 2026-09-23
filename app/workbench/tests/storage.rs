@@ -1,6 +1,6 @@
 use anyhow::{Context, bail};
 use meta_cortex_workbench::request::{ClaimTask, CreateTask, InitFeature, WorkerUpdate};
-use meta_cortex_workbench::values::{FeatureId, TaskId};
+use meta_cortex_workbench::values::{FeatureId, Note, TaskId};
 use meta_cortex_workbench::versions::StorageVersion;
 use meta_cortex_workbench::{Ledger, LedgerError, Workbench};
 use std::env;
@@ -47,7 +47,7 @@ impl Scenario {
         let mut ledger = workbench
             .initialize(InitFeature {
                 feature: FeatureId::try_from("feature".to_owned())?,
-                objective: "Example feature".to_owned().try_into()?,
+                objective: Note::from("Example feature".to_owned()),
                 branch: "codex/feature".to_owned().try_into()?,
                 worktree: self.directory.path().to_path_buf(),
             })

@@ -151,6 +151,7 @@ struct TaskView {
 #[derive(Debug, Deserialize)]
 struct Event {
     kind: String,
+    note: Note,
     task: Task,
 }
 
@@ -239,7 +240,7 @@ impl Scenario {
     fn init(&self, feature: FeatureId) -> anyhow::Result<LedgerInfo> {
         let reply = self.run(Operation::Initialize(InitFeature {
             feature,
-            objective: Note::try_from("Example feature".to_owned())?,
+            objective: Note::from("Example feature".to_owned()),
             branch: BranchName::try_from("codex/feature".to_owned())?,
             worktree: self.directory.path().to_owned(),
         }))?;
@@ -262,11 +263,11 @@ impl Scenario {
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
             actor: AgentId::try_from("gizmo".to_owned())?,
-            objective: Note::try_from("Review code".to_owned())?,
-            acceptance: vec![Note::try_from("Report findings".to_owned())?],
+            objective: Note::from("Review code".to_owned()),
+            acceptance: vec![Note::from("Report findings".to_owned())],
             dependencies: Vec::new(),
             workspace: Workspace::ReadOnly,
-            progress: Self::progress(Note::try_from("Waiting".to_owned())?),
+            progress: Self::progress(Note::from("Waiting".to_owned())),
         })
     }
     fn progress(summary: Note) -> Progress {
@@ -447,7 +448,7 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
     scenario.run(Operation::Claim(Scenario::claim()?))?;
     scenario.run(Operation::Coordinate(Scenario::coordinate(
         CoordinatorAction::Requeue {
-            reason: Note::try_from("Worker exited".to_owned())?,
+            reason: Note::from("Worker exited".to_owned()),
             previous_execution: StoppedExecution::StoppedOrFinished,
         },
     )?))?;
@@ -469,7 +470,7 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
         expected_revision: reclaimed_revision,
         attempt: Attempt::try_from(2)?,
         action: WorkerAction::Ready {
-            progress: Scenario::progress(Note::try_from("Reviewed".to_owned())?),
+            progress: Scenario::progress(Note::from("Reviewed".to_owned())),
         },
         ..Scenario::heartbeat()?
     }))?;
@@ -529,7 +530,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
         action: WorkerAction::Checkpoint {
             ttl_seconds: LeaseSeconds::try_from(600)?,
             commit: commit.clone(),
-            progress: Scenario::progress(Note::try_from("File added".to_owned())?),
+            progress: Scenario::progress(Note::from("File added".to_owned())),
         },
         ..Scenario::heartbeat()?
     }))?;
@@ -538,7 +539,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
         Ok(Operation::Update(WorkerUpdate {
             expected_revision: checkpoint_revision,
             action: WorkerAction::Ready {
-                progress: Scenario::progress(Note::try_from("Ready".to_owned())?),
+                progress: Scenario::progress(Note::from("Ready".to_owned())),
             },
             ..Scenario::heartbeat()?
         }))
@@ -658,15 +659,15 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         "conflict"
     );
     scenario.run(Operation::Claim(Scenario::claim()?))?;
-    let mut progress = Scenario::progress(Note::try_from(
+    let mut progress = Scenario::progress(Note::from(
         "Investigated: \"quotes\"\nNext line — details".to_owned(),
-    )?);
-    progress.findings = vec![Note::try_from("Need a decision".to_owned())?];
-    progress.next_steps = vec![Note::try_from("Ask Gizmo".to_owned())?];
+    ));
+    progress.findings = vec![Note::from("Need a decision".to_owned())];
+    progress.next_steps = vec![Note::from("Ask Gizmo".to_owned())];
     progress.checks = vec![Check {
-        command: Note::try_from("cargo test".to_owned())?,
+        command: Note::from("cargo test".to_owned()),
         outcome: CheckOutcome::NotRun,
-        evidence: Note::try_from("Waiting".to_owned())?,
+        evidence: Note::from("Waiting".to_owned()),
     }];
     // Extensions are the explicitly open, task-specific portion of this schema.
     let Extensions(entries) = &mut progress.extensions;
@@ -678,7 +679,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         action: WorkerAction::Progress {
             ttl_seconds: LeaseSeconds::try_from(600)?,
             phase: Phase::Blocked {
-                reason: Note::try_from("Waiting for input".to_owned())?,
+                reason: Note::from("Waiting for input".to_owned()),
             },
             progress: progress.clone(),
         },
@@ -731,7 +732,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
     scenario.run(Operation::Coordinate(CoordinatorUpdate {
         expected_revision: view.task.revision,
         ..Scenario::coordinate(CoordinatorAction::Cancel {
-            reason: Note::try_from("Scope removed".to_owned())?,
+            reason: Note::from("Scope removed".to_owned()),
         })?
     }))?;
     assert!(
@@ -808,5 +809,50 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
         bail!("version error")
     };
     assert!(error.message.contains("unsupported command version"));
+    Ok(())
+}
+
+#[test]
+fn empty_notes_survive_cli_storage_and_history() -> anyhow::Result<()> {
+    let scenario = Scenario::create()?;
+    scenario.run(Operation::Initialize(InitFeature {
+        objective: Note::Empty,
+        feature: FeatureId::try_from("feature".to_owned())?,
+        branch: BranchName::try_from("codex/feature".to_owned())?,
+        worktree: scenario.directory.path().to_owned(),
+    }))?;
+    let empty_progress = Scenario::progress(Note::Empty);
+    scenario.run(Operation::Create(CreateTask {
+        objective: Note::Empty,
+        acceptance: vec![Note::Empty],
+        progress: empty_progress.clone(),
+        ..Scenario::task()?
+    }))?;
+    scenario.run(Operation::Claim(Scenario::claim()?))?;
+    scenario.run(Operation::Update(WorkerUpdate {
+        action: WorkerAction::Progress {
+            ttl_seconds: LeaseSeconds::try_from(600)?,
+            phase: Phase::Blocked {
+                reason: Note::Empty,
+            },
+            progress: empty_progress.clone(),
+        },
+        ..Scenario::heartbeat()?
+    }))?;
+    let task = scenario.status()?.remove(0).task;
+    assert_eq!(task.progress, empty_progress);
+    scenario.run(Operation::Coordinate(CoordinatorUpdate {
+        expected_revision: task.revision,
+        ..Scenario::coordinate(CoordinatorAction::Cancel {
+            reason: Note::Empty,
+        })?
+    }))?;
+    let Reply::History(events) = scenario.run(Operation::History(Scenario::query()?))? else {
+        bail!("history")
+    };
+    let cancelled = events.last().context("cancelled event")?;
+    assert_eq!(cancelled.note, Note::Empty);
+    assert_eq!(cancelled.task.progress, empty_progress);
+    assert!(matches!(cancelled.task.state, State::Cancelled));
     Ok(())
 }

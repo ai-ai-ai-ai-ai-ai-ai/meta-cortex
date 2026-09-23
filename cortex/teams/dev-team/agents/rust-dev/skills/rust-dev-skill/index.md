@@ -203,9 +203,16 @@ in full. Include related subjects when the change crosses their boundaries.
   - Exclude dependency-generated implementations from the authored-code requirement.
   - Do not ban Option through Clippy or add wrapper modules and lint allowances for derives.
 
+- **[domain_states:empty_text](practices/modeling/domain-states.md#represent-empty-prose-as-a-value)**
+
+  - Classify empty free-form prose with infallible From and meaningful domain states.
+  - Protect nonempty payload construction, preserve whitespace and established wire
+    shapes, and distinguish empty text from missing or malformed input.
+
 - **[domain_states:required_values](practices/modeling/domain-states.md#require-values-that-cannot-be-absent)**
 
-  - Required persisted/signed values remain required.
+  - Required identities/signed values remain required; persistence does not make
+    empty prose invalid.
   - Reject missing or invalid input before domain construction rather than inventing
     Missing variants or empty strings.
 

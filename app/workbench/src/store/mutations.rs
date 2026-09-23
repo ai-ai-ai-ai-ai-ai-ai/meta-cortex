@@ -44,7 +44,7 @@ impl Ledger {
                 version: RecordVersion::CURRENT,
                 kind: EventKind::Claimed,
                 actor: input.agent,
-                note: Note::try_from("Assignment claimed".to_owned())?,
+                note: Note::from("Assignment claimed".to_owned()),
                 task,
             })
             .await?;
@@ -177,9 +177,7 @@ impl TaskChange<'_> {
                 self.task.integrate(commit)?;
                 EventDetails {
                     kind: EventKind::Integrated,
-                    note: Note::try_from(
-                        "Integration recorded by the integration owner".to_owned(),
-                    )?,
+                    note: Note::from("Integration recorded by the integration owner".to_owned()),
                 }
             }
             CoordinatorAction::Requeue {

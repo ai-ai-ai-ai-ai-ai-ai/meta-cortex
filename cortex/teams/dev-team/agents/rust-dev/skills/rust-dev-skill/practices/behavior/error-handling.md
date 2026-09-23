@@ -4,7 +4,9 @@ Preserve the meaning and source of each failure. Propagate typed errors until an
 
 ## Required actions
 
-- Return `Result<T, E>`; name application failures with `thiserror` enums.
+- Return `Result<T, E>` for genuine fallible operations; name application failures
+  with `thiserror` enums. Use infallible `From` for valid value classification,
+  including [empty free-form text](../modeling/domain-states.md#represent-empty-prose-as-a-value).
 - Preserve typed sources. Use `#[from]` and `?` for direct conversions.
 - Use `map_err` only to add context or select the appropriate error variant.
 - Return a typed error when required input is missing or invalid.

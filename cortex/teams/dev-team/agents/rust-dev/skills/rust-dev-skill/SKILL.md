@@ -34,6 +34,10 @@ application fields as raw strings because compilation passes.
 **Preferred:** load the modeling rules, classify the metadata fields, preserve
 their wire format with domain types, and run the required checks.
 
+For text constructors, apply [empty-text state modeling](practices/modeling/domain-states.md#represent-empty-prose-as-a-value).
+Use infallible classification for valid empty prose; do not invent validation
+failures merely because a domain wrapper holds a string.
+
 For versioned contracts, apply [supported schema revisions](practices/modeling/domain-types.md#model-supported-schema-revisions-explicitly):
 name supported identities, bind differing payload shapes to their versions, and
 review migration dispatch exhaustively. Distinguish these from open runtime

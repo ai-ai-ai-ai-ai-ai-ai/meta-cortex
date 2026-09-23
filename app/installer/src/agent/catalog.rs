@@ -79,7 +79,7 @@ impl Catalog {
                 ),
                 operation: Operation::Initialize(InitFeature {
                     feature: feature.clone(),
-                    objective: Note::try_from("Implement the feature".to_owned())?,
+                    objective: Note::from("Implement the feature".to_owned()),
                     branch: BranchName::try_from("codex/example".to_owned())?,
                     worktree: PathBuf::from("/absolute/project"),
                 }),
@@ -100,14 +100,14 @@ impl Catalog {
                     feature: feature.clone(),
                     task: task.clone(),
                     actor: coordinator.clone(),
-                    objective: Note::try_from("Review the feature".to_owned())?,
-                    acceptance: vec![Note::try_from("Report actionable findings".to_owned())?],
+                    objective: Note::from("Review the feature".to_owned()),
+                    acceptance: vec![Note::from("Report actionable findings".to_owned())],
                     dependencies: Vec::new(),
                     workspace: Workspace::ReadOnly,
                     progress: Progress {
-                        summary: Note::try_from("Awaiting assignment".to_owned())?,
+                        summary: Note::from("Awaiting assignment".to_owned()),
                         findings: Vec::new(),
-                        next_steps: vec![Note::try_from("Read the diff".to_owned())?],
+                        next_steps: vec![Note::from("Read the diff".to_owned())],
                         checks: Vec::new(),
                         extensions: Extensions::default(),
                     },
@@ -166,9 +166,9 @@ impl Catalog {
                     expected_revision: heartbeat_revision,
                     actor: coordinator,
                     action: CoordinatorAction::Requeue {
-                        reason: Note::try_from(
+                        reason: Note::from(
                             "Previous worker exited; resume from its recorded progress".to_owned(),
-                        )?,
+                        ),
                         previous_execution: StoppedExecution::StoppedOrFinished,
                     },
                 }),
