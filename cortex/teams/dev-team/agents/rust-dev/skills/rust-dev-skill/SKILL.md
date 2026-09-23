@@ -15,7 +15,8 @@ selected language practices. Reuse it if already loaded for this assignment.
 
 For every Rust implementation, refactoring, review, or tooling assignment, load
 and apply [domain types](practices/modeling/domain-types.md),
-[domain states](practices/modeling/domain-states.md), and
+[domain states](practices/modeling/domain-states.md),
+[module layout](practices/tooling/module-layout.md), and
 [Rust code checks](practices/tooling/rust-code-checks.md). These prerequisites are
 mandatory, independent of the selected implementation practices. Complete the
 [domain-type review](practices/modeling/domain-types.md#validation) before handoff.

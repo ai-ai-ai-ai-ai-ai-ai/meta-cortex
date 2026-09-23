@@ -21,6 +21,8 @@ for Rust practices, checks, and boundary requirements.
 ## Small structural steps
 
 - Name one cohesive structural seam before moving code.
+- Apply the [module-layout rule](../../../rust-dev/skills/rust-dev-skill/practices/tooling/module-layout.md)
+  when moving module files, including its include-path and reference checks.
 - Keep ownership, dependency direction, and tests aligned with that seam.
 - Make the smallest structural edit and keep unrelated behavior changes out.
 

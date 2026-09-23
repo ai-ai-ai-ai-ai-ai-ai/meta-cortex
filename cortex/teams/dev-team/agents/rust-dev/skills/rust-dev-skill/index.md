@@ -19,7 +19,7 @@ Related entries are review relationships, not instructions for leaf documents to
 link back here. Apply the relevant cross-language practices when the assignment crosses that boundary.
 
 For implementation, refactoring, review, and tooling, always load Domain types,
-Domain states, and Rust code checks as required by the skill entry point. Select
+Domain states, Module layout, and Rust code checks as required by the skill entry point. Select
 additional entries covering the decisions being changed and load those practices
 in full. Include related subjects when the change crosses their boundaries.
 
@@ -979,6 +979,31 @@ in full. Include related subjects when the change crosses their boundaries.
 
   - Do not hand-mirror contracts, serialize through JSON just to cross WASM, or spread
     low-level browser binding calls through domain code.
+
+
+### Module layout
+
+- **File:** [Module layout](practices/tooling/module-layout.md).
+- **Owns:** Module filenames, child-directory layout, and path updates during module moves.
+- **Does not own:** Domain ownership belongs to Domain types; inline test placement belongs to Rust testing.
+- **Related:** [Domain types](practices/modeling/domain-types.md), [Rust testing](practices/tooling/rust-testing.md), [Paths and imports](practices/tooling/path-imports.md).
+
+- **[module_layout:named_files](practices/tooling/module-layout.md#use-named-module-files)**
+
+  - Use `<module>.rs` with children under `<module>/`; prohibit authored `mod.rs`
+    files, including declaration-only modules and test support.
+  - Retain crate/test entry points, inline modules, and externally owned layouts.
+
+- **[module_layout:preserve_resolution](practices/tooling/module-layout.md#preserve-resolution-when-moving-modules)**
+
+  - Move owners without changing module identity, visibility, re-exports, or tests.
+  - Update file-relative includes, explicit paths, and repository references;
+    do not leave forwarding files or hide old layouts behind path attributes.
+
+- **[module_layout:validation](practices/tooling/module-layout.md#validation)**
+
+  - Inventory all authored module files and run compiler, Clippy, formatting,
+    and affected tests to verify resolution, embedded assets, and public behavior.
 
 
 ### Paths and imports
