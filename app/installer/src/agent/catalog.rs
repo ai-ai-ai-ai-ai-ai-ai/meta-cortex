@@ -48,9 +48,9 @@ impl Catalog {
     pub fn discover() -> Result<Self, AgentError> {
         let feature = FeatureId::try_from("example".to_owned())?;
         let task = TaskId::try_from("review".to_owned())?;
-        let coordinator = AgentId::try_from("gizmo".to_owned())?;
-        let worker = AgentId::try_from("reviewer".to_owned())?;
-        let ttl = LeaseSeconds::try_from(600)?;
+        let coordinator = AgentId::Gizmo;
+        let worker = AgentId::RustDev;
+        let ttl = LeaseSeconds::TEN_MINUTES;
         let claimed_revision = Revision::INITIAL.advance()?;
         let heartbeat_revision = claimed_revision.advance()?;
         let examples = [
@@ -99,7 +99,7 @@ impl Catalog {
                 operation: Operation::Create(CreateTask {
                     feature: feature.clone(),
                     task: task.clone(),
-                    actor: coordinator.clone(),
+                    actor: coordinator,
                     objective: Note::from("Review the feature".to_owned()),
                     acceptance: vec![Note::from("Report actionable findings".to_owned())],
                     dependencies: Vec::new(),
@@ -139,7 +139,7 @@ impl Catalog {
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: Revision::INITIAL,
-                    agent: worker.clone(),
+                    agent: worker,
                     ttl_seconds: ttl,
                 }),
             },

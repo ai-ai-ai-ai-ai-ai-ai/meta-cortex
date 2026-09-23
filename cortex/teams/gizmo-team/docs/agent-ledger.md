@@ -90,7 +90,7 @@ workflow. The ledger records these resources; it does not create or merge them.
    objective, at least one acceptance criterion, dependencies, initial continuation
    notes, and either a Git workspace or `kind: read_only`. Dependencies must
    already exist; self-dependencies and duplicates are rejected.
-3. The worker reads `task.get` and runs `task.claim` with its owner name,
+3. The worker reads `task.get` and runs `task.claim` with its catalog agent identity,
    expected revision, and TTL. A claim succeeds only for a queued task whose
    dependencies are integrated. The result contains its new attempt and revision.
 4. While working, the worker runs `task.update` at meaningful milestones and
@@ -102,6 +102,14 @@ workflow. The ledger records these resources; it does not create or merge them.
 5. Team Gizmo reads durable readiness and directs the integration agent. After
    merging and running the assigned combined checks, that agent records
    `task.coordinate` with `action.kind: integrate` and the feature HEAD.
+
+`agent` and `actor` use the fixed identities of the bundled agent catalog, such
+as `gizmo`, `rust-dev`, and `integration-agent`. The CLI discovery schema lists
+all supported identities. Use the role's directory name, not a host session ID,
+`worker`, or an invented agent name. An unknown name is rejected, including in
+stored records; do not silently relabel historical actors to another role.
+Task IDs remain per-assignment values. The task and attempt identify the claimed
+assignment even when multiple sessions execute the same role.
 
 Prose fields accept empty strings and preserve whitespace exactly. A required
 field must still be supplied as a string; omitting it or supplying `null` is a

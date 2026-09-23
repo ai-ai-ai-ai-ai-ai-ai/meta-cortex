@@ -34,6 +34,10 @@ application fields as raw strings because compilation passes.
 **Preferred:** load the modeling rules, classify the metadata fields, preserve
 their wire format with domain types, and run the required checks.
 
+Before adding primitive conversions, inspect the [owning vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum).
+Known identities must be complete enums; use variants and named typed constants
+for authored known values. Do not replace a closed catalog with string validation.
+
 For text constructors, apply [empty-text state modeling](practices/modeling/domain-states.md#represent-empty-prose-as-a-value).
 Use infallible classification for valid empty prose; do not invent validation
 failures merely because a domain wrapper holds a string.

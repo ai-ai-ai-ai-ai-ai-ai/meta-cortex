@@ -40,16 +40,36 @@ impl TryFrom<String> for FeatureId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "String")]
-pub struct AgentId(String);
-
-impl TryFrom<String> for AgentId {
-    type Error = LedgerError;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        TaskId::try_from(value.clone())?;
-        Ok(Self(value))
-    }
+/// A role in the bundled Cortex agent catalog, not a host session identifier.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum AgentId {
+    #[display("gizmo-prime")]
+    GizmoPrime,
+    #[display("gizmo")]
+    Gizmo,
+    #[display("rust-dev")]
+    RustDev,
+    #[display("rust-refactoring")]
+    RustRefactoring,
+    #[display("typescript-dev")]
+    TypescriptDev,
+    #[display("web-designer")]
+    WebDesigner,
+    #[display("tech-writer")]
+    TechWriter,
+    #[display("security-agent")]
+    SecurityAgent,
+    #[display("cicd-agent")]
+    CicdAgent,
+    #[display("docker-specialist")]
+    DockerSpecialist,
+    #[display("kubernetes-specialist")]
+    KubernetesSpecialist,
+    #[display("integration-agent")]
+    IntegrationAgent,
+    #[display("pr-agent")]
+    PrAgent,
 }
 
 // Preserve the established string wire format; emptiness is a domain state.
@@ -209,6 +229,10 @@ impl TryFrom<i64> for Timestamp {
 #[serde(try_from = "i64")]
 pub struct LeaseSeconds(i64);
 
+impl LeaseSeconds {
+    pub const TEN_MINUTES: Self = Self(600);
+}
+
 impl TryFrom<i64> for LeaseSeconds {
     type Error = LedgerError;
     fn try_from(value: i64) -> Result<Self, Self::Error> {
@@ -228,6 +252,34 @@ pub struct Extensions(pub BTreeMap<String, serde_json::Value>);
 #[cfg(test)]
 mod tests {
     use super::Note;
+    use super::{AgentId, LeaseSeconds};
+
+    #[test]
+    fn agent_identity_rejects_arbitrary_roles_and_session_names() {
+        for input in [
+            r#""worker""#,
+            r#""reviewer""#,
+            r#""rust-dev-2""#,
+            r#""""#,
+            "null",
+        ] {
+            assert!(serde_json::from_str::<AgentId>(input).is_err());
+        }
+    }
+
+    #[test]
+    fn named_lease_preserves_duration_and_external_validation() -> serde_json::Result<()> {
+        let encoded = serde_json::to_string(&LeaseSeconds::TEN_MINUTES)?;
+        assert_eq!(encoded, "600");
+        assert_eq!(
+            serde_json::from_str::<LeaseSeconds>(&encoded)?,
+            LeaseSeconds::TEN_MINUTES
+        );
+        for input in ["0", "-1", "86401"] {
+            assert!(serde_json::from_str::<LeaseSeconds>(input).is_err());
+        }
+        Ok(())
+    }
 
     #[test]
     fn note_states_preserve_string_wire_values() -> serde_json::Result<()> {

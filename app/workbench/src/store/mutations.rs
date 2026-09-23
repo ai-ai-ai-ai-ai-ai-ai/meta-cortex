@@ -34,7 +34,7 @@ impl Ledger {
         self.repository.require_workspace(&task.workspace)?;
         let now = Timestamp::now()?;
         task.claim(ClaimAt {
-            agent: input.agent.clone(),
+            agent: input.agent,
             ttl: input.ttl_seconds,
             now,
         })?;

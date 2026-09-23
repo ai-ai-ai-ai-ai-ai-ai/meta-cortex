@@ -217,7 +217,7 @@ impl Task {
             ));
         }
         self.state = TaskState::Ready {
-            agent: input.agent.clone(),
+            agent: *input.agent,
             attempt: input.attempt,
         };
         Ok(())
@@ -308,7 +308,7 @@ mod tests {
 
         fn claim() -> anyhow::Result<ClaimAt> {
             Ok(ClaimAt {
-                agent: AgentId::try_from("worker".to_owned())?,
+                agent: AgentId::RustDev,
                 ttl: LeaseSeconds::try_from(10)?,
                 now: Timestamp::try_from(1000)?,
             })
@@ -334,7 +334,7 @@ mod tests {
             task.claim(Scenario::claim()?),
             Err(LedgerError::InvalidTransition)
         ));
-        let agent = AgentId::try_from("worker".to_owned())?;
+        let agent = AgentId::RustDev;
         task.ready(WorkerAt {
             agent: &agent,
             attempt: Attempt::try_from(1)?,
@@ -362,7 +362,7 @@ mod tests {
     fn expiry_and_reassignment_reject_stale_attempts() -> anyhow::Result<()> {
         let mut task = Scenario::task()?;
         task.claim(Scenario::claim()?)?;
-        let agent = AgentId::try_from("worker".to_owned())?;
+        let agent = AgentId::RustDev;
         assert_eq!(
             task.clone().view(Timestamp::try_from(10000)?).lease,
             LeaseHealth::Current
@@ -389,7 +389,7 @@ mod tests {
             }),
             Err(LedgerError::AssignmentChanged)
         ));
-        let stranger = AgentId::try_from("other".to_owned())?;
+        let stranger = AgentId::TypescriptDev;
         assert!(matches!(
             task.worker(WorkerAt {
                 agent: &stranger,

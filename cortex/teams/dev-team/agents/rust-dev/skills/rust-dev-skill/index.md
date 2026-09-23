@@ -76,6 +76,12 @@ in full. Include related subjects when the change crosses their boundaries.
   - Required persisted or signed values use validated required newtypes.
   - Preserve validation during deserialization.
 
+- **[domain_types:closed_vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum)**
+
+  - Inspect the owning catalog; use a complete closed enum for known identities and
+    reject unregistered names. Keep dynamic session/task identities separate.
+  - Construct variants directly and use named typed constants for reusable quantities.
+
 - **[domain_types:external_conversions](practices/modeling/domain-types.md#external-raw-values)**
 
   - Convert uncontrolled external primitives and records immediately through

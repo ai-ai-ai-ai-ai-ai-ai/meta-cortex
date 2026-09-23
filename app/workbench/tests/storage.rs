@@ -192,7 +192,7 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             let claim: ClaimTask = serde_json::from_str(
                 r#"{
             "feature":"feature","task":"task","expected_revision":1,
-            "agent":"worker","ttl_seconds":600
+            "agent":"rust-dev","ttl_seconds":600
         }"#,
             )?;
             ledger.claim(claim).await?;
@@ -222,7 +222,7 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             let heartbeat: WorkerUpdate = serde_json::from_str(
                 r#"{
             "feature":"feature","task":"task","expected_revision":2,
-            "agent":"worker","attempt":1,"action":{"kind":"heartbeat","ttl_seconds":600}
+            "agent":"rust-dev","attempt":1,"action":{"kind":"heartbeat","ttl_seconds":600}
         }"#,
             )?;
             ledger.update(heartbeat).await?;

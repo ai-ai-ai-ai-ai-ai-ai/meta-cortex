@@ -262,7 +262,7 @@ impl Scenario {
         Ok(CreateTask {
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
-            actor: AgentId::try_from("gizmo".to_owned())?,
+            actor: AgentId::Gizmo,
             objective: Note::from("Review code".to_owned()),
             acceptance: vec![Note::from("Report findings".to_owned())],
             dependencies: Vec::new(),
@@ -284,8 +284,8 @@ impl Scenario {
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
             expected_revision: Revision::INITIAL,
-            agent: AgentId::try_from("worker".to_owned())?,
-            ttl_seconds: LeaseSeconds::try_from(600)?,
+            agent: AgentId::RustDev,
+            ttl_seconds: LeaseSeconds::TEN_MINUTES,
         })
     }
     fn heartbeat() -> anyhow::Result<WorkerUpdate> {
@@ -293,10 +293,10 @@ impl Scenario {
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
             expected_revision: Revision::INITIAL.advance()?,
-            agent: AgentId::try_from("worker".to_owned())?,
+            agent: AgentId::RustDev,
             attempt: Attempt::try_from(1)?,
             action: WorkerAction::Heartbeat {
-                ttl_seconds: LeaseSeconds::try_from(600)?,
+                ttl_seconds: LeaseSeconds::TEN_MINUTES,
             },
         })
     }
@@ -305,7 +305,7 @@ impl Scenario {
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
             expected_revision: Revision::INITIAL.advance()?,
-            actor: AgentId::try_from("gizmo".to_owned())?,
+            actor: AgentId::Gizmo,
             action,
         })
     }
@@ -528,7 +528,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     let commit = CommitId::try_from(worker.git(&["rev-parse", "HEAD"])?)?;
     worker.run(Operation::Update(WorkerUpdate {
         action: WorkerAction::Checkpoint {
-            ttl_seconds: LeaseSeconds::try_from(600)?,
+            ttl_seconds: LeaseSeconds::TEN_MINUTES,
             commit: commit.clone(),
             progress: Scenario::progress(Note::from("File added".to_owned())),
         },
@@ -625,7 +625,8 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
     let scenario = Scenario::create()?;
     for request in [
         "version: 1\nproject: .\noperation: {name: nope, arguments: {}}",
-        "version: 1\nproject: .\noperation: {name: task.claim, arguments: {feature: f, task: t, expected_revision: 0, agent: a, ttl_seconds: 1}}",
+        "version: 1\nproject: .\noperation: {name: task.claim, arguments: {feature: f, task: t, expected_revision: 1, agent: worker, ttl_seconds: 600}}",
+        "version: 1\nproject: .\noperation: {name: task.claim, arguments: {feature: f, task: t, expected_revision: 0, agent: rust-dev, ttl_seconds: 1}}",
         "version: 1\nproject: .\noperation: {name: ledger.status, arguments: {feature: f, typo: 1}}",
         "version: 1\nproject: .\noperation: {name: ledger.status, arguments: {feature: f, feature: g}}",
     ] {
@@ -677,7 +678,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
     );
     scenario.run(Operation::Update(WorkerUpdate {
         action: WorkerAction::Progress {
-            ttl_seconds: LeaseSeconds::try_from(600)?,
+            ttl_seconds: LeaseSeconds::TEN_MINUTES,
             phase: Phase::Blocked {
                 reason: Note::from("Waiting for input".to_owned()),
             },
@@ -831,7 +832,7 @@ fn empty_notes_survive_cli_storage_and_history() -> anyhow::Result<()> {
     scenario.run(Operation::Claim(Scenario::claim()?))?;
     scenario.run(Operation::Update(WorkerUpdate {
         action: WorkerAction::Progress {
-            ttl_seconds: LeaseSeconds::try_from(600)?,
+            ttl_seconds: LeaseSeconds::TEN_MINUTES,
             phase: Phase::Blocked {
                 reason: Note::Empty,
             },

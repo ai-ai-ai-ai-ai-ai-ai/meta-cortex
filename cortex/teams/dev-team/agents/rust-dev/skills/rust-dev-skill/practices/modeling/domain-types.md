@@ -137,6 +137,74 @@ wrapper around a command line or transport paragraph is not sufficient merely
 because it is called help text. Structured JSON/YAML examples follow
 [typed document construction](../boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values).
 
+### Model a known vocabulary as a closed enum
+
+Inspect the owning catalog before choosing a string wrapper. If the application
+knows every identity in advance, represent those identities as enum variants.
+Use the variants directly in authored code; let Serde decode their external names.
+A string newtype plus `TryFrom` does not expose the domain's finite alternatives.
+
+These alternatives illustrate a two-role catalog. Both compile; only the enum
+restricts construction to the actual roles. Assume Serde derive, `derive_more`'s
+`display` feature, and a concrete `InvalidAgent` error in the prohibited example.
+
+**Prohibited:** any nonempty name becomes an agent, including invented roles.
+
+```rust
+pub struct AgentId(String);
+impl TryFrom<String> for AgentId {
+    type Error = InvalidAgent;
+    fn try_from(name: String) -> Result<Self, Self::Error> {
+        if name.is_empty() { Err(InvalidAgent) } else { Ok(Self(name)) }
+    }
+}
+let coordinator = AgentId::try_from("gizmo".to_owned())?;
+```
+
+**Preferred:** internal construction is infallible and names the exact role.
+
+```rust
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize, derive_more::Display)]
+#[serde(rename_all = "kebab-case")]
+pub enum AgentId {
+    #[display("gizmo")]
+    Gizmo,
+    #[display("rust-dev")]
+    RustDev,
+}
+let coordinator = AgentId::Gizmo;
+let worker = AgentId::RustDev;
+```
+
+Keep the real enum complete against its owning catalog. Adding/removing a role
+must update both; verify their correspondence when the catalog is shipped as
+separate files. Do not add `Other(String)`, `Custom(String)`, or an unknown-role
+fallback unless the product explicitly supports an open registry. Unknown input
+is a decoding failure, not another valid role. A host session identifier is a
+separate dynamic value and must not be smuggled into the role enum.
+
+A per-assignment task identifier belongs to an open domain, unlike a fixed role
+catalog. Classify each value by its meaning instead of banning conversion traits
+by name. Runtime input may require validation; closed choices use variants, open
+text uses domain values, and stable scalar quantities use named typed constants.
+
+These call-site alternatives assume the owning `LeaseSeconds` type validates
+external durations through `TryFrom<i64>` and declares
+`pub const TEN_MINUTES: Self = Self(600)` inside its implementation. Both calls
+compile; the second avoids revalidating a known, reusable domain quantity.
+
+**Prohibited:** reconstruct a known quantity through runtime validation.
+
+```rust
+let ttl = LeaseSeconds::try_from(600)?;
+```
+
+**Preferred:** use the typed value declared by its owner.
+
+```rust
+let ttl = LeaseSeconds::TEN_MINUTES;
+```
+
 ### Normalize structured strings into domain components
 
 When an authored string has internal structure, extract its independently
@@ -641,7 +709,8 @@ its import edits.
 
 1. Inventory fields, parameters, returns, locals, constants, examples, and tests,
    including private code and primitives nested inside collections or aliases.
-2. Inspect strings for internal structure and normalize composite values into
+2. Inspect the owning vocabulary: known identities become a closed enum, with
+   no invented string fallback. Inspect strings for internal structure and normalize composite values into
    typed components, including their dynamic parts. Classify each value as a
    closed choice, open domain content, private newtype
    storage, or an exact external contract. Use an enum or distinct newtype for
