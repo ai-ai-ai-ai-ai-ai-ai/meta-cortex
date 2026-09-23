@@ -158,8 +158,9 @@ result:
 ```
 
 - `schema_version` identifies the output contract; incompatible changes increment it.
-- `framework_version` is the installed version string; missing version metadata
-  is an incomplete installation and produces an error.
+- `framework_version` identifies a release declared in the executable's typed
+  release catalog, serialized as semantic-version text. Missing, malformed, or
+  unsupported installed version metadata produces an error.
 - `integrations` reports each harness's resolved instruction file and managed-block
   status: `Connected`, `Missing`, or `Conflict`. Multiple harnesses can share a file;
   this reports file contents, not which harness is running.

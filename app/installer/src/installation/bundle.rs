@@ -25,7 +25,7 @@ impl Bundle<'_> {
         )?;
         fs::write(
             self.destination.join(Version::FILE),
-            Version::CURRENT.to_string(),
+            Version::CURRENT.as_str(),
         )?;
         Ok(())
     }

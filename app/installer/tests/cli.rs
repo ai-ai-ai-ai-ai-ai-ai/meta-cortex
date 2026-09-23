@@ -12,12 +12,19 @@ use tempfile::{Builder, TempDir};
 #[serde(deny_unknown_fields)]
 struct InfoDocument {
     schema_version: u32,
-    cli_version: String,
-    framework_version: String,
+    cli_version: ReportVersion,
+    framework_version: ReportVersion,
     paths: ReportPaths,
     integrations: Vec<ReportIntegration>,
     models: ReportModels,
     model_availability: ModelAvailability,
+}
+
+// Independent decoder for the established semantic-release strings in report schema 3.
+#[derive(Debug, PartialEq, Eq, Deserialize)]
+enum ReportVersion {
+    #[serde(rename = "0.6.2")]
+    V0_6_2,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
@@ -232,7 +239,11 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     })?;
     let info = scenario.info()?;
     assert_eq!(info.schema_version, 3);
-    assert_eq!(info.cli_version, env!("CARGO_PKG_VERSION"));
+    assert_eq!(info.cli_version, ReportVersion::V0_6_2);
+    assert_eq!(
+        fs::read_to_string(root.join(".meta-cortex/.version"))?,
+        env!("CARGO_PKG_VERSION")
+    );
     assert_eq!(info.framework_version, info.cli_version);
     assert_eq!(info.paths.project, root);
     assert_eq!(info.paths.framework, root.join(".meta-cortex"));

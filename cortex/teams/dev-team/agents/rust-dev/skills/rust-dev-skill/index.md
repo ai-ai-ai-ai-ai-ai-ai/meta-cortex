@@ -165,6 +165,13 @@ in full. Include related subjects when the change crosses their boundaries.
     payload types for differing shapes. Reject unsupported wire values at entry.
   - Retain documented migration support before advancing the current version.
 
+- **[domain_types:release_versions](practices/modeling/domain-types.md#enumerate-supported-application-releases)**
+
+  - Parse supported application/framework releases into closed enums, not validated
+    strings or arbitrary semantic-version records. Reject unknown/retired identities.
+  - Require package-version/enum correspondence at compile time, exhaustive wire
+    mappings, and typed consumer decoding; test both known and unsupported releases.
+
 - **[domain_types:update_revisions](practices/modeling/domain-types.md#distinguish-schema-revisions-from-update-counters)**
 
   - Keep optimistic-lock revisions as open validated counters; use observed tokens

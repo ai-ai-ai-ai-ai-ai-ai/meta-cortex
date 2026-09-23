@@ -304,11 +304,11 @@ mod tests {
             assert!(matches!(self.install(), Err(InstallError::Version(_))));
             assert!(!self.directory.path().join("AGENTS.md").exists());
             assert!(!version.exists());
-            fs::write(&version, "0.0.1")?;
-            assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
-            for contents in ["", "invalid version"] {
+            for contents in ["", "invalid version", "arbitrary", "0.0.1", "0.6.3"] {
                 fs::write(&version, contents)?;
                 assert!(matches!(self.install(), Err(InstallError::Version(_))));
+                assert_eq!(fs::read_to_string(&version)?, contents);
+                assert!(!self.directory.path().join("AGENTS.md").exists());
                 assert!(
                     Project::open(self.directory.path().to_path_buf())?
                         .info()

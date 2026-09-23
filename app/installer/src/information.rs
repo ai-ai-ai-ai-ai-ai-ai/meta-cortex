@@ -1,8 +1,6 @@
 use crate::configuration::Configuration;
 use crate::integration::HarnessInfo;
-use derive_more::Display;
 use serde::Serialize;
-use std::borrow::Cow;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -22,8 +20,12 @@ pub enum VersionError {
     },
 }
 
-#[derive(Debug, PartialEq, Eq, Display, Serialize)]
-pub struct Version(Cow<'static, str>);
+// Installed metadata and report schema 3 retain Cargo's semantic-version text.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(into = "&'static str")]
+pub enum Version {
+    V0_6_2,
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum VersionParse {
@@ -37,6 +39,8 @@ pub enum VersionTextError {
     Empty,
     #[error("version text must not contain internal whitespace")]
     Whitespace,
+    #[error("framework release is not supported by this executable")]
+    Unsupported,
 }
 
 impl From<String> for VersionParse {
@@ -48,13 +52,39 @@ impl From<String> for VersionParse {
         if text.contains(char::is_whitespace) {
             return Self::Invalid(VersionTextError::Whitespace);
         }
-        Self::Parsed(Version(Cow::Owned(text.to_owned())))
+        Self::release(text)
+    }
+}
+
+impl VersionParse {
+    const fn release(text: &str) -> Self {
+        match text.as_bytes() {
+            b"0.6.2" => Self::Parsed(Version::V0_6_2),
+            _ => Self::Invalid(VersionTextError::Unsupported),
+        }
+    }
+}
+
+impl From<Version> for &'static str {
+    fn from(version: Version) -> Self {
+        version.as_str()
     }
 }
 
 impl Version {
-    pub const CURRENT: Self = Self(Cow::Borrowed(env!("CARGO_PKG_VERSION")));
+    pub const CURRENT: Self = match VersionParse::release(env!("CARGO_PKG_VERSION")) {
+        VersionParse::Parsed(version) => version,
+        VersionParse::Invalid(_) => {
+            panic!("declare the Cargo package release in Version and its wire mappings")
+        }
+    };
     pub const FILE: &str = ".version";
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::V0_6_2 => "0.6.2",
+        }
+    }
 
     pub fn read(directory: &Path) -> Result<Self, VersionError> {
         let path = directory.join(Self::FILE);
@@ -73,6 +103,9 @@ impl Version {
         }
     }
 }
+
+// Evaluate even when a build does not otherwise use the current release.
+const _: Version = Version::CURRENT;
 
 pub struct ProjectInfo {
     pub root: PathBuf,
@@ -159,7 +192,22 @@ mod tests {
                 VersionParse::Invalid(VersionTextError::Whitespace)
             );
         }
-        let text = Version::CURRENT.to_string();
+        for text in [
+            "arbitrary",
+            "0.0.1",
+            "0.6.3",
+            "9.9.9",
+            "0.6.2-beta.1",
+            "v0.6.2",
+        ] {
+            assert_eq!(
+                VersionParse::from(text.to_owned()),
+                VersionParse::Invalid(VersionTextError::Unsupported)
+            );
+        }
+        assert_eq!(Version::CURRENT, Version::V0_6_2);
+        assert_eq!(Version::CURRENT.as_str(), env!("CARGO_PKG_VERSION"));
+        let text = Version::V0_6_2.as_str().to_owned();
         assert_eq!(
             VersionParse::from(text.clone()),
             VersionParse::Parsed(Version::CURRENT)

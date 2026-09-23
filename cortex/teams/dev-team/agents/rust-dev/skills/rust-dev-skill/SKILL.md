@@ -58,6 +58,11 @@ For text constructors, apply [empty-text state modeling](practices/modeling/doma
 Use infallible classification for valid empty prose; do not invent validation
 failures merely because a domain wrapper holds a string.
 
+For application/framework release identities, apply
+[declared releases](practices/modeling/domain-types.md#enumerate-supported-application-releases).
+A successful parse returns a supported enum variant, never a validated string.
+Require a compile-time check that the package release belongs to that enum.
+
 For versioned contracts, apply [supported schema revisions](practices/modeling/domain-types.md#model-supported-schema-revisions-explicitly):
 name supported identities, bind differing payload shapes to their versions, and
 review migration dispatch exhaustively. Distinguish these from open runtime

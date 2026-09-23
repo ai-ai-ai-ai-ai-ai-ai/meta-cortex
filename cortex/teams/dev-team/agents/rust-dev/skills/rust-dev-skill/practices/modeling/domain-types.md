@@ -721,6 +721,83 @@ reject retired/future revisions explicitly. Never reinterpret an old payload as
 versions. Do not create 100 speculative schemas. With only one shipped shape,
 a single supported variant suffices until another shape exists.
 
+### Enumerate supported application releases
+
+Successful parsing of an application/framework release must return a declared
+release enum, not a validated string or a general semantic-version record.
+Syntax validity does not establish membership in the supported release set.
+Declare each supported identity in code and reject unknown/retired releases
+through explicit parse states. Keep wire text only at the metadata boundary.
+
+These complete alternatives assume a Cargo package at version `2.4.0`. Both
+compile; the first accepts invented versions as application releases.
+
+**Prohibited:** trimming and validation leave the successful value open-ended.
+
+```rust
+pub struct AppRelease(String);
+pub enum ReleaseParse { Parsed(AppRelease), Invalid }
+impl From<String> for ReleaseParse {
+    fn from(text: String) -> Self {
+        let text = text.trim();
+        if text.is_empty() || text.contains(char::is_whitespace) {
+            return Self::Invalid;
+        }
+        Self::Parsed(AppRelease(text.to_owned()))
+    }
+}
+```
+
+**Preferred:** parsing selects a unit variant; no input string survives as the
+successful release identity. The const initializer rejects a package-version
+bump until its identity is declared. The wire renderer matches exhaustively.
+
+```rust
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppRelease { V2_4_0 }
+pub enum ReleaseParse { Parsed(AppRelease), Unsupported }
+
+impl ReleaseParse {
+    pub const fn classify(text: &str) -> Self {
+        match text.as_bytes() {
+            b"2.4.0" => Self::Parsed(AppRelease::V2_4_0),
+            _ => Self::Unsupported,
+        }
+    }
+}
+impl From<String> for ReleaseParse {
+    fn from(text: String) -> Self {
+        Self::classify(text.trim())
+    }
+}
+impl AppRelease {
+    pub const CURRENT: Self = match ReleaseParse::classify(env!("CARGO_PKG_VERSION")) {
+        ReleaseParse::Parsed(release) => release,
+        ReleaseParse::Unsupported => panic!("declare the package release in AppRelease"),
+    };
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::V2_4_0 => "2.4.0",
+        }
+    }
+}
+const _: AppRelease = AppRelease::CURRENT;
+```
+
+Adding a supported release requires its variant, input mapping, and exhaustive
+output mapping. Match the enum in behavior that differs by release. Do not
+silently map unknown versions to `CURRENT`, generate an unconstrained string
+wrapper from Cargo metadata, or add speculative variants. Preserve established
+semantic-version wire text using the serialization boundary's derived adapters;
+independent consumers must decode it into their supported release enum too.
+An external dependency's arbitrary version range is a different domain and does
+not prove support for one of the application's own releases.
+
+Validate both directions of every supported mapping, arbitrary text and unknown
+well-formed releases, and the build failure for a package release missing from
+the enum. Verify that a known version passes the same build check. A runtime test
+alone does not enforce the required package/enum correspondence at compile time.
+
 ### Distinguish schema revisions from update counters
 
 A task's optimistic-lock revision is an open runtime counter, not a released
@@ -908,7 +985,8 @@ reviewed, structured help is normalized into typed components, atomic prose uses
 distinct newtypes, and rendering preserves the required wire contract. Report
 consumer test results separately.
 
-For changed version contracts, review named supported identities, exhaustive
+For changed version contracts, review named supported identities (including
+application releases), package-version compile-time correspondence, exhaustive
 version dispatch, distinct payload types for differing shapes, and the retained
 migration paths. Test unknown/retired rejection and wire compatibility separately
 from compile-time payload checks; a passing compiler cannot prove freshness.
