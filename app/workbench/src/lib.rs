@@ -3,6 +3,7 @@
 //! [`Workbench`] discovers a project's shared Git directory and opens its ledgers.
 //! Command-line transport and framework installation belong to the application.
 
+pub mod agents;
 mod git;
 pub mod model;
 pub mod request;

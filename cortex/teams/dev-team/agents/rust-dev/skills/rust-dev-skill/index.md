@@ -91,6 +91,16 @@ in full. Include related subjects when the change crosses their boundaries.
     reject unregistered names. Keep dynamic session/task identities separate.
   - Construct variants directly and use named typed constants for reusable quantities.
 
+- **[domain_types:ownership_hierarchy](practices/modeling/domain-types.md#preserve-ownership-hierarchies-in-enum-payloads)**
+
+  - Preserve catalog containment in nested enums: each team encloses only its role
+    enum, and coordinators retain their own group. Reject flat leaf catalogs and
+    independent owner/role fields that permit invalid combinations.
+  - Team-specific APIs take the team's leaf enum; shared ledgers take the enclosing
+    identity. Preserve containment in wire schemas, assignments, and history.
+  - Verify role membership against each parent's catalog, not just a combined set;
+    prove invalid combinations fail compilation and boundary decoding.
+
 - **[domain_types:external_conversions](practices/modeling/domain-types.md#external-raw-values)**
 
   - Convert uncontrolled external primitives and records immediately through

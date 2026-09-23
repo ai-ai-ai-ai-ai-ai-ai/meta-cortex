@@ -1,13 +1,14 @@
 use anyhow::{Context, bail};
 use derive_more::From;
-use meta_cortex_workbench::model::{Check, CheckOutcome, Phase, Progress, Workspace};
+use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+use meta_cortex_workbench::model::{Assignment, Check, CheckOutcome, Phase, Progress, Workspace};
 use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
     StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    AgentId, Attempt, BranchNameParse, CommitIdParse, Extensions, FeatureId, FeatureIdParse,
-    LeaseSeconds, Note, Revision, TaskIdParse,
+    Attempt, BranchNameParse, CommitIdParse, Extensions, FeatureId, FeatureIdParse, LeaseSeconds,
+    Note, Revision, TaskIdParse,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use serde::{Deserialize, Serialize};
@@ -127,7 +128,7 @@ struct Task {
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum State {
     Queued,
-    Active,
+    Active { assignment: Assignment },
     Ready,
     Integrated,
     Cancelled,
@@ -139,6 +140,7 @@ struct TaskView {
 }
 #[derive(Debug, Deserialize)]
 struct Event {
+    actor: AgentId,
     kind: String,
     note: Note,
     task: Task,
@@ -255,7 +257,7 @@ impl Scenario {
         Ok(CreateTask {
             feature,
             task,
-            actor: AgentId::Gizmo,
+            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             objective: Note::from("Review code".to_owned()),
             acceptance: vec![Note::from("Report findings".to_owned())],
             dependencies: Vec::new(),
@@ -278,7 +280,7 @@ impl Scenario {
             feature,
             task,
             expected_revision: Revision::INITIAL,
-            agent: AgentId::RustDev,
+            agent: AgentId::Development(DevelopmentAgent::RustDev),
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
         })
     }
@@ -288,7 +290,7 @@ impl Scenario {
             feature,
             task,
             expected_revision: Revision::INITIAL.advance()?,
-            agent: AgentId::RustDev,
+            agent: AgentId::Development(DevelopmentAgent::RustDev),
             attempt: Attempt::UNCLAIMED.advance()?,
             action: WorkerAction::Heartbeat {
                 ttl_seconds: LeaseSeconds::TEN_MINUTES,
@@ -301,7 +303,7 @@ impl Scenario {
             feature,
             task,
             expected_revision: Revision::INITIAL.advance()?,
-            actor: AgentId::Gizmo,
+            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             action,
         })
     }
@@ -385,6 +387,13 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             Outcome::Success(Reply::Task(task)) => {
                 assert_eq!(task.revision, Revision::INITIAL.advance()?);
                 assert_eq!(task.attempt, 1);
+                let State::Active { assignment } = task.state else {
+                    bail!("claimed task must retain its active assignment")
+                };
+                assert_eq!(
+                    assignment.agent,
+                    AgentId::Development(DevelopmentAgent::RustDev)
+                );
             }
             Outcome::Success(other) => bail!("{other:?}"),
         }
@@ -418,6 +427,15 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         Reply::History(events) => {
             assert_eq!(events.len(), 3);
             assert_eq!(events[0].kind, "created");
+            assert_eq!(events[0].actor, AgentId::Gizmo(GizmoAgent::Gizmo));
+            assert_eq!(
+                events[1].actor,
+                AgentId::Development(DevelopmentAgent::RustDev)
+            );
+            assert_eq!(
+                events[2].actor,
+                AgentId::Development(DevelopmentAgent::RustDev)
+            );
             assert_eq!(events[2].task.revision, after.task.revision);
         }
         other @ (Reply::Features(_)
@@ -645,7 +663,8 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         "version: 1\nproject: .\noperation: {name: get_framework_info, arguments: {}}",
         "version: 1\nproject: .\noperation: {name: ledger.features, arguments: {}}",
         "version: 1\nproject: .\noperation: {name: ClaimTask, arguments: {feature: f, task: t, expected_revision: 1, agent: worker, ttl_seconds: 600}}",
-        "version: 1\nproject: .\noperation: {name: ClaimTask, arguments: {feature: f, task: t, expected_revision: 0, agent: rust-dev, ttl_seconds: 1}}",
+        "version: 1\nproject: .\noperation: {name: ClaimTask, arguments: {feature: f, task: t, expected_revision: 1, agent: {team: Sre, role: RustDev}, ttl_seconds: 600}}",
+        "version: 1\nproject: .\noperation: {name: ClaimTask, arguments: {feature: f, task: t, expected_revision: 0, agent: {team: Development, role: RustDev}, ttl_seconds: 1}}",
         "version: 1\nproject: .\noperation: {name: GetFeatureStatus, arguments: {feature: f, typo: 1}}",
         "version: 1\nproject: .\noperation: {name: GetFeatureStatus, arguments: {feature: f, feature: g}}",
     ] {

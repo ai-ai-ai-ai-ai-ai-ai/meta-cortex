@@ -1,6 +1,7 @@
+use super::agents::AgentId;
 use super::model::{Phase, Progress, Workspace};
 use super::values::{
-    AgentId, Attempt, BranchName, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

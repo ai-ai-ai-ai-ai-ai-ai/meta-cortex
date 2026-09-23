@@ -39,8 +39,10 @@ application fields as raw strings because compilation passes.
 their wire format with domain types, and run the required checks.
 
 Before adding primitive conversions, inspect the [owning vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum).
-Known identities must be complete enums; use variants and named typed constants
-for authored known values. Do not replace a closed catalog with string validation.
+Known identities must be complete enums; preserve
+[ownership hierarchies](practices/modeling/domain-types.md#preserve-ownership-hierarchies-in-enum-payloads)
+with team-specific enums inside their enclosing variants. A flat role list is
+insufficient. Use variants and named typed constants for authored known values. Do not replace a closed catalog with string validation.
 
 Before wrapping strings or classifying constrained primitive input, apply
 [explicit parse states](practices/modeling/domain-types.md#classify-primitive-wrapper-input-with-explicit-states).

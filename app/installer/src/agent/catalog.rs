@@ -5,14 +5,14 @@ use super::protocol::{
 };
 use derive_more::{Display, From};
 use meta_cortex_workbench::LedgerError;
+use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::{Progress, Workspace};
 use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
     StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    AgentId, Attempt, BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision,
-    TaskIdParse,
+    Attempt, BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision, TaskIdParse,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
@@ -60,8 +60,8 @@ impl Catalog {
                 return Err(LedgerError::from(error).into());
             }
         };
-        let coordinator = AgentId::Gizmo;
-        let worker = AgentId::RustDev;
+        let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
+        let worker = AgentId::Development(DevelopmentAgent::RustDev);
         let ttl = LeaseSeconds::TEN_MINUTES;
         let claimed_revision = Revision::INITIAL.advance()?;
         let heartbeat_revision = claimed_revision.advance()?;

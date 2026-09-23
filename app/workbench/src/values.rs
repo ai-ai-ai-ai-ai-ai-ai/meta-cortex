@@ -92,38 +92,6 @@ impl TryFrom<FeatureIdParse> for FeatureId {
     }
 }
 
-/// A role in the bundled Cortex agent catalog, not a host session identifier.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "kebab-case")]
-pub enum AgentId {
-    #[display("gizmo-prime")]
-    GizmoPrime,
-    #[display("gizmo")]
-    Gizmo,
-    #[display("rust-dev")]
-    RustDev,
-    #[display("rust-refactoring")]
-    RustRefactoring,
-    #[display("typescript-dev")]
-    TypescriptDev,
-    #[display("web-designer")]
-    WebDesigner,
-    #[display("tech-writer")]
-    TechWriter,
-    #[display("security-agent")]
-    SecurityAgent,
-    #[display("cicd-agent")]
-    CicdAgent,
-    #[display("docker-specialist")]
-    DockerSpecialist,
-    #[display("kubernetes-specialist")]
-    KubernetesSpecialist,
-    #[display("integration-agent")]
-    IntegrationAgent,
-    #[display("pr-agent")]
-    PrAgent,
-}
-
 // Preserve the established string wire format; emptiness is a domain state.
 #[derive(Clone, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 #[serde(from = "String", into = "String")]
@@ -480,7 +448,7 @@ pub enum LeaseSecondsParseError {
 #[cfg(test)]
 mod tests {
     use super::{
-        AgentId, Attempt, AttemptParse, AttemptParseError, BranchName, BranchNameParse,
+        Attempt, AttemptParse, AttemptParseError, BranchName, BranchNameParse,
         BranchNameParseError, CommitId, CommitIdParse, CommitIdParseError, FeatureId,
         FeatureIdParse, IdentifierParseError, LeaseSeconds, LeaseSecondsParse,
         LeaseSecondsParseError, Note, Revision, RevisionParse, RevisionParseError, TaskId,
@@ -488,19 +456,6 @@ mod tests {
     };
     use schemars::schema_for;
     use serde::Deserialize;
-
-    #[test]
-    fn agent_identity_rejects_arbitrary_roles_and_session_names() {
-        for input in [
-            r#""worker""#,
-            r#""reviewer""#,
-            r#""rust-dev-2""#,
-            r#""""#,
-            "null",
-        ] {
-            assert!(serde_json::from_str::<AgentId>(input).is_err());
-        }
-    }
 
     #[test]
     fn named_lease_preserves_duration_and_external_validation() -> serde_json::Result<()> {

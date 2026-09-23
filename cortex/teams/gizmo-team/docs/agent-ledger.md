@@ -103,11 +103,26 @@ workflow. The ledger records these resources; it does not create or merge them.
    merging and running the assigned combined checks, that agent records
    `CoordinateTask` with `action.kind: integrate` and the feature HEAD.
 
-`agent` and `actor` use the fixed identities of the bundled agent catalog, such
-as `gizmo`, `rust-dev`, and `integration-agent`. The CLI discovery schema lists
-all supported identities. Use the role's directory name, not a host session ID,
-`worker`, or an invented agent name. An unknown name is rejected, including in
-stored records; do not silently relabel historical actors to another role.
+`agent` and `actor` contain a team and a role from that team's catalog. The
+Rust identity encloses a team-specific role enum; the generated schema permits
+only its matching combinations. Examples of these identity fields:
+
+```yaml
+actor:
+  team: Gizmo
+  role: Gizmo
+agent:
+  team: Development
+  role: RustDev
+```
+
+The two coordinators are `Gizmo/GizmoPrime` and `Gizmo/Gizmo`. Specialist teams
+are `Development`, `Ai`, `Security`, `Sre`, and `Delivery`; discover their roles
+with `meta-cortex list`. For example, integration uses
+`{team: Delivery, role: IntegrationAgent}`. `Sre/RustDev` is impossible in the
+Rust model and rejected in requests and stored records. Flat strings such as
+`rust-dev`, unknown roles, and host session identifiers are rejected. Do not
+silently relabel historical actors or move them between teams.
 Task IDs remain per-assignment values. The task and attempt identify the claimed
 assignment even when multiple sessions execute the same role.
 

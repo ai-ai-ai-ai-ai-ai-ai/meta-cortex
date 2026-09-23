@@ -2,9 +2,9 @@
 mod build_support;
 
 use build_support::FrameworkBundle;
-use meta_cortex_workbench::values::AgentId;
-use schemars::schema_for;
-use serde::Deserialize;
+use meta_cortex_workbench::agents::AgentId;
+use schemars::generate::SchemaSettings;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::fs;
 use std::io;
@@ -86,36 +86,103 @@ fn rejects_symlinks_in_framework_source() -> io::Result<()> {
     BundleFixture::create()?.rejects_source_links()
 }
 
-// Consume the generated enum schema, so a new variant cannot evade this check
-// by being omitted from a separately maintained list of known agents.
+// JSON Schema owns oneOf/const/enum spellings. This projection consumes its
+// generated alternatives rather than maintaining a second list of agent roles.
 #[derive(Deserialize)]
 struct AgentCatalogSchema {
+    #[serde(rename = "oneOf")]
+    teams: Vec<TeamSchema>,
+}
+#[derive(Deserialize)]
+struct TeamSchema {
+    properties: TeamProperties,
+}
+#[derive(Deserialize)]
+struct TeamProperties {
+    team: TeamConstant,
+    role: RoleChoices,
+}
+#[derive(Deserialize)]
+struct TeamConstant {
+    #[serde(rename = "const")]
+    name: CatalogTeam,
+}
+#[derive(Deserialize)]
+struct RoleChoices {
     #[serde(rename = "enum")]
-    agents: Vec<AgentId>,
+    roles: Vec<SchemaRoleName>,
+}
+#[derive(Deserialize, Serialize)]
+#[serde(transparent)]
+struct SchemaRoleName(String);
+
+// Independent consumer of the schema's team constants, checked against the
+// directory that actually owns each role. Role names come from the schema above.
+#[derive(Clone, Copy, Deserialize, Serialize)]
+enum CatalogTeam {
+    Gizmo,
+    Development,
+    Ai,
+    Security,
+    Sre,
+    Delivery,
+}
+impl CatalogTeam {
+    fn agents_path(self) -> PathBuf {
+        let directory = match self {
+            Self::Gizmo => "gizmo-team",
+            Self::Development => "dev-team",
+            Self::Ai => "ai-team",
+            Self::Security => "security-team",
+            Self::Sre => "sre-team",
+            Self::Delivery => "delivery-team",
+        };
+        PathBuf::from("teams").join(directory).join("agents")
+    }
+}
+
+#[derive(Serialize)]
+struct SchemaIdentity {
+    team: CatalogTeam,
+    role: SchemaRoleName,
 }
 
 #[test]
-fn agent_enum_matches_every_bundled_role() -> anyhow::Result<()> {
-    let schema: AgentCatalogSchema =
-        serde_json::from_value(serde_json::to_value(schema_for!(AgentId))?)?;
+fn agent_hierarchy_matches_every_role_in_its_owning_team() -> anyhow::Result<()> {
+    let mut settings = SchemaSettings::draft2020_12();
+    settings.inline_subschemas = true;
+    let schema = settings.into_generator().into_root_schema_for::<AgentId>();
+    let catalog: AgentCatalogSchema = serde_json::from_value(serde_json::to_value(schema)?)?;
     let mut declared = BTreeSet::new();
-    for agent in schema.agents {
-        let encoded = serde_json::to_string(&agent)?;
-        assert_eq!(serde_json::from_str::<AgentId>(&encoded)?, agent);
-        assert_eq!(serde_json::from_str::<String>(&encoded)?, agent.to_string());
-        assert!(declared.insert(PathBuf::from(agent.to_string())));
+    for team in catalog.teams {
+        let team_name = team.properties.team.name;
+        for role in team.properties.role.roles {
+            let identity = SchemaIdentity {
+                team: team_name,
+                role,
+            };
+            let encoded = serde_json::to_string(&identity)?;
+            let agent: AgentId = serde_json::from_str(&encoded)?;
+            assert_eq!(
+                serde_json::from_str::<AgentId>(&serde_json::to_string(&agent)?)?,
+                agent
+            );
+            let path = agent.instructions_path();
+            assert!(path.starts_with(team_name.agents_path()));
+            assert!(declared.insert(path));
+        }
     }
-    let teams = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../cortex/teams");
+    let library = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../cortex");
     let mut bundled = BTreeSet::new();
-    for team in fs::read_dir(teams)? {
+    for team in fs::read_dir(library.join("teams"))? {
         let agents = team?.path().join("agents");
         if !agents.is_dir() {
             continue;
         }
         for agent in fs::read_dir(agents)? {
-            let agent = agent?;
-            assert!(agent.path().join("AGENTS.md").is_file());
-            assert!(bundled.insert(PathBuf::from(agent.file_name())));
+            let path = agent?.path().join("AGENTS.md");
+            assert!(path.is_file());
+            assert!(bundled.insert(path.strip_prefix(&library)?.to_path_buf()));
         }
     }
     assert_eq!(declared, bundled);

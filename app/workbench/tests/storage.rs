@@ -1,10 +1,11 @@
 use anyhow::{Context, bail};
+use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::{Progress, Workspace};
 use meta_cortex_workbench::request::{
     ClaimTask, CreateTask, InitFeature, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    AgentId, BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision, TaskIdParse,
+    BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision, TaskIdParse,
 };
 use meta_cortex_workbench::versions::{
     StorageVersion, StorageVersionParse, VersionFamily, VersionNumber, VersionParseError,
@@ -72,7 +73,7 @@ impl Scenario {
         let task = CreateTask {
             feature: ledger.info().feature.id,
             task,
-            actor: AgentId::Gizmo,
+            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             objective: Note::from("Review code".to_owned()),
             acceptance: vec![Note::from("Report findings".to_owned())],
             dependencies: Vec::new(),
@@ -226,7 +227,7 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
                     feature: queued.feature,
                     task: queued.id,
                     expected_revision: Revision::INITIAL,
-                    agent: AgentId::RustDev,
+                    agent: AgentId::Development(DevelopmentAgent::RustDev),
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 })
                 .await?;
@@ -256,7 +257,7 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
                 feature: claimed.feature,
                 task: claimed.id,
                 expected_revision: claimed.revision,
-                agent: AgentId::RustDev,
+                agent: AgentId::Development(DevelopmentAgent::RustDev),
                 attempt: claimed.attempt,
                 action: WorkerAction::Heartbeat {
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,

@@ -142,11 +142,14 @@ because it is called help text. Structured JSON/YAML examples follow
 Inspect the owning catalog before choosing a string wrapper. If the application
 knows every identity in advance, represent those identities as enum variants.
 Use the variants directly in authored code; let Serde decode their external names.
+If the catalog has owners or teams, preserve that hierarchy in nested enums;
+a flat list of known roles still loses membership constraints.
 A string newtype plus `TryFrom` does not expose the domain's finite alternatives.
 
-These alternatives illustrate a two-role catalog. Both compile; only the enum
-restricts construction to the actual roles. Assume Serde derive, `derive_more`'s
-`display` feature, and a concrete `InvalidAgent` error in the prohibited example.
+These alternatives illustrate a small coordinator/development catalog. Both
+compile; only the nested enums restrict construction to roles in their actual
+team. Assume Serde derive and a concrete `InvalidAgent` error in the prohibited
+example. The hierarchy rule below adds another team to show invalid membership.
 
 **Prohibited:** any nonempty name becomes an agent, including invented roles.
 
@@ -164,16 +167,19 @@ let coordinator = AgentId::try_from("gizmo".to_owned())?;
 **Preferred:** internal construction is infallible and names the exact role.
 
 ```rust
-#[derive(Clone, Copy, serde::Serialize, serde::Deserialize, derive_more::Display)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "team", content = "role", deny_unknown_fields)]
 pub enum AgentId {
-    #[display("gizmo")]
-    Gizmo,
-    #[display("rust-dev")]
-    RustDev,
+    Gizmo(GizmoAgent),
+    Development(DevelopmentAgent),
 }
-let coordinator = AgentId::Gizmo;
-let worker = AgentId::RustDev;
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum GizmoAgent { GizmoPrime, Gizmo }
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum DevelopmentAgent { RustDev }
+
+let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
+let worker = AgentId::Development(DevelopmentAgent::RustDev);
 ```
 
 Keep the real enum complete against its owning catalog. Adding/removing a role
@@ -204,6 +210,62 @@ let ttl = LeaseSeconds::try_from(600)?;
 ```rust
 let ttl = LeaseSeconds::TEN_MINUTES;
 ```
+
+### Preserve ownership hierarchies in enum payloads
+
+A closed enum must preserve the catalog's containment, not merely its set of
+leaf names. Each team variant carries that team's role enum. Coordinators retain
+their own enclosing group. Keep the relationship typed through arguments,
+assignments, history, serialization, and generated schemas.
+
+**Prohibited:** separate unrestricted fields allow an SRE/developer combination.
+This complete example compiles but cannot enforce membership.
+
+```rust
+pub enum Team { Development, Sre }
+pub enum Agent { RustDev, DockerSpecialist }
+pub struct Assignment { pub team: Team, pub agent: Agent }
+
+let assignment = Assignment { team: Team::Sre, agent: Agent::RustDev };
+```
+
+**Preferred:** an enclosing variant restricts which leaf enum can be supplied.
+This is an expanded alternative to the earlier `AgentId` example, using Serde derive.
+
+```rust
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "team", content = "role", deny_unknown_fields)]
+pub enum AgentId {
+    Gizmo(GizmoAgent),
+    Development(DevelopmentAgent),
+    Sre(SreAgent),
+}
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum GizmoAgent { GizmoPrime, Gizmo }
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum DevelopmentAgent { RustDev }
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum SreAgent { DockerSpecialist }
+
+let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
+let developer = AgentId::Development(DevelopmentAgent::RustDev);
+let operator = AgentId::Sre(SreAgent::DockerSpecialist);
+```
+
+`AgentId::Sre(DevelopmentAgent::RustDev)` is a compiler type mismatch;
+`SreAgent::RustDev` names a nonexistent variant. Both must fail to compile.
+Team-specific APIs accept their leaf type (for example `SreAgent`), while
+cross-team ledgers may accept the enclosing `AgentId`. Do not use a flat enum,
+independent `team`/`agent` fields, string prefixes, or runtime membership checks
+as a substitute for that relationship. This constrains membership; it is not
+host authorization or a claim that the CLI launches agents.
+
+Generate the discriminated wire union from these types. Do not flatten it to
+an agent string or give every team the union of every role. Compare the generated
+alternatives with each team's catalog, including coordinators; checking only
+the combined set of all agent names misses misplaced roles. Keep filesystem-name
+mapping at the instructions-path boundary. Follow the contract's revision policy
+when changing an established stored or published representation.
 
 ### Normalize structured strings into domain components
 
@@ -815,7 +877,8 @@ its import edits.
 1. Inventory fields, parameters, returns, locals, constants, examples, and tests,
    including private code and primitives nested inside collections or aliases.
 2. Inspect the owning vocabulary: known identities become a closed enum, with
-   no invented string fallback. Inspect strings for internal structure and normalize composite values into
+   no invented string fallback. Preserve ownership hierarchies in typed variant
+   payloads and verify membership per parent, not just a flat catalog. Inspect strings for internal structure and normalize composite values into
    typed components, including their dynamic parts. Classify each value as a
    closed choice, open domain content, private newtype
    storage, or an exact external contract. Use an enum or distinct newtype for

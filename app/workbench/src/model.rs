@@ -1,7 +1,8 @@
 use super::LedgerError;
+use super::agents::AgentId;
 use super::values::{
-    AgentId, Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision,
-    TaskId, Timestamp,
+    Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Timestamp,
 };
 use super::versions::RecordVersion;
 use schemars::JsonSchema;
@@ -289,9 +290,10 @@ impl Task {
 mod tests {
     use super::{Checkpoint, ClaimAt, LeaseHealth, Progress, Task, TaskState, WorkerAt, Workspace};
     use crate::LedgerError;
+    use crate::agents::{AgentId, DevelopmentAgent};
     use crate::values::{
-        AgentId, Attempt, CommitIdParse, Extensions, FeatureIdParse, LeaseSecondsParse, Note,
-        Revision, TaskIdParse, TimestampParse,
+        Attempt, CommitIdParse, Extensions, FeatureIdParse, LeaseSecondsParse, Note, Revision,
+        TaskIdParse, TimestampParse,
     };
     use crate::versions::RecordVersion;
     use std::collections::BTreeMap;
@@ -338,7 +340,7 @@ mod tests {
 
         fn claim() -> anyhow::Result<ClaimAt> {
             Ok(ClaimAt {
-                agent: AgentId::RustDev,
+                agent: AgentId::Development(DevelopmentAgent::RustDev),
                 ttl: match LeaseSecondsParse::from(10) {
                     LeaseSecondsParse::Parsed(value) => value,
                     LeaseSecondsParse::Invalid(error) => return Err(error.into()),
@@ -370,7 +372,7 @@ mod tests {
             task.claim(Scenario::claim()?),
             Err(LedgerError::InvalidTransition)
         ));
-        let agent = AgentId::RustDev;
+        let agent = AgentId::Development(DevelopmentAgent::RustDev);
         task.ready(WorkerAt {
             agent: &agent,
             attempt: Attempt::UNCLAIMED.advance()?,
@@ -408,7 +410,7 @@ mod tests {
     fn expiry_and_reassignment_reject_stale_attempts() -> anyhow::Result<()> {
         let mut task = Scenario::task()?;
         task.claim(Scenario::claim()?)?;
-        let agent = AgentId::RustDev;
+        let agent = AgentId::Development(DevelopmentAgent::RustDev);
         assert_eq!(
             task.clone()
                 .view(match TimestampParse::from(10000) {
@@ -451,7 +453,7 @@ mod tests {
             }),
             Err(LedgerError::AssignmentChanged)
         ));
-        let stranger = AgentId::TypescriptDev;
+        let stranger = AgentId::Development(DevelopmentAgent::TypescriptDev);
         assert!(matches!(
             task.worker(WorkerAt {
                 agent: &stranger,
