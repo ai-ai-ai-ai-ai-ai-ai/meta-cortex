@@ -49,6 +49,8 @@ impl TryFrom<u32> for ReportSchemaVersion {
 enum ReportVersion {
     #[serde(rename = "0.6.2")]
     V0_6_2,
+    #[serde(rename = "0.7.0")]
+    V0_7_0,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
@@ -263,7 +265,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     })?;
     let info = scenario.info()?;
     assert_eq!(info.schema_version, ReportSchemaVersion::V3);
-    assert_eq!(info.cli_version, ReportVersion::V0_6_2);
+    assert_eq!(info.cli_version, ReportVersion::V0_7_0);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
         env!("CARGO_PKG_VERSION")

@@ -25,6 +25,7 @@ pub enum VersionError {
 #[serde(into = "&'static str")]
 pub enum Version {
     V0_6_2,
+    V0_7_0,
 }
 
 #[derive(Debug, PartialEq, Eq, Error)]
@@ -56,6 +57,7 @@ impl Version {
     const fn release(text: &str) -> Result<Self, VersionTextError> {
         match text.as_bytes() {
             b"0.6.2" => Ok(Version::V0_6_2),
+            b"0.7.0" => Ok(Version::V0_7_0),
             _ => Err(VersionTextError::Unsupported),
         }
     }
@@ -79,6 +81,7 @@ impl Version {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::V0_6_2 => "0.6.2",
+            Self::V0_7_0 => "0.7.0",
         }
     }
 
@@ -203,14 +206,16 @@ pub mod tests {
                 Err(VersionTextError::Unsupported)
             );
         }
-        assert_eq!(Version::CURRENT, Version::V0_6_2);
-        let text = Version::V0_6_2.as_str().to_owned();
-        assert_eq!(Version::try_from(text.clone()), Ok(Version::CURRENT));
-        assert_eq!(Version::try_from(format!("{text}\n")), Ok(Version::CURRENT));
-        assert_eq!(
-            serde_json::to_string(&Version::CURRENT)?,
-            serde_json::to_string(&text)?
-        );
+        assert_eq!(Version::CURRENT, Version::V0_7_0);
+        for version in [Version::V0_6_2, Version::V0_7_0] {
+            let text = version.as_str().to_owned();
+            assert_eq!(Version::try_from(text.clone()), Ok(version));
+            assert_eq!(Version::try_from(format!("{text}\n")), Ok(version));
+            assert_eq!(
+                serde_json::to_string(&version)?,
+                serde_json::to_string(&text)?
+            );
+        }
         Ok(())
     }
 }
