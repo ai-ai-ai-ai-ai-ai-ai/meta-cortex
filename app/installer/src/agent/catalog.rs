@@ -37,7 +37,8 @@ struct CommandGroups {
 }
 
 impl CommandGroups {
-    fn insert(&mut self, example: CommandExample) {
+    #[must_use]
+    fn insert(mut self, example: CommandExample) -> Self {
         let commands = match &example.operation {
             Operation::Framework(_) => &mut self.framework,
             Operation::Feature(_) => &mut self.feature,
@@ -51,6 +52,7 @@ impl CommandGroups {
                 operation: example.operation,
             },
         });
+        self
     }
 }
 
@@ -217,10 +219,9 @@ impl Catalog {
                 })),
             },
         ];
-        let mut commands = CommandGroups::default();
-        for example in examples {
-            commands.insert(example);
-        }
+        let commands = examples
+            .into_iter()
+            .fold(CommandGroups::default(), CommandGroups::insert);
         Ok(Self {
             version: ProtocolVersion::CURRENT,
             invocation: InvocationGuide::example(),

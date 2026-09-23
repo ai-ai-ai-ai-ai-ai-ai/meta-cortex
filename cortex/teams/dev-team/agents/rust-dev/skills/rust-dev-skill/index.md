@@ -569,6 +569,10 @@ in full. Include related subjects when the change crosses their boundaries.
 
   - Consume mut self for replacement updates and return Self or a typed result while
     preserving unchanged fields.
+  - Prohibit borrowed mutation on authored value-update APIs, including private
+    collection helpers and equivalent helpers taking &mut Owner.
+  - Mark replacements must_use and rebind, chain, or fold their returned owners.
+    Local mutation inside the consuming method remains permitted.
 
 - **[owned_updates:external_mutation](practices/behavior/owned-updates.md#required-actions)**
 

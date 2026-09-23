@@ -16,10 +16,17 @@ selected language practices. Reuse it if already loaded for this assignment.
 For every Rust implementation, refactoring, review, or tooling assignment, load
 and apply [domain types](practices/modeling/domain-types.md),
 [domain states](practices/modeling/domain-states.md),
+[owned updates](practices/behavior/owned-updates.md),
 [module layout](practices/tooling/module-layout.md), and
 [Rust code checks](practices/tooling/rust-code-checks.md). These prerequisites are
 mandatory, independent of the selected implementation practices. Complete the
 [domain-type review](practices/modeling/domain-types.md#validation) before handoff.
+
+Prohibit authored `&mut self` value-update methods, including private collection
+helpers. Consume `mut self`, return the updated owner, and use the returned value
+at each caller. Local mutation inside that owned method is permitted. Retain a
+borrowed receiver only where the exact external trait or resource contract
+requires it, as defined by [owned updates](practices/behavior/owned-updates.md).
 
 For SQL schemas, queries, migrations, and database fixtures, load
 [typed SQL construction](practices/boundaries/typed-sql.md). Use an established
