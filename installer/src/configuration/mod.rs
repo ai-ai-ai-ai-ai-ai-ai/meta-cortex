@@ -38,17 +38,20 @@ pub enum Model {
     #[serde(rename = "gpt-5.6-sol")]
     #[display("gpt-5.6-sol")]
     Sol,
+    #[serde(rename = "gpt-6-luna")]
+    #[display("gpt-6-luna")]
+    Luna6,
     #[serde(rename = "gpt-6-astra")]
     #[display("gpt-6-astra")]
     Astra,
 }
 
 impl Model {
-    pub const ALL: [Self; 4] = [Self::Luna, Self::Terra, Self::Sol, Self::Astra];
+    pub const ALL: [Self; 5] = [Self::Luna, Self::Terra, Self::Sol, Self::Luna6, Self::Astra];
 
     pub fn efforts(self) -> &'static [Effort] {
         match self {
-            Self::Luna => &Effort::ALL[..5],
+            Self::Luna | Self::Luna6 => &Effort::ALL[..5],
             Self::Terra | Self::Sol | Self::Astra => &Effort::ALL,
         }
     }
@@ -193,7 +196,23 @@ mod tests {
 
     #[test]
     fn rejects_invalid_or_incomplete_configuration() -> Result<(), ConfigError> {
-        let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
+        let text = ConfigText::try_from(Configuration {
+            gizmo_prime: AgentSettings {
+                model: Model::Terra,
+                reasoning_effort: Effort::Low,
+            },
+            team: TeamSettings {
+                gizmo: AgentSettings {
+                    model: Model::Sol,
+                    reasoning_effort: Effort::Medium,
+                },
+                agent: AgentSettings {
+                    model: Model::Luna,
+                    reasoning_effort: Effort::Xhigh,
+                },
+            },
+        })?
+        .to_string();
         for invalid in [
             text.replace("gpt-5.6-terra", "unknown-model"),
             text.replace("\"low\"", "\"extreme\""),
@@ -213,5 +232,28 @@ mod tests {
             })
         ));
         Ok(())
+    }
+
+    #[test]
+    fn gpt_6_luna_rejects_ultra_effort() {
+        let settings = AgentSettings {
+            model: Model::Luna6,
+            reasoning_effort: Effort::Ultra,
+        };
+        let config = Configuration {
+            gizmo_prime: settings,
+            team: TeamSettings {
+                gizmo: settings,
+                agent: settings,
+            },
+        };
+
+        assert!(matches!(
+            ConfigText::try_from(config),
+            Err(ConfigError::UnsupportedEffort {
+                model: Model::Luna6,
+                effort: Effort::Ultra
+            })
+        ));
     }
 }
