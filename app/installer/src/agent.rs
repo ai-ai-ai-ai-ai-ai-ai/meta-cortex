@@ -64,12 +64,19 @@ impl From<&AgentError> for Failure {
             AgentError::Ledger(error) => match error {
                 LedgerError::Conflict | LedgerError::AlreadyExists => ErrorCode::Conflict,
                 LedgerError::NotFound | LedgerError::Uninitialized => ErrorCode::NotFound,
-                LedgerError::Invalid(_) => ErrorCode::InvalidRequest,
+                LedgerError::Invalid(_)
+                | LedgerError::Identifier(_)
+                | LedgerError::BranchName(_)
+                | LedgerError::CommitId(_)
+                | LedgerError::Revision(_)
+                | LedgerError::Attempt(_)
+                | LedgerError::Timestamp(_)
+                | LedgerError::LeaseSeconds(_) => ErrorCode::InvalidRequest,
                 LedgerError::InvalidTransition => ErrorCode::InvalidState,
                 LedgerError::AssignmentChanged => ErrorCode::AssignmentChanged,
                 LedgerError::Expired => ErrorCode::Expired,
                 LedgerError::DependencyPending => ErrorCode::DependencyPending,
-                LedgerError::UnsupportedVersion { .. } => ErrorCode::UnsupportedVersion,
+                LedgerError::UnsupportedVersion(_) => ErrorCode::UnsupportedVersion,
                 LedgerError::Git(_) => ErrorCode::Git,
                 LedgerError::Io(_) | LedgerError::Clock(_) => ErrorCode::Io,
                 LedgerError::Database(_) | LedgerError::Json(_) => ErrorCode::Storage,

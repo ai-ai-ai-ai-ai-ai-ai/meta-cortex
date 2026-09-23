@@ -1,4 +1,5 @@
 use super::{LedgerError, StorageVersion};
+use crate::versions::StorageVersionParse;
 use turso::Connection;
 use turso::transaction::TransactionBehavior;
 
@@ -14,7 +15,10 @@ impl LedgerSchema {
             .next()
             .await?
             .ok_or(LedgerError::Invalid("missing database version"))?;
-        let mut version = StorageVersion::try_from(row.get::<i64>(0)?)?;
+        let mut version = match StorageVersionParse::from(row.get::<i64>(0)?) {
+            StorageVersionParse::Parsed(value) => value,
+            StorageVersionParse::Invalid(error) => return Err(error.into()),
+        };
         drop(rows);
         loop {
             version = match version {

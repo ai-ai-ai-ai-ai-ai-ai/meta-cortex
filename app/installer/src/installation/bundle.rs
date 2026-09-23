@@ -23,7 +23,10 @@ impl Bundle<'_> {
             self.destination.join("meta-cortex.toml"),
             configuration.as_bytes(),
         )?;
-        fs::write(self.destination.join(Version::FILE), Version::CURRENT)?;
+        fs::write(
+            self.destination.join(Version::FILE),
+            Version::CURRENT.to_string(),
+        )?;
         Ok(())
     }
 
@@ -69,7 +72,7 @@ impl Bundle<'_> {
                 return Err(InstallError::Conflict(license));
             }
             expected += 1; // LICENSE is distributed beside the framework.
-            if Version::read(&self.destination)? != Version::from(Version::CURRENT.to_owned()) {
+            if Version::read(&self.destination)? != Version::CURRENT {
                 return Err(InstallError::Conflict(self.destination.clone()));
             }
             expected += 1;

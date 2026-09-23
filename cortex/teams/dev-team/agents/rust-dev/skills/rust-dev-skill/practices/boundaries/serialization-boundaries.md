@@ -92,7 +92,13 @@ Raw-input exceptions do not permit constructing valid requests from strings.
 - Use Serde attributes for supported wire representations.
 - Use `transparent` for scalar newtypes.
 - Use `from`, `try_from`, and `into` for wire conversions.
-- Keep validation in `TryFrom` when input can violate domain invariants.
+- Classify primitive wrapper input through [explicit parse states](../modeling/domain-types.md#classify-primitive-wrapper-input-with-explicit-states).
+- For a constrained scalar wire format, derive `Deserialize` for the parse enum
+  with `#[serde(from = "String")]`; derive it for the validated value with
+  `#[serde(try_from = "TaskIdParse")]`. The enum-to-value `TryFrom` adapter only
+  maps existing variants to Serde's required `Result`; it does not parse raw input.
+- Never call that adapter from application code or add a general `into_result`
+  method. Test both classification variants and actual deserialization rejection.
 - Keep semantic variant mappings in concrete conversion implementations.
 - Do not handwrite `Serialize`, `Deserialize`, visitors, or serialization callbacks when derives and attributes express the contract.
 - Do not move the same boilerplate into `serialize_with`, `deserialize_with`, or a helper module.
@@ -129,6 +135,44 @@ pub enum ApplicationMode {
 - A supported Serde attribute does not justify changing an enum into a boolean.
 - Verify the exact wire representation and all mapping branches for an allowed conversion.
 - Follow [Serde's conversion attribute requirements](https://serde.rs/container-attrs.html) when an exception applies.
+
+### Adapt classified states to Serde's required result
+
+These alternative additions use the `TaskId`, `TaskIdParse`, and
+`IdentifierParseError` definitions from the explicit-state rule. Add
+`#[derive(serde::Deserialize)]` and `#[serde(from = "String")]` to `TaskIdParse`.
+
+**Prohibited:** bypass classification or restore primitive validation in Serde.
+
+```rust
+#[derive(serde::Deserialize)]
+#[serde(try_from = "String")]
+pub struct TaskId(String); // Would require the prohibited TryFrom<String>.
+```
+
+**Preferred:** Serde owns failure transport; the domain enum owns classification.
+This replaces the earlier `TaskId` declaration and adds its boundary adapter.
+
+```rust
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(try_from = "TaskIdParse")]
+pub struct TaskId(String);
+
+impl TryFrom<TaskIdParse> for TaskId {
+    type Error = IdentifierParseError;
+    fn try_from(parsed: TaskIdParse) -> Result<Self, Self::Error> {
+        match parsed {
+            TaskIdParse::Parsed(task) => Ok(task),
+            TaskIdParse::Invalid(error) => Err(error),
+        }
+    }
+}
+```
+
+The serialized scalar stays a string; internal parse states are not additional
+wire values. If generating schemas, describe the actual scalar with the schema
+library's wire-type attribute and test it. Do not publish internal parse variants
+as the request schema or silently change the wire shape.
 
 ## Keep encoding out of application state
 

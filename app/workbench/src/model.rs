@@ -287,30 +287,66 @@ impl Task {
 
 #[cfg(test)]
 mod tests {
-    use super::{ClaimAt, LeaseHealth, Task, TaskState, WorkerAt};
+    use super::{Checkpoint, ClaimAt, LeaseHealth, Progress, Task, TaskState, WorkerAt, Workspace};
     use crate::LedgerError;
-    use crate::values::{AgentId, Attempt, CommitId, LeaseSeconds, Note, Revision, Timestamp};
+    use crate::values::{
+        AgentId, Attempt, CommitIdParse, Extensions, FeatureIdParse, LeaseSecondsParse, Note,
+        Revision, TaskIdParse, TimestampParse,
+    };
+    use crate::versions::RecordVersion;
+    use std::collections::BTreeMap;
 
     struct Scenario;
 
     impl Scenario {
         fn task() -> anyhow::Result<Task> {
-            Ok(serde_json::from_str(
-                r#"{
-                "version":1,"id":"task","feature":"feature","objective":"Review",
-                "acceptance":["Report findings"],"dependencies":[],"workspace":{"kind":"read_only"},
-                "revision":1,"attempt":0,"state":{"kind":"queued"},"created_at":1000,
-                "last_update":1000,"last_progress":1000,"checkpoint":{"kind":"unrecorded"},
-                "progress":{"summary":"Starting","findings":[],"next_steps":[],"checks":[],"extensions":{"custom":[1,"note"]}}
-            }"#,
-            )?)
+            let id = match TaskIdParse::from("task".to_owned()) {
+                TaskIdParse::Parsed(id) => id,
+                TaskIdParse::Invalid(error) => return Err(error.into()),
+            };
+            let feature = match FeatureIdParse::from("feature".to_owned()) {
+                FeatureIdParse::Parsed(id) => id,
+                FeatureIdParse::Invalid(error) => return Err(error.into()),
+            };
+            let now = Scenario::claim()?.now;
+            let mut extensions = BTreeMap::new();
+            extensions.insert("custom".to_owned(), serde_json::json!([1, "note"]));
+            Ok(Task {
+                version: RecordVersion::V1,
+                id,
+                feature,
+                objective: Note::from("Review".to_owned()),
+                acceptance: vec![Note::from("Report findings".to_owned())],
+                dependencies: Vec::new(),
+                workspace: Workspace::ReadOnly,
+                revision: Revision::INITIAL,
+                attempt: Attempt::UNCLAIMED,
+                state: TaskState::Queued,
+                created_at: now,
+                last_update: now,
+                last_progress: now,
+                checkpoint: Checkpoint::Unrecorded,
+                progress: Progress {
+                    summary: Note::from("Starting".to_owned()),
+                    findings: Vec::new(),
+                    next_steps: Vec::new(),
+                    checks: Vec::new(),
+                    extensions: Extensions::from(extensions),
+                },
+            })
         }
 
         fn claim() -> anyhow::Result<ClaimAt> {
             Ok(ClaimAt {
                 agent: AgentId::RustDev,
-                ttl: LeaseSeconds::try_from(10)?,
-                now: Timestamp::try_from(1000)?,
+                ttl: match LeaseSecondsParse::from(10) {
+                    LeaseSecondsParse::Parsed(value) => value,
+                    LeaseSecondsParse::Invalid(error) => return Err(error.into()),
+                },
+                now: match TimestampParse::from(1000) {
+                    TimestampParse::Parsed(value) => value,
+                    TimestampParse::Invalid(error) => return Err(error.into()),
+                },
             })
         }
     }
@@ -337,11 +373,17 @@ mod tests {
         let agent = AgentId::RustDev;
         task.ready(WorkerAt {
             agent: &agent,
-            attempt: Attempt::try_from(1)?,
-            now: Timestamp::try_from(2000)?,
+            attempt: Attempt::UNCLAIMED.advance()?,
+            now: match TimestampParse::from(2000) {
+                TimestampParse::Parsed(value) => value,
+                TimestampParse::Invalid(error) => return Err(error.into()),
+            },
         })?;
         assert!(matches!(task.state, TaskState::Ready { .. }));
-        task.integrate(CommitId::try_from("a".repeat(40))?)?;
+        task.integrate(match CommitIdParse::from("a".repeat(40)) {
+            CommitIdParse::Parsed(value) => value,
+            CommitIdParse::Invalid(error) => return Err(error.into()),
+        })?;
         task.require_dependency()?;
         assert!(matches!(
             task.requeue(),
@@ -352,7 +394,11 @@ mod tests {
             Err(LedgerError::InvalidTransition)
         ));
         assert_eq!(
-            task.view(Timestamp::try_from(50000)?).lease,
+            task.view(match TimestampParse::from(50000) {
+                TimestampParse::Parsed(value) => value,
+                TimestampParse::Invalid(error) => return Err(error.into()),
+            })
+            .lease,
             LeaseHealth::NotRunning
         );
         Ok(())
@@ -364,18 +410,31 @@ mod tests {
         task.claim(Scenario::claim()?)?;
         let agent = AgentId::RustDev;
         assert_eq!(
-            task.clone().view(Timestamp::try_from(10000)?).lease,
+            task.clone()
+                .view(match TimestampParse::from(10000) {
+                    TimestampParse::Parsed(value) => value,
+                    TimestampParse::Invalid(error) => return Err(error.into()),
+                })
+                .lease,
             LeaseHealth::Current
         );
         assert_eq!(
-            task.clone().view(Timestamp::try_from(11000)?).lease,
+            task.clone()
+                .view(match TimestampParse::from(11000) {
+                    TimestampParse::Parsed(value) => value,
+                    TimestampParse::Invalid(error) => return Err(error.into()),
+                })
+                .lease,
             LeaseHealth::Expired
         );
         assert!(matches!(
             task.worker(WorkerAt {
                 agent: &agent,
-                attempt: Attempt::try_from(1)?,
-                now: Timestamp::try_from(11000)?
+                attempt: Attempt::UNCLAIMED.advance()?,
+                now: match TimestampParse::from(11000) {
+                    TimestampParse::Parsed(value) => value,
+                    TimestampParse::Invalid(error) => return Err(error.into()),
+                }
             }),
             Err(LedgerError::Expired)
         ));
@@ -384,8 +443,11 @@ mod tests {
         assert!(matches!(
             task.worker(WorkerAt {
                 agent: &agent,
-                attempt: Attempt::try_from(1)?,
-                now: Timestamp::try_from(2000)?
+                attempt: Attempt::UNCLAIMED.advance()?,
+                now: match TimestampParse::from(2000) {
+                    TimestampParse::Parsed(value) => value,
+                    TimestampParse::Invalid(error) => return Err(error.into()),
+                }
             }),
             Err(LedgerError::AssignmentChanged)
         ));
@@ -393,8 +455,11 @@ mod tests {
         assert!(matches!(
             task.worker(WorkerAt {
                 agent: &stranger,
-                attempt: Attempt::try_from(2)?,
-                now: Timestamp::try_from(2000)?
+                attempt: Attempt::UNCLAIMED.advance()?.advance()?,
+                now: match TimestampParse::from(2000) {
+                    TimestampParse::Parsed(value) => value,
+                    TimestampParse::Invalid(error) => return Err(error.into()),
+                }
             }),
             Err(LedgerError::AssignmentChanged)
         ));

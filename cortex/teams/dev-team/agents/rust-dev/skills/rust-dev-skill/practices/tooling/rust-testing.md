@@ -6,8 +6,9 @@ Keep functional domain coverage in portable Rust unit and property tests.
 WASM tests check typed exports and browser adapters; browser E2E checks user
 flows. Neither replaces tests of the Rust implementation.
 
-These fragments assume `RetryLimit::try_from(u16)` rejects zero with
-`RetryLimitError::Zero` and accepts positive values. `RetryLimit` and its error
+These fragments assume `RetryLimitParse::from(u16)` classifies zero as
+`RetryLimitParse::Invalid(RetryLimitError::Zero)` and positive values as
+`RetryLimitParse::Parsed(RetryLimit)`. The value, classification, and error
 implement `Debug` and `PartialEq`. Prohibited examples compile but test the
 wrong thing.
 
@@ -31,7 +32,7 @@ fn rejects_zero() {
 ```rust
 #[test]
 fn rejects_zero() {
-    assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+    assert_eq!(RetryLimitParse::from(0), RetryLimitParse::Invalid(RetryLimitError::Zero));
 }
 ```
 
@@ -70,16 +71,19 @@ mod tests; // Loads a separate unit-test file.
 ```rust
 #[cfg(test)]
 mod tests {
-    use super::{RetryLimit, RetryLimitError};
+    use super::{RetryLimit, RetryLimitError, RetryLimitParse};
 
     #[test]
     fn rejects_zero() {
-        assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+        assert_eq!(RetryLimitParse::from(0), RetryLimitParse::Invalid(RetryLimitError::Zero));
     }
 
     #[test]
     fn accepts_positive_limit() -> Result<(), RetryLimitError> {
-        let limit = RetryLimit::try_from(3)?;
+        let limit = match RetryLimitParse::from(3) {
+            RetryLimitParse::Parsed(limit) => limit,
+            RetryLimitParse::Invalid(error) => return Err(error),
+        };
 
         assert_eq!(limit, RetryLimit(3));
         Ok(())
@@ -109,11 +113,11 @@ mod retry_limit;
 **Preferred — `tests/retry_limit.rs`:** exercise the exported contract.
 
 ```rust
-use retry_policy::{RetryLimit, RetryLimitError};
+use retry_policy::{RetryLimitError, RetryLimitParse};
 
 #[test]
 fn public_api_rejects_zero() {
-    assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+    assert_eq!(RetryLimitParse::from(0), RetryLimitParse::Invalid(RetryLimitError::Zero));
 }
 ```
 
@@ -139,7 +143,7 @@ cross-layer bug, cover both the affected contract and the user flow.
 ```rust
 #[test]
 fn zero_limit_regression() {
-    let _ = RetryLimit::try_from(0);
+    let _ = RetryLimitParse::from(0);
 }
 ```
 
@@ -148,7 +152,7 @@ fn zero_limit_regression() {
 ```rust
 #[test]
 fn zero_limit_regression() {
-    assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+    assert_eq!(RetryLimitParse::from(0), RetryLimitParse::Invalid(RetryLimitError::Zero));
 }
 ```
 

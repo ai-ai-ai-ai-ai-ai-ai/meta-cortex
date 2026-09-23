@@ -4,13 +4,15 @@ use super::protocol::{
     AgentHarness, AgentInstructions, EmptyArguments, FrameworkInit, Operation, Request,
 };
 use derive_more::{Display, From};
+use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::model::{Progress, Workspace};
 use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
     StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    AgentId, Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    AgentId, Attempt, BranchNameParse, Extensions, FeatureIdParse, LeaseSeconds, Note, Revision,
+    TaskIdParse,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
@@ -46,8 +48,18 @@ pub struct CatalogYaml(String);
 
 impl Catalog {
     pub fn discover() -> Result<Self, AgentError> {
-        let feature = FeatureId::try_from("example".to_owned())?;
-        let task = TaskId::try_from("review".to_owned())?;
+        let feature = match FeatureIdParse::from("example".to_owned()) {
+            FeatureIdParse::Parsed(value) => value,
+            FeatureIdParse::Invalid(error) => {
+                return Err(LedgerError::from(error).into());
+            }
+        };
+        let task = match TaskIdParse::from("review".to_owned()) {
+            TaskIdParse::Parsed(value) => value,
+            TaskIdParse::Invalid(error) => {
+                return Err(LedgerError::from(error).into());
+            }
+        };
         let coordinator = AgentId::Gizmo;
         let worker = AgentId::RustDev;
         let ttl = LeaseSeconds::TEN_MINUTES;
@@ -80,7 +92,12 @@ impl Catalog {
                 operation: Operation::Initialize(InitFeature {
                     feature: feature.clone(),
                     objective: Note::from("Implement the feature".to_owned()),
-                    branch: BranchName::try_from("codex/example".to_owned())?,
+                    branch: match BranchNameParse::from("codex/example".to_owned()) {
+                        BranchNameParse::Parsed(value) => value,
+                        BranchNameParse::Invalid(error) => {
+                            return Err(LedgerError::from(error).into());
+                        }
+                    },
                     worktree: PathBuf::from("/absolute/project"),
                 }),
             },
@@ -152,7 +169,7 @@ impl Catalog {
                     task: task.clone(),
                     expected_revision: claimed_revision,
                     agent: worker,
-                    attempt: Attempt::try_from(1)?,
+                    attempt: Attempt::UNCLAIMED.advance()?,
                     action: WorkerAction::Heartbeat { ttl_seconds: ttl },
                 }),
             },

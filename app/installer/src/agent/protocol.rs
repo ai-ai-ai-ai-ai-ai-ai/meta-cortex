@@ -7,7 +7,7 @@ use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery, WorkerUpdate,
 };
 use meta_cortex_workbench::values::FeatureId;
-use meta_cortex_workbench::versions::ProtocolVersion;
+use meta_cortex_workbench::versions::{ProtocolVersion, ProtocolVersionParse};
 use meta_cortex_workbench::{Ledger, LedgerError, LedgerInfo, Workbench};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -121,8 +121,9 @@ struct RequestHeader {
 impl Request {
     pub fn decode(text: &str) -> Result<Self, AgentError> {
         let header: RequestHeader = serde_saphyr::from_str(text)?;
-        match ProtocolVersion::try_from(header.version)? {
-            ProtocolVersion::V1 => Ok(serde_saphyr::from_str(text)?),
+        match ProtocolVersionParse::from(header.version) {
+            ProtocolVersionParse::Parsed(ProtocolVersion::V1) => Ok(serde_saphyr::from_str(text)?),
+            ProtocolVersionParse::Invalid(error) => Err(LedgerError::from(error).into()),
         }
     }
 

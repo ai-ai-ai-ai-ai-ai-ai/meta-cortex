@@ -60,8 +60,22 @@ impl Workbench {
 pub enum LedgerError {
     #[error("invalid ledger input: {0}")]
     Invalid(&'static str),
-    #[error("unsupported {schema} version {version}; upgrade meta-cortex")]
-    UnsupportedVersion { schema: &'static str, version: i64 },
+    #[error(transparent)]
+    UnsupportedVersion(#[from] versions::VersionParseError),
+    #[error(transparent)]
+    Identifier(#[from] values::IdentifierParseError),
+    #[error(transparent)]
+    BranchName(#[from] values::BranchNameParseError),
+    #[error(transparent)]
+    CommitId(#[from] values::CommitIdParseError),
+    #[error(transparent)]
+    Revision(#[from] values::RevisionParseError),
+    #[error(transparent)]
+    Attempt(#[from] values::AttemptParseError),
+    #[error(transparent)]
+    Timestamp(#[from] values::TimestampParseError),
+    #[error(transparent)]
+    LeaseSeconds(#[from] values::LeaseSecondsParseError),
     #[error("revision conflict; read the task again before retrying")]
     Conflict,
     #[error("task or feature already exists")]

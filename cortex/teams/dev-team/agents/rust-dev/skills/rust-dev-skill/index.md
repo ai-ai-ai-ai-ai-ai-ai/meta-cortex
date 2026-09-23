@@ -76,6 +76,15 @@ in full. Include related subjects when the change crosses their boundaries.
   - Required persisted or signed values use validated required newtypes.
   - Preserve validation during deserialization.
 
+- **[domain_types:parse_states](practices/modeling/domain-types.md#classify-primitive-wrapper-input-with-explicit-states)**
+
+  - Prohibit primitive-wrapper TryFrom/FromStr and equivalent hidden-Result APIs;
+    classify input through enums naming success and every rejection state.
+  - Match classifications in callers, catalogs, and fixtures; no into_result shortcut
+    or serialization detour. Keep validated payloads private.
+  - Genuine representation conversion and I/O retain typed Result errors. Serde's
+    enum-to-value adapter only maps states to its required Result interface.
+
 - **[domain_types:closed_vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum)**
 
   - Inspect the owning catalog; use a complete closed enum for known identities and
@@ -85,7 +94,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[domain_types:external_conversions](practices/modeling/domain-types.md#external-raw-values)**
 
   - Convert uncontrolled external primitives and records immediately through
-    destination-owned From or TryFrom.
+    destination-owned From classification, or TryFrom for genuine representation conversion.
   - Conversion parameters may be raw, but application contracts may not.
 
 - **[domain_types:external_records](practices/modeling/domain-types.md#external-raw-values)**
@@ -95,8 +104,8 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[domain_types:conversion_traits](practices/modeling/domain-types.md#standard-conversions)**
 
-  - Use From for a clear infallible value conversion and TryFrom with a concrete error
-    when validation can fail.
+  - Use From for infallible conversion/classification and TryFrom with a concrete
+    error for genuine representation conversion, not primitive-wrapper validation.
   - Do not panic, discard meaning, or default invalid input to force From.
 
 - **[domain_types:operation_boundaries](practices/modeling/domain-types.md#standard-conversions)**
@@ -319,7 +328,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[struct_construction:derive_from](practices/modeling/struct-construction.md#single-field-derive-from)**
 
   - Derive derive_more::From with its from feature for infallible single-field wrappers.
-  - Use TryFrom for validation.
+  - Constrained wrappers use explicit classification enums; keep their fields private.
 
 - **[struct_construction:initial_state](practices/modeling/struct-construction.md#single-field-derive-from)**
 
@@ -642,7 +651,8 @@ in full. Include related subjects when the change crosses their boundaries.
   - Derive serialization and preserve enums in new owned wire contracts.
   - Apply domain-state exceptions before using boolean conversion attributes.
   - Prohibit handwritten traits, visitors, and callbacks that duplicate this support.
-  - Keep semantic mappings in concrete conversions and validation in TryFrom.
+  - Classify raw wrapper input in an enum; Serde may use an enum-to-value TryFrom
+    adapter to satisfy its required Result interface, never a raw-input validator.
   - Document unsupported contracts and evaluate established adapters before custom machinery.
   - Review manually and test wire values; standard Clippy does not enforce this rule.
 
@@ -1173,8 +1183,9 @@ Check whether construction is infallible, requires validation, or performs an op
 
 - **Prohibited:** Derive `From` for a constrained value to avoid reporting validation
   errors, or put consuming-domain policy on the source type.
-- **Preferred:** The destination owns `From` for infallible conversions and `TryFrom`
-  for validation. Context-dependent policy stays a named operation.
+- **Preferred:** The destination owns `From` for infallible conversion/classification and `TryFrom`
+  for genuine representation conversion. Constrained wrappers use explicit enums;
+  context-dependent policy stays a named operation.
 
 **Compare:**
 

@@ -1,6 +1,7 @@
 use super::LedgerError;
 use super::model::{Checkpoint, Feature, Workspace};
 use super::values::{BranchName, CommitId, FeatureId};
+use crate::values::{CommitIdParse, FeatureIdParse};
 use derive_more::From;
 use std::fs;
 use std::io::ErrorKind;
@@ -36,7 +37,10 @@ impl GitWorktree {
     }
 
     pub fn head(&self) -> Result<CommitId, LedgerError> {
-        CommitId::try_from(self.output(&["rev-parse", "--verify", "HEAD^{commit}"])?)
+        match CommitIdParse::from(self.output(&["rev-parse", "--verify", "HEAD^{commit}"])?) {
+            CommitIdParse::Parsed(commit) => Ok(commit),
+            CommitIdParse::Invalid(error) => Err(error.into()),
+        }
     }
 
     pub fn require_branch(&self, branch: &BranchName) -> Result<(), LedgerError> {
@@ -75,7 +79,10 @@ impl Repository {
                             .file_stem()
                             .and_then(|name| name.to_str())
                             .ok_or(LedgerError::Invalid("invalid feature database filename"))?;
-                        ids.push(FeatureId::try_from(id.to_owned())?);
+                        ids.push(match FeatureIdParse::from(id.to_owned()) {
+                            FeatureIdParse::Parsed(value) => value,
+                            FeatureIdParse::Invalid(error) => return Err(error.into()),
+                        });
                     }
                 }
             }

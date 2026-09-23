@@ -88,7 +88,7 @@ pub struct OrderLine {
 }
 ```
 
-These wrappers are infallible examples. Use validated `TryFrom` construction
+These wrappers are infallible examples. Use [explicit parse states](#classify-primitive-wrapper-input-with-explicit-states)
 when the domain restricts the value. Named enums represent states; do not use
 primitive sentinels to encode them.
 
@@ -189,9 +189,9 @@ by name. Runtime input may require validation; closed choices use variants, open
 text uses domain values, and stable scalar quantities use named typed constants.
 
 These call-site alternatives assume the owning `LeaseSeconds` type validates
-external durations through `TryFrom<i64>` and declares
-`pub const TEN_MINUTES: Self = Self(600)` inside its implementation. Both calls
-compile; the second avoids revalidating a known, reusable domain quantity.
+external durations through a `LeaseSecondsParse` enum and declares
+`pub const TEN_MINUTES: Self = Self(600)` inside its implementation. The prohibited call illustrates the superseded API; the preferred call avoids
+reclassifying a known, reusable domain quantity.
 
 **Prohibited:** reconstruct a known quantity through runtime validation.
 
@@ -319,7 +319,7 @@ impl FieldIndex {
 ```
 
 - Use `From<Primitive>` for an infallible single-field wrapper.
-- Use `TryFrom` for genuine format/invariant failures. Empty free-form prose
+- Use an [explicit classification enum](#classify-primitive-wrapper-input-with-explicit-states) for constrained wrapper input. Empty free-form prose
   uses [infallible state classification](domain-states.md#represent-empty-prose-as-a-value),
   not a validation error.
 - Add associated constants only for common values with stable meaning.
@@ -330,6 +330,89 @@ impl FieldIndex {
   primitive.
 - Keep a named `value` field when the serialized contract must retain the
   wrapper shape.
+
+### Classify primitive-wrapper input with explicit states
+
+**Prohibit `FeatureId::try_from("example".to_owned())?` and equivalent
+`TryFrom<String>`, `TryFrom<&str>`, or `FromStr` APIs for string-backed domain
+wrappers.** Classify the string with infallible `From` into a domain enum naming
+all states. Constrained numeric wrappers follow the same rule for range/state
+classification. Renaming the constructor to `parse`, returning `Result` under
+another name, or adding `.into_result()?` does not satisfy this requirement.
+
+**Prohibited:** this API compiles but hides classification behind failure propagation.
+Assume `InvalidTaskId` is a concrete error and `input: String` comes from the edge.
+
+```rust
+pub struct TaskId(String);
+impl TryFrom<String> for TaskId {
+    type Error = InvalidTaskId;
+    fn try_from(text: String) -> Result<Self, Self::Error> {
+        if text.is_empty() { Err(InvalidTaskId) } else { Ok(Self(text)) }
+    }
+}
+let task = TaskId::try_from(input)?;
+```
+
+**Preferred:** classification always returns a named state; only `Parsed` carries
+an ID. This example uses `thiserror`; the caller returns a concrete error that
+can wrap `IdentifierParseError`.
+
+```rust
+pub struct TaskId(String);
+
+#[derive(Debug, thiserror::Error)]
+pub enum IdentifierParseError {
+    #[error("identifier must not be empty")]
+    Empty,
+    #[error("identifier exceeds 128 bytes")]
+    TooLong,
+    #[error("identifier contains invalid characters")]
+    InvalidCharacters,
+}
+
+pub enum TaskIdParse {
+    Parsed(TaskId),
+    Invalid(IdentifierParseError),
+}
+
+impl From<String> for TaskIdParse {
+    fn from(text: String) -> Self {
+        if text.is_empty() {
+            return Self::Invalid(IdentifierParseError::Empty);
+        }
+        if text.len() > 128 {
+            return Self::Invalid(IdentifierParseError::TooLong);
+        }
+        if !text.bytes().all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c)) {
+            return Self::Invalid(IdentifierParseError::InvalidCharacters);
+        }
+        Self::Parsed(TaskId(text))
+    }
+}
+
+let task = match TaskIdParse::from(input) {
+    TaskIdParse::Parsed(task) => task,
+    TaskIdParse::Invalid(error) => return Err(error.into()),
+};
+```
+
+Valid empty prose uses `Note::Empty` / `Note::Text`, not an invalid ID's error
+model. Known catalogs use closed variants. Do not classify invalid IDs as usable
+IDs, invent fallback values, or expose private validated fields.
+
+The exception is a real representation conversion: text to a number, decoding
+YAML, or integer narrowing can return `Result<T, ConcreteError>`. Those operations
+can fail to produce the requested representation. Merely checking the length or
+characters of a string already held by a string wrapper is classification.
+I/O and validated workflow operations also keep their typed `Result` contracts.
+
+Serde's required `Result` interface is isolated in an enum-to-value adapter,
+shown in [serialization boundaries](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate).
+It must exhaustively map the already-classified enum, never validate raw input
+again. Application code, catalog examples, and fixtures match the enum directly;
+they must not call that adapter, use `?` to hide the classification, or round-trip
+through serialization to obtain a validated value.
 
 ### Access wrappers through patterns or domain methods
 
@@ -451,8 +534,10 @@ the application. This is not an exception for application-authored tuple APIs.
 pub struct StoreId(String);
 ```
 
-Wire JSON stays unchanged; the Rust API is typed. Validate through `TryFrom`
-when invariants matter. Deserialization must preserve the same validation.
+Wire JSON stays unchanged; the Rust API is typed. If the string is constrained,
+classify it through explicit parse states and use the
+[Serde adapter](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate)
+to reject invalid states. A transparent derive alone would bypass classification.
 
 ### Model supported schema revisions explicitly
 
@@ -463,7 +548,8 @@ projection, or migration must handle every supported version exhaustively.
 Keep numeric conversion at external boundaries; reject unsupported input there.
 
 These alternative fragments assume Serde derive and existing domain payload
-types. Both compile; the first hides a finite version choice inside a number.
+types, plus an `UnsupportedEventVersion` error implementing `Display`. Both
+compile; the first hides a finite version choice inside a number.
 
 **Prohibited:** author a known schema revision through runtime validation.
 
@@ -485,19 +571,35 @@ let version = EventSchemaVersion::try_from(2)?;
 
 ```rust
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
-#[serde(try_from = "u32", into = "u32")]
+#[serde(try_from = "EventVersionParse", into = "u32")]
 pub enum EventSchemaVersion { V1, V2 }
+
+#[derive(serde::Deserialize)]
+#[serde(from = "u32")]
+pub enum EventVersionParse {
+    Parsed(EventSchemaVersion),
+    Unsupported(UnsupportedEventVersion),
+}
 
 impl EventSchemaVersion {
     pub const CURRENT: Self = Self::V2;
 }
-impl TryFrom<u32> for EventSchemaVersion {
-    type Error = UnsupportedEventVersion;
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
+impl From<u32> for EventVersionParse {
+    fn from(value: u32) -> Self {
         match value {
-            1 => Ok(Self::V1),
-            2 => Ok(Self::V2),
-            _ => Err(UnsupportedEventVersion),
+            1 => Self::Parsed(EventSchemaVersion::V1),
+            2 => Self::Parsed(EventSchemaVersion::V2),
+            _ => Self::Unsupported(UnsupportedEventVersion),
+        }
+    }
+}
+// Serde adapter only; application callers match EventVersionParse.
+impl TryFrom<EventVersionParse> for EventSchemaVersion {
+    type Error = UnsupportedEventVersion;
+    fn try_from(parsed: EventVersionParse) -> Result<Self, Self::Error> {
+        match parsed {
+            EventVersionParse::Parsed(version) => Ok(version),
+            EventVersionParse::Unsupported(error) => Err(error),
         }
     }
 }
@@ -588,8 +690,9 @@ prove runtime concurrency freshness: retain revision comparisons in transactions
 ## External raw values
 
 Uncontrolled external APIs may return primitives or raw records. Accept those
-values in destination-owned `From<Raw>` conversions; use `TryFrom<Raw>` when
-validation can fail. Convert immediately at the adapter, then pass only the typed
+values in destination-owned `From<Raw>` conversions. Constrained primitive wrappers
+use an explicit classification enum; genuine representation conversions may use
+`TryFrom<Raw>` with a typed error. Convert immediately at the adapter, then pass only the typed
 result into application code. Raw conversion parameters are allowed; raw
 application contracts are not.
 
@@ -618,8 +721,9 @@ let body = MessageBody::from(external.read_message());
 inbox.receive(body);
 ```
 
-For constrained input, use `TryFrom` and propagate its typed error. Do not panic,
-replace invalid input with a default, or weaken validation to force `From`.
+For constrained wrapper input, match the classification and handle each rejection
+explicitly. Do not panic, replace invalid input with a default, or make invalid
+states usable as validated identifiers.
 
 ## Standard conversions
 
@@ -631,11 +735,12 @@ conversion.
 
 - Use `From<T>` for a direct, infallible, value-preserving conversion from one
   input value.
-- Use `TryFrom<T>` for the corresponding fallible conversion. Return a
-  concrete error that describes the failure.
+- Use `TryFrom<T>` for genuine representation conversions, such as text to a
+  number or narrowing an integer. Return a concrete error. It is prohibited for
+  classifying primitive wrappers; use the explicit-state rule below instead.
 - Implement `From` or `TryFrom` on the destination type. Use their provided
   `Into` or `TryInto` implementations at suitable call sites.
-- Preserve private validated construction inside conversion implementations.
+- Preserve private validated construction inside the owning classifier or conversion.
 - Keep named methods for context-dependent policy or ambiguous interpretations.
 - Keep named operations for external effects or authorization-sensitive
   capability transitions. Preserve their runtime freshness checks.
@@ -715,7 +820,9 @@ its import edits.
    closed choice, open domain content, private newtype
    storage, or an exact external contract. Use an enum or distinct newtype for
    application values; identify the external owner for a retained raw edge.
-3. Inspect construction and call sites to ensure the named type survives until
+3. Reject primitive-wrapper `TryFrom`/`FromStr` and equivalent hidden-`Result`
+   APIs. Verify exhaustive classification, concrete rejection variants, and the
+   narrowly scoped Serde adapter. Inspect construction and call sites to ensure the named type survives until
    the actual encoding boundary. Check that serialization preserves the intended
    wire contract. Reject numeric field access, including inside wrapper methods;
    use patterns or domain methods instead. Replace positional aggregates with

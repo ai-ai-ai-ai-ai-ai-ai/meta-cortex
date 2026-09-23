@@ -128,8 +128,9 @@ use delivery::DeliveryKind;
 let requirement = AddressRequirement::from(DeliveryKind::Shipment);
 ```
 
-Use `From` for direct infallible conversions and `TryFrom` when conversion can
-fail. Use a named method for policy that needs additional context or performs an
+Use `From` for direct infallible conversions and `TryFrom` for genuine fallible
+representation conversions. Primitive wrappers follow the
+[explicit-state rule](../modeling/domain-types.md#classify-primitive-wrapper-input-with-explicit-states). Use a named method for policy that needs additional context or performs an
 action. Keep validation and workflow transitions intact.
 
 ## Keep required free functions at the boundary

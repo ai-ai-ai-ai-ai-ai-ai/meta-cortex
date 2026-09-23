@@ -38,6 +38,13 @@ Before adding primitive conversions, inspect the [owning vocabulary](practices/m
 Known identities must be complete enums; use variants and named typed constants
 for authored known values. Do not replace a closed catalog with string validation.
 
+Before wrapping strings or classifying constrained primitive input, apply
+[explicit parse states](practices/modeling/domain-types.md#classify-primitive-wrapper-input-with-explicit-states).
+Prohibit primitive-wrapper `TryFrom`/`FromStr`, renamed `Result` constructors,
+and helper conversions that hide classification. Inspect catalogs, fixtures, and
+Serde adapters as well as product callers. Genuine representation conversions
+(such as text to a number) retain concrete `Result` errors.
+
 For text constructors, apply [empty-text state modeling](practices/modeling/domain-states.md#represent-empty-prose-as-a-value).
 Use infallible classification for valid empty prose; do not invent validation
 failures merely because a domain wrapper holds a string.
