@@ -17,7 +17,8 @@ For every Rust implementation, refactoring, review, or tooling assignment, load
 and apply [domain types](practices/modeling/domain-types.md),
 [domain states](practices/modeling/domain-states.md),
 [owned updates](practices/behavior/owned-updates.md),
-[module layout](practices/tooling/module-layout.md), and
+[module layout](practices/tooling/module-layout.md),
+[test placement](practices/tooling/rust-testing.md#test-placement), and
 [Rust code checks](practices/tooling/rust-code-checks.md). These prerequisites are
 mandatory, independent of the selected implementation practices. Complete the
 [domain-type review](practices/modeling/domain-types.md#validation) before handoff.

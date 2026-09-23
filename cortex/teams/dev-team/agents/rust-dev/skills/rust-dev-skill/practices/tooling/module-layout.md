@@ -40,16 +40,21 @@ pub mod agent;
 pub mod worker;
 ```
 
+Normal `mod` and `pub mod` declarations are required to connect module files.
+Use `pub mod` for public modules and `mod` for private modules; this filename
+convention does not change visibility. It prohibits the filename `mod.rs`, not
+the `mod` keyword.
+
 The convention also applies recursively: `agent/worker.rs` owns children under
 `agent/worker/`. Crate entry points retain `lib.rs` and `main.rs`; integration
-test entry points retain their normal names. Inline modules such as `mod tests`
-remain inline. Dependency-owned and generated source layouts retain their
-external ownership.
+test entry points retain their normal names. Put unit test bodies in named
+child files as required by [test placement](rust-testing.md#test-placement).
+Dependency-owned and generated source layouts retain their external ownership.
 
 ## Preserve resolution when moving modules
 
 Move `parent/child/mod.rs` to `parent/child.rs` and leave its children in
-`parent/child/`. Preserve module names, visibility, re-exports, and inline tests.
+`parent/child/`. Preserve module names, visibility, re-exports, and test behavior.
 Recalculate file-relative `include_str!`, `include_bytes!`, and `include!` paths;
 update explicit path attributes and repository references affected by the move.
 
@@ -75,4 +80,4 @@ let defaults = include_str!("../defaults.toml");
 - Run the [Rust code checks](rust-code-checks.md) and affected tests to verify
   module resolution, embedded assets, and preserved public behavior.
 - Review the move separately from behavioral changes; a rename does not authorize
-  API changes or test extraction. Keep the [test-placement rules](rust-testing.md).
+  API visibility or behavior changes. Keep the [test-placement rules](rust-testing.md#test-placement).

@@ -1052,14 +1052,14 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **File:** [Module layout](practices/tooling/module-layout.md).
 - **Owns:** Module filenames, child-directory layout, and path updates during module moves.
-- **Does not own:** Domain ownership belongs to Domain types; inline test placement belongs to Rust testing.
+- **Does not own:** Domain ownership belongs to Domain types; test placement belongs to Rust testing.
 - **Related:** [Domain types](practices/modeling/domain-types.md), [Rust testing](practices/tooling/rust-testing.md), [Paths and imports](practices/tooling/path-imports.md).
 
 - **[module_layout:named_files](practices/tooling/module-layout.md#use-named-module-files)**
 
   - Use `<module>.rs` with children under `<module>/`; prohibit authored `mod.rs`
     files, including declaration-only modules and test support.
-  - Retain crate/test entry points, inline modules, and externally owned layouts.
+  - Retain normal `mod`/`pub mod` declarations, crate/test entry points, and externally owned layouts.
 
 - **[module_layout:preserve_resolution](practices/tooling/module-layout.md#preserve-resolution-when-moving-modules)**
 
@@ -1182,15 +1182,17 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[testing:colocation](practices/tooling/rust-testing.md#test-placement)**
 
-  - Keep unit tests inline in the focused implementation module.
+  - Keep unit tests in `<module>/tests.rs`, declared with `#[cfg(test)] mod tests;`
+    in the implementation file; keep test helpers in test modules.
   - Crate tests/ integration files exercise public boundaries, not relabeled unit tests.
   - Test-harness entrypoints may contain scenario steps and assertions; reusable
     test helpers remain on fixtures and never duplicate production algorithms.
 
 - **[testing:no_size_evasion](practices/tooling/rust-testing.md#split-production-ownership-before-tests)**
 
-  - Split production ownership before colocating tests.
-  - Forbid external unit-test files and test extraction to evade the 1,000-line limit.
+  - Keep production ownership focused and tests in each owner's child directory.
+  - Apply the 1,000-line limit independently to implementation and test files;
+    separating tests does not excuse oversized production abstractions.
 
 - **[testing:coverage](practices/tooling/rust-testing.md#90-rust-line-coverage-floor)**
 
@@ -1344,10 +1346,10 @@ routine code.
 
 Review fixture setup and test placement when adding tests to meet the coverage floor.
 
-- **Prohibited:** Use `unwrap()` in fixture setup or extract inline tests solely to get
-  their source file below the size limit.
+- **Prohibited:** Use `unwrap()` in fixture setup or leave an oversized production abstraction
+  after moving its tests.
 - **Preferred:** Propagate setup errors from fallible tests. Split production ownership
-  and colocate tests before measuring combined coverage.
+  and keep tests in named child files before measuring combined coverage.
 
 **Compare:**
 

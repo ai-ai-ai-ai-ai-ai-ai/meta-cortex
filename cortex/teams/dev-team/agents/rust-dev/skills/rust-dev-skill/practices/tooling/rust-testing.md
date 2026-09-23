@@ -56,38 +56,52 @@ place checks at their owning layer:
 
 ## Test placement
 
-Keep unit tests in an inline `#[cfg(test)] mod tests` in their implementation
-module. Separate unit-test files under `src/` are prohibited.
+Keep unit tests and test-only helpers in named child module files, separate from
+implementation bodies. The implementation retains `#[cfg(test)] mod tests;`;
+`<module>/tests.rs` holds the tests and accesses private items through `super`.
+Use ordinary module declarations and the [named module layout](module-layout.md).
+Do not introduce `mod.rs` or widen production visibility to move tests.
+Executable documentation examples may remain in API doc comments.
 
 **Prohibited — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
-mod tests; // Loads a separate unit-test file.
+mod tests {
+    // Test bodies mixed into the implementation file.
+    #[test]
+    fn rejects_zero() {
+        assert_eq!(super::RetryLimitParse::from(0), super::RetryLimitParse::Invalid(super::RetryLimitError::Zero));
+    }
+}
 ```
 
-**Preferred — in the same file as `RetryLimit`:**
+**Preferred — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
-mod tests {
-    use super::{RetryLimit, RetryLimitError, RetryLimitParse};
+mod tests;
+```
 
-    #[test]
-    fn rejects_zero() {
-        assert_eq!(RetryLimitParse::from(0), RetryLimitParse::Invalid(RetryLimitError::Zero));
-    }
+**Preferred — `src/retry_limit/tests.rs`:**
 
-    #[test]
-    fn accepts_positive_limit() -> Result<(), RetryLimitError> {
-        let limit = match RetryLimitParse::from(3) {
-            RetryLimitParse::Parsed(limit) => limit,
-            RetryLimitParse::Invalid(error) => return Err(error),
-        };
+```rust
+use super::{RetryLimit, RetryLimitError, RetryLimitParse};
 
-        assert_eq!(limit, RetryLimit(3));
-        Ok(())
-    }
+#[test]
+fn rejects_zero() {
+    assert_eq!(RetryLimitParse::from(0), RetryLimitParse::Invalid(RetryLimitError::Zero));
+}
+
+#[test]
+fn accepts_positive_limit() -> Result<(), RetryLimitError> {
+    let limit = match RetryLimitParse::from(3) {
+        RetryLimitParse::Parsed(limit) => limit,
+        RetryLimitParse::Invalid(error) => return Err(error),
+    };
+
+    assert_eq!(limit, RetryLimit(3));
+    Ok(())
 }
 ```
 
@@ -123,18 +137,20 @@ fn public_api_rejects_zero() {
 
 ### Split production ownership before tests
 
-The 1,000-line file limit includes inline tests. Split distinct production
-abstractions, then colocate each one's tests; extracting tests is not a size fix.
+The 1,000-line file limit applies to implementation and test files independently.
+Separate test files do not excuse oversized production abstractions. Split
+distinct production owners and keep each owner's tests in its child directory.
 
 **Prohibited:** retain policy and limit logic in an oversized `retry_policy.rs`
-and move only its tests to `retry_policy_tests.rs` to lower the count.
+and treat moving its tests as sufficient while the implementation remains oversized.
 
 **Preferred:** separate policy behavior into `retry_policy.rs` and limit
-validation into `retry_limit.rs`, with each owner's tests inline in its module.
+validation into `retry_limit.rs`, with tests in `retry_policy/tests.rs` and
+`retry_limit/tests.rs` respectively.
 
 ## Regression tests precede the fix
 
-For a portable domain bug, add a colocated test that fails before the fix and
+For a portable domain bug, add a test in the owning test module that fails before the fix and
 passes after it. For a WASM bug, test the narrow owning boundary. For a
 cross-layer bug, cover both the affected contract and the user flow.
 
