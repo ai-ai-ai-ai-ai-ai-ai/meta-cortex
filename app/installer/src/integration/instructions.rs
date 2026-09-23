@@ -145,19 +145,19 @@ mod tests {
             let target = self.project().target(Harness::Codex)?;
             let path = target.path();
             let prepared = PreparedInstructions::read(target.clone())?;
-            fs::write(&path, "User wrote this after the prompt")?;
+            fs::write(&path, "User wrote this after preparation")?;
             assert!(matches!(
                 prepared.write(),
                 Err(InstructionError::Conflict(_))
             ));
             assert_eq!(
                 fs::read_to_string(&path)?,
-                "User wrote this after the prompt"
+                "User wrote this after preparation"
             );
             for invalid in [
-                b"<!-- meta-cortex:start -->".as_slice(),
-                b"<!-- meta-cortex:end -->".as_slice(),
-                b"<!-- meta-cortex:start -->edited<!-- meta-cortex:end -->".as_slice(),
+                b"---\nmeta-cortex: instructions\n---\n".as_slice(),
+                b"meta-cortex: instructions\n".as_slice(),
+                b"---\nmeta-cortex: instructions\n---\nedited\n---\n".as_slice(),
                 &[0xff],
             ] {
                 fs::write(&path, invalid)?;

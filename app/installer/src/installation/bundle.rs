@@ -1,6 +1,6 @@
 use super::InstallError;
 use crate::configuration::ConfigText;
-use crate::information::{FrameworkVersion, Version};
+use crate::information::Version;
 use include_dir::{Dir, include_dir};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
@@ -23,10 +23,7 @@ impl Bundle<'_> {
             self.destination.join("meta-cortex.toml"),
             configuration.as_bytes(),
         )?;
-        fs::write(
-            self.destination.join(FrameworkVersion::FILE),
-            Version::CURRENT,
-        )?;
+        fs::write(self.destination.join(Version::FILE), Version::CURRENT)?;
         Ok(())
     }
 
@@ -72,15 +69,10 @@ impl Bundle<'_> {
                 return Err(InstallError::Conflict(license));
             }
             expected += 1; // LICENSE is distributed beside the framework.
-            match FrameworkVersion::read(&self.destination)? {
-                FrameworkVersion::Legacy => {}
-                FrameworkVersion::Recorded(version) => {
-                    if version != Version::from(Version::CURRENT.to_owned()) {
-                        return Err(InstallError::Conflict(self.destination.clone()));
-                    }
-                    expected += 1;
-                }
+            if Version::read(&self.destination)? != Version::from(Version::CURRENT.to_owned()) {
+                return Err(InstallError::Conflict(self.destination.clone()));
             }
+            expected += 1;
         }
         let mut actual = 0;
         for entry in fs::read_dir(&self.destination)? {

@@ -5,10 +5,9 @@ mod markdown;
 mod selection;
 
 pub use instructions::InstructionStatus;
+pub use selection::IntegrationOptions;
 pub use selection::{HarnessChoice, InstructionAction};
-pub use selection::{IntegrationOptions, IntegrationRequest};
 
-use clap::ValueEnum;
 use derive_more::Display;
 use document::{CursorApplication, CursorHeader};
 use instructions::PreparedInstructions;
@@ -34,21 +33,9 @@ pub enum InstructionError {
         "instruction file has an altered or incomplete Meta-Cortex block, invalid UTF-8, or unsupported Cursor frontmatter: {0}"
     )]
     InvalidEntry(PathBuf),
-    #[error("initialization cancelled; no project files were written")]
-    Cancelled,
-    #[error(
-        "interactive harness selection requires a terminal; omit --interactive to install with defaults, or supply --harness <codex|claude|cursor> --instructions <write|skip>"
-    )]
-    TerminalRequired,
-    #[error("instruction selection was not resolved; use --instructions <write|skip>")]
-    ExplicitChoiceRequired,
-    #[error("harness selection failed: {0}")]
-    Prompt(#[from] dialoguer::Error),
-    #[error("invalid harness choice; choose codex, claude, cursor, or none")]
-    InvalidHarness,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum, Display, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize)]
 pub enum Harness {
     Codex,
     Claude,
@@ -73,21 +60,12 @@ impl Harness {
             Self::Cursor => ".cursor/rules/meta-cortex.mdc",
         }
     }
-
-    fn marker(self) -> &'static str {
-        match self {
-            Self::Codex => ".codex",
-            Self::Claude => ".claude",
-            Self::Cursor => ".cursor",
-        }
-    }
 }
 
 #[derive(Clone)]
 pub struct InstructionTarget {
     root: PathBuf,
     relative: PathBuf,
-    harness: Harness,
 }
 
 impl InstructionTarget {
@@ -159,7 +137,6 @@ impl ProjectHarnesses {
             let target = InstructionTarget {
                 root: self.root.clone(),
                 relative: PathBuf::from(candidate),
-                harness,
             };
             // Never follow a symlink even while discovering a nested instruction file.
             if target.check_parents().is_err() {
@@ -176,7 +153,6 @@ impl ProjectHarnesses {
         Ok(InstructionTarget {
             root: self.root.clone(),
             relative: PathBuf::from(harness.default_file()),
-            harness,
         })
     }
 
@@ -277,12 +253,12 @@ mod tests {
                 self.project().target(Harness::Cursor)?.path(),
                 root.join("AGENTS.md")
             );
-            fs::write(root.join(".cursorrules"), "Legacy Cursor rules")?;
+            fs::write(root.join(".cursorrules"), "Existing Cursor rules")?;
             let cursor = self.project().target(Harness::Cursor)?;
             assert_eq!(cursor.path(), root.join(".cursorrules"));
             PreparedInstructions::read(cursor)?.write()?;
             assert!(
-                fs::read_to_string(root.join(".cursorrules"))?.starts_with("Legacy Cursor rules")
+                fs::read_to_string(root.join(".cursorrules"))?.starts_with("Existing Cursor rules")
             );
             let statuses = self.project().inspect()?;
             assert!(
@@ -292,7 +268,7 @@ mod tests {
             );
             fs::write(
                 root.join("AGENTS.override.md"),
-                "<!-- meta-cortex:start -->broken",
+                "---\nmeta-cortex: instructions\n---\nbroken\n---\n",
             )?;
             let statuses = self.project().inspect()?;
             assert_eq!(statuses[0].status, InstructionStatus::Conflict);

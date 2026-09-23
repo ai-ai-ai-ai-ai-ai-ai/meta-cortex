@@ -20,18 +20,6 @@ pub struct Version(String);
 
 impl Version {
     pub const CURRENT: &str = env!("CARGO_PKG_VERSION");
-}
-
-#[derive(Debug, PartialEq, Eq, Display, Serialize)]
-#[serde(tag = "status", content = "value")]
-pub enum FrameworkVersion {
-    #[display("{_0}")]
-    Recorded(Version),
-    #[display("unknown (installed by an older CLI)")]
-    Legacy,
-}
-
-impl FrameworkVersion {
     pub const FILE: &str = ".version";
 
     pub fn read(directory: &Path) -> Result<Self, VersionError> {
@@ -42,10 +30,9 @@ impl FrameworkVersion {
                 if text.trim().is_empty() || text.trim().contains(char::is_whitespace) {
                     return Err(VersionError::InvalidFile(path));
                 }
-                Ok(Self::Recorded(Version::from(text.trim().to_owned())))
+                Ok(Self::from(text.trim().to_owned()))
             }
             Ok(_) => Err(VersionError::InvalidFile(path)),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Self::Legacy),
             Err(error) => Err(error.into()),
         }
     }
@@ -53,7 +40,7 @@ impl FrameworkVersion {
 
 pub struct ProjectInfo {
     pub root: PathBuf,
-    pub version: FrameworkVersion,
+    pub version: Version,
     pub configuration: Configuration,
     pub integrations: Vec<HarnessInfo>,
 }
@@ -61,17 +48,17 @@ pub struct ProjectInfo {
 #[derive(Clone, Serialize)]
 #[serde(into = "u32")]
 enum InfoSchemaVersion {
-    V2,
+    V3,
 }
 
 impl InfoSchemaVersion {
-    const CURRENT: Self = Self::V2;
+    const CURRENT: Self = Self::V3;
 }
 
 impl From<InfoSchemaVersion> for u32 {
     fn from(version: InfoSchemaVersion) -> Self {
         match version {
-            InfoSchemaVersion::V2 => 2,
+            InfoSchemaVersion::V3 => 3,
         }
     }
 }
@@ -92,7 +79,7 @@ enum ModelAvailability {
 pub struct InfoReport {
     schema_version: InfoSchemaVersion,
     cli_version: Version,
-    framework_version: FrameworkVersion,
+    framework_version: Version,
     paths: InfoPaths,
     integrations: Vec<HarnessInfo>,
     models: Configuration,
@@ -115,16 +102,5 @@ impl From<ProjectInfo> for InfoReport {
             models: info.configuration,
             model_availability: ModelAvailability::NotChecked,
         }
-    }
-}
-
-#[derive(Display)]
-pub struct InfoYaml(String);
-
-impl TryFrom<ProjectInfo> for InfoYaml {
-    type Error = serde_saphyr::SerializeError;
-
-    fn try_from(info: ProjectInfo) -> Result<Self, Self::Error> {
-        Ok(Self(serde_saphyr::to_string(&InfoReport::from(info))?))
     }
 }

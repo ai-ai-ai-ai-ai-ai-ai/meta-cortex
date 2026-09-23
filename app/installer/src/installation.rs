@@ -1,11 +1,9 @@
 use thiserror::Error;
 mod bundle;
 
-use crate::configuration::{ConfigError, ConfigText, InitMode};
-use crate::information::{FrameworkVersion, ProjectInfo, VersionError};
-use crate::integration::{
-    InstructionError, IntegrationOptions, IntegrationRequest, ProjectHarnesses,
-};
+use crate::configuration::{ConfigError, ConfigText, Configuration};
+use crate::information::{ProjectInfo, Version, VersionError};
+use crate::integration::{InstructionError, IntegrationOptions, ProjectHarnesses};
 use bundle::Bundle;
 use std::fs;
 use std::io;
@@ -16,7 +14,7 @@ pub enum InstallError {
     #[error("filesystem operation failed: {0}")]
     Io(#[from] io::Error),
     #[error(
-        "missing required framework entry: {path}; the installed .meta-cortex directory is incomplete or from a different framework version. To replace it, back up and move the existing .meta-cortex directory out of the installation path, run meta-cortex init again, then review and reapply your configuration changes"
+        "missing required framework entry: {path}; the installed .meta-cortex directory is incomplete or from a different framework version. To replace it, back up and move the existing .meta-cortex directory out of the installation path, run framework.init through meta-cortex run again, then review and reapply your configuration changes"
     )]
     MissingFrameworkEntry {
         path: PathBuf,
@@ -27,10 +25,8 @@ pub enum InstallError {
     Configuration(#[from] ConfigError),
     #[error(transparent)]
     Version(#[from] VersionError),
-    #[error("Meta-Cortex is not initialized in {0}; run meta-cortex init")]
+    #[error("Meta-Cortex is not initialized in {0}; run framework.init through meta-cortex run")]
     NotInitialized(PathBuf),
-    #[error("could not serialize project information: {0}")]
-    Info(#[from] serde_saphyr::SerializeError),
     #[error("expected an existing project directory: {0}")]
     InvalidProject(PathBuf),
     #[error("refusing to overwrite differing content or a symbolic link: {0}")]
@@ -95,7 +91,7 @@ impl Project {
         .inspect()?;
         Ok(ProjectInfo {
             root: self.root,
-            version: FrameworkVersion::read(&destination)?,
+            version: Version::read(&destination)?,
             configuration,
             integrations,
         })
@@ -123,22 +119,18 @@ impl Project {
 }
 
 pub struct InitRequest {
-    pub mode: InitMode,
     pub integration: IntegrationOptions,
 }
 
 impl Installation {
     pub fn install(self, request: InitRequest) -> Result<InstalledProject, InstallError> {
         let destination = self.project.root.join(".meta-cortex");
-        let integration = request.integration.plan(IntegrationRequest {
-            project: ProjectHarnesses {
-                root: self.project.root.clone(),
-            },
-            mode: request.mode,
+        let integration = request.integration.plan(ProjectHarnesses {
+            root: self.project.root.clone(),
         })?;
         match self.bundle {
             BundleState::Absent => {
-                let configuration = ConfigText::try_from(request.mode.configure()?)?;
+                let configuration = ConfigText::try_from(Configuration::bundled()?)?;
                 Bundle {
                     directory: &Bundle::FRAMEWORK,
                     destination,
@@ -163,7 +155,6 @@ impl Installation {
 #[cfg(test)]
 mod tests {
     use super::{InitRequest, InstallError, Project};
-    use crate::configuration::InitMode;
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
@@ -185,7 +176,6 @@ mod tests {
             Project::open(self.directory.path().to_path_buf())?
                 .prepare()?
                 .install(InitRequest {
-                    mode: InitMode::Bundled,
                     integration: IntegrationOptions {
                         harness: HarnessChoice::Selected(Harness::Codex),
                         instructions: InstructionAction::Write,
@@ -253,7 +243,6 @@ mod tests {
             let agents = self.directory.path().join("AGENTS.md");
             fs::remove_file(&agents)?;
             let result = prepared.install(InitRequest {
-                mode: InitMode::Bundled,
                 integration: IntegrationOptions {
                     harness: HarnessChoice::Selected(Harness::Codex),
                     instructions: InstructionAction::Write,
@@ -308,9 +297,10 @@ mod tests {
             self.install()?;
             let version = self.directory.path().join(".meta-cortex/.version");
             fs::remove_file(&version)?;
-            // Legacy installs with the same framework can still repair their entry point.
+            // Missing metadata is an incomplete installation, not a supported version.
             fs::remove_file(self.directory.path().join("AGENTS.md"))?;
-            self.install()?;
+            assert!(matches!(self.install(), Err(InstallError::Version(_))));
+            assert!(!self.directory.path().join("AGENTS.md").exists());
             assert!(!version.exists());
             fs::write(&version, "0.0.1")?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
@@ -328,7 +318,7 @@ mod tests {
         fn rejects_invalid_entry(self) -> Result<(), InstallError> {
             fs::write(
                 self.directory.path().join("AGENTS.md"),
-                "<!-- meta-cortex:start -->",
+                "---\nmeta-cortex: instructions\n---\n",
             )?;
             assert!(matches!(
                 self.install(),
@@ -409,7 +399,7 @@ mod tests {
         Fixture::create()?.rejects_linked_metadata()
     }
     #[test]
-    fn distinguishes_legacy_mismatched_and_invalid_versions() -> Result<(), InstallError> {
+    fn rejects_missing_mismatched_and_invalid_versions() -> Result<(), InstallError> {
         Fixture::create()?.handles_version_metadata()
     }
 }

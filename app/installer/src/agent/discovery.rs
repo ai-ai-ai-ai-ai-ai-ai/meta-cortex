@@ -64,14 +64,6 @@ enum ToolProtocol {
 }
 
 #[derive(Clone, Copy, Display)]
-enum LegacyCommand {
-    #[display("init")]
-    Init,
-    #[display("info")]
-    Info,
-}
-
-#[derive(Clone, Copy, Display)]
 enum DiscoveryCommand {
     #[display("list")]
     List,
@@ -91,8 +83,6 @@ pub(super) struct TransportGuide {
     exchange: ExchangeLifecycle,
     protocol: ToolProtocol,
     exits: ExitBehavior,
-    installation: LegacyCommand,
-    inspection: LegacyCommand,
     command_discovery: DiscoveryCommand,
     cli_help: DiscoveryCommand,
 }
@@ -107,8 +97,6 @@ impl TransportGuide {
             success: AgentExit::Success,
             structured_error: AgentExit::StructuredError,
         },
-        installation: LegacyCommand::Init,
-        inspection: LegacyCommand::Info,
         command_discovery: DiscoveryCommand::List,
         cli_help: DiscoveryCommand::Help,
     };
@@ -118,13 +106,11 @@ impl fmt::Display for TransportGuide {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
-            "{}; {}. Exit {}: success; exit {}: structured error. Legacy {}/{} remain available; {}/{} discover the CLI.",
+            "{}; {}. Exit {}: success; exit {}: structured error. {}/{} discover the CLI.",
             self.exchange,
             self.protocol,
             u8::from(self.exits.success),
             u8::from(self.exits.structured_error),
-            self.installation,
-            self.inspection,
             self.command_discovery,
             self.cli_help,
         )

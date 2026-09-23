@@ -31,3 +31,12 @@ From `app/`, run `cargo fmt --all --check`, `cargo check --locked --workspace --
 `cargo clippy --locked --workspace --all-targets -- -D warnings`, and
 `cargo test --locked --workspace` before completing Rust changes. Measure combined
 coverage with `cargo llvm-cov --locked --workspace --fail-under-lines 90`.
+
+## Current interface
+
+This project does not retain legacy CLI aliases, interactive setup paths, or
+old instruction formats for hypothetical compatibility. `list` discovers commands;
+`run` executes typed YAML requests, including framework initialization and inspection.
+Remove superseded paths and update their callers, tests, and documentation together.
+Keep the explicitly required Workbench schema-version and migration support;
+add other compatibility mechanisms only for a demonstrated supported contract.

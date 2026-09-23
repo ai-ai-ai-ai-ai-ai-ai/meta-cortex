@@ -4,7 +4,6 @@ use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Options, Parser, Tag};
 use pulldown_cmark_to_cmark::cmark;
 use serde::Deserialize;
 use serde_saphyr::Options as YamlOptions;
-use std::ops::Range;
 
 pub struct MarkdownInstructions<'a> {
     pub text: &'a str,
@@ -24,7 +23,6 @@ enum CursorFrontmatter {
 enum ManagedBlock {
     Absent,
     Present,
-    Legacy(Range<usize>),
 }
 
 enum Frontmatter {
@@ -73,9 +71,6 @@ impl Frontmatter {
 }
 
 impl MarkdownInstructions<'_> {
-    const START: &'static str = "<!-- meta-cortex:start -->";
-    const END: &'static str = "<!-- meta-cortex:end -->";
-
     fn parser(&self) -> Parser<'_> {
         Parser::new_ext(self.text, Options::ENABLE_YAML_STYLE_METADATA_BLOCKS)
     }
@@ -134,7 +129,6 @@ impl MarkdownInstructions<'_> {
     }
 
     fn managed_block(&self) -> Result<ManagedBlock, InstructionError> {
-        let mut legacy = Vec::new();
         let mut sections = Vec::new();
         let mut excluded = Vec::new();
         let mut labels = Vec::new();
@@ -186,16 +180,9 @@ impl MarkdownInstructions<'_> {
                     self.validate_body(&self.text[body_start..body_start + closing.start])?;
                     sections.push(range.start..body_start + closing.end);
                 }
-                Event::Html(_) | Event::InlineHtml(_) => {
-                    for marker in [Self::START, Self::END] {
-                        legacy.extend(
-                            self.text[range.clone()]
-                                .match_indices(marker)
-                                .map(|(offset, _)| (marker, range.start + offset)),
-                        );
-                    }
-                }
                 Event::Start(_)
+                | Event::Html(_)
+                | Event::InlineHtml(_)
                 | Event::End(_)
                 | Event::Text(_)
                 | Event::InlineMath(_)
@@ -212,14 +199,9 @@ impl MarkdownInstructions<'_> {
         {
             return Err(InstructionError::InvalidEntry(self.target.path()));
         }
-        legacy.sort_by_key(|(_, offset)| *offset);
-        match (sections.as_slice(), legacy.as_slice()) {
-            ([], []) => Ok(ManagedBlock::Absent),
-            ([_], []) => Ok(ManagedBlock::Present),
-            ([], [(Self::START, start), (Self::END, end)]) if start < end => {
-                self.validate_body(&self.text[start + Self::START.len()..*end])?;
-                Ok(ManagedBlock::Legacy(*start..end + Self::END.len()))
-            }
+        match sections.as_slice() {
+            [] => Ok(ManagedBlock::Absent),
+            [_] => Ok(ManagedBlock::Present),
             _ => Err(InstructionError::InvalidEntry(self.target.path())),
         }
     }
@@ -227,11 +209,6 @@ impl MarkdownInstructions<'_> {
     pub fn prepare(&self) -> Result<String, InstructionError> {
         match self.managed_block()? {
             ManagedBlock::Present => Ok(self.text.to_owned()),
-            ManagedBlock::Legacy(range) => {
-                let mut contents = self.text.to_owned();
-                contents.replace_range(range, &self.target.entry()?);
-                Ok(contents)
-            }
             ManagedBlock::Absent => {
                 let contents = format!(
                     "{}{}{}\n",
@@ -245,9 +222,7 @@ impl MarkdownInstructions<'_> {
                 };
                 match appended.managed_block()? {
                     ManagedBlock::Present => Ok(contents),
-                    ManagedBlock::Absent | ManagedBlock::Legacy(_) => {
-                        Err(InstructionError::InvalidEntry(self.target.path()))
-                    }
+                    ManagedBlock::Absent => Err(InstructionError::InvalidEntry(self.target.path())),
                 }
             }
         }
@@ -276,7 +251,7 @@ mod tests {
             let example = target.entry()?;
             for text in [
                 format!("# 雪\r\n```md\n{example}\n```\n"),
-                "Example: `<!-- meta-cortex:start -->` and `<!-- meta-cortex:end -->`\n".to_owned(),
+                "Example: `meta-cortex: instructions`\n".to_owned(),
                 format!("    {}\n", example.replace('\n', "\n    ")),
                 format!(
                     "---\nexample: |\n  {}\n---\n",
@@ -302,7 +277,6 @@ mod tests {
             }
             for text in [
                 format!("{example}\n{example}"),
-                "<!-- meta-cortex:end -->\n<!-- meta-cortex:start -->".to_owned(),
                 "```md\nunclosed".to_owned(),
             ] {
                 assert!(
@@ -317,24 +291,18 @@ mod tests {
             Ok(())
         }
 
-        fn migrates_legacy_blocks(self) -> Result<(), InstructionError> {
+        fn preserves_sections_and_surroundings(self) -> Result<(), InstructionError> {
             for harness in [Harness::Codex, Harness::Cursor] {
                 let target = ProjectHarnesses {
                     root: self.root.path().to_path_buf(),
                 }
                 .target(harness)?;
                 let entry = target.entry()?;
-                let body = entry
-                    .trim_start_matches("---\nmeta-cortex: instructions\n---")
-                    .trim_end_matches("---")
-                    .trim();
                 let prefix = "# User rules\n\n---\n\nKeep this separator.\n\n";
                 let suffix = "\n\n## More guidance\nKeep this too.\n";
-                let old = format!(
-                    "{prefix}<!-- meta-cortex:start -->\n{body}\n<!-- meta-cortex:end -->{suffix}"
-                );
+                let original = format!("{prefix}{entry}{suffix}");
                 let updated = MarkdownInstructions {
-                    text: &old,
+                    text: &original,
                     target: &target,
                 }
                 .prepare()?;
@@ -358,7 +326,7 @@ mod tests {
                     crlf
                 );
                 for broken in [
-                    format!("{old}\n{}", target.entry()?),
+                    format!("{original}\n{}", target.entry()?),
                     target.entry()?.replace("Read and follow", "Changed"),
                     format!("{}broken", target.entry()?),
                     "雪\nmeta-cortex: instructions\n".to_owned(),
@@ -437,9 +405,8 @@ mod tests {
     }
 
     #[test]
-    fn yaml_sections_replace_legacy_blocks_and_preserve_surroundings()
-    -> Result<(), InstructionError> {
-        Fixture::create()?.migrates_legacy_blocks()
+    fn yaml_sections_preserve_surroundings() -> Result<(), InstructionError> {
+        Fixture::create()?.preserves_sections_and_surroundings()
     }
 
     #[test]

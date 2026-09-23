@@ -1,7 +1,4 @@
 use thiserror::Error;
-mod selection;
-
-pub use selection::InitMode;
 
 use derive_more::{Display, From};
 use serde::{Deserialize, Serialize};
@@ -15,16 +12,6 @@ pub enum ConfigError {
     Encode(#[from] ser::Error),
     #[error("{model} does not support reasoning effort {effort}")]
     UnsupportedEffort { model: Model, effort: Effort },
-    #[error(
-        "interactive model selection requires a terminal; omit --interactive to use bundled settings"
-    )]
-    TerminalRequired,
-    #[error("initialization cancelled; no project files were written")]
-    Cancelled,
-    #[error("model selection failed: {0}")]
-    Prompt(#[from] dialoguer::Error),
-    #[error("the selected item is not in the model menu")]
-    InvalidSelection,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Display)]
@@ -47,6 +34,7 @@ pub enum Model {
 }
 
 impl Model {
+    #[cfg(test)]
     pub const ALL: [Self; 5] = [Self::Luna, Self::Terra, Self::Sol, Self::Luna6, Self::Astra];
 
     pub fn efforts(self) -> &'static [Effort] {

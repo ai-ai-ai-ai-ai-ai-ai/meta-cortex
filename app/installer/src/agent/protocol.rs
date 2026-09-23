@@ -1,5 +1,4 @@
 use super::AgentError;
-use crate::configuration::InitMode;
 use crate::information::InfoReport;
 use crate::installation::{InitRequest, Project};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
@@ -133,7 +132,6 @@ impl Request {
                 let project = Project::open(self.project)?
                     .prepare()?
                     .install(InitRequest {
-                        mode: InitMode::Bundled,
                         integration: input.into(),
                     })?;
                 Ok(Reply::FrameworkInitialized {

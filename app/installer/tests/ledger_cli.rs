@@ -609,7 +609,7 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
     );
     assert_eq!(
         catalog.transport,
-        TransportGuide::from("One YAML request and response per process; local tool discovery/calls, no MCP server or JSON-RPC session. Exit 0: success; exit 2: structured error. Legacy init/info remain available; list/--help discover the CLI.".to_owned())
+        TransportGuide::from("One YAML request and response per process; local tool discovery/calls, no MCP server or JSON-RPC session. Exit 0: success; exit 2: structured error. list/--help discover the CLI.".to_owned())
     );
     assert_eq!(catalog.commands.len(), 11);
     assert!(
