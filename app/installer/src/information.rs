@@ -179,6 +179,12 @@ mod tests {
     use super::{Version, VersionParse, VersionTextError};
 
     #[test]
+    fn current_version_matches_cargo_package_version() {
+        // Cargo resolves package.version, including workspace inheritance.
+        assert_eq!(Version::CURRENT.as_str(), env!("CARGO_PKG_VERSION"));
+    }
+
+    #[test]
     fn installed_version_classifies_text_and_preserves_wire_format() -> serde_json::Result<()> {
         for text in ["", " ", "\n\t"] {
             assert_eq!(
@@ -206,7 +212,6 @@ mod tests {
             );
         }
         assert_eq!(Version::CURRENT, Version::V0_6_2);
-        assert_eq!(Version::CURRENT.as_str(), env!("CARGO_PKG_VERSION"));
         let text = Version::V0_6_2.as_str().to_owned();
         assert_eq!(
             VersionParse::from(text.clone()),
