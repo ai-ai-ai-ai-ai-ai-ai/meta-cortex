@@ -212,12 +212,38 @@ write the error to stderr, and leave stdout empty.
 
 Give your AI host a development task in the initialized project.
 In Codex, the current agent asks at the start of every new session whether to use
-`single_agent` (this thread and agent) or `multi_agent` (Gizmo coordination).
-Tasks and follow-ups in that conversation retain the choice. Configuration uses native
+`single_agent` (this thread and agent) or `multi_agent` (Gizmo coordination), and
+whether delivery should `create_pr` (recommended) or stay `local_only`.
+Tasks and follow-ups in that conversation retain both choices. Configuration uses native
 questions and the library's Bun helper; see the
 [setup and configuration instructions](cortex/README.md#execution-configuration).
 Read the [framework guide](cortex/README.md) for project context, agent
 coordination, model configuration, and agent skills.
+
+## Develop the application
+
+The [Rust workspace](app/Cargo.toml) contains two crates:
+
+- [installer](app/installer): the `meta-cortex` executable, framework installation,
+  command discovery, and typed YAML transport.
+- [workbench](app/workbench): the `meta-cortex-workbench` library for durable agent
+  tasks, claims, progress, Git checkpoints, and per-feature Turso ledgers. It owns
+  database migrations and storage tests; installer uses its public API.
+
+```sh
+cd app
+cargo fmt --all --check
+cargo check --locked --workspace --all-targets
+cargo clippy --locked --workspace --all-targets -- -D warnings
+cargo test --locked --workspace
+cargo llvm-cov --locked --workspace --fail-under-lines 90
+cargo build --release --locked --workspace
+```
+
+Run `cargo run -p meta-cortex -- list` from `app/` to inspect agent commands.
+The binary is built at `app/target/release/meta-cortex`. Release configuration
+lives in [app/dist-workspace.toml](app/dist-workspace.toml); only the executable
+is distributed. The [framework source](cortex/) remains at the repository root.
 
 ## Update a project
 

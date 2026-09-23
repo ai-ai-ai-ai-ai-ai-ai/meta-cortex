@@ -123,7 +123,7 @@ impl AgentSettings {
 
 impl Configuration {
     pub fn bundled() -> Result<Self, ConfigError> {
-        ConfigText::from(include_str!("../../../cortex/meta-cortex.toml").to_owned()).parse()
+        ConfigText::from(include_str!("../../../../cortex/meta-cortex.toml").to_owned()).parse()
     }
 
     fn validate(self) -> Result<Self, ConfigError> {

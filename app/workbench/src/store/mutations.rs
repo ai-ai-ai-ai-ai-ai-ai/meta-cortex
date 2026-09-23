@@ -1,12 +1,10 @@
 use super::{Documents, Ledger};
-use crate::ledger::LedgerError;
-use crate::ledger::git::{CheckpointCheck, IntegrationCheck, ReadyCheck, Repository};
-use crate::ledger::model::{Checkpoint, ClaimAt, Event, EventKind, Feature, Phase, Task, WorkerAt};
-use crate::ledger::request::{
-    ClaimTask, CoordinatorAction, CoordinatorUpdate, WorkerAction, WorkerUpdate,
-};
-use crate::ledger::values::{Note, Timestamp};
-use crate::ledger::versions::RecordVersion;
+use crate::LedgerError;
+use crate::git::{CheckpointCheck, IntegrationCheck, ReadyCheck, Repository};
+use crate::model::{Checkpoint, ClaimAt, Event, EventKind, Feature, Phase, Task, WorkerAt};
+use crate::request::{ClaimTask, CoordinatorAction, CoordinatorUpdate, WorkerAction, WorkerUpdate};
+use crate::values::{Note, Timestamp};
+use crate::versions::RecordVersion;
 use turso::transaction::TransactionBehavior;
 
 struct TaskChange<'a> {

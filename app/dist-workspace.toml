@@ -12,6 +12,6 @@ tap = "ai-ai-ai-ai-ai-ai-ai/homebrew-tap"
 publish-jobs = []
 pr-run-mode = "plan"
 
-# Release workflow runs dist from installer/; retain its directory adjustments.
+# Release workflow runs dist from app/; retain its directory adjustments.
 allow-dirty = ["ci"]
 include = ["../LICENSE", "../README.md"]

@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str;
 
+#[derive(Clone)]
 pub struct Repository {
     pub common_dir: PathBuf,
 }

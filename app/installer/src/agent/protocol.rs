@@ -3,15 +3,13 @@ use crate::configuration::InitMode;
 use crate::information::InfoReport;
 use crate::installation::{InitRequest, Project};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
-use crate::ledger::LedgerError;
-use crate::ledger::git::Repository;
-use crate::ledger::model::{Event, Task, TaskView};
-use crate::ledger::request::{
+use meta_cortex_workbench::model::{Event, Task, TaskView};
+use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery, WorkerUpdate,
 };
-use crate::ledger::store::{InitializeLedger, Ledger, LedgerInfo, OpenLedger};
-use crate::ledger::values::FeatureId;
-use crate::ledger::versions::{ProtocolVersion, StorageVersion};
+use meta_cortex_workbench::values::FeatureId;
+use meta_cortex_workbench::versions::ProtocolVersion;
+use meta_cortex_workbench::{Ledger, LedgerError, LedgerInfo, Workbench};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -145,29 +143,12 @@ impl Request {
                 Project::open(self.project)?.info()?,
             ))),
             Operation::Initialize(input) => {
-                let repository = Repository::discover(&self.project)?;
-                Ok(Reply::Ledger(
-                    Ledger::initialize(InitializeLedger { repository, input })
-                        .await?
-                        .info(),
-                ))
+                let workbench = Workbench::discover(&self.project)?;
+                Ok(Reply::Ledger(workbench.initialize(input).await?.info()))
             }
             Operation::Features(_) => {
-                let repository = Repository::discover(&self.project)?;
-                let mut ledgers = Vec::new();
-                for feature in repository.features()? {
-                    ledgers.push(
-                        Ledger::open(OpenLedger {
-                            repository: Repository {
-                                common_dir: repository.common_dir.clone(),
-                            },
-                            feature,
-                        })
-                        .await?
-                        .info(),
-                    );
-                }
-                Ok(Reply::Features(ledgers))
+                let workbench = Workbench::discover(&self.project)?;
+                Ok(Reply::Features(workbench.features().await?))
             }
             operation @ (Operation::Status(_)
             | Operation::Create(_)
@@ -176,13 +157,9 @@ impl Request {
             | Operation::Claim(_)
             | Operation::Update(_)
             | Operation::Coordinate(_)) => {
-                let repository = Repository::discover(&self.project)?;
+                let workbench = Workbench::discover(&self.project)?;
                 let feature = operation.feature()?.clone();
-                let mut ledger = Ledger::open(OpenLedger {
-                    repository,
-                    feature,
-                })
-                .await?;
+                let mut ledger = workbench.open(feature).await?;
                 operation.execute(&mut ledger).await
             }
         }
@@ -210,11 +187,7 @@ impl Operation {
     async fn execute(self, ledger: &mut Ledger) -> Result<Reply, AgentError> {
         match self {
             Self::Status(_) => Ok(Reply::Status {
-                ledger: LedgerInfo {
-                    path: ledger.path.clone(),
-                    feature: ledger.feature.clone(),
-                    storage_version: StorageVersion::CURRENT,
-                },
+                ledger: ledger.info(),
                 tasks: ledger.status().await?,
             }),
             Self::Create(input) => Ok(Reply::Task(ledger.create(input).await?)),

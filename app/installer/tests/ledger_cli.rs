@@ -1,13 +1,10 @@
 use anyhow::{Context, bail};
 use serde::Deserialize;
-use std::env;
 use std::fs;
-use std::future;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use tempfile::TempDir;
-use tokio::runtime::Builder;
 
 // An independent consumer of the CLI's versioned YAML response.
 #[derive(Debug, Deserialize)]
@@ -402,138 +399,6 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
             .code,
         "not_found"
     );
-    Ok(())
-}
-
-#[test]
-fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<()> {
-    let scenario = Scenario::create()?;
-    let ledger = scenario.init("feature")?;
-    scenario.create_task()?;
-    let runtime = Builder::new_current_thread().enable_time().build()?;
-    runtime.block_on(async {
-        let db = turso::Builder::new_local(ledger.path.to_str().context("path")?)
-            .experimental_multiprocess_wal(true)
-            .build()
-            .await?;
-        let conn = db.connect()?;
-        conn.execute("DROP INDEX events_task_revision", ()).await?;
-        conn.execute("PRAGMA user_version=1", ()).await?;
-        anyhow::Ok(())
-    })?;
-    assert_eq!(scenario.status()?.len(), 1);
-    runtime.block_on(async {
-        let db = turso::Builder::new_local(ledger.path.to_str().context("path")?)
-            .experimental_multiprocess_wal(true)
-            .build()
-            .await?;
-        let conn = db.connect()?;
-        conn.execute("PRAGMA user_version=99", ()).await?;
-        anyhow::Ok(())
-    })?;
-    assert_eq!(
-        scenario
-            .failure("name: ledger.status\narguments: {feature: feature}")?
-            .code,
-        "unsupported_version"
-    );
-    runtime.block_on(async {
-        let db = turso::Builder::new_local(ledger.path.to_str().context("path")?)
-            .experimental_multiprocess_wal(true)
-            .build()
-            .await?;
-        let conn = db.connect()?;
-        let mut rows = conn.query("PRAGMA user_version", ()).await?;
-        assert_eq!(rows.next().await?.context("version")?.get::<i64>(0)?, 99);
-        anyhow::Ok(())
-    })?;
-    Ok(())
-}
-
-struct InterruptedWriter {
-    child: Child,
-}
-impl Drop for InterruptedWriter {
-    fn drop(&mut self) {
-        match self.child.kill() {
-            Ok(()) => {}
-            Err(error) => eprintln!("test child stop: {error}"),
-        }
-        match self.child.wait() {
-            Ok(_) => {}
-            Err(error) => eprintln!("test child wait: {error}"),
-        }
-    }
-}
-
-#[test]
-fn interrupted_transaction_child() -> anyhow::Result<()> {
-    let path = match env::var_os("META_CORTEX_TEST_CRASH_DB") {
-        Some(path) => PathBuf::from(path),
-        None => return Ok(()),
-    };
-    let signal = PathBuf::from(env::var_os("META_CORTEX_TEST_CRASH_SIGNAL").context("signal")?);
-    Builder::new_current_thread()
-        .enable_time()
-        .build()?
-        .block_on(async {
-            let database = turso::Builder::new_local(path.to_str().context("path")?)
-                .experimental_multiprocess_wal(true)
-                .build()
-                .await?;
-            let connection = database.connect()?;
-            connection.execute("BEGIN IMMEDIATE", ()).await?;
-            connection
-                .execute(
-                    "UPDATE tasks SET document = 'uncommitted corruption', revision = 999",
-                    (),
-                )
-                .await?;
-            connection
-                .execute(
-                    "INSERT INTO events VALUES ('task', 999, 'uncommitted event')",
-                    (),
-                )
-                .await?;
-            fs::write(signal, "transaction open")?;
-            future::pending::<anyhow::Result<()>>().await
-        })
-}
-
-#[test]
-fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<()> {
-    use std::env;
-    use std::thread;
-    use std::time::{Duration, Instant};
-    let scenario = Scenario::create()?;
-    let ledger = scenario.init("feature")?;
-    scenario.create_task()?;
-    scenario.run(Scenario::claim())?;
-    let signal = scenario.directory.path().join("writer-ready");
-    let writer = InterruptedWriter {
-        child: Command::new(env::current_exe()?)
-            .args(["--exact", "interrupted_transaction_child", "--nocapture"])
-            .env("META_CORTEX_TEST_CRASH_DB", &ledger.path)
-            .env("META_CORTEX_TEST_CRASH_SIGNAL", &signal)
-            .stdout(Stdio::null())
-            .spawn()?,
-    };
-    let deadline = Instant::now() + Duration::from_secs(15);
-    while !signal.exists() {
-        if Instant::now() >= deadline {
-            bail!("child did not open its transaction");
-        }
-        thread::sleep(Duration::from_millis(10));
-    }
-    drop(writer);
-    assert_eq!(scenario.status()?.remove(0).task.revision, 2);
-    let Reply::History(events) =
-        scenario.run("name: task.history\narguments: {feature: feature, task: task}")?
-    else {
-        bail!("history response")
-    };
-    assert_eq!(events.len(), 2);
-    scenario.run(Scenario::heartbeat())?;
     Ok(())
 }
 

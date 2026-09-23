@@ -288,10 +288,8 @@ impl Task {
 #[cfg(test)]
 mod tests {
     use super::{ClaimAt, LeaseHealth, Task, TaskState, WorkerAt};
-    use crate::ledger::LedgerError;
-    use crate::ledger::values::{
-        AgentId, Attempt, CommitId, LeaseSeconds, Note, Revision, Timestamp,
-    };
+    use crate::LedgerError;
+    use crate::values::{AgentId, Attempt, CommitId, LeaseSeconds, Note, Revision, Timestamp};
 
     struct Scenario;
 

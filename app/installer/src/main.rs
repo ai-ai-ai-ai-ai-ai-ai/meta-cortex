@@ -3,7 +3,6 @@ mod configuration;
 mod information;
 mod installation;
 mod integration;
-mod ledger;
 
 use agent::AgentCli;
 use clap::builder::{BoolishValueParser, TypedValueParser};

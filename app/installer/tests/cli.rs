@@ -287,7 +287,7 @@ impl CliScenario {
             );
             let actual: ReportModels = toml::from_str(&fs::read_to_string(&config_path)?)?;
             let expected: ReportModels =
-                toml::from_str(include_str!("../../cortex/meta-cortex.toml"))?;
+                toml::from_str(include_str!("../../../cortex/meta-cortex.toml"))?;
             assert_eq!(actual, expected);
             assert_eq!(
                 fs::read_to_string(self.project.path().join("AGENTS.md"))?,

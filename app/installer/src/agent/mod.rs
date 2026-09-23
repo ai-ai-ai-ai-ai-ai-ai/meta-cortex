@@ -2,9 +2,9 @@ mod catalog;
 mod protocol;
 
 use crate::installation::InstallError;
-use crate::ledger::LedgerError;
-use crate::ledger::versions::ProtocolVersion;
 use catalog::Catalog;
+use meta_cortex_workbench::LedgerError;
+use meta_cortex_workbench::versions::ProtocolVersion;
 use protocol::{Reply, Request};
 use serde::Serialize;
 use std::fs;

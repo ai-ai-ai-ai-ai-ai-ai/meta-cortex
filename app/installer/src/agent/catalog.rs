@@ -1,6 +1,6 @@
 use super::AgentError;
 use super::protocol::Request;
-use crate::ledger::versions::ProtocolVersion;
+use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
 use serde::Serialize;
 

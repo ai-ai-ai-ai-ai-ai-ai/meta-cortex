@@ -12,7 +12,7 @@ pub(super) struct Bundle<'a> {
 
 impl Bundle<'_> {
     pub(super) const FRAMEWORK: Dir<'static> = include_dir!("$META_CORTEX_BUNDLE");
-    const LICENSE: &'static [u8] = include_bytes!("../../../LICENSE");
+    const LICENSE: &'static [u8] = include_bytes!("../../../../LICENSE");
 
     pub(super) fn install(self, configuration: ConfigText) -> Result<(), InstallError> {
         // Claim the destination without replacing an existing entry.

@@ -1309,18 +1309,31 @@ dependencies = [
  "derive_more",
  "dialoguer",
  "include_dir",
+ "meta-cortex-workbench",
  "pulldown-cmark",
  "pulldown-cmark-to-cmark",
  "rexpect",
  "schemars",
  "serde",
  "serde-saphyr",
- "serde_json",
  "tempfile",
  "thiserror",
  "tokio",
  "toml",
- "tracing",
+]
+
+[[package]]
+name = "meta-cortex-workbench"
+version = "0.6.2"
+dependencies = [
+ "anyhow",
+ "derive_more",
+ "schemars",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
  "turso",
 ]
 

@@ -19,16 +19,16 @@ use turso::{Builder, Connection, params};
 
 pub struct Ledger {
     connection: Connection,
-    pub feature: Feature,
-    pub path: PathBuf,
+    feature: Feature,
+    path: PathBuf,
     repository: Repository,
 }
 
-pub struct OpenLedger {
+pub(crate) struct OpenLedger {
     pub repository: Repository,
     pub feature: FeatureId,
 }
-pub struct InitializeLedger {
+pub(crate) struct InitializeLedger {
     pub repository: Repository,
     pub input: InitFeature,
 }
@@ -59,7 +59,7 @@ impl Ledger {
         Ok(connection)
     }
 
-    pub async fn initialize(request: InitializeLedger) -> Result<Self, LedgerError> {
+    pub(crate) async fn initialize(request: InitializeLedger) -> Result<Self, LedgerError> {
         let feature = Feature {
             version: RecordVersion::CURRENT,
             id: request.input.feature,
@@ -95,7 +95,7 @@ impl Ledger {
         })
     }
 
-    pub async fn open(request: OpenLedger) -> Result<Self, LedgerError> {
+    pub(crate) async fn open(request: OpenLedger) -> Result<Self, LedgerError> {
         let path = request.repository.ledger_path(&request.feature);
         if !path.is_file() {
             return Err(LedgerError::Uninitialized);
@@ -119,10 +119,10 @@ impl Ledger {
         })
     }
 
-    pub fn info(self) -> LedgerInfo {
+    pub fn info(&self) -> LedgerInfo {
         LedgerInfo {
-            path: self.path,
-            feature: self.feature,
+            path: self.path.clone(),
+            feature: self.feature.clone(),
             storage_version: StorageVersion::CURRENT,
         }
     }
