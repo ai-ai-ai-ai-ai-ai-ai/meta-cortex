@@ -22,6 +22,7 @@ struct EventDetails {
 impl Ledger {
     pub async fn claim(&mut self, input: ClaimTask) -> Result<Task, LedgerError> {
         let tx = self
+            .state
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
@@ -54,6 +55,7 @@ impl Ledger {
 
     pub async fn update(&mut self, input: WorkerUpdate) -> Result<Task, LedgerError> {
         let tx = self
+            .state
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
@@ -63,7 +65,7 @@ impl Ledger {
         let change = TaskChange {
             task,
             repository: &self.repository,
-            feature: &self.feature,
+            feature: &self.state.feature,
             now: Timestamp::now()?,
         };
         let task = documents.save(change.worker(input)?).await?;
@@ -73,6 +75,7 @@ impl Ledger {
 
     pub async fn coordinate(&mut self, input: CoordinatorUpdate) -> Result<Task, LedgerError> {
         let tx = self
+            .state
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
@@ -82,7 +85,7 @@ impl Ledger {
         let change = TaskChange {
             task,
             repository: &self.repository,
-            feature: &self.feature,
+            feature: &self.state.feature,
             now: Timestamp::now()?,
         };
         let task = documents.save(change.coordinate(input)?).await?;

@@ -1,3 +1,4 @@
+mod lifecycle;
 mod mutations;
 mod schema;
 mod sql;
@@ -9,22 +10,45 @@ use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskState, TaskV
 use super::request::{CreateTask, InitFeature};
 use super::values::{Attempt, FeatureId, Revision, TaskId, Timestamp};
 use super::versions::{RecordVersion, StorageVersion};
-use schema::{EventTable, FeatureTable, LedgerSchema, TaskTable};
+use schema::{EventTable, FeatureTable, TaskTable};
 use sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
 use serde::Serialize;
 use sql::SqlStatement;
 use std::collections::BTreeSet;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::path::PathBuf;
+use turso::Connection;
 use turso::transaction::TransactionBehavior;
-use turso::{Builder, Connection};
 
-pub struct Ledger {
-    connection: Connection,
-    feature: Feature,
+/// A feature ledger whose task operations require a loaded feature.
+///
+/// Preparation consumes each internal stage: located, connected, schema ready,
+/// then feature loaded. Workbench returns only the fully prepared default state.
+/// A loaded ledger cannot reconnect or rerun preparation:
+///
+/// ```compile_fail
+/// use meta_cortex_workbench::Ledger;
+/// async fn reconnect(ledger: Ledger) {
+///     ledger.connect().await;
+/// }
+/// ```
+///
+/// ```compile_fail
+/// use meta_cortex_workbench::Ledger;
+/// async fn remigrate(ledger: Ledger) {
+///     ledger.migrate().await;
+/// }
+/// ```
+pub struct Ledger<State = FeatureLoaded> {
+    state: State,
     path: PathBuf,
     repository: Repository,
+}
+
+/// Successfully migrated storage with its feature record loaded and validated.
+/// Constructed only by the ledger preparation transitions.
+pub struct FeatureLoaded {
+    connection: Connection,
+    feature: Feature,
 }
 
 pub(crate) struct OpenLedger {
@@ -48,104 +72,21 @@ struct Documents<'a> {
 }
 
 impl Ledger {
-    async fn connect(path: &Path) -> Result<Connection, LedgerError> {
-        let path = path
-            .to_str()
-            .ok_or(LedgerError::Invalid("ledger path must be UTF-8"))?;
-        let database = Builder::new_local(path)
-            .experimental_multiprocess_wal(true)
-            .build()
-            .await?;
-        let mut connection = database.connect()?;
-        connection.busy_timeout(Duration::from_secs(10))?;
-        LedgerSchema::migrate(&mut connection).await?;
-        Ok(connection)
-    }
-
-    pub(crate) async fn initialize(request: InitializeLedger) -> Result<Self, LedgerError> {
-        let feature = Feature {
-            version: RecordVersion::CURRENT,
-            id: request.input.feature,
-            objective: request.input.objective,
-            branch: request.input.branch,
-            worktree: request.input.worktree.canonicalize()?,
-        };
-        request.repository.require_feature(&feature)?;
-        let path = request.repository.ledger_path(&feature.id);
-        fs::create_dir_all(
-            path.parent()
-                .ok_or(LedgerError::Invalid("ledger path has no parent"))?,
-        )?;
-        let mut connection = Self::connect(&path).await?;
-        let tx = connection
-            .transaction_with_behavior(TransactionBehavior::Immediate)
-            .await?;
-        SqlStatement::build(
-            Query::insert()
-                .into_table(FeatureTable::Table)
-                .columns([FeatureTable::Singleton, FeatureTable::Document])
-                .values([1.into(), serde_json::to_string(&feature)?.into()])?
-                .on_conflict(
-                    OnConflict::column(FeatureTable::Singleton)
-                        .do_nothing()
-                        .to_owned(),
-                )
-                .to_owned(),
-        )?
-        .execute(&tx)
-        .await?;
-        let stored = Documents { connection: &tx }.feature().await?;
-        if stored != feature {
-            return Err(LedgerError::AlreadyExists);
-        }
-        tx.commit().await?;
-        Ok(Self {
-            connection,
-            feature,
-            path,
-            repository: request.repository,
-        })
-    }
-
-    pub(crate) async fn open(request: OpenLedger) -> Result<Self, LedgerError> {
-        let path = request.repository.ledger_path(&request.feature);
-        if !path.is_file() {
-            return Err(LedgerError::Uninitialized);
-        }
-        let connection = Self::connect(&path).await?;
-        let feature = Documents {
-            connection: &connection,
-        }
-        .feature()
-        .await?;
-        if feature.id != request.feature {
-            return Err(LedgerError::Invalid(
-                "feature document does not match ledger location",
-            ));
-        }
-        Ok(Self {
-            connection,
-            feature,
-            path,
-            repository: request.repository,
-        })
-    }
-
     pub fn info(&self) -> LedgerInfo {
         LedgerInfo {
             path: self.path.clone(),
-            feature: self.feature.clone(),
+            feature: self.state.feature.clone(),
             storage_version: StorageVersion::CURRENT,
         }
     }
 
     pub async fn create(&mut self, input: CreateTask) -> Result<Task, LedgerError> {
-        if input.feature != self.feature.id {
+        if input.feature != self.state.feature.id {
             return Err(LedgerError::Invalid("feature mismatch"));
         }
         self.repository.require_workspace(&input.workspace)?;
         if let Workspace::Git { branch, .. } = &input.workspace
-            && branch == &self.feature.branch
+            && branch == &self.state.feature.branch
         {
             return Err(LedgerError::Invalid(
                 "write tasks require a branch distinct from the feature branch",
@@ -157,6 +98,7 @@ impl Ledger {
             ));
         }
         let tx = self
+            .state
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
@@ -218,7 +160,7 @@ impl Ledger {
 
     pub async fn task(&self, id: &TaskId) -> Result<TaskView, LedgerError> {
         Ok(Documents {
-            connection: &self.connection,
+            connection: &self.state.connection,
         }
         .task(id)
         .await?
@@ -233,7 +175,7 @@ impl Ledger {
                 .order_by(TaskTable::Id, Order::Asc)
                 .to_owned(),
         )?
-        .query(&self.connection)
+        .query(&self.state.connection)
         .await?;
         let now = Timestamp::now()?;
         let mut tasks = Vec::new();
@@ -246,7 +188,7 @@ impl Ledger {
 
     pub async fn history(&self, id: &TaskId) -> Result<Vec<Event>, LedgerError> {
         Documents {
-            connection: &self.connection,
+            connection: &self.state.connection,
         }
         .task(id)
         .await?;
@@ -258,7 +200,7 @@ impl Ledger {
                 .order_by(EventTable::Revision, Order::Asc)
                 .to_owned(),
         )?
-        .query(&self.connection)
+        .query(&self.state.connection)
         .await?;
         let mut events = Vec::new();
         while let Some(row) = rows.next().await? {

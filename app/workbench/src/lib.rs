@@ -16,8 +16,8 @@ use request::InitFeature;
 use sea_query::error;
 use std::path::Path;
 use std::{io, time::SystemTimeError};
+pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};
-pub use store::{Ledger, LedgerInfo};
 use thiserror::Error;
 use values::FeatureId;
 
