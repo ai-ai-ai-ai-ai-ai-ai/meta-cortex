@@ -1,8 +1,10 @@
 mod catalog;
+mod discovery;
 mod protocol;
 
 use crate::installation::InstallError;
 use catalog::Catalog;
+use derive_more::Display;
 use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::versions::ProtocolVersion;
 use protocol::{Reply, Request};
@@ -93,9 +95,28 @@ struct Response {
     result: Outcome,
 }
 
+#[derive(Clone, Copy)]
+#[repr(u8)]
+enum AgentExit {
+    Success = 0,
+    StructuredError = 2,
+}
+
+impl From<AgentExit> for u8 {
+    fn from(status: AgentExit) -> Self {
+        status as Self
+    }
+}
+
+impl From<AgentExit> for ExitCode {
+    fn from(status: AgentExit) -> Self {
+        Self::from(u8::from(status))
+    }
+}
+
 struct CommandResult {
     outcome: Outcome,
-    exit: ExitCode,
+    exit: AgentExit,
 }
 
 impl From<Result<Reply, AgentError>> for CommandResult {
@@ -103,12 +124,43 @@ impl From<Result<Reply, AgentError>> for CommandResult {
         match result {
             Ok(reply) => Self {
                 outcome: Outcome::Success(Box::new(reply)),
-                exit: ExitCode::SUCCESS,
+                exit: AgentExit::Success,
             },
             Err(error) => Self {
                 outcome: Outcome::Error(Failure::from(&error)),
-                exit: ExitCode::from(2),
+                exit: AgentExit::StructuredError,
             },
+        }
+    }
+}
+
+#[derive(Clone, Display)]
+enum RequestSource {
+    #[display("{}", _0.display())]
+    File(PathBuf),
+    #[display("-")]
+    Stdin,
+}
+
+impl From<PathBuf> for RequestSource {
+    fn from(path: PathBuf) -> Self {
+        if path.as_os_str() == "-" {
+            Self::Stdin
+        } else {
+            Self::File(path)
+        }
+    }
+}
+
+impl RequestSource {
+    fn read(&self) -> Result<String, io::Error> {
+        match self {
+            Self::File(path) => fs::read_to_string(path),
+            Self::Stdin => {
+                let mut text = String::new();
+                io::stdin().read_to_string(&mut text)?;
+                Ok(text)
+            }
         }
     }
 }
@@ -120,7 +172,7 @@ impl AgentCli {
         match Catalog::discover().and_then(|catalog| catalog.render()) {
             Ok(output) => {
                 print!("{output}");
-                ExitCode::SUCCESS
+                ExitCode::from(AgentExit::Success)
             }
             Err(error) => Self::report(Err(error)),
         }
@@ -131,13 +183,8 @@ impl AgentCli {
     }
 
     fn execute(path: PathBuf) -> Result<Reply, AgentError> {
-        let mut text = String::new();
-        if path.as_os_str() == "-" {
-            io::stdin().read_to_string(&mut text)?;
-        } else {
-            text = fs::read_to_string(path)?;
-        }
-        let request = Request::decode(&text)?;
+        let source = RequestSource::from(path);
+        let request = Request::decode(&source.read()?)?;
         let runtime = Builder::new_current_thread().enable_time().build()?;
         runtime.block_on(request.execute())
     }
@@ -151,9 +198,9 @@ impl AgentCli {
             Ok(output) => print!("{output}"),
             Err(error) => {
                 eprintln!("could not encode response: {error}");
-                return ExitCode::from(2);
+                return ExitCode::from(AgentExit::StructuredError);
             }
         }
-        result.exit
+        ExitCode::from(result.exit)
     }
 }

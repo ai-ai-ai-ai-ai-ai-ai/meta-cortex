@@ -217,11 +217,10 @@ impl Scenario {
             )
         })?;
         assert_eq!(response.version, 1);
-        assert_eq!(
-            result.status.success(),
-            matches!(&response.result, Outcome::Success(_)),
-            "{response:?}"
-        );
+        match &response.result {
+            Outcome::Success(_) => assert_eq!(result.status.code(), Some(0), "{response:?}"),
+            Outcome::Error(_) => assert_eq!(result.status.code(), Some(2), "{response:?}"),
+        }
         Ok(response)
     }
     fn run(&self, operation: Operation) -> anyhow::Result<Reply> {
@@ -597,7 +596,8 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
     assert_eq!(
         catalog.invocation,
         InvocationGuide::from(
-            "meta-cortex run --request request.yaml (or --request - for stdin)".to_owned()
+            "meta-cortex run --request request.yaml (or meta-cortex run --request - for stdin)"
+                .to_owned()
         )
     );
     assert_eq!(

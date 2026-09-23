@@ -1,4 +1,5 @@
 use super::AgentError;
+use super::discovery::{InvocationGuide, TransportGuide};
 use super::protocol::{
     AgentHarness, AgentInstructions, EmptyArguments, FrameworkInit, Operation, Request,
 };
@@ -29,25 +30,6 @@ pub struct Catalog {
 struct CommandDescription {
     description: CommandSummary,
     example: Request,
-}
-
-#[derive(Serialize, From)]
-#[serde(transparent)]
-struct InvocationGuide(&'static str);
-
-impl InvocationGuide {
-    const YAML_REQUEST: Self =
-        Self("meta-cortex run --request request.yaml (or --request - for stdin)");
-}
-
-#[derive(Serialize, From)]
-#[serde(transparent)]
-struct TransportGuide(&'static str);
-
-impl TransportGuide {
-    const LOCAL_YAML: Self = Self(
-        "One YAML request and response per process; local tool discovery/calls, no MCP server or JSON-RPC session. Exit 0: success; exit 2: structured error. Legacy init/info remain available; list/--help discover the CLI.",
-    );
 }
 
 #[derive(Serialize, From)]
@@ -203,7 +185,7 @@ impl Catalog {
         }
         Ok(Self {
             version: ProtocolVersion::CURRENT,
-            invocation: InvocationGuide::YAML_REQUEST,
+            invocation: InvocationGuide::example(),
             transport: TransportGuide::LOCAL_YAML,
             commands,
             request_schema: schema_for!(Request),

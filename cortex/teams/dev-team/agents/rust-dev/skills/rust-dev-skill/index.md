@@ -57,11 +57,19 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[domain_types:metadata_meaning](practices/modeling/domain-types.md#classify-metadata-by-meaning)**
 
-  - Use enums for closed choices and distinct newtypes for help text, metadata,
-    and diagnostics, including static and private serialized fields.
-  - Preserve existing string wire shapes with transparent newtypes; do not encode
-    paragraphs as enum variants or use one generic text wrapper for unrelated meanings.
+  - Classify metadata contents before choosing types: enums for choices, named
+    records for composites, and distinct newtypes for atomic prose.
+  - Help text and output placement do not exempt structured content from modeling.
   - Structured examples follow Serialization boundaries' typed construction rule.
+
+- **[domain_types:structured_strings](practices/modeling/domain-types.md#normalize-structured-strings-into-domain-components)**
+
+  - Normalize structured strings into independently meaningful typed components;
+    use domain types for dynamic parts and reuse canonical behavioral values.
+  - Keep fixed wording in renderers, free-form prose in named text values, and
+    external parsing/encoding at adapters; do not store redundant composite text.
+  - Existing string wire contracts may render normalized models at the edge;
+    wire-shape changes follow versioning/migration policy.
 
 - **[domain_types:validated_records](practices/modeling/domain-types.md#construction-and-representation)**
 

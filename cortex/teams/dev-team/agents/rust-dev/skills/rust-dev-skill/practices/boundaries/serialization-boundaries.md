@@ -123,6 +123,11 @@ pub enum ApplicationMode {
 
 ## Keep encoding out of application state
 
+For structured strings beyond JSON/YAML, apply
+[domain string normalization](../modeling/domain-types.md#normalize-structured-strings-into-domain-components).
+An established string wire field can render a normalized model at the adapter;
+its internal representation must still retain the typed components.
+
 Return and store the decoded value. Do not carry JSON or YAML through the
 application only to parse it again in the next layer.
 

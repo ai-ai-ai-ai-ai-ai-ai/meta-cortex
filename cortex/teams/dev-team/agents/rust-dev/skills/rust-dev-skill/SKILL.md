@@ -22,7 +22,9 @@ mandatory, independent of the selected implementation practices. Complete the
 
 For authored JSON/YAML, including catalogs and test fixtures, also load
 [serialization boundaries](practices/boundaries/serialization-boundaries.md).
-Apply its typed construction rule before choosing a text wrapper.
+Apply its typed construction rule before choosing a text wrapper. For composite
+text, apply [structured-string normalization](practices/modeling/domain-types.md#normalize-structured-strings-into-domain-components)
+before deciding that a scalar newtype is sufficient.
 
 **Prohibited:** select only code checks for a CLI metadata change and leave its
 application fields as raw strings because compilation passes.

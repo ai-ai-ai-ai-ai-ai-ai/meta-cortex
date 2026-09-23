@@ -97,53 +97,140 @@ assume its derive imports; aggregate examples assume existing domain types.
 
 ### Classify metadata by meaning
 
-Use enums for closed choices and distinct newtypes for text. Static help text,
-CLI discovery, diagnostics, examples, and private serialization records are
-application values too. `&'static str`, `Serialize`, or placement at an output
-boundary does not exempt an authored field from this rule.
+Classify the contents before choosing a wrapper: use enums for closed choices,
+named records for composite values, and distinct newtypes for atomic text.
+Static help text, CLI discovery, diagnostics, examples, and private serialization
+records are application values too. Output placement does not exempt them.
 
-**Prohibited:** these help fields compile, but their values are interchangeable.
+**Prohibited:** unrelated pieces of free-form prose are interchangeable.
 
 ```rust
 pub struct CommandHelp {
-    pub invocation: &'static str,
-    pub transport: &'static str,
+    pub summary: String,
+    pub rationale: String,
 }
 ```
 
-**Preferred:** keep help text distinct from a machine-readable choice. These
+**Preferred:** distinct newtypes preserve the roles of atomic prose. These
 alternative declarations assume Serde derive and `derive_more`'s `from` feature.
 
 ```rust
 #[derive(serde::Serialize, derive_more::From)]
 #[serde(transparent)]
-pub struct InvocationGuide(&'static str);
+pub struct CommandSummary(String);
 
 #[derive(serde::Serialize, derive_more::From)]
 #[serde(transparent)]
-pub struct TransportGuide(&'static str);
+pub struct CommandRationale(String);
 
 #[derive(serde::Serialize)]
 pub struct CommandHelp {
-    pub invocation: InvocationGuide,
-    pub transport: TransportGuide,
-}
-
-#[derive(serde::Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum RequestSource {
-    File,
-    Stdin,
+    pub summary: CommandSummary,
+    pub rationale: CommandRationale,
 }
 ```
 
-The help wrappers preserve existing string wire fields. `RequestSource` models
-a closed choice; do not turn whole help paragraphs into enum variants just
-because only one paragraph currently exists. A scalar alias or one generic
-`Text` wrapper for unrelated meanings still permits the original mix-up.
-Structured JSON/YAML examples are records, not help prose: follow
-[typed document construction](../boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values)
-instead of wrapping their encoded source text.
+Apply the next rule when text contains independently meaningful parts. A single
+wrapper around a command line or transport paragraph is not sufficient merely
+because it is called help text. Structured JSON/YAML examples follow
+[typed document construction](../boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values).
+
+### Normalize structured strings into domain components
+
+When an authored string has internal structure, extract its independently
+meaningful parts into named domain fields as far as the domain permits. Use
+nested records for composites, enums for closed choices, and existing domain
+value types for dynamic parts. Keep those components typed until rendering.
+This applies to command examples, resource locators, identifiers with multiple
+parts, diagnostics, and prose that encodes settings or protocol behavior.
+
+These alternative declarations describe a request invocation. They assume
+Serde derive, `derive_more`'s `from` feature, and standard-library `PathBuf`.
+Both compile; only the second exposes the command's structure.
+
+**Prohibited:** a newtype still hides executable, operation, and request source.
+
+```rust
+#[derive(serde::Serialize, derive_more::From)]
+#[serde(transparent)]
+pub struct InvocationGuide(String);
+
+let invocation = InvocationGuide::from(
+    "meta-cortex run --request request.yaml (or --request - for stdin)".to_owned(),
+);
+```
+
+**Preferred:** model the invocation and its alternatives before rendering.
+`RunInvocation` itself names the operation; there is no need to store the fixed
+`run` keyword in another string field.
+
+```rust
+use std::path::PathBuf;
+
+#[derive(serde::Serialize, derive_more::From)]
+#[serde(transparent)]
+pub struct ExecutableName(String);
+
+#[derive(serde::Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum RequestSource {
+    File { path: PathBuf },
+    Stdin,
+}
+
+#[derive(serde::Serialize)]
+pub struct RunInvocation {
+    pub executable: ExecutableName,
+    pub request: RequestSource,
+}
+
+let invocation = RunInvocation {
+    executable: ExecutableName::from("meta-cortex".to_owned()),
+    request: RequestSource::File { path: PathBuf::from("request.yaml") },
+};
+```
+
+Reuse the canonical values used by behavior: for example, a transport guide's
+exit statuses should come from the command result types, not duplicate numbers
+inside prose. Do not retain both a composite source string and independently
+mutable components. Parse external structured text once at its owning adapter;
+validate dynamic parts through their domain constructors.
+
+**Prohibited:** an interpolated message stores raw dynamic values or becomes
+application state that callers must split apart again.
+
+```rust
+pub struct RetryNotice {
+    pub text: String, // "Retry 2 of 5 for task review"
+}
+```
+
+**Preferred:** render a typed message at the presentation boundary. This fragment
+assumes existing validated `Attempt`, `RetryLimit`, and `TaskId` types implementing
+`Display`, plus `derive_more`'s `display` feature.
+
+```rust
+#[derive(derive_more::Display)]
+#[display("Retry {attempt} of {limit} for task {task}")]
+pub struct RetryNotice {
+    pub attempt: Attempt,
+    pub limit: RetryLimit,
+    pub task: TaskId,
+}
+```
+
+Keep fixed grammar and presentation wording in the renderer; do not create a
+type for every word or punctuation mark. Preserve genuinely free-form user prose
+as a named text value. Use an established parser/value type when it already owns
+the structure, rather than inventing a grammar. At execution boundaries, pass
+separate arguments to the process API; rendered help is not a shell command to
+execute. At JSON/YAML boundaries, serialize the typed record rather than
+interpolating a document.
+
+If an established wire contract requires a string, keep the normalized model
+internally and render only in that adapter using derives or supported conversion
+attributes. Changing its wire shape requires the protocol's version/migration
+policy. Static text and backward compatibility do not exempt the internal model.
 
 ### Single-field primitive wrapper
 
@@ -390,7 +477,9 @@ its import edits.
 
 1. Inventory fields, parameters, returns, locals, constants, examples, and tests,
    including private code and primitives nested inside collections or aliases.
-2. Classify each value as a closed choice, open domain content, private newtype
+2. Inspect strings for internal structure and normalize composite values into
+   typed components, including their dynamic parts. Classify each value as a
+   closed choice, open domain content, private newtype
    storage, or an exact external contract. Use an enum or distinct newtype for
    application values; identify the external owner for a retained raw edge.
 3. Inspect construction and call sites to ensure the named type survives until
@@ -410,5 +499,6 @@ Text searches can locate candidates but cannot establish semantic compliance.
 while reviewing identifiers but skipping its help fields and example tuples.
 
 **Preferred:** report that the catalog's fields and example construction were
-reviewed, help text uses distinct newtypes, raw representation stays inside those
-types or encoding, and existing YAML consumers still pass their checks.
+reviewed, structured help is normalized into typed components, atomic prose uses
+distinct newtypes, and rendering preserves the required wire contract. Report
+consumer test results separately.
