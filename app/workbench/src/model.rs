@@ -287,7 +287,7 @@ impl Task {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{Checkpoint, ClaimAt, LeaseHealth, Progress, Task, TaskState, WorkerAt, Workspace};
     use crate::LedgerError;
     use crate::agents::{AgentId, DevelopmentAgent};

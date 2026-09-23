@@ -97,7 +97,7 @@ pub enum InstructionStatus {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{InstructionError, InstructionStatus, PreparedInstructions};
     use crate::integration::{Harness, ProjectHarnesses};
     use std::fs;

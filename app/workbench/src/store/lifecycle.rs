@@ -185,7 +185,7 @@ impl Ledger<SchemaReady<FeatureId>> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{InitializeLedger, Ledger, OpenLedger};
     use crate::LedgerError;
     use crate::git::Repository;

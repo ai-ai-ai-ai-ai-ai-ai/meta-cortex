@@ -310,7 +310,7 @@ pub enum LeaseSecondsParseError {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{
         Attempt, AttemptParseError, BranchName, BranchNameParseError, CommitId, CommitIdParseError,
         FeatureId, IdentifierParseError, LeaseSeconds, LeaseSecondsParseError, Note, Revision,

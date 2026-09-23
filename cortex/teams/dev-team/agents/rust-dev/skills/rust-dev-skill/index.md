@@ -1182,8 +1182,9 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[testing:colocation](practices/tooling/rust-testing.md#test-placement)**
 
-  - Keep unit tests and helpers inline under `#[cfg(test)] mod tests` in their
-    implementation file; prohibit separate unit-test files and path/include workarounds.
+  - Critical: follow standard Rust inline unit-test organization, using Cortex's
+    `#[cfg(test)] pub mod tests` convention in the same file as the code; keep helpers
+    in that module. Prohibit separate unit-test files and path/include workarounds.
   - Keep normal production mod/pub mod declarations; banning mod.rs filenames
     does not require extracting inline unit tests.
   - Crate tests/ integration files exercise public boundaries, not relabeled unit tests.

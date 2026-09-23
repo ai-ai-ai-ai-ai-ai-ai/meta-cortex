@@ -106,7 +106,7 @@ impl AgentId {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{AgentId, DevelopmentAgent, GizmoAgent, SreAgent};
 
     #[test]

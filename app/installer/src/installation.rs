@@ -155,7 +155,7 @@ impl Installation {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{InitRequest, InstallError, Project};
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,

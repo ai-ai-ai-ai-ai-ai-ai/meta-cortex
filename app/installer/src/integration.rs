@@ -200,7 +200,7 @@ impl IntegrationPlan {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::instructions::PreparedInstructions;
     use super::{Harness, InstructionError, InstructionStatus, ProjectHarnesses};
     use std::fs;

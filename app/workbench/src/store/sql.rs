@@ -66,7 +66,7 @@ impl SqlStatement {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::SqlStatement;
     use crate::LedgerError;
     use sea_query::{Expr, Query, Value};

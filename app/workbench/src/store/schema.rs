@@ -143,7 +143,7 @@ impl EventTable {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{EventTable, FeatureTable, LedgerSchema, TaskTable};
     use crate::LedgerError;
     use crate::store::sql::SqlStatement;

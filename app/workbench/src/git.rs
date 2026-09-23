@@ -204,7 +204,7 @@ pub struct IntegrationCheck<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{GitWorktree, Repository};
     use crate::LedgerError;
     use crate::values::{BranchName, CommitId};

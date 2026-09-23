@@ -125,7 +125,7 @@ impl InstructionTarget {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::CursorApplication;
     use serde_saphyr::{SerializeError, to_string};
 

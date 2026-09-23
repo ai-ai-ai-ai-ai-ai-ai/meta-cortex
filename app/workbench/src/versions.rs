@@ -133,7 +133,7 @@ pub enum VersionParseError {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{
         ProtocolVersion, RecordVersion, StorageVersion, VersionFamily, VersionNumber,
         VersionParseError,

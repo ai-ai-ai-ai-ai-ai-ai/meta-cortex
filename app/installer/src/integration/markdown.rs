@@ -229,7 +229,7 @@ impl MarkdownInstructions<'_> {
     }
 }
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{InstructionError, MarkdownInstructions};
     use crate::integration::{Harness, ProjectHarnesses};
     use tempfile::{TempDir, tempdir};

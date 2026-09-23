@@ -23,7 +23,9 @@ and apply [domain types](practices/modeling/domain-types.md),
 mandatory, independent of the selected implementation practices. Complete the
 [domain-type review](practices/modeling/domain-types.md#validation) before handoff.
 
-Keep unit tests inline in their implementation file under `#[cfg(test)] mod tests`.
+**Critical: follow the standard Rust inline unit-test structure.** Keep unit tests
+in the same file as the code they exercise, using Cortex's required
+`#[cfg(test)] pub mod tests { ... }` form.
 Do not extract them into separate files. Keep ordinary production `mod`/`pub mod`
 declarations; the module-layout prohibition applies to `mod.rs` filenames only.
 Crate-level integration tests retain their own files, as defined by

@@ -55,8 +55,11 @@ place checks at their owning layer:
 
 ## Test placement
 
-Keep unit tests and their helpers in an inline `#[cfg(test)] mod tests { ... }`
-at the bottom of the implementation file they exercise. Access private items
+**Critical requirement:** follow Rust's standard inline unit-test organization.
+Cortex requires `#[cfg(test)] pub mod tests { ... }` at the bottom of the same
+file as the implementation being tested. Keep unit tests and their helpers
+inside that module. The `pub` visibility is the Cortex convention; `#[cfg(test)]`
+keeps the entire module out of normal builds. Access private items
 through `super`. Do not extract unit tests into `tests.rs`, `<module>/tests.rs`,
 or another file loaded through `mod tests;`, `#[path]`, or `include!`.
 
@@ -77,7 +80,7 @@ mod tests; // Loads tests from a separate file.
 
 ```rust
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{RetryLimit, RetryLimitError};
 
     #[test]

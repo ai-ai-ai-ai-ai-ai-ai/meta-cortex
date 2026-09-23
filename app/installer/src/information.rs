@@ -166,7 +166,7 @@ impl From<ProjectInfo> for InfoReport {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{Version, VersionTextError};
 
     #[test]

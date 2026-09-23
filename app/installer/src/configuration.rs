@@ -144,7 +144,7 @@ impl TryFrom<Configuration> for ConfigText {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{
         AgentSettings, ConfigError, ConfigText, Configuration, Effort, Model, TeamSettings,
     };
