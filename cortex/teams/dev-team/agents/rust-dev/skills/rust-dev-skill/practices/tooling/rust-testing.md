@@ -7,9 +7,9 @@ WASM tests check typed exports and browser adapters; browser E2E checks user
 flows. Neither replaces tests of the Rust implementation.
 
 These fragments assume `RetryLimit::try_from(u16)` rejects zero with
-`RetryLimitError::Zero` and accepts positive values. `RetryLimit` and its error
-implement `Debug` and `PartialEq`. Prohibited examples compile but test the
-wrong thing.
+`Err(RetryLimitError::Zero)` and returns `Ok(RetryLimit)` for positive values.
+The value and error implement `Debug` and `PartialEq`. Prohibited examples
+compile but test the wrong thing.
 
 **Prohibited:** duplicate the validation algorithm in the test. This passes
 even if `RetryLimit` accepts zero.
@@ -55,21 +55,32 @@ place checks at their owning layer:
 
 ## Test placement
 
-Keep unit tests in an inline `#[cfg(test)] mod tests` in their implementation
-module. Separate unit-test files under `src/` are prohibited.
+**Critical requirement:** follow Rust's standard inline unit-test organization.
+Cortex requires `#[cfg(test)] pub mod tests { ... }` at the bottom of the same
+file as the implementation being tested. Keep unit tests and their helpers
+inside that module. The `pub` visibility is the Cortex convention; `#[cfg(test)]`
+keeps the entire module out of normal builds. Access private items
+through `super`. Do not extract unit tests into `tests.rs`, `<module>/tests.rs`,
+or another file loaded through `mod tests;`, `#[path]`, or `include!`.
+
+Normal `mod child;` and `pub mod child;` declarations still connect production
+modules. The [module-layout rule](module-layout.md) prohibits the filename
+`mod.rs`; it does not prohibit module declarations or require test extraction.
+Keep visibility appropriate to the public API. Executable documentation examples
+may remain in API doc comments.
 
 **Prohibited — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
-mod tests; // Loads a separate unit-test file.
+mod tests; // Loads tests from a separate file.
 ```
 
-**Preferred — in the same file as `RetryLimit`:**
+**Preferred — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::{RetryLimit, RetryLimitError};
 
     #[test]
@@ -109,7 +120,7 @@ mod retry_limit;
 **Preferred — `tests/retry_limit.rs`:** exercise the exported contract.
 
 ```rust
-use retry_policy::{RetryLimit, RetryLimitError};
+use retry_policy::{RetryLimitError, RetryLimit};
 
 #[test]
 fn public_api_rejects_zero() {
@@ -119,18 +130,19 @@ fn public_api_rejects_zero() {
 
 ### Split production ownership before tests
 
-The 1,000-line file limit includes inline tests. Split distinct production
-abstractions, then colocate each one's tests; extracting tests is not a size fix.
+The 1,000-line file limit includes inline unit tests. Split distinct production
+owners into cohesive modules, each with its own inline tests. Do not extract
+unit tests to lower the implementation file's line count.
 
 **Prohibited:** retain policy and limit logic in an oversized `retry_policy.rs`
-and move only its tests to `retry_policy_tests.rs` to lower the count.
+and move only its tests to a separate file to lower the count.
 
 **Preferred:** separate policy behavior into `retry_policy.rs` and limit
-validation into `retry_limit.rs`, with each owner's tests inline in its module.
+validation into `retry_limit.rs`, with each owner's unit tests inline in its file.
 
 ## Regression tests precede the fix
 
-For a portable domain bug, add a colocated test that fails before the fix and
+For a portable domain bug, add a test in the owning test module that fails before the fix and
 passes after it. For a WASM bug, test the narrow owning boundary. For a
 cross-layer bug, cover both the affected contract and the user flow.
 

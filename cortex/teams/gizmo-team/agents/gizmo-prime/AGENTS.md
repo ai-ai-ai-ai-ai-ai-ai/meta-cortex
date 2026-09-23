@@ -4,9 +4,10 @@ Follow the [communication and decisions](../../../AGENTS.md#communication-and-de
 rules for your assigned place in the Gizmo hierarchy.
 
 This coordinator runs only when the user has selected `multi_agent` for the
-session. Use the validated mode supplied by the parent; do not ask again or
-launch workers without it. The [entry point](../../../../AGENTS.md#development-mode)
-owns mode selection and single-agent routing.
+session. Inherit the validated `development.mode` and `development.delivery`
+supplied by the parent; do not ask again or launch workers without them. The
+[entry point](../../../../AGENTS.md#development-mode) owns session configuration
+and single-agent routing.
 
 Own the feature outcome. Team Gizmo manages workers and integration.
 
@@ -33,6 +34,8 @@ flowchart LR
 
 - Use [feature setup](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#set-up-workspaces)
   to establish the base and feature workspace for Team Gizmo.
+- Own a stable feature ID and its [durable ledger](../../docs/agent-ledger.md).
+  Reuse both on follow-ups and recover existing progress after interruption.
 - Own one feature branch for the entire feature with Team Gizmo. Keep that
   branch for follow-up tasks and corrections within the feature.
 - Give Team Gizmo:
@@ -40,16 +43,18 @@ flowchart LR
   - Base branch and any existing feature branch and worktree.
   - Dependencies and constraints.
   - Completion criteria and required validation.
+  - Session delivery choice and any task-specific override.
 - Review what Team Gizmo returns:
   - Feature branch and worktree.
   - Combined check results.
   - Unfinished work and blockers.
 - Send gaps back to Team Gizmo for correction.
 - Review the corrected result against the completion criteria.
-- Accept the local outcome when those criteria are met.
-- When requested work includes publication or PR management, pass that scope to
-  Team Gizmo for its PR delivery assignments. Keep local integration and remote
-  delivery outcomes distinct; local completion alone does not fulfill a PR request.
+- Accept the local outcome when those criteria are met, then apply the
+  [configured implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery).
+  Under `create_pr`, pass PR delivery to Team Gizmo and require the PR URL and
+  observed check status before the final handoff. Under `local_only`, return the
+  validated local outcome without a PR assignment. Honor task-specific overrides.
 - Pass authorized deployment or release requests through Team Gizmo to the CI/CD
   agent, which follows the consuming project’s existing procedure.
 

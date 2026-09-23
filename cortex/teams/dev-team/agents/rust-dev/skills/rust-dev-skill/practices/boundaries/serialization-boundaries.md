@@ -1,7 +1,12 @@
 # Rust Serialization Boundaries
 
 Decode at the external edge. Pass typed values through the application; encode
-again only when an external API requires it.
+again only when an external API requires it. For project-owned command identities,
+apply [name coherence](rust-wasm-name-coherence.md#preserve-command-identities):
+use the exact descriptive Rust variant in YAML/JSON and discovery, without an
+invented `rename` or `rename_all` mapping. Preserve
+[command groups](rust-wasm-name-coherence.md#group-operations-by-their-owning-domain)
+as nested enum payloads instead of flat prefixed names or independent selectors.
 
 ## Decode known schemas into their types
 
@@ -40,13 +45,65 @@ Ok(settings)
 Deserialization must also preserve domain validation. Deriving `Deserialize`
 for a constrained newtype must not bypass its validating construction.
 
+## Construct known documents from typed values
+
+**Prohibit building YAML from strings.** This includes complete string literals,
+raw/multiline literals, YAML fragments, `format!`, concatenation, indentation
+helpers, replacement, and wrappers such as `ExampleOperationYaml::from("...")`.
+Static content and discovery examples are not exceptions.
+
+Build authored JSON/YAML requests, configuration, catalog examples, and valid
+test fixtures from their concrete structs and enums. Serialize once at the I/O
+edge. Do not assemble documents through interpolation, concatenation, templates,
+indentation helpers, or string replacement. Parsing the assembled string back
+into a typed value is too late; wrapping it in a newtype is not schema safety.
+
+These alternative fragments use `DeliverySettings` above and assume
+`serde_saphyr` with its `serialize` and `deserialize` features. They belong in a
+fallible output adapter. Both compile; only the second models the document before
+encoding it.
+
+**Prohibited:** maintain the schema and enum spelling in a literal or template.
+
+```rust
+let literal = "delivery_mode: Shipment\n";
+let _settings: DeliverySettings = serde_saphyr::from_str(literal)?;
+let mode = "Shipment";
+let yaml = format!("delivery_mode: {mode}\n");
+let settings: DeliverySettings = serde_saphyr::from_str(&yaml)?;
+let output = serde_saphyr::to_string(&settings)?;
+```
+
+**Preferred:** the compiler checks fields and alternatives; Serde owns escaping.
+
+```rust
+let settings = DeliverySettings {
+    delivery_mode: DeliveryMode::Shipment,
+};
+let output = serde_saphyr::to_string(&settings)?;
+```
+
+External input and deliberately malformed/unknown test documents remain raw
+at the decoding boundary. Open extension payloads may use dynamic values only
+where the contract explicitly permits arbitrary content; they do not make the
+surrounding known schema dynamic. Keep valid fixtures typed, including variants
+created for conflict, stale revision, or invalid transition tests. Hand-authored
+`.yaml` documents and YAML shown in documentation are not programmatic builders.
+Raw-input exceptions do not permit constructing valid requests from strings.
+
 ## Derive serialization instead of writing boilerplate
 
 - Derive `Serialize` and `Deserialize` for authored data types.
 - Use Serde attributes for supported wire representations.
 - Use `transparent` for scalar newtypes.
 - Use `from`, `try_from`, and `into` for wire conversions.
-- Keep validation in `TryFrom` when input can violate domain invariants.
+- Inspect text for [domain structure](../modeling/domain-types.md#parse-according-to-domain-structure)
+  before choosing its representation. Normalize components into typed records;
+  use enums only for meaningful alternatives, not success/failure wrappers.
+- For constrained scalar input, use `#[serde(try_from = "String")]` (or the actual
+  primitive wire type) and the domain's validating `TryFrom` implementation.
+  Return `Result<Value, ConcreteError>` and reuse it from ordinary callers.
+- Test both direct validation and deserialization rejection; preserve the wire shape.
 - Keep semantic variant mappings in concrete conversion implementations.
 - Do not handwrite `Serialize`, `Deserialize`, visitors, or serialization callbacks when derives and attributes express the contract.
 - Do not move the same boilerplate into `serialize_with`, `deserialize_with`, or a helper module.
@@ -84,7 +141,43 @@ pub enum ApplicationMode {
 - Verify the exact wire representation and all mapping branches for an allowed conversion.
 - Follow [Serde's conversion attribute requirements](https://serde.rs/container-attrs.html) when an exception applies.
 
+### Reuse validating conversions in Serde
+
+These alternative declarations use the `TryFrom<String>` implementation and
+`IdentifierParseError` from [typed parsing](../modeling/domain-types.md#parse-according-to-domain-structure).
+Replace its `TaskId` declaration with one of these alternatives.
+
+**Prohibited:** transparent deserialization bypasses the validating conversion.
+
+```rust
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
+pub struct TaskId(String);
+```
+
+**Preferred:** decoding and ordinary callers share the same validation.
+
+```rust
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(try_from = "String")]
+pub struct TaskId(String);
+```
+
+`TaskId::try_from(input)?` returns the typed ID or `IdentifierParseError`.
+No intermediate `TaskIdParse` enum or enum-to-`Result` adapter is needed. For
+structured strings such as addresses, the successful domain value holds the
+components and alternatives; a `Parsed(String)` variant does not normalize them.
+
+The serialized scalar stays a string. If generating schemas, describe that
+actual wire type with the schema library's attribute and test it. A structured
+internal representation does not authorize an unversioned wire-shape change.
+
 ## Keep encoding out of application state
+
+For structured strings beyond JSON/YAML, apply
+[domain string normalization](../modeling/domain-types.md#normalize-structured-strings-into-domain-components).
+An established string wire field can render a normalized model at the adapter;
+its internal representation must still retain the typed components.
 
 Return and store the decoded value. Do not carry JSON or YAML through the
 application only to parse it again in the next layer.
@@ -194,7 +287,7 @@ Ok(settings)
 ## Test the typed contract
 
 For known schemas, round-trip the concrete type and assert its fields or variants.
-Use raw JSON only when testing malformed/unknown input or exact property presence;
+Use raw JSON/YAML only when testing malformed/unknown input or exact property presence;
 that inspection does not replace a typed round trip.
 
 These tests use the first `DeliverySettings` definition.
@@ -235,6 +328,8 @@ fn rejects_unknown_delivery_mode() {
 ## Validation
 
 - Check that application APIs expose typed values, not encoded text or erased bags.
+- Inspect authored document construction, including catalogs and fixtures, for
+  string assembly hidden behind wrappers or subsequent deserialization.
 - Inspect ABI overrides and dependency conversions for hidden untyped contracts.
 - Run typed round-trip and invalid-input tests; regenerate and type-check bindings
   when the exported contract changes.

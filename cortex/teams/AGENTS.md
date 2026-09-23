@@ -21,7 +21,7 @@ entry point. Pass this context to delegated agents.
 
 ## Start with Gizmo Prime
 
-First resolve the session’s [development mode](../AGENTS.md#development-mode) at the entry
+First resolve the session’s [mode and delivery choices](../AGENTS.md#development-mode) at the entry
 point. In `single_agent` mode, the current agent applies the assignment context
 locally and performs the work; the launch and delegation instructions below
 apply only to `multi_agent` mode.
@@ -46,6 +46,10 @@ Team Gizmo reports to Gizmo Prime; Gizmo Prime reports to the current host agent
 Decisions and assignments travel back down the same hierarchy. Gizmo Prime does
 not bypass Team Gizmo to direct workers. Agents retain technical judgment within
 their assigned scope; coordination decisions belong to their Gizmo.
+
+Persist assignments and progress through the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
+Host messages notify the assigning coordinator; they are not the only record of work.
+All assigned agents may read their feature ledger while retaining this decision hierarchy.
 
 Use ordinary host communication tools. In single-agent mode, the current agent
 performs the responsibilities locally without agent messages or launches.
@@ -92,10 +96,15 @@ Before launching an agent, the host agent or Gizmo coordinator resolves the
 following from the active library and supplies them in the launch instructions:
 
 - Objective, scope, dependencies, acceptance criteria, and expected evidence.
+- For task workers after feature initialization: stable feature ID, task ID,
+  ledger location, and the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
+  Record the assignment before launching its worker. Coordinator and workspace
+  bootstrap assignments establish this context before task workers launch.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
-- The validated session development mode; assigned agents inherit it and never
-  repeat configuration collection.
+- The validated session `development.mode` and `development.delivery`, plus any
+  task-specific override; assigned agents inherit them and never repeat
+  configuration collection.
 - Project root, library root, working directory, and relevant project instructions.
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.
 - The assigned agent’s team directory and team `AGENTS.md`.

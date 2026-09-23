@@ -1,3 +1,9 @@
+import { ProtocolVersion } from "../ts/request.ts";
+import { BlockKind } from "../ts/article.ts";
+import {
+  SkillRequestDocument,
+  type SkillRequestWire,
+} from "../ts/request-document.ts";
 import { expect, test } from "bun:test";
 import type { CommandArguments } from "../ts/cli.ts";
 import type { SpawnOptions } from "bun";
@@ -23,9 +29,12 @@ class CliFixture {
 }
 
 test("CLI produces YAML and uses exit status 0 for discovery", () => {
-  const arguments_: CommandArguments = [
-    "--request-yaml=version: 1\ntools: {list: {}}",
-  ];
+  const request: SkillRequestWire = {
+    version: ProtocolVersion.V1,
+    tools: { list: {} },
+  };
+  const source = new SkillRequestDocument(request).encode();
+  const arguments_: CommandArguments = [`--request-yaml=${source}`];
   const result = new CliFixture(arguments_).execute();
   expect(result.exitCode).toBe(0);
   expect(result.stdout.toString()).toContain("kind: catalog");
@@ -42,8 +51,22 @@ test("CLI rejects extra arguments and does not echo input", () => {
 });
 
 test("CLI exits 1 for findings", () => {
-  const source =
-    "version: 1\narticles:\n  audit:\n    documents:\n      - path: a.md\n        blocks:\n          - {kind: heading, depth: 2, line: 1, text: Empty}";
+  const request: SkillRequestWire = {
+    version: ProtocolVersion.V1,
+    articles: {
+      audit: {
+        documents: [
+          {
+            path: "a.md",
+            blocks: [
+              { kind: BlockKind.Heading, depth: 2, line: 1, text: "Empty" },
+            ],
+          },
+        ],
+      },
+    },
+  };
+  const source = new SkillRequestDocument(request).encode();
   const arguments_: CommandArguments = [`--request-yaml=${source}`];
   const result = new CliFixture(arguments_).execute();
   expect(result.exitCode).toBe(1);

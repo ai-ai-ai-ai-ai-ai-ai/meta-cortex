@@ -73,10 +73,88 @@ pub fn find(&self, id: &OrderId) -> OrderLookup<'_> {
 
 **Preferred:** retain ordinary derives and review authored code against the no-`Option` rule.
 
+## Represent empty prose as a value
+
+Free-form notes and similar text have a valid empty state. Model that state in a
+domain enum and classify strings with infallible `From`, not `TryFrom` returning
+an error solely for empty/blank content. Do not use `Result` as a disguised
+optional value. Apply this to constructors, decoding, examples, and tests.
+
+These alternative declarations assume Serde derive, `derive_more`'s `display`
+feature, and a concrete `EmptyNote` error for the prohibited example. Both compile;
+the first invents a failure for valid text.
+
+**Prohibited:** every caller must propagate an empty-note error.
+
+```rust
+pub struct Note(String);
+impl TryFrom<String> for Note {
+    type Error = EmptyNote;
+    fn try_from(text: String) -> Result<Self, Self::Error> {
+        if text.trim().is_empty() {
+            Err(EmptyNote)
+        } else {
+            Ok(Self(text))
+        }
+    }
+}
+let note = Note::try_from(input)?;
+```
+
+**Preferred:** distinguish empty text explicitly and protect the text variant's
+construction. Preserve the established string wire contract through Serde's
+conversion attributes; new wire contracts follow their own versioning policy.
+
+```rust
+#[derive(Clone, serde::Serialize, serde::Deserialize, derive_more::Display)]
+#[serde(from = "String", into = "String")]
+pub enum Note {
+    #[display("")]
+    Empty,
+    #[display("{_0}")]
+    Text(NoteText),
+}
+
+#[derive(Clone, derive_more::Display)]
+pub struct NoteText(String);
+
+impl From<String> for Note {
+    fn from(text: String) -> Self {
+        if text.is_empty() {
+            Self::Empty
+        } else {
+            Self::Text(NoteText(text))
+        }
+    }
+}
+impl From<Note> for String {
+    fn from(note: Note) -> Self {
+        match note {
+            Note::Empty => Self::new(),
+            Note::Text(NoteText(text)) => text,
+        }
+    }
+}
+let note = Note::from(input);
+```
+
+Keep `NoteText` construction private to the classifier. Do not derive a public
+`From<String>`, `Default`, or unchecked `Deserialize` for it: those would permit
+`Note::Text` to contain empty text. Do not expose a generic `Maybe<String>` or a
+raw string payload in its place. Whitespace remains text and round-trips exactly;
+do not trim or discard user content merely to classify it as empty.
+
+Empty text and a missing field are different. Required fields remain required;
+a missing or non-string wire value can still be a decoding error. A plain text
+wrapper whose behavior makes no empty/present distinction can use infallible
+`From` directly. Do not mechanically wrap every string in another enum.
+
 ## Require values that cannot be absent
 
-A required persisted or signed value stays required. Failure belongs in a typed
-`Result`, not a `Missing` variant or empty string. Deserialize through validated
+An identifier or signed value whose contract requires a valid identity stays
+required. Failure belongs in a typed `Result`, not a `Missing` variant or empty
+string. This is not permission to reject empty free-form prose; apply the
+[empty-text rule](#represent-empty-prose-as-a-value) to that domain instead. Deserialize through validated
 types; preserve established wire shapes through adapters and explicit migrations.
 
 **Prohibited:** an incomplete record enters the domain.
@@ -351,6 +429,8 @@ pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
 ## Validation
 
 - Reject authored `Option` and boolean contracts or stored values; inspect whole-record boundary conversions.
+- Test empty/text classification, whitespace preservation, and wire round trips;
+  do not turn empty prose into a failure. Keep genuine format validation at its boundary.
 - Test each state and reject incomplete or invalid persisted values at decoding.
 - Check payload ownership, independent dimensions, and exhaustive decisions.
 - Run the affected Rust tests and Clippy for all targets with warnings denied.

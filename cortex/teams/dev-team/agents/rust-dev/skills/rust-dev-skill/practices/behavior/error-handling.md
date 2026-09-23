@@ -4,10 +4,14 @@ Preserve the meaning and source of each failure. Propagate typed errors until an
 
 ## Required actions
 
-- Return `Result<T, E>`; name application failures with `thiserror` enums.
+- Return `Result<T, E>` for genuine fallible operations; name application failures
+  with `thiserror` enums. Use infallible `From` for valid value classification,
+  including [empty free-form text](../modeling/domain-states.md#represent-empty-prose-as-a-value).
 - Preserve typed sources. Use `#[from]` and `?` for direct conversions.
 - Use `map_err` only to add context or select the appropriate error variant.
-- Return a typed error when required input is missing or invalid.
+- Return `Result<Value, ConcreteError>` for direct parsing and constrained-wrapper
+  validation. Normalize structured successful values; do not duplicate `Result`
+  with a `Parsed`/`Invalid` enum.
 - In tests, return a concrete `Result` or `anyhow::Result` and propagate with `?`.
 - Use `serde_json::Result<T>` when JSON encoding/decoding is the only failure.
 
@@ -16,7 +20,10 @@ Preserve the meaning and source of each failure. Propagate typed errors until an
 Do not use `.unwrap()`, `.expect(...)`, or `.expect_err(...)`, including in tests.
 Production libraries, binaries, examples, and build scripts use concrete errors.
 
-These alternatives convert a boundary string into `RetryCount`.
+These alternatives convert a boundary string into the numeric `RetryCount`.
+Like validation of a string-backed ID, this conversion returns `Result` with a
+concrete error. Apply [structure-aware parsing](../modeling/domain-types.md#parse-according-to-domain-structure)
+when the successful value has independently meaningful components.
 
 **Prohibited:** malformed input becomes a panic, so the caller cannot classify
 or recover from the expected input error.
@@ -117,8 +124,8 @@ These alternatives use the `RetryCount` and `RetryCountError` definitions above.
 ```rust
 #[test]
 fn parses_retry_count() {
-    let count = RetryCount::try_from("3").unwrap();
-    assert_eq!(count.0, 3);
+    let RetryCount(count) = RetryCount::try_from("3").unwrap();
+    assert_eq!(count, 3);
 }
 
 #[test]
@@ -132,8 +139,8 @@ fn rejects_invalid_count() {
 ```rust
 #[test]
 fn parses_retry_count() -> Result<(), RetryCountError> {
-    let count = RetryCount::try_from("3")?;
-    assert_eq!(count.0, 3);
+    let RetryCount(count) = RetryCount::try_from("3")?;
+    assert_eq!(count, 3);
     Ok(())
 }
 

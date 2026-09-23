@@ -4,7 +4,7 @@ Meta-Cortex develops itself using the framework in [cortex/AGENTS.md](cortex/AGE
 Read and follow that entry point with this repository as the project root and
 `cortex/` as the library root.
 
-The distributable framework lives in `cortex/`. The Rust package installs
+The distributable framework lives in `cortex/`. The Rust executable installs
 that framework into consuming projects at `.meta-cortex/`. Keep framework
 instructions generic and keep the root `LICENSE` in place.
 
@@ -18,7 +18,25 @@ Skills live under their owning agents. Do not create library-root or team-level
 skill directories. Each agent links its skills; each `SKILL.md` owns its instructions.
 Keep one canonical copy of each practice and update all callers when moving it.
 
-For installer changes, apply the framework's
+The Rust workspace lives in `app/`. `app/installer/` owns the `meta-cortex`
+executable, command transport, and framework installation. `app/workbench/`
+owns durable agent coordination, Turso storage, migrations, and domain tests.
+Keep database code and dependencies in workbench; installer uses its public API.
+Shared Cargo dependencies, lint policy, lockfile, and release profile live at the
+workspace root. The framework remains at the repository root in `cortex/`.
+
+For Rust changes, apply the framework's
 [Rust skill](cortex/teams/dev-team/agents/rust-dev/skills/rust-dev-skill/SKILL.md).
-From `installer/`, run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and
-`cargo test` before completing Rust changes.
+From `app/`, run `cargo fmt --all --check`, `cargo check --locked --workspace --all-targets`,
+`cargo clippy --locked --workspace --all-targets -- -D warnings`, and
+`cargo test --locked --workspace` before completing Rust changes. Measure combined
+coverage with `cargo llvm-cov --locked --workspace --fail-under-lines 90`.
+
+## Current interface
+
+This project does not retain legacy CLI aliases, interactive setup paths, or
+old instruction formats for hypothetical compatibility. `list` discovers commands;
+`run` executes typed YAML requests, including framework initialization and inspection.
+Remove superseded paths and update their callers, tests, and documentation together.
+Keep the explicitly required Workbench schema-version and migration support;
+add other compatibility mechanisms only for a demonstrated supported contract.

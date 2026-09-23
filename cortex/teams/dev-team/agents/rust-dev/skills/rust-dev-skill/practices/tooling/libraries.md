@@ -41,7 +41,8 @@ pub enum JobError {
 }
 
 let job_id = JobId::from(42);
-tracing::info!(job_id = job_id.0, "job started");
+let JobId(id) = job_id;
+tracing::info!(job_id = id, "job started");
 ```
 
 ## Concurrency

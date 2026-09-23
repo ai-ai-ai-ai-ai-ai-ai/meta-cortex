@@ -18,9 +18,10 @@ reader can detect contradictions without opening every file.
 Related entries are review relationships, not instructions for leaf documents to
 link back here. Apply the relevant cross-language practices when the assignment crosses that boundary.
 
-For implementation, select entries covering the decisions being changed and load
-those practices in full. Include related subjects when the change crosses their
-boundaries.
+For implementation, refactoring, review, and tooling, always load Domain types,
+Domain states, Module layout, and Rust code checks as required by the skill entry point. Select
+additional entries covering the decisions being changed and load those practices
+in full. Include related subjects when the change crosses their boundaries.
 
 ## Modeling
 
@@ -54,15 +55,56 @@ boundaries.
   - Keep primitive representation inside its owning value or a required external edge.
   - User text and locale keys also require meaningful domain types.
 
+- **[domain_types:metadata_meaning](practices/modeling/domain-types.md#classify-metadata-by-meaning)**
+
+  - Classify metadata contents before choosing types: enums for choices, named
+    records for composites, and distinct newtypes for atomic prose.
+  - Help text and output placement do not exempt structured content from modeling.
+  - Structured examples follow Serialization boundaries' typed construction rule.
+
+- **[domain_types:structured_strings](practices/modeling/domain-types.md#normalize-structured-strings-into-domain-components)**
+
+  - Normalize structured strings into independently meaningful typed components;
+    use domain types for dynamic parts and reuse canonical behavioral values.
+  - Keep fixed wording in renderers, free-form prose in named text values, and
+    external parsing/encoding at adapters; do not store redundant composite text.
+  - Existing string wire contracts may render normalized models at the edge;
+    wire-shape changes follow versioning/migration policy.
+
 - **[domain_types:validated_records](practices/modeling/domain-types.md#construction-and-representation)**
 
   - Required persisted or signed values use validated required newtypes.
   - Preserve validation during deserialization.
 
+- **[domain_types:parsing](practices/modeling/domain-types.md#parse-according-to-domain-structure)**
+
+  - Inspect strings for internal domain structure; use typed fields for components
+    and enums for genuine alternatives. Atomic IDs need no artificial structure.
+  - Return Result with concrete errors for direct parsing and validation, including
+    constrained wrappers; prohibit duplicate Parsed/Invalid outcome enums.
+  - Keep validated fields private and reuse TryFrom/FromStr conversions in callers
+    and Serde without duplicating validation or changing the wire shape.
+
+- **[domain_types:closed_vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum)**
+
+  - Inspect the owning catalog; use a complete closed enum for known identities and
+    reject unregistered names. Keep dynamic session/task identities separate.
+  - Construct variants directly and use named typed constants for reusable quantities.
+
+- **[domain_types:ownership_hierarchy](practices/modeling/domain-types.md#preserve-ownership-hierarchies-in-enum-payloads)**
+
+  - Preserve catalog containment in nested enums: each team encloses only its role
+    enum, and coordinators retain their own group. Reject flat leaf catalogs and
+    independent owner/role fields that permit invalid combinations.
+  - Team-specific APIs take the team's leaf enum; shared ledgers take the enclosing
+    identity. Preserve containment in wire schemas, assignments, and history.
+  - Verify role membership against each parent's catalog, not just a combined set;
+    prove invalid combinations fail compilation and boundary decoding.
+
 - **[domain_types:external_conversions](practices/modeling/domain-types.md#external-raw-values)**
 
   - Convert uncontrolled external primitives and records immediately through
-    destination-owned From or TryFrom.
+    destination-owned From when infallible, or TryFrom for fallible parsing and validation.
   - Conversion parameters may be raw, but application contracts may not.
 
 - **[domain_types:external_records](practices/modeling/domain-types.md#external-raw-values)**
@@ -72,8 +114,8 @@ boundaries.
 
 - **[domain_types:conversion_traits](practices/modeling/domain-types.md#standard-conversions)**
 
-  - Use From for a clear infallible value conversion and TryFrom with a concrete error
-    when validation can fail.
+  - Use From for infallible conversion/classification and TryFrom with a concrete
+    error for fallible parsing and validation, including constrained wrappers.
   - Do not panic, discard meaning, or default invalid input to force From.
 
 - **[domain_types:operation_boundaries](practices/modeling/domain-types.md#standard-conversions)**
@@ -103,17 +145,46 @@ boundaries.
   - Choose transparent serialization only when the wire must remain primitive.
   - Retain the wrapper shape when the wire requires a value field.
 
+- **[domain_types:wrapper_access](practices/modeling/domain-types.md#access-wrappers-through-patterns-or-domain-methods)**
+
+  - Prohibit numeric field access throughout authored code, including wrapper
+    implementations, conversions, tests, and adapters.
+  - Use meaningful destructuring patterns or domain methods that retain domain
+    types; preserve privacy and keep primitive extraction at its owning boundary.
+  - Retain approved derives and the existing prohibition on application tuples.
+
 - **[domain_types:aggregates](practices/modeling/domain-types.md#aggregate-construction)**
 
   - Construct multi-field aggregates with named literals and reject From<(A, B, C)> for
     independent fields.
   - Validation must not expose restricted fields.
 
-- **[domain_types:versions](practices/modeling/domain-types.md#version-newtype)**
+- **[domain_types:versions](practices/modeling/domain-types.md#model-supported-schema-revisions-explicitly)**
 
-  - Give independent schema versions distinct types, validate supported ranges when
-    parsing, retain supported old versions, and require a migration before advancing the
-    current wire shape.
+  - Name each supported schema revision; use exhaustive version dispatch and separate
+    payload types for differing shapes. Reject unsupported wire values at entry.
+  - Keep independent consumer/test version fields typed; primitive wire values stay
+    in boundary classifiers and invalid fixtures, not decoded application records.
+  - Retain documented migration support before advancing the current version.
+
+- **[domain_types:release_versions](practices/modeling/domain-types.md#enumerate-supported-application-releases)**
+
+  - Parse supported application/framework releases into closed enums, not validated
+    strings or arbitrary semantic-version records. Reject unknown/retired identities.
+  - Require package-version/enum correspondence at compile time, exhaustive wire
+    mappings, and typed consumer decoding; test both known and unsupported releases.
+
+- **[domain_types:update_revisions](practices/modeling/domain-types.md#distinguish-schema-revisions-from-update-counters)**
+
+  - Keep optimistic-lock revisions as open validated counters; use observed tokens
+    and named domain transitions instead of guessed numeric fixtures.
+
+- **[domain_types:named_records](practices/modeling/domain-types.md#replace-positional-tuples-with-named-records)**
+
+  - Replace positional multi-value tuples with named domain structs throughout
+    application code and fixtures; match existing records directly.
+  - Unit and single-field newtypes are distinct; contain dependency-required
+    tuples at the exact adapter boundary.
 
 - **[domain_types:api_inventory](practices/modeling/domain-types.md#domain-api-enforcement)**
 
@@ -127,6 +198,15 @@ boundaries.
   - Scope any required serialization/database/FFI lint expectation to the exact item and
     document the edge, never blanket-suppress a crate/module/type.
 
+
+- **[domain_types:semantic_review](practices/modeling/domain-types.md#validation)**
+
+  - Before handoff, inventory changed code and touched aggregates, including
+    siblings, private fields, constants, examples, tests, and moved code.
+  - Classify choices, open content, representation storage, and exact external
+    contracts; preserve named values through construction and encoding.
+  - Report semantic review scope and exceptions separately from mechanical checks;
+    numeric lints and text searches do not establish full compliance.
 
 ### Domain states
 
@@ -157,9 +237,16 @@ boundaries.
   - Exclude dependency-generated implementations from the authored-code requirement.
   - Do not ban Option through Clippy or add wrapper modules and lint allowances for derives.
 
+- **[domain_states:empty_text](practices/modeling/domain-states.md#represent-empty-prose-as-a-value)**
+
+  - Classify empty free-form prose with infallible From and meaningful domain states.
+  - Protect nonempty payload construction, preserve whitespace and established wire
+    shapes, and distinguish empty text from missing or malformed input.
+
 - **[domain_states:required_values](practices/modeling/domain-states.md#require-values-that-cannot-be-absent)**
 
-  - Required persisted/signed values remain required.
+  - Required identities/signed values remain required; persistence does not make
+    empty prose invalid.
   - Reject missing or invalid input before domain construction rather than inventing
     Missing variants or empty strings.
 
@@ -260,7 +347,7 @@ boundaries.
 - **[struct_construction:derive_from](practices/modeling/struct-construction.md#single-field-derive-from)**
 
   - Derive derive_more::From with its from feature for infallible single-field wrappers.
-  - Use TryFrom for validation.
+  - Constrained wrappers use TryFrom/FromStr returning Result; keep their fields private.
 
 - **[struct_construction:initial_state](practices/modeling/struct-construction.md#single-field-derive-from)**
 
@@ -482,6 +569,10 @@ boundaries.
 
   - Consume mut self for replacement updates and return Self or a typed result while
     preserving unchanged fields.
+  - Prohibit borrowed mutation on authored value-update APIs, including private
+    collection helpers and equivalent helpers taking &mut Owner.
+  - Mark replacements must_use and rebind, chain, or fold their returned owners.
+    Local mutation inside the consuming method remains permitted.
 
 - **[owned_updates:external_mutation](practices/behavior/owned-updates.md#required-actions)**
 
@@ -568,12 +659,23 @@ boundaries.
   - Preserve validated newtype invariants during Deserialize.
   - An automatic derive must not bypass validating construction.
 
+- **[serialization_boundaries:typed_construction](practices/boundaries/serialization-boundaries.md#construct-known-documents-from-typed-values)**
+
+  - Construct known JSON/YAML from structs and enums, including catalog examples
+    and valid fixtures; encode only at I/O.
+  - Prohibit YAML string literals/fragments, string assembly, replacement, and
+    encode-then-parse construction, including static discovery examples;
+    text wrappers do not provide schema safety.
+  - Keep malformed inputs raw at the decoder and dynamic values inside explicitly
+    open extensions.
+
 - **[serialization_boundaries:derive_first](practices/boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate)**
 
   - Derive serialization and preserve enums in new owned wire contracts.
   - Apply domain-state exceptions before using boolean conversion attributes.
   - Prohibit handwritten traits, visitors, and callbacks that duplicate this support.
-  - Keep semantic mappings in concrete conversions and validation in TryFrom.
+  - Reuse the domain validating conversion with serde(try_from = "String") or
+    the actual wire type; do not introduce a result-shaped parse enum.
   - Document unsupported contracts and evaluate established adapters before custom machinery.
   - Review manually and test wire values; standard Clippy does not enforce this rule.
 
@@ -613,7 +715,7 @@ boundaries.
 - **[serialization_boundaries:typed_tests](practices/boundaries/serialization-boundaries.md#test-the-typed-contract)**
 
   - Test concrete typed round trips and invalid-input rejection.
-  - Use raw JSON only for malformed/unknown input or exact property presence, never
+  - Use raw JSON/YAML only for malformed/unknown input or exact property presence, never
     instead of a typed domain assertion.
 
 - **[serialization_boundaries:validation](practices/boundaries/serialization-boundaries.md#validation)**
@@ -789,10 +891,10 @@ boundaries.
   - Borrowed samples do not grant cleanup ownership.
 
 
-### WASM name coherence
+### WASM and command name coherence
 
 - **File:** [WASM name coherence](practices/boundaries/rust-wasm-name-coherence.md).
-- **Owns:** Cross-language symbol names and fixed external wire-name exceptions.
+- **Owns:** Cross-language symbol names, command identities, and fixed external wire-name exceptions.
 - **Does not own:** Value representations belong to Domain types; decoding mechanics belong to Serialization boundaries.
 - **Related:** [Domain types](practices/modeling/domain-types.md), [Serialization boundaries](practices/boundaries/serialization-boundaries.md).
 
@@ -816,6 +918,22 @@ boundaries.
 
   - Do not add serde rename/rename_all to project-owned schemas, rebuild case-renamed
     objects, or rename destructured fields.
+
+- **[wasm_name_coherence:command_names](practices/boundaries/rust-wasm-name-coherence.md#preserve-command-identities)**
+
+  - Use descriptive Rust variants directly as command identities in YAML/JSON,
+    discovery, and consumers; no invented dotted aliases or casing transforms.
+  - Load this rule for CLI/discovery work even without WASM or TypeScript.
+  - Generate examples from the enum, update callers/docs together, and require a
+    concrete external contract for any unavoidable adapter.
+
+- **[wasm_name_coherence:command_groups](practices/boundaries/rust-wasm-name-coherence.md#group-operations-by-their-owning-domain)**
+
+  - Aggregate related operations in domain-specific enums carried by enclosing
+    group variants; do not flatten repeated prefixes/suffixes or allow arbitrary
+    group/operation pairs.
+  - Preserve groups through requests, schemas, discovery, and consumers; dispatch
+    exhaustively through the owning enum and reject mismatched groups at decoding.
 
 - **[wasm_name_coherence:external_names](practices/boundaries/rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter)**
 
@@ -851,6 +969,7 @@ boundaries.
   - Cover workspace members, all applicable targets, and supported feature/target
     configurations; preserve build flags and deny compiler and Clippy warnings.
   - Coordinate pipeline changes with the CI/CD owner under the active mode.
+  - Complete the mandatory domain-type review as well as mechanical gates.
 
 - **[code_checks:lint_baseline](practices/tooling/rust-code-checks.md#enforce-the-lint-baseline)**
 
@@ -873,6 +992,7 @@ boundaries.
     must succeed without warnings before completion.
   - Missing tooling, unverified required configurations, and unresolved diagnostics
     block verification rather than count as success.
+  - Report semantic domain-review scope and unresolved findings separately.
 
 ### Libraries
 
@@ -928,6 +1048,31 @@ boundaries.
     low-level browser binding calls through domain code.
 
 
+### Module layout
+
+- **File:** [Module layout](practices/tooling/module-layout.md).
+- **Owns:** Module filenames, child-directory layout, and path updates during module moves.
+- **Does not own:** Domain ownership belongs to Domain types; test placement belongs to Rust testing.
+- **Related:** [Domain types](practices/modeling/domain-types.md), [Rust testing](practices/tooling/rust-testing.md), [Paths and imports](practices/tooling/path-imports.md).
+
+- **[module_layout:named_files](practices/tooling/module-layout.md#use-named-module-files)**
+
+  - Use `<module>.rs` with children under `<module>/`; prohibit authored `mod.rs`
+    files, including declaration-only modules and test support.
+  - Retain normal `mod`/`pub mod` declarations, crate/test entry points, and externally owned layouts.
+
+- **[module_layout:preserve_resolution](practices/tooling/module-layout.md#preserve-resolution-when-moving-modules)**
+
+  - Move owners without changing module identity, visibility, re-exports, or tests.
+  - Update file-relative includes, explicit paths, and repository references;
+    do not leave forwarding files or hide old layouts behind path attributes.
+
+- **[module_layout:validation](practices/tooling/module-layout.md#validation)**
+
+  - Inventory all authored module files and run compiler, Clippy, formatting,
+    and affected tests to verify resolution, embedded assets, and public behavior.
+
+
 ### Paths and imports
 
 - **File:** [Paths and imports](practices/tooling/path-imports.md).
@@ -956,6 +1101,21 @@ boundaries.
     configuration boundary.
   - Review relative paths and semantic context separately.
 
+
+### Typed SQL construction
+
+- **File:** [Typed SQL construction](practices/boundaries/typed-sql.md).
+- **Owns:** Typed schema/query construction, identifiers, binding, and driver boundaries.
+- **Related:** [Dependency selection](practices/tooling/dependency-selection.md), [Domain types](practices/modeling/domain-types.md).
+
+- **[typed_sql:construction](practices/boundaries/typed-sql.md)**
+
+  - Use established builders/ORMs and identifier enums for schemas, migrations,
+    queries, and fixtures; never assemble SQL as application text.
+  - Bind runtime values, use driver transaction/settings APIs, and isolate only
+    documented fixed dialect tokens unsupported by the builder.
+  - Verify actual database constraints and transactions; builder types alone do
+    not prove schema compatibility or application correctness.
 
 ### Dependency selection
 
@@ -1022,15 +1182,20 @@ boundaries.
 
 - **[testing:colocation](practices/tooling/rust-testing.md#test-placement)**
 
-  - Keep unit tests inline in the focused implementation module.
+  - Critical: follow standard Rust inline unit-test organization, using Cortex's
+    `#[cfg(test)] pub mod tests` convention in the same file as the code; keep helpers
+    in that module. Prohibit separate unit-test files and path/include workarounds.
+  - Keep normal production mod/pub mod declarations; banning mod.rs filenames
+    does not require extracting inline unit tests.
   - Crate tests/ integration files exercise public boundaries, not relabeled unit tests.
   - Test-harness entrypoints may contain scenario steps and assertions; reusable
     test helpers remain on fixtures and never duplicate production algorithms.
 
 - **[testing:no_size_evasion](practices/tooling/rust-testing.md#split-production-ownership-before-tests)**
 
-  - Split production ownership before colocating tests.
-  - Forbid external unit-test files and test extraction to evade the 1,000-line limit.
+  - Keep production ownership focused and unit tests inline with each owner.
+  - Include inline tests in the 1,000-line limit; split production responsibilities
+    rather than extracting tests to evade the limit.
 
 - **[testing:coverage](practices/tooling/rust-testing.md#90-rust-line-coverage-floor)**
 
@@ -1077,8 +1242,9 @@ Check whether construction is infallible, requires validation, or performs an op
 
 - **Prohibited:** Derive `From` for a constrained value to avoid reporting validation
   errors, or put consuming-domain policy on the source type.
-- **Preferred:** The destination owns `From` for infallible conversions and `TryFrom`
-  for validation. Context-dependent policy stays a named operation.
+- **Preferred:** The destination owns `From` for infallible conversion/classification and `TryFrom`
+  for fallible parsing and validation, including constrained wrappers;
+  context-dependent policy stays a named operation.
 
 **Compare:**
 
@@ -1183,10 +1349,10 @@ routine code.
 
 Review fixture setup and test placement when adding tests to meet the coverage floor.
 
-- **Prohibited:** Use `unwrap()` in fixture setup or extract inline tests solely to get
-  their source file below the size limit.
+- **Prohibited:** Use `unwrap()` in fixture setup or extract unit tests to get the
+  implementation file below the size limit.
 - **Preferred:** Propagate setup errors from fallible tests. Split production ownership
-  and colocate tests before measuring combined coverage.
+  and keep tests inline with each owner before measuring combined coverage.
 
 **Compare:**
 

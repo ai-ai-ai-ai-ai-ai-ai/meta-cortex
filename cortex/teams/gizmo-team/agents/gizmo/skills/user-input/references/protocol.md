@@ -53,10 +53,18 @@ For example, submit the user's mode selection:
 {"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"development.mode","value":"single_agent"}}
 ```
 
-The completed result contains:
+The result is still `pending`, with `prompt.field: development.delivery` and
+`create_pr` first in the options. After the user selects delivery, retain the
+mode in the returned state and submit the delivery answer:
 
 ```json
-{"version":1,"status":"complete","state":{"answers":{"development.mode":"single_agent"},"skipped":[]},"issues":[]}
+{"version":1,"state":{"answers":{"development.mode":"single_agent"},"skipped":[]},"event":{"type":"answer","name":"development.delivery","value":"create_pr"}}
+```
+
+Only after both choices are validated does the completed result contain:
+
+```json
+{"version":1,"status":"complete","state":{"answers":{"development.mode":"single_agent","development.delivery":"create_pr"},"skipped":[]},"issues":[]}
 ```
 
 Pending results also contain `prompt.field` (the stable field name) and

@@ -12,12 +12,17 @@ for Rust practices, checks, and boundary requirements.
 ## Baseline
 
 - Inspect focused tests and affected public, wire, and Rust-owned WASM boundaries.
+- Apply the Rust skill's mandatory modeling prerequisites and
+  [domain-type review](../../../rust-dev/skills/rust-dev-skill/practices/modeling/domain-types.md#validation)
+  to moved code and touched aggregates; existing code is not automatically compliant.
 - Record the behavior, domain decisions, and contracts the refactor must preserve.
 - Route an intended behavior or contract change through Team Gizmo to rust-dev.
 
 ## Small structural steps
 
 - Name one cohesive structural seam before moving code.
+- Apply the [module-layout rule](../../../rust-dev/skills/rust-dev-skill/practices/tooling/module-layout.md)
+  when moving module files, including its include-path and reference checks.
 - Keep ownership, dependency direction, and tests aligned with that seam.
 - Make the smallest structural edit and keep unrelated behavior changes out.
 

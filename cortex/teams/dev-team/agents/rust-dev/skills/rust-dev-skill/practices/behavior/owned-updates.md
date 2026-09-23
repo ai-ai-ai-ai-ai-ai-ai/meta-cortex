@@ -6,12 +6,23 @@ without inventing a workflow stage for every edit.
 ## Required actions
 
 - Use `mut self` for replacement updates and return `Self` or a typed result.
+- Apply this to public and private methods, including collection helpers such as
+  `insert`, `push`, and `add`. A collection being mutable does not justify a
+  borrowed receiver on its owning application type.
+- Mark replacement methods `#[must_use]`. Rebind, chain, or fold their returned
+  owners at callers; do not discard the update.
+- Local mutable bindings and short-lived mutable borrows inside a consuming
+  method are allowed, including calls to standard-library collection methods.
 - Retain `&mut self` only for required traits or externally owned mutation contracts.
 - Keep those exceptions at their exact boundary.
+- Name the exact trait or resource API that requires the borrowed receiver;
+  convenience or the existing method signature is not an exception.
 - Introduce channels only for a real high-level actor or concurrent owner.
 
 ## Prohibited actions
 
+- Do not expose `&mut self` for an authored owned-value update or hide the same
+  contract behind a helper taking `&mut Owner`.
 - Do not add actor infrastructure merely to avoid an owned update.
 - Do not introduce artificial lifecycle phases for a pure value update.
 
@@ -61,6 +72,7 @@ pub struct RetryPolicy {
 }
 
 impl RetryPolicy {
+    #[must_use]
     pub fn with_limit(mut self, limit: RetryLimit) -> Self {
         self.limit = limit;
         self
@@ -78,4 +90,6 @@ only its limit. Neither a conversion trait nor an approval state is needed.
 ## Validation
 
 - Check that the update consumes the previous value and preserves unchanged fields.
+- Review private helpers and their callers as well as public APIs. Confirm each
+  returned owner is used and collection construction preserves ordering and grouping.
 - Identify the exact external contract for every retained mutation exception.

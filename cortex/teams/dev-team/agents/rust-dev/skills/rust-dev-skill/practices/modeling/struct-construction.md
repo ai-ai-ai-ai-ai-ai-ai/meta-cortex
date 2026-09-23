@@ -11,7 +11,9 @@ they must not expose unchecked fields merely to permit a literal.
 ## Single field: derive From
 
 Use `#[derive(derive_more::From)]` for infallible wrappers instead of writing
-the conversion by hand. Write `TryFrom<T>` when validation can fail.
+the conversion by hand. Constrained wrappers use
+[validating conversions returning `Result`](domain-types.md#parse-according-to-domain-structure)
+through `TryFrom<T>` or `FromStr`, with concrete errors.
 For a generic workflow owner, implement only the permitted initial-state
 conversion manually; a blanket derive would expose construction for every state.
 

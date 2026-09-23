@@ -5,6 +5,50 @@ consuming project owns its branch, review, validation, and merge policies.
 
 ## Required actions
 
+### Configured implementation delivery
+
+Use the validated session `development.delivery` collected by the
+[entry point](../../../AGENTS.md#development-mode) from
+[development.yaml](../../../development.yaml). Apply it in both development modes:
+
+- `create_pr` is the recommended first choice. An implementation request includes
+  committing the validated feature, pushing its branch, and creating or updating
+  its PR. Continue without requiring a separate PR request or approval. The PR
+  role owns remote operations in multi-agent mode.
+- `local_only` completes after local implementation and required validation.
+  Keep work local: do not push or create/update a PR. Return the local branch,
+  workspace, validation results, and any uncommitted changes. Local commits remain
+  allowed unless the user says otherwise.
+
+The recommendation is not an automatic selection. Missing or pending delivery
+configuration does not authorize publishing; recover the session choice or collect
+it through the entry point. Carry the resolved choice in assignments and recovery
+context. Discussion and read-only review do not imply implementation or publication.
+
+For PR delivery:
+
+- Honor an explicit local-only, no-push, or no-PR instruction from the user or
+  consuming project. Apply explicit user changes before further affected work;
+  a task-specific override leaves the session preference intact. Do not retract
+  already-published work unless requested.
+- Resolve the repository and target from project context. If authentication,
+  repository access, or a necessary target decision is unavailable, report the
+  actual delivery blocker instead of declaring the feature complete locally.
+- Reuse a matching open PR. Follow the consuming project's PR template and
+  draft policy; create a ready-for-review PR when the implementation and required
+  local validation are complete unless that policy calls for a draft.
+- Finish with the PR URL, published revision, and observed check status. Attach
+  the PR through the host when supported. Pending CI remains pending.
+- Opening a PR does not authorize merging, releasing, or deploying it. Those
+  operations retain their own user or project authorization requirements.
+
+**Prohibited:** finish locally under `create_pr` because the user did not repeat
+“open a PR,” publish under `local_only`, or infer `create_pr` from a pending prompt.
+
+**Preferred:** under `create_pr`, validate, commit, push, update the matching PR,
+and return its link with the actual check status. Under `local_only`, return the
+validated local outcome without a PR handoff.
+
 ### Resolve project delivery policy
 
 Read the project's `AGENTS.md` and its linked delivery instructions. Inspect the
@@ -44,5 +88,6 @@ work evidence, not credentials or an authorization protocol.
 manager loop merely to move an integrated feature into a PR.
 
 **Preferred:** the integration agent reports the feature branch and check results
-to Team Gizmo. Gizmo decides whether to assign PR work and supplies that evidence
-to the PR agent, which reports the outcome and remaining work back to Gizmo.
+to Team Gizmo. Under `create_pr`, Gizmo supplies that evidence to the PR agent,
+which reports the outcome and remaining work back to Gizmo. Under `local_only`,
+Gizmo returns the local outcome to Prime.

@@ -4,3 +4,8 @@ fields:
     options:
       - single_agent
       - multi_agent
+  - name: development.delivery
+    question: "Delivery: create_pr (recommended) commits and pushes the validated feature and creates or updates its PR; local_only keeps work local without pushing or creating a PR. Which delivery?"
+    options:
+      - create_pr
+      - local_only

@@ -110,7 +110,6 @@ pub struct RetryLimit(u16);
 
 impl TryFrom<u16> for RetryLimit {
     type Error = RetryLimitError;
-
     fn try_from(raw: u16) -> Result<Self, Self::Error> {
         reject_zero!(raw);
         Ok(Self(raw))
@@ -125,7 +124,6 @@ pub struct RetryLimit(u16);
 
 impl TryFrom<u16> for RetryLimit {
     type Error = RetryLimitError;
-
     fn try_from(raw: u16) -> Result<Self, Self::Error> {
         if raw == 0 {
             return Err(RetryLimitError::Zero);

@@ -128,8 +128,9 @@ use delivery::DeliveryKind;
 let requirement = AddressRequirement::from(DeliveryKind::Shipment);
 ```
 
-Use `From` for direct infallible conversions and `TryFrom` when conversion can
-fail. Use a named method for policy that needs additional context or performs an
+Use `From` for direct infallible conversions and `TryFrom` for fallible parsing
+and validation. Inspect structured strings under the
+[parsing rule](../modeling/domain-types.md#parse-according-to-domain-structure). Use a named method for policy that needs additional context or performs an
 action. Keep validation and workflow transitions intact.
 
 ## Keep required free functions at the boundary
@@ -165,7 +166,8 @@ pub struct MessageBody(String);
 
 impl MessageBody {
     pub fn print(&self) {
-        println!("{}", self.0);
+        let Self(message) = self;
+        println!("{message}");
     }
 }
 

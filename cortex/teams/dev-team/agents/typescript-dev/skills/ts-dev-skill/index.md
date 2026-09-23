@@ -227,6 +227,16 @@ validation. Existing code does not weaken their requirements.
     state-appropriate operations.
   - Do not mutate parallel flags or invent lifecycles for pure behavior.
 
+- **[domain_structure:typed_yaml](practices/typescript-domain-structure.md#serialize-yaml-from-typed-values)**
+
+  - Prohibit building YAML from literals, templates, concatenation, fragments,
+    indentation, or replacement, including catalogs, recovery, and valid fixtures.
+  - Construct canonical typed records and serialize at I/O; branding, assertions,
+    and subsequent parsing cannot repair string-based construction.
+  - Keep raw input only at external decoders and deliberate malformed/unsupported
+    test cases; handwritten YAML files and documentation are not builders.
+  - Review producers and test escaping/round trips separately from compiler checks.
+
 - **[domain_structure:versioned_schemas](practices/typescript-domain-structure.md#version-owned-persisted-formats)**
 
   - Give TypeScript-owned persisted/wire schemas a named version, current writer,
