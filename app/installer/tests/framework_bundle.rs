@@ -4,6 +4,7 @@ mod build_support;
 use build_support::FrameworkBundle;
 use meta_cortex_workbench::agents::AgentId;
 use schemars::generate::SchemaSettings;
+use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::fs;
@@ -93,6 +94,19 @@ struct AgentCatalogSchema {
     #[serde(rename = "oneOf")]
     teams: Vec<TeamSchema>,
 }
+impl AgentCatalogSchema {
+    fn generate() -> serde_json::Result<Self> {
+        let mut settings = SchemaSettings::draft2020_12();
+        settings.inline_subschemas = true;
+        let schema = settings.into_generator().into_root_schema_for::<AgentId>();
+        serde_json::from_value(serde_json::to_value(schema)?)
+    }
+}
+#[derive(Deserialize)]
+struct CatalogTeamSchema {
+    #[serde(rename = "enum")]
+    teams: Vec<CatalogTeam>,
+}
 #[derive(Deserialize)]
 struct TeamSchema {
     properties: TeamProperties,
@@ -118,7 +132,9 @@ struct SchemaRoleName(String);
 
 // Independent consumer of the schema's team constants, checked against the
 // directory that actually owns each role. Role names come from the schema above.
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, JsonSchema,
+)]
 enum CatalogTeam {
     Gizmo,
     Development,
@@ -128,7 +144,7 @@ enum CatalogTeam {
     Delivery,
 }
 impl CatalogTeam {
-    fn agents_path(self) -> PathBuf {
+    fn directory(self) -> PathBuf {
         let directory = match self {
             Self::Gizmo => "gizmo-team",
             Self::Development => "dev-team",
@@ -137,7 +153,11 @@ impl CatalogTeam {
             Self::Sre => "sre-team",
             Self::Delivery => "delivery-team",
         };
-        PathBuf::from("teams").join(directory).join("agents")
+        PathBuf::from("teams").join(directory)
+    }
+
+    fn agents_path(self) -> PathBuf {
+        self.directory().join("agents")
     }
 }
 
@@ -149,10 +169,7 @@ struct SchemaIdentity {
 
 #[test]
 fn agent_hierarchy_matches_every_role_in_its_owning_team() -> anyhow::Result<()> {
-    let mut settings = SchemaSettings::draft2020_12();
-    settings.inline_subschemas = true;
-    let schema = settings.into_generator().into_root_schema_for::<AgentId>();
-    let catalog: AgentCatalogSchema = serde_json::from_value(serde_json::to_value(schema)?)?;
+    let catalog = AgentCatalogSchema::generate()?;
     let mut declared = BTreeSet::new();
     for team in catalog.teams {
         let team_name = team.properties.team.name;
@@ -186,5 +203,55 @@ fn agent_hierarchy_matches_every_role_in_its_owning_team() -> anyhow::Result<()>
         }
     }
     assert_eq!(declared, bundled);
+    Ok(())
+}
+
+#[test]
+fn catalog_teams_match_directories_one_to_one() -> anyhow::Result<()> {
+    // Derive every variant from the enum itself, never from a hand-maintained list.
+    let catalog: CatalogTeamSchema =
+        serde_json::from_value(serde_json::to_value(schema_for!(CatalogTeam))?)?;
+    let mut variants = BTreeSet::new();
+    let mut declared = BTreeSet::new();
+    for team in catalog.teams {
+        assert!(variants.insert(team), "duplicate team variant: {team:?}");
+        assert!(
+            declared.insert(team.directory()),
+            "multiple variants map to {:?}",
+            team.directory()
+        );
+    }
+    let mut hierarchy = BTreeSet::new();
+    for team in AgentCatalogSchema::generate()?.teams {
+        assert!(
+            hierarchy.insert(team.properties.team.name),
+            "duplicate AgentId team"
+        );
+    }
+    assert_eq!(variants, hierarchy, "CatalogTeam and AgentId teams differ");
+
+    let library = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../cortex");
+    let mut directories = BTreeSet::new();
+    for entry in fs::read_dir(library.join("teams"))? {
+        let entry = entry?;
+        let kind = entry.file_type()?;
+        assert!(
+            !kind.is_symlink(),
+            "team entries must not be symlinks: {:?}",
+            entry.path()
+        );
+        if kind.is_dir() {
+            let directory = entry.path();
+            assert!(
+                directory.join("agents").is_dir(),
+                "team is missing its agents directory: {directory:?}"
+            );
+            assert!(directories.insert(directory.strip_prefix(&library)?.to_path_buf()));
+        }
+    }
+    assert_eq!(
+        declared, directories,
+        "CatalogTeam and team directories differ"
+    );
     Ok(())
 }
