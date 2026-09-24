@@ -111,10 +111,14 @@ class DocumentArticles {
           candidate.kind === BlockKind.Heading &&
           candidate.depth <= block.depth,
       );
+      let blocks: ArticleBlocks = following;
+      if (boundary >= 0) {
+        blocks = following.slice(0, boundary);
+      }
       const request: ArticleSectionRequest = {
         document: this.document,
         heading: block,
-        blocks: boundary < 0 ? following : following.slice(0, boundary),
+        blocks,
       };
       findings.push(...new ArticleSection(request).audit());
     }
@@ -144,7 +148,11 @@ class ArticleSection {
     for (const block of this.request.blocks) {
       if (block.kind === BlockKind.Heading && block.depth <= 3) break;
       if (block.kind === BlockKind.Transparent) continue;
-      consecutive = block.kind === BlockKind.Paragraph ? consecutive + 1 : 0;
+      if (block.kind === BlockKind.Paragraph) {
+        consecutive += 1;
+      } else {
+        consecutive = 0;
+      }
       if (consecutive === ArticleSection.maximumProseRun + 1) {
         const finding: ArticleFinding = {
           code: ArticleFindingCode.Dense,

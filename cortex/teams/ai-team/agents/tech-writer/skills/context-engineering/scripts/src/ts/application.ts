@@ -27,14 +27,19 @@ export class SkillApplication {
       Effect.flatMap((request) => this.dispatch(request)),
       Effect.flatMap((response) =>
         new YamlResponse(response).encode().pipe(
-          Effect.map((yaml) => ({
-            yaml,
-            exitCode:
-              response.kind === ResponseKind.Findings &&
-              response.findings.length > 0
-                ? ExitCode.Findings
-                : ExitCode.Success,
-          })),
+          Effect.map((yaml): SkillExecution => {
+            switch (response.kind) {
+              case ResponseKind.Catalog:
+                return { yaml, exitCode: ExitCode.Success };
+              case ResponseKind.Findings:
+                if (response.findings.length > 0) {
+                  return { yaml, exitCode: ExitCode.Findings };
+                }
+                return { yaml, exitCode: ExitCode.Success };
+            }
+            const unhandled: never = response;
+            return unhandled;
+          }),
         ),
       ),
       Effect.catchAll((failure) =>

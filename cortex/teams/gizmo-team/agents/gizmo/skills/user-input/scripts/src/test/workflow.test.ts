@@ -155,9 +155,14 @@ describe("answer collection", () => {
       scenario.answer(answer);
       const event: HostEvent = { type };
       const result = scenario.send(event);
-      expect(result.status).toBe(
-        type === EventType.Cancel ? Status.Cancelled : Status.Unavailable,
-      );
+      switch (type) {
+        case EventType.Cancel:
+          expect(result.status).toBe(Status.Cancelled);
+          break;
+        case EventType.Unavailable:
+          expect(result.status).toBe(Status.Unavailable);
+          break;
+      }
       const retainedAnswers: ExpectedAnswers = { name: "Ada" };
       expect<ExpectedAnswers>(result.state.answers).toEqual(retainedAnswers);
       expect(Object.hasOwn(result, "prompt")).toBe(false);

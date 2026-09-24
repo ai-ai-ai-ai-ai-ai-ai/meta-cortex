@@ -73,10 +73,15 @@ export class InputWorkflow {
           issues.push(issue);
         } else {
           const answer = new FieldAnswer(field);
-          const checked: AnswerCheck =
-            event.type === EventType.Skip
-              ? answer.skip()
-              : answer.convert(event.value);
+          let checked: AnswerCheck;
+          switch (event.type) {
+            case EventType.Skip:
+              checked = answer.skip();
+              break;
+            case EventType.Answer:
+              checked = answer.convert(event.value);
+              break;
+          }
           switch (checked.kind) {
             case AnswerKind.Accepted:
               answers[field.name] = checked.value;

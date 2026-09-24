@@ -528,11 +528,12 @@ test("a renamed anchor in real graph facts is reported", () => {
         ...request.navigation.audit,
         graphs: request.navigation.audit.graphs.map((graph) => ({
           ...graph,
-          entries: graph.entries.map((entry) =>
-            entry.rule === "function_ownership:instances"
-              ? { ...entry, anchor: "missing-section" }
-              : entry,
-          ),
+          entries: graph.entries.map((entry) => {
+            if (entry.rule === "function_ownership:instances") {
+              return { ...entry, anchor: "missing-section" };
+            }
+            return entry;
+          }),
         })),
       },
     },

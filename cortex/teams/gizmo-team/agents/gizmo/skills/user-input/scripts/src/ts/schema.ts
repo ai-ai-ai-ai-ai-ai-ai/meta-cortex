@@ -27,8 +27,16 @@ export class FormSchema {
     Schema.brand("Question"),
   );
   private static readonly requirementConversion = {
-    decode: (required: boolean) =>
-      required ? Requirement.Required : Requirement.Optional,
+    decode: (required: boolean) => {
+      switch (required) {
+        case true:
+          return Requirement.Required;
+        case false:
+          return Requirement.Optional;
+      }
+      const unhandled: never = required;
+      return unhandled;
+    },
     encode: (required: Requirement) => required === Requirement.Required,
   };
   private static readonly requirement = Schema.transform(

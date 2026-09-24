@@ -17,10 +17,21 @@ export interface NativePrompt {
 export class CodexPrompt {
   constructor(private readonly field: Field) {}
   render(): NativePrompt {
-    const question: NativeQuestion =
-      this.field.type === FieldType.Choice
-        ? { title: this.field.question, options: this.field.options }
-        : { title: this.field.question };
-    return { field: this.field.name, arguments: { questions: [question] } };
+    switch (this.field.type) {
+      case FieldType.Text:
+      case FieldType.Integer: {
+        const question: NativeQuestion = { title: this.field.question };
+        return { field: this.field.name, arguments: { questions: [question] } };
+      }
+      case FieldType.Choice: {
+        const question: NativeQuestion = {
+          title: this.field.question,
+          options: this.field.options,
+        };
+        return { field: this.field.name, arguments: { questions: [question] } };
+      }
+    }
+    const unhandled: never = this.field;
+    return unhandled;
   }
 }
