@@ -72,10 +72,11 @@ struct EmptyArguments {}
 struct FrameworkInit {
     harness: Harness,
     instructions: Instructions,
-    bun: BunSetup,
+    bun: ToolSetup,
+    vale: ToolSetup,
 }
 #[derive(Debug, Serialize, Deserialize)]
-enum BunSetup {
+enum ToolSetup {
     InstallMissing,
     RequireExisting,
 }
@@ -764,7 +765,8 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness: Harness::None,
                     instructions: Instructions::Skip,
-                    bun: BunSetup::RequireExisting,
+                    bun: ToolSetup::RequireExisting,
+                    vale: ToolSetup::RequireExisting,
                 },
             )))?
     else {
@@ -789,7 +791,8 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness,
                     instructions: Instructions::Write,
-                    bun: BunSetup::RequireExisting,
+                    bun: ToolSetup::RequireExisting,
+                    vale: ToolSetup::RequireExisting,
                 },
             )))?;
     }

@@ -104,7 +104,7 @@ switch (setting.kind) {
 
 ## Distinguish effects from absent values
 
-Allow void for complete unit returns, callbacks, Promise<void>, synchronous-or-
+Allow void for complete unit returns, callbacks, `Promise<void>`, synchronous-or-
 asynchronous effects, and unary discard. Reject T | void and nested value-or-void
 contracts. Model value absence explicitly instead.
 

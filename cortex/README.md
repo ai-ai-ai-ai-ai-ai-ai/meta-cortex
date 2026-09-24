@@ -133,8 +133,8 @@ The [development form](development.yaml) defines the session mode and delivery q
 [user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 includes a generic YAML form helper, an example, and usage instructions. It
 uses Bun and the shared workspace dependencies installed by Framework / Initialize.
-Initialization automatically installs missing Bun 1.3.14 in `~/.meta-cortex/bun`,
-shared by repositories and worktrees. The entry point configures PATH
+Initialization automatically installs missing Bun 1.3.14 in `~/.meta-cortex/bun`
+and Vale 3.22.0 in `~/.meta-cortex/vale`, shared by repositories and worktrees. The entry point configures PATH
 for framework scripts. Individual skills reuse that installation. The helper
 validates data locally, while the current agent calls the host's native question
 tool. Answers stay in session context rather than a repository configuration file.
@@ -181,3 +181,18 @@ skills directly; there is no global knowledge directory or selection registry.
 
 The framework's instructions remain generic.
 Project-specific requirements and architecture belong to the consuming project.
+
+## Documentation checks
+
+Run from the library root to check its Markdown files:
+
+```sh
+bun run docs:check
+```
+
+Vale checks prose with bundled styles. Remark checks Markdown structure and local
+links, including heading anchors. Two small plugins check Cortex article and
+practice-index rules. Supply file paths, directories, or quoted globs to check
+selected project documentation. See the
+[context-engineering skill](teams/ai-team/agents/tech-writer/skills/context-engineering/SKILL.md#executable-audits)
+for the checks and their limits.

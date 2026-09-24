@@ -155,7 +155,7 @@ validation. Existing code does not weaken their requirements.
 
 - **[single_parameter:validation](practices/typescript-single-parameter.md#validation)**
 
-  - Enforce max-params: [error, 1] plus semantic request review and verify every host
+  - Enforce `max-params: [error, 1]` plus semantic request review and verify every host
     exception.
 
 
@@ -394,7 +394,7 @@ validation. Existing code does not weaken their requirements.
 
 - **[explicit_state:unit_void](practices/typescript-explicit-state.md#distinguish-effects-from-absent-values)**
 
-  - Allow void only for complete unit/effect returns, Promise<void>,
+  - Allow void only for complete unit/effect returns, `Promise<void>`,
     synchronous-or-asynchronous effects, and unary discard.
   - Reject value-or-void contracts including nested generics and callback results.
 

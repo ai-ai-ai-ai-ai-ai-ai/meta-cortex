@@ -133,12 +133,13 @@ enum FrameworkOperation {
 struct EmptyArguments {}
 #[derive(Serialize)]
 struct Initialization {
-    bun: BunSetup,
+    bun: ToolSetup,
+    vale: ToolSetup,
     harness: Harness,
     instructions: Instructions,
 }
-#[derive(Serialize)]
-enum BunSetup {
+#[derive(Clone, Copy, Serialize)]
+enum ToolSetup {
     InstallMissing,
     RequireExisting,
 }
@@ -258,7 +259,8 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     ));
     assert_eq!(fs::read_dir(scenario.project.path())?.count(), 1);
     scenario.initialize(Initialization {
-        bun: BunSetup::InstallMissing,
+        bun: ToolSetup::InstallMissing,
+        vale: ToolSetup::InstallMissing,
         harness: Harness::Codex,
         instructions: Instructions::Write,
     })?;
@@ -279,7 +281,8 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     fs::write(&config, &customized)?;
     let guidance = fs::read(root.join("AGENTS.md"))?;
     scenario.initialize(Initialization {
-        bun: BunSetup::InstallMissing,
+        bun: ToolSetup::InstallMissing,
+        vale: ToolSetup::InstallMissing,
         harness: Harness::Codex,
         instructions: Instructions::Write,
     })?;
@@ -332,7 +335,8 @@ fn yaml_initialization_defaults_are_unattended_and_preserve_guidance() -> anyhow
     fs::write(&guidance, "# Existing instructions\n")?;
     for _ in 0..2 {
         scenario.initialize(Initialization {
-            bun: BunSetup::InstallMissing,
+            bun: ToolSetup::InstallMissing,
+            vale: ToolSetup::InstallMissing,
             harness: Harness::None,
             instructions: Instructions::Skip,
         })?;
@@ -365,7 +369,8 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
         version: ProtocolVersion::V1,
         project: scenario.project.path().to_owned(),
         operation: Operation::Framework(FrameworkOperation::Initialize(Initialization {
-            bun: BunSetup::RequireExisting,
+            bun: ToolSetup::RequireExisting,
+            vale: ToolSetup::RequireExisting,
             harness: Harness::Codex,
             instructions: Instructions::Write,
         })),
@@ -396,7 +401,8 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
     assert!(!scenario.project.path().join("AGENTS.md").exists());
     assert!(!scenario.project.path().join(".agents").exists());
     scenario.initialize(Initialization {
-        bun: BunSetup::InstallMissing,
+        bun: ToolSetup::InstallMissing,
+        vale: ToolSetup::InstallMissing,
         harness: Harness::Codex,
         instructions: Instructions::Write,
     })?;
@@ -411,14 +417,14 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
     Ok(())
 }
 
-struct BunScenario {
+struct ToolScenario {
     cli: CliScenario,
     tools: TempDir,
     global_installation: TempDir,
     executable: PathBuf,
 }
 
-impl BunScenario {
+impl ToolScenario {
     fn create() -> anyhow::Result<Self> {
         let tools = Builder::new().prefix("bun tools ").tempdir()?;
         let output = Command::new("bun")
@@ -435,10 +441,16 @@ impl BunScenario {
         fs::write(
             scenario.tools.path().join("curl"),
             r#"#!/bin/sh
-test "$5" = "https://bun.com/install" || exit 90
 test "$6" = "--output" || exit 91
-printf 'downloaded' > "$CORTEX_TEST_DOWNLOAD"
-exec /bin/cp "$CORTEX_TEST_INSTALLER" "$7"
+case "$5" in
+  https://bun.com/install)
+    printf 'downloaded' > "$CORTEX_TEST_DOWNLOAD"
+    exec /bin/cp "$CORTEX_TEST_INSTALLER" "$7" ;;
+  https://github.com/vale-cli/vale/releases/download/v3.22.0/vale_3.22.0_*.tar.gz)
+    printf 'downloaded' > "$CORTEX_TEST_VALE_DOWNLOAD"
+    exec /bin/cp "$CORTEX_TEST_VALE_ARCHIVE" "$7" ;;
+  *) exit 90 ;;
+esac
 "#,
         )?;
         fs::set_permissions(
@@ -455,15 +467,32 @@ printf 'installer stdout'
 printf 'installer stderr' >&2
 "#,
         )?;
+        symlink("/usr/bin/tar", scenario.tools.path().join("tar"))?;
+        let vale = scenario.tools.path().join("vale-fixture");
+        fs::create_dir(&vale)?;
+        fs::write(
+            vale.join("vale"),
+            "#!/bin/sh\nprintf 'vale version 3.22.0\\n'\n",
+        )?;
+        fs::set_permissions(vale.join("vale"), fs::Permissions::from_mode(0o755))?;
+        let archived = Command::new("tar")
+            .arg("-czf")
+            .arg(scenario.tools.path().join("vale.tar.gz"))
+            .arg("-C")
+            .arg(vale)
+            .arg("vale")
+            .status()?;
+        assert!(archived.success());
         Ok(scenario)
     }
 
-    fn call(&self, setup: BunSetup) -> anyhow::Result<Outcome> {
+    fn call(&self, setup: ToolSetup) -> anyhow::Result<Outcome> {
         let request = Request {
             version: ProtocolVersion::V1,
             project: self.cli.project.path().to_owned(),
             operation: Operation::Framework(FrameworkOperation::Initialize(Initialization {
                 bun: setup,
+                vale: setup,
                 harness: Harness::Codex,
                 instructions: Instructions::Write,
             })),
@@ -479,6 +508,14 @@ printf 'installer stderr' >&2
                 self.tools.path().join("installer.sh"),
             )
             .env("CORTEX_TEST_DOWNLOAD", self.tools.path().join("downloaded"))
+            .env(
+                "CORTEX_TEST_VALE_DOWNLOAD",
+                self.tools.path().join("vale-downloaded"),
+            )
+            .env(
+                "CORTEX_TEST_VALE_ARCHIVE",
+                self.tools.path().join("vale.tar.gz"),
+            )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -504,9 +541,9 @@ printf 'installer stderr' >&2
 }
 
 #[test]
-fn installs_missing_bun_once_and_shares_identity_when_worktree_initializes_first()
+fn installs_missing_tools_once_and_shares_identity_when_worktree_initializes_first()
 -> anyhow::Result<()> {
-    let scenario = BunScenario::create()?;
+    let scenario = ToolScenario::create()?;
     let repository = git2::Repository::open(scenario.cli.project.path())?;
     let signature = git2::Signature::now("Bun Test", "bun@example.invalid")?;
     let tree_id = repository.index()?.write_tree()?;
@@ -521,7 +558,7 @@ fn installs_missing_bun_once_and_shares_identity_when_worktree_initializes_first
     fs::remove_dir(worktree.path())?;
     repository.worktree("bun-test", worktree.path(), Some(&options))?;
     let main = scenario.cli;
-    let worker = BunScenario {
+    let worker = ToolScenario {
         cli: CliScenario {
             project: worktree,
             data: main.data.clone(),
@@ -529,10 +566,12 @@ fn installs_missing_bun_once_and_shares_identity_when_worktree_initializes_first
         ..scenario
     };
     assert!(matches!(
-        worker.call(BunSetup::InstallMissing)?,
+        worker.call(ToolSetup::InstallMissing)?,
         Outcome::Success(_)
     ));
     assert!(worker.tools.path().join("downloaded").is_file());
+    assert!(worker.tools.path().join("vale-downloaded").is_file());
+    assert!(worker.cli.data.path().join("vale/bin/vale").is_file());
     assert!(worker.cli.data.path().join("bun/bin/bun").is_file());
     assert_eq!(fs::read_dir(worker.global_installation.path())?.count(), 0);
     assert!(
@@ -566,21 +605,23 @@ fn installs_missing_bun_once_and_shares_identity_when_worktree_initializes_first
     );
     assert!(!main.project.path().join(".git/meta-cortex").exists());
     fs::remove_file(worker.tools.path().join("downloaded"))?;
+    fs::remove_file(worker.tools.path().join("vale-downloaded"))?;
 
     let worktree = worker.cli;
-    let scenario = BunScenario {
+    let scenario = ToolScenario {
         cli: main,
         ..worker
     };
     for _ in 0..2 {
         assert!(matches!(
-            scenario.call(BunSetup::RequireExisting)?,
+            scenario.call(ToolSetup::RequireExisting)?,
             Outcome::Success(_)
         ));
         assert_eq!(fs::read_to_string(&identity_path)?, identity);
     }
     assert!(!scenario.tools.path().join("downloaded").exists());
-    assert_eq!(fs::read_dir(scenario.cli.data.path())?.count(), 2);
+    assert!(!scenario.tools.path().join("vale-downloaded").exists());
+    assert_eq!(fs::read_dir(scenario.cli.data.path())?.count(), 3);
     assert!(
         scenario
             .cli
@@ -589,12 +630,12 @@ fn installs_missing_bun_once_and_shares_identity_when_worktree_initializes_first
             .join(".meta-cortex/node_modules/effect/AGENTS.md")
             .is_file()
     );
-    let worker = BunScenario {
+    let worker = ToolScenario {
         cli: worktree,
         ..scenario
     };
     assert!(matches!(
-        worker.call(BunSetup::RequireExisting)?,
+        worker.call(ToolSetup::RequireExisting)?,
         Outcome::Success(_)
     ));
     assert_eq!(fs::read_to_string(identity_path)?, identity);
@@ -604,9 +645,9 @@ fn installs_missing_bun_once_and_shares_identity_when_worktree_initializes_first
 
 #[test]
 fn initialization_requires_git_before_installing_anything() -> anyhow::Result<()> {
-    let scenario = BunScenario::create()?;
+    let scenario = ToolScenario::create()?;
     fs::remove_dir_all(scenario.cli.project.path().join(".git"))?;
-    let Outcome::Error(error) = scenario.call(BunSetup::InstallMissing)? else {
+    let Outcome::Error(error) = scenario.call(ToolSetup::InstallMissing)? else {
         bail!("expected missing Git repository failure")
     };
     assert!(error.message.contains("requires a Git repository"));
@@ -618,12 +659,12 @@ fn initialization_requires_git_before_installing_anything() -> anyhow::Result<()
 #[test]
 fn bun_setup_failures_leave_framework_and_instructions_untouched() -> anyhow::Result<()> {
     for failing_step in ["curl", "installer.sh"] {
-        let scenario = BunScenario::create()?;
+        let scenario = ToolScenario::create()?;
         fs::write(
             scenario.tools.path().join(failing_step),
             "#!/bin/sh\nprintf 'installation failed' >&2\nexit 7\n",
         )?;
-        let Outcome::Error(error) = scenario.call(BunSetup::InstallMissing)? else {
+        let Outcome::Error(error) = scenario.call(ToolSetup::InstallMissing)? else {
             bail!("expected Bun setup failure")
         };
         assert!(error.message.contains("installation failed"));
@@ -638,16 +679,70 @@ fn bun_setup_failures_leave_framework_and_instructions_untouched() -> anyhow::Re
 
 #[test]
 fn a_broken_existing_bun_is_reported_without_reinstalling() -> anyhow::Result<()> {
-    let scenario = BunScenario::create()?;
+    let scenario = ToolScenario::create()?;
     let executable = scenario.tools.path().join("bun");
     fs::write(&executable, "#!/bin/sh\nprintf 'broken Bun' >&2\nexit 12\n")?;
     fs::set_permissions(&executable, fs::Permissions::from_mode(0o755))?;
-    let Outcome::Error(error) = scenario.call(BunSetup::InstallMissing)? else {
+    let Outcome::Error(error) = scenario.call(ToolSetup::InstallMissing)? else {
         bail!("expected broken Bun failure")
     };
     assert!(error.message.contains("broken Bun"));
     assert!(!scenario.tools.path().join("downloaded").exists());
     assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 1);
+    Ok(())
+}
+
+#[test]
+fn missing_vale_requires_existing_tools_before_writing_project_files() -> anyhow::Result<()> {
+    let scenario = ToolScenario::create()?;
+    symlink(&scenario.executable, scenario.tools.path().join("bun"))?;
+    let Outcome::Error(error) = scenario.call(ToolSetup::RequireExisting)? else {
+        bail!("expected missing Vale failure")
+    };
+    assert!(error.message.contains("install Vale"));
+    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 1);
+    assert!(!scenario.tools.path().join("vale-downloaded").exists());
+    Ok(())
+}
+
+#[test]
+fn a_broken_existing_vale_is_reported_without_reinstalling() -> anyhow::Result<()> {
+    let scenario = ToolScenario::create()?;
+    symlink(&scenario.executable, scenario.tools.path().join("bun"))?;
+    let executable = scenario.tools.path().join("vale");
+    fs::write(
+        &executable,
+        "#!/bin/sh\nprintf 'broken Vale' >&2\nexit 12\n",
+    )?;
+    fs::set_permissions(&executable, fs::Permissions::from_mode(0o755))?;
+    let Outcome::Error(error) = scenario.call(ToolSetup::InstallMissing)? else {
+        bail!("expected broken Vale failure")
+    };
+    assert!(error.message.contains("broken Vale"));
+    assert!(!scenario.tools.path().join("vale-downloaded").exists());
+    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 1);
+    Ok(())
+}
+
+#[test]
+fn invalid_vale_archive_fails_before_project_writes_and_can_be_retried() -> anyhow::Result<()> {
+    let scenario = ToolScenario::create()?;
+    symlink(&scenario.executable, scenario.tools.path().join("bun"))?;
+    let archive = scenario.tools.path().join("vale.tar.gz");
+    let valid = fs::read(&archive)?;
+    fs::write(&archive, "invalid archive")?;
+    let Outcome::Error(error) = scenario.call(ToolSetup::InstallMissing)? else {
+        bail!("expected Vale extraction failure")
+    };
+    assert!(error.message.contains("Vale"));
+    assert!(error.message.contains("tar failed"));
+    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 1);
+    fs::write(archive, valid)?;
+    assert!(matches!(
+        scenario.call(ToolSetup::InstallMissing)?,
+        Outcome::Success(_)
+    ));
+    assert!(scenario.cli.data.path().join("vale/bin/vale").is_file());
     Ok(())
 }
 
@@ -659,7 +754,8 @@ fn incomplete_framework_is_reported_without_overwriting_files() -> anyhow::Resul
     fs::write(framework.join("meta-cortex.toml"), "# Keep my settings\n")?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(
         FrameworkOperation::Initialize(Initialization {
-            bun: BunSetup::InstallMissing,
+            bun: ToolSetup::InstallMissing,
+            vale: ToolSetup::InstallMissing,
             harness: Harness::None,
             instructions: Instructions::Skip,
         }),
@@ -690,7 +786,8 @@ fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
     fs::remove_dir_all(scenario.project.path())?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(
         FrameworkOperation::Initialize(Initialization {
-            bun: BunSetup::InstallMissing,
+            bun: ToolSetup::InstallMissing,
+            vale: ToolSetup::InstallMissing,
             harness: Harness::None,
             instructions: Instructions::Skip,
         }),

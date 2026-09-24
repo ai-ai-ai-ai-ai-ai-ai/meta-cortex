@@ -4,7 +4,7 @@ use super::protocol::{
     AgentHarness, AgentInstructions, EmptyArguments, FeatureOperation, FrameworkInit,
     FrameworkOperation, Operation, Request, TaskOperation,
 };
-use crate::installation::BunSetup;
+use crate::installation::ToolSetup;
 use derive_more::{Display, From};
 use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
@@ -98,7 +98,8 @@ impl Catalog {
                 operation: Operation::Framework(FrameworkOperation::Initialize(FrameworkInit {
                     harness: AgentHarness::None,
                     instructions: AgentInstructions::Skip,
-                    bun: BunSetup::InstallMissing,
+                    bun: ToolSetup::InstallMissing,
+                    vale: ToolSetup::InstallMissing,
                 })),
             },
             CommandExample {

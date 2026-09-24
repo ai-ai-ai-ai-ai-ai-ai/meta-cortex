@@ -51,8 +51,8 @@ Persist assignments and progress through the [agent ledger protocol](gizmo-team/
 Host messages notify the assigning coordinator; they are not the only record of work.
 All assigned agents may read their feature ledger while retaining this decision hierarchy.
 
-Use ordinary host communication tools. In single-agent mode, the current agent
-performs the responsibilities locally without agent messages or launches.
+- Use ordinary host communication tools. In single-agent mode, the current agent
+  performs the responsibilities locally without agent messages or launches.
 
 - **Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
   the integration agent sends a conflict directly to a developer.

@@ -32,7 +32,7 @@ and valid fixtures; string construction is prohibited.
 
 **Prohibited:** select only browser practices and omit type checking and linting.
 
-**Preferred:** establish and run the required checks alongside browser validation.
+- **Preferred:** establish and run the required checks alongside browser validation.
 
 ## Practice selection
 
@@ -60,11 +60,11 @@ and runtime guidance. Do not maintain a parallel Cortex Effect tutorial, operato
 allowlist, or wrapper skill. Shared domain, language, and project rules
 still apply; keep compositions flat and readable without adding helper layers.
 
-Pin the same explicit v4 release in workspace packages and verify the lockfile's
-resolved version. Identify prereleases in delivery evidence. For a v3 migration,
-apply the official [effect-v3-to-v4 skill](https://github.com/Effect-TS/skills/blob/main/skills/effect-v3-to-v4/SKILL.md)
-under the session's selected development mode. Run the project's required checks
-and tests after migration.
+- Pin the same explicit v4 release in workspace packages and verify the lockfile's
+  resolved version. Identify prereleases in delivery evidence. For a v3 migration,
+  apply the official [effect-v3-to-v4 skill](https://github.com/Effect-TS/skills/blob/main/skills/effect-v3-to-v4/SKILL.md)
+  under the session's selected development mode. Run the project's required checks
+  and tests after migration.
 
 ## TypeScript security practices
 

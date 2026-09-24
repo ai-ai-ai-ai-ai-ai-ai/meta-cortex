@@ -63,7 +63,7 @@ These alternative fragments use `DeliverySettings` above and assume
 fallible output adapter. Both compile; only the second models the document before
 encoding it.
 
-**Prohibited:** maintain the schema and enum spelling in a literal or template.
+- **Prohibited:** maintain the schema and enum spelling in a literal or template.
 
 ```rust
 let literal = "delivery_mode: Shipment\n";
@@ -184,7 +184,7 @@ application only to parse it again in the next layer.
 
 These alternatives use the `DeliverySettings` above.
 
-**Prohibited:** every consumer must recover the record's meaning.
+- **Prohibited:** every consumer must recover the record's meaning.
 
 ```rust
 pub struct DeliverySession {

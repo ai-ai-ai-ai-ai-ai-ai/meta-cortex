@@ -24,11 +24,11 @@ unavoidable dependency boolean immediately. Keep raw values at that boundary;
 do not introduce decorative enums, generic branching helpers, or a custom
 matching framework to avoid an `if`.
 
-When a dependency boolean feeds a workflow decision, the boundary match only
-normalizes it into that decision's named enum or union. Perform the workflow
-actions by matching the named outcome afterward. A meaningful domain enum
-preserves the contract even with only two cases; generic `True`/`False` wrappers
-or a boolean matcher do not. Keep the conversion on the existing owner.
+- When a dependency boolean feeds a workflow decision, the boundary match only
+  normalizes it into that decision's named enum or union. Perform the workflow
+  actions by matching the named outcome afterward. A meaningful domain enum
+  preserves the contract even with only two cases; generic `True`/`False` wrappers
+  or a boolean matcher do not. Keep the conversion on the existing owner.
 
 **Prohibited:** erase the named outcome before deciding what to do.
 
@@ -66,8 +66,8 @@ the exhaustive handling required for closed domain alternatives.
 **Prohibited:** use `if let true = matches!(event, Event::Progress(_))` to
 reintroduce a boolean guard and discard its payload.
 
-**Preferred:** these alternative fragments assume existing event and reporting
-owners; each fragment intentionally treats all non-progress events alike.
+- **Preferred:** these alternative fragments assume existing event and reporting
+  owners; each fragment intentionally treats all non-progress events alike.
 
 ```rust
 if let Event::Progress(update) = event {

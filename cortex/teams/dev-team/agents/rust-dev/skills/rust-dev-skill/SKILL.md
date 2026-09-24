@@ -38,9 +38,9 @@ at each caller. Local mutation inside that owned method is permitted. Retain a
 borrowed receiver only where the exact external trait or resource contract
 requires it, as defined by [owned updates](practices/behavior/owned-updates.md).
 
-For SQL schemas, queries, migrations, and database fixtures, load
-[typed SQL construction](practices/boundaries/typed-sql.md). Use an established
-builder/ORM and bind runtime values; do not author SQL strings.
+- For SQL schemas, queries, migrations, and database fixtures, load
+  [typed SQL construction](practices/boundaries/typed-sql.md). Use an established
+  builder/ORM and bind runtime values; do not author SQL strings.
 
 For authored JSON/YAML, including catalogs and test fixtures, also load
 [serialization boundaries](practices/boundaries/serialization-boundaries.md).
@@ -62,11 +62,11 @@ application fields as raw strings because compilation passes.
 **Preferred:** load the modeling rules, classify the metadata fields, preserve
 their wire format with domain types, and run the required checks.
 
-Before adding primitive conversions, inspect the [owning vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum).
-Known identities must be complete enums; preserve
-[ownership hierarchies](practices/modeling/domain-types.md#preserve-ownership-hierarchies-in-enum-payloads)
-with team-specific enums inside their enclosing variants. A flat role list is
-insufficient. Use variants and named typed constants for authored known values. Do not replace a closed catalog with string validation.
+- Before adding primitive conversions, inspect the [owning vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum).
+  Known identities must be complete enums; preserve
+  [ownership hierarchies](practices/modeling/domain-types.md#preserve-ownership-hierarchies-in-enum-payloads)
+  with team-specific enums inside their enclosing variants. A flat role list is
+  insufficient. Use variants and named typed constants for authored known values. Do not replace a closed catalog with string validation.
 
 Before parsing strings, apply [structure-aware parsing](practices/modeling/domain-types.md#parse-according-to-domain-structure).
 Inspect the content for independently meaningful components and normalize those
@@ -84,11 +84,11 @@ For application/framework release identities, apply
 A successful parse returns a supported enum variant, never a validated string.
 Require a compile-time check that the package release belongs to that enum.
 
-For versioned contracts, apply [supported schema revisions](practices/modeling/domain-types.md#model-supported-schema-revisions-explicitly):
-name supported identities in producers and independent consumers (including tests),
-bind differing payload shapes to their versions, and
-review migration dispatch exhaustively. Distinguish these from open runtime
-[update counters](practices/modeling/domain-types.md#distinguish-schema-revisions-from-update-counters).
+- For versioned contracts, apply [supported schema revisions](practices/modeling/domain-types.md#model-supported-schema-revisions-explicitly):
+  name supported identities in producers and independent consumers (including tests),
+  bind differing payload shapes to their versions, and
+  review migration dispatch exhaustively. Distinguish these from open runtime
+  [update counters](practices/modeling/domain-types.md#distinguish-schema-revisions-from-update-counters).
 
 ## Practice selection
 

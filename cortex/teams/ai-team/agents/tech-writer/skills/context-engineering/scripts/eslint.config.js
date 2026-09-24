@@ -14,6 +14,7 @@ export default [
     rules: {
       "no-restricted-syntax": [
         "error",
+        { selector: "IfStatement", message: "Use native pattern matching." },
         {
           selector: "ConditionalExpression",
           message:
@@ -61,7 +62,8 @@ export default [
           },
         },
       ],
-      "max-params": ["error", 1],
+      // The TypeScript receiver annotation is not a call argument.
+      "max-params": ["error", { max: 1, countThis: "never" }],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unsafe-assignment": "error",
       "@typescript-eslint/no-unsafe-argument": "error",
@@ -72,23 +74,19 @@ export default [
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
-      "@typescript-eslint/switch-exhaustiveness-check": "error",
-      "@typescript-eslint/no-unused-vars": "error",
-    },
-  },
-  {
-    files: ["src/ts/transport.ts"],
-    rules: {
-      "@typescript-eslint/no-restricted-types": [
+      "@typescript-eslint/switch-exhaustiveness-check": [
         "error",
         {
-          types: {
-            object: "Use a concrete contract.",
-            Object: "Use a concrete contract.",
-            "{}": "Use a concrete contract.",
-          },
+          allowDefaultCaseForExhaustiveSwitch: false,
+          considerDefaultExhaustiveForUnions: false,
         },
       ],
+      "max-depth": ["error", 2],
+      "max-nested-callbacks": [
+        "error",
+        { max: 2, checkConstructorCallCallbacks: true },
+      ],
+      "@typescript-eslint/no-unused-vars": "error",
     },
   },
 ];

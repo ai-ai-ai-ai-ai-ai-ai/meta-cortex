@@ -1,12 +1,12 @@
 use super::InstallError;
-use super::bun::Bun;
+use super::tools::InstalledTool;
 use std::io;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 pub(super) struct WorkspaceDependencies {
     pub directory: PathBuf,
-    pub bun: Bun,
+    pub bun: InstalledTool,
 }
 
 impl WorkspaceDependencies {
@@ -38,7 +38,7 @@ impl WorkspaceDependencies {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{Bun, InstallError, WorkspaceDependencies};
+    use super::{InstallError, InstalledTool, WorkspaceDependencies};
     use std::path::PathBuf;
     use std::{fs, io};
     use tempfile::tempdir;
@@ -49,7 +49,7 @@ pub mod tests {
         let manifest = project.path().join("package.json");
         fs::write(&manifest, "invalid package manifest")?;
         let dependencies = WorkspaceDependencies {
-            bun: Bun {
+            bun: InstalledTool {
                 executable: PathBuf::from("bun"),
                 directory: project.path().join("bun"),
             },
@@ -63,7 +63,7 @@ pub mod tests {
         assert!(error.to_string().contains("rerun Framework / Initialize"));
         assert_eq!(fs::read_to_string(&manifest)?, "invalid package manifest");
         let dependencies = WorkspaceDependencies {
-            bun: Bun {
+            bun: InstalledTool {
                 executable: PathBuf::from("bun"),
                 directory: project.path().join("bun"),
             },

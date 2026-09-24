@@ -1,0 +1,8 @@
+extends: substitution
+message: "Use '%s' instead of '%s'."
+level: error
+ignorecase: false
+swap:
+  'Meta Cortex|Meta cortex|Meta-cortex': Meta-Cortex
+  Typescript: TypeScript
+  Javascript: JavaScript

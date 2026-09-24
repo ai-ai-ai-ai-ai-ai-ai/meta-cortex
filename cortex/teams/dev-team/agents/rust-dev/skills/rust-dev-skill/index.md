@@ -263,7 +263,7 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[domain_states:boolean_conversion](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
 
-  - Allow destination-owned From<bool> at external conversion boundaries, or TryFrom
+  - Allow destination-owned `From<bool>` at external conversion boundaries, or TryFrom
     when conversion can fail.
   - Prohibit enum-to-bool conversions and serde(into = "bool") by default.
   - Allow them only for a required external interface or established backward compatibility.
@@ -383,7 +383,7 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[default_values:enum_defaults](practices/modeling/default-values.md#enums-mark-the-default-variant)**
 
-  - Use #[default] on the intended unit enum variant.
+  - Use `#[default]` on the intended unit enum variant.
   - Implement Default manually when the default variant carries data.
 
 
@@ -557,7 +557,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[workflow_typestate:typed_owner](practices/behavior/workflow-typestate.md#state-and-transitions)**
 
   - Prioritize typestate for meaningful new/changed action flows: domain-named
-    owner<State>, distinct payload states, and transitions on specialized owner impls.
+    `owner<State>`, distinct payload states, and transitions on specialized owner impls.
 
 - **[workflow_typestate:consuming_transitions](practices/behavior/workflow-typestate.md#state-and-transitions)**
 
@@ -650,7 +650,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[error_handling:source_conversion](practices/behavior/error-handling.md#add-context-only-when-it-changes-the-error)**
 
   - Preserve typed sources.
-  - Use #[from] and ? for direct conversion, map_err for added context or selection
+  - Use `#[from]` and ? for direct conversion, map_err for added context or selection
     among same-source variants.
 
 - **[error_handling:required_input](practices/behavior/error-handling.md#required-actions)**
@@ -666,7 +666,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[error_handling:test_errors](practices/behavior/error-handling.md#keep-anyhow-in-tests)**
 
   - Fallible tests return concrete Result or anyhow::Result and use ?.
-  - Anyhow is test-only under dev-dependencies, not production or a Box<dyn Error>
+  - Anyhow is test-only under dev-dependencies, not production or a `Box<dyn Error>`
     substitute.
 
 - **[error_handling:codec_errors](practices/behavior/error-handling.md#required-actions)**
@@ -739,7 +739,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[serialization_boundaries:typed_abi](practices/boundaries/serialization-boundaries.md#generate-typed-javascript-contracts)**
 
   - Generate structural ABI from canonical typed declarations with Tsify.
-  - Use Ts<T> and fallible to_rust conversion rather than deprecated leaking ABI
+  - Use `Ts<T>` and fallible to_rust conversion rather than deprecated leaking ABI
     attributes.
 
 - **[serialization_boundaries:tsify_support](practices/boundaries/serialization-boundaries.md#generate-typed-javascript-contracts)**
@@ -838,7 +838,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[wasm_contracts:abi](practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares)**
 
   - Follow the generated ABI: actual wasm-bindgen instances for class inputs and
-    generated structural objects for Tsify Ts<T> inputs.
+    generated structural objects for Tsify `Ts<T>` inputs.
   - Assertions cannot create allocations.
 
 - **[wasm_contracts:construction](practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares)**
@@ -1156,7 +1156,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **Owns:** Typed schema/query construction, identifiers, binding, and driver boundaries.
 - **Related:** [Dependency selection](practices/tooling/dependency-selection.md), [Domain types](practices/modeling/domain-types.md).
 
-- **[typed_sql:construction](practices/boundaries/typed-sql.md)**
+- **[typed_sql:construction](practices/boundaries/typed-sql.md#typed-sql-construction)**
 
   - Use established builders/ORMs and identifier enums for schemas, migrations,
     queries, and fixtures; never assemble SQL as application text.

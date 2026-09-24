@@ -62,29 +62,36 @@ settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
 host needs different settings. Repeating the request preserves valid project
 settings and does not replace a modified framework.
 
-Initialization requires a Git repository. It reuses Meta-Cortex's Bun, or Bun
-from `PATH` when no local installation exists.
-If Bun is missing, it installs Bun 1.3.14 automatically with the
-[official Bun installer](https://bun.com/docs/installation), then continues setup.
-The destination is `~/.meta-cortex/bun`, shared by all repositories and worktrees.
-The downloaded installer stays there too. `META_CORTEX_HOME` overrides the
-application directory when needed.
-Automatic installation requires network access, `curl`, `bash`, and `unzip`.
-Setup uses the application directory regardless of the user's `BUN_INSTALL` and
-disables the installer's shell configuration updates. Initialization uses the
-installed executable immediately. For framework script commands in a new shell:
+Initialization requires a Git repository. It reuses tools from the application
+home, then `PATH`. Missing tools are installed automatically:
+
+- **Bun 1.3.14:** the [official installer](https://bun.com/docs/installation)
+  installs into `~/.meta-cortex/bun`. Requires `curl`, `bash`, and `unzip`.
+- **Vale 3.22.0:** the [official release archive](https://github.com/vale-cli/vale/releases/tag/v3.22.0)
+  installs into `~/.meta-cortex/vale`. Requires `curl` and `tar`. Automatic
+  installation supports macOS and Linux on arm64 and x86_64.
+
+Both installations are shared by all repositories and worktrees. Downloads stay
+in their tool directories. `META_CORTEX_HOME` overrides the application directory.
+Setup leaves shell configuration unchanged and ignores the user's `BUN_INSTALL`.
+For framework script commands in a new shell:
 
 ```sh
-export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:$PATH"
+export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH"
 ```
 
-The request's `bun` argument defaults to `InstallMissing`. Set
-`bun: RequireExisting` alongside `harness` and `instructions` to disable automatic
-Bun installation. An existing Bun that cannot run is reported without replacement.
-Bun setup failures are returned as structured errors before writing framework or
-harness instruction files. Failed downloads can leave files in the local Bun directory.
-After Bun is ready, initialization runs
-`bun install --frozen-lockfile --ignore-scripts` in `.meta-cortex/`.
+The request's `bun` and `vale` arguments each default to `InstallMissing`.
+Set either to `RequireExisting` alongside `harness` and `instructions` to disable
+its automatic installation. An existing tool that cannot run is reported without
+replacement. Tool setup failures return structured errors before writing framework
+or harness instruction files; downloaded tool files can remain for inspection.
+
+After both tools are ready, initialization runs the shared dependency installation:
+
+```sh
+bun install --frozen-lockfile --ignore-scripts
+```
+
 All framework scripts share that workspace's `node_modules`; individual skills
 do not install dependencies. Repeating initialization also restores missing dependencies.
 Effect guidance comes directly from `.meta-cortex/node_modules/effect/AGENTS.md`.
@@ -283,9 +290,7 @@ alone does not replace that directory. Initialization leaves the existing files
 in place.
 
 If a filesystem error interrupts initialization, inspect and move the incomplete
-installation before retrying.
-
-For development and release instructions, see [Contributing](CONTRIBUTING.md).
+installation before retrying. For development and release instructions, see [Contributing](CONTRIBUTING.md).
 
 ## Agent work ledger
 
@@ -296,8 +301,8 @@ initialization generates a UUID once in the main checkout's
 ID. The file is locally ignored by Git, so a fresh clone gets a new identity;
 repositories with the same name remain separate. Repeated initialization and
 renaming the checkout preserve the ID and data location. Bun is shared across
-repositories at `~/.meta-cortex/bun`. `META_CORTEX_HOME` overrides the application
-directory. Keep the identity file when replacing an installed framework or
+repositories at `~/.meta-cortex/bun`; Vale is shared at `~/.meta-cortex/vale`.
+`META_CORTEX_HOME` overrides the application directory. Keep the identity file when replacing an installed framework or
 restoring a repository whose ledgers you want to retain.
 Database files and their engine-managed sidecars are persistent state; keep them
 together when backing up or moving them. Application storage is outside `.git`.

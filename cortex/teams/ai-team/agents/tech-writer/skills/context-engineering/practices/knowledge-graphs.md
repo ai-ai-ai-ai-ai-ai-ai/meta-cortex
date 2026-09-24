@@ -31,7 +31,7 @@ bullets for its requirements and exceptions:
 ```markdown
 - **[domain_states:boolean_conversion](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
 
-  - Allow destination-owned From<bool> only to convert external flags.
+  - Allow destination-owned `From<bool>` only to convert external flags.
   - Use TryFrom when validation can fail.
   - Boolean application fields and APIs remain prohibited.
 ```
@@ -81,7 +81,7 @@ full index. Preserve implementation loading requirements when moving an index.
 Leaf practices may link directly to shared prerequisites, including through
 `../` paths, without circular loading or restarting agent routing.
 
-- **Prohibited:** permit From<bool> in the practice while the graph still says
+- **Prohibited:** permit `From<bool>` in the practice while the graph still says
   “no boolean parameter under any circumstances.”
 
 - **Preferred:** preserve the rule name and update its boundary exception, the related

@@ -199,7 +199,7 @@ external durations through `TryFrom<i64>` and declares
 `pub const TEN_MINUTES: Self = Self(600)` inside its implementation. The preferred
 call avoids revalidating a known, reusable domain quantity.
 
-**Prohibited:** reconstruct a known quantity through runtime validation.
+- **Prohibited:** reconstruct a known quantity through runtime validation.
 
 ```rust
 let ttl = LeaseSeconds::try_from(600)?;
@@ -1019,8 +1019,8 @@ reviewed, structured help is normalized into typed components, atomic prose uses
 distinct newtypes, and rendering preserves the required wire contract. Report
 consumer test results separately.
 
-For changed version contracts, review named supported identities (including
-application releases), package-version compile-time correspondence, exhaustive
-version dispatch, distinct payload types for differing shapes, and the retained
-migration paths. Test unknown/retired rejection and wire compatibility separately
-from compile-time payload checks; a passing compiler cannot prove freshness.
+- For changed version contracts, review named supported identities (including
+  application releases), package-version compile-time correspondence, exhaustive
+  version dispatch, distinct payload types for differing shapes, and the retained
+  migration paths. Test unknown/retired rejection and wire compatibility separately
+  from compile-time payload checks; a passing compiler cannot prove freshness.

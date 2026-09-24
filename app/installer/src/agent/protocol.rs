@@ -1,6 +1,6 @@
 use super::AgentError;
 use crate::information::InfoReport;
-use crate::installation::{BunSetup, InitRequest, Project};
+use crate::installation::{InitRequest, Project, ToolSetup};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
 use meta_cortex_workbench::model::{Event, Task, TaskView};
 use meta_cortex_workbench::request::{
@@ -65,7 +65,9 @@ pub struct FrameworkInit {
     pub harness: AgentHarness,
     pub instructions: AgentInstructions,
     #[serde(default)]
-    pub bun: BunSetup,
+    pub bun: ToolSetup,
+    #[serde(default)]
+    pub vale: ToolSetup,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -102,6 +104,7 @@ impl From<FrameworkInit> for InitRequest {
                 instructions,
             },
             bun: input.bun,
+            vale: input.vale,
         }
     }
 }
@@ -210,7 +213,7 @@ impl TaskOperation {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{AgentHarness, AgentInstructions, BunSetup, FrameworkInit};
+    use super::{AgentHarness, AgentInstructions, FrameworkInit, ToolSetup};
     use serde::Serialize;
 
     #[derive(Serialize)]
@@ -220,14 +223,15 @@ pub mod tests {
     }
 
     #[test]
-    fn omitted_bun_policy_installs_missing_bun() -> anyhow::Result<()> {
+    fn omitted_tool_policies_install_missing_dependencies() -> anyhow::Result<()> {
         let input = FrameworkDefaults {
             harness: AgentHarness::None,
             instructions: AgentInstructions::Skip,
         };
         let encoded = serde_saphyr::to_string(&input)?;
         let decoded: FrameworkInit = serde_saphyr::from_str(&encoded)?;
-        assert!(matches!(decoded.bun, BunSetup::InstallMissing));
+        assert!(matches!(decoded.bun, ToolSetup::InstallMissing));
+        assert!(matches!(decoded.vale, ToolSetup::InstallMissing));
         Ok(())
     }
 }

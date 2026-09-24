@@ -1,9 +1,10 @@
 use thiserror::Error;
-mod bun;
 mod bundle;
 mod dependencies;
+mod tools;
 
-pub use bun::BunSetup;
+use tools::ToolRequest;
+pub use tools::{Tool, ToolSetup};
 
 use crate::configuration::{ConfigError, ConfigText, Configuration};
 use crate::information::{ProjectInfo, Version, VersionError};
@@ -22,9 +23,10 @@ pub enum InstallError {
     #[error("Meta-Cortex requires a Git repository: {0}")]
     Git(#[from] git2::Error),
     #[error(
-        "Bun setup failed for {path}; use bun: InstallMissing or install Bun manually and rerun Framework / Initialize: {source}"
+        "{tool} setup failed for {path}; use InstallMissing or install {tool} manually and rerun Framework / Initialize: {source}"
     )]
-    BunUnavailable {
+    ToolUnavailable {
+        tool: Tool,
         path: PathBuf,
         #[source]
         source: io::Error,
@@ -156,7 +158,8 @@ impl Project {
 
 pub struct InitRequest {
     pub integration: IntegrationOptions,
-    pub bun: BunSetup,
+    pub bun: ToolSetup,
+    pub vale: ToolSetup,
 }
 
 impl Installation {
@@ -167,8 +170,23 @@ impl Installation {
         })?;
         let bun = request
             .bun
-            .prepare(self.project.data.path().join("bun"))
-            .map_err(|source| InstallError::BunUnavailable {
+            .prepare(ToolRequest {
+                tool: Tool::Bun,
+                home: self.project.data.path().to_owned(),
+            })
+            .map_err(|source| InstallError::ToolUnavailable {
+                tool: Tool::Bun,
+                path: destination.clone(),
+                source,
+            })?;
+        request
+            .vale
+            .prepare(ToolRequest {
+                tool: Tool::Vale,
+                home: self.project.data.path().to_owned(),
+            })
+            .map_err(|source| InstallError::ToolUnavailable {
+                tool: Tool::Vale,
                 path: destination.clone(),
                 source,
             })?;
@@ -206,7 +224,7 @@ impl Installation {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{BunSetup, DataDirectory, InitRequest, InstallError, Project};
+    use super::{DataDirectory, InitRequest, InstallError, Project, ToolSetup};
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
@@ -235,7 +253,8 @@ pub mod tests {
             }
             .prepare()?
             .install(InitRequest {
-                bun: BunSetup::RequireExisting,
+                bun: ToolSetup::RequireExisting,
+                vale: ToolSetup::RequireExisting,
                 integration: IntegrationOptions {
                     harness: HarnessChoice::Selected(Harness::Codex),
                     instructions: InstructionAction::Write,
@@ -310,7 +329,8 @@ pub mod tests {
             let agents = self.directory.path().join("AGENTS.md");
             fs::remove_file(&agents)?;
             let result = prepared.install(InitRequest {
-                bun: BunSetup::RequireExisting,
+                bun: ToolSetup::RequireExisting,
+                vale: ToolSetup::RequireExisting,
                 integration: IntegrationOptions {
                     harness: HarnessChoice::Selected(Harness::Codex),
                     instructions: InstructionAction::Write,
