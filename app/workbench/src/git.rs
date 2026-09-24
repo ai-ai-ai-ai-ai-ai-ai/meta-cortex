@@ -79,7 +79,14 @@ impl Repository {
 
     fn feature_directory(&self) -> Result<PathBuf, LedgerError> {
         let id = RepositoryId::read(&self.root)?;
-        Ok(self.data.path().join(id.to_string()).join("features"))
+        Ok(self
+            .data
+            .path()
+            .join(self.root.file_name().ok_or(LedgerError::Invalid(
+                "repository checkout has no directory name",
+            ))?)
+            .join(id.to_string())
+            .join("features"))
     }
 
     pub fn initialize(&self) -> Result<(), LedgerError> {
@@ -237,13 +244,14 @@ pub struct IntegrationCheck<'a> {
 #[cfg(test)]
 pub mod tests {
     use super::{GitWorktree, Repository};
+    use crate::repository_id::RepositoryId;
     use crate::values::{BranchName, CommitId};
     use crate::{DataDirectory, LedgerError};
     use std::fs;
     use std::path::Path;
 
     #[test]
-    fn repository_identity_is_local_stable_and_independent_of_its_name() -> anyhow::Result<()> {
+    fn repository_storage_groups_names_and_preserves_distinct_identities() -> anyhow::Result<()> {
         let directory = tempfile::tempdir()?;
         let original = directory.path().join("source/project");
         let cloned = directory.path().join("cloned/project");
@@ -254,6 +262,14 @@ pub mod tests {
         assert!(!original.join(".meta-cortex").exists());
         repository.initialize()?;
         let storage = repository.feature_directory()?;
+        let id = RepositoryId::read(&original)?;
+        assert_eq!(
+            storage,
+            data.path()
+                .join("project")
+                .join(id.to_string())
+                .join("features")
+        );
         repository.initialize()?;
         assert_eq!(storage, repository.feature_directory()?);
         GitWorktree::from(original.clone()).require_clean()?;
@@ -272,7 +288,14 @@ pub mod tests {
         fs::rename(&original, &renamed)?;
         let moved = Repository::discover(&renamed)?.with_data_directory(data.clone());
         moved.initialize()?;
-        assert_eq!(storage, moved.feature_directory()?);
+        assert_eq!(id, RepositoryId::read(&renamed)?);
+        assert_eq!(
+            moved.feature_directory()?,
+            data.path()
+                .join("renamed")
+                .join(id.to_string())
+                .join("features")
+        );
 
         fs::remove_dir_all(&renamed)?;
         git2::Repository::init(&renamed)?;
@@ -280,6 +303,34 @@ pub mod tests {
         recreated.initialize()?;
         assert_ne!(storage, recreated.feature_directory()?);
         assert!(storage.is_dir());
+        Ok(())
+    }
+
+    #[test]
+    fn linked_worktrees_share_the_main_checkout_name() -> anyhow::Result<()> {
+        let directory = tempfile::tempdir()?;
+        let project = directory.path().join("project with spaces 🦀");
+        let repository = git2::Repository::init(&project)?;
+        let signature = git2::Signature::now("Git Test", "git@example.invalid")?;
+        let tree_id = repository.index()?.write_tree()?;
+        let tree = repository.find_tree(tree_id)?;
+        repository.commit(Some("HEAD"), &signature, &signature, "root", &tree, &[])?;
+        let data = DataDirectory::from(directory.path().join("data"));
+        let main = Repository::discover(&project)?.with_data_directory(data.clone());
+        main.initialize()?;
+        let id = RepositoryId::read(&project)?;
+        let expected = data
+            .path()
+            .join("project with spaces 🦀")
+            .join(id.to_string())
+            .join("features");
+        assert_eq!(main.feature_directory()?, expected);
+        let linked_path = directory.path().join("worker checkout");
+        repository.worktree("worker", &linked_path, None)?;
+        let linked = Repository::discover(&linked_path)?.with_data_directory(data);
+        linked.initialize()?;
+        assert_eq!(linked.feature_directory()?, expected);
+        assert!(!linked_path.join(".meta-cortex/repository-id").exists());
         Ok(())
     }
 

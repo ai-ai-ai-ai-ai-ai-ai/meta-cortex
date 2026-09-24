@@ -305,15 +305,21 @@ installation before retrying.
 ## Agent work ledger
 
 The `meta-cortex` binary includes an embedded Turso ledger at
-`~/.meta-cortex/<repo_id>/features/<feature-id>.db`. Framework or feature
+`~/.meta-cortex/<repo-name>/<repo_id>/features/<feature-id>.db`. Framework or feature
 initialization generates a UUID once in the main checkout's
 `.meta-cortex/repository-id`. Initialization from any linked worktree reuses that
 ID. The file is locally ignored by Git, so a fresh clone gets a new identity;
 repositories with the same name remain separate. Repeated initialization and
-renaming the checkout preserve the ID and data location. Bun is shared across
+moving the checkout without changing its directory name preserve the ID and data
+location. The repository name is the main checkout directory name; linked
+worktrees use that same name. Renaming the main checkout preserves the UUID but
+changes the name folder. Move its UUID directory under the new name to retain
+access to existing ledgers. Bun is shared across
 repositories at `~/.meta-cortex/bun`; Vale is shared at `~/.meta-cortex/vale`.
 `META_CORTEX_HOME` overrides the application directory. Keep the identity file when replacing an installed framework or
 restoring a repository whose ledgers you want to retain.
+For storage created before the name folder was introduced, move the existing
+`<repo_id>` directory under `<repo-name>` before using its ledgers again.
 Database files and their engine-managed sidecars are persistent state; keep them
 together when backing up or moving them. Application storage is outside `.git`.
 

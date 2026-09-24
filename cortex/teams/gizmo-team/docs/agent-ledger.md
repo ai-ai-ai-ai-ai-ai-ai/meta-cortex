@@ -10,13 +10,13 @@ Each feature has its own embedded Turso database. Resolve its location from any
 linked project worktree:
 
 ```text
-~/.meta-cortex/<repo_id>/features/<feature-id>.db
+~/.meta-cortex/<repo-name>/<repo_id>/features/<feature-id>.db
 ```
 
 - **Repository identity**
   - Framework or feature initialization creates a UUID in the main checkout's
     `.meta-cortex/repository-id` when it is missing.
-  - Linked worktrees reuse that ID.
+  - Linked worktrees reuse that ID and the main checkout directory name.
   - Repeated initialization and checkout renaming retain the ID.
   - Read-only commands never generate an ID.
   - Git's local exclude file ignores the identity file.
@@ -25,6 +25,11 @@ linked project worktree:
   - Preserve the identity file when replacing the framework or restoring ledgers.
 - **Storage location**
   - Keep application data outside `.git`.
+  - The name folder is the main checkout directory name, including spaces and
+    Unicode. Changing that name changes the storage path; move the UUID directory
+    under the new name to retain access to existing ledgers.
+  - For the earlier UUID-only layout, move the UUID directory under the repository
+    name before using its ledgers again. Keep database sidecars with their database.
   - `META_CORTEX_HOME` overrides the default `~/.meta-cortex` location.
   - All repositories share Bun in that location's `bun/` directory.
 
