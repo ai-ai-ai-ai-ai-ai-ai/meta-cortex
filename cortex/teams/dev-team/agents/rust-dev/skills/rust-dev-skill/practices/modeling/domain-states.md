@@ -286,13 +286,64 @@ legal combinations and reject invalid input instead of copying the flag matrix.
 For raw JSON, decode into those owned enums; do not invent an intermediate
 application-authored struct of booleans.
 
-Library predicates and operators necessarily produce boolean expressions.
-Normalize those directly through pattern matching into named domain outcomes
-at their boundary before choosing workflow behavior. Do not store them as
-workflow values or expose an authored boolean predicate. Every authored
-decision carries domain meaning, including private and mechanical decisions.
-This is not permission for boolean domain models or duplicate serialized flags
-derived from enums.
+### Name predicate outcomes before choosing behavior
+
+When a library predicate or comparison returns `bool`, convert that result
+into a named domain outcome where the expression is evaluated.
+
+- Match the expression directly; do not store its boolean result.
+- Return the decision's enum from the conversion.
+- Choose workflow actions by matching that enum.
+- Apply this rule to private helpers and mechanical decisions too.
+- Do not expose the enum through a boolean getter or serialize a duplicate flag.
+
+These alternatives belong to `JobQueue`, which owns `jobs: Vec<Job>`.
+The call sites assume a worker with `wait()` and `process()` operations.
+Both alternatives compile; the first violates the boolean API rule.
+
+**Prohibited:** the helper exposes a boolean and the caller chooses actions
+from `true` and `false`.
+
+```rust
+// Inside impl JobQueue:
+fn is_empty(&self) -> bool {
+    self.jobs.is_empty()
+}
+
+// At the call site:
+match queue.is_empty() {
+    true => worker.wait(),
+    false => worker.process(),
+}
+```
+
+**Preferred:** the helper names the state before the caller chooses an action.
+
+```rust
+pub enum QueueState {
+    Empty,
+    Ready,
+}
+
+// Inside impl JobQueue:
+fn state(&self) -> QueueState {
+    match self.jobs.is_empty() {
+        true => QueueState::Empty,
+        false => QueueState::Ready,
+    }
+}
+
+// At the call site:
+match queue.state() {
+    QueueState::Empty => worker.wait(),
+    QueueState::Ready => worker.process(),
+}
+```
+
+The library boolean stays inside `state()`. The caller receives the queue's
+meaningful alternatives. Keep this conversion on the existing owner; the shared
+[branching rule](../../../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)
+prohibits decorative `True`/`False` enums and generic branching helpers.
 
 ## Put payloads on their owning variants
 

@@ -281,13 +281,14 @@ in full. Include related subjects when the change crosses their boundaries.
   - Do not redeclare external boolean DTOs or retain their raw records behind getters.
   - Decode raw JSON into owned states.
 
-- **[domain_states:mechanical_predicates](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
+- **[domain_states:mechanical_predicates](practices/modeling/domain-states.md#name-predicate-outcomes-before-choosing-behavior)**
 
   - Normalize library predicate/operator booleans into named domain outcomes
     at their boundary before workflow behavior.
-  - Do not expose authored boolean predicates or store mechanical results as policy.
+  - Match the expression directly; do not store its boolean result or expose an
+    authored boolean predicate. Apply this to private helpers and mechanical decisions.
 
-- **[domain_states:no_derived_flags](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
+- **[domain_states:no_derived_flags](practices/modeling/domain-states.md#name-predicate-outcomes-before-choosing-behavior)**
 
   - Do not add is_* methods that merely reveal a variant, decorative True/False
     variants, or duplicate serialized boolean fields derivable from an enum.
