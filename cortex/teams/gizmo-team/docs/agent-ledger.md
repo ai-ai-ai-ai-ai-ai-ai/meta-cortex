@@ -13,15 +13,20 @@ linked project worktree:
 ~/.meta-cortex/<repo_id>/features/<feature-id>.db
 ```
 
-Framework or feature initialization generates a UUID in the main checkout's
-`.meta-cortex/repository-id`. Initializing any linked worktree reuses that ID;
-read-only commands never generate one. Git locally ignores the identity file,
-so a fresh clone receives a new ID and storage directory. Repeated initialization
-and renaming the checkout retain its identity; same-name repositories stay
-separate. Preserve the identity file when replacing the framework or restoring
-ledgers. `META_CORTEX_HOME` overrides `~/.meta-cortex`. Bun lives separately in
-`~/.meta-cortex/bun`, shared by all repositories. Application data stays outside
-`.git`; Git's local exclude file ignores the generated identity.
+- **Repository identity**
+  - Framework or feature initialization creates a UUID in the main checkout's
+    `.meta-cortex/repository-id` when it is missing.
+  - Linked worktrees reuse that ID.
+  - Repeated initialization and checkout renaming retain the ID.
+  - Read-only commands never generate an ID.
+  - Git's local exclude file ignores the identity file.
+  - Initializing a fresh clone creates a new ID and storage directory, even if
+    another repository has the same name.
+  - Preserve the identity file when replacing the framework or restoring ledgers.
+- **Storage location**
+  - Keep application data outside `.git`.
+  - `META_CORTEX_HOME` overrides the default `~/.meta-cortex` location.
+  - All repositories share Bun in that location's `bun/` directory.
 
 Pass the consuming project path and a stable feature
 ID to every command. Do not use the library's repository as the project. The
