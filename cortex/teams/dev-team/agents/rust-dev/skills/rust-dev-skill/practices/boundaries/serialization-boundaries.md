@@ -47,23 +47,22 @@ for a constrained newtype must not bypass its validating construction.
 
 ## Construct known documents from typed values
 
-**Prohibit building YAML from strings.** This includes complete string literals,
-raw/multiline literals, YAML fragments, `format!`, concatenation, indentation
-helpers, replacement, and wrappers such as `ExampleOperationYaml::from("...")`.
-Static content and discovery examples are not exceptions.
-
-Build authored JSON/YAML requests, configuration, catalog examples, and valid
-test fixtures from their concrete structs and enums. Serialize once at the I/O
-edge. Do not assemble documents through interpolation, concatenation, templates,
-indentation helpers, or string replacement. Parsing the assembled string back
-into a typed value is too late; wrapping it in a newtype is not schema safety.
+- **Prohibit building YAML from strings**, including complete or raw/multiline
+  literals, fragments, and wrappers such as `ExampleOperationYaml::from("...")`.
+  Static content and discovery examples are not exceptions.
+- Build authored JSON/YAML requests, configuration, catalog examples, and valid
+  test fixtures from their concrete structs and enums.
+- Do not assemble documents through `format!`, interpolation, concatenation,
+  templates, indentation helpers, or string replacement. Parsing the assembled
+  string back into a typed value is too late; a newtype does not ensure schema safety.
+- Serialize once at the I/O edge.
 
 These alternative fragments use `DeliverySettings` above and assume
 `serde_saphyr` with its `serialize` and `deserialize` features. They belong in a
 fallible output adapter. Both compile; only the second models the document before
 encoding it.
 
-- **Prohibited:** maintain the schema and enum spelling in a literal or template.
+**Prohibited:** maintain the schema and enum spelling in a literal or template.
 
 ```rust
 let literal = "delivery_mode: Shipment\n";
@@ -174,17 +173,16 @@ internal representation does not authorize an unversioned wire-shape change.
 
 ## Keep encoding out of application state
 
-For structured strings beyond JSON/YAML, apply
-[domain string normalization](../modeling/domain-types.md#normalize-structured-strings-into-domain-components).
-An established string wire field can render a normalized model at the adapter;
-its internal representation must still retain the typed components.
-
-Return and store the decoded value. Do not carry JSON or YAML through the
-application only to parse it again in the next layer.
+- For structured strings beyond JSON/YAML, apply
+  [domain string normalization](../modeling/domain-types.md#normalize-structured-strings-into-domain-components).
+  An established string wire field can render a normalized model at the adapter;
+  its internal representation must still retain the typed components.
+- Return and store the decoded value. Do not carry JSON or YAML through the
+  application only to parse it again in the next layer.
 
 These alternatives use the `DeliverySettings` above.
 
-- **Prohibited:** every consumer must recover the record's meaning.
+**Prohibited:** every consumer must recover the record's meaning.
 
 ```rust
 pub struct DeliverySession {

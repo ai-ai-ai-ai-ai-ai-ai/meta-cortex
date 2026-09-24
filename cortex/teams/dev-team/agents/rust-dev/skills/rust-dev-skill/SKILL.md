@@ -39,8 +39,9 @@ borrowed receiver only where the exact external trait or resource contract
 requires it, as defined by [owned updates](practices/behavior/owned-updates.md).
 
 - For SQL schemas, queries, migrations, and database fixtures, load
-  [typed SQL construction](practices/boundaries/typed-sql.md). Use an established
-  builder/ORM and bind runtime values; do not author SQL strings.
+  [typed SQL construction](practices/boundaries/typed-sql.md):
+  - Use an established builder/ORM; do not author SQL strings.
+  - Bind runtime values.
 
 For authored JSON/YAML, including catalogs and test fixtures, also load
 [serialization boundaries](practices/boundaries/serialization-boundaries.md).
@@ -62,11 +63,13 @@ application fields as raw strings because compilation passes.
 **Preferred:** load the modeling rules, classify the metadata fields, preserve
 their wire format with domain types, and run the required checks.
 
-- Before adding primitive conversions, inspect the [owning vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum).
-  Known identities must be complete enums; preserve
-  [ownership hierarchies](practices/modeling/domain-types.md#preserve-ownership-hierarchies-in-enum-payloads)
-  with team-specific enums inside their enclosing variants. A flat role list is
-  insufficient. Use variants and named typed constants for authored known values. Do not replace a closed catalog with string validation.
+- Before adding primitive conversions, inspect the [owning vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum):
+  - Model known identities as complete enums. Do not replace a closed catalog
+    with string validation.
+  - Preserve [ownership hierarchies](practices/modeling/domain-types.md#preserve-ownership-hierarchies-in-enum-payloads)
+    with team-specific enums inside their enclosing variants. A flat role list
+    is insufficient.
+  - Use variants and named typed constants for authored known values.
 
 Before parsing strings, apply [structure-aware parsing](practices/modeling/domain-types.md#parse-according-to-domain-structure).
 Inspect the content for independently meaningful components and normalize those

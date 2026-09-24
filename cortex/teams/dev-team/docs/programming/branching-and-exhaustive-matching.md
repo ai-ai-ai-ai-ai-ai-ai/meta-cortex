@@ -65,23 +65,23 @@ switch (delivery) {
 
 ### Encourage Rust conditional patterns
 
-Rust `if let`, `else if let`, `if let ... else`, and `let ... else` are pattern
-matching and are allowed and encouraged for focused variant handling or payload
-extraction. An unmatched case may intentionally take the same fallback or do
-nothing. Use a full exhaustive `match` when variants need distinct decisions
-that must be revisited when the enum grows.
-
-The exception requires a genuine pattern on the value. Do not disguise a
-boolean condition as `if let true = predicate`, append boolean conditions to
-a let-chain, or put an ordinary `else if condition` after a pattern branch.
-Match guards that refine a pattern remain pattern matching; they must preserve
-the exhaustive handling required for closed domain alternatives.
+- Use Rust `if let`, `else if let`, `if let ... else`, and `let ... else` for
+  focused variant handling or payload extraction. These forms are pattern
+  matching; unmatched cases may intentionally share a fallback or do nothing.
+- Use a full exhaustive `match` when variants need distinct decisions that must
+  be revisited when the enum grows.
+- Require a genuine pattern on the value. Do not disguise a boolean condition
+  as `if let true = predicate`, append boolean conditions to a let-chain, or put
+  an ordinary `else if condition` after a pattern branch.
+- Match guards may refine a pattern while preserving the exhaustive handling
+  required for closed domain alternatives.
 
 **Prohibited:** use `if let true = matches!(event, Event::Progress(_))` to
 reintroduce a boolean guard and discard its payload.
 
-- **Preferred:** these alternative fragments assume existing event and reporting
-  owners; each fragment intentionally treats all non-progress events alike.
+**Preferred:** match the progress variant and use its payload. These alternative
+fragments assume existing event and reporting owners; each intentionally treats
+all non-progress events alike.
 
 ```rust
 if let Event::Progress(update) = event {

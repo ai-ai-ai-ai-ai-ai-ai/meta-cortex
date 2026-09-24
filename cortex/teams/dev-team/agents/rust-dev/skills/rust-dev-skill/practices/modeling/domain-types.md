@@ -191,15 +191,18 @@ separate dynamic value and must not be smuggled into the role enum.
 
 A per-assignment task identifier belongs to an open domain, unlike a fixed role
 catalog. Classify each value by its meaning instead of banning conversion traits
-by name. Runtime input may require validation; closed choices use variants, open
-text uses domain values, and stable scalar quantities use named typed constants.
+by name. Runtime input may require validation.
+
+- Use variants for closed choices.
+- Use domain values for open text.
+- Use named typed constants for stable scalar quantities.
 
 These call-site alternatives assume the owning `LeaseSeconds` type validates
 external durations through `TryFrom<i64>` and declares
 `pub const TEN_MINUTES: Self = Self(600)` inside its implementation. The preferred
 call avoids revalidating a known, reusable domain quantity.
 
-- **Prohibited:** reconstruct a known quantity through runtime validation.
+**Prohibited:** reconstruct a known quantity through runtime validation.
 
 ```rust
 let ttl = LeaseSeconds::try_from(600)?;
@@ -1007,6 +1010,17 @@ its import edits.
 4. Report the reviewed scope, corrections, and any remaining exceptions separately
    from compiler, Clippy, and test results. An unreviewed scope is not verified.
 
+For changed version contracts:
+
+- Review supported identities, including application releases.
+  - Require named identities.
+  - Check compile-time correspondence with the package version.
+- Review version dispatch for exhaustiveness.
+- Require distinct payload types for differing shapes.
+- Review the retained migration paths.
+- Test unknown/retired rejection and wire compatibility separately from
+  compile-time payload checks; a passing compiler cannot prove freshness.
+
 Use `raw_numeric_public_api` where available for the public numeric subset;
 passing it does not verify strings, metadata, private fields, or the broader rule.
 Text searches can locate candidates but cannot establish semantic compliance.
@@ -1018,9 +1032,3 @@ while reviewing identifiers but skipping its help fields and example tuples.
 reviewed, structured help is normalized into typed components, atomic prose uses
 distinct newtypes, and rendering preserves the required wire contract. Report
 consumer test results separately.
-
-- For changed version contracts, review named supported identities (including
-  application releases), package-version compile-time correspondence, exhaustive
-  version dispatch, distinct payload types for differing shapes, and the retained
-  migration paths. Test unknown/retired rejection and wire compatibility separately
-  from compile-time payload checks; a passing compiler cannot prove freshness.

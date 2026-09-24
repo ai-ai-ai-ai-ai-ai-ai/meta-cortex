@@ -10,6 +10,7 @@ project.
 - [Get started](#get-started)
 - [Use Meta-Cortex](#use-meta-cortex)
 - [Update a project](#update-a-project)
+- [Contribute and release](CONTRIBUTING.md)
 
 ## Get started
 
@@ -292,7 +293,7 @@ alone does not replace that directory. Initialization leaves the existing files
 in place.
 
 If a filesystem error interrupts initialization, inspect and move the incomplete
-installation before retrying. For development and release instructions, see [Contributing](CONTRIBUTING.md).
+installation before retrying.
 
 ## Agent work ledger
 

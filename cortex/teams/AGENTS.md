@@ -47,19 +47,19 @@ Decisions and assignments travel back down the same hierarchy. Gizmo Prime does
 not bypass Team Gizmo to direct workers. Agents retain technical judgment within
 their assigned scope; coordination decisions belong to their Gizmo.
 
-Persist assignments and progress through the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
-Host messages notify the assigning coordinator; they are not the only record of work.
-All assigned agents may read their feature ledger while retaining this decision hierarchy.
+- Persist assignments and progress through the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
+- Use ordinary host communication tools to notify the assigning coordinator.
+  Messages are not the only record of work.
+- All assigned agents may read their feature ledger while retaining this decision hierarchy.
+- In single-agent mode, perform these responsibilities locally without agent
+  messages or launches.
 
-- Use ordinary host communication tools. In single-agent mode, the current agent
-  performs the responsibilities locally without agent messages or launches.
+**Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
+the integration agent sends a conflict directly to a developer.
 
-- **Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
-  the integration agent sends a conflict directly to a developer.
-
-- **Preferred:** the agent reports the failure and evidence to its Team Gizmo.
-  Gizmo decides the next step, assigns any repair, and supplies the resulting
-  evidence to agents that need it.
+**Preferred:** the agent reports the failure and evidence to its Team Gizmo.
+Gizmo decides the next step, assigns any repair, and supplies the resulting
+evidence to agents that need it.
 
 ## Working model
 
