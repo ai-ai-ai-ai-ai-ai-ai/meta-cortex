@@ -109,7 +109,9 @@ in this thread.
 Identify both roots before planning development work:
 
 - **Library root**
-  - The directory containing this file and `meta-cortex.toml`.
+  - From this file's directory, install missing workspace dependencies with
+    `bun install --frozen-lockfile --ignore-scripts`, then run
+    `bun scripts/src/ts/check-library-root.ts`; continue only if it succeeds.
   - Supplies Meta-Cortex instructions, roles, skills, and configuration.
 - **Project root**
   - The consuming repository that owns the user's development task.
