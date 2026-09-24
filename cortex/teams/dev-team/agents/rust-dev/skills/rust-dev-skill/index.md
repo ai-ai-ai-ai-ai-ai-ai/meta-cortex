@@ -283,7 +283,8 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[domain_states:mechanical_predicates](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
 
-  - Match library predicate/operator booleans directly at their boundary.
+  - Normalize library predicate/operator booleans into named domain outcomes
+    at their boundary before workflow behavior.
   - Do not expose authored boolean predicates or store mechanical results as policy.
 
 - **[domain_states:no_derived_flags](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**

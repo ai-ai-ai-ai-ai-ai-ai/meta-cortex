@@ -39,8 +39,12 @@ also prohibits ordinary `if` conditions outside Effect workflows.
 and matching; keep side effects inside `Effect.sync`, `Effect.tryPromise`, or
 the owning adapter. Match branches return effects without running them during
 construction. Match closed alternatives exhaustively without a fallback that
-hides a missing case. A platform boolean may be matched immediately at its
-adapter; domain decisions still use their meaningful enum or union.
+hides a missing case. Normalize a platform boolean into the named domain enum
+or union inside its adapter before choosing workflow behavior. A boolean match
+at that boundary only converts representation; its branches must not perform
+the workflow's success/failure actions. `Match.type<boolean>()` is not a domain
+contract. Keep this conversion on the existing owner without adding services
+or generic wrappers.
 
 **Prohibited:**
 
@@ -57,12 +61,13 @@ return Effect.gen(this, function* () {
 **Preferred:**
 
 ```ts
+// inspectConfiguration normalizes Bun's boolean into ConfigurationPresence.
 // reportFound and reportMissing return effects that write the CLI response.
 return Effect.gen(this, function* () {
-  const exists = yield* Effect.tryPromise(() => this.configuration.exists());
-  yield* Match.value(exists).pipe(
-    Match.when(true, () => this.reportFound()),
-    Match.when(false, () => this.reportMissing()),
+  const presence = yield* this.inspectConfiguration();
+  yield* Match.value(presence).pipe(
+    Match.when(ConfigurationPresence.Present, () => this.reportFound()),
+    Match.when(ConfigurationPresence.Missing, () => this.reportMissing()),
     Match.exhaustive,
   );
 });
@@ -232,6 +237,8 @@ return label.text;
   must not bypass the rule. Keep enforcement scoped to adopted modules or packages.
 - Verify exhaustive matches and deferred side effects; reject unnecessary
   wrappers, layers, and composition that obscures a simple operation.
+- Verify adapters return named outcomes before workflow branching. A generic
+  boolean matcher or a local inferred boolean must not replace that contract.
 - Enforce callback nesting through the existing lint gate and review mixed
   execution scopes under the shared limit.
 - Reject `flatMap` and `zipWith` in simple scripts through their existing lint gate.

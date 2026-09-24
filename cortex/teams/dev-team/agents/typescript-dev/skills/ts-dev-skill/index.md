@@ -477,9 +477,9 @@ validation. Existing code does not weaken their requirements.
 
 - **[enums_over_booleans:boundary_exceptions](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
-  - The current TypeScript practice allows booleans only at required platform/host
-    signatures, fixed external wire edges with immediate enum normalization, or private
-    immediately matched mechanical predicates at their boundary.
+  - Required platform/host signatures and fixed wire edges keep external booleans
+    only until immediate domain normalization. Dependency predicates follow the same rule.
+  - Private or mechanical authored predicates still return named domain outcomes.
 
 - **[enums_over_booleans:observations](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
@@ -578,8 +578,9 @@ validation. Existing code does not weaken their requirements.
     and try/catch in generators, callbacks, and helpers choosing workflow steps.
   - A local variable or extracted helper does not exempt the same procedural
     branch. The shared rule also prohibits ordinary if outside Effect workflows.
-  - Match external booleans only at their adapter; preserve domain enum/union
-    vocabulary and reject fallbacks for closed alternatives.
+  - Normalize external booleans into named outcomes at their adapter before
+    workflow actions. Boolean matching alone does not provide domain type safety.
+  - Preserve domain enum/union vocabulary and reject fallbacks for closed alternatives.
 
 - **[effect:linear_generators](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
 
@@ -1082,10 +1083,10 @@ implementation stack.
 Check the owner of an unavoidable boolean contract and the precise exception in the
 applicable language practice.
 
-- **Prohibited:** Generalize a TypeScript host-signature or private-predicate exception
-  into permission for Rust boolean application APIs.
-- **Preferred:** Keep TypeScript exceptions within their documented boundary. For Rust
-  work, consult the supplied Rust rules for destination-owned external conversions.
+- **Prohibited:** Treat a host signature or dependency predicate as permission
+  for authored boolean decisions in either language.
+- **Preferred:** Normalize required external booleans into named domain outcomes
+  before workflow behavior. Keep conversions on their TypeScript or Rust owner.
 
 **Compare:**
 

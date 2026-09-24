@@ -286,11 +286,13 @@ legal combinations and reject invalid input instead of copying the flag matrix.
 For raw JSON, decode into those owned enums; do not invent an intermediate
 application-authored struct of booleans.
 
-Library predicates and operators necessarily produce boolean expressions. Consume
-those directly through pattern matching at their boundary, as with membership
-insertion below; do not store them as values or expose an authored boolean
-predicate. This is not permission
-for boolean domain models or duplicate serialized flags derived from enums.
+Library predicates and operators necessarily produce boolean expressions.
+Normalize those directly through pattern matching into named domain outcomes
+at their boundary before choosing workflow behavior. Do not store them as
+workflow values or expose an authored boolean predicate. Every authored
+decision carries domain meaning, including private and mechanical decisions.
+This is not permission for boolean domain models or duplicate serialized flags
+derived from enums.
 
 ## Put payloads on their owning variants
 

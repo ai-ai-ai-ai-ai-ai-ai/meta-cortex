@@ -128,12 +128,13 @@ ABI, browser, and host edges. Validate and convert them immediately.
 An externally fixed boolean field retains its transport shape. Convert it to
 the semantic enum before domain policy reads it.
 
-A mechanical predicate may return a boolean for immediate pattern matching only
-when the owning language policy permits authored predicates. A language may
-restrict this further to immediate consumption of dependency predicates.
-Named domain decisions return semantic enums or discriminated outcomes, even
-when they have two alternatives. Do not pass a mechanical boolean onward as
-a domain-state, policy, mode, or command parameter.
+Every authored decision returns a domain type with named alternatives, even
+when there are only two. Do not expose authored boolean predicates or preserve
+an inferred boolean as workflow state. Dependency predicates are raw boundary
+inputs: normalize them into the owning domain's enum or discriminated outcome
+before choosing application behavior. A boolean matcher does not supply domain
+meaning. Keep conversions on existing owners and use the same rule in tests
+and tooling.
 
 ### Fixed edge contracts
 

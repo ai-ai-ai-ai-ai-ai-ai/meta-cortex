@@ -19,6 +19,12 @@ unavoidable dependency boolean immediately. Keep raw values at that boundary;
 do not introduce decorative enums, generic branching helpers, or a custom
 matching framework to avoid an `if`.
 
+When a dependency boolean feeds a workflow decision, the boundary match only
+normalizes it into that decision's named enum or union. Perform the workflow
+actions by matching the named outcome afterward. A meaningful domain enum
+preserves the contract even with only two cases; generic `True`/`False` wrappers
+or a boolean matcher do not. Keep the conversion on the existing owner.
+
 **Prohibited:** erase the named outcome before deciding what to do.
 
 ```rust
