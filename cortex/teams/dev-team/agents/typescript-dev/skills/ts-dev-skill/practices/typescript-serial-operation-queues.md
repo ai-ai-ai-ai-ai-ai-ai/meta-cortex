@@ -1,6 +1,6 @@
 # TypeScript Serial Operation Queues
 
-Use Effect v4 for authored serial workflows. Keep scheduling in TypeScript and
+Use Effect for authored serial workflows. Keep scheduling in TypeScript and
 portable product policy in its domain owner, which is Rust in Rust/WASM projects.
 External Promise APIs belong only at adapters;
 do not build an internal Promise-tail failure model alongside Effect.
@@ -17,10 +17,10 @@ practice owns the scheduling contract; it does not supply a second Effect recipe
 
 FIFO means admission order. Use an appropriate capacity/backpressure policy;
 keep richer schedulers when priorities, cancellation, expiry, or closing require it.
-In v4, `Queue.offer` returns `false` when admission is rejected, including after
-shutdown. Never await a job's Deferred after a rejected offer: no consumer will
-receive that job. Verify the admission adapter against the selected capacity
-strategy and keep its rejection in the domain failure channel.
+Handle rejected admission before awaiting a job's Deferred: no consumer will
+receive an unsubmitted job. Verify rejection behavior against the installed
+Queue API, the selected capacity strategy, and shutdown. Keep rejection in the
+domain failure channel.
 
 ## Report failure without stopping later work
 
@@ -55,4 +55,4 @@ into a replacement owner. Promise adaptation remains at host/runtime boundaries.
 - Verify a failed job does not prevent the next job from completing.
 - Verify idle barriers wait for in-flight work, not just an empty pending queue.
 - Verify cancellation, shutdown, and recovery leave no stranded callers or workers.
-- Type-check against the project's Effect v4 version and run focused behavior tests.
+- Type-check against the project's pinned Effect version and run focused behavior tests.

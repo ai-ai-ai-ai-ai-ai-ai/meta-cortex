@@ -571,7 +571,9 @@ validation. Existing code does not weaken their requirements.
 
 - **[effect:version](SKILL.md#effect-use-installed-documentation)**
 
-  - Require one explicit v4 release and use the official migration skill for v3 upgrades.
+  - Select the latest release on the chosen release channel when adopting or upgrading.
+  - Pin one exact release across workspace packages; routine work uses its installed docs.
+  - Identify prereleases and follow official migration guidance with required checks.
 
 - **[effect:effectful_work](SKILL.md#effect-use-installed-documentation)**
 
@@ -826,7 +828,7 @@ validation. Existing code does not weaken their requirements.
 - **[serial_operation_queues:admission_and_shutdown](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)**
 
   - Return Effect from enqueue and admit work when that effect runs.
-  - Convert v4 Queue.offer rejection into a typed admission failure before
+  - Convert Queue admission rejection into a typed admission failure before
     awaiting completion; an unsubmitted job must not leave a caller waiting.
   - Scope the consumer and settle every in-flight/queued completion on shutdown, not
     only Queue waiters.
@@ -834,7 +836,7 @@ validation. Existing code does not weaken their requirements.
 - **[serial_operation_queues:validation](practices/typescript-serial-operation-queues.md#validation)**
 
   - Test FIFO, one active operation, typed caller failures, continuation, idle barriers,
-    cancellation, shutdown, and recovery against Effect v4.
+    cancellation, shutdown, and recovery against the pinned Effect release.
 
 
 

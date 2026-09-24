@@ -44,7 +44,7 @@ requirements or their placement change.
 
 ## Effect: use installed documentation
 
-Use Effect v4 for new or materially changed asynchronous, fallible, resource-owning,
+Use Effect for new or materially changed asynchronous, fallible, resource-owning,
 concurrent, service-dependent, and untrusted-decoding workflows, including scripts
 and tests. Pure calculations keep their existing domain owners.
 
@@ -60,11 +60,12 @@ and runtime guidance. Do not maintain a parallel Cortex Effect tutorial, operato
 allowlist, or wrapper skill. Shared domain, language, and project rules
 still apply; keep compositions flat and readable without adding helper layers.
 
-- Pin the same explicit v4 release in workspace packages and verify the lockfile's
-  resolved version. Identify prereleases in delivery evidence. For a v3 migration,
-  apply the official [effect-v3-to-v4 skill](https://github.com/Effect-TS/skills/blob/main/skills/effect-v3-to-v4/SKILL.md)
-  under the session's selected development mode. Run the project's required checks
-  and tests after migration.
+- When adopting or upgrading Effect, select the latest release on the project's
+  chosen release channel. Identify prereleases in delivery evidence.
+- Pin one exact release across workspace packages and verify the lockfile's
+  resolved version. Routine development uses that pin and its installed docs.
+- Follow the applicable [official Effect migration guidance](https://github.com/Effect-TS/skills)
+  for upgrades. Run the project's required checks and tests after migration.
 
 ## TypeScript security practices
 
