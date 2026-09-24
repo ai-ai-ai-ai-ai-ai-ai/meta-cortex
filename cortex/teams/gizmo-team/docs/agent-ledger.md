@@ -10,10 +10,20 @@ Each feature has its own embedded Turso database. Resolve its location from any
 linked project worktree:
 
 ```text
-<git rev-parse --path-format=absolute --git-common-dir>/meta-cortex/features/<feature-id>.db
+~/.meta-cortex/<repo_id>/features/<feature-id>.db
 ```
 
-The CLI resolves this path. Pass the consuming project path and a stable feature
+Framework or feature initialization generates a UUID in the main checkout's
+`.meta-cortex/repository-id`. Initializing any linked worktree reuses that ID;
+read-only commands never generate one. Git locally ignores the identity file,
+so a fresh clone receives a new ID and storage directory. Repeated initialization
+and renaming the checkout retain its identity; same-name repositories stay
+separate. Preserve the identity file when replacing the framework or restoring
+ledgers. `META_CORTEX_HOME` overrides `~/.meta-cortex`. Bun lives separately in
+`~/.meta-cortex/bun`, shared by all repositories. Application data stays outside
+`.git`; Git's local exclude file ignores the generated identity.
+
+Pass the consuming project path and a stable feature
 ID to every command. Do not use the library's repository as the project. The
 feature ID stays fixed when a host session restarts. Reuse the ID and feature
 branch on follow-ups. Different features use different files, even when task IDs

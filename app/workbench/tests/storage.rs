@@ -10,7 +10,7 @@ use meta_cortex_workbench::values::{
 use meta_cortex_workbench::versions::{
     StorageVersion, VersionFamily, VersionNumber, VersionParseError,
 };
-use meta_cortex_workbench::{Ledger, LedgerError, Workbench};
+use meta_cortex_workbench::{DataDirectory, Ledger, LedgerError, Workbench};
 use sea_query::{Expr, Iden, Index, Query, SqliteQueryBuilder};
 use std::env;
 use std::fs;
@@ -54,12 +54,14 @@ enum DatabasePragma {
 
 struct Scenario {
     directory: TempDir,
+    data: TempDir,
 }
 
 impl Scenario {
     fn create() -> anyhow::Result<Self> {
         let scenario = Self {
             directory: tempfile::tempdir()?,
+            data: tempfile::tempdir()?,
         };
         let mut options = git2::RepositoryInitOptions::new();
         options.initial_head("codex/feature");
@@ -72,7 +74,8 @@ impl Scenario {
     }
 
     async fn initialize(&self) -> anyhow::Result<Ledger> {
-        let workbench = Workbench::discover(self.directory.path())?;
+        let workbench = Workbench::discover(self.directory.path())?
+            .with_data_directory(DataDirectory::from(self.data.path().to_owned()));
         let mut ledger = workbench
             .initialize(InitFeature {
                 feature: FeatureId::try_from("feature".to_owned())?,
@@ -118,6 +121,7 @@ impl Scenario {
 
     async fn open(&self) -> Result<Ledger, LedgerError> {
         Workbench::discover(self.directory.path())?
+            .with_data_directory(DataDirectory::from(self.data.path().to_owned()))
             .open(FeatureId::try_from("feature".to_owned())?)
             .await
     }

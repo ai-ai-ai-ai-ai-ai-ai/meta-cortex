@@ -6,6 +6,7 @@ use std::io::Write;
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::rc::Rc;
 use tempfile::{Builder, TempDir};
 use thiserror::Error;
 
@@ -176,12 +177,16 @@ enum Reply {
 }
 struct CliScenario {
     project: TempDir,
+    data: Rc<TempDir>,
 }
 impl CliScenario {
     fn create() -> anyhow::Result<Self> {
         let project = Builder::new().prefix("project: # \"雪\" ").tempdir()?;
         git2::Repository::init(project.path())?;
-        Ok(Self { project })
+        Ok(Self {
+            project,
+            data: Rc::new(Builder::new().prefix("cortex data ").tempdir()?),
+        })
     }
     fn call(&self, operation: Operation) -> anyhow::Result<Outcome> {
         let request = Request {
@@ -191,6 +196,7 @@ impl CliScenario {
         };
         let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
             .args(["run", "--request", "-"])
+            .env("META_CORTEX_HOME", self.data.path())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -366,6 +372,7 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
     };
     let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
         .args(["run", "--request", "-"])
+        .env("META_CORTEX_HOME", scenario.data.path())
         .env("PATH", scenario.project.path())
         .env("BUN_INSTALL", scenario.project.path().join("bun"))
         .stdin(Stdio::piped())
@@ -463,6 +470,7 @@ printf 'installer stderr' >&2
         };
         let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
             .args(["run", "--request", "-"])
+            .env("META_CORTEX_HOME", self.cli.data.path())
             .env("PATH", self.tools.path())
             .env("BUN_INSTALL", self.global_installation.path())
             .env("CORTEX_TEST_BUN", &self.executable)
@@ -496,34 +504,9 @@ printf 'installer stderr' >&2
 }
 
 #[test]
-fn installs_missing_bun_once_and_shares_it_across_worktrees() -> anyhow::Result<()> {
+fn installs_missing_bun_once_and_shares_identity_when_worktree_initializes_first()
+-> anyhow::Result<()> {
     let scenario = BunScenario::create()?;
-    assert!(matches!(
-        scenario.call(BunSetup::InstallMissing)?,
-        Outcome::Success(_)
-    ));
-    assert!(scenario.tools.path().join("downloaded").is_file());
-    assert!(
-        scenario
-            .cli
-            .project
-            .path()
-            .join(".git/meta-cortex/bun/bin/bun")
-            .is_file()
-    );
-    assert_eq!(
-        fs::read_dir(scenario.global_installation.path())?.count(),
-        0
-    );
-    assert!(
-        scenario
-            .cli
-            .project
-            .path()
-            .join(".meta-cortex/node_modules/effect/AGENTS.md")
-            .is_file()
-    );
-    fs::remove_file(scenario.tools.path().join("downloaded"))?;
     let repository = git2::Repository::open(scenario.cli.project.path())?;
     let signature = git2::Signature::now("Bun Test", "bun@example.invalid")?;
     let tree_id = repository.index()?.write_tree()?;
@@ -537,23 +520,67 @@ fn installs_missing_bun_once_and_shares_it_across_worktrees() -> anyhow::Result<
     let worktree = Builder::new().prefix("bun linked worktree ").tempdir()?;
     fs::remove_dir(worktree.path())?;
     repository.worktree("bun-test", worktree.path(), Some(&options))?;
-    let original = scenario.cli;
-    let scenario = BunScenario {
-        cli: CliScenario { project: worktree },
+    let main = scenario.cli;
+    let worker = BunScenario {
+        cli: CliScenario {
+            project: worktree,
+            data: main.data.clone(),
+        },
         ..scenario
     };
     assert!(matches!(
-        scenario.call(BunSetup::RequireExisting)?,
+        worker.call(BunSetup::InstallMissing)?,
         Outcome::Success(_)
     ));
-    assert!(!scenario.tools.path().join("downloaded").exists());
+    assert!(worker.tools.path().join("downloaded").is_file());
+    assert!(worker.cli.data.path().join("bun/bin/bun").is_file());
+    assert_eq!(fs::read_dir(worker.global_installation.path())?.count(), 0);
     assert!(
-        original
+        worker
+            .cli
             .project
             .path()
-            .join(".git/meta-cortex/bun/bin/bun")
+            .join(".meta-cortex/node_modules/effect/AGENTS.md")
             .is_file()
     );
+    assert!(
+        !worker
+            .cli
+            .project
+            .path()
+            .join(".meta-cortex/repository-id")
+            .exists()
+    );
+    let identity_path = main.project.path().join(".meta-cortex/repository-id");
+    let identity = fs::read_to_string(&identity_path)?;
+    assert_eq!(
+        fs::read_dir(main.project.path().join(".meta-cortex"))?.count(),
+        1
+    );
+    assert!(
+        main.data
+            .path()
+            .join(identity.trim())
+            .join("features")
+            .is_dir()
+    );
+    assert!(!main.project.path().join(".git/meta-cortex").exists());
+    fs::remove_file(worker.tools.path().join("downloaded"))?;
+
+    let worktree = worker.cli;
+    let scenario = BunScenario {
+        cli: main,
+        ..worker
+    };
+    for _ in 0..2 {
+        assert!(matches!(
+            scenario.call(BunSetup::RequireExisting)?,
+            Outcome::Success(_)
+        ));
+        assert_eq!(fs::read_to_string(&identity_path)?, identity);
+    }
+    assert!(!scenario.tools.path().join("downloaded").exists());
+    assert_eq!(fs::read_dir(scenario.cli.data.path())?.count(), 2);
     assert!(
         scenario
             .cli
@@ -562,14 +589,16 @@ fn installs_missing_bun_once_and_shares_it_across_worktrees() -> anyhow::Result<
             .join(".meta-cortex/node_modules/effect/AGENTS.md")
             .is_file()
     );
-    assert!(
-        !scenario
-            .cli
-            .project
-            .path()
-            .join(".meta-cortex/bun")
-            .exists()
-    );
+    let worker = BunScenario {
+        cli: worktree,
+        ..scenario
+    };
+    assert!(matches!(
+        worker.call(BunSetup::RequireExisting)?,
+        Outcome::Success(_)
+    ));
+    assert_eq!(fs::read_to_string(identity_path)?, identity);
+    assert!(!worker.cli.project.path().join(".meta-cortex/bun").exists());
     Ok(())
 }
 

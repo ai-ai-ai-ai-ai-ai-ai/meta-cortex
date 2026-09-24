@@ -1,6 +1,7 @@
-use super::LedgerError;
 use super::model::{Checkpoint, Feature, Workspace};
 use super::values::{BranchName, CommitId, FeatureId};
+use super::{DataDirectory, LedgerError};
+use crate::repository_id::RepositoryId;
 use derive_more::From;
 use git2::{Branch, Oid, StatusOptions};
 use std::fs;
@@ -10,6 +11,8 @@ use std::path::{Path, PathBuf};
 #[derive(Clone)]
 pub struct Repository {
     pub common_dir: PathBuf,
+    root: PathBuf,
+    data: DataDirectory,
 }
 
 #[derive(From)]
@@ -68,8 +71,29 @@ impl GitWorktree {
 }
 
 impl Repository {
+    #[must_use]
+    pub fn with_data_directory(mut self, directory: DataDirectory) -> Self {
+        self.data = directory;
+        self
+    }
+
+    fn feature_directory(&self) -> Result<PathBuf, LedgerError> {
+        let id = RepositoryId::read(&self.root)?;
+        Ok(self.data.path().join(id.to_string()).join("features"))
+    }
+
+    pub fn initialize(&self) -> Result<(), LedgerError> {
+        RepositoryId::initialize(&self.root, &self.common_dir)?;
+        fs::create_dir_all(self.feature_directory()?)?;
+        Ok(())
+    }
+
     pub fn features(&self) -> Result<Vec<FeatureId>, LedgerError> {
-        let directory = self.common_dir.join("meta-cortex/features");
+        let directory = match self.feature_directory() {
+            Ok(directory) => directory,
+            Err(LedgerError::Uninitialized) => return Ok(Vec::new()),
+            Err(error) => return Err(error),
+        };
         let mut ids = Vec::new();
         match fs::read_dir(directory) {
             Ok(entries) => {
@@ -95,13 +119,20 @@ impl Repository {
         let common_dir = git2::Repository::discover(project)?
             .commondir()
             .canonicalize()?;
-        Ok(Self { common_dir })
+        let main = git2::Repository::open(&common_dir)?;
+        let root = main
+            .workdir()
+            .ok_or(LedgerError::Invalid("repository has no main checkout"))?;
+        let root = root.to_owned();
+        Ok(Self {
+            common_dir,
+            root,
+            data: DataDirectory::discover()?,
+        })
     }
 
-    pub fn ledger_path(&self, feature: &FeatureId) -> PathBuf {
-        self.common_dir
-            .join("meta-cortex/features")
-            .join(format!("{feature}.db"))
+    pub fn ledger_path(&self, feature: &FeatureId) -> Result<PathBuf, LedgerError> {
+        Ok(self.feature_directory()?.join(format!("{feature}.db")))
     }
 
     pub fn require_workspace(&self, workspace: &Workspace) -> Result<(), LedgerError> {
@@ -206,10 +237,51 @@ pub struct IntegrationCheck<'a> {
 #[cfg(test)]
 pub mod tests {
     use super::{GitWorktree, Repository};
-    use crate::LedgerError;
     use crate::values::{BranchName, CommitId};
+    use crate::{DataDirectory, LedgerError};
     use std::fs;
     use std::path::Path;
+
+    #[test]
+    fn repository_identity_is_local_stable_and_independent_of_its_name() -> anyhow::Result<()> {
+        let directory = tempfile::tempdir()?;
+        let original = directory.path().join("source/project");
+        let cloned = directory.path().join("cloned/project");
+        let data = DataDirectory::from(directory.path().join("data"));
+        git2::Repository::init(&original)?;
+        let repository = Repository::discover(&original)?.with_data_directory(data.clone());
+        assert!(repository.features()?.is_empty());
+        assert!(!original.join(".meta-cortex").exists());
+        repository.initialize()?;
+        let storage = repository.feature_directory()?;
+        repository.initialize()?;
+        assert_eq!(storage, repository.feature_directory()?);
+        GitWorktree::from(original.clone()).require_clean()?;
+        assert!(!original.join(".git/meta-cortex").exists());
+
+        git2::Repository::clone(
+            original.to_str().ok_or_else(|| anyhow::anyhow!("path"))?,
+            &cloned,
+        )?;
+        assert!(!cloned.join(".meta-cortex/repository-id").exists());
+        let clone = Repository::discover(&cloned)?.with_data_directory(data.clone());
+        clone.initialize()?;
+        assert_ne!(storage, clone.feature_directory()?);
+
+        let renamed = directory.path().join("renamed");
+        fs::rename(&original, &renamed)?;
+        let moved = Repository::discover(&renamed)?.with_data_directory(data.clone());
+        moved.initialize()?;
+        assert_eq!(storage, moved.feature_directory()?);
+
+        fs::remove_dir_all(&renamed)?;
+        git2::Repository::init(&renamed)?;
+        let recreated = Repository::discover(&renamed)?.with_data_directory(data);
+        recreated.initialize()?;
+        assert_ne!(storage, recreated.feature_directory()?);
+        assert!(storage.is_dir());
+        Ok(())
+    }
 
     #[test]
     fn git_library_preserves_checkpoint_and_worktree_checks() -> anyhow::Result<()> {

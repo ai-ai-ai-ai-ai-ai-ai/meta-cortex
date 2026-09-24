@@ -133,8 +133,8 @@ The [development form](development.yaml) defines the session mode and delivery q
 [user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 includes a generic YAML form helper, an example, and usage instructions. It
 uses Bun and the shared workspace dependencies installed by Framework / Initialize.
-Initialization automatically installs missing Bun 1.3.14 in the repository's
-shared Git directory, alongside Turso's storage. The entry point configures PATH
+Initialization automatically installs missing Bun 1.3.14 in `~/.meta-cortex/bun`,
+shared by repositories and worktrees. The entry point configures PATH
 for framework scripts. Individual skills reuse that installation. The helper
 validates data locally, while the current agent calls the host's native question
 tool. Answers stay in session context rather than a repository configuration file.

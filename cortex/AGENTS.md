@@ -112,8 +112,7 @@ Identify both roots before planning development work:
   - Run from this file's directory; continue only if it succeeds:
 
     ```sh
-    cortex_git_dir="$(git rev-parse --path-format=absolute --git-common-dir)" &&
-    export PATH="$cortex_git_dir/meta-cortex/bun/bin:$PATH" &&
+    export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:$PATH" &&
     bun scripts/src/ts/check-library-root.ts
     ```
 

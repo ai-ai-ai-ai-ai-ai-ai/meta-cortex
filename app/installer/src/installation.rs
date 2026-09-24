@@ -10,12 +10,15 @@ use crate::information::{ProjectInfo, Version, VersionError};
 use crate::integration::{InstructionError, IntegrationOptions, ProjectHarnesses};
 use bundle::Bundle;
 use dependencies::WorkspaceDependencies;
+use meta_cortex_workbench::{DataDirectory, LedgerError, Workbench};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Error)]
 pub enum InstallError {
+    #[error("repository initialization failed: {0}")]
+    Repository(#[from] LedgerError),
     #[error("Meta-Cortex requires a Git repository: {0}")]
     Git(#[from] git2::Error),
     #[error(
@@ -62,7 +65,7 @@ pub enum InstallError {
 
 pub struct Project {
     root: PathBuf,
-    common_dir: PathBuf,
+    data: DataDirectory,
 }
 
 pub struct Installation {
@@ -90,11 +93,10 @@ impl Project {
         if !path.is_dir() {
             return Err(InstallError::InvalidProject(path));
         }
+        git2::Repository::discover(&path)?;
         Ok(Self {
-            common_dir: git2::Repository::discover(&path)?
-                .commondir()
-                .canonicalize()?,
             root: path.canonicalize()?,
+            data: DataDirectory::discover()?,
         })
     }
 
@@ -130,12 +132,17 @@ impl Project {
         let destination = self.root.join(".meta-cortex");
         let bundle = match fs::symlink_metadata(&destination) {
             Ok(_) => {
-                Bundle {
+                let bundle = Bundle {
                     directory: &Bundle::FRAMEWORK,
                     destination: destination.clone(),
+                };
+                match bundle.verify_identity_only() {
+                    Ok(()) => BundleState::Absent,
+                    Err(_) => {
+                        bundle.verify()?;
+                        BundleState::Identical
+                    }
                 }
-                .verify()?;
-                BundleState::Identical
             }
             Err(error) if error.kind() == io::ErrorKind::NotFound => BundleState::Absent,
             Err(error) => return Err(error.into()),
@@ -160,7 +167,7 @@ impl Installation {
         })?;
         let bun = request
             .bun
-            .prepare(self.project.common_dir.join("meta-cortex/bun"))
+            .prepare(self.project.data.path().join("bun"))
             .map_err(|source| InstallError::BunUnavailable {
                 path: destination.clone(),
                 source,
@@ -187,6 +194,9 @@ impl Installation {
             }
         }
         dependencies.install()?;
+        Workbench::discover(&self.project.root)?
+            .with_data_directory(self.project.data)
+            .initialize_repository()?;
         integration.apply()?;
         Ok(InstalledProject {
             root: self.project.root,
@@ -196,7 +206,7 @@ impl Installation {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{BunSetup, InitRequest, InstallError, Project};
+    use super::{BunSetup, DataDirectory, InitRequest, InstallError, Project};
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
@@ -207,23 +217,30 @@ pub mod tests {
 
     struct Fixture {
         directory: TempDir,
+        data: TempDir,
     }
     impl Fixture {
         fn create() -> Result<Self, InstallError> {
             let directory = tempdir()?;
             git2::Repository::init(directory.path())?;
-            Ok(Self { directory })
+            Ok(Self {
+                directory,
+                data: tempdir()?,
+            })
         }
         fn install(&self) -> Result<(), InstallError> {
-            Project::open(self.directory.path().to_path_buf())?
-                .prepare()?
-                .install(InitRequest {
-                    bun: BunSetup::RequireExisting,
-                    integration: IntegrationOptions {
-                        harness: HarnessChoice::Selected(Harness::Codex),
-                        instructions: InstructionAction::Write,
-                    },
-                })?;
+            Project {
+                data: DataDirectory::from(self.data.path().to_owned()),
+                ..Project::open(self.directory.path().to_path_buf())?
+            }
+            .prepare()?
+            .install(InitRequest {
+                bun: BunSetup::RequireExisting,
+                integration: IntegrationOptions {
+                    harness: HarnessChoice::Selected(Harness::Codex),
+                    instructions: InstructionAction::Write,
+                },
+            })?;
             Ok(())
         }
         fn preserves_and_repeats(self) -> Result<(), InstallError> {
@@ -279,7 +296,11 @@ pub mod tests {
         }
         fn rejects_license_changed_after_prepare(self) -> Result<(), InstallError> {
             self.install()?;
-            let prepared = Project::open(self.directory.path().to_path_buf())?.prepare()?;
+            let prepared = Project {
+                data: DataDirectory::from(self.data.path().to_owned()),
+                ..Project::open(self.directory.path().to_path_buf())?
+            }
+            .prepare()?;
             let license = self
                 .directory
                 .path()

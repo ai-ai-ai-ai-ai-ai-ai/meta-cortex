@@ -62,20 +62,20 @@ settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
 host needs different settings. Repeating the request preserves valid project
 settings and does not replace a modified framework.
 
-Initialization requires a Git repository. It reuses the repository's Bun, or Bun
+Initialization requires a Git repository. It reuses Meta-Cortex's Bun, or Bun
 from `PATH` when no local installation exists.
 If Bun is missing, it installs Bun 1.3.14 automatically with the
 [official Bun installer](https://bun.com/docs/installation), then continues setup.
-The destination is `<git-common-dir>/meta-cortex/bun`, alongside Turso's storage.
-Linked worktrees share this installation. The downloaded installer stays there too.
+The destination is `~/.meta-cortex/bun`, shared by all repositories and worktrees.
+The downloaded installer stays there too. `META_CORTEX_HOME` overrides the
+application directory when needed.
 Automatic installation requires network access, `curl`, `bash`, and `unzip`.
-Setup uses the repository directory regardless of the user's `BUN_INSTALL` and
+Setup uses the application directory regardless of the user's `BUN_INSTALL` and
 disables the installer's shell configuration updates. Initialization uses the
 installed executable immediately. For framework script commands in a new shell:
 
 ```sh
-cortex_git_dir="$(git rev-parse --path-format=absolute --git-common-dir)" &&
-export PATH="$cortex_git_dir/meta-cortex/bun/bin:$PATH"
+export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:$PATH"
 ```
 
 The request's `bun` argument defaults to `InstallMissing`. Set
@@ -289,9 +289,18 @@ For development and release instructions, see [Contributing](CONTRIBUTING.md).
 
 ## Agent work ledger
 
-The `meta-cortex` binary includes an embedded Turso ledger, isolated by feature
-in the consuming repository’s common Git directory. Linked worktrees share the
-feature database without a server or tracked project files.
+The `meta-cortex` binary includes an embedded Turso ledger at
+`~/.meta-cortex/<repo_id>/features/<feature-id>.db`. Framework or feature
+initialization generates a UUID once in the main checkout's
+`.meta-cortex/repository-id`. Initialization from any linked worktree reuses that
+ID. The file is locally ignored by Git, so a fresh clone gets a new identity;
+repositories with the same name remain separate. Repeated initialization and
+renaming the checkout preserve the ID and data location. Bun is shared across
+repositories at `~/.meta-cortex/bun`. `META_CORTEX_HOME` overrides the application
+directory. Keep the identity file when replacing an installed framework or
+restoring a repository whose ledgers you want to retain.
+Database files and their engine-managed sidecars are persistent state; keep them
+together when backing up or moving them. Application storage is outside `.git`.
 
 ```sh
 meta-cortex list
