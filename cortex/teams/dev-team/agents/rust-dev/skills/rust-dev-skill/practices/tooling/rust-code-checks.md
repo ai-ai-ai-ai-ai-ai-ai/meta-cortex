@@ -105,7 +105,9 @@ excessive-nesting-threshold = 5
 - Set the argument threshold to two because Clippy counts `self`.
 - Check associated and free functions manually; two nonreceiver parameters still pass this threshold.
 - Use the nesting threshold of five as a structural backstop.
-- Review decision depth separately under [function ownership](../../../../../../docs/programming/function-ownership.md).
+- Review combined execution-scope depth separately under the shared
+  [nesting limit](../../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction),
+  including closures and permitted conditional patterns.
 - Account for enclosing modules, implementations, and function blocks in Clippy's nesting count.
 - Do not equate five structural levels with five nested decisions.
 - Do not raise thresholds or add allowances merely to pass the baseline.

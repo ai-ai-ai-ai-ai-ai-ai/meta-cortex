@@ -20,6 +20,12 @@
   Reject procedural branches, loops, and exception handling there; verify that
   the rejected pattern fails and its functional replacement passes.
 - Coordinate pipeline changes with the CI/CD owner under the active development mode.
+- Enforce `max-depth: ["error", 2]` and `max-nested-callbacks` with
+  `{ max: 2, checkConstructorCallCallbacks: true }` in adopted packages. Verify
+  the installed ESLint version supports the constructor option. These are
+  separate structural checks; review mixed callback/branch depth under the
+  shared [nesting limit](../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction).
+  Confirm the previously nested form fails and the flattened form passes.
 
 This `package.json` fragment assumes the package already uses npm, Prettier,
 TypeScript, and ESLint.

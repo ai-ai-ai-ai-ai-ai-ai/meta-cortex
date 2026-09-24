@@ -68,6 +68,11 @@ export default [
         },
       ],
       "max-params": ["error", 1],
+      "max-depth": ["error", 2],
+      "max-nested-callbacks": [
+        "error",
+        { max: 2, checkConstructorCallCallbacks: true },
+      ],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unsafe-assignment": "error",
       "@typescript-eslint/no-unsafe-argument": "error",

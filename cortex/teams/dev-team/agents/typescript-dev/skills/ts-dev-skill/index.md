@@ -80,6 +80,12 @@ validation. Existing code does not weaken their requirements.
   - Static methods are only narrow construction builders, while
     execution/validation/formatting/dispatch belong to instances.
 
+- **[function_ownership:nesting](../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction)**
+
+  - Limit combined callback and control-flow nesting to two execution scopes.
+  - Flatten first; reject helper chains and new abstractions added only to meet
+    the depth limit.
+
 - **[function_ownership:meaningful_state](practices/typescript-function-ownership.md#use-instances-for-owned-behavior)**
 
   - Give instances the state/request/capability they own.
@@ -584,6 +590,8 @@ validation. Existing code does not weaken their requirements.
 - **[effect:simple_composition](practices/typescript-effect.md#keep-the-composition-easy-to-read)**
 
   - Prefer short pipelines, named intermediate values, and small callbacks.
+  - Count Effect, Match, and I/O callbacks under the shared nesting limit;
+    pass matchers directly and use existing library effects.
   - Reject generic wrappers, custom functional frameworks, deep composition,
     and services or layers introduced only to express a branch.
   - Extract meaningful or reused operations and keep pure calculations pure.
@@ -593,6 +601,8 @@ validation. Existing code does not weaken their requirements.
   - Use existing lint gates in adopted modules/packages to reject procedural
     control flow; review called helpers, exhaustiveness, deferred effects,
     and unnecessary abstraction.
+  - Enforce callback and block nesting through the existing lint gate; review
+    mixed nesting separately because ESLint counts them independently.
 
 - **[effect:typed_failures](practices/typescript-effect.md#preserve-the-typed-failure-channel)**
 

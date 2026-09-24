@@ -2,7 +2,7 @@
 
 ## Programming
 
-- [Function ownership](programming/function-ownership.md): ownership of functions, constants, and state.
+- [Function ownership](programming/function-ownership.md): ownership of functions, constants, and state; nesting and abstraction limits.
 - [Domain API integrity](programming/domain-api-integrity.md): domain types, boundaries, and API contracts.
 - [Branching and exhaustive matching](programming/branching-and-exhaustive-matching.md): boolean-if and ternary prohibitions, exhaustive decisions, and permitted Rust conditional patterns.
 - [Source file size](programming/source-file-size.md): size limits and architectural decomposition.

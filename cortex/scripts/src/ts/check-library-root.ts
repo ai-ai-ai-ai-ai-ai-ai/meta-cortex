@@ -1,40 +1,37 @@
 import type { BunFile } from "bun";
-import { Effect, Match } from "effect";
+import { Console, Effect, Match } from "effect";
 
 class LibraryRootCheck {
   constructor(private readonly configuration: BunFile) {}
 
   run(): Effect.Effect<void> {
-    return Effect.tryPromise(() => this.configuration.exists()).pipe(
-      Effect.flatMap((exists) =>
-        Match.value(exists).pipe(
-          Match.when(true, () =>
-            Effect.sync(() => {
-              process.stdout.write(
-                "Found meta-cortex.toml in the current directory.\n",
-              );
-            }),
-          ),
-          Match.when(false, () =>
-            Effect.sync(() => {
-              process.stderr.write(
-                "Missing meta-cortex.toml in the current directory.\n",
-              );
-              process.exitCode = 1;
-            }),
-          ),
-          Match.exhaustive,
+    const report = Match.type<boolean>().pipe(
+      Match.when(true, () =>
+        Console.log("Found meta-cortex.toml in the current directory."),
+      ),
+      Match.when(false, () =>
+        this.reportFailure(
+          "Missing meta-cortex.toml in the current directory.",
         ),
       ),
+      Match.exhaustive,
+    );
+
+    return Effect.tryPromise(() => this.configuration.exists()).pipe(
+      Effect.flatMap(report),
       Effect.catchAll((error) =>
-        Effect.sync(() => {
-          process.stderr.write(
-            `Could not check meta-cortex.toml: ${error.message}\n`,
-          );
-          process.exitCode = 1;
-        }),
+        this.reportFailure(
+          `Could not check meta-cortex.toml: ${error.message}`,
+        ),
       ),
     );
+  }
+
+  private reportFailure(message: string): Effect.Effect<void> {
+    return Effect.sync(() => {
+      process.stderr.write(`${message}\n`);
+      process.exitCode = 1;
+    });
   }
 }
 

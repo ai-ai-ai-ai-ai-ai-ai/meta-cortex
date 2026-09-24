@@ -3,6 +3,10 @@
 Put behavior, constants, and state on the type or component that owns them.
 A file, namespace, Utils class, or empty instance is not an owner.
 
+Apply the shared [nesting and abstraction limit](../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction).
+Count callbacks and branches together. Flatten first; extract meaningful or
+repeated behavior onto an existing owner without creating forwarding layers.
+
 Examples are alternative fragments. Supporting domain types and collaborators
 are supplied by the application; method fragments belong to their named owner.
 

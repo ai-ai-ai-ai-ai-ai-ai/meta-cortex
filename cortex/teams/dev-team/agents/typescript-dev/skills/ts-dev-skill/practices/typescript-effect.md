@@ -47,8 +47,8 @@ return Effect.gen(this, function* () {
 ```ts
 // reportFound and reportMissing return effects that write the CLI response.
 return Effect.tryPromise(() => this.configuration.exists()).pipe(
-  Effect.flatMap((exists) =>
-    Match.value(exists).pipe(
+  Effect.flatMap(
+    Match.type<boolean>().pipe(
       Match.when(true, () => this.reportFound()),
       Match.when(false, () => this.reportMissing()),
       Match.exhaustive,
@@ -58,6 +58,12 @@ return Effect.tryPromise(() => this.configuration.exists()).pipe(
 ```
 
 ### Keep the composition easy to read
+
+Apply the shared [nesting and abstraction limit](../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction).
+Effect continuations, Match callbacks, and I/O callbacks all count; functional
+syntax does not exempt a nested scope. Pass an existing matcher directly to
+`Effect.flatMap` instead of wrapping it in another callback. Prefer provided
+effects such as `Console.log` over `Effect.sync(() => console.log(...))`.
 
 Use a short pipeline, named intermediate values, and small callbacks. Extract
 an operation when it has a meaningful responsibility or reuse. Do not introduce
@@ -214,6 +220,8 @@ return label.text;
   must not bypass the rule. Keep enforcement scoped to adopted modules or packages.
 - Verify exhaustive matches and deferred side effects; reject unnecessary
   wrappers, layers, and composition that obscures a simple operation.
+- Enforce callback nesting through the existing lint gate and review mixed
+  execution scopes under the shared limit.
 - Check that expected failures stay typed and run* appears only at execution edges.
 - Test failure propagation, service substitution, interruption, and resource cleanup.
 - Use Effect LSP where available for quick type feedback.

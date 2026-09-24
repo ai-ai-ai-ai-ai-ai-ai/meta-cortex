@@ -35,9 +35,6 @@ to reconstruct that decision.
 - Let callers act on the outcome without reconstructing its prerequisites.
 - Apply the same placement rule recursively inside the extracted behavior.
 - Keep each nested decision with the domain that owns its meaning.
-- Treat more than three nested branches or matches as a signal of mixed
-  responsibilities or misplaced domain knowledge.
-- Extract those decisions into meaningful owner types with intent-named methods.
 - Preserve short-circuit behavior when it protects admission or effects.
 - Keep transport records structural at their external boundary.
 - Admit those records into meaningful owners when authored behavior needs them.
@@ -51,6 +48,36 @@ The source block must not depend on article policy merely because it supplies da
 A compound condition is evidence, not a mechanical extraction rule. Conditions
 that relate independent owners belong to the operation that owns that relation.
 An empty wrapper around the original expression does not establish ownership.
+
+### Limit nesting and abstraction
+
+Keep at most two nested execution scopes inside an operation. This applies to
+TypeScript and Rust equally: count callbacks, closures, match branches,
+conditionals (including Rust `if let`), and loops together along each path.
+The operation's body starts at zero; entering one of those scopes adds one.
+Sibling branches or sequential callbacks do not accumulate. A match and its
+arms form one level, not two. Modules, classes, impl blocks, data literals,
+and parentheses do not add execution scopes. Other practices still determine
+which control-flow constructs are permitted.
+
+- Flatten first: use sequential steps, named intermediate values, and existing
+  library operations. Do not add a callback that only passes its argument to
+  another function.
+- Extract a meaningful stage or repeated behavior onto its existing owner when
+  flattening alone is insufficient.
+- Reject a chain of forwarding helpers, new types, services, or generic
+  combinators created only to satisfy the depth limit. A small operation must
+  remain understandable without following a chain of trivial methods.
+- Evaluate the whole operation, not only its deepest expression. Passing a
+  nesting check does not justify unnecessary abstraction or repeated wrapping.
+
+**Prohibited:** nest an Effect continuation, a match callback, and an I/O
+callback to print one file-check result. Each scope counts even though no
+ordinary `if` appears.
+
+**Preferred:** pass an exhaustive matcher directly to the continuation, use
+the library's console effect, and share the actual failure-reporting behavior
+on the existing checker. Do not invent a reporting service or outcome hierarchy.
 
 ### Precise receivers
 
@@ -180,6 +207,9 @@ other domain rules owned elsewhere.
   variable as a P1 review finding.
 - Treat misplaced domain decisions or mixed owner responsibilities in new or
   changed code as P1 findings.
+- Reject more than two nested execution scopes and abstraction added merely to
+  evade that limit. Review mixed nesting across callbacks and branches together;
+  language linters may count these constructs separately.
 - Inspect public, private, nested, test, callback, and adapter functions, plus
   module-level declarations and mutable static members.
 - Verify that the selected owner has semantic knowledge or capability required

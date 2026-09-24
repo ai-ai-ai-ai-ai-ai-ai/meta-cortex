@@ -445,6 +445,13 @@ in full. Include related subjects when the change crosses their boundaries.
     construction/stateless behavior, and traits only for genuine shared contracts or
     external interfaces.
 
+- **[function_ownership:nesting](../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction)**
+
+  - Limit combined match, closure, loop, and conditional-pattern nesting to two
+    execution scopes; flatten before extracting meaningful owned behavior.
+  - Reject forwarding layers added only to satisfy depth. Clippy's structural
+    threshold is a backstop, not an exact check of mixed execution scopes.
+
 - **[function_ownership:no_utility_containers](practices/behavior/function-ownership.md#choose-the-owner)**
 
   - Do not treat modules, Utils containers, empty catch-all types, or artificial

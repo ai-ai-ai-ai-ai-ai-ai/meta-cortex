@@ -14,6 +14,12 @@ except for the required boundaries described below.
 A module, `Utils`, or an empty catch-all type is not a meaningful owner.
 A simple decision does not need an artificial lifecycle.
 
+Apply the shared [nesting and abstraction limit](../../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction).
+Count match branches, closures, loops, and permitted conditional patterns
+together. Flatten before extracting; do not add types or forwarding methods
+merely to move nested code elsewhere. Clippy's structural nesting count is a
+backstop, not proof that mixed execution scopes satisfy the shared limit.
+
 ## Own constants and state
 
 Put constants in the owning type's `impl` as associated constants. Keep mutable
