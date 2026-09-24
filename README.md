@@ -65,14 +65,16 @@ settings and does not replace a modified framework.
 Initialization requires a Git repository. It reuses tools from the application
 home, then `PATH`. Missing tools are installed automatically:
 
-- **Bun 1.3.14:** the [official installer](https://bun.com/docs/installation)
+- **Bun:** the [official installer](https://bun.com/docs/installation)
   installs into `~/.meta-cortex/bun`. Requires `curl`, `bash`, and `unzip`.
-- **Vale 3.22.0:** the [official release archive](https://github.com/vale-cli/vale/releases/tag/v3.22.0)
+- **Vale:** the [official release archive](https://github.com/vale-cli/vale/releases)
   installs into `~/.meta-cortex/vale`. Requires `curl` and `tar`. Automatic
   installation supports macOS and Linux on arm64 and x86_64.
 
-Both installations are shared by all repositories and worktrees. Downloads stay
-in their tool directories. `META_CORTEX_HOME` overrides the application directory.
+Runtime versions are configured in [cortex/mise.toml](cortex/mise.toml), shared by
+the installer and CI. The installer embeds this file at build time; CI reads it
+directly. Both installations are shared by all repositories and worktrees.
+Downloads stay in their tool directories. `META_CORTEX_HOME` overrides the application directory.
 Setup leaves shell configuration unchanged and ignores the user's `BUN_INSTALL`.
 For framework script commands in a new shell:
 

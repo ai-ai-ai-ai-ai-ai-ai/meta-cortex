@@ -21,6 +21,28 @@ pub enum Tool {
     Vale,
 }
 
+#[derive(Deserialize, derive_more::Display)]
+#[serde(transparent)]
+struct ToolRelease(String);
+
+#[derive(Deserialize)]
+struct ToolVersions {
+    bun: ToolRelease,
+    vale: ToolRelease,
+}
+
+#[derive(Deserialize)]
+struct ToolConfiguration {
+    tools: ToolVersions,
+}
+
+impl ToolConfiguration {
+    fn bundled() -> io::Result<Self> {
+        toml::from_str(include_str!("../../../../cortex/mise.toml"))
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
+    }
+}
+
 impl Tool {
     fn name(self) -> &'static str {
         match self {
@@ -77,13 +99,14 @@ impl InstalledTool {
 
     fn install(&self, tool: Tool) -> io::Result<()> {
         fs::create_dir_all(self.directory.join("bin"))?;
+        let versions = ToolConfiguration::bundled()?.tools;
         match tool {
-            Tool::Bun => self.install_bun(),
-            Tool::Vale => self.install_vale(),
+            Tool::Bun => self.install_bun(versions.bun),
+            Tool::Vale => self.install_vale(versions.vale),
         }
     }
 
-    fn install_bun(&self) -> io::Result<()> {
+    fn install_bun(&self, version: ToolRelease) -> io::Result<()> {
         let script = self.directory.join("install.sh");
         Self::run(
             Command::new("curl")
@@ -100,13 +123,13 @@ impl InstalledTool {
         Self::run(
             Command::new("bash")
                 .arg(&script)
-                .arg("bun-v1.3.14")
+                .arg(format!("bun-v{version}"))
                 .env("BUN_INSTALL", &self.directory)
                 .env("SHELL", "/bin/sh"),
         )
     }
 
-    fn install_vale(&self) -> io::Result<()> {
+    fn install_vale(&self, version: ToolRelease) -> io::Result<()> {
         let archive = self.directory.join("vale.tar.gz");
         let asset = match (OS, ARCH) {
             ("macos", "aarch64") => "macOS_arm64",
@@ -120,7 +143,7 @@ impl InstalledTool {
             }
         };
         let url = format!(
-            "https://github.com/vale-cli/vale/releases/download/v3.22.0/vale_3.22.0_{asset}.tar.gz"
+            "https://github.com/vale-cli/vale/releases/download/v{version}/vale_{version}_{asset}.tar.gz"
         );
         Self::run(
             Command::new("curl")

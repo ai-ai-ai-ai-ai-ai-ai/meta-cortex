@@ -1,7 +1,6 @@
 {
   "name": "@meta-cortex/skill-workspace",
   "private": true,
-  "packageManager": "bun@1.3.14",
   "workspaces": [
     "scripts",
     "teams/*/agents/*/skills/*/scripts"
@@ -12,5 +11,8 @@
   },
   "devDependencies": {
     "effect": "4.0.0-rc.117"
+  },
+  "catalog": {
+    "@types/bun": "1.3.14"
   }
 }

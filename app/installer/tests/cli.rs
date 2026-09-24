@@ -417,6 +417,17 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
     Ok(())
 }
 
+#[derive(Deserialize)]
+struct ToolConfiguration {
+    tools: ToolVersions,
+}
+
+#[derive(Deserialize)]
+struct ToolVersions {
+    bun: String,
+    vale: String,
+}
+
 struct ToolScenario {
     cli: CliScenario,
     tools: TempDir,
@@ -446,7 +457,7 @@ case "$5" in
   https://bun.com/install)
     printf 'downloaded' > "$CORTEX_TEST_DOWNLOAD"
     exec /bin/cp "$CORTEX_TEST_INSTALLER" "$7" ;;
-  https://github.com/vale-cli/vale/releases/download/v3.22.0/vale_3.22.0_*.tar.gz)
+  https://github.com/vale-cli/vale/releases/download/v"$CORTEX_TEST_VALE_RELEASE"/vale_"$CORTEX_TEST_VALE_RELEASE"_*.tar.gz)
     printf 'downloaded' > "$CORTEX_TEST_VALE_DOWNLOAD"
     exec /bin/cp "$CORTEX_TEST_VALE_ARCHIVE" "$7" ;;
   *) exit 90 ;;
@@ -459,7 +470,7 @@ esac
         )?;
         fs::write(
             scenario.tools.path().join("installer.sh"),
-            r#"test "$1" = "bun-v1.3.14" || exit 92
+            r#"test "$1" = "$CORTEX_TEST_BUN_RELEASE" || exit 92
 test "$SHELL" = "/bin/sh" || exit 93
 /bin/mkdir -p "$BUN_INSTALL/bin"
 /bin/ln -s "$CORTEX_TEST_BUN" "$BUN_INSTALL/bin/bun"
@@ -468,12 +479,11 @@ printf 'installer stderr' >&2
 "#,
         )?;
         symlink("/usr/bin/tar", scenario.tools.path().join("tar"))?;
+        // GNU tar launches gzip through PATH; BSD tar handles it internally.
+        symlink("/usr/bin/gzip", scenario.tools.path().join("gzip"))?;
         let vale = scenario.tools.path().join("vale-fixture");
         fs::create_dir(&vale)?;
-        fs::write(
-            vale.join("vale"),
-            "#!/bin/sh\nprintf 'vale version 3.22.0\\n'\n",
-        )?;
+        fs::write(vale.join("vale"), "#!/bin/sh\nprintf 'vale fixture\\n'\n")?;
         fs::set_permissions(vale.join("vale"), fs::Permissions::from_mode(0o755))?;
         let archived = Command::new("tar")
             .arg("-czf")
@@ -487,6 +497,8 @@ printf 'installer stderr' >&2
     }
 
     fn call(&self, setup: ToolSetup) -> anyhow::Result<Outcome> {
+        let configuration: ToolConfiguration =
+            toml::from_str(include_str!("../../../cortex/mise.toml"))?;
         let request = Request {
             version: ProtocolVersion::V1,
             project: self.cli.project.path().to_owned(),
@@ -503,6 +515,11 @@ printf 'installer stderr' >&2
             .env("PATH", self.tools.path())
             .env("BUN_INSTALL", self.global_installation.path())
             .env("CORTEX_TEST_BUN", &self.executable)
+            .env(
+                "CORTEX_TEST_BUN_RELEASE",
+                format!("bun-v{}", configuration.tools.bun),
+            )
+            .env("CORTEX_TEST_VALE_RELEASE", configuration.tools.vale)
             .env(
                 "CORTEX_TEST_INSTALLER",
                 self.tools.path().join("installer.sh"),
