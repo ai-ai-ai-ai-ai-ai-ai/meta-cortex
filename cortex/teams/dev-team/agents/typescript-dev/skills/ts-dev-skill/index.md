@@ -32,19 +32,40 @@ validation. Existing code does not weaken their requirements.
 ### Branching and exhaustive matching
 
 - **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
-- **Owns:** Conditional-expression prohibition and exhaustive domain decisions.
+- **Owns:** Boolean-if and ternary prohibitions, exhaustive decisions, and Rust conditional patterns.
 - **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Effect workflows](practices/typescript-effect.md), [Code checks](practices/typescript-code-checks.md).
 
 - **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
 
-  - Prohibit conditional expressions in authored code; use a closed match for
-    domain alternatives and explicit control flow for mechanical conditions
-    only where the language's composition rules permit it.
+  - Prohibit conditional expressions in authored code and use explicit pattern
+    matching instead.
+
+- **[branching:no_boolean_if](../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)**
+
+  - Prohibit ordinary boolean if/else-if/if-else in TypeScript, JavaScript, and
+    Rust, including pure code, adapters, tests, tooling, and examples.
+  - Match domain values directly. At required raw-value boundaries, match the
+    raw input or dependency predicate immediately without decorative abstractions.
+
+- **[branching:rust_patterns](../../../../docs/programming/branching-and-exhaustive-matching.md#encourage-rust-conditional-patterns)**
+
+  - Encourage Rust if let, else if let, if let-else, and let-else for focused
+    pattern handling with intentional unmatched behavior.
+  - Reject boolean disguises, boolean let-chain conditions, and ordinary else-if
+    conditions. Pattern guards may refine a match without hiding missing cases.
 
 - **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
 
-  - Name every enum or union variant; reject catch-all arms that absorb new
-    variants and check exhaustiveness statically.
+  - Name every enum or union variant in decisions; reject catch-all arms that
+    absorb new variants and check exhaustiveness statically.
+  - Preserve the focused Rust conditional-pattern exception and open-input
+    matching. Use Match.exhaustive in TypeScript and retain checks on enum switches.
+
+- **[branching:validation](../../../../docs/programming/branching-and-exhaustive-matching.md#validation)**
+
+  - Reject IfStatement and ConditionalExpression in TypeScript/JavaScript lint.
+  - Distinguish Rust boolean if expressions from valid conditional patterns;
+    keyword searches and the standard Clippy baseline do not prove compliance.
 
 ### Function ownership
 
@@ -452,7 +473,7 @@ validation. Existing code does not weaken their requirements.
 
   - The current TypeScript practice allows booleans only at required platform/host
     signatures, fixed external wire edges with immediate enum normalization, or private
-    immediately consumed mechanical predicates.
+    immediately matched mechanical predicates at their boundary.
 
 - **[enums_over_booleans:observations](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
@@ -550,7 +571,7 @@ validation. Existing code does not weaken their requirements.
     decisions, traversal, and recovery; prohibit procedural branches, loops,
     and try/catch in generators, callbacks, and helpers choosing workflow steps.
   - A local variable or extracted helper does not exempt the same procedural
-    branch. General mechanical-guard allowances do not apply here.
+    branch. The shared rule also prohibits ordinary if outside Effect workflows.
   - Match external booleans only at their adapter; preserve domain enum/union
     vocabulary and reject fallbacks for closed alternatives.
 
@@ -899,6 +920,8 @@ validation. Existing code does not weaken their requirements.
   - Builds do not replace type checks; run required builds without warnings and
     make lint warnings fail, using the installed tool's supported options.
   - Keep generated/vendor files with their owners and coordinate pipeline changes.
+  - Reject IfStatement and ConditionalExpression throughout authored TS/JS,
+    including pure code, adapters, tests, and tooling outside Effect workflows.
   - Enforce Effect composition in adopted modules/packages through the existing
     lint gate; verify rejected procedural syntax fails and its replacement passes.
 

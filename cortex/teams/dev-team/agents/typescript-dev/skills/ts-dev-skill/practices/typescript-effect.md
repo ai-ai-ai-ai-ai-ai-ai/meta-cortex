@@ -19,8 +19,9 @@ Do not mix procedural `if`/`else`, `switch`, ternaries, loops, or `try`/`catch`
 with Effect workflow control. This includes generators, composition callbacks,
 and helpers that choose workflow steps. Assigning a yielded result to a local
 variable before an `if`, or moving the same branch into a helper, does not
-satisfy the rule. The general allowance for mechanical guards does not apply
-inside these workflows.
+satisfy the rule. The shared
+[branching rule](../../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)
+also prohibits ordinary `if` conditions outside Effect workflows.
 
 `Effect.gen` may sequence dependent steps linearly. Branch through composition
 and matching; keep side effects inside `Effect.sync`, `Effect.tryPromise`, or

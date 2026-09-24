@@ -10,6 +10,11 @@
 - Extend the existing project-owned check entry point when a gate is missing.
 - Use the chosen package manager and locally installed tools.
 - Preserve the project's formatter, linter, framework, and compiler settings.
+- Reject `IfStatement` and `ConditionalExpression` in authored TypeScript and
+  JavaScript through the existing lint gate, following the shared
+  [branching rule](../../../../../docs/programming/branching-and-exhaustive-matching.md).
+  Include pure code, adapters, tests, and tooling; Effect is not a scope boundary
+  for the prohibition on ordinary `if` conditions.
 - Enforce the [Effect composition rules](typescript-effect.md#compose-workflows-with-simple-functional-operations)
   in adopted workflow modules or packages through the existing lint gate.
   Reject procedural branches, loops, and exception handling there; verify that

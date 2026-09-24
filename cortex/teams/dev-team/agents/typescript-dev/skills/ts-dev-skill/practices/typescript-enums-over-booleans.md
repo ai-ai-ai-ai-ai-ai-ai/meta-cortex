@@ -57,8 +57,8 @@ type UploadState =
 
 Keep boolean host/platform signatures at their exact boundary. Fixed external
 fields normalize immediately into named states, and map back only outbound.
-Private mechanical predicates such as contains/isEmpty may be consumed immediately
-as control flow, never stored policy. Document retained public fields/signatures
+Private mechanical predicates such as contains/isEmpty may be matched immediately
+at their boundary, never stored as policy. Document retained public fields/signatures
 and lint exceptions; tests and internal DTOs have no blanket exemption.
 
 **Prohibited:**

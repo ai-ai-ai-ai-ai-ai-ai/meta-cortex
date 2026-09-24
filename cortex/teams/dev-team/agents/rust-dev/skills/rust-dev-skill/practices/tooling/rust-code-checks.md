@@ -96,6 +96,11 @@ excessive-nesting-threshold = 5
 - Review fallible replacement methods manually; `return_self_not_must_use` does not cover every wrapper around `Self`.
 - Name enum alternatives explicitly in `match` arms.
 - Use partial matching only when permitted by [exhaustive matching](../modeling/domain-states.md#match-decisions-exhaustively).
+- Apply the shared [branching rule](../../../../../../docs/programming/branching-and-exhaustive-matching.md)
+  to ordinary boolean `if` expressions. Preserve genuine `if let`,
+  `if let ... else`, and `let ... else` patterns. Review this distinction with
+  syntax-aware tooling where available and semantic review; the baseline above
+  does not enforce the ban, and a keyword ban would reject valid patterns.
 - Review [API inputs](../behavior/api-inputs.md) for the one-nonreceiver-parameter limit.
 - Set the argument threshold to two because Clippy counts `self`.
 - Check associated and free functions manually; two nonreceiver parameters still pass this threshold.

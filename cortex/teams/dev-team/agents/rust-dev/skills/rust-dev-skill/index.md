@@ -18,7 +18,8 @@ reader can detect contradictions without opening every file.
 Related entries are review relationships, not instructions for leaf documents to
 link back here. Apply the relevant cross-language practices when the assignment crosses that boundary.
 
-For implementation, refactoring, review, and tooling, always load Domain types,
+For implementation, refactoring, review, and tooling, always load Branching and
+exhaustive matching, Domain types,
 Domain states, Module layout, and Rust code checks as required by the skill entry point. Select
 additional entries covering the decisions being changed and load those practices
 in full. Include related subjects when the change crosses their boundaries.
@@ -282,7 +283,7 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[domain_states:mechanical_predicates](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
 
-  - Consume library predicate/operator booleans directly in control flow.
+  - Match library predicate/operator booleans directly at their boundary.
   - Do not expose authored boolean predicates or store mechanical results as policy.
 
 - **[domain_states:no_derived_flags](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
@@ -310,8 +311,8 @@ in full. Include related subjects when the change crosses their boundaries.
 
   - Match evolving decisions exhaustively.
   - Wildcard/early-exit branches may not silently classify future variants.
-  - Use if let or positive let-else only when unmatched variants intentionally share
-    handling.
+  - Encourage genuine if let, if let-else, and positive let-else when unmatched
+    variants intentionally share handling under the shared branching rule.
 
 - **[domain_states:decision_locality](practices/modeling/domain-states.md#match-decisions-exhaustively)**
 
@@ -387,6 +388,43 @@ in full. Include related subjects when the change crosses their boundaries.
 
 
 ## Behavior
+
+### Branching and exhaustive matching
+
+- **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
+- **Owns:** Boolean-if and ternary prohibitions, exhaustive decisions, and Rust conditional patterns.
+- **Related:** [Domain states](practices/modeling/domain-states.md), [Rust code checks](practices/tooling/rust-code-checks.md).
+
+- **[branching:no_boolean_if](../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)**
+
+  - Prohibit ordinary boolean if/else-if/if-else in Rust, TypeScript, and
+    JavaScript, including pure code, adapters, tests, tooling, and examples.
+  - Match domain values directly. Match unavoidable raw values and dependency
+    predicates at their boundary without decorative abstractions.
+
+- **[branching:rust_patterns](../../../../docs/programming/branching-and-exhaustive-matching.md#encourage-rust-conditional-patterns)**
+
+  - Encourage if let, else if let, if let-else, and let-else for focused pattern
+    handling when unmatched cases intentionally share behavior.
+  - Reject if-let-true disguises, boolean let-chain conditions, and ordinary
+    else-if conditions. Pattern guards may refine a match without hiding cases.
+
+- **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
+
+  - Prohibit conditional operators in languages that provide them; Rust boolean
+    if expressions are prohibited by the same pattern-matching policy.
+
+- **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
+
+  - Name every enum or union variant in decisions and reject catch-all arms that
+    silently absorb future variants; check exhaustiveness statically.
+  - Preserve focused conditional patterns and open-input matching at boundaries.
+
+- **[branching:validation](../../../../docs/programming/branching-and-exhaustive-matching.md#validation)**
+
+  - Review Rust syntax to distinguish boolean if from conditional patterns;
+    neither a keyword ban nor the standard Clippy baseline proves compliance.
+  - Lint TS/JS against IfStatement and ConditionalExpression, including pure code.
 
 ### Function ownership
 
@@ -977,6 +1015,8 @@ in full. Include related subjects when the change crosses their boundaries.
     wildcard-enum, argument-count, and nesting lints alongside existing checks.
   - Apply the prescribed thresholds; review authored Option usage separately.
   - Review semantic gaps; Clippy counts receivers and structural nesting.
+  - Review boolean if expressions separately from permitted Rust conditional
+    patterns using the shared branching rule; the baseline does not ban if.
 
 - **[code_checks:fix_diagnostics](practices/tooling/rust-code-checks.md#fix-diagnostics-before-completion)**
 

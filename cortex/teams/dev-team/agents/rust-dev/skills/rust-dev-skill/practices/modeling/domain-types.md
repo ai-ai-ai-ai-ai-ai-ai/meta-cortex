@@ -440,16 +440,14 @@ impl TryFrom<String> for TaskId {
     type Error = IdentifierParseError;
 
     fn try_from(text: String) -> Result<Self, Self::Error> {
-        if text.is_empty() {
-            return Err(IdentifierParseError::Empty);
+        match text.len() {
+            0 => Err(IdentifierParseError::Empty),
+            129.. => Err(IdentifierParseError::TooLong),
+            1..=128 => match text.bytes().all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c)) {
+                true => Ok(Self(text)),
+                false => Err(IdentifierParseError::InvalidCharacters),
+            },
         }
-        if text.len() > 128 {
-            return Err(IdentifierParseError::TooLong);
-        }
-        if !text.bytes().all(|c| c.is_ascii_alphanumeric() || b"-_.".contains(&c)) {
-            return Err(IdentifierParseError::InvalidCharacters);
-        }
-        Ok(Self(text))
     }
 }
 ```

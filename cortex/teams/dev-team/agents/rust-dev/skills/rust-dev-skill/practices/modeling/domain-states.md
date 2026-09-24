@@ -120,10 +120,9 @@ pub struct NoteText(String);
 
 impl From<String> for Note {
     fn from(text: String) -> Self {
-        if text.is_empty() {
-            Self::Empty
-        } else {
-            Self::Text(NoteText(text))
+        match text.as_str() {
+            "" => Self::Empty,
+            _ => Self::Text(NoteText(text)),
         }
     }
 }
@@ -252,13 +251,19 @@ pub struct SyncRequest {
 
 impl From<bool> for SyncMode {
     fn from(force: bool) -> Self {
-        if force { Self::Forced } else { Self::Scheduled }
+        match force {
+            true => Self::Forced,
+            false => Self::Scheduled,
+        }
     }
 }
 
 impl From<bool> for UploadMode {
     fn from(upload: bool) -> Self {
-        if upload { Self::Enabled } else { Self::Disabled }
+        match upload {
+            true => Self::Enabled,
+            false => Self::Disabled,
+        }
     }
 }
 
@@ -282,8 +287,9 @@ For raw JSON, decode into those owned enums; do not invent an intermediate
 application-authored struct of booleans.
 
 Library predicates and operators necessarily produce boolean expressions. Consume
-those directly in control flow, as with membership insertion below; do not store
-them as values or expose an authored boolean predicate. This is not permission
+those directly through pattern matching at their boundary, as with membership
+insertion below; do not store them as values or expose an authored boolean
+predicate. This is not permission
 for boolean domain models or duplicate serialized flags derived from enums.
 
 ## Put payloads on their owning variants
@@ -363,10 +369,11 @@ pub enum ShippingSpeed { Standard, Express }
 
 ## Match decisions exhaustively
 
-When variants require distinct behavior, name every arm. A wildcard or early
-return must not silently assign future variants an existing policy. Use `if let`
-or positive `let ... else` only when all unmatched variants intentionally share
-one behavior. Avoid negated compound conditions and deeply nested matches.
+Apply the shared [branching rule](../../../../../../docs/programming/branching-and-exhaustive-matching.md).
+When variants require distinct behavior, name every arm so a new variant requires
+a new decision. For focused payload extraction, use the rule's encouraged Rust
+conditional patterns with intentional unmatched handling. Keep decisions with
+their owners and avoid deeply nested matches.
 
 These alternatives convert the existing domain `DeliveryKind` into the
 consumer-owned `AddressRequirement`.
@@ -419,10 +426,10 @@ pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
 
 ```rust
 pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
-    if !self.seen.insert(id) {
-        return Err(RegistrationError::Duplicate);
+    match self.seen.insert(id) {
+        true => Ok(self),
+        false => Err(RegistrationError::Duplicate),
     }
-    Ok(self)
 }
 ```
 

@@ -21,7 +21,8 @@ selected language practices. Reuse it if already loaded for this assignment.
 ## Required actions
 
 For every TypeScript or JavaScript implementation or tooling assignment, load
-and apply [TypeScript code checks](practices/typescript-code-checks.md). This
+and apply [branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md)
+and [TypeScript code checks](practices/typescript-code-checks.md). This
 prerequisite is mandatory, independent of the selected implementation practices.
 
 For any YAML-producing code, load and apply

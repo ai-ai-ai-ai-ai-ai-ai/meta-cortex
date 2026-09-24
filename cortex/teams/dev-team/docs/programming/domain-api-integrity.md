@@ -128,7 +128,7 @@ ABI, browser, and host edges. Validate and convert them immediately.
 An externally fixed boolean field retains its transport shape. Convert it to
 the semantic enum before domain policy reads it.
 
-A mechanical predicate may return a boolean for immediate control flow only
+A mechanical predicate may return a boolean for immediate pattern matching only
 when the owning language policy permits authored predicates. A language may
 restrict this further to immediate consumption of dependency predicates.
 Named domain decisions return semantic enums or discriminated outcomes, even

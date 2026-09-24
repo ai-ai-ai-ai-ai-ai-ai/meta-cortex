@@ -142,10 +142,9 @@ pub mod publishing {
 
         fn try_from(draft: DraftText) -> Result<Self, Self::Error> {
             let DraftText(text) = draft;
-            if text.trim().is_empty() {
-                Err(PublishError::EmptyDocument)
-            } else {
-                Ok(Self(text))
+            match text.trim() {
+                "" => Err(PublishError::EmptyDocument),
+                _ => Ok(Self(text)),
             }
         }
     }

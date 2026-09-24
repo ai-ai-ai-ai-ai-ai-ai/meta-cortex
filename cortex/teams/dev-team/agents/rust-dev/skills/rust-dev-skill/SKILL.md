@@ -14,7 +14,8 @@ selected language practices. Reuse it if already loaded for this assignment.
 ## Required actions
 
 For every Rust implementation, refactoring, review, or tooling assignment, load
-and apply [domain types](practices/modeling/domain-types.md),
+and apply [branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md),
+[domain types](practices/modeling/domain-types.md),
 [domain states](practices/modeling/domain-states.md),
 [owned updates](practices/behavior/owned-updates.md),
 [module layout](practices/tooling/module-layout.md),
