@@ -14,6 +14,14 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Error)]
 pub enum InstallError {
     #[error(
+        "Bun is required to initialize {path}; install Bun and rerun Framework / Initialize: {source}"
+    )]
+    BunUnavailable {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
+    #[error(
         "could not install framework dependencies in {path}; install Bun and rerun Framework / Initialize: {source}"
     )]
     Dependencies {
@@ -137,6 +145,10 @@ pub struct InitRequest {
 impl Installation {
     pub fn install(self, request: InitRequest) -> Result<InstalledProject, InstallError> {
         let destination = self.project.root.join(".meta-cortex");
+        let dependencies = WorkspaceDependencies {
+            directory: destination.clone(),
+        };
+        dependencies.check_bun()?;
         let integration = request.integration.plan(ProjectHarnesses {
             root: self.project.root.clone(),
         })?;
@@ -157,10 +169,7 @@ impl Installation {
                 .verify()?;
             }
         }
-        WorkspaceDependencies {
-            directory: destination,
-        }
-        .install()?;
+        dependencies.install()?;
         integration.apply()?;
         Ok(InstalledProject {
             root: self.project.root,

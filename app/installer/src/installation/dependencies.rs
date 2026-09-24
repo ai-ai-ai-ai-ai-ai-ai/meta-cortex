@@ -8,6 +8,28 @@ pub(super) struct WorkspaceDependencies {
 }
 
 impl WorkspaceDependencies {
+    pub fn check_bun(&self) -> Result<(), InstallError> {
+        let output = Command::new("bun")
+            .arg("--version")
+            .stdin(Stdio::null())
+            .output()
+            .map_err(|source| InstallError::BunUnavailable {
+                path: self.directory.clone(),
+                source,
+            })?;
+        match output.status.code() {
+            Some(0) => Ok(()),
+            Some(_) | None => Err(InstallError::BunUnavailable {
+                path: self.directory.clone(),
+                source: io::Error::other(format!(
+                    "bun --version failed with {}: {}",
+                    output.status,
+                    String::from_utf8_lossy(&output.stderr),
+                )),
+            }),
+        }
+    }
+
     pub fn install(self) -> Result<(), InstallError> {
         let output = Command::new("bun")
             .args(["install", "--frozen-lockfile", "--ignore-scripts"])

@@ -350,7 +350,7 @@ fn yaml_initialization_defaults_are_unattended_and_preserve_guidance() -> anyhow
 }
 
 #[test]
-fn missing_bun_reports_failure_before_connecting_and_can_be_retried() -> anyhow::Result<()> {
+fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::Result<()> {
     let scenario = CliScenario::create()?;
     let request = Request {
         version: ProtocolVersion::V1,
@@ -380,6 +380,7 @@ fn missing_bun_reports_failure_before_connecting_and_can_be_retried() -> anyhow:
         bail!("expected missing Bun failure")
     };
     assert!(error.message.contains("install Bun"));
+    assert_eq!(fs::read_dir(scenario.project.path())?.count(), 0);
     assert!(!scenario.project.path().join("AGENTS.md").exists());
     assert!(!scenario.project.path().join(".agents").exists());
     scenario.initialize(Initialization {

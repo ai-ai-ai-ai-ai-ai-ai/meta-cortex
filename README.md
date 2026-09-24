@@ -64,6 +64,8 @@ settings and does not replace a modified framework.
 
 Initialization requires Bun 1.3.14 and runs
 `bun install --frozen-lockfile --ignore-scripts` once in `.meta-cortex/`.
+It first checks that `bun --version` succeeds. If Bun is missing or cannot run,
+initialization reports the prerequisite failure before writing any project files.
 All framework scripts share that workspace's `node_modules`; individual skills
 do not install dependencies. Repeating initialization also restores missing dependencies.
 The executable bundles the framework and official Effect skill. Dependency
