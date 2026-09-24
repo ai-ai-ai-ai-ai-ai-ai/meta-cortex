@@ -11,11 +11,13 @@ are supplied by the application; method fragments belong to their named owner.
 ## Compose workflows with simple functional operations
 
 Effect owns sequencing, decisions, failures, and cleanup in effectful workflows.
-Use `Effect.map` for pure transformations, `Effect.all` or `Effect.zipWith` to
+Use `Effect.map` for pure transformations, `Effect.all` with named results to
 combine independent effects, and basic exhaustive `Match` branches for
 alternatives. Use `Effect.forEach` for effectful traversal and Effect's error
 operators for recovery. Keep execution order and concurrency explicit where
 they affect behavior; independent composition does not require parallel execution.
+Do not use `zipWith` chains for routine composition. Keep inputs and results
+visible in named bindings instead of threading them through combining callbacks.
 
 Explicit `Effect.flatMap` is a rare exception, not the default sequencing tool.
 Prefer a short, linear `Effect.gen` when the next effect needs an earlier result.
@@ -232,7 +234,7 @@ return label.text;
   wrappers, layers, and composition that obscures a simple operation.
 - Enforce callback nesting through the existing lint gate and review mixed
   execution scopes under the shared limit.
-- Reject explicit `flatMap` in simple scripts through their existing lint gate.
+- Reject `flatMap` and `zipWith` in simple scripts through their existing lint gate.
   Elsewhere, review each new use for a concrete dependency and an explanation
   of why basic composition or a linear generator is insufficient. Do not add a
   custom composition checker or migrate unrelated workflows for this rule.

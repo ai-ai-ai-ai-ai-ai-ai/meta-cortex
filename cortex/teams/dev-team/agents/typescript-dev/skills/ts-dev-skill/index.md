@@ -589,8 +589,8 @@ validation. Existing code does not weaken their requirements.
 
 - **[effect:basic_composition_first](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
 
-  - Prefer map for pure transformations, all/zipWith for independent effects,
-    and a linear generator for dependent steps.
+  - Prefer map for pure transformations, all with named results for independent
+    effects, and a linear generator for dependent steps. Avoid zipWith chains.
   - Explicit flatMap is exceptional and needs a concrete reason that simpler
     composition is insufficient; aliases and map-plus-flatten do not simplify it.
 
@@ -610,8 +610,8 @@ validation. Existing code does not weaken their requirements.
     and unnecessary abstraction.
   - Enforce callback and block nesting through the existing lint gate; review
     mixed nesting separately because ESLint counts them independently.
-  - Reject explicit flatMap in simple scripts and review exceptional uses
-    elsewhere under the basic-composition rule.
+  - Reject flatMap and zipWith in simple scripts and review exceptional flatMap
+    uses elsewhere under the basic-composition rule.
 
 - **[effect:typed_failures](practices/typescript-effect.md#preserve-the-typed-failure-channel)**
 

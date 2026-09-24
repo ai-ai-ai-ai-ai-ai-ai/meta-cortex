@@ -21,9 +21,9 @@ export default [
         },
         {
           selector:
-            "CallExpression[callee.object.name='Effect'][callee.property.name='flatMap']",
+            "CallExpression[callee.object.name='Effect'][callee.property.name=/^(flatMap|zipWith)$/]",
           message:
-            "These scripts need only basic composition or linear Effect.gen; do not introduce explicit flatMap.",
+            "These scripts need only basic composition or linear Effect.gen; do not introduce flatMap or zipWith.",
         },
         {
           selector:
