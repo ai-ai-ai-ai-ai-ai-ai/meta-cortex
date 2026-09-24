@@ -11,9 +11,19 @@ are supplied by the application; method fragments belong to their named owner.
 ## Compose workflows with simple functional operations
 
 Effect owns sequencing, decisions, failures, and cleanup in effectful workflows.
-Use `Effect.map` for pure transformations, `Effect.flatMap` for dependent effects,
-and basic exhaustive `Match` branches for alternatives. Use `Effect.forEach` for
-effectful traversal and Effect's error operators for recovery.
+Use `Effect.map` for pure transformations, `Effect.all` or `Effect.zipWith` to
+combine independent effects, and basic exhaustive `Match` branches for
+alternatives. Use `Effect.forEach` for effectful traversal and Effect's error
+operators for recovery. Keep execution order and concurrency explicit where
+they affect behavior; independent composition does not require parallel execution.
+
+Explicit `Effect.flatMap` is a rare exception, not the default sequencing tool.
+Prefer a short, linear `Effect.gen` when the next effect needs an earlier result.
+Use explicit `flatMap` only when that dependency cannot be expressed clearly
+with the simpler operations or a linear generator; explain the concrete reason
+at the use site. Do not replace it mechanically with `map` plus `flatten`, an
+effect-returning `andThen` callback, or a custom alias. Those substitutions keep
+the same dependency and do not establish simpler composition.
 
 Do not mix procedural `if`/`else`, `switch`, ternaries, loops, or `try`/`catch`
 with Effect workflow control. This includes generators, composition callbacks,
@@ -46,24 +56,24 @@ return Effect.gen(this, function* () {
 
 ```ts
 // reportFound and reportMissing return effects that write the CLI response.
-return Effect.tryPromise(() => this.configuration.exists()).pipe(
-  Effect.flatMap(
-    Match.type<boolean>().pipe(
-      Match.when(true, () => this.reportFound()),
-      Match.when(false, () => this.reportMissing()),
-      Match.exhaustive,
-    ),
-  ),
-);
+return Effect.gen(this, function* () {
+  const exists = yield* Effect.tryPromise(() => this.configuration.exists());
+  yield* Match.value(exists).pipe(
+    Match.when(true, () => this.reportFound()),
+    Match.when(false, () => this.reportMissing()),
+    Match.exhaustive,
+  );
+});
 ```
 
 ### Keep the composition easy to read
 
 Apply the shared [nesting and abstraction limit](../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction).
 Effect continuations, Match callbacks, and I/O callbacks all count; functional
-syntax does not exempt a nested scope. Pass an existing matcher directly to
-`Effect.flatMap` instead of wrapping it in another callback. Prefer provided
-effects such as `Console.log` over `Effect.sync(() => console.log(...))`.
+syntax does not exempt a nested scope. Keep dependent steps linear and prefer
+provided effects such as `Console.log` over
+`Effect.sync(() => console.log(...))`. A generator improves the notation for
+dependent steps; it does not make them independent or applicative.
 
 Use a short pipeline, named intermediate values, and small callbacks. Extract
 an operation when it has a meaningful responsibility or reuse. Do not introduce
@@ -222,6 +232,10 @@ return label.text;
   wrappers, layers, and composition that obscures a simple operation.
 - Enforce callback nesting through the existing lint gate and review mixed
   execution scopes under the shared limit.
+- Reject explicit `flatMap` in simple scripts through their existing lint gate.
+  Elsewhere, review each new use for a concrete dependency and an explanation
+  of why basic composition or a linear generator is insufficient. Do not add a
+  custom composition checker or migrate unrelated workflows for this rule.
 - Check that expected failures stay typed and run* appears only at execution edges.
 - Test failure propagation, service substitution, interruption, and resource cleanup.
 - Use Effect LSP where available for quick type feedback.

@@ -75,9 +75,10 @@ which control-flow constructs are permitted.
 callback to print one file-check result. Each scope counts even though no
 ordinary `if` appears.
 
-**Preferred:** pass an exhaustive matcher directly to the continuation, use
-the library's console effect, and share the actual failure-reporting behavior
-on the existing checker. Do not invent a reporting service or outcome hierarchy.
+**Preferred:** read the file-existence result and report it in two linear
+steps, using an exhaustive match and the library's console effect. Share actual
+failure-reporting behavior on the existing checker. Do not invent a reporting
+service or outcome hierarchy.
 
 ### Precise receivers
 

@@ -587,11 +587,18 @@ validation. Existing code does not weaken their requirements.
     and defer I/O through Effect or its owning adapter.
   - Match branches return effects without executing them during construction.
 
+- **[effect:basic_composition_first](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
+
+  - Prefer map for pure transformations, all/zipWith for independent effects,
+    and a linear generator for dependent steps.
+  - Explicit flatMap is exceptional and needs a concrete reason that simpler
+    composition is insufficient; aliases and map-plus-flatten do not simplify it.
+
 - **[effect:simple_composition](practices/typescript-effect.md#keep-the-composition-easy-to-read)**
 
   - Prefer short pipelines, named intermediate values, and small callbacks.
   - Count Effect, Match, and I/O callbacks under the shared nesting limit;
-    pass matchers directly and use existing library effects.
+    keep dependent steps linear and use existing library effects.
   - Reject generic wrappers, custom functional frameworks, deep composition,
     and services or layers introduced only to express a branch.
   - Extract meaningful or reused operations and keep pure calculations pure.
@@ -603,6 +610,8 @@ validation. Existing code does not weaken their requirements.
     and unnecessary abstraction.
   - Enforce callback and block nesting through the existing lint gate; review
     mixed nesting separately because ESLint counts them independently.
+  - Reject explicit flatMap in simple scripts and review exceptional uses
+    elsewhere under the basic-composition rule.
 
 - **[effect:typed_failures](practices/typescript-effect.md#preserve-the-typed-failure-channel)**
 

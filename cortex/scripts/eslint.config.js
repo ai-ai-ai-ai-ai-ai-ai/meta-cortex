@@ -21,6 +21,12 @@ export default [
         },
         {
           selector:
+            "CallExpression[callee.object.name='Effect'][callee.property.name='flatMap']",
+          message:
+            "These scripts need only basic composition or linear Effect.gen; do not introduce explicit flatMap.",
+        },
+        {
+          selector:
             ":matches(IfStatement, SwitchStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, TryStatement)",
           message:
             "Keep workflow control in Effect combinators and exhaustive Match branches; do not mix in procedural control flow.",
