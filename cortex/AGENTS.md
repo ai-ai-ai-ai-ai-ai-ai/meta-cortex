@@ -109,9 +109,13 @@ in this thread.
 Identify both roots before planning development work:
 
 - **Library root**
-  - From this file's directory, install missing workspace dependencies with
-    `bun install --frozen-lockfile --ignore-scripts`, then run
-    `bun scripts/src/ts/check-library-root.ts`; continue only if it succeeds.
+  - Run from this file's directory; continue only if both commands succeed:
+
+    ```sh
+    bun install --frozen-lockfile --ignore-scripts &&
+      bun scripts/src/ts/check-library-root.ts
+    ```
+
   - Supplies Meta-Cortex instructions, roles, skills, and configuration.
 - **Project root**
   - The consuming repository that owns the user's development task.
