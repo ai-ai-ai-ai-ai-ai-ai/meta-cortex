@@ -25,13 +25,9 @@ Keep database code and dependencies in workbench; installer uses its public API.
 Shared Cargo dependencies, lint policy, lockfile, and release profile live at the
 workspace root. The framework remains at the repository root in `cortex/`.
 
-For Effect code, use the official
-[Effect skill](cortex/teams/dev-team/agents/typescript-dev/skills/effect-ts/SKILL.md).
-The project skill at `.agents/skills/effect-ts` points to that upstream copy.
-Before editing, read
-`cortex/node_modules/effect/AGENTS.md` completely and follow its relevant links;
-consult `cortex/node_modules/effect/src` for API details. The Bun workspace in
-`cortex/` supplies this installed v4 package and its version-matched guidance.
+For Effect code, apply the
+[upstream guidance](cortex/teams/dev-team/agents/typescript-dev/skills/ts-dev-skill/SKILL.md#effect-use-installed-documentation).
+This repository's installed v4 package is at `cortex/node_modules/effect/`.
 
 For a fresh development checkout, install the shared workspace dependencies once:
 

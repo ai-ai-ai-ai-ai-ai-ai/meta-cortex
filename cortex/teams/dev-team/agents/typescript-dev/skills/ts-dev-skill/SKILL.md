@@ -42,26 +42,22 @@ read the selected practices in full. Before changing a rule, inspect its owner a
 update the same namespaced rules, summaries, exceptions, and section links whenever the
 requirements or their placement change.
 
-## Effect: use upstream skills
+## Effect: use installed documentation
 
 Use Effect v4 for new or materially changed asynchronous, fallible, resource-owning,
 concurrent, service-dependent, and untrusted-decoding workflows, including scripts
 and tests. Pure calculations keep their existing domain owners.
 
-Apply the bundled official [effect-ts skill](../effect-ts/SKILL.md).
 Before writing Effect code, read the installed `effect/AGENTS.md` completely,
 then follow its relevant documentation links and consult `effect/src` for API
 details. Resolve the package from the workspace that owns the code, including
 hoisted `node_modules`; do not use a different project's installed version.
 For Cortex's own scripts, the package is at the library root's
-`node_modules/effect/`. Install missing dependencies with the project's existing
-package manager and lockfile before reading it.
+`node_modules/effect/`; Framework / Initialize installs its dependencies.
 
 Upstream owns Effect idioms, composition, services, errors, schemas, resources,
 and runtime guidance. Do not maintain a parallel Cortex Effect tutorial, operator
-allowlist, or edited fork of the upstream skill. Its unmodified source and license
-ship with the framework; initialization installs it for the selected harness.
-Shared domain, language, and project rules
+allowlist, or wrapper skill. Shared domain, language, and project rules
 still apply; keep compositions flat and readable without adding helper layers.
 
 Pin the same explicit v4 release in workspace packages and verify the lockfile's

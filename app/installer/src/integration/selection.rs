@@ -1,5 +1,4 @@
 use super::instructions::PreparedInstructions;
-use super::skills::EffectSkill;
 use super::{Harness, InstructionError, IntegrationPlan, ProjectHarnesses};
 
 #[derive(Clone, Copy, Debug)]
@@ -27,15 +26,7 @@ impl IntegrationOptions {
                 HarnessChoice::None => Ok(IntegrationPlan::Skip),
                 HarnessChoice::Selected(harness) => {
                     let instructions = PreparedInstructions::read(project.target(harness)?)?;
-                    let skill = EffectSkill {
-                        root: project.root,
-                        harness,
-                    };
-                    skill.verify()?;
-                    Ok(IntegrationPlan::Write {
-                        instructions,
-                        skill,
-                    })
+                    Ok(IntegrationPlan::Write { instructions })
                 }
             },
         }

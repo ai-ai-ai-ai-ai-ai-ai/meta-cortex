@@ -3,7 +3,6 @@ mod document;
 mod instructions;
 mod markdown;
 mod selection;
-mod skills;
 
 pub use instructions::InstructionStatus;
 pub use selection::IntegrationOptions;
@@ -16,7 +15,6 @@ use markdown::MarkdownInstructions;
 use pulldown_cmark_to_cmark::Error as MarkdownError;
 use serde::Serialize;
 use serde_saphyr::SerializeError;
-use skills::EffectSkill;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -189,23 +187,14 @@ pub struct HarnessInfo {
 
 pub enum IntegrationPlan {
     Skip,
-    Write {
-        instructions: PreparedInstructions,
-        skill: EffectSkill,
-    },
+    Write { instructions: PreparedInstructions },
 }
 
 impl IntegrationPlan {
     pub fn apply(self) -> Result<(), InstructionError> {
         match self {
             Self::Skip => Ok(()),
-            Self::Write {
-                instructions,
-                skill,
-            } => {
-                skill.install()?;
-                instructions.write()
-            }
+            Self::Write { instructions } => instructions.write(),
         }
     }
 }

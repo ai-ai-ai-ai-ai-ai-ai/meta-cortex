@@ -11,7 +11,7 @@ Use an Effect Queue with one scoped consumer for FIFO execution. Each submitted
 operation has its own Deferred completion; the caller receives that operation's
 success or typed failure. Do not expose a mutable tail or run effects internally.
 
-Use the [upstream Effect guidance](../SKILL.md#effect-use-upstream-skills)
+Use the [upstream Effect guidance](../SKILL.md#effect-use-installed-documentation)
 and the installed Queue, Deferred, and Scope APIs for implementation. This
 practice owns the scheduling contract; it does not supply a second Effect recipe.
 

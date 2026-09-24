@@ -16,7 +16,7 @@
   Include pure code, adapters, tests, and tooling; Effect is not a scope boundary
   for the prohibition on ordinary `if` conditions.
 - Require native-switch exhaustiveness and fallthrough checks under the shared
-  branching rule. Consult the [upstream Effect guidance](../SKILL.md#effect-use-upstream-skills)
+  branching rule. Consult the [upstream Effect guidance](../SKILL.md#effect-use-installed-documentation)
   for Effect code; do not add a separate operator allowlist to the lint gate.
 - Coordinate pipeline changes with the CI/CD owner under the active development mode.
 - Enforce `max-depth: ["error", 2]` and `max-nested-callbacks` with

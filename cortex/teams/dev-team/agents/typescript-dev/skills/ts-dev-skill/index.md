@@ -33,7 +33,7 @@ validation. Existing code does not weaken their requirements.
 
 - **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
 - **Owns:** Boolean-if and ternary prohibitions, exhaustive decisions, and Rust conditional patterns.
-- **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Upstream Effect guidance](SKILL.md#effect-use-upstream-skills), [Code checks](practices/typescript-code-checks.md).
+- **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation), [Code checks](practices/typescript-code-checks.md).
 
 - **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
 
@@ -332,7 +332,7 @@ validation. Existing code does not weaken their requirements.
 - **File:** [Explicit state](practices/typescript-explicit-state.md).
 - **Owns:** Enum-backed unions, absence normalization, forbidden sentinels, and unit versus value-returning void.
 - **Does not own:** Boolean policy belongs to Enums instead of booleans; rune initialization belongs to Svelte state modeling.
-- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Svelte state modeling](practices/svelte-state-modeling.md), [Upstream Effect guidance](SKILL.md#effect-use-upstream-skills).
+- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Svelte state modeling](practices/svelte-state-modeling.md), [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation).
 
 - **[explicit_state:named_unions](practices/typescript-explicit-state.md#name-the-state-and-its-payload)**
 
@@ -505,7 +505,7 @@ validation. Existing code does not weaken their requirements.
 - **File:** [Concrete values](practices/typescript-no-unknown.md).
 - **Owns:** Restrictions on object, unknown, any, and erased bags; immediate boundary decoding.
 - **Does not own:** Named domain contracts belong to Domain structure; effectful decoding belongs to upstream Effect guidance.
-- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Upstream Effect guidance](SKILL.md#effect-use-upstream-skills).
+- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation).
 
 - **[no_unknown:no_object](practices/typescript-no-unknown.md#do-not-erase-application-contracts)**
 
@@ -554,20 +554,20 @@ validation. Existing code does not weaken their requirements.
 
 ### Effect workflows
 
-- **Source:** [Upstream Effect skills](SKILL.md#effect-use-upstream-skills).
+- **Source:** [Installed Effect documentation](SKILL.md#effect-use-installed-documentation).
 - **Owns:** Effect's installed documentation owns API and implementation guidance.
 - **Related:** [Domain structure](practices/typescript-domain-structure.md), [Serial operation queues](practices/typescript-serial-operation-queues.md).
 
-- **[effect:upstream](SKILL.md#effect-use-upstream-skills)**
+- **[effect:upstream](SKILL.md#effect-use-installed-documentation)**
 
-  - Apply the official skill and read the owning workspace's installed Effect
-    AGENTS.md completely before implementation; follow its linked docs and source.
+  - Read the owning workspace's installed Effect AGENTS.md completely before
+    implementation; follow its linked docs and source.
 
-- **[effect:version](SKILL.md#effect-use-upstream-skills)**
+- **[effect:version](SKILL.md#effect-use-installed-documentation)**
 
   - Require one explicit v4 release and use the official migration skill for v3 upgrades.
 
-- **[effect:effectful_work](SKILL.md#effect-use-upstream-skills)**
+- **[effect:effectful_work](SKILL.md#effect-use-installed-documentation)**
 
   - Use Effect for materially changed effectful workflows, including scripts and
     tests; keep pure calculations with their existing domain owners.
@@ -791,7 +791,7 @@ validation. Existing code does not weaken their requirements.
 - **File:** [Serial operation queues](practices/typescript-serial-operation-queues.md).
 - **Owns:** Ordered asynchronous work, per-operation failure, queue recovery, and idle barriers.
 - **Does not own:** Effect API guidance belongs to the installed upstream documentation.
-- **Related:** [Upstream Effect guidance](SKILL.md#effect-use-upstream-skills), [Function ownership](practices/typescript-function-ownership.md).
+- **Related:** [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation), [Function ownership](practices/typescript-function-ownership.md).
 
 - **[serial_operation_queues:effect_queue](practices/typescript-serial-operation-queues.md#keep-the-queue-and-results-typed)**
 
@@ -940,7 +940,7 @@ Follow untrusted input from its decoder into the effectful workflow.
 
 - [no_unknown:decoder_scope](practices/typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge)
 - [no_unknown:typed_errors](practices/typescript-no-unknown.md#keep-failures-concrete)
-- [effect:upstream](SKILL.md#effect-use-upstream-skills)
+- [effect:upstream](SKILL.md#effect-use-installed-documentation)
 
 ### Reactive state must have a meaningful initial state
 
@@ -1033,4 +1033,4 @@ Trace each admitted job through success, failure, recovery, and scope shutdown.
 
 - [serial_operation_queues:typed_completion](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)
 - [serial_operation_queues:admission_and_shutdown](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)
-- [effect:upstream](SKILL.md#effect-use-upstream-skills)
+- [effect:upstream](SKILL.md#effect-use-installed-documentation)

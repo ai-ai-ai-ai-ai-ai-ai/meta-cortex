@@ -68,8 +68,8 @@ It first checks that `bun --version` succeeds. If Bun is missing or cannot run,
 initialization reports the prerequisite failure before writing any project files.
 All framework scripts share that workspace's `node_modules`; individual skills
 do not install dependencies. Repeating initialization also restores missing dependencies.
-The executable bundles the framework and official Effect skill. Dependency
-installation requires network access or a populated Bun cache.
+Effect guidance comes directly from `.meta-cortex/node_modules/effect/AGENTS.md`.
+Dependency installation requires network access or a populated Bun cache.
 Installing or initializing Meta-Cortex does not start agents. Run `meta-cortex list`
 to discover every operation, its typed schema, and a complete request example.
 `meta-cortex run --request -` reads a request from stdin.
@@ -85,13 +85,6 @@ to discover every operation, its typed schema, and a complete request example.
 Select the harness and set `instructions: write` in the request to update it.
 Existing instructions are preserved. Repeated initialization updates the same
 managed block without duplicating it. Skipping leaves any existing block in place.
-With `instructions: write`, initialization also installs the official `effect-ts`
-skill: `.agents/skills/effect-ts/` for Codex and Cursor, or
-`.claude/skills/effect-ts/` for Claude. An identical installed skill is reused;
-differing files are reported without overwriting them. `instructions: skip`
-leaves native skill directories unchanged; the upstream skill remains available
-inside the framework. The skill directs agents to the installed Effect package's
-`AGENTS.md`, so API guidance follows the package version.
 The managed section uses a YAML header and Markdown delimiters:
 
 ```markdown
