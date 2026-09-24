@@ -1,10 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::fs;
 use std::io;
-use std::path::{Path, PathBuf, absolute};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use tempfile::NamedTempFile;
 
 #[derive(Debug, Default, Serialize, Deserialize, JsonSchema)]
 pub enum BunSetup {
@@ -15,37 +14,33 @@ pub enum BunSetup {
 
 pub(super) struct Bun {
     pub executable: PathBuf,
+    pub directory: PathBuf,
 }
 
 impl BunSetup {
-    pub(super) fn prepare(self) -> io::Result<Bun> {
-        let on_path = Bun {
-            executable: PathBuf::from("bun"),
-        };
-        match on_path.check() {
-            Ok(()) => return Ok(on_path),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-            Err(error) => return Err(error),
-        }
-        let directory = match env::var_os("BUN_INSTALL") {
-            Some(directory) if !directory.is_empty() => PathBuf::from(directory),
-            Some(_) | None => env::home_dir()
-                .ok_or_else(|| io::Error::other("cannot locate Bun's home; set BUN_INSTALL"))?
-                .join(".bun"),
-        };
-        let directory = absolute(directory)?;
+    pub(super) fn prepare(self, directory: PathBuf) -> io::Result<Bun> {
         let installed = Bun {
             executable: directory.join("bin/bun"),
+            directory: directory.clone(),
         };
         match installed.check() {
             Ok(()) => return Ok(installed),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error),
+        }
+        let on_path = Bun {
+            executable: PathBuf::from("bun"),
+            directory,
+        };
+        match on_path.check() {
+            Ok(()) => return Ok(on_path),
             Err(error) if error.kind() == io::ErrorKind::NotFound => match self {
                 Self::RequireExisting => return Err(error),
                 Self::InstallMissing => {}
             },
             Err(error) => return Err(error),
         }
-        installed.install(&directory)?;
+        installed.install()?;
         installed.check()?;
         Ok(installed)
     }
@@ -58,8 +53,9 @@ impl Bun {
         Self::run(Command::new(&self.executable).arg("--version"))
     }
 
-    fn install(&self, directory: &Path) -> io::Result<()> {
-        let script = NamedTempFile::new()?;
+    fn install(&self) -> io::Result<()> {
+        fs::create_dir_all(&self.directory)?;
+        let script = self.directory.join("install.sh");
         Self::run(
             Command::new("curl")
                 .args([
@@ -70,13 +66,14 @@ impl Bun {
                     "https://bun.com/install",
                     "--output",
                 ])
-                .arg(script.path()),
+                .arg(&script),
         )?;
         Self::run(
             Command::new("bash")
-                .arg(script.path())
+                .arg(&script)
                 .arg(Self::RELEASE)
-                .env("BUN_INSTALL", directory),
+                .env("BUN_INSTALL", &self.directory)
+                .env("SHELL", "/bin/sh"),
         )
     }
 

@@ -22,6 +22,7 @@ pulldown-cmark.workspace = true
 pulldown-cmark-to-cmark.workspace = true
 tokio.workspace = true
 schemars.workspace = true
+git2.workspace = true
 
 [lints]
 workspace = true
@@ -30,6 +31,5 @@ workspace = true
 dist = true
 
 [dev-dependencies]
-git2.workspace = true
 anyhow.workspace = true
 serde_json.workspace = true

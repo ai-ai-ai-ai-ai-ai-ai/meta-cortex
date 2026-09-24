@@ -179,9 +179,9 @@ struct CliScenario {
 }
 impl CliScenario {
     fn create() -> anyhow::Result<Self> {
-        Ok(Self {
-            project: Builder::new().prefix("project: # \"雪\" ").tempdir()?,
-        })
+        let project = Builder::new().prefix("project: # \"雪\" ").tempdir()?;
+        git2::Repository::init(project.path())?;
+        Ok(Self { project })
     }
     fn call(&self, operation: Operation) -> anyhow::Result<Outcome> {
         let request = Request {
@@ -250,7 +250,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
         )))?,
         Outcome::Error(_)
     ));
-    assert_eq!(fs::read_dir(scenario.project.path())?.count(), 0);
+    assert_eq!(fs::read_dir(scenario.project.path())?.count(), 1);
     scenario.initialize(Initialization {
         bun: BunSetup::InstallMissing,
         harness: Harness::Codex,
@@ -385,7 +385,7 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
         bail!("expected missing Bun failure")
     };
     assert!(error.message.contains("install Bun"));
-    assert_eq!(fs::read_dir(scenario.project.path())?.count(), 0);
+    assert_eq!(fs::read_dir(scenario.project.path())?.count(), 1);
     assert!(!scenario.project.path().join("AGENTS.md").exists());
     assert!(!scenario.project.path().join(".agents").exists());
     scenario.initialize(Initialization {
@@ -407,7 +407,7 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
 struct BunScenario {
     cli: CliScenario,
     tools: TempDir,
-    home: TempDir,
+    global_installation: TempDir,
     executable: PathBuf,
 }
 
@@ -421,7 +421,7 @@ impl BunScenario {
         let scenario = Self {
             cli: CliScenario::create()?,
             tools,
-            home: Builder::new().prefix("bun home ").tempdir()?,
+            global_installation: Builder::new().prefix("unused global bun ").tempdir()?,
             executable: PathBuf::from(String::from_utf8(output.stdout)?.trim()),
         };
         symlink("/bin/bash", scenario.tools.path().join("bash"))?;
@@ -441,6 +441,7 @@ exec /bin/cp "$CORTEX_TEST_INSTALLER" "$7"
         fs::write(
             scenario.tools.path().join("installer.sh"),
             r#"test "$1" = "bun-v1.3.14" || exit 92
+test "$SHELL" = "/bin/sh" || exit 93
 /bin/mkdir -p "$BUN_INSTALL/bin"
 /bin/ln -s "$CORTEX_TEST_BUN" "$BUN_INSTALL/bin/bun"
 printf 'installer stdout'
@@ -463,7 +464,7 @@ printf 'installer stderr' >&2
         let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
             .args(["run", "--request", "-"])
             .env("PATH", self.tools.path())
-            .env("BUN_INSTALL", self.home.path())
+            .env("BUN_INSTALL", self.global_installation.path())
             .env("CORTEX_TEST_BUN", &self.executable)
             .env(
                 "CORTEX_TEST_INSTALLER",
@@ -495,14 +496,25 @@ printf 'installer stderr' >&2
 }
 
 #[test]
-fn installs_missing_bun_and_reuses_it_without_a_shell_restart() -> anyhow::Result<()> {
+fn installs_missing_bun_once_and_shares_it_across_worktrees() -> anyhow::Result<()> {
     let scenario = BunScenario::create()?;
     assert!(matches!(
         scenario.call(BunSetup::InstallMissing)?,
         Outcome::Success(_)
     ));
     assert!(scenario.tools.path().join("downloaded").is_file());
-    assert!(scenario.home.path().join("bin/bun").is_file());
+    assert!(
+        scenario
+            .cli
+            .project
+            .path()
+            .join(".git/meta-cortex/bun/bin/bun")
+            .is_file()
+    );
+    assert_eq!(
+        fs::read_dir(scenario.global_installation.path())?.count(),
+        0
+    );
     assert!(
         scenario
             .cli
@@ -512,16 +524,70 @@ fn installs_missing_bun_and_reuses_it_without_a_shell_restart() -> anyhow::Resul
             .is_file()
     );
     fs::remove_file(scenario.tools.path().join("downloaded"))?;
+    let repository = git2::Repository::open(scenario.cli.project.path())?;
+    let signature = git2::Signature::now("Bun Test", "bun@example.invalid")?;
+    let tree_id = repository.index()?.write_tree()?;
+    let tree = repository.find_tree(tree_id)?;
+    let commit_id =
+        repository.commit(Some("HEAD"), &signature, &signature, "initial", &tree, &[])?;
+    let commit = repository.find_commit(commit_id)?;
+    let branch = repository.branch("codex/bun-test", &commit, false)?;
+    let mut options = git2::WorktreeAddOptions::new();
+    options.reference(Some(branch.get()));
+    let worktree = Builder::new().prefix("bun linked worktree ").tempdir()?;
+    fs::remove_dir(worktree.path())?;
+    repository.worktree("bun-test", worktree.path(), Some(&options))?;
+    let original = scenario.cli;
+    let scenario = BunScenario {
+        cli: CliScenario { project: worktree },
+        ..scenario
+    };
     assert!(matches!(
         scenario.call(BunSetup::RequireExisting)?,
         Outcome::Success(_)
     ));
     assert!(!scenario.tools.path().join("downloaded").exists());
+    assert!(
+        original
+            .project
+            .path()
+            .join(".git/meta-cortex/bun/bin/bun")
+            .is_file()
+    );
+    assert!(
+        scenario
+            .cli
+            .project
+            .path()
+            .join(".meta-cortex/node_modules/effect/AGENTS.md")
+            .is_file()
+    );
+    assert!(
+        !scenario
+            .cli
+            .project
+            .path()
+            .join(".meta-cortex/bun")
+            .exists()
+    );
     Ok(())
 }
 
 #[test]
-fn bun_setup_failures_leave_project_untouched() -> anyhow::Result<()> {
+fn initialization_requires_git_before_installing_anything() -> anyhow::Result<()> {
+    let scenario = BunScenario::create()?;
+    fs::remove_dir_all(scenario.cli.project.path().join(".git"))?;
+    let Outcome::Error(error) = scenario.call(BunSetup::InstallMissing)? else {
+        bail!("expected missing Git repository failure")
+    };
+    assert!(error.message.contains("requires a Git repository"));
+    assert!(!scenario.tools.path().join("downloaded").exists());
+    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 0);
+    Ok(())
+}
+
+#[test]
+fn bun_setup_failures_leave_framework_and_instructions_untouched() -> anyhow::Result<()> {
     for failing_step in ["curl", "installer.sh"] {
         let scenario = BunScenario::create()?;
         fs::write(
@@ -532,8 +598,11 @@ fn bun_setup_failures_leave_project_untouched() -> anyhow::Result<()> {
             bail!("expected Bun setup failure")
         };
         assert!(error.message.contains("installation failed"));
-        assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 0);
-        assert_eq!(fs::read_dir(scenario.home.path())?.count(), 0);
+        assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 1);
+        assert_eq!(
+            fs::read_dir(scenario.global_installation.path())?.count(),
+            0
+        );
     }
     Ok(())
 }
@@ -549,7 +618,7 @@ fn a_broken_existing_bun_is_reported_without_reinstalling() -> anyhow::Result<()
     };
     assert!(error.message.contains("broken Bun"));
     assert!(!scenario.tools.path().join("downloaded").exists());
-    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 0);
+    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 1);
     Ok(())
 }
 
@@ -589,7 +658,7 @@ fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
     assert!(text.contains("list"));
     assert!(text.contains("run"));
     let scenario = CliScenario::create()?;
-    fs::remove_dir(scenario.project.path())?;
+    fs::remove_dir_all(scenario.project.path())?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(
         FrameworkOperation::Initialize(Initialization {
             bun: BunSetup::InstallMissing,

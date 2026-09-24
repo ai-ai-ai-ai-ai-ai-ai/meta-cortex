@@ -112,10 +112,14 @@ Identify both roots before planning development work:
   - Run from this file's directory; continue only if it succeeds:
 
     ```sh
+    cortex_git_dir="$(git rev-parse --path-format=absolute --git-common-dir)" &&
+    export PATH="$cortex_git_dir/meta-cortex/bun/bin:$PATH" &&
     bun scripts/src/ts/check-library-root.ts
     ```
 
   - Supplies Meta-Cortex instructions, roles, skills, and configuration.
+  - Use this PATH for subsequent framework script commands. Supply it again when
+    the host starts a new shell for each tool call.
   - Initialization installs the shared Bun dependencies. If they are missing,
     rerun Framework / Initialize; individual skills do not reinstall them.
 - **Project root**

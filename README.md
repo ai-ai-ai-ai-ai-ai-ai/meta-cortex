@@ -36,7 +36,7 @@ for downloadable artifacts.
 
 ### Initialize your project
 
-Create `request.yaml` with an existing project directory and explicit harness choices:
+Create `request.yaml` with an existing Git project directory and explicit harness choices:
 
 ```yaml
 version: 1
@@ -62,20 +62,27 @@ settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
 host needs different settings. Repeating the request preserves valid project
 settings and does not replace a modified framework.
 
-Initialization reuses Bun from `PATH` or its standard installation directory.
+Initialization requires a Git repository. It reuses the repository's Bun, or Bun
+from `PATH` when no local installation exists.
 If Bun is missing, it installs Bun 1.3.14 automatically with the
 [official Bun installer](https://bun.com/docs/installation), then continues setup.
-The destination is `BUN_INSTALL` when set, otherwise `~/.bun`.
+The destination is `<git-common-dir>/meta-cortex/bun`, alongside Turso's storage.
+Linked worktrees share this installation. The downloaded installer stays there too.
 Automatic installation requires network access, `curl`, `bash`, and `unzip`.
-The official installer may update your shell configuration; initialization uses
-the installed executable immediately, without requiring a shell restart.
-For subsequent shell commands, reload your shell or use `~/.bun/bin/bun`
-(`$BUN_INSTALL/bin/bun` with a custom installation directory).
+Setup uses the repository directory regardless of the user's `BUN_INSTALL` and
+disables the installer's shell configuration updates. Initialization uses the
+installed executable immediately. For framework script commands in a new shell:
+
+```sh
+cortex_git_dir="$(git rev-parse --path-format=absolute --git-common-dir)" &&
+export PATH="$cortex_git_dir/meta-cortex/bun/bin:$PATH"
+```
 
 The request's `bun` argument defaults to `InstallMissing`. Set
 `bun: RequireExisting` alongside `harness` and `instructions` to disable automatic
 Bun installation. An existing Bun that cannot run is reported without replacement.
-Bun setup failures are returned as structured errors before writing project files.
+Bun setup failures are returned as structured errors before writing framework or
+harness instruction files. Failed downloads can leave files in the local Bun directory.
 After Bun is ready, initialization runs
 `bun install --frozen-lockfile --ignore-scripts` in `.meta-cortex/`.
 All framework scripts share that workspace's `node_modules`; individual skills

@@ -16,6 +16,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, Error)]
 pub enum InstallError {
+    #[error("Meta-Cortex requires a Git repository: {0}")]
+    Git(#[from] git2::Error),
     #[error(
         "Bun setup failed for {path}; use bun: InstallMissing or install Bun manually and rerun Framework / Initialize: {source}"
     )]
@@ -60,6 +62,7 @@ pub enum InstallError {
 
 pub struct Project {
     root: PathBuf,
+    common_dir: PathBuf,
 }
 
 pub struct Installation {
@@ -88,6 +91,9 @@ impl Project {
             return Err(InstallError::InvalidProject(path));
         }
         Ok(Self {
+            common_dir: git2::Repository::discover(&path)?
+                .commondir()
+                .canonicalize()?,
             root: path.canonicalize()?,
         })
     }
@@ -154,7 +160,7 @@ impl Installation {
         })?;
         let bun = request
             .bun
-            .prepare()
+            .prepare(self.project.common_dir.join("meta-cortex/bun"))
             .map_err(|source| InstallError::BunUnavailable {
                 path: destination.clone(),
                 source,
@@ -204,9 +210,9 @@ pub mod tests {
     }
     impl Fixture {
         fn create() -> Result<Self, InstallError> {
-            Ok(Self {
-                directory: tempdir()?,
-            })
+            let directory = tempdir()?;
+            git2::Repository::init(directory.path())?;
+            Ok(Self { directory })
         }
         fn install(&self) -> Result<(), InstallError> {
             Project::open(self.directory.path().to_path_buf())?

@@ -13,6 +13,7 @@ impl WorkspaceDependencies {
     pub fn install(self) -> Result<(), InstallError> {
         let output = Command::new(&self.bun.executable)
             .args(["install", "--frozen-lockfile", "--ignore-scripts"])
+            .env("BUN_INSTALL", &self.bun.directory)
             .current_dir(&self.directory)
             .stdin(Stdio::null())
             .output()
@@ -50,6 +51,7 @@ pub mod tests {
         let dependencies = WorkspaceDependencies {
             bun: Bun {
                 executable: PathBuf::from("bun"),
+                directory: project.path().join("bun"),
             },
             directory: project.path().to_owned(),
         };
@@ -63,6 +65,7 @@ pub mod tests {
         let dependencies = WorkspaceDependencies {
             bun: Bun {
                 executable: PathBuf::from("bun"),
+                directory: project.path().join("bun"),
             },
             directory: project.path().join("missing"),
         };
