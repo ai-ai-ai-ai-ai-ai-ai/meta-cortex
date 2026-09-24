@@ -1,12 +1,33 @@
 # TypeScript Effect Workflows
 
-Use Effect v3 for new or materially changed asynchronous, fallible, resource-owning,
+Use Effect v4 for new or materially changed asynchronous, fallible, resource-owning,
 concurrent, service-dependent, or untrusted-decoding workflows. This includes
 tests, scripts, and tooling. In Rust/WASM projects, portable product/security
 policy stays in Rust. Effect does not change the project's domain ownership.
 
 Examples are alternative fragments. Supporting domain types and collaborators
 are supplied by the application; method fragments belong to their named owner.
+
+## Require Effect v4
+
+Use Effect's v4 APIs and versioned v4 documentation. Pin an explicit v4 release
+in every workspace package and share the workspace lockfile. A registry's
+`latest` tag may still select v3; inspect the resolved version. When adopting a
+v4 prerelease, pin its full version and identify it in delivery evidence.
+Migrate callers, decoders, tests, and examples together without a v3 compatibility
+wrapper or a second installed Effect major.
+
+Use `Effect.catch`, `Effect.result` and the built-in `Result`,
+`Schema.decodeUnknownEffect`, `Schema.SchemaError`, and `Cause.UnknownError`
+where those operations are needed. Import `Context.Service` keys for service
+contracts. Do not copy removed API names from older documentation.
+
+**Prohibited:** request v4 while retaining an `effect` dependency on `3.22.2`
+or an example calling `Effect.catchAll`.
+
+**Preferred:** pin the same selected v4 release in all workspace manifests,
+update recovery to `Effect.catch`, and verify the complete workspace against
+that installed release.
 
 ## Compose workflows with simple functional operations
 
@@ -51,11 +72,12 @@ or generic wrappers.
 
 ```ts
 // Inside the file-check adapter:
-return Effect.gen(this, function* () {
-  if (!(yield* Effect.tryPromise(() => this.configuration.exists()))) {
-    return yield* this.reportMissing();
+const owner = this;
+return Effect.gen(function* () {
+  if (!(yield* Effect.tryPromise(() => owner.configuration.exists()))) {
+    return yield* owner.reportMissing();
   }
-  return yield* this.reportFound();
+  return yield* owner.reportFound();
 });
 ```
 
@@ -64,13 +86,14 @@ return Effect.gen(this, function* () {
 ```ts
 // inspectConfiguration normalizes Bun's boolean into ConfigurationPresence.
 // reportFound and reportMissing return effects that write the CLI response.
-return Effect.gen(this, function* () {
-  const presence = yield* this.inspectConfiguration();
+const owner = this;
+return Effect.gen(function* () {
+  const presence = yield* owner.inspectConfiguration();
   switch (presence) {
     case ConfigurationPresence.Present:
-      return yield* this.reportFound();
+      return yield* owner.reportFound();
     case ConfigurationPresence.Missing:
-      return yield* this.reportMissing();
+      return yield* owner.reportMissing();
   }
 });
 ```
@@ -159,14 +182,14 @@ return Effect.succeed(raw as PanelRequest);
 
 ```ts
 // PanelRequestSchema belongs to this TypeScript-owned protocol.
-return Schema.decodeUnknown(PanelRequestSchema.value)(raw);
+return Schema.decodeUnknownEffect(PanelRequestSchema.value)(raw);
 ```
 
 ## Make effectful dependencies explicit
 
-Use Context tags for effectful services and Layers to provide them. Do not use
+Use `Context.Service` keys for effectful services and Layers to provide them. Do not use
 service machinery for pure local calculations. This fragment assumes an existing
-DocumentStore tag and live Layer owned by that service.
+DocumentStore service key and live Layer owned by that service.
 
 **Prohibited:**
 
@@ -235,6 +258,8 @@ return label.text;
 
 ## Validation
 
+- Verify manifests, lockfile, and installed packages resolve the same v4 release.
+  Check preferred examples against that API, including Schema and queue behavior.
 - Allow native `switch` and require its exhaustiveness check in adopted Effect
   workflows. Reject boolean if, ternaries, loops, and try/catch through the existing
   lint gate. Review called helpers as well as inline callbacks; moving a branch
@@ -252,9 +277,9 @@ return label.text;
 - Check that expected failures stay typed and run* appears only at execution edges.
 - Test failure propagation, service substitution, interruption, and resource cleanup.
 - Use Effect LSP where available for quick type feedback.
-- Use the supplied Effect v3 contracts; no competing Result/error abstraction.
+- Use the supplied Effect v4 contracts; no competing Result/error abstraction.
 
-Effect v3 references: [services](https://effect.website/docs/v3/requirements-management/services),
-[Schema](https://effect.website/docs/v3/schema/introduction),
-[Scope](https://effect.website/docs/v3/resource-management/scope), and
-[runtime edges](https://effect.website/docs/v3/getting-started/running-effects).
+Effect v4 references: [services](https://effect.website/docs/v4/requirements-management/services),
+[Schema](https://effect.website/docs/v4/schema/introduction),
+[Scope](https://effect.website/docs/v4/resource-management/scope), and
+[runtime edges](https://effect.website/docs/v4/getting-started/running-effects).

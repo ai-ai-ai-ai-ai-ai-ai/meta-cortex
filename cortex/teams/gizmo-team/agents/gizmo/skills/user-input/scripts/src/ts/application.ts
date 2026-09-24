@@ -16,15 +16,16 @@ export interface InputSources {
 export class InputApplication {
   constructor(private readonly sources: InputSources) {}
   run(): Effect.Effect<WorkflowResult, InputFailure> {
-    return Effect.gen(this, function* () {
+    const owner = this;
+    return Effect.gen(function* () {
       const formRequest: YamlDecodeRequest<
         typeof FormSchema.value.Type,
         typeof FormSchema.value.Encoded
-      > = { source: this.sources.schema, schema: FormSchema.value };
+      > = { source: owner.sources.schema, schema: FormSchema.value };
       const inputRequest: YamlDecodeRequest<
         typeof InputProtocol.value.Type,
         typeof InputProtocol.value.Encoded
-      > = { source: this.sources.request, schema: InputProtocol.value };
+      > = { source: owner.sources.request, schema: InputProtocol.value };
       const form = yield* new YamlInput(formRequest).decode();
       const input = yield* new YamlInput(inputRequest).decode();
       const workflow: WorkflowRequest = { form, input };

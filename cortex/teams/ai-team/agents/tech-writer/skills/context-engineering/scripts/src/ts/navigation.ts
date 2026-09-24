@@ -6,12 +6,14 @@ export class NavigationSchema {
   private static readonly documentFields = {
     path: DocumentFields.path,
     owner: DocumentFields.path,
-    anchors: Schema.Array(DocumentFields.anchor).pipe(Schema.maxItems(1000)),
+    anchors: Schema.Array(DocumentFields.anchor).pipe(
+      Schema.check(Schema.isMaxLength(1000)),
+    ),
   } satisfies Schema.Struct.Fields;
   private static readonly entryFields = {
     rule: Schema.String.pipe(
-      Schema.minLength(1),
-      Schema.maxLength(512),
+      Schema.check(Schema.isMinLength(1)),
+      Schema.check(Schema.isMaxLength(512)),
       Schema.brand("RuleName"),
     ),
     target: DocumentFields.path,
@@ -21,15 +23,15 @@ export class NavigationSchema {
   private static readonly graphFields = {
     path: DocumentFields.path,
     entries: Schema.Array(Schema.Struct(NavigationSchema.entryFields)).pipe(
-      Schema.maxItems(2000),
+      Schema.check(Schema.isMaxLength(2000)),
     ),
   } satisfies Schema.Struct.Fields;
   private static readonly requestFields = {
     documents: Schema.Array(
       Schema.Struct(NavigationSchema.documentFields),
-    ).pipe(Schema.maxItems(500)),
+    ).pipe(Schema.check(Schema.isMaxLength(500))),
     graphs: Schema.Array(Schema.Struct(NavigationSchema.graphFields)).pipe(
-      Schema.maxItems(100),
+      Schema.check(Schema.isMaxLength(100)),
     ),
   } satisfies Schema.Struct.Fields;
   static readonly value = Schema.Struct(NavigationSchema.requestFields);

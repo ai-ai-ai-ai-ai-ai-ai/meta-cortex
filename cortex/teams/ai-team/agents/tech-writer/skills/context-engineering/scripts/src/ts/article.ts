@@ -23,36 +23,40 @@ export class ArticleSchema {
   private static readonly headingFields = {
     kind: Schema.Literal(BlockKind.Heading),
     line: DocumentFields.line,
-    depth: Schema.Int.pipe(Schema.between(1, 6), Schema.brand("HeadingDepth")),
+    depth: Schema.Int.pipe(
+      Schema.check(Schema.isGreaterThanOrEqualTo(1)),
+      Schema.check(Schema.isLessThanOrEqualTo(6)),
+      Schema.brand("HeadingDepth"),
+    ),
     text: Schema.String.pipe(
-      Schema.maxLength(3800),
+      Schema.check(Schema.isMaxLength(3800)),
       Schema.brand("HeadingText"),
     ),
   } satisfies Schema.Struct.Fields;
   static readonly heading = Schema.Struct(ArticleSchema.headingFields);
   private static readonly contentFields = {
-    kind: Schema.Literal(
+    kind: Schema.Literals([
       BlockKind.Paragraph,
       BlockKind.OrderedList,
       BlockKind.Structure,
       BlockKind.Transparent,
       BlockKind.Separator,
       BlockKind.Table,
-    ),
+    ]),
     line: DocumentFields.line,
   } satisfies Schema.Struct.Fields;
   private static readonly documentFields = {
     path: DocumentFields.path,
     blocks: Schema.Array(
-      Schema.Union(
+      Schema.Union([
         ArticleSchema.heading,
         Schema.Struct(ArticleSchema.contentFields),
-      ),
-    ).pipe(Schema.maxItems(2000)),
+      ]),
+    ).pipe(Schema.check(Schema.isMaxLength(2000))),
   } satisfies Schema.Struct.Fields;
   private static readonly requestFields = {
     documents: Schema.Array(Schema.Struct(ArticleSchema.documentFields)).pipe(
-      Schema.maxItems(100),
+      Schema.check(Schema.isMaxLength(100)),
     ),
   } satisfies Schema.Struct.Fields;
   static readonly value = Schema.Struct(ArticleSchema.requestFields);

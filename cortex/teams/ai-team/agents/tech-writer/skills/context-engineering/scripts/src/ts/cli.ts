@@ -8,10 +8,11 @@ export type CommandArguments = readonly string[];
 export class SkillCli {
   constructor(private readonly arguments_: CommandArguments) {}
   run(): Effect.Effect<void> {
-    return Effect.gen(this, function* () {
-      const argument = this.arguments_.at(0);
+    const owner = this;
+    return Effect.gen(function* () {
+      const argument = owner.arguments_.at(0);
       if (
-        this.arguments_.length !== 1 ||
+        owner.arguments_.length !== 1 ||
         typeof argument !== "string" ||
         !argument.startsWith("--request-yaml=")
       ) {

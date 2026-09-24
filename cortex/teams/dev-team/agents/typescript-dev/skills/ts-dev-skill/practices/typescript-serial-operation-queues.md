@@ -1,6 +1,6 @@
 # TypeScript Serial Operation Queues
 
-Use Effect v3 for authored serial workflows. Keep scheduling in TypeScript and
+Use Effect v4 for authored serial workflows. Keep scheduling in TypeScript and
 portable product policy in its domain owner, which is Rust in Rust/WASM projects.
 External Promise APIs belong only at adapters;
 do not build an internal Promise-tail failure model alongside Effect.
@@ -27,7 +27,10 @@ enqueue(operation: WriteOperation): Promise<void> {
 **Preferred:** queue admission and completion stay in Effect.
 These fragments use an existing concrete `WriteFailure`. `pending` is a private
 `Queue.Queue<WriteJob>` owned by the scheduler; service dependencies have already
-been provided to the submitted operation.
+been provided to the submitted operation. Its `admit(job)` adapter returns
+`Effect.Effect<void, WriteFailure>`: it wraps `Queue.offer`, converts acceptance
+into success, and converts rejection into the scheduler's typed admission failure.
+It must not return the dependency boolean to the workflow.
 
 ```ts
 import { Deferred, Effect, Queue } from "effect";
@@ -42,11 +45,11 @@ interface WriteJob {
 
 // Inside the scheduler:
 enqueue(operation: WriteOperation): WriteOperation {
-  const pending = this.pending;
+  const owner = this;
   return Effect.gen(function* () {
     const completion = yield* Deferred.make<void, WriteFailure>();
     const job: WriteJob = { operation, completion };
-    yield* Queue.offer(pending, job);
+    yield* owner.admit(job);
     yield* Deferred.await(completion);
   });
 }
@@ -55,6 +58,10 @@ enqueue(operation: WriteOperation): WriteOperation {
 Executing the returned effect admits the job; calling `enqueue` alone does not.
 FIFO means admission order. Use an appropriate capacity/backpressure policy;
 keep richer schedulers when priorities, cancellation, expiry, or closing require it.
+In v4, `Queue.offer` returns `false` when admission is rejected, including after
+shutdown. Never await a job's Deferred after a rejected offer: no consumer will
+receive that job. Verify the admission adapter against the selected capacity
+strategy and keep its rejection in the domain failure channel.
 
 ## Report failure without stopping later work
 
@@ -108,10 +115,11 @@ into a replacement owner. Promise adaptation remains at host/runtime boundaries.
 ## Validation
 
 - Verify FIFO admission, one active operation, and each caller's own typed result.
+- Verify rejected admission fails promptly without awaiting an unsubmitted job.
 - Verify a failed job does not prevent the next job from completing.
 - Verify idle barriers wait for in-flight work, not just an empty pending queue.
 - Verify cancellation, shutdown, and recovery leave no stranded callers or workers.
-- Type-check against the project's Effect v3 version and run focused behavior tests.
+- Type-check against the project's Effect v4 version and run focused behavior tests.
 
-See Effect v3's [Queue](https://effect.website/docs/v3/concurrency/queue) and
-[Deferred](https://effect.website/docs/v3/concurrency/deferred) contracts.
+See Effect v4's [Queue](https://effect.website/docs/v4/concurrency/queue) and
+[Deferred](https://effect.website/docs/v4/concurrency/deferred) contracts.

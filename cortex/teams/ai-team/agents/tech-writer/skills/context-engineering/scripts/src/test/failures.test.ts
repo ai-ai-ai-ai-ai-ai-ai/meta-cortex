@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { Effect, Either, ParseResult } from "effect";
+import { Effect, Result, Schema } from "effect";
 import { YamlRequest } from "../ts/transport.ts";
 import { FailureCode, FailureSourceKind } from "../ts/failure.ts";
 import { SkillApplication } from "../ts/application.ts";
@@ -8,14 +8,14 @@ import { ProtocolText } from "../ts/protocol-text.ts";
 test("schema failures retain their concrete parse error until presentation", () => {
   const source = ProtocolText.yaml("version: 99\ntools: {list: {}}");
   const decoded = Effect.runSync(
-    Effect.either(new YamlRequest(source).decode()),
+    Effect.result(new YamlRequest(source).decode()),
   );
-  expect(Either.isLeft(decoded)).toBe(true);
-  if (Either.isLeft(decoded)) {
-    expect(decoded.left.code).toBe(FailureCode.Request);
-    expect(decoded.left.source.kind).toBe(FailureSourceKind.Schema);
-    if (decoded.left.source.kind === FailureSourceKind.Schema) {
-      expect(ParseResult.isParseError(decoded.left.source.error)).toBe(true);
+  expect(Result.isFailure(decoded)).toBe(true);
+  if (Result.isFailure(decoded)) {
+    expect(decoded.failure.code).toBe(FailureCode.Request);
+    expect(decoded.failure.source.kind).toBe(FailureSourceKind.Schema);
+    if (decoded.failure.source.kind === FailureSourceKind.Schema) {
+      expect(Schema.isSchemaError(decoded.failure.source.error)).toBe(true);
     }
   }
 });
@@ -25,14 +25,14 @@ test("YAML diagnostics are preserved internally and excluded from responses", ()
     "version: 1\nversion: private-fixture-value\ntools: {list: {}}",
   );
   const decoded = Effect.runSync(
-    Effect.either(new YamlRequest(source).decode()),
+    Effect.result(new YamlRequest(source).decode()),
   );
-  expect(Either.isLeft(decoded)).toBe(true);
-  if (Either.isLeft(decoded)) {
-    expect(decoded.left.code).toBe(FailureCode.Yaml);
-    expect(decoded.left.source.kind).toBe(FailureSourceKind.Yaml);
-    if (decoded.left.source.kind === FailureSourceKind.Yaml) {
-      expect(decoded.left.source.diagnostics.length).toBeGreaterThan(0);
+  expect(Result.isFailure(decoded)).toBe(true);
+  if (Result.isFailure(decoded)) {
+    expect(decoded.failure.code).toBe(FailureCode.Yaml);
+    expect(decoded.failure.source.kind).toBe(FailureSourceKind.Yaml);
+    if (decoded.failure.source.kind === FailureSourceKind.Yaml) {
+      expect(decoded.failure.source.diagnostics.length).toBeGreaterThan(0);
     }
   }
   const response = Effect.runSync(new SkillApplication(source).execute());
@@ -43,11 +43,11 @@ test("YAML diagnostics are preserved internally and excluded from responses", ()
 test("a policy rejection does not fabricate a parser failure", () => {
   const source = ProtocolText.yaml("x".repeat(YamlRequest.maximumBytes + 1));
   const decoded = Effect.runSync(
-    Effect.either(new YamlRequest(source).decode()),
+    Effect.result(new YamlRequest(source).decode()),
   );
-  expect(Either.isLeft(decoded)).toBe(true);
-  if (Either.isLeft(decoded)) {
-    expect(decoded.left.code).toBe(FailureCode.Request);
-    expect(decoded.left.source.kind).toBe(FailureSourceKind.Policy);
+  expect(Result.isFailure(decoded)).toBe(true);
+  if (Result.isFailure(decoded)) {
+    expect(decoded.failure.code).toBe(FailureCode.Request);
+    expect(decoded.failure.source.kind).toBe(FailureSourceKind.Policy);
   }
 });

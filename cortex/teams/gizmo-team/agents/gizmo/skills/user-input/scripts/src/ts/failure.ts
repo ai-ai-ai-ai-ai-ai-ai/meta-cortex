@@ -1,5 +1,5 @@
 import { Cause, Data } from "effect";
-import type { ParseError } from "effect/ParseResult";
+import type { SchemaError } from "effect/Schema";
 import type { YAMLError, YAMLWarning } from "yaml";
 
 export enum FailureCode {
@@ -22,8 +22,8 @@ export enum SourceKind {
 export type YamlDiagnostic = YAMLError | YAMLWarning;
 export type FailureSource =
   | { readonly kind: SourceKind.Policy }
-  | { readonly kind: SourceKind.Host; readonly error: Cause.UnknownException }
-  | { readonly kind: SourceKind.Schema; readonly error: ParseError }
+  | { readonly kind: SourceKind.Host; readonly error: Cause.UnknownError }
+  | { readonly kind: SourceKind.Schema; readonly error: SchemaError }
   | {
       readonly kind: SourceKind.Yaml;
       readonly errors: readonly YamlDiagnostic[];

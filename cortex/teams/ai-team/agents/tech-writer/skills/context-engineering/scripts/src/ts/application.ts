@@ -42,7 +42,7 @@ export class SkillApplication {
           }),
         ),
       ),
-      Effect.catchAll((failure) =>
+      Effect.catch((failure) =>
         Effect.succeed(new FailurePresentation(failure).render()),
       ),
     );

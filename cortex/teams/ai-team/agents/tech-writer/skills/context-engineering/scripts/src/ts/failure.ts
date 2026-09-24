@@ -1,5 +1,5 @@
 import { Cause, Data } from "effect";
-import type { ParseError } from "effect/ParseResult";
+import type { SchemaError } from "effect/Schema";
 import type { YAMLParseError, YAMLWarning } from "yaml";
 
 export enum FailureCode {
@@ -20,16 +20,16 @@ export interface PolicyFailureSource {
 }
 export interface HostFailureSource {
   readonly kind: FailureSourceKind.Host;
-  readonly error: Cause.UnknownException;
+  readonly error: Cause.UnknownError;
 }
 export interface SchemaFailureSource {
   readonly kind: FailureSourceKind.Schema;
-  readonly error: ParseError;
+  readonly error: SchemaError;
 }
 export type YamlDiagnostics = readonly YamlDiagnostic[];
 export interface HostFailureRequest {
   readonly code: FailureCode;
-  readonly error: Cause.UnknownException;
+  readonly error: Cause.UnknownError;
 }
 export interface YamlFailureSource {
   readonly kind: FailureSourceKind.Yaml;
@@ -55,7 +55,7 @@ export class SkillFailure extends Data.TaggedError(
     const details: SkillFailureDetails = { code: request.code, source };
     return new SkillFailure(details);
   }
-  static fromSchema(error: ParseError): SkillFailure {
+  static fromSchema(error: SchemaError): SkillFailure {
     const source: SchemaFailureSource = {
       kind: FailureSourceKind.Schema,
       error,

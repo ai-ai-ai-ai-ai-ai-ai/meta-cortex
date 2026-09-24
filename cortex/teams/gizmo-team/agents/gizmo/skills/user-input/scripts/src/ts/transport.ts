@@ -28,7 +28,7 @@ export type PendingYamlNode = {
 
 export interface YamlDecodeRequest<A, I> {
   readonly source: string;
-  readonly schema: Schema.Schema<A, I>;
+  readonly schema: Schema.Codec<A, I>;
 }
 
 export class YamlInput<A, I> {
@@ -46,15 +46,16 @@ export class YamlInput<A, I> {
   constructor(private readonly request: YamlDecodeRequest<A, I>) {}
 
   decode(): Effect.Effect<A, InputFailure> {
-    return Effect.gen(this, function* () {
+    const owner = this;
+    return Effect.gen(function* () {
       if (
-        Buffer.byteLength(this.request.source, "utf8") > YamlInput.maximumBytes
+        Buffer.byteLength(owner.request.source, "utf8") > YamlInput.maximumBytes
       ) {
-        return yield* Effect.fail(this.failure(FailureCode.Yaml));
+        return yield* Effect.fail(owner.failure(FailureCode.Yaml));
       }
       const document = yield* Effect.try(() =>
-        parseDocument(this.request.source, YamlInput.options),
-      ).pipe(Effect.mapError((error) => this.hostFailure(error)));
+        parseDocument(owner.request.source, YamlInput.options),
+      ).pipe(Effect.mapError((error) => owner.hostFailure(error)));
       if (document.errors.length > 0 || document.warnings.length > 0) {
         const context: FailureContext = {
           code: FailureCode.Yaml,
@@ -73,19 +74,19 @@ export class YamlInput<A, I> {
         ) ||
         !document.contents
       ) {
-        return yield* Effect.fail(this.failure(FailureCode.Yaml));
+        return yield* Effect.fail(owner.failure(FailureCode.Yaml));
       }
       const root: PendingYamlNode = { node: document.contents, depth: 0 };
-      if (!this.accepts(root))
-        return yield* Effect.fail(this.failure(FailureCode.Yaml));
+      if (!owner.accepts(root))
+        return yield* Effect.fail(owner.failure(FailureCode.Yaml));
       // The parser's untyped output stays in this contiguous schema decoder.
       return yield* Effect.try((): unknown =>
         document.toJS(YamlInput.conversion),
       ).pipe(
-        Effect.mapError((error) => this.hostFailure(error)),
+        Effect.mapError((error) => owner.hostFailure(error)),
         Effect.flatMap((value) =>
-          Schema.decodeUnknown(
-            this.request.schema,
+          Schema.decodeUnknownEffect(
+            owner.request.schema,
             YamlInput.admission,
           )(value).pipe(
             Effect.mapError((error) => {
@@ -102,7 +103,7 @@ export class YamlInput<A, I> {
     });
   }
 
-  private hostFailure(error: Cause.UnknownException): InputFailure {
+  private hostFailure(error: Cause.UnknownError): InputFailure {
     const context: FailureContext = {
       code: FailureCode.Yaml,
       message: "YAML parsing failed.",

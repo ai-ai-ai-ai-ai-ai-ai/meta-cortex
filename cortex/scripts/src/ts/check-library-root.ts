@@ -11,20 +11,21 @@ class LibraryRootCheck {
   constructor(private readonly configuration: BunFile) {}
 
   run(): Effect.Effect<void> {
-    return Effect.gen(this, function* () {
-      const presence = yield* this.inspectConfiguration();
+    const owner = this;
+    return Effect.gen(function* () {
+      const presence = yield* owner.inspectConfiguration();
       switch (presence) {
         case ConfigurationPresence.Present:
           return yield* Console.log(
             "Found meta-cortex.toml in the current directory.",
           );
         case ConfigurationPresence.Missing:
-          return yield* this.reportFailure(
+          return yield* owner.reportFailure(
             "Missing meta-cortex.toml in the current directory.",
           );
       }
     }).pipe(
-      Effect.catchAll((error) =>
+      Effect.catch((error) =>
         this.reportFailure(
           `Could not check meta-cortex.toml: ${error.message}`,
         ),
@@ -34,7 +35,7 @@ class LibraryRootCheck {
 
   private inspectConfiguration(): Effect.Effect<
     ConfigurationPresence,
-    Cause.UnknownException
+    Cause.UnknownError
   > {
     return Effect.tryPromise(async () => {
       switch (await this.configuration.exists()) {

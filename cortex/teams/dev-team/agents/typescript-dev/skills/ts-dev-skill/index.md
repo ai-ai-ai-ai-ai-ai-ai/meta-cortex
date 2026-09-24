@@ -559,9 +559,16 @@ validation. Existing code does not weaken their requirements.
 - **Does not own:** Pure value modeling belongs to Domain structure; queue ordering semantics belong to Serial operation queues.
 - **Related:** [Domain structure](practices/typescript-domain-structure.md), [Explicit state](practices/typescript-explicit-state.md), [Concrete values](practices/typescript-no-unknown.md), [Serial operation queues](practices/typescript-serial-operation-queues.md).
 
+- **[effect:version](practices/typescript-effect.md#require-effect-v4)**
+
+  - Require v4 APIs and documentation, pin one explicit v4 release across the
+    workspace, and verify the resolved version rather than trusting latest.
+  - Migrate callers, schemas, tests, and examples together; do not retain a v3
+    compatibility wrapper or another installed Effect major.
+
 - **[effect:effectful_work](practices/typescript-effect.md#return-the-workflow-not-a-running-promise)**
 
-  - Use Effect v3 for new/materially changed async, expected-failure, resource-owning,
+  - Use Effect v4 for new/materially changed async, expected-failure, resource-owning,
     concurrent, service-dependent, or untrusted-decoding workflows across authored
     code/tooling/tests.
 
@@ -628,7 +635,7 @@ validation. Existing code does not weaken their requirements.
 
 - **[effect:services](practices/typescript-effect.md#make-effectful-dependencies-explicit)**
 
-  - Use Context tags and Layer implementations for effectful
+  - Use Context.Service keys and Layer implementations for effectful
     browser/network/clock/storage services, not local pure calculations.
 
 - **[effect:resources](practices/typescript-effect.md#tie-cleanup-to-the-resource-scope)**
@@ -913,13 +920,15 @@ validation. Existing code does not weaken their requirements.
 - **[serial_operation_queues:admission_and_shutdown](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)**
 
   - Return Effect from enqueue and admit work when that effect runs.
+  - Convert v4 Queue.offer rejection into a typed admission failure before
+    awaiting completion; an unsubmitted job must not leave a caller waiting.
   - Scope the consumer and settle every in-flight/queued completion on shutdown, not
     only Queue waiters.
 
 - **[serial_operation_queues:validation](practices/typescript-serial-operation-queues.md#validation)**
 
   - Test FIFO, one active operation, typed caller failures, continuation, idle barriers,
-    cancellation, shutdown, and recovery against Effect v3.
+    cancellation, shutdown, and recovery against Effect v4.
 
 
 

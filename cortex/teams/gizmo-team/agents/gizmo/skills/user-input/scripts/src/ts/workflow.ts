@@ -41,9 +41,10 @@ export type WorkflowResult =
 export class InputWorkflow {
   constructor(private readonly request: WorkflowRequest) {}
   advance(): Effect.Effect<WorkflowResult, InputFailure> {
-    return Effect.gen(this, function* () {
-      yield* this.validateState();
-      const { input, form } = this.request;
+    const owner = this;
+    return Effect.gen(function* () {
+      yield* owner.validateState();
+      const { input, form } = owner.request;
       const { event } = input;
       const answers = { ...input.state.answers };
       const skipped = [...input.state.skipped];

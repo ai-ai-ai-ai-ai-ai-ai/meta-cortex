@@ -10,7 +10,7 @@ import { Effect, type Cause } from "effect";
 export class RepositoryNavigationFixture {
   constructor(private readonly moduleUrl: string) {}
 
-  request(): Effect.Effect<NavigationWire, Cause.UnknownException> {
+  request(): Effect.Effect<NavigationWire, Cause.UnknownError> {
     return Effect.try(() => {
       const skill = new URL(
         "../../../../../../../../dev-team/agents/typescript-dev/skills/ts-dev-skill/",

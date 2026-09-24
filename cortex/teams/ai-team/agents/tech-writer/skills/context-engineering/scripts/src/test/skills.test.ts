@@ -131,10 +131,10 @@ class InvalidYamlFixtures {
 
 class SkillProbe {
   private static readonly findingFields = {
-    code: Schema.Union(
-      Schema.Enums(ArticleFindingCode),
-      Schema.Enums(NavigationFindingCode),
-    ),
+    code: Schema.Union([
+      Schema.Enum(ArticleFindingCode),
+      Schema.Enum(NavigationFindingCode),
+    ]),
     file: Schema.String,
   } satisfies Schema.Struct.Fields;
   private static readonly findingsFields = {

@@ -3,7 +3,7 @@ import {
   SkillRequestDocument,
   type SkillRequestWire,
 } from "./request-document.ts";
-import { JSONSchema } from "effect";
+import { JsonSchema, Schema } from "effect";
 import { Command, ProtocolVersion, SkillRequestSchema } from "./request.ts";
 import {
   ProtocolText,
@@ -15,7 +15,7 @@ import {
 export interface CatalogCommand {
   readonly name: Command;
   readonly description: CommandDescription;
-  readonly inputSchema: JSONSchema.JsonSchema7Root;
+  readonly inputSchema: JsonSchema.JsonSchema;
   readonly exampleYaml: YamlText;
 }
 export interface CommandCatalog {
@@ -89,7 +89,7 @@ export class SkillCatalog {
           description: ProtocolText.description(
             "List commands, request schemas, and runnable YAML examples.",
           ),
-          inputSchema: JSONSchema.make(SkillRequestSchema.list),
+          inputSchema: this.inputSchema(SkillRequestSchema.list),
           exampleYaml: new SkillRequestDocument(list).encode(),
         },
         {
@@ -97,7 +97,7 @@ export class SkillCatalog {
           description: ProtocolText.description(
             "Audit caller-supplied semantic blocks; does not parse Markdown or read files. Example paths are synthetic.",
           ),
-          inputSchema: JSONSchema.make(SkillRequestSchema.articles),
+          inputSchema: this.inputSchema(SkillRequestSchema.articles),
           exampleYaml: new SkillRequestDocument(articles).encode(),
         },
         {
@@ -105,10 +105,21 @@ export class SkillCatalog {
           description: ProtocolText.description(
             "Audit owning graph entries against supplied documents and exact heading anchors. Supply the complete inventory for this scope. Rule names identify entries; distinct rules may share a section. Example paths are synthetic.",
           ),
-          inputSchema: JSONSchema.make(SkillRequestSchema.navigation),
+          inputSchema: this.inputSchema(SkillRequestSchema.navigation),
           exampleYaml: new SkillRequestDocument(navigation).encode(),
         },
       ],
+    };
+  }
+
+  private inputSchema(schema: Schema.Constraint): JsonSchema.JsonSchema {
+    const document = JsonSchema.toDocumentDraft07(
+      Schema.toJsonSchemaDocument(schema),
+    );
+    return {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      ...document.schema,
+      definitions: document.definitions,
     };
   }
 }

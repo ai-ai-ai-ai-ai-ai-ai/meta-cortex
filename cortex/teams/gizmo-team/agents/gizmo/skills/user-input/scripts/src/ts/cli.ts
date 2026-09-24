@@ -17,7 +17,7 @@ export class InputCli {
   constructor(private readonly arguments_: CommandArguments) {}
   run(): Effect.Effect<void> {
     return this.execute().pipe(
-      Effect.catchAll((failure) =>
+      Effect.catch((failure) =>
         Effect.sync(() => {
           const output: FailureOutput = {
             error: failure.code,
@@ -30,10 +30,11 @@ export class InputCli {
     );
   }
   private execute(): Effect.Effect<void, InputFailure> {
-    return Effect.gen(this, function* () {
-      const argument = this.arguments_.at(0);
+    const owner = this;
+    return Effect.gen(function* () {
+      const argument = owner.arguments_.at(0);
       if (
-        this.arguments_.length !== 1 ||
+        owner.arguments_.length !== 1 ||
         typeof argument !== "string" ||
         !argument.startsWith("--schema=") ||
         argument.length === "--schema=".length
@@ -47,16 +48,16 @@ export class InputCli {
       }
       const schema = yield* Effect.tryPromise(() =>
         Bun.file(argument.slice("--schema=".length)).text(),
-      ).pipe(Effect.mapError((error) => this.readFailure(error)));
+      ).pipe(Effect.mapError((error) => owner.readFailure(error)));
       const request = yield* Effect.tryPromise(() => Bun.stdin.text()).pipe(
-        Effect.mapError((error) => this.readFailure(error)),
+        Effect.mapError((error) => owner.readFailure(error)),
       );
       const sources: InputSources = { schema, request };
       const result = yield* new InputApplication(sources).run();
       process.stdout.write(JSON.stringify(result) + "\n");
     });
   }
-  private readFailure(error: Cause.UnknownException): InputFailure {
+  private readFailure(error: Cause.UnknownError): InputFailure {
     const context: FailureContext = {
       code: FailureCode.Io,
       message: "Could not read schema or stdin.",
