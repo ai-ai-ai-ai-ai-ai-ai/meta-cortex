@@ -44,7 +44,7 @@ requirements or their placement change.
 
 ## Effect: use installed documentation
 
-Use the owning workspace's Effect installation and upstream guidance.
+Before writing Effect code, read the installed `effect/AGENTS.md` completely.
 
 ### Choose Effect for workflows
 
@@ -57,29 +57,6 @@ Use the owning workspace's Effect installation and upstream guidance.
 
 **Preferred:** the script uses Effect for scheduling; pure calculations remain
 methods on their domain owners.
-
-### Read the installed guidance
-
-Before writing Effect code:
-
-1. Resolve `effect` from the workspace that owns the code, including hoisted
-   `node_modules`.
-2. Read that package's `AGENTS.md` completely.
-3. Follow its relevant documentation links and consult `effect/src` for API details.
-
-For Cortex scripts, Framework / Initialize installs Effect at the library root's
-`node_modules/effect/`.
-
-- Follow upstream guidance for idioms, composition, services, errors, schemas,
-  resources, and runtimes. Do not maintain a parallel Cortex tutorial, operator
-  allowlist, or wrapper skill.
-- Apply shared domain, language, and project rules. Keep compositions flat and
-  readable without adding helper layers.
-
-**Prohibited:** copy another project's Effect recipe without checking the owning
-workspace's installed API.
-
-**Preferred:** read the owning package's guidance and use its API for the change.
 
 ### Manage the pinned release
 

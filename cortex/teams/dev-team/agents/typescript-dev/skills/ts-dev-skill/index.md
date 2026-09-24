@@ -564,12 +564,9 @@ validation. Existing code does not weaken their requirements.
 - **Owns:** Effect's installed documentation owns API and implementation guidance.
 - **Related:** [Domain structure](practices/typescript-domain-structure.md), [Serial operation queues](practices/typescript-serial-operation-queues.md).
 
-- **[effect:upstream](SKILL.md#read-the-installed-guidance)**
+- **[effect:upstream](SKILL.md#effect-use-installed-documentation)**
 
-  - Read the owning workspace's installed Effect AGENTS.md completely before
-    implementation; follow its linked docs and source.
-  - Keep Effect API guidance upstream; do not create a parallel tutorial, operator
-    allowlist, or wrapper skill. Shared project rules still apply.
+  - Before writing Effect code, read the installed `effect/AGENTS.md` completely.
 
 - **[effect:version](SKILL.md#manage-the-pinned-release)**
 
@@ -950,7 +947,7 @@ Follow untrusted input from its decoder into the effectful workflow.
 
 - [no_unknown:decoder_scope](practices/typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge)
 - [no_unknown:typed_errors](practices/typescript-no-unknown.md#keep-failures-concrete)
-- [effect:upstream](SKILL.md#read-the-installed-guidance)
+- [effect:upstream](SKILL.md#effect-use-installed-documentation)
 
 ### Reactive state must have a meaningful initial state
 
@@ -1043,4 +1040,4 @@ Trace each admitted job through success, failure, recovery, and scope shutdown.
 
 - [serial_operation_queues:typed_completion](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)
 - [serial_operation_queues:admission_and_shutdown](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)
-- [effect:upstream](SKILL.md#read-the-installed-guidance)
+- [effect:upstream](SKILL.md#effect-use-installed-documentation)
