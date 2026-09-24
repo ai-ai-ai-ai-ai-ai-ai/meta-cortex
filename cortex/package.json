@@ -8,5 +8,8 @@
   ],
   "scripts": {
     "verify": "bun run --workspaces verify"
+  },
+  "devDependencies": {
+    "effect": "4.0.0-rc.117"
   }
 }

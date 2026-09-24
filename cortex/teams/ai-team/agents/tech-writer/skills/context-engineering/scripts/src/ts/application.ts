@@ -22,20 +22,19 @@ export class SkillApplication {
     "bun teams/ai-team/agents/tech-writer/skills/context-engineering/scripts/src/ts/cli.ts --request-yaml=<yaml>",
   );
   constructor(private readonly source: YamlText) {}
-  execute(): Effect.Effect<SkillExecution> {
-    const decoded = new YamlRequest(this.source).decode();
-    const owner = this;
-    const program = Effect.gen(function* () {
-      const request = yield* decoded;
-      const response = yield* owner.dispatch(request);
+  readonly execute = Effect.fnUntraced(
+    function* (
+      this: SkillApplication,
+    ): Effect.fn.Return<SkillExecution, SkillFailure> {
+      const request = yield* new YamlRequest(this.source).decode();
+      const response = yield* this.dispatch(request);
       const yaml = yield* new YamlResponse(response).encode();
-      return { yaml, exitCode: owner.exitCode(response) };
-    });
-
-    return Effect.catch(program, (failure) =>
+      return { yaml, exitCode: this.exitCode(response) };
+    },
+    Effect.catch((failure) =>
       Effect.sync(() => new FailurePresentation(failure).render()),
-    );
-  }
+    ),
+  );
 
   private exitCode(response: SkillResponse): ExitCode {
     switch (response.kind) {

@@ -132,8 +132,8 @@ permanent observer agent.
 The [development form](development.yaml) defines the session mode and delivery questions. The
 [user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 includes a generic YAML form helper, an example, and usage instructions. It
-requires Bun 1.3.14 and the library's workspace dependencies; install once from
-the library root with `bun install --frozen-lockfile --ignore-scripts`. The helper
+requires Bun 1.3.14 and the shared workspace dependencies installed by
+Framework / Initialize. Individual skills reuse that installation. The helper
 validates data locally, while the current agent calls the host's native question
 tool. Answers stay in session context rather than a repository configuration file.
 

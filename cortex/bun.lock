@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "@meta-cortex/skill-workspace",
+      "devDependencies": {
+        "effect": "4.0.0-rc.117",
+      },
     },
     "scripts": {
       "name": "@meta-cortex/scripts",

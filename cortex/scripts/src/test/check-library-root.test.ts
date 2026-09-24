@@ -61,39 +61,39 @@ class RootCheckScenario {
 }
 
 test("accepts an existing configuration without parsing its contents", async () => {
-  await Effect.runPromise(
-    Effect.gen(function* () {
-      const scenario = yield* RootCheckScenario.scoped();
-      yield* scenario.writeConfiguration();
-      const result = yield* scenario.execute();
-      expect(result.exitCode).toBe(0);
-      expect(result.stdout.toString()).toContain("Found meta-cortex.toml");
-      expect(result.stderr.toString()).toBe("");
-    }).pipe(Effect.scoped),
-  );
+  const program = Effect.gen(function* () {
+    const scenario = yield* RootCheckScenario.scoped();
+    yield* scenario.writeConfiguration();
+    const result = yield* scenario.execute();
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout.toString()).toContain("Found meta-cortex.toml");
+    expect(result.stderr.toString()).toBe("");
+  });
+  const scoped = Effect.scoped(program);
+  await Effect.runPromise(scoped);
 });
 
 test("fails when the current directory has no configuration", async () => {
-  await Effect.runPromise(
-    Effect.gen(function* () {
-      const scenario = yield* RootCheckScenario.scoped();
-      const result = yield* scenario.execute();
-      expect(result.exitCode).toBe(1);
-      expect(result.stdout.toString()).toBe("");
-      expect(result.stderr.toString()).toContain("Missing meta-cortex.toml");
-    }).pipe(Effect.scoped),
-  );
+  const program = Effect.gen(function* () {
+    const scenario = yield* RootCheckScenario.scoped();
+    const result = yield* scenario.execute();
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout.toString()).toBe("");
+    expect(result.stderr.toString()).toContain("Missing meta-cortex.toml");
+  });
+  const scoped = Effect.scoped(program);
+  await Effect.runPromise(scoped);
 });
 
 test("a directory named meta-cortex.toml does not count as a file", async () => {
-  await Effect.runPromise(
-    Effect.gen(function* () {
-      const scenario = yield* RootCheckScenario.scoped();
-      yield* scenario.createDirectoryNamedConfiguration();
-      const result = yield* scenario.execute();
-      expect(result.exitCode).toBe(1);
-      expect(result.stdout.toString()).toBe("");
-      expect(result.stderr.toString()).toContain("Missing meta-cortex.toml");
-    }).pipe(Effect.scoped),
-  );
+  const program = Effect.gen(function* () {
+    const scenario = yield* RootCheckScenario.scoped();
+    yield* scenario.createDirectoryNamedConfiguration();
+    const result = yield* scenario.execute();
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout.toString()).toBe("");
+    expect(result.stderr.toString()).toContain("Missing meta-cortex.toml");
+  });
+  const scoped = Effect.scoped(program);
+  await Effect.runPromise(scoped);
 });

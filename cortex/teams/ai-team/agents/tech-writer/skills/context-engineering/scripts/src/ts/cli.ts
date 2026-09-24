@@ -1,31 +1,34 @@
 import { Effect } from "effect";
 import { SkillApplication } from "./application.ts";
-import { FailurePresentation } from "./response.ts";
+import { FailurePresentation, type SkillExecution } from "./response.ts";
 import { FailureCode, SkillFailure } from "./failure.ts";
 import { ProtocolText } from "./protocol-text.ts";
 
 export type CommandArguments = readonly string[];
 export class SkillCli {
   constructor(private readonly arguments_: CommandArguments) {}
-  run(): Effect.Effect<void> {
-    const owner = this;
-    return Effect.gen(function* () {
-      const argument = owner.arguments_.at(0);
-      if (
-        owner.arguments_.length !== 1 ||
-        typeof argument !== "string" ||
-        !argument.startsWith("--request-yaml=")
-      ) {
-        const execution = new FailurePresentation(
-          SkillFailure.from(FailureCode.Usage),
-        ).render();
-        process.stdout.write(execution.yaml);
-        process.exitCode = execution.exitCode;
-        return;
-      }
-      const execution = yield* new SkillApplication(
-        ProtocolText.yaml(argument.slice("--request-yaml=".length)),
-      ).execute();
+  readonly run = Effect.fnUntraced(function* (
+    this: SkillCli,
+  ): Effect.fn.Return<void> {
+    const argument = this.arguments_.at(0);
+    if (
+      this.arguments_.length !== 1 ||
+      typeof argument !== "string" ||
+      !argument.startsWith("--request-yaml=")
+    ) {
+      const execution = new FailurePresentation(
+        SkillFailure.from(FailureCode.Usage),
+      ).render();
+      return yield* this.report(execution);
+    }
+    const execution = yield* new SkillApplication(
+      ProtocolText.yaml(argument.slice("--request-yaml=".length)),
+    ).execute();
+    yield* this.report(execution);
+  });
+
+  private report(execution: SkillExecution): Effect.Effect<void> {
+    return Effect.sync(() => {
       process.stdout.write(execution.yaml);
       process.exitCode = execution.exitCode;
     });

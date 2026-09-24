@@ -17,6 +17,8 @@ global policy supplied with the assignment.
 
 ## Skills
 
+- For Effect code, apply the official [Effect skill](skills/effect-ts/SKILL.md)
+  and the installed package's documentation.
 - For secret handling, also load
   [secret lifecycle](../../../security-team/agents/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 

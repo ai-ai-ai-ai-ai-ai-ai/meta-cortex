@@ -40,75 +40,74 @@ export type WorkflowResult =
 
 export class InputWorkflow {
   constructor(private readonly request: WorkflowRequest) {}
-  advance(): Effect.Effect<WorkflowResult, InputFailure> {
-    const owner = this;
-    return Effect.gen(function* () {
-      yield* owner.validateState();
-      const { input, form } = owner.request;
-      const { event } = input;
-      const answers = { ...input.state.answers };
-      const skipped = [...input.state.skipped];
-      const issues: FieldIssue[] = [];
-      const state: InputState = { answers, skipped };
-      const base = { version: ProtocolVersion.V1, state, issues } as const;
-      if (event.type === EventType.Cancel)
-        return { ...base, status: Status.Cancelled };
-      if (event.type === EventType.Unavailable)
-        return { ...base, status: Status.Unavailable };
-      if (event.type === EventType.Answer || event.type === EventType.Skip) {
-        const field = form.fields.find((field) => field.name === event.name);
-        if (!field) {
-          const issue: FieldIssue = {
-            name: event.name,
-            code: IssueCode.Unknown,
-          };
-          issues.push(issue);
-        } else if (
-          Object.hasOwn(answers, field.name) ||
-          skipped.includes(field.name)
-        ) {
-          const issue: FieldIssue = {
-            name: field.name,
-            code: IssueCode.AlreadyAnswered,
-          };
-          issues.push(issue);
-        } else {
-          const answer = new FieldAnswer(field);
-          let checked: AnswerCheck;
-          switch (event.type) {
-            case EventType.Skip:
-              checked = answer.skip();
-              break;
-            case EventType.Answer:
-              checked = answer.convert(event.value);
-              break;
-          }
-          switch (checked.kind) {
-            case AnswerKind.Accepted:
-              answers[field.name] = checked.value;
-              break;
-            case AnswerKind.Skipped:
-              skipped.push(field.name);
-              break;
-            case AnswerKind.Invalid:
-              issues.push(checked.issue);
-              break;
-          }
+  readonly advance = Effect.fnUntraced(function* (
+    this: InputWorkflow,
+  ): Effect.fn.Return<WorkflowResult, InputFailure> {
+    yield* this.validateState();
+    const { input, form } = this.request;
+    const { event } = input;
+    const answers = { ...input.state.answers };
+    const skipped = [...input.state.skipped];
+    const issues: FieldIssue[] = [];
+    const state: InputState = { answers, skipped };
+    const base = { version: ProtocolVersion.V1, state, issues } as const;
+    if (event.type === EventType.Cancel)
+      return { ...base, status: Status.Cancelled };
+    if (event.type === EventType.Unavailable)
+      return { ...base, status: Status.Unavailable };
+    if (event.type === EventType.Answer || event.type === EventType.Skip) {
+      const field = form.fields.find((field) => field.name === event.name);
+      if (!field) {
+        const issue: FieldIssue = {
+          name: event.name,
+          code: IssueCode.Unknown,
+        };
+        issues.push(issue);
+      } else if (
+        Object.hasOwn(answers, field.name) ||
+        skipped.includes(field.name)
+      ) {
+        const issue: FieldIssue = {
+          name: field.name,
+          code: IssueCode.AlreadyAnswered,
+        };
+        issues.push(issue);
+      } else {
+        const answer = new FieldAnswer(field);
+        let checked: AnswerCheck;
+        switch (event.type) {
+          case EventType.Skip:
+            checked = answer.skip();
+            break;
+          case EventType.Answer:
+            checked = answer.convert(event.value);
+            break;
+        }
+        switch (checked.kind) {
+          case AnswerKind.Accepted:
+            answers[field.name] = checked.value;
+            break;
+          case AnswerKind.Skipped:
+            skipped.push(field.name);
+            break;
+          case AnswerKind.Invalid:
+            issues.push(checked.issue);
+            break;
         }
       }
-      const next = form.fields.find(
-        (field) =>
-          !Object.hasOwn(answers, field.name) && !skipped.includes(field.name),
-      );
-      if (next)
-        return {
-          ...base,
-          status: Status.Pending,
-          prompt: new CodexPrompt(next).render(),
-        };
-      return { ...base, status: Status.Complete };
-    });
-  }
+    }
+    const next = form.fields.find(
+      (field) =>
+        !Object.hasOwn(answers, field.name) && !skipped.includes(field.name),
+    );
+    if (next)
+      return {
+        ...base,
+        status: Status.Pending,
+        prompt: new CodexPrompt(next).render(),
+      };
+    return { ...base, status: Status.Complete };
+  });
 
   private validateState(): Effect.Effect<void, InputFailure> {
     const { form, input } = this.request;

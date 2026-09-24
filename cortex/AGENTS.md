@@ -109,14 +109,15 @@ in this thread.
 Identify both roots before planning development work:
 
 - **Library root**
-  - Run from this file's directory; continue only if both commands succeed:
+  - Run from this file's directory; continue only if it succeeds:
 
     ```sh
-    bun install --frozen-lockfile --ignore-scripts &&
-      bun scripts/src/ts/check-library-root.ts
+    bun scripts/src/ts/check-library-root.ts
     ```
 
   - Supplies Meta-Cortex instructions, roles, skills, and configuration.
+  - Initialization installs the shared Bun dependencies. If they are missing,
+    rerun Framework / Initialize; individual skills do not reinstall them.
 - **Project root**
   - The consuming repository that owns the user's development task.
   - Identify it from the host workspace and the project's instructions.

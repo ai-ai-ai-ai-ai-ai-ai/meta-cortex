@@ -249,6 +249,18 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
         instructions: Instructions::Write,
     })?;
     let root = scenario.project.path().canonicalize()?;
+    assert!(
+        root.join(".meta-cortex/node_modules/effect/AGENTS.md")
+            .is_file()
+    );
+    assert_eq!(
+        fs::read(root.join(".agents/skills/effect-ts/SKILL.md"))?,
+        fs::read(
+            root.join(
+                ".meta-cortex/teams/dev-team/agents/typescript-dev/skills/effect-ts/SKILL.md"
+            )
+        )?,
+    );
     let config = root.join(".meta-cortex/meta-cortex.toml");
     let customized = format!(
         "# Keep settings\n{}",
@@ -325,7 +337,92 @@ fn yaml_initialization_defaults_are_unattended_and_preserve_guidance() -> anyhow
             toml::from_str(include_str!("../../../cortex/meta-cortex.toml"))?;
         assert_eq!(actual, expected);
         assert_eq!(fs::read_to_string(&guidance)?, "# Existing instructions\n");
+        assert!(!scenario.project.path().join(".agents").exists());
+        assert!(
+            scenario
+                .project
+                .path()
+                .join(".meta-cortex/node_modules/effect/AGENTS.md")
+                .is_file()
+        );
     }
+    Ok(())
+}
+
+#[test]
+fn missing_bun_reports_failure_before_connecting_and_can_be_retried() -> anyhow::Result<()> {
+    let scenario = CliScenario::create()?;
+    let request = Request {
+        version: ProtocolVersion::V1,
+        project: scenario.project.path().to_owned(),
+        operation: Operation::Framework(FrameworkOperation::Initialize(Initialization {
+            harness: Harness::Codex,
+            instructions: Instructions::Write,
+        })),
+    };
+    let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
+        .args(["run", "--request", "-"])
+        .env("PATH", scenario.project.path())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    child
+        .stdin
+        .take()
+        .context("stdin")?
+        .write_all(serde_saphyr::to_string(&request)?.as_bytes())?;
+    let output = child.wait_with_output()?;
+    assert_eq!(output.status.code(), Some(2));
+    assert!(output.stderr.is_empty());
+    let response: Response = serde_saphyr::from_slice(&output.stdout)?;
+    let Outcome::Error(error) = response.result else {
+        bail!("expected missing Bun failure")
+    };
+    assert!(error.message.contains("install Bun"));
+    assert!(!scenario.project.path().join("AGENTS.md").exists());
+    assert!(!scenario.project.path().join(".agents").exists());
+    scenario.initialize(Initialization {
+        harness: Harness::Codex,
+        instructions: Instructions::Write,
+    })?;
+    assert!(
+        scenario
+            .project
+            .path()
+            .join(".meta-cortex/node_modules/effect/AGENTS.md")
+            .is_file()
+    );
+    assert!(
+        scenario
+            .project
+            .path()
+            .join(".agents/skills/effect-ts/SKILL.md")
+            .is_file()
+    );
+    Ok(())
+}
+
+#[test]
+fn initialization_preserves_a_conflicting_native_skill() -> anyhow::Result<()> {
+    let scenario = CliScenario::create()?;
+    let directory = scenario.project.path().join(".agents/skills/effect-ts");
+    fs::create_dir_all(&directory)?;
+    let skill = directory.join("SKILL.md");
+    fs::write(&skill, "Existing project skill")?;
+    let Outcome::Error(error) = scenario.call(Operation::Framework(
+        FrameworkOperation::Initialize(Initialization {
+            harness: Harness::Codex,
+            instructions: Instructions::Write,
+        }),
+    ))?
+    else {
+        bail!("expected skill conflict")
+    };
+    assert!(error.message.contains("refusing to overwrite"));
+    assert_eq!(fs::read_to_string(skill)?, "Existing project skill");
+    assert!(!scenario.project.path().join(".meta-cortex").exists());
+    assert!(!scenario.project.path().join("AGENTS.md").exists());
     Ok(())
 }
 

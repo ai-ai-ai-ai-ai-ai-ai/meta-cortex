@@ -10,25 +10,25 @@ enum ConfigurationPresence {
 class LibraryRootCheck {
   constructor(private readonly configuration: BunFile) {}
 
-  run(): Effect.Effect<void> {
-    const inspection = this.inspectConfiguration();
-    const reports: Record<ConfigurationPresence, Effect.Effect<void>> = {
-      [ConfigurationPresence.Present]: Console.log(
-        "Found meta-cortex.toml in the current directory.",
-      ),
-      [ConfigurationPresence.Missing]: this.reportFailure(
-        "Missing meta-cortex.toml in the current directory.",
-      ),
-    };
-    const check = Effect.gen(function* () {
-      const presence = yield* inspection;
+  readonly run = Effect.fnUntraced(
+    function* (
+      this: LibraryRootCheck,
+    ): Effect.fn.Return<void, Cause.UnknownError> {
+      const reports: Record<ConfigurationPresence, Effect.Effect<void>> = {
+        [ConfigurationPresence.Present]: Console.log(
+          "Found meta-cortex.toml in the current directory.",
+        ),
+        [ConfigurationPresence.Missing]: this.reportFailure(
+          "Missing meta-cortex.toml in the current directory.",
+        ),
+      };
+      const presence = yield* this.inspectConfiguration();
       yield* reports[presence];
-    });
-
-    return Effect.catch(check, (error) =>
+    },
+    Effect.catch((error) =>
       this.reportFailure(`Could not check meta-cortex.toml: ${error.message}`),
-    );
-  }
+    ),
+  );
 
   private inspectConfiguration(): Effect.Effect<
     ConfigurationPresence,

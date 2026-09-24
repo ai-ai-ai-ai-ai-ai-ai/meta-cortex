@@ -26,10 +26,19 @@ Shared Cargo dependencies, lint policy, lockfile, and release profile live at th
 workspace root. The framework remains at the repository root in `cortex/`.
 
 For Effect code, use the official
-[Effect skills](https://github.com/Effect-TS/skills). Before editing, read
+[Effect skill](cortex/teams/dev-team/agents/typescript-dev/skills/effect-ts/SKILL.md).
+The project skill at `.agents/skills/effect-ts` points to that upstream copy.
+Before editing, read
 `cortex/node_modules/effect/AGENTS.md` completely and follow its relevant links;
 consult `cortex/node_modules/effect/src` for API details. The Bun workspace in
 `cortex/` supplies this installed v4 package and its version-matched guidance.
+
+For a fresh development checkout, install the shared workspace dependencies once:
+
+```sh
+cd cortex
+bun install --frozen-lockfile --ignore-scripts
+```
 
 For Rust changes, apply the framework's
 [Rust skill](cortex/teams/dev-team/agents/rust-dev/skills/rust-dev-skill/SKILL.md).

@@ -83,14 +83,9 @@ command catalog; they do not require an MCP server or Loom.
 
 1. Resolve the Meta-Cortex library root as `library_root` (`cortex/` in this
    repository, `.meta-cortex/` in an installed project).
-2. Install the root workspace once with Bun 1.3.14:
-
-   ```sh
-   cd "$library_root"
-   bun install --frozen-lockfile --ignore-scripts
-   ```
-
-   The root manifest and lockfile cover all skill script packages. The hoisted
+2. Use the shared dependencies installed by Framework / Initialize with Bun 1.3.14.
+   Rerun initialization if dependencies are missing. The root manifest and
+   lockfile cover all skill script packages. The hoisted
    linker shares one root `node_modules/`; Bun reuses its home-directory cache
    (`~/.bun/install/cache`). Do not create per-skill installs, lockfiles, caches,
    or temporary runtime copies. Keep dependency versions aligned across skills

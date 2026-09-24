@@ -1,16 +1,26 @@
 use thiserror::Error;
 mod bundle;
+mod dependencies;
 
 use crate::configuration::{ConfigError, ConfigText, Configuration};
 use crate::information::{ProjectInfo, Version, VersionError};
 use crate::integration::{InstructionError, IntegrationOptions, ProjectHarnesses};
 use bundle::Bundle;
+use dependencies::WorkspaceDependencies;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Error)]
 pub enum InstallError {
+    #[error(
+        "could not install framework dependencies in {path}; install Bun and rerun Framework / Initialize: {source}"
+    )]
+    Dependencies {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
     #[error("filesystem operation failed: {0}")]
     Io(#[from] io::Error),
     #[error(
@@ -135,18 +145,22 @@ impl Installation {
                 let configuration = ConfigText::try_from(Configuration::bundled()?)?;
                 Bundle {
                     directory: &Bundle::FRAMEWORK,
-                    destination,
+                    destination: destination.clone(),
                 }
                 .install(configuration)?;
             }
             BundleState::Identical => {
                 Bundle {
                     directory: &Bundle::FRAMEWORK,
-                    destination,
+                    destination: destination.clone(),
                 }
                 .verify()?;
             }
         }
+        WorkspaceDependencies {
+            directory: destination,
+        }
+        .install()?;
         integration.apply()?;
         Ok(InstalledProject {
             root: self.project.root,
@@ -201,15 +215,17 @@ pub mod tests {
             self.install()?;
             let root = self.directory.path().join(".meta-cortex");
             let modules = root.join("node_modules");
-            assert!(!modules.exists());
+            assert!(modules.join("effect/AGENTS.md").is_file());
             assert!(root.join("package.json").is_file());
             assert!(root.join("bun.lock").is_file());
-            fs::create_dir(&modules)?;
             let marker = modules.join("installed-package");
             fs::write(&marker, "local dependency")?;
             self.install()?;
             Project::open(self.directory.path().to_path_buf())?.info()?;
             assert_eq!(fs::read_to_string(marker)?, "local dependency");
+            fs::remove_dir_all(&modules)?;
+            self.install()?;
+            assert!(modules.join("effect/AGENTS.md").is_file());
             fs::write(root.join("unexpected-file"), "unexpected")?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             Ok(())
@@ -218,6 +234,7 @@ pub mod tests {
             self.install()?;
             let external = tempdir()?;
             let modules = self.directory.path().join(".meta-cortex/node_modules");
+            fs::remove_dir_all(&modules)?;
             symlink(external.path(), &modules)?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             fs::remove_file(&modules)?;
