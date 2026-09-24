@@ -42,6 +42,32 @@ read the selected practices in full. Before changing a rule, inspect its owner a
 update the same namespaced rules, summaries, exceptions, and section links whenever the
 requirements or their placement change.
 
+## Effect: use upstream skills
+
+Use Effect v4 for new or materially changed asynchronous, fallible, resource-owning,
+concurrent, service-dependent, and untrusted-decoding workflows, including scripts
+and tests. Pure calculations keep their existing domain owners.
+
+Apply the official [effect-ts skill](https://github.com/Effect-TS/skills/blob/main/skills/effect-ts/SKILL.md).
+Before writing Effect code, read the installed `effect/AGENTS.md` completely,
+then follow its relevant documentation links and consult `effect/src` for API
+details. Resolve the package from the workspace that owns the code, including
+hoisted `node_modules`; do not use a different project's installed version.
+For Cortex's own scripts, the package is at the library root's
+`node_modules/effect/`. Install missing dependencies with the project's existing
+package manager and lockfile before reading it.
+
+Upstream owns Effect idioms, composition, services, errors, schemas, resources,
+and runtime guidance. Do not maintain a parallel Cortex Effect tutorial, operator
+allowlist, or copied upstream skill. Shared domain, language, and project rules
+still apply; keep compositions flat and readable without adding helper layers.
+
+Pin the same explicit v4 release in workspace packages and verify the lockfile's
+resolved version. Identify prereleases in delivery evidence. For a v3 migration,
+apply the official [effect-v3-to-v4 skill](https://github.com/Effect-TS/skills/blob/main/skills/effect-v3-to-v4/SKILL.md)
+under the session's selected development mode. Run the project's required checks
+and tests after migration.
+
 ## TypeScript security practices
 
 - For secret handling, apply the local [secret ownership rules](practices/typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners).

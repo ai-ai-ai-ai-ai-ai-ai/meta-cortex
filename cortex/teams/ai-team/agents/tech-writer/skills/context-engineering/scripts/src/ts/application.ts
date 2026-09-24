@@ -23,29 +23,32 @@ export class SkillApplication {
   );
   constructor(private readonly source: YamlText) {}
   execute(): Effect.Effect<SkillExecution> {
-    return new YamlRequest(this.source).decode().pipe(
-      Effect.flatMap((request) => this.dispatch(request)),
-      Effect.flatMap((response) =>
-        new YamlResponse(response).encode().pipe(
-          Effect.map((yaml): SkillExecution => {
-            switch (response.kind) {
-              case ResponseKind.Catalog:
-                return { yaml, exitCode: ExitCode.Success };
-              case ResponseKind.Findings:
-                if (response.findings.length > 0) {
-                  return { yaml, exitCode: ExitCode.Findings };
-                }
-                return { yaml, exitCode: ExitCode.Success };
-            }
-            const unhandled: never = response;
-            return unhandled;
-          }),
-        ),
-      ),
-      Effect.catch((failure) =>
-        Effect.succeed(new FailurePresentation(failure).render()),
-      ),
+    const decoded = new YamlRequest(this.source).decode();
+    const owner = this;
+    const program = Effect.gen(function* () {
+      const request = yield* decoded;
+      const response = yield* owner.dispatch(request);
+      const yaml = yield* new YamlResponse(response).encode();
+      return { yaml, exitCode: owner.exitCode(response) };
+    });
+
+    return Effect.catch(program, (failure) =>
+      Effect.sync(() => new FailurePresentation(failure).render()),
     );
+  }
+
+  private exitCode(response: SkillResponse): ExitCode {
+    switch (response.kind) {
+      case ResponseKind.Catalog:
+        return ExitCode.Success;
+      case ResponseKind.Findings:
+        switch (response.findings.length) {
+          case 0:
+            return ExitCode.Success;
+          default:
+            return ExitCode.Findings;
+        }
+    }
   }
   private dispatch(
     request: SkillRequest,

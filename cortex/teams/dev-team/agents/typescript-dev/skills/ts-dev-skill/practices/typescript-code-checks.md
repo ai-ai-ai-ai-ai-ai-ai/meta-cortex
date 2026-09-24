@@ -15,11 +15,9 @@
   [branching rule](../../../../../docs/programming/branching-and-exhaustive-matching.md).
   Include pure code, adapters, tests, and tooling; Effect is not a scope boundary
   for the prohibition on ordinary `if` conditions.
-- Enforce the [Effect composition rules](typescript-effect.md#compose-workflows-with-simple-functional-operations)
-  in adopted workflow modules or packages through the existing lint gate.
-  Allow native switch branches with mandatory exhaustiveness and fallthrough
-  checks. Reject boolean if, ternaries, loops, and try/catch there; verify that
-  the rejected pattern fails and its native exhaustive replacement passes.
+- Require native-switch exhaustiveness and fallthrough checks under the shared
+  branching rule. Consult the [upstream Effect guidance](../SKILL.md#effect-use-upstream-skills)
+  for Effect code; do not add a separate operator allowlist to the lint gate.
 - Coordinate pipeline changes with the CI/CD owner under the active development mode.
 - Enforce `max-depth: ["error", 2]` and `max-nested-callbacks` with
   `{ max: 2, checkConstructorCallCallbacks: true }` in adopted packages. Verify

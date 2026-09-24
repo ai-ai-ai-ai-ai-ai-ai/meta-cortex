@@ -45,62 +45,64 @@ export class YamlInput<A, I> {
   };
   constructor(private readonly request: YamlDecodeRequest<A, I>) {}
 
-  decode(): Effect.Effect<A, InputFailure> {
-    const owner = this;
-    return Effect.gen(function* () {
-      if (
-        Buffer.byteLength(owner.request.source, "utf8") > YamlInput.maximumBytes
-      ) {
-        return yield* Effect.fail(owner.failure(FailureCode.Yaml));
-      }
-      const document = yield* Effect.try(() =>
-        parseDocument(owner.request.source, YamlInput.options),
-      ).pipe(Effect.mapError((error) => owner.hostFailure(error)));
-      if (document.errors.length > 0 || document.warnings.length > 0) {
-        const context: FailureContext = {
-          code: FailureCode.Yaml,
-          message: "Malformed YAML or unsupported YAML syntax.",
-          source: {
-            kind: SourceKind.Yaml,
-            errors: [...document.errors, ...document.warnings],
-          },
-        };
-        return yield* Effect.fail(new InputFailure(context));
-      }
-      if (
-        document.directives.yaml.explicit ||
-        Object.keys(document.directives.tags).some(
-          (handle) => handle !== "!!",
-        ) ||
-        !document.contents
-      ) {
-        return yield* Effect.fail(owner.failure(FailureCode.Yaml));
-      }
-      const root: PendingYamlNode = { node: document.contents, depth: 0 };
-      if (!owner.accepts(root))
-        return yield* Effect.fail(owner.failure(FailureCode.Yaml));
-      // The parser's untyped output stays in this contiguous schema decoder.
-      return yield* Effect.try((): unknown =>
-        document.toJS(YamlInput.conversion),
-      ).pipe(
-        Effect.mapError((error) => owner.hostFailure(error)),
-        Effect.flatMap((value) =>
-          Schema.decodeUnknownEffect(
-            owner.request.schema,
-            YamlInput.admission,
-          )(value).pipe(
-            Effect.mapError((error) => {
-              const context: FailureContext = {
-                code: FailureCode.Schema,
-                message: "Input does not match the documented schema.",
-                source: { kind: SourceKind.Schema, error },
-              };
-              return new InputFailure(context);
-            }),
-          ),
-        ),
-      );
-    });
+  readonly decode = Effect.fnUntraced(function* (
+    this: YamlInput<A, I>,
+  ): Effect.fn.Return<A, InputFailure> {
+    if (
+      Buffer.byteLength(this.request.source, "utf8") > YamlInput.maximumBytes
+    ) {
+      return yield* Effect.fail(this.failure(FailureCode.Yaml));
+    }
+    const parsed = Effect.try(() =>
+      parseDocument(this.request.source, YamlInput.options),
+    );
+    const document = yield* Effect.mapError(parsed, (error) =>
+      this.hostFailure(error),
+    );
+    if (document.errors.length > 0 || document.warnings.length > 0) {
+      const context: FailureContext = {
+        code: FailureCode.Yaml,
+        message: "Malformed YAML or unsupported YAML syntax.",
+        source: {
+          kind: SourceKind.Yaml,
+          errors: [...document.errors, ...document.warnings],
+        },
+      };
+      return yield* Effect.fail(new InputFailure(context));
+    }
+    if (
+      document.directives.yaml.explicit ||
+      Object.keys(document.directives.tags).some((handle) => handle !== "!!") ||
+      !document.contents
+    ) {
+      return yield* Effect.fail(this.failure(FailureCode.Yaml));
+    }
+    const root: PendingYamlNode = { node: document.contents, depth: 0 };
+    if (!this.accepts(root))
+      return yield* Effect.fail(this.failure(FailureCode.Yaml));
+    // The parser's untyped output stays in this contiguous schema decoder.
+    const converted = Effect.try((): unknown =>
+      document.toJS(YamlInput.conversion),
+    );
+    const value = yield* Effect.mapError(converted, (error) =>
+      this.hostFailure(error),
+    );
+    const decoded = Schema.decodeUnknownEffect(
+      this.request.schema,
+      YamlInput.admission,
+    )(value);
+    return yield* Effect.mapError(decoded, (error) =>
+      this.schemaFailure(error),
+    );
+  });
+
+  private schemaFailure(error: Schema.SchemaError): InputFailure {
+    const context: FailureContext = {
+      code: FailureCode.Schema,
+      message: "Input does not match the documented schema.",
+      source: { kind: SourceKind.Schema, error },
+    };
+    return new InputFailure(context);
   }
 
   private hostFailure(error: Cause.UnknownError): InputFailure {

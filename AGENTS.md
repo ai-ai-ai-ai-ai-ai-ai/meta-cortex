@@ -25,6 +25,12 @@ Keep database code and dependencies in workbench; installer uses its public API.
 Shared Cargo dependencies, lint policy, lockfile, and release profile live at the
 workspace root. The framework remains at the repository root in `cortex/`.
 
+For Effect code, use the official
+[Effect skills](https://github.com/Effect-TS/skills). Before editing, read
+`cortex/node_modules/effect/AGENTS.md` completely and follow its relevant links;
+consult `cortex/node_modules/effect/src` for API details. The Bun workspace in
+`cortex/` supplies this installed v4 package and its version-matched guidance.
+
 For Rust changes, apply the framework's
 [Rust skill](cortex/teams/dev-team/agents/rust-dev/skills/rust-dev-skill/SKILL.md).
 From `app/`, run `cargo fmt --all --check`, `cargo check --locked --workspace --all-targets`,

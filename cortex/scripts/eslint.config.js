@@ -20,16 +20,8 @@ export default [
             "Use exhaustive native switch branches over domain outcomes.",
         },
         {
-          selector:
-            "CallExpression[callee.object.name='Effect'][callee.property.name=/^(flatMap|zipWith)$/]",
-          message:
-            "These scripts need only basic composition or linear Effect.gen; do not introduce flatMap or zipWith.",
-        },
-        {
-          selector:
-            ":matches(IfStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, TryStatement)",
-          message:
-            "Use exhaustive native switch branches and Effect sequencing; keep boolean if, loops, and try/catch out of these workflows.",
+          selector: "IfStatement",
+          message: "Use exhaustive native branches over domain outcomes.",
         },
         {
           selector: "CallExpression > ObjectExpression",

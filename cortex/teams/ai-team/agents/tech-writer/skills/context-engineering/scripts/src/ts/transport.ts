@@ -44,47 +44,47 @@ export class YamlRequest {
   };
   constructor(private readonly source: YamlText) {}
 
-  decode(): Effect.Effect<SkillRequest, SkillFailure> {
-    const owner = this;
-    return Effect.gen(function* () {
-      if (Buffer.byteLength(owner.source, "utf8") > YamlRequest.maximumBytes) {
-        return yield* Effect.fail(SkillFailure.from(FailureCode.Request));
-      }
-      const document = yield* Effect.try(() =>
-        parseDocument(owner.source, YamlRequest.options),
-      ).pipe(Effect.mapError((error) => owner.hostFailure(error)));
-      if (document.errors.length > 0 || document.warnings.length > 0) {
-        const diagnostics = [...document.errors, ...document.warnings];
-        return yield* Effect.fail(SkillFailure.fromYaml(diagnostics));
-      }
-      if (
-        document.directives.yaml.explicit ||
-        Object.keys(document.directives.tags).some(
-          (handle) => handle !== "!!",
-        ) ||
-        !document.contents
-      ) {
-        return yield* Effect.fail(SkillFailure.from(FailureCode.Yaml));
-      }
-      const root: PendingYamlNode = { node: document.contents, depth: 0 };
-      if (!owner.accepts(root))
-        return yield* Effect.fail(SkillFailure.from(FailureCode.Yaml));
-      // The parser's untyped output stays in this contiguous schema decoder.
-      return yield* Effect.try((): unknown =>
-        document.toJS(YamlRequest.conversion),
-      ).pipe(
-        Effect.mapError((error) => owner.hostFailure(error)),
-        Effect.flatMap((value) =>
-          Schema.decodeUnknownEffect(
-            SkillRequestSchema.value,
-            YamlRequest.admission,
-          )(value).pipe(
-            Effect.mapError((error) => SkillFailure.fromSchema(error)),
-          ),
-        ),
-      );
-    });
-  }
+  readonly decode = Effect.fnUntraced(function* (
+    this: YamlRequest,
+  ): Effect.fn.Return<SkillRequest, SkillFailure> {
+    if (Buffer.byteLength(this.source, "utf8") > YamlRequest.maximumBytes) {
+      return yield* Effect.fail(SkillFailure.from(FailureCode.Request));
+    }
+    const parsed = Effect.try(() =>
+      parseDocument(this.source, YamlRequest.options),
+    );
+    const document = yield* Effect.mapError(parsed, (error) =>
+      this.hostFailure(error),
+    );
+    if (document.errors.length > 0 || document.warnings.length > 0) {
+      const diagnostics = [...document.errors, ...document.warnings];
+      return yield* Effect.fail(SkillFailure.fromYaml(diagnostics));
+    }
+    if (
+      document.directives.yaml.explicit ||
+      Object.keys(document.directives.tags).some((handle) => handle !== "!!") ||
+      !document.contents
+    ) {
+      return yield* Effect.fail(SkillFailure.from(FailureCode.Yaml));
+    }
+    const root: PendingYamlNode = { node: document.contents, depth: 0 };
+    if (!this.accepts(root))
+      return yield* Effect.fail(SkillFailure.from(FailureCode.Yaml));
+    // The parser's untyped output stays in this contiguous schema decoder.
+    const converted = Effect.try((): unknown =>
+      document.toJS(YamlRequest.conversion),
+    );
+    const value = yield* Effect.mapError(converted, (error) =>
+      this.hostFailure(error),
+    );
+    const decoded = Schema.decodeUnknownEffect(
+      SkillRequestSchema.value,
+      YamlRequest.admission,
+    )(value);
+    return yield* Effect.mapError(decoded, (error) =>
+      SkillFailure.fromSchema(error),
+    );
+  });
 
   private hostFailure(error: Cause.UnknownError): SkillFailure {
     const request: HostFailureRequest = { code: FailureCode.Yaml, error };
@@ -135,22 +135,21 @@ export class YamlRequest {
 export class YamlResponse {
   static readonly maximumBytes = 256 * 1024;
   constructor(private readonly response: SkillResponse) {}
-  encode(): Effect.Effect<YamlText, SkillFailure> {
-    const owner = this;
-    return Effect.gen(function* () {
-      const encoded = yield* Effect.try(() => stringify(owner.response)).pipe(
-        Effect.mapError((error) => {
-          const request: HostFailureRequest = {
-            code: FailureCode.Response,
-            error,
-          };
-          return SkillFailure.fromHost(request);
-        }),
-      );
-      if (Buffer.byteLength(encoded, "utf8") > YamlResponse.maximumBytes) {
-        return yield* Effect.fail(SkillFailure.from(FailureCode.Response));
-      }
-      return ProtocolText.yaml(encoded);
-    });
-  }
+  readonly encode = Effect.fnUntraced(function* (
+    this: YamlResponse,
+  ): Effect.fn.Return<YamlText, SkillFailure> {
+    const encoded = yield* Effect.try(() => stringify(this.response)).pipe(
+      Effect.mapError((error) => {
+        const request: HostFailureRequest = {
+          code: FailureCode.Response,
+          error,
+        };
+        return SkillFailure.fromHost(request);
+      }),
+    );
+    if (Buffer.byteLength(encoded, "utf8") > YamlResponse.maximumBytes) {
+      return yield* Effect.fail(SkillFailure.from(FailureCode.Response));
+    }
+    return ProtocolText.yaml(encoded);
+  });
 }
