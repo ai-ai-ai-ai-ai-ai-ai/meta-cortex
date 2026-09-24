@@ -10,9 +10,9 @@ are supplied by the application; method fragments belong to their named owner.
 
 ## Compose workflows with simple functional operations
 
-Effect owns sequencing, decisions, failures, and cleanup in effectful workflows.
+Effect owns sequencing, failures, and cleanup in effectful workflows.
 Use `Effect.map` for pure transformations, `Effect.all` with named results to
-combine independent effects, and basic exhaustive `Match` branches for
+combine independent effects, and native exhaustive `switch` branches for
 alternatives. Use `Effect.forEach` for effectful traversal and Effect's error
 operators for recovery. Keep execution order and concurrency explicit where
 they affect behavior; independent composition does not require parallel execution.
@@ -27,7 +27,7 @@ at the use site. Do not replace it mechanically with `map` plus `flatten`, an
 effect-returning `andThen` callback, or a custom alias. Those substitutions keep
 the same dependency and do not establish simpler composition.
 
-Do not mix procedural `if`/`else`, `switch`, ternaries, loops, or `try`/`catch`
+Do not mix procedural `if`/`else`, ternaries, loops, or `try`/`catch`
 with Effect workflow control. This includes generators, composition callbacks,
 and helpers that choose workflow steps. Assigning a yielded result to a local
 variable before an `if`, or moving the same branch into a helper, does not
@@ -35,10 +35,11 @@ satisfy the rule. The shared
 [branching rule](../../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)
 also prohibits ordinary `if` conditions outside Effect workflows.
 
-`Effect.gen` may sequence dependent steps linearly. Branch through composition
-and matching; keep side effects inside `Effect.sync`, `Effect.tryPromise`, or
-the owning adapter. Match branches return effects without running them during
-construction. Match closed alternatives exhaustively without a fallback that
+`Effect.gen` may sequence dependent steps linearly and branch with native
+`switch` over domain outcomes. Yield the selected effect in each branch; keep
+side effects inside `Effect.sync`, `Effect.tryPromise`, or the owning adapter.
+Returning an Effect from a generator does not execute it; use `yield*`.
+Match closed alternatives exhaustively without a fallback that
 hides a missing case. Normalize a platform boolean into the named domain enum
 or union inside its adapter before choosing workflow behavior. A boolean match
 at that boundary only converts representation; its branches must not perform
@@ -65,18 +66,19 @@ return Effect.gen(this, function* () {
 // reportFound and reportMissing return effects that write the CLI response.
 return Effect.gen(this, function* () {
   const presence = yield* this.inspectConfiguration();
-  yield* Match.value(presence).pipe(
-    Match.when(ConfigurationPresence.Present, () => this.reportFound()),
-    Match.when(ConfigurationPresence.Missing, () => this.reportMissing()),
-    Match.exhaustive,
-  );
+  switch (presence) {
+    case ConfigurationPresence.Present:
+      return yield* this.reportFound();
+    case ConfigurationPresence.Missing:
+      return yield* this.reportMissing();
+  }
 });
 ```
 
 ### Keep the composition easy to read
 
 Apply the shared [nesting and abstraction limit](../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction).
-Effect continuations, Match callbacks, and I/O callbacks all count; functional
+Native branches, Effect continuations, and I/O callbacks all count; functional
 syntax does not exempt a nested scope. Keep dependent steps linear and prefer
 provided effects such as `Console.log` over
 `Effect.sync(() => console.log(...))`. A generator improves the notation for
@@ -92,8 +94,9 @@ Effect wrappers to look functional.
 **Prohibited:** introduce a generic branching service and several adapters to
 choose between two file-check outcomes.
 
-**Preferred:** use one exhaustive `Match` with two concrete branches and lift
-only their I/O into Effect.
+**Preferred:** use one native `switch` with two concrete domain cases and yield
+their I/O effects. Follow the shared branching rule's mandatory exhaustiveness
+lint gate. Do not add library matching callbacks around these cases.
 
 ## Return the workflow, not a running Promise
 
@@ -232,7 +235,8 @@ return label.text;
 
 ## Validation
 
-- Reject procedural control flow in adopted Effect workflows through the existing
+- Allow native `switch` and require its exhaustiveness check in adopted Effect
+  workflows. Reject boolean if, ternaries, loops, and try/catch through the existing
   lint gate. Review called helpers as well as inline callbacks; moving a branch
   must not bypass the rule. Keep enforcement scoped to adopted modules or packages.
 - Verify exhaustive matches and deferred side effects; reject unnecessary

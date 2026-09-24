@@ -13,7 +13,12 @@ expressions. There is no exception for a short guard, mechanical predicate,
 validation, or code outside Effect. Match the existing domain enum or union
 directly; do not reduce its variants to a boolean first.
 
-Use simple exhaustive matching in TypeScript and Rust `match` expressions.
+Prefer native language constructs: TypeScript `switch` over a domain enum or
+discriminated union, and Rust `match`. TypeScript switch is native branching
+with type narrowing; it does not require a matching library. This also applies
+inside Effect generators. Do not replace a clear native branch with a matcher
+DSL or callback pipeline merely to make it look functional.
+
 At a required raw-value boundary, match literals, ranges, slices, or an
 unavoidable dependency boolean immediately. Keep raw values at that boundary;
 do not introduce decorative enums, generic branching helpers, or a custom
@@ -93,8 +98,13 @@ use a wildcard, `default`, or fallback to absorb future variants in these
 decisions. The compiler or a required static check must reject a newly added
 variant until the decision is updated. Focused Rust conditional patterns follow
 the exception above; a catch-all for an open raw input is not an enum default.
-In TypeScript, use `Match.exhaustive`; retain exhaustiveness checking for any
-existing enum switches, and keep Effect workflows in functional composition.
+In TypeScript, require `@typescript-eslint/switch-exhaustiveness-check` with
+`allowDefaultCaseForExhaustiveSwitch: false` and
+`considerDefaultExhaustiveForUnions: false`, plus fallthrough checking. TypeScript
+does not enforce every exhaustive switch by itself, so the lint gate is mandatory.
+Keep Effect sequencing and error handling around native branches. Existing
+library matches must remain exhaustive until migrated; use them in new code
+only when native constructs cannot clearly express the required pattern.
 
 **Prohibited:** a new field type silently receives the text-field prompt.
 
@@ -107,19 +117,13 @@ const question = field.type === FieldType.Choice
 **Preferred:** every field type is named, including cases that share output.
 
 ```ts
-return Match.value(field).pipe(
-  Match.discriminator("type")(FieldType.Text, (text) => ({
-    title: text.question,
-  })),
-  Match.discriminator("type")(FieldType.Integer, (integer) => ({
-    title: integer.question,
-  })),
-  Match.discriminator("type")(FieldType.Choice, (choice) => ({
-    title: choice.question,
-    options: choice.options,
-  })),
-  Match.exhaustive,
-);
+switch (field.type) {
+  case FieldType.Text:
+  case FieldType.Integer:
+    return { title: field.question };
+  case FieldType.Choice:
+    return { title: field.question, options: field.options };
+}
 ```
 
 ## Validation

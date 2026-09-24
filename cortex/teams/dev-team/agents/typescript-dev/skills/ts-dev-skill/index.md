@@ -59,7 +59,8 @@ validation. Existing code does not weaken their requirements.
   - Name every enum or union variant in decisions; reject catch-all arms that
     absorb new variants and check exhaustiveness statically.
   - Preserve the focused Rust conditional-pattern exception and open-input
-    matching. Use Match.exhaustive in TypeScript and retain checks on enum switches.
+    matching. Prefer native TypeScript switch and Rust match; require the
+    TypeScript exhaustiveness lint gate without default cases hiding new variants.
 
 - **[branching:validation](../../../../docs/programming/branching-and-exhaustive-matching.md#validation)**
 
@@ -573,8 +574,8 @@ validation. Existing code does not weaken their requirements.
 
 - **[effect:functional_control](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
 
-  - Use Effect combinators and basic exhaustive Match branches for workflow
-    decisions, traversal, and recovery; prohibit procedural branches, loops,
+  - Use native exhaustive switch for workflow decisions and Effect operations
+    for sequencing, traversal, and recovery; prohibit boolean if, ternaries, loops,
     and try/catch in generators, callbacks, and helpers choosing workflow steps.
   - A local variable or extracted helper does not exempt the same procedural
     branch. The shared rule also prohibits ordinary if outside Effect workflows.
@@ -584,9 +585,9 @@ validation. Existing code does not weaken their requirements.
 
 - **[effect:linear_generators](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
 
-  - Allow Effect.gen for linear dependent steps; use composition for decisions
-    and defer I/O through Effect or its owning adapter.
-  - Match branches return effects without executing them during construction.
+  - Allow Effect.gen for linear dependent steps and native domain switches;
+    defer I/O through Effect or its owning adapter.
+  - Yield the selected branch's effect; merely returning an Effect does not run it.
 
 - **[effect:basic_composition_first](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
 
@@ -598,7 +599,7 @@ validation. Existing code does not weaken their requirements.
 - **[effect:simple_composition](practices/typescript-effect.md#keep-the-composition-easy-to-read)**
 
   - Prefer short pipelines, named intermediate values, and small callbacks.
-  - Count Effect, Match, and I/O callbacks under the shared nesting limit;
+  - Count native branches, Effect callbacks, and I/O callbacks under the shared nesting limit;
     keep dependent steps linear and use existing library effects.
   - Reject generic wrappers, custom functional frameworks, deep composition,
     and services or layers introduced only to express a branch.
@@ -606,8 +607,8 @@ validation. Existing code does not weaken their requirements.
 
 - **[effect:composition_checks](practices/typescript-effect.md#validation)**
 
-  - Use existing lint gates in adopted modules/packages to reject procedural
-    control flow; review called helpers, exhaustiveness, deferred effects,
+  - Require native-switch exhaustiveness checks and reject boolean if, ternaries,
+    loops, and try/catch; review called helpers, deferred effects,
     and unnecessary abstraction.
   - Enforce callback and block nesting through the existing lint gate; review
     mixed nesting separately because ESLint counts them independently.
@@ -943,7 +944,7 @@ validation. Existing code does not weaken their requirements.
   - Reject IfStatement and ConditionalExpression throughout authored TS/JS,
     including pure code, adapters, tests, and tooling outside Effect workflows.
   - Enforce Effect composition in adopted modules/packages through the existing
-    lint gate; verify rejected procedural syntax fails and its replacement passes.
+    lint gate; allow native switch and verify omitted domain cases fail lint.
 
 - **[code_checks:fix_diagnostics](practices/typescript-code-checks.md#fix-diagnostics-before-completion)**
 

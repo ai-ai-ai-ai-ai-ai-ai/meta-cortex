@@ -17,7 +17,7 @@ export default [
         {
           selector: "ConditionalExpression",
           message:
-            "Use simple Effect composition and exhaustive Match branches.",
+            "Use exhaustive native switch branches over domain outcomes.",
         },
         {
           selector:
@@ -27,9 +27,9 @@ export default [
         },
         {
           selector:
-            ":matches(IfStatement, SwitchStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, TryStatement)",
+            ":matches(IfStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, TryStatement)",
           message:
-            "Keep workflow control in Effect combinators and exhaustive Match branches; do not mix in procedural control flow.",
+            "Use exhaustive native switch branches and Effect sequencing; keep boolean if, loops, and try/catch out of these workflows.",
         },
         {
           selector: "CallExpression > ObjectExpression",
@@ -89,7 +89,13 @@ export default [
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
-      "@typescript-eslint/switch-exhaustiveness-check": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": [
+        "error",
+        {
+          allowDefaultCaseForExhaustiveSwitch: false,
+          considerDefaultExhaustiveForUnions: false,
+        },
+      ],
       "@typescript-eslint/no-unused-vars": "error",
     },
   },

@@ -1,6 +1,6 @@
 import type { BunFile } from "bun";
 import type { Cause } from "effect";
-import { Console, Effect, Match } from "effect";
+import { Console, Effect } from "effect";
 
 enum ConfigurationPresence {
   Present = "present",
@@ -13,17 +13,16 @@ class LibraryRootCheck {
   run(): Effect.Effect<void> {
     return Effect.gen(this, function* () {
       const presence = yield* this.inspectConfiguration();
-      yield* Match.value(presence).pipe(
-        Match.when(ConfigurationPresence.Present, () =>
-          Console.log("Found meta-cortex.toml in the current directory."),
-        ),
-        Match.when(ConfigurationPresence.Missing, () =>
-          this.reportFailure(
+      switch (presence) {
+        case ConfigurationPresence.Present:
+          return yield* Console.log(
+            "Found meta-cortex.toml in the current directory.",
+          );
+        case ConfigurationPresence.Missing:
+          return yield* this.reportFailure(
             "Missing meta-cortex.toml in the current directory.",
-          ),
-        ),
-        Match.exhaustive,
-      );
+          );
+      }
     }).pipe(
       Effect.catchAll((error) =>
         this.reportFailure(
@@ -37,13 +36,14 @@ class LibraryRootCheck {
     ConfigurationPresence,
     Cause.UnknownException
   > {
-    return Effect.tryPromise(async () =>
-      Match.value(await this.configuration.exists()).pipe(
-        Match.when(true, () => ConfigurationPresence.Present),
-        Match.when(false, () => ConfigurationPresence.Missing),
-        Match.exhaustive,
-      ),
-    );
+    return Effect.tryPromise(async () => {
+      switch (await this.configuration.exists()) {
+        case true:
+          return ConfigurationPresence.Present;
+        case false:
+          return ConfigurationPresence.Missing;
+      }
+    });
   }
 
   private reportFailure(message: string): Effect.Effect<void> {

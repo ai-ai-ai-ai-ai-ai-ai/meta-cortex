@@ -17,8 +17,9 @@
   for the prohibition on ordinary `if` conditions.
 - Enforce the [Effect composition rules](typescript-effect.md#compose-workflows-with-simple-functional-operations)
   in adopted workflow modules or packages through the existing lint gate.
-  Reject procedural branches, loops, and exception handling there; verify that
-  the rejected pattern fails and its functional replacement passes.
+  Allow native switch branches with mandatory exhaustiveness and fallthrough
+  checks. Reject boolean if, ternaries, loops, and try/catch there; verify that
+  the rejected pattern fails and its native exhaustive replacement passes.
 - Coordinate pipeline changes with the CI/CD owner under the active development mode.
 - Enforce `max-depth: ["error", 2]` and `max-nested-callbacks` with
   `{ max: 2, checkConstructorCallCallbacks: true }` in adopted packages. Verify
