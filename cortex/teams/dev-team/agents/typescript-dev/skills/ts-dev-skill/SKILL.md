@@ -44,28 +44,58 @@ requirements or their placement change.
 
 ## Effect: use installed documentation
 
-Use Effect for new or materially changed asynchronous, fallible, resource-owning,
-concurrent, service-dependent, and untrusted-decoding workflows, including scripts
-and tests. Pure calculations keep their existing domain owners.
+Use the owning workspace's Effect installation and upstream guidance.
 
-Before writing Effect code, read the installed `effect/AGENTS.md` completely,
-then follow its relevant documentation links and consult `effect/src` for API
-details. Resolve the package from the workspace that owns the code, including
-hoisted `node_modules`; do not use a different project's installed version.
-For Cortex's own scripts, the package is at the library root's
-`node_modules/effect/`; Framework / Initialize installs its dependencies.
+### Choose Effect for workflows
 
-Upstream owns Effect idioms, composition, services, errors, schemas, resources,
-and runtime guidance. Do not maintain a parallel Cortex Effect tutorial, operator
-allowlist, or wrapper skill. Shared domain, language, and project rules
-still apply; keep compositions flat and readable without adding helper layers.
+- Use Effect for new or materially changed asynchronous, fallible, resource-owning,
+  concurrent, service-dependent, and untrusted-decoding workflows.
+- Apply this requirement to scripts and tests too.
+- Keep pure calculations with their existing domain owners.
+
+**Prohibited:** a script introduces a separate Promise-based queue for its workflow.
+
+**Preferred:** the script uses Effect for scheduling; pure calculations remain
+methods on their domain owners.
+
+### Read the installed guidance
+
+Before writing Effect code:
+
+1. Resolve `effect` from the workspace that owns the code, including hoisted
+   `node_modules`.
+2. Read that package's `AGENTS.md` completely.
+3. Follow its relevant documentation links and consult `effect/src` for API details.
+
+For Cortex scripts, Framework / Initialize installs Effect at the library root's
+`node_modules/effect/`.
+
+- Follow upstream guidance for idioms, composition, services, errors, schemas,
+  resources, and runtimes. Do not maintain a parallel Cortex tutorial, operator
+  allowlist, or wrapper skill.
+- Apply shared domain, language, and project rules. Keep compositions flat and
+  readable without adding helper layers.
+
+**Prohibited:** copy another project's Effect recipe without checking the owning
+workspace's installed API.
+
+**Preferred:** read the owning package's guidance and use its API for the change.
+
+### Manage the pinned release
 
 - When adopting or upgrading Effect, select the latest release on the project's
-  chosen release channel. Identify prereleases in delivery evidence.
-- Pin one exact release across workspace packages and verify the lockfile's
-  resolved version. Routine development uses that pin and its installed docs.
-- Follow the applicable [official Effect migration guidance](https://github.com/Effect-TS/skills)
-  for upgrades. Run the project's required checks and tests after migration.
+  chosen release channel.
+- Pin one exact release across workspace packages and verify the lockfile.
+- Use that pin and its installed docs during routine development.
+- Identify prereleases in delivery evidence.
+- Follow the applicable [official migration guidance](https://github.com/Effect-TS/skills)
+  for upgrades, then run the project's required checks and tests.
+
+**Prohibited:** use a floating `latest` dependency or silently upgrade Effect
+while implementing an unrelated change.
+
+**Preferred:** select a release during an upgrade, pin it consistently, and
+validate the migration before using its APIs.
 
 ## TypeScript security practices
 
