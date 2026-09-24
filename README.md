@@ -62,10 +62,22 @@ settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
 host needs different settings. Repeating the request preserves valid project
 settings and does not replace a modified framework.
 
-Initialization requires Bun 1.3.14 and runs
-`bun install --frozen-lockfile --ignore-scripts` once in `.meta-cortex/`.
-It first checks that `bun --version` succeeds. If Bun is missing or cannot run,
-initialization reports the prerequisite failure before writing any project files.
+Initialization reuses Bun from `PATH` or its standard installation directory.
+If Bun is missing, it installs Bun 1.3.14 automatically with the
+[official Bun installer](https://bun.com/docs/installation), then continues setup.
+The destination is `BUN_INSTALL` when set, otherwise `~/.bun`.
+Automatic installation requires network access, `curl`, `bash`, and `unzip`.
+The official installer may update your shell configuration; initialization uses
+the installed executable immediately, without requiring a shell restart.
+For subsequent shell commands, reload your shell or use `~/.bun/bin/bun`
+(`$BUN_INSTALL/bin/bun` with a custom installation directory).
+
+The request's `bun` argument defaults to `InstallMissing`. Set
+`bun: RequireExisting` alongside `harness` and `instructions` to disable automatic
+Bun installation. An existing Bun that cannot run is reported without replacement.
+Bun setup failures are returned as structured errors before writing project files.
+After Bun is ready, initialization runs
+`bun install --frozen-lockfile --ignore-scripts` in `.meta-cortex/`.
 All framework scripts share that workspace's `node_modules`; individual skills
 do not install dependencies. Repeating initialization also restores missing dependencies.
 Effect guidance comes directly from `.meta-cortex/node_modules/effect/AGENTS.md`.

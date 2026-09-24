@@ -1,6 +1,9 @@
 use thiserror::Error;
+mod bun;
 mod bundle;
 mod dependencies;
+
+pub use bun::BunSetup;
 
 use crate::configuration::{ConfigError, ConfigText, Configuration};
 use crate::information::{ProjectInfo, Version, VersionError};
@@ -14,7 +17,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Error)]
 pub enum InstallError {
     #[error(
-        "Bun is required to initialize {path}; install Bun and rerun Framework / Initialize: {source}"
+        "Bun setup failed for {path}; use bun: InstallMissing or install Bun manually and rerun Framework / Initialize: {source}"
     )]
     BunUnavailable {
         path: PathBuf,
@@ -140,18 +143,26 @@ impl Project {
 
 pub struct InitRequest {
     pub integration: IntegrationOptions,
+    pub bun: BunSetup,
 }
 
 impl Installation {
     pub fn install(self, request: InitRequest) -> Result<InstalledProject, InstallError> {
         let destination = self.project.root.join(".meta-cortex");
-        let dependencies = WorkspaceDependencies {
-            directory: destination.clone(),
-        };
-        dependencies.check_bun()?;
         let integration = request.integration.plan(ProjectHarnesses {
             root: self.project.root.clone(),
         })?;
+        let bun = request
+            .bun
+            .prepare()
+            .map_err(|source| InstallError::BunUnavailable {
+                path: destination.clone(),
+                source,
+            })?;
+        let dependencies = WorkspaceDependencies {
+            directory: destination.clone(),
+            bun,
+        };
         match self.bundle {
             BundleState::Absent => {
                 let configuration = ConfigText::try_from(Configuration::bundled()?)?;
@@ -179,7 +190,7 @@ impl Installation {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{InitRequest, InstallError, Project};
+    use super::{BunSetup, InitRequest, InstallError, Project};
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
@@ -201,6 +212,7 @@ pub mod tests {
             Project::open(self.directory.path().to_path_buf())?
                 .prepare()?
                 .install(InitRequest {
+                    bun: BunSetup::RequireExisting,
                     integration: IntegrationOptions {
                         harness: HarnessChoice::Selected(Harness::Codex),
                         instructions: InstructionAction::Write,
@@ -271,6 +283,7 @@ pub mod tests {
             let agents = self.directory.path().join("AGENTS.md");
             fs::remove_file(&agents)?;
             let result = prepared.install(InitRequest {
+                bun: BunSetup::RequireExisting,
                 integration: IntegrationOptions {
                     harness: HarnessChoice::Selected(Harness::Codex),
                     instructions: InstructionAction::Write,

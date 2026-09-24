@@ -71,6 +71,12 @@ struct EmptyArguments {}
 struct FrameworkInit {
     harness: Harness,
     instructions: Instructions,
+    bun: BunSetup,
+}
+#[derive(Debug, Serialize, Deserialize)]
+enum BunSetup {
+    InstallMissing,
+    RequireExisting,
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -741,6 +747,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness: Harness::None,
                     instructions: Instructions::Skip,
+                    bun: BunSetup::RequireExisting,
                 },
             )))?
     else {
@@ -765,6 +772,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness,
                     instructions: Instructions::Write,
+                    bun: BunSetup::RequireExisting,
                 },
             )))?;
     }

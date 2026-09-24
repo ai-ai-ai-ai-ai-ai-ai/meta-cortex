@@ -4,6 +4,7 @@ use super::protocol::{
     AgentHarness, AgentInstructions, EmptyArguments, FeatureOperation, FrameworkInit,
     FrameworkOperation, Operation, Request, TaskOperation,
 };
+use crate::installation::BunSetup;
 use derive_more::{Display, From};
 use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
@@ -92,11 +93,12 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Install the bundled framework without interactive prompts.",
+                    "Install missing Bun and the bundled framework without interactive prompts. Set bun to RequireExisting to disable Bun installation.",
                 ),
                 operation: Operation::Framework(FrameworkOperation::Initialize(FrameworkInit {
                     harness: AgentHarness::None,
                     instructions: AgentInstructions::Skip,
+                    bun: BunSetup::InstallMissing,
                 })),
             },
             CommandExample {

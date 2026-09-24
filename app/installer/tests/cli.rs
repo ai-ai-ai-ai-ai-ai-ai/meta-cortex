@@ -3,6 +3,7 @@ use meta_cortex_workbench::versions::ProtocolVersion;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
+use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use tempfile::{Builder, TempDir};
@@ -131,8 +132,14 @@ enum FrameworkOperation {
 struct EmptyArguments {}
 #[derive(Serialize)]
 struct Initialization {
+    bun: BunSetup,
     harness: Harness,
     instructions: Instructions,
+}
+#[derive(Serialize)]
+enum BunSetup {
+    InstallMissing,
+    RequireExisting,
 }
 #[derive(Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -245,6 +252,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     ));
     assert_eq!(fs::read_dir(scenario.project.path())?.count(), 0);
     scenario.initialize(Initialization {
+        bun: BunSetup::InstallMissing,
         harness: Harness::Codex,
         instructions: Instructions::Write,
     })?;
@@ -265,6 +273,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     fs::write(&config, &customized)?;
     let guidance = fs::read(root.join("AGENTS.md"))?;
     scenario.initialize(Initialization {
+        bun: BunSetup::InstallMissing,
         harness: Harness::Codex,
         instructions: Instructions::Write,
     })?;
@@ -317,6 +326,7 @@ fn yaml_initialization_defaults_are_unattended_and_preserve_guidance() -> anyhow
     fs::write(&guidance, "# Existing instructions\n")?;
     for _ in 0..2 {
         scenario.initialize(Initialization {
+            bun: BunSetup::InstallMissing,
             harness: Harness::None,
             instructions: Instructions::Skip,
         })?;
@@ -349,6 +359,7 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
         version: ProtocolVersion::V1,
         project: scenario.project.path().to_owned(),
         operation: Operation::Framework(FrameworkOperation::Initialize(Initialization {
+            bun: BunSetup::RequireExisting,
             harness: Harness::Codex,
             instructions: Instructions::Write,
         })),
@@ -356,6 +367,7 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
     let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
         .args(["run", "--request", "-"])
         .env("PATH", scenario.project.path())
+        .env("BUN_INSTALL", scenario.project.path().join("bun"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -377,6 +389,7 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
     assert!(!scenario.project.path().join("AGENTS.md").exists());
     assert!(!scenario.project.path().join(".agents").exists());
     scenario.initialize(Initialization {
+        bun: BunSetup::InstallMissing,
         harness: Harness::Codex,
         instructions: Instructions::Write,
     })?;
@@ -391,6 +404,155 @@ fn missing_bun_fails_before_any_project_writes_and_can_be_retried() -> anyhow::R
     Ok(())
 }
 
+struct BunScenario {
+    cli: CliScenario,
+    tools: TempDir,
+    home: TempDir,
+    executable: PathBuf,
+}
+
+impl BunScenario {
+    fn create() -> anyhow::Result<Self> {
+        let tools = Builder::new().prefix("bun tools ").tempdir()?;
+        let output = Command::new("bun")
+            .args(["-p", "process.execPath"])
+            .output()?;
+        assert!(output.status.success());
+        let scenario = Self {
+            cli: CliScenario::create()?,
+            tools,
+            home: Builder::new().prefix("bun home ").tempdir()?,
+            executable: PathBuf::from(String::from_utf8(output.stdout)?.trim()),
+        };
+        symlink("/bin/bash", scenario.tools.path().join("bash"))?;
+        fs::write(
+            scenario.tools.path().join("curl"),
+            r#"#!/bin/sh
+test "$5" = "https://bun.com/install" || exit 90
+test "$6" = "--output" || exit 91
+printf 'downloaded' > "$CORTEX_TEST_DOWNLOAD"
+exec /bin/cp "$CORTEX_TEST_INSTALLER" "$7"
+"#,
+        )?;
+        fs::set_permissions(
+            scenario.tools.path().join("curl"),
+            fs::Permissions::from_mode(0o755),
+        )?;
+        fs::write(
+            scenario.tools.path().join("installer.sh"),
+            r#"test "$1" = "bun-v1.3.14" || exit 92
+/bin/mkdir -p "$BUN_INSTALL/bin"
+/bin/ln -s "$CORTEX_TEST_BUN" "$BUN_INSTALL/bin/bun"
+printf 'installer stdout'
+printf 'installer stderr' >&2
+"#,
+        )?;
+        Ok(scenario)
+    }
+
+    fn call(&self, setup: BunSetup) -> anyhow::Result<Outcome> {
+        let request = Request {
+            version: ProtocolVersion::V1,
+            project: self.cli.project.path().to_owned(),
+            operation: Operation::Framework(FrameworkOperation::Initialize(Initialization {
+                bun: setup,
+                harness: Harness::Codex,
+                instructions: Instructions::Write,
+            })),
+        };
+        let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
+            .args(["run", "--request", "-"])
+            .env("PATH", self.tools.path())
+            .env("BUN_INSTALL", self.home.path())
+            .env("CORTEX_TEST_BUN", &self.executable)
+            .env(
+                "CORTEX_TEST_INSTALLER",
+                self.tools.path().join("installer.sh"),
+            )
+            .env("CORTEX_TEST_DOWNLOAD", self.tools.path().join("downloaded"))
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+        child
+            .stdin
+            .take()
+            .context("stdin")?
+            .write_all(serde_saphyr::to_string(&request)?.as_bytes())?;
+        let output = child.wait_with_output()?;
+        assert!(
+            output.stderr.is_empty(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let response: Response = serde_saphyr::from_slice(&output.stdout)?;
+        match &response.result {
+            Outcome::Success(_) => assert_eq!(output.status.code(), Some(0)),
+            Outcome::Error(_) => assert_eq!(output.status.code(), Some(2)),
+        }
+        Ok(response.result)
+    }
+}
+
+#[test]
+fn installs_missing_bun_and_reuses_it_without_a_shell_restart() -> anyhow::Result<()> {
+    let scenario = BunScenario::create()?;
+    assert!(matches!(
+        scenario.call(BunSetup::InstallMissing)?,
+        Outcome::Success(_)
+    ));
+    assert!(scenario.tools.path().join("downloaded").is_file());
+    assert!(scenario.home.path().join("bin/bun").is_file());
+    assert!(
+        scenario
+            .cli
+            .project
+            .path()
+            .join(".meta-cortex/node_modules/effect/AGENTS.md")
+            .is_file()
+    );
+    fs::remove_file(scenario.tools.path().join("downloaded"))?;
+    assert!(matches!(
+        scenario.call(BunSetup::RequireExisting)?,
+        Outcome::Success(_)
+    ));
+    assert!(!scenario.tools.path().join("downloaded").exists());
+    Ok(())
+}
+
+#[test]
+fn bun_setup_failures_leave_project_untouched() -> anyhow::Result<()> {
+    for failing_step in ["curl", "installer.sh"] {
+        let scenario = BunScenario::create()?;
+        fs::write(
+            scenario.tools.path().join(failing_step),
+            "#!/bin/sh\nprintf 'installation failed' >&2\nexit 7\n",
+        )?;
+        let Outcome::Error(error) = scenario.call(BunSetup::InstallMissing)? else {
+            bail!("expected Bun setup failure")
+        };
+        assert!(error.message.contains("installation failed"));
+        assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 0);
+        assert_eq!(fs::read_dir(scenario.home.path())?.count(), 0);
+    }
+    Ok(())
+}
+
+#[test]
+fn a_broken_existing_bun_is_reported_without_reinstalling() -> anyhow::Result<()> {
+    let scenario = BunScenario::create()?;
+    let executable = scenario.tools.path().join("bun");
+    fs::write(&executable, "#!/bin/sh\nprintf 'broken Bun' >&2\nexit 12\n")?;
+    fs::set_permissions(&executable, fs::Permissions::from_mode(0o755))?;
+    let Outcome::Error(error) = scenario.call(BunSetup::InstallMissing)? else {
+        bail!("expected broken Bun failure")
+    };
+    assert!(error.message.contains("broken Bun"));
+    assert!(!scenario.tools.path().join("downloaded").exists());
+    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 0);
+    Ok(())
+}
+
 #[test]
 fn incomplete_framework_is_reported_without_overwriting_files() -> anyhow::Result<()> {
     let scenario = CliScenario::create()?;
@@ -399,6 +561,7 @@ fn incomplete_framework_is_reported_without_overwriting_files() -> anyhow::Resul
     fs::write(framework.join("meta-cortex.toml"), "# Keep my settings\n")?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(
         FrameworkOperation::Initialize(Initialization {
+            bun: BunSetup::InstallMissing,
             harness: Harness::None,
             instructions: Instructions::Skip,
         }),
@@ -429,6 +592,7 @@ fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
     fs::remove_dir(scenario.project.path())?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(
         FrameworkOperation::Initialize(Initialization {
+            bun: BunSetup::InstallMissing,
             harness: Harness::None,
             instructions: Instructions::Skip,
         }),

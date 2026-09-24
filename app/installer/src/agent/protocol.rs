@@ -1,6 +1,6 @@
 use super::AgentError;
 use crate::information::InfoReport;
-use crate::installation::{InitRequest, Project};
+use crate::installation::{BunSetup, InitRequest, Project};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
 use meta_cortex_workbench::model::{Event, Task, TaskView};
 use meta_cortex_workbench::request::{
@@ -64,6 +64,8 @@ pub struct EmptyArguments {}
 pub struct FrameworkInit {
     pub harness: AgentHarness,
     pub instructions: AgentInstructions,
+    #[serde(default)]
+    pub bun: BunSetup,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -82,7 +84,7 @@ pub enum AgentInstructions {
     Skip,
 }
 
-impl From<FrameworkInit> for IntegrationOptions {
+impl From<FrameworkInit> for InitRequest {
     fn from(input: FrameworkInit) -> Self {
         let harness = match input.harness {
             AgentHarness::None => HarnessChoice::None,
@@ -95,8 +97,11 @@ impl From<FrameworkInit> for IntegrationOptions {
             AgentInstructions::Skip => InstructionAction::Skip,
         };
         Self {
-            harness,
-            instructions,
+            integration: IntegrationOptions {
+                harness,
+                instructions,
+            },
+            bun: input.bun,
         }
     }
 }
@@ -152,9 +157,7 @@ impl FrameworkOperation {
     fn execute(self, project: PathBuf) -> Result<Reply, AgentError> {
         match self {
             Self::Initialize(input) => {
-                let project = Project::open(project)?.prepare()?.install(InitRequest {
-                    integration: input.into(),
-                })?;
+                let project = Project::open(project)?.prepare()?.install(input.into())?;
                 Ok(Reply::FrameworkInitialized {
                     project: project.path().to_path_buf(),
                 })
@@ -202,5 +205,29 @@ impl TaskOperation {
             Self::Update(input) => Ok(Reply::Task(ledger.update(input).await?)),
             Self::Coordinate(input) => Ok(Reply::Task(ledger.coordinate(input).await?)),
         }
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::{AgentHarness, AgentInstructions, BunSetup, FrameworkInit};
+    use serde::Serialize;
+
+    #[derive(Serialize)]
+    struct FrameworkDefaults {
+        harness: AgentHarness,
+        instructions: AgentInstructions,
+    }
+
+    #[test]
+    fn omitted_bun_policy_installs_missing_bun() -> anyhow::Result<()> {
+        let input = FrameworkDefaults {
+            harness: AgentHarness::None,
+            instructions: AgentInstructions::Skip,
+        };
+        let encoded = serde_saphyr::to_string(&input)?;
+        let decoded: FrameworkInit = serde_saphyr::from_str(&encoded)?;
+        assert!(matches!(decoded.bun, BunSetup::InstallMissing));
+        Ok(())
     }
 }
