@@ -8,29 +8,23 @@ and dependency-owned code keeps its external form.
 
 ### Use patterns instead of boolean if conditions
 
-Prohibit ordinary boolean `if`, `else if`, and `if`/`else` statements or
-expressions. There is no exception for a short guard, mechanical predicate,
-validation, or code outside Effect. Match the existing domain enum or union
-directly; do not reduce its variants to a boolean first.
+- Match domain enums and unions directly. Do not reduce their variants to booleans.
+- Use Rust `match` and TypeScript `switch`, including inside Effect generators.
+- Prohibit ordinary boolean `if`, `else if`, and `if`/`else`. Short guards,
+  validation, mechanical predicates, and code outside Effect have no exemption.
+- At a required raw-value boundary, match literals, ranges, slices, or dependency
+  booleans immediately. Keep the conversion on the existing owner.
+- Convert dependency booleans into named domain outcomes before choosing workflow
+  actions. Two-case decisions still need meaningful names.
+- Keep clear native branches. Do not add matcher DSLs, callback pipelines, generic
+  branching helpers, or decorative `True`/`False` enums to avoid an `if`.
 
-Prefer native language constructs: TypeScript `switch` over a domain enum or
-discriminated union, and Rust `match`. TypeScript switch is native branching
-with type narrowing; it does not require a matching library. This also applies
-inside Effect generators. Do not replace a clear native branch with a matcher
-DSL or callback pipeline merely to make it look functional.
+These alternative method bodies receive `delivery: DeliveryKind` and return
+`AddressRequirement`. `DeliveryKind` has `Shipment` and `Download` variants;
+`AddressRequirement` has `Required` and `NotRequired` variants. All fragments
+compile; the boolean branches violate this rule.
 
-At a required raw-value boundary, match literals, ranges, slices, or an
-unavoidable dependency boolean immediately. Keep raw values at that boundary;
-do not introduce decorative enums, generic branching helpers, or a custom
-matching framework to avoid an `if`.
-
-- When a dependency boolean feeds a workflow decision, the boundary match only
-  normalizes it into that decision's named enum or union. Perform the workflow
-  actions by matching the named outcome afterward. A meaningful domain enum
-  preserves the contract even with only two cases; generic `True`/`False` wrappers
-  or a boolean matcher do not. Keep the conversion on the existing owner.
-
-**Prohibited:** erase the named outcome before deciding what to do.
+**Rust — prohibited:** turn the delivery kind into a boolean.
 
 ```rust
 if matches!(delivery, DeliveryKind::Shipment) {
@@ -40,12 +34,32 @@ if matches!(delivery, DeliveryKind::Shipment) {
 }
 ```
 
-**Preferred:** preserve the domain alternatives in the decision.
+**Rust — preferred:** match the delivery kind directly.
 
 ```rust
 match delivery {
     DeliveryKind::Shipment => AddressRequirement::Required,
     DeliveryKind::Download => AddressRequirement::NotRequired,
+}
+```
+
+**TypeScript — prohibited:** turn the delivery kind into a boolean.
+
+```ts
+if (delivery === DeliveryKind.Shipment) {
+  return AddressRequirement.Required;
+}
+return AddressRequirement.NotRequired;
+```
+
+**TypeScript — preferred:** use the native switch.
+
+```ts
+switch (delivery) {
+  case DeliveryKind.Shipment:
+    return AddressRequirement.Required;
+  case DeliveryKind.Download:
+    return AddressRequirement.NotRequired;
 }
 ```
 

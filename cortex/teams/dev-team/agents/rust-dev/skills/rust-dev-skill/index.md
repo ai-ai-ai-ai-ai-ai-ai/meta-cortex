@@ -401,8 +401,11 @@ in full. Include related subjects when the change crosses their boundaries.
 
   - Prohibit ordinary boolean if/else-if/if-else in Rust, TypeScript, and
     JavaScript, including pure code, adapters, tests, tooling, and examples.
-  - Match domain values directly. Match unavoidable raw values and dependency
-    predicates at their boundary without decorative abstractions.
+  - Match domain values directly with native Rust match or TypeScript switch,
+    including inside Effect generators.
+  - Convert required raw inputs and dependency predicates at their boundary;
+    name boolean outcomes before choosing workflow actions.
+  - Keep conversions on existing owners without decorative branching abstractions.
 
 - **[branching:rust_patterns](../../../../docs/programming/branching-and-exhaustive-matching.md#encourage-rust-conditional-patterns)**
 
