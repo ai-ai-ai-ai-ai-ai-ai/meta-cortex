@@ -479,8 +479,14 @@ validation. Existing code does not weaken their requirements.
 - **[enums_over_booleans:boundary_exceptions](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
   - Required platform/host signatures and fixed wire edges keep external booleans
-    only until immediate domain normalization. Dependency predicates follow the same rule.
+    only until immediate domain normalization.
+
+- **[enums_over_booleans:predicate_outcomes](practices/typescript-enums-over-booleans.md#name-predicate-outcomes-before-choosing-behavior)**
+
+  - Match dependency predicates directly into domain enums before workflow actions or reporting.
   - Private or mechanical authored predicates still return named domain outcomes.
+  - Inference, callbacks, and exhaustive boolean matchers do not satisfy this requirement.
+  - Keep conversions on existing owners without extra wrappers or services.
 
 - **[enums_over_booleans:observations](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
