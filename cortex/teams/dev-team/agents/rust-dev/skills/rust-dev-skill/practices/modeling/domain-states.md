@@ -420,13 +420,77 @@ pub enum DeliveryMode {
 pub enum ShippingSpeed { Standard, Express }
 ```
 
-## Match decisions exhaustively
+## Match domain values directly
 
 Apply the shared [branching rule](../../../../../../docs/programming/branching-and-exhaustive-matching.md).
+Use native `match` for domain decisions. Ordinary boolean `if`, `else if`, and
+`if`/`else` expressions are prohibited, including guards, adapters, and tests.
+
+These alternative method bodies receive `delivery: DeliveryKind` and return
+`AddressRequirement`. `DeliveryKind` has `Shipment` and `Download` variants;
+`AddressRequirement` has `Required` and `NotRequired` variants. Both compile;
+the boolean branch violates the practice.
+
+**Prohibited:** turn the delivery kind into a boolean.
+
+```rust
+if matches!(delivery, DeliveryKind::Shipment) {
+    AddressRequirement::Required
+} else {
+    AddressRequirement::NotRequired
+}
+```
+
+**Preferred:** match the delivery kind directly.
+
+```rust
+match delivery {
+    DeliveryKind::Shipment => AddressRequirement::Required,
+    DeliveryKind::Download => AddressRequirement::NotRequired,
+}
+```
+
+## Encourage Rust conditional patterns
+
+- Use Rust `if let`, `else if let`, `if let ... else`, and `let ... else` for
+  focused variant handling or payload extraction. These forms are pattern
+  matching; unmatched cases may intentionally share a fallback or do nothing.
+- Use a full exhaustive `match` when variants need distinct decisions that must
+  be revisited when the enum grows.
+- Require a genuine pattern on the value. Do not disguise a boolean condition
+  as `if let true = predicate`, append boolean conditions to a let-chain, or put
+  an ordinary `else if condition` after a pattern branch.
+- Match guards may refine a pattern while preserving the exhaustive handling
+  required for closed domain alternatives.
+
+**Prohibited:** use `if let true = matches!(event, Event::Progress(_))` to
+reintroduce a boolean guard and discard its payload.
+
+**Preferred:** match the progress variant and use its payload. These alternative
+fragments assume existing event and reporting owners; each intentionally treats
+all non-progress events alike.
+
+```rust
+if let Event::Progress(update) = event {
+    reporter.progress(update);
+} else {
+    reporter.idle();
+}
+```
+
+```rust
+let Event::Progress(update) = event else {
+    return;
+};
+reporter.progress(update);
+```
+
+## Match decisions exhaustively
+
 When variants require distinct behavior, name every arm so a new variant requires
-a new decision. For focused payload extraction, use the rule's encouraged Rust
-conditional patterns with intentional unmatched handling. Keep decisions with
-their owners and avoid deeply nested matches.
+a new decision. For focused payload extraction, use
+[conditional patterns](#encourage-rust-conditional-patterns) with intentional
+unmatched handling. Keep decisions with their owners and avoid deeply nested matches.
 
 These alternatives convert the existing domain `DeliveryKind` into the
 consumer-owned `AddressRequirement`.

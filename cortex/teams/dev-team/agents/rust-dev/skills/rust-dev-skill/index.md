@@ -212,7 +212,7 @@ in full. Include related subjects when the change crosses their boundaries.
 ### Domain states
 
 - **File:** [Domain states](practices/modeling/domain-states.md).
-- **Owns:** Runtime alternatives, state-owned payloads, exhaustive decisions, Option/boolean prohibitions, and external-record conversion.
+- **Owns:** Runtime alternatives, state-owned payloads, native matching and conditional patterns, Option/boolean prohibitions, and external-record conversion.
 - **Does not own:** Legal transition sequences belong to Workflow typestate; value identity belongs to Domain types.
 - **Related:** [Domain types](practices/modeling/domain-types.md), [Workflow typestate](practices/behavior/workflow-typestate.md), [Error handling](practices/behavior/error-handling.md).
 
@@ -309,12 +309,25 @@ in full. Include related subjects when the change crosses their boundaries.
   - Keep authorization capability construction private.
   - Model legal action sequencing with typestate rather than runtime flag bags.
 
+- **[branching:rust_match](practices/modeling/domain-states.md#match-domain-values-directly)**
+
+  - Use native match for domain decisions; ordinary boolean if/else-if/if-else
+    expressions are prohibited, including guards, adapters, and tests.
+
+- **[branching:rust_patterns](practices/modeling/domain-states.md#encourage-rust-conditional-patterns)**
+
+  - Encourage if let, else if let, if-let-else, and let-else for focused pattern
+    handling when unmatched cases intentionally share behavior.
+  - Reject boolean disguises, boolean let-chain conditions, and ordinary else-if
+    conditions. Pattern guards may refine a match without hiding missing cases.
+  - Use exhaustive match when variants need distinct decisions as the enum grows.
+
 - **[domain_states:exhaustive_matching](practices/modeling/domain-states.md#match-decisions-exhaustively)**
 
   - Match evolving decisions exhaustively.
   - Wildcard/early-exit branches may not silently classify future variants.
   - Encourage genuine if let, if let-else, and positive let-else when unmatched
-    variants intentionally share handling under the shared branching rule.
+    variants intentionally share handling under the Rust conditional-pattern rule.
 
 - **[domain_states:decision_locality](practices/modeling/domain-states.md#match-decisions-exhaustively)**
 
@@ -394,42 +407,36 @@ in full. Include related subjects when the change crosses their boundaries.
 ### Branching and exhaustive matching
 
 - **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
-- **Owns:** Boolean-if and ternary prohibitions, exhaustive decisions, and Rust conditional patterns.
+- **Owns:** Language-independent branching policy and exhaustive domain decisions.
+- **Does not own:** Language syntax, examples, and enforcement belong to the language practices.
 - **Related:** [Domain states](practices/modeling/domain-states.md), [Rust code checks](practices/tooling/rust-code-checks.md).
 
 - **[branching:no_boolean_if](../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)**
 
-  - Prohibit ordinary boolean if/else-if/if-else in Rust, TypeScript, and
-    JavaScript, including pure code, adapters, tests, tooling, and examples.
-  - Match domain values directly with native Rust match or TypeScript switch,
-    including inside Effect generators.
+  - Match named domain alternatives directly; prohibit ordinary boolean conditions
+    throughout authored code, including guards, validation, tests, and tooling.
   - Convert required raw inputs and dependency predicates at their boundary;
     name boolean outcomes before choosing workflow actions.
   - Keep conversions on existing owners without decorative branching abstractions.
-
-- **[branching:rust_patterns](../../../../docs/programming/branching-and-exhaustive-matching.md#encourage-rust-conditional-patterns)**
-
-  - Encourage if let, else if let, if let-else, and let-else for focused pattern
-    handling when unmatched cases intentionally share behavior.
-  - Reject if-let-true disguises, boolean let-chain conditions, and ordinary
-    else-if conditions. Pattern guards may refine a match without hiding cases.
+  - Prefer native patterns; use library matchers only when native constructs cannot
+    clearly express the pattern. Preserve exhaustiveness during migration.
 
 - **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
 
-  - Prohibit conditional operators in languages that provide them; Rust boolean
-    if expressions are prohibited by the same pattern-matching policy.
+  - Prohibit ternary conditional operators where available; use explicit patterns.
 
 - **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
 
-  - Name every enum or union variant in decisions and reject catch-all arms that
+  - Name every variant in closed domain decisions and reject fallbacks that
     silently absorb future variants; check exhaustiveness statically.
-  - Preserve focused conditional patterns and open-input matching at boundaries.
+  - Group named alternatives only when they share behavior.
+  - Distinguish full decisions from focused payload extraction and open-input matching.
 
 - **[branching:validation](../../../../docs/programming/branching-and-exhaustive-matching.md#validation)**
 
-  - Review Rust syntax to distinguish boolean if from conditional patterns;
-    neither a keyword ban nor the standard Clippy baseline proves compliance.
-  - Lint TS/JS against IfStatement and ConditionalExpression, including pure code.
+  - Verify that adding a variant fails incomplete decisions under required static checks.
+  - Review focused patterns, unmatched handling, and boundary conversions.
+  - Test variants separately when outcomes or payloads differ.
 
 ### Function ownership
 
@@ -1028,7 +1035,8 @@ in full. Include related subjects when the change crosses their boundaries.
   - Apply the prescribed thresholds; review authored Option usage separately.
   - Review semantic gaps; Clippy counts receivers and structural nesting.
   - Review boolean if expressions separately from permitted Rust conditional
-    patterns using the shared branching rule; the baseline does not ban if.
+    patterns under the Rust rules; reject boolean disguises and mixed let-chains.
+  - Review pattern guards and unmatched handling; the baseline does not ban if.
 
 - **[code_checks:fix_diagnostics](practices/tooling/rust-code-checks.md#fix-diagnostics-before-completion)**
 

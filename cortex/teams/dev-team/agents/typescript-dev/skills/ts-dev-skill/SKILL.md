@@ -22,7 +22,8 @@ selected language practices. Reuse it if already loaded for this assignment.
 
 - For every TypeScript or JavaScript implementation or tooling assignment, load
   and apply [branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md)
-  and [TypeScript code checks](practices/typescript-code-checks.md), regardless
+  and its [TypeScript branching guidance](practices/typescript-explicit-state.md#match-domain-values-directly),
+  plus [TypeScript code checks](practices/typescript-code-checks.md), regardless
   of the selected implementation practices.
 - For any YAML-producing code, load and apply
   [typed YAML construction](practices/typescript-domain-structure.md#serialize-yaml-from-typed-values)

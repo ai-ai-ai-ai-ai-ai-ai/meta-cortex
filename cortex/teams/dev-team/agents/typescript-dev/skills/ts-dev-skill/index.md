@@ -32,44 +32,36 @@ validation. Existing code does not weaken their requirements.
 ### Branching and exhaustive matching
 
 - **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
-- **Owns:** Boolean-if and ternary prohibitions, exhaustive decisions, and Rust conditional patterns.
-- **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation), [Code checks](practices/typescript-code-checks.md).
-
-- **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
-
-  - Prohibit conditional expressions in authored code and use explicit pattern
-    matching instead.
+- **Owns:** Language-independent branching policy and exhaustive domain decisions.
+- **Does not own:** Language syntax, examples, and enforcement belong to the language practices.
+- **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Code checks](practices/typescript-code-checks.md).
 
 - **[branching:no_boolean_if](../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)**
 
-  - Prohibit ordinary boolean if/else-if/if-else in TypeScript, JavaScript, and
-    Rust, including pure code, adapters, tests, tooling, and examples.
-  - Match domain values directly with native Rust match or TypeScript switch,
-    including inside Effect generators.
+  - Match named domain alternatives directly; prohibit ordinary boolean conditions
+    throughout authored code, including guards, validation, tests, and tooling.
   - Convert required raw inputs and dependency predicates at their boundary;
     name boolean outcomes before choosing workflow actions.
   - Keep conversions on existing owners without decorative branching abstractions.
+  - Prefer native patterns; use library matchers only when native constructs cannot
+    clearly express the pattern. Preserve exhaustiveness during migration.
 
-- **[branching:rust_patterns](../../../../docs/programming/branching-and-exhaustive-matching.md#encourage-rust-conditional-patterns)**
+- **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
 
-  - Encourage Rust if let, else if let, if let-else, and let-else for focused
-    pattern handling with intentional unmatched behavior.
-  - Reject boolean disguises, boolean let-chain conditions, and ordinary else-if
-    conditions. Pattern guards may refine a match without hiding missing cases.
+  - Prohibit ternary conditional operators where available; use explicit patterns.
 
 - **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
 
-  - Name every enum or union variant in decisions; reject catch-all arms that
-    absorb new variants and check exhaustiveness statically.
-  - Preserve the focused Rust conditional-pattern exception and open-input
-    matching. Prefer native TypeScript switch and Rust match; require the
-    TypeScript exhaustiveness lint gate without default cases hiding new variants.
+  - Name every variant in closed domain decisions and reject fallbacks that
+    silently absorb future variants; check exhaustiveness statically.
+  - Group named alternatives only when they share behavior.
+  - Distinguish full decisions from focused payload extraction and open-input matching.
 
 - **[branching:validation](../../../../docs/programming/branching-and-exhaustive-matching.md#validation)**
 
-  - Reject IfStatement and ConditionalExpression in TypeScript/JavaScript lint.
-  - Distinguish Rust boolean if expressions from valid conditional patterns;
-    keyword searches and the standard Clippy baseline do not prove compliance.
+  - Verify that adding a variant fails incomplete decisions under required static checks.
+  - Review focused patterns, unmatched handling, and boundary conversions.
+  - Test variants separately when outcomes or payloads differ.
 
 ### Function ownership
 
@@ -361,6 +353,18 @@ validation. Existing code does not weaken their requirements.
 
   - Preserve externally required serialized enum values.
   - Do not centralize unrelated state vocabularies into generic repository-wide enums.
+
+- **[branching:typescript_switch](practices/typescript-explicit-state.md#match-domain-values-directly)**
+
+  - Use native switch, including inside Effect generators; keep Effect sequencing
+    and error handling around native branches.
+  - Prohibit boolean if/else-if/if-else, including outside Effect.
+
+- **[branching:typescript_exhaustiveness](practices/typescript-explicit-state.md#match-decisions-exhaustively)**
+
+  - Name every enum/union variant; group cases only for intentional shared output.
+  - Reject default cases hiding future variants and ternary conditional operators.
+  - Require the branching lint checks; TypeScript alone is insufficient.
 
 - **[explicit_state:component_enums](practices/typescript-explicit-state.md#keep-component-enums-in-an-importable-module)**
 
@@ -860,10 +864,14 @@ validation. Existing code does not weaken their requirements.
   - Builds do not replace type checks; run required builds without warnings and
     make lint warnings fail, using the installed tool's supported options.
   - Keep generated/vendor files with their owners and coordinate pipeline changes.
-  - Reject IfStatement and ConditionalExpression throughout authored TS/JS,
-    including pure code, adapters, tests, and tooling outside Effect workflows.
-  - Enforce Effect composition in adopted modules/packages through the existing
-    lint gate; allow native switch and verify omitted domain cases fail lint.
+  - Apply the branching checks; use upstream Effect guidance without an operator allowlist.
+
+- **[code_checks:branching](practices/typescript-code-checks.md#check-branching)**
+
+  - Reject IfStatement and ConditionalExpression across authored TypeScript/JavaScript.
+  - Require switch-exhaustiveness-check with allowDefaultCaseForExhaustiveSwitch
+    and considerDefaultExhaustiveForUnions both false, plus fallthrough checking.
+  - Verify missing variants fail lint even with a default; preserve existing restrictions.
 
 - **[code_checks:fix_diagnostics](practices/typescript-code-checks.md#fix-diagnostics-before-completion)**
 
