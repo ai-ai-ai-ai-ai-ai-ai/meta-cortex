@@ -93,11 +93,12 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Install missing Bun and the bundled framework without interactive prompts. Set bun to RequireExisting to disable Bun installation.",
+                    "Install missing mise, Bun, Vale, and the bundled framework without interactive prompts. Set a tool's policy to RequireExisting to disable its automatic installation.",
                 ),
                 operation: Operation::Framework(FrameworkOperation::Initialize(FrameworkInit {
                     harness: AgentHarness::None,
                     instructions: AgentInstructions::Skip,
+                    mise: ToolSetup::InstallMissing,
                     bun: ToolSetup::InstallMissing,
                     vale: ToolSetup::InstallMissing,
                 })),

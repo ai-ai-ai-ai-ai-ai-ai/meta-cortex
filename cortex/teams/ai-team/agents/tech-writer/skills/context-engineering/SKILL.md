@@ -76,7 +76,7 @@ Its local links resolve; the code example was reviewed but not executed.”
 ## Executable audits
 
 Run the bundled Vale and remark checks against actual Markdown files.
-Initialization installs Bun, Vale, and the shared script dependencies.
+Initialization installs mise, Bun, Vale, and the shared script dependencies.
 Individual skills reuse those installations. Run these commands from the
 library root (`cortex/` here, `.meta-cortex/` in an installed project).
 

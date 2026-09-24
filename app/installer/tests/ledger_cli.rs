@@ -72,6 +72,7 @@ struct EmptyArguments {}
 struct FrameworkInit {
     harness: Harness,
     instructions: Instructions,
+    mise: ToolSetup,
     bun: ToolSetup,
     vale: ToolSetup,
 }
@@ -758,6 +759,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
             .iter()
             .any(|item| item.path == scenario.ledger().path)
     );
+    scenario.seed_tools()?;
     let Reply::FrameworkInitialized { project } =
         scenario
             .client()
@@ -765,6 +767,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness: Harness::None,
                     instructions: Instructions::Skip,
+                    mise: ToolSetup::RequireExisting,
                     bun: ToolSetup::RequireExisting,
                     vale: ToolSetup::RequireExisting,
                 },
@@ -791,6 +794,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness,
                     instructions: Instructions::Write,
+                    mise: ToolSetup::RequireExisting,
                     bun: ToolSetup::RequireExisting,
                     vale: ToolSetup::RequireExisting,
                 },

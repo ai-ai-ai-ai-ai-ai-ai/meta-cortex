@@ -133,11 +133,15 @@ The [development form](development.yaml) defines the session mode and delivery q
 [user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 includes a generic YAML form helper, an example, and usage instructions. It
 uses Bun and the shared workspace dependencies installed by Framework / Initialize.
-Initialization automatically installs missing Bun in `~/.meta-cortex/bun`
-and Vale in `~/.meta-cortex/vale`, shared by repositories and worktrees. The entry point configures PATH
-for framework scripts. Runtime versions live in [mise.toml](mise.toml). Individual skills reuse those installations. The helper
-validates data locally, while the current agent calls the host's native question
-tool. Answers stay in session context rather than a repository configuration file.
+
+- Initialization installs missing mise in `~/.meta-cortex/mise`.
+- Mise installs missing Bun in `~/.meta-cortex/bun` and Vale in `~/.meta-cortex/vale`.
+- Runtime versions live in [mise.toml](mise.toml).
+- Repositories, worktrees, and individual skills reuse these installations.
+- Initialization uses these managed copies and ignores tools on the user's `PATH`.
+- The entry point configures `PATH` for framework scripts.
+- The helper validates data locally; the agent calls the host's native question tool.
+- Answers stay in session context.
 
 [meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for
 each delegated role in multi-agent mode. Single-agent mode keeps the current

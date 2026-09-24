@@ -22,7 +22,10 @@ Read this repository's [development instructions](AGENTS.md) before making chang
 
 ### Run and validate locally
 
-Rust integration tests and documentation checks require Bun and Vale on `PATH`.
+Rust integration tests require mise, Bun, and Vale on `PATH`.
+Test fixtures use them to populate isolated application homes.
+The production installer uses only tools inside its application home.
+Documentation checks require Bun and Vale.
 Framework initialization installs missing tools; see the
 [initialization prerequisites](README.md#initialize-your-project).
 

@@ -119,7 +119,7 @@ Identify both roots before planning development work:
   - Supplies Meta-Cortex instructions, roles, skills, and configuration.
   - Use this PATH for subsequent framework script commands. Supply it again when
     the host starts a new shell for each tool call.
-  - Initialization installs Bun, Vale, and the shared workspace dependencies. If they are missing,
+  - Initialization installs mise, Bun, Vale, and the shared workspace dependencies. If they are missing,
     rerun Framework / Initialize; individual skills do not reinstall them.
 - **Project root**
   - The consuming repository that owns the user's development task.

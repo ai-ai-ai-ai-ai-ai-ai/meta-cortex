@@ -63,33 +63,40 @@ settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
 host needs different settings. Repeating the request preserves valid project
 settings and does not replace a modified framework.
 
-Initialization requires a Git repository. It reuses tools from the application
-home, then `PATH`. Missing tools are installed automatically:
+Initialization requires a Git repository. It uses its own tools under
+`~/.meta-cortex` and ignores copies on the user's `PATH`.
+It installs missing tools in this order:
 
-- **Bun:** the [official installer](https://bun.com/docs/installation)
-  installs into `~/.meta-cortex/bun`. Requires `curl`, `bash`, and `unzip`.
-- **Vale:** the [official release archive](https://github.com/vale-cli/vale/releases)
-  installs into `~/.meta-cortex/vale`. Requires `curl` and `tar`. Automatic
-  installation supports macOS and Linux on arm64 and x86_64.
+1. Install mise through its [official installer](https://mise.jdx.dev/installing-mise.html#https-mise-run)
+   into `~/.meta-cortex/mise/bin/mise`.
+2. Use mise's `install-into` command to install Bun into `~/.meta-cortex/bun`
+   and Vale into `~/.meta-cortex/vale/bin`.
+3. Use Bun to install the shared framework dependencies.
 
-Runtime versions are configured in [cortex/mise.toml](cortex/mise.toml), shared by
-the installer and CI. The installer embeds this file at build time; CI reads it
-directly. Both installations are shared by all repositories and worktrees.
-Downloads stay in their tool directories. `META_CORTEX_HOME` overrides the application directory.
-Setup leaves shell configuration unchanged and ignores the user's `BUN_INSTALL`.
+- Runtime versions come from [cortex/mise.toml](cortex/mise.toml).
+  The installer embeds this file at build time; CI reads it directly.
+- All repositories and worktrees share these tool installations.
+- Tool installation stays inside the application directory; no global tool
+  installation or shell activation is performed.
+- Mise's data, cache, configuration, and state directories stay under `~/.meta-cortex/mise`.
+- `META_CORTEX_HOME` overrides the application directory.
+- Bootstrapping mise uses `curl`, `sh`, and the official installer's platform requirements.
+- Setup leaves shell configuration unchanged and ignores the user's `BUN_INSTALL`.
+
 For framework script commands in a new shell:
 
 ```sh
-export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH"
+export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/mise/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH"
 ```
 
-The request's `bun` and `vale` arguments each default to `InstallMissing`.
-Set either to `RequireExisting` alongside `harness` and `instructions` to disable
-its automatic installation. An existing tool that cannot run is reported without
-replacement. Tool setup failures return structured errors before writing framework
-or harness instruction files; downloaded tool files can remain for inspection.
+- The request's `mise`, `bun`, and `vale` arguments each default to `InstallMissing`.
+- Set a tool's argument to `RequireExisting` to require an existing copy in the
+  application directory.
+- An existing tool that cannot run produces an error without replacement.
+- Tool setup failures return structured errors before writing framework or harness
+  instruction files. Downloaded tool files can remain for inspection.
 
-After both tools are ready, initialization runs the shared dependency installation:
+After the tools are ready, initialization runs the shared dependency installation:
 
 ```sh
 bun install --frozen-lockfile --ignore-scripts

@@ -65,6 +65,8 @@ pub struct FrameworkInit {
     pub harness: AgentHarness,
     pub instructions: AgentInstructions,
     #[serde(default)]
+    pub mise: ToolSetup,
+    #[serde(default)]
     pub bun: ToolSetup,
     #[serde(default)]
     pub vale: ToolSetup,
@@ -103,6 +105,7 @@ impl From<FrameworkInit> for InitRequest {
                 harness,
                 instructions,
             },
+            mise: input.mise,
             bun: input.bun,
             vale: input.vale,
         }
@@ -230,6 +233,7 @@ pub mod tests {
         };
         let encoded = serde_saphyr::to_string(&input)?;
         let decoded: FrameworkInit = serde_saphyr::from_str(&encoded)?;
+        assert!(matches!(decoded.mise, ToolSetup::InstallMissing));
         assert!(matches!(decoded.bun, ToolSetup::InstallMissing));
         assert!(matches!(decoded.vale, ToolSetup::InstallMissing));
         Ok(())

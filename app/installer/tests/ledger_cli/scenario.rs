@@ -13,7 +13,9 @@ use meta_cortex_workbench::values::{
     Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
+use std::fs;
 use std::io::Write;
+use std::os::unix::fs::symlink;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::rc::Rc;
@@ -33,6 +35,24 @@ pub(super) struct FeatureReady {
 pub(super) struct TaskCreated {
     feature: FeatureReady,
     task: Task,
+}
+
+impl<Setup> Scenario<Setup> {
+    pub(super) fn seed_tools(&self) -> anyhow::Result<()> {
+        for name in ["mise", "bun", "vale"] {
+            let output = Command::new("sh")
+                .args(["-c", "command -v \"$1\"", "sh", name])
+                .output()?;
+            assert!(output.status.success(), "missing test tool: {name}");
+            let directory = self.data.path().join(name).join("bin");
+            fs::create_dir_all(&directory)?;
+            symlink(
+                String::from_utf8(output.stdout)?.trim(),
+                directory.join(name),
+            )?;
+        }
+        Ok(())
+    }
 }
 
 impl Scenario<RepositoryReady> {

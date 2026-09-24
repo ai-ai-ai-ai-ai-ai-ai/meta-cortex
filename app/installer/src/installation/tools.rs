@@ -1,6 +1,5 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::env::consts::{ARCH, OS};
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -15,6 +14,8 @@ pub enum ToolSetup {
 
 #[derive(Clone, Copy, Debug, derive_more::Display)]
 pub enum Tool {
+    #[display("mise")]
+    Mise,
     #[display("Bun")]
     Bun,
     #[display("Vale")]
@@ -46,10 +47,24 @@ impl ToolConfiguration {
 impl Tool {
     fn name(self) -> &'static str {
         match self {
+            Self::Mise => "mise",
             Self::Bun => "bun",
             Self::Vale => "vale",
         }
     }
+}
+
+#[derive(derive_more::Display)]
+enum RuntimePackage {
+    #[display("bun@{_0}")]
+    Bun(ToolRelease),
+    #[display("vale@{_0}")]
+    Vale(ToolRelease),
+}
+
+struct RuntimeInstall {
+    home: PathBuf,
+    package: RuntimePackage,
 }
 
 pub(super) struct ToolRequest {
@@ -69,44 +84,62 @@ impl ToolSetup {
             executable: directory.join("bin").join(request.tool.name()),
             directory: directory.clone(),
         };
-        match installed.check() {
+        match installed.check(request.tool) {
             Ok(()) => return Ok(installed),
             Err(error) if error.kind() == io::ErrorKind::NotFound => {}
             Err(error) => return Err(error),
         }
-        let on_path = InstalledTool {
-            executable: PathBuf::from(request.tool.name()),
-            directory,
-        };
-        match on_path.check() {
-            Ok(()) => return Ok(on_path),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => match self {
-                Self::RequireExisting => return Err(error),
-                Self::InstallMissing => {}
-            },
-            Err(error) => return Err(error),
+        match self {
+            Self::RequireExisting => {
+                return Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("missing managed tool: {}", installed.executable.display()),
+                ));
+            }
+            Self::InstallMissing => {}
         }
-        installed.install(request.tool)?;
-        installed.check()?;
+        let tool = request.tool;
+        installed.install(request)?;
+        installed.check(tool)?;
         Ok(installed)
     }
 }
 
 impl InstalledTool {
-    fn check(&self) -> io::Result<()> {
-        Self::run(Command::new(&self.executable).arg("--version"))
+    fn check(&self, tool: Tool) -> io::Result<()> {
+        let mut command = Command::new(&self.executable);
+        match tool {
+            Tool::Mise => self.configure_mise(&mut command),
+            Tool::Bun | Tool::Vale => {}
+        }
+        Self::run(command.arg("--version"))
     }
 
-    fn install(&self, tool: Tool) -> io::Result<()> {
-        fs::create_dir_all(self.directory.join("bin"))?;
-        let versions = ToolConfiguration::bundled()?.tools;
-        match tool {
-            Tool::Bun => self.install_bun(versions.bun),
-            Tool::Vale => self.install_vale(versions.vale),
+    fn configure_mise(&self, command: &mut Command) {
+        command
+            .env("MISE_DATA_DIR", &self.directory)
+            .env("MISE_CACHE_DIR", self.directory.join("cache"))
+            .env("MISE_CONFIG_DIR", self.directory.join("config"))
+            .env("MISE_STATE_DIR", self.directory.join("state"))
+            .env("MISE_YES", "1");
+    }
+
+    fn install(&self, request: ToolRequest) -> io::Result<()> {
+        match request.tool {
+            Tool::Mise => self.install_mise(),
+            Tool::Bun => self.install_runtime(RuntimeInstall {
+                home: request.home,
+                package: RuntimePackage::Bun(ToolConfiguration::bundled()?.tools.bun),
+            }),
+            Tool::Vale => self.install_runtime(RuntimeInstall {
+                home: request.home,
+                package: RuntimePackage::Vale(ToolConfiguration::bundled()?.tools.vale),
+            }),
         }
     }
 
-    fn install_bun(&self, version: ToolRelease) -> io::Result<()> {
+    fn install_mise(&self) -> io::Result<()> {
+        fs::create_dir_all(self.directory.join("bin"))?;
         let script = self.directory.join("install.sh");
         Self::run(
             Command::new("curl")
@@ -115,55 +148,39 @@ impl InstalledTool {
                     "--silent",
                     "--show-error",
                     "--location",
-                    "https://bun.com/install",
+                    "https://mise.run",
                     "--output",
                 ])
                 .arg(&script),
         )?;
+        let mut installer = Command::new("sh");
+        self.configure_mise(&mut installer);
         Self::run(
-            Command::new("bash")
+            installer
                 .arg(&script)
-                .arg(format!("bun-v{version}"))
-                .env("BUN_INSTALL", &self.directory)
-                .env("SHELL", "/bin/sh"),
+                .env("MISE_INSTALL_PATH", &self.executable),
         )
     }
 
-    fn install_vale(&self, version: ToolRelease) -> io::Result<()> {
-        let archive = self.directory.join("vale.tar.gz");
-        let asset = match (OS, ARCH) {
-            ("macos", "aarch64") => "macOS_arm64",
-            ("macos", "x86_64") => "macOS_64-bit",
-            ("linux", "aarch64") => "Linux_arm64",
-            ("linux", "x86_64") => "Linux_64-bit",
-            _ => {
-                return Err(io::Error::other(
-                    "automatic Vale installation supports macOS and Linux on arm64 and x86_64; install Vale on PATH for this platform",
-                ));
-            }
+    fn install_runtime(&self, request: RuntimeInstall) -> io::Result<()> {
+        let manager = ToolSetup::RequireExisting.prepare(ToolRequest {
+            tool: Tool::Mise,
+            home: request.home.clone(),
+        })?;
+        let manager_home = request.home.join("mise");
+        let destination = match &request.package {
+            RuntimePackage::Bun(_) => self.directory.clone(),
+            RuntimePackage::Vale(_) => self.directory.join("bin"),
         };
-        let url = format!(
-            "https://github.com/vale-cli/vale/releases/download/v{version}/vale_{version}_{asset}.tar.gz"
-        );
+        fs::create_dir_all(&manager_home)?;
+        let mut command = Command::new(&manager.executable);
+        manager.configure_mise(&mut command);
         Self::run(
-            Command::new("curl")
-                .args([
-                    "--fail",
-                    "--silent",
-                    "--show-error",
-                    "--location",
-                    &url,
-                    "--output",
-                ])
-                .arg(&archive),
-        )?;
-        Self::run(
-            Command::new("tar")
-                .arg("-xzf")
-                .arg(archive)
-                .arg("-C")
-                .arg(self.directory.join("bin"))
-                .arg("vale"),
+            command
+                .arg("install-into")
+                .arg(request.package.to_string())
+                .arg(destination)
+                .current_dir(manager_home),
         )
     }
 

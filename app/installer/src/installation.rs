@@ -158,6 +158,7 @@ impl Project {
 
 pub struct InitRequest {
     pub integration: IntegrationOptions,
+    pub mise: ToolSetup,
     pub bun: ToolSetup,
     pub vale: ToolSetup,
 }
@@ -168,6 +169,17 @@ impl Installation {
         let integration = request.integration.plan(ProjectHarnesses {
             root: self.project.root.clone(),
         })?;
+        request
+            .mise
+            .prepare(ToolRequest {
+                tool: Tool::Mise,
+                home: self.project.data.path().to_owned(),
+            })
+            .map_err(|source| InstallError::ToolUnavailable {
+                tool: Tool::Mise,
+                path: destination.clone(),
+                source,
+            })?;
         let bun = request
             .bun
             .prepare(ToolRequest {
@@ -231,6 +243,7 @@ pub mod tests {
     use std::fs;
     use std::io;
     use std::os::unix::fs::symlink;
+    use std::process::Command;
     use tempfile::{TempDir, tempdir};
 
     struct Fixture {
@@ -241,10 +254,26 @@ pub mod tests {
         fn create() -> Result<Self, InstallError> {
             let directory = tempdir()?;
             git2::Repository::init(directory.path())?;
-            Ok(Self {
+            let fixture = Self {
                 directory,
                 data: tempdir()?,
-            })
+            };
+            fixture.seed_tools()?;
+            Ok(fixture)
+        }
+        fn seed_tools(&self) -> io::Result<()> {
+            // Tests supply managed installations from the runner's toolchain.
+            for name in ["mise", "bun", "vale"] {
+                let output = Command::new("sh")
+                    .args(["-c", "command -v \"$1\"", "sh", name])
+                    .output()?;
+                assert!(output.status.success(), "missing test tool: {name}");
+                let directory = self.data.path().join(name).join("bin");
+                fs::create_dir_all(&directory)?;
+                let executable = String::from_utf8(output.stdout).map_err(io::Error::other)?;
+                symlink(executable.trim(), directory.join(name))?;
+            }
+            Ok(())
         }
         fn install(&self) -> Result<(), InstallError> {
             Project {
@@ -253,6 +282,7 @@ pub mod tests {
             }
             .prepare()?
             .install(InitRequest {
+                mise: ToolSetup::RequireExisting,
                 bun: ToolSetup::RequireExisting,
                 vale: ToolSetup::RequireExisting,
                 integration: IntegrationOptions {
@@ -329,6 +359,7 @@ pub mod tests {
             let agents = self.directory.path().join("AGENTS.md");
             fs::remove_file(&agents)?;
             let result = prepared.install(InitRequest {
+                mise: ToolSetup::RequireExisting,
                 bun: ToolSetup::RequireExisting,
                 vale: ToolSetup::RequireExisting,
                 integration: IntegrationOptions {
