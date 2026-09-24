@@ -4,6 +4,7 @@ use super::protocol::{
     AgentHarness, AgentInstructions, EmptyArguments, FeatureOperation, FrameworkInit,
     FrameworkOperation, Operation, Request, TaskOperation,
 };
+use crate::installation::ToolSetup;
 use derive_more::{Display, From};
 use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
@@ -92,11 +93,14 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Install the bundled framework without interactive prompts.",
+                    "Install missing mise, Bun, Vale, and the bundled framework without interactive prompts. Set a tool's policy to RequireExisting to disable its automatic installation.",
                 ),
                 operation: Operation::Framework(FrameworkOperation::Initialize(FrameworkInit {
                     harness: AgentHarness::None,
                     instructions: AgentInstructions::Skip,
+                    mise: ToolSetup::InstallMissing,
+                    bun: ToolSetup::InstallMissing,
+                    vale: ToolSetup::InstallMissing,
                 })),
             },
             CommandExample {

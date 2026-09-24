@@ -22,6 +22,13 @@ Read this repository's [development instructions](AGENTS.md) before making chang
 
 ### Run and validate locally
 
+Rust integration tests require mise, Bun, and Vale on `PATH`.
+Test fixtures use them to populate isolated application homes.
+The production installer uses only tools inside its application home.
+Documentation checks require Bun and Vale.
+Framework initialization installs missing tools; see the
+[initialization prerequisites](README.md#initialize-your-project).
+
 Run Cargo and dist commands from `app/`:
 
 ```sh
@@ -56,6 +63,20 @@ cd app
    ```sh
    cargo build --release --locked --workspace
    ```
+
+### Check framework scripts and documentation
+
+Run from the repository root after making framework changes:
+
+```sh
+cd cortex
+bun install --frozen-lockfile --ignore-scripts
+bun run verify
+bun run docs:check
+```
+
+The documentation check reads actual Markdown files and fails on findings. Its
+Vale styles ship with the framework, so checks require no style downloads.
 
 ## Publish a release
 

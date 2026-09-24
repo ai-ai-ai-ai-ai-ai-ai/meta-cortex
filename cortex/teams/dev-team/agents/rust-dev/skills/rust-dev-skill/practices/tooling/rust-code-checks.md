@@ -96,11 +96,19 @@ excessive-nesting-threshold = 5
 - Review fallible replacement methods manually; `return_self_not_must_use` does not cover every wrapper around `Self`.
 - Name enum alternatives explicitly in `match` arms.
 - Use partial matching only when permitted by [exhaustive matching](../modeling/domain-states.md#match-decisions-exhaustively).
+- Apply [Rust branching](../modeling/domain-states.md#match-domain-values-directly)
+  and its [conditional patterns](../modeling/domain-states.md#encourage-rust-conditional-patterns).
+  Reject boolean disguises and mixed let-chains; review pattern guards and
+  intentional unmatched handling. Review this distinction with
+  syntax-aware tooling where available and semantic review; the baseline above
+  does not enforce the ban, and a keyword ban would reject valid patterns.
 - Review [API inputs](../behavior/api-inputs.md) for the one-nonreceiver-parameter limit.
 - Set the argument threshold to two because Clippy counts `self`.
 - Check associated and free functions manually; two nonreceiver parameters still pass this threshold.
 - Use the nesting threshold of five as a structural backstop.
-- Review decision depth separately under [function ownership](../../../../../../docs/programming/function-ownership.md).
+- Review combined execution-scope depth separately under the shared
+  [nesting limit](../../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction),
+  including closures and permitted conditional patterns.
 - Account for enclosing modules, implementations, and function blocks in Clippy's nesting count.
 - Do not equate five structural levels with five nested decisions.
 - Do not raise thresholds or add allowances merely to pass the baseline.

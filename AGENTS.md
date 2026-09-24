@@ -25,6 +25,17 @@ Keep database code and dependencies in workbench; installer uses its public API.
 Shared Cargo dependencies, lint policy, lockfile, and release profile live at the
 workspace root. The framework remains at the repository root in `cortex/`.
 
+For Effect code, apply the
+[upstream guidance](cortex/teams/dev-team/agents/typescript-dev/skills/ts-dev-skill/SKILL.md#effect-use-installed-documentation).
+This repository's installed v4 package is at `cortex/node_modules/effect/`.
+
+For a fresh development checkout, install the shared workspace dependencies once:
+
+```sh
+cd cortex
+bun install --frozen-lockfile --ignore-scripts
+```
+
 For Rust changes, apply the framework's
 [Rust skill](cortex/teams/dev-team/agents/rust-dev/skills/rust-dev-skill/SKILL.md).
 From `app/`, run `cargo fmt --all --check`, `cargo check --locked --workspace --all-targets`,

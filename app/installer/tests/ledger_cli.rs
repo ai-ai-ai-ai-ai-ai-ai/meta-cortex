@@ -4,6 +4,7 @@ use scenario::{Cli, Examples, Scenario};
 
 use anyhow::{Context, bail};
 use derive_more::From;
+use git2::StatusOptions;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::{
     Assignment, Check, CheckOutcome, EventKind, LeaseHealth, Phase, Progress, Workspace,
@@ -71,6 +72,14 @@ struct EmptyArguments {}
 struct FrameworkInit {
     harness: Harness,
     instructions: Instructions,
+    mise: ToolSetup,
+    bun: ToolSetup,
+    vale: ToolSetup,
+}
+#[derive(Debug, Serialize, Deserialize)]
+enum ToolSetup {
+    InstallMissing,
+    RequireExisting,
 }
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -297,7 +306,17 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             .code,
         "not_found"
     );
-    assert!(scenario.repository()?.statuses(None)?.is_empty());
+    let mut options = StatusOptions::new();
+    options
+        .include_ignored(false)
+        .include_untracked(true)
+        .recurse_untracked_dirs(true);
+    assert!(
+        scenario
+            .repository()?
+            .statuses(Some(&mut options))?
+            .is_empty()
+    );
     Ok(())
 }
 
@@ -376,7 +395,9 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     let mut options = git2::WorktreeAddOptions::new();
     options.reference(Some(branch.get()));
     repository.worktree("worker", worker_dir.path(), Some(&options))?;
-    let worker = Scenario::open(worker_dir)?.observe(Examples::feature()?.feature)?;
+    let worker = scenario
+        .linked(worker_dir)?
+        .observe(Examples::feature()?.feature)?;
     match worker
         .client()
         .run(Operation::Feature(FeatureOperation::Status(
@@ -564,7 +585,11 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         "version: 1\nproject: .\noperation: {group: Feature, command: {name: Status, arguments: {feature: f, typo: 1}}}",
         "version: 1\nproject: .\noperation: {group: Feature, command: {name: Status, arguments: {feature: f, feature: g}}}",
     ] {
-        let response = Cli::collect(Cli::start_yaml(RequestYaml::from(request.to_owned()))?)?;
+        let response = Cli::collect(
+            scenario
+                .client()
+                .start_yaml(RequestYaml::from(request.to_owned()))?,
+        )?;
         let Outcome::Error(error) = response.result else {
             bail!("invalid request accepted")
         };
@@ -734,6 +759,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
             .iter()
             .any(|item| item.path == scenario.ledger().path)
     );
+    scenario.seed_tools()?;
     let Reply::FrameworkInitialized { project } =
         scenario
             .client()
@@ -741,6 +767,9 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness: Harness::None,
                     instructions: Instructions::Skip,
+                    mise: ToolSetup::RequireExisting,
+                    bun: ToolSetup::RequireExisting,
+                    vale: ToolSetup::RequireExisting,
                 },
             )))?
     else {
@@ -765,6 +794,9 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
                 FrameworkInit {
                     harness,
                     instructions: Instructions::Write,
+                    mise: ToolSetup::RequireExisting,
+                    bun: ToolSetup::RequireExisting,
+                    vale: ToolSetup::RequireExisting,
                 },
             )))?;
     }
@@ -777,6 +809,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
     )?;
     let output = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
         .args(["run", "--request"])
+        .env("META_CORTEX_HOME", scenario.data_directory())
         .arg(&request_file)
         .output()?;
     assert!(output.status.success());
@@ -791,6 +824,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
     )?;
     let output = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
         .args(["run", "--request"])
+        .env("META_CORTEX_HOME", scenario.data_directory())
         .arg(&request_file)
         .output()?;
     assert!(!output.status.success());

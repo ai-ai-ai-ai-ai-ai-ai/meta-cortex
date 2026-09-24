@@ -1,16 +1,19 @@
 //! Durable task coordination, Git checkpoints, and per-feature Turso storage.
 //!
-//! [`Workbench`] discovers a project's shared Git directory and opens its ledgers.
+//! [`Workbench`] identifies a repository through Git and opens its user-owned ledgers.
 //! Command-line transport and framework installation belong to the application.
 
 pub mod agents;
+mod data_directory;
 mod git;
 pub mod model;
+mod repository_id;
 pub mod request;
 mod store;
 pub mod values;
 pub mod versions;
 
+pub use data_directory::DataDirectory;
 use git::Repository;
 use request::InitFeature;
 use sea_query::error;
@@ -27,10 +30,21 @@ pub struct Workbench {
 }
 
 impl Workbench {
+    #[must_use]
+    pub fn with_data_directory(mut self, directory: DataDirectory) -> Self {
+        self.repository = self.repository.with_data_directory(directory);
+        self
+    }
+
     pub fn discover(project: &Path) -> Result<Self, LedgerError> {
         Ok(Self {
             repository: Repository::discover(project)?,
         })
+    }
+
+    /// Create or reuse the main checkout's local identity and data directory.
+    pub fn initialize_repository(&self) -> Result<(), LedgerError> {
+        self.repository.initialize()
     }
 
     pub async fn initialize(&self, input: InitFeature) -> Result<Ledger, LedgerError> {

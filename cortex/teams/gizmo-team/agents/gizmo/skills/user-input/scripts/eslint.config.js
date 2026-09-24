@@ -17,7 +17,7 @@ export default [
         {
           selector: "ConditionalExpression",
           message:
-            "Use exhaustive matching for alternatives, or explicit control flow for mechanical conditions.",
+            "Use explicit pattern matching for alternatives and boundary predicates.",
         },
         {
           selector: "CallExpression > ObjectExpression",

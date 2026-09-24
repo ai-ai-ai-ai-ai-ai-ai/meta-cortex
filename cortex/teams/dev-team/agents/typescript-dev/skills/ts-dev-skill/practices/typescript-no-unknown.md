@@ -53,7 +53,7 @@ accept(value: unknown): void {
 ```ts
 // Inside a dedicated transport decoder; schema belongs to this TS-owned format.
 decode(value: unknown) {
-  return Schema.decodeUnknown(DocumentSchema.value)(value);
+  return Schema.decodeUnknownEffect(DocumentSchema.value)(value);
 }
 ```
 

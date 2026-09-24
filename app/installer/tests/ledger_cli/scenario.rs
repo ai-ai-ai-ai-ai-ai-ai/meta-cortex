@@ -13,14 +13,18 @@ use meta_cortex_workbench::values::{
     Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
+use std::fs;
 use std::io::Write;
+use std::os::unix::fs::symlink;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
+use std::rc::Rc;
 use tempfile::TempDir;
 
 // Setup capabilities describe completed fixture effects, not the mutable database lifecycle.
 pub(super) struct Scenario<Setup> {
     directory: TempDir,
+    data: Rc<TempDir>,
     state: Setup,
 }
 pub(super) struct RepositoryReady;
@@ -33,10 +37,29 @@ pub(super) struct TaskCreated {
     task: Task,
 }
 
+impl<Setup> Scenario<Setup> {
+    pub(super) fn seed_tools(&self) -> anyhow::Result<()> {
+        for name in ["mise", "bun", "vale"] {
+            let output = Command::new("sh")
+                .args(["-c", "command -v \"$1\"", "sh", name])
+                .output()?;
+            assert!(output.status.success(), "missing test tool: {name}");
+            let directory = self.data.path().join(name).join("bin");
+            fs::create_dir_all(&directory)?;
+            symlink(
+                String::from_utf8(output.stdout)?.trim(),
+                directory.join(name),
+            )?;
+        }
+        Ok(())
+    }
+}
+
 impl Scenario<RepositoryReady> {
     pub(super) fn create() -> anyhow::Result<Self> {
         let scenario = Self {
             directory: tempfile::tempdir()?,
+            data: Rc::new(tempfile::tempdir()?),
             state: RepositoryReady,
         };
         let mut options = git2::RepositoryInitOptions::new();
@@ -47,14 +70,6 @@ impl Scenario<RepositoryReady> {
         let tree = repository.find_tree(tree_id)?;
         repository.commit(Some("HEAD"), &signature, &signature, "initial", &tree, &[])?;
         Ok(scenario)
-    }
-
-    pub(super) fn open(directory: TempDir) -> anyhow::Result<Self> {
-        git2::Repository::open(directory.path())?;
-        Ok(Self {
-            directory,
-            state: RepositoryReady,
-        })
     }
 
     pub(super) fn initialization(&self, feature: FeatureId) -> anyhow::Result<InitFeature> {
@@ -84,6 +99,7 @@ impl Scenario<RepositoryReady> {
         };
         Ok(Scenario {
             directory: self.directory,
+            data: self.data,
             state: FeatureReady { feature, ledger },
         })
     }
@@ -99,6 +115,7 @@ impl Scenario<RepositoryReady> {
         };
         Ok(Scenario {
             directory: self.directory,
+            data: self.data,
             state: FeatureReady { feature, ledger },
         })
     }
@@ -127,6 +144,7 @@ impl Scenario<FeatureReady> {
         }
         Ok(Scenario {
             directory: self.directory,
+            data: self.data,
             state: TaskCreated {
                 feature: self.state,
                 task,
@@ -145,12 +163,25 @@ impl Scenario<TaskCreated> {
 }
 
 impl<Setup> Scenario<Setup> {
+    pub(super) fn linked(&self, directory: TempDir) -> anyhow::Result<Scenario<RepositoryReady>> {
+        git2::Repository::open(directory.path())?;
+        Ok(Scenario {
+            directory,
+            data: self.data.clone(),
+            state: RepositoryReady,
+        })
+    }
+    pub(super) fn data_directory(&self) -> &Path {
+        self.data.path()
+    }
+
     pub(super) fn path(&self) -> &Path {
         self.directory.path()
     }
     pub(super) fn client(&self) -> Cli<'_> {
         Cli {
             project: self.path(),
+            data: self.data.path(),
         }
     }
     pub(super) fn repository(&self) -> anyhow::Result<git2::Repository> {
@@ -165,6 +196,7 @@ impl<Setup> Scenario<Setup> {
 // Raw protocol transport remains available for negative and concurrent requests.
 pub(super) struct Cli<'a> {
     project: &'a Path,
+    data: &'a Path,
 }
 impl Cli<'_> {
     pub(super) fn request(&self, operation: Operation) -> Request {
@@ -175,14 +207,15 @@ impl Cli<'_> {
         }
     }
     pub(super) fn start(&self, operation: Operation) -> anyhow::Result<Child> {
-        Self::start_yaml(RequestYaml::from(serde_saphyr::to_string(
+        self.start_yaml(RequestYaml::from(serde_saphyr::to_string(
             &self.request(operation),
         )?))
     }
-    pub(super) fn start_yaml(request: RequestYaml) -> anyhow::Result<Child> {
+    pub(super) fn start_yaml(&self, request: RequestYaml) -> anyhow::Result<Child> {
         let RequestYaml(text) = request;
         let mut child = Command::new(env!("CARGO_BIN_EXE_meta-cortex"))
             .args(["run", "--request", "-"])
+            .env("META_CORTEX_HOME", self.data)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

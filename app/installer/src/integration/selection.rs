@@ -24,9 +24,10 @@ impl IntegrationOptions {
             InstructionAction::Skip => Ok(IntegrationPlan::Skip),
             InstructionAction::Write => match self.harness {
                 HarnessChoice::None => Ok(IntegrationPlan::Skip),
-                HarnessChoice::Selected(harness) => Ok(IntegrationPlan::Write(
-                    PreparedInstructions::read(project.target(harness)?)?,
-                )),
+                HarnessChoice::Selected(harness) => {
+                    let instructions = PreparedInstructions::read(project.target(harness)?)?;
+                    Ok(IntegrationPlan::Write { instructions })
+                }
             },
         }
     }

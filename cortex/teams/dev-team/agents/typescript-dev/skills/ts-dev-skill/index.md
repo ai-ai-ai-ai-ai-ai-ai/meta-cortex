@@ -19,7 +19,7 @@ Related entries are review relationships, not instructions for leaf documents to
 link back here. Apply the relevant cross-language practices when the assignment crosses that boundary.
 
 For implementation, apply the core practices. Load Domain structure and Explicit
-state together. Load Effect workflows before effectful work; it also governs
+state together. Load the upstream Effect guidance before effectful work, including
 Serial operation queues. Select task-specific and supporting practices when their
 subjects are involved; Svelte practices apply only to Svelte projects. Preserve
 the project’s stack and command runner. Rust ownership applies when the project
@@ -32,24 +32,45 @@ validation. Existing code does not weaken their requirements.
 ### Branching and exhaustive matching
 
 - **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
-- **Owns:** Conditional-expression prohibition and exhaustive domain decisions.
+- **Owns:** Language-independent branching policy and exhaustive domain decisions.
+- **Does not own:** Language syntax, examples, and enforcement belong to the language practices.
 - **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Code checks](practices/typescript-code-checks.md).
+
+- **[branching:no_boolean_if](../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)**
+
+  - Match named domain alternatives directly; prohibit ordinary boolean conditions
+    throughout authored code, including guards, validation, tests, and tooling.
+  - Convert required raw inputs and dependency predicates at their boundary;
+    name boolean outcomes before choosing workflow actions.
+  - Keep conversions on existing owners without decorative branching abstractions.
+  - Prefer native patterns; use library matchers only when native constructs cannot
+    clearly express the pattern. Preserve exhaustiveness during migration.
 
 - **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
 
-  - Prohibit conditional expressions in authored code; use a closed match for
-    domain alternatives and explicit control flow for mechanical conditions.
+  - Prohibit ternary conditional operators where available; use explicit patterns.
 
 - **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
 
-  - Name every enum or union variant; reject catch-all arms that absorb new
-    variants and check exhaustiveness statically.
+  - Name every variant in closed domain decisions and reject fallbacks that
+    silently absorb future variants; check exhaustiveness statically.
+  - Group named alternatives only when they share behavior.
+  - Distinguish full decisions from focused payload extraction and open-input matching.
+
+- **[branching:validation](../../../../docs/programming/branching-and-exhaustive-matching.md#validation)**
+
+  - Verify that adding a variant fails incomplete decisions under required static checks.
+  - Review focused patterns, unmatched handling, and boundary conversions.
+  - Test variants separately when outcomes or payloads differ.
 
 ### Function ownership
 
 - **File:** [Function ownership](practices/typescript-function-ownership.md).
-- **Owns:** Owners of functions, constants, and state; static construction and component handlers.
-- **Does not own:** Parameter count belongs to Single parameter; nominal values belong to Domain structure.
+- **Owns:** TypeScript declaration placement, static construction, component handlers, and execution-scope counting.
+- **Does not own:**
+  - Shared ownership policy and depth limits belong to Function ownership in the team docs.
+  - Effect implementation guidance belongs to its installed documentation.
+  - Parameter count belongs to Single parameter; nominal values belong to Domain structure.
 - **Related:** [Single parameter](practices/typescript-single-parameter.md), [Domain structure](practices/typescript-domain-structure.md).
 
 - **[function_ownership:instances](practices/typescript-function-ownership.md#use-instances-for-owned-behavior)**
@@ -57,6 +78,13 @@ validation. Existing code does not weaken their requirements.
   - Put behavior on meaningful concrete owners or typed enum companions.
   - Static methods are only narrow construction builders, while
     execution/validation/formatting/dispatch belong to instances.
+
+- **[function_ownership:nesting](practices/typescript-function-ownership.md#count-execution-scopes)**
+
+  - Limit combined callback and control-flow nesting to two execution scopes.
+  - Flatten first; reject helper chains and new abstractions added only to meet
+    the depth limit.
+  - Count switch cases as one level; exclude type and namespace bodies and data literals.
 
 - **[function_ownership:meaningful_state](practices/typescript-function-ownership.md#use-instances-for-owned-behavior)**
 
@@ -69,6 +97,7 @@ validation. Existing code does not weaken their requirements.
   - Put constants on their owner as static readonly and mutable state on instances.
   - Prohibit free functions, module const/let/var, function-valued global constants, and
     mutable statics.
+  - Assigning a function to a binding does not establish ownership.
   - Test-runner callbacks may contain scenario steps and assertions; put reusable
     test helpers on fixture or scenario owners.
 
@@ -126,7 +155,7 @@ validation. Existing code does not weaken their requirements.
 
 - **[single_parameter:validation](practices/typescript-single-parameter.md#validation)**
 
-  - Enforce max-params: [error, 1] plus semantic request review and verify every host
+  - Enforce `max-params: [error, 1]` plus semantic request review and verify every host
     exception.
 
 
@@ -212,6 +241,13 @@ validation. Existing code does not weaken their requirements.
   - Preserve domain types recursively in public/private parameters, returns, fields,
     locals, constants, containers, state, and tests.
   - Do not unwrap just to pass between layers.
+
+- **[domain_structure:type_aliases](practices/typescript-domain-structure.md#name-complex-type-expressions)**
+
+  - Name complex type expressions for their domain role, even at one use.
+  - Keep aliases near their owner and derive schema types from the source.
+  - Preserve exact types; aliases do not add nominal identity or validation.
+  - Keep simple generics inline and avoid unnecessary alias chains.
 
 - **[domain_structure:trusted_construction](practices/typescript-domain-structure.md#construct-trusted-values-at-the-boundary)**
 
@@ -303,7 +339,7 @@ validation. Existing code does not weaken their requirements.
 - **File:** [Explicit state](practices/typescript-explicit-state.md).
 - **Owns:** Enum-backed unions, absence normalization, forbidden sentinels, and unit versus value-returning void.
 - **Does not own:** Boolean policy belongs to Enums instead of booleans; rune initialization belongs to Svelte state modeling.
-- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Svelte state modeling](practices/svelte-state-modeling.md), [Effect workflows](practices/typescript-effect.md).
+- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Svelte state modeling](practices/svelte-state-modeling.md), [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation).
 
 - **[explicit_state:named_unions](practices/typescript-explicit-state.md#name-the-state-and-its-payload)**
 
@@ -329,6 +365,18 @@ validation. Existing code does not weaken their requirements.
 
   - Preserve externally required serialized enum values.
   - Do not centralize unrelated state vocabularies into generic repository-wide enums.
+
+- **[branching:typescript_switch](practices/typescript-explicit-state.md#match-domain-values-directly)**
+
+  - Use native switch for domain decisions.
+  - Prohibit boolean if/else-if/if-else.
+
+- **[branching:typescript_exhaustiveness](practices/typescript-explicit-state.md#match-decisions-exhaustively)**
+
+  - Name every enum/union variant; group cases only for intentional shared output.
+  - Keep transport discriminators attached to their payloads for compiler narrowing.
+  - Reject default cases hiding future variants and ternary conditional operators.
+  - Require the branching lint checks; TypeScript alone is insufficient.
 
 - **[explicit_state:component_enums](practices/typescript-explicit-state.md#keep-component-enums-in-an-importable-module)**
 
@@ -365,7 +413,7 @@ validation. Existing code does not weaken their requirements.
 
 - **[explicit_state:unit_void](practices/typescript-explicit-state.md#distinguish-effects-from-absent-values)**
 
-  - Allow void only for complete unit/effect returns, Promise<void>,
+  - Allow void only for complete unit/effect returns, `Promise<void>`,
     synchronous-or-asynchronous effects, and unary discard.
   - Reject value-or-void contracts including nested generics and callback results.
 
@@ -449,9 +497,15 @@ validation. Existing code does not weaken their requirements.
 
 - **[enums_over_booleans:boundary_exceptions](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
-  - The current TypeScript practice allows booleans only at required platform/host
-    signatures, fixed external wire edges with immediate enum normalization, or private
-    immediately consumed mechanical predicates.
+  - Required platform/host signatures and fixed wire edges keep external booleans
+    only until immediate domain normalization.
+
+- **[enums_over_booleans:predicate_outcomes](practices/typescript-enums-over-booleans.md#name-predicate-outcomes-before-choosing-behavior)**
+
+  - Match dependency predicates directly into domain enums before workflow actions or reporting.
+  - Private or mechanical authored predicates still return named domain outcomes.
+  - Inference, callbacks, and exhaustive boolean matchers do not satisfy this requirement.
+  - Keep conversions on existing owners without extra wrappers or services.
 
 - **[enums_over_booleans:observations](practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts)**
 
@@ -475,8 +529,8 @@ validation. Existing code does not weaken their requirements.
 
 - **File:** [Concrete values](practices/typescript-no-unknown.md).
 - **Owns:** Restrictions on object, unknown, any, and erased bags; immediate boundary decoding.
-- **Does not own:** Named domain contracts belong to Domain structure; effectful decoding belongs to Effect workflows.
-- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Effect workflows](practices/typescript-effect.md).
+- **Does not own:** Named domain contracts belong to Domain structure; effectful decoding belongs to upstream Effect guidance.
+- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation).
 
 - **[no_unknown:no_object](practices/typescript-no-unknown.md#do-not-erase-application-contracts)**
 
@@ -525,71 +579,24 @@ validation. Existing code does not weaken their requirements.
 
 ### Effect workflows
 
-- **File:** [Effect workflows](practices/typescript-effect.md).
-- **Owns:** Effect-based failures, resources, concurrency, services, and boundary decoding.
-- **Does not own:** Pure value modeling belongs to Domain structure; queue ordering semantics belong to Serial operation queues.
-- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Explicit state](practices/typescript-explicit-state.md), [Concrete values](practices/typescript-no-unknown.md), [Serial operation queues](practices/typescript-serial-operation-queues.md).
+- **Source:** [Installed Effect documentation](SKILL.md#effect-use-installed-documentation).
+- **Owns:** Effect's installed documentation owns API and implementation guidance.
+- **Related:** [Domain structure](practices/typescript-domain-structure.md), [Serial operation queues](practices/typescript-serial-operation-queues.md).
 
-- **[effect:effectful_work](practices/typescript-effect.md#return-the-workflow-not-a-running-promise)**
+- **[effect:upstream](SKILL.md#effect-use-installed-documentation)**
 
-  - Use Effect v3 for new/materially changed async, expected-failure, resource-owning,
-    concurrent, service-dependent, or untrusted-decoding workflows across authored
-    code/tooling/tests.
+  - Before writing Effect code, read the installed `effect/AGENTS.md` completely.
 
-- **[effect:pure_code](practices/typescript-effect.md#migrate-one-connected-workflow)**
+- **[effect:version](SKILL.md#manage-the-pinned-release)**
 
-  - Keep pure calculations, inert declarations, and rendering free of ceremonial Effect
-    wrappers.
-  - Effect preserves the project’s domain ownership, including Rust-owned policy in
-    Rust/WASM projects.
+  - Select the latest release on the chosen release channel when adopting or upgrading.
+  - Pin one exact release across workspace packages; routine work uses its installed docs.
+  - Identify prereleases and follow official migration guidance with required checks.
 
-- **[effect:typed_failures](practices/typescript-effect.md#preserve-the-typed-failure-channel)**
+- **[effect:effectful_work](SKILL.md#choose-effect-for-workflows)**
 
-  - Represent workflows as Effect<Success, Failure, Services> with tagged concrete
-    failures.
-  - Propagate/handle at the owner able to classify or present them.
-
-- **[effect:schema](practices/typescript-effect.md#decode-untrusted-input-once)**
-
-  - Decode untrusted input with Effect Schema at the narrow boundary while preserving
-    generated Rust contracts and typed decoding errors.
-
-- **[effect:services](practices/typescript-effect.md#make-effectful-dependencies-explicit)**
-
-  - Use Context tags and Layer implementations for effectful
-    browser/network/clock/storage services, not local pure calculations.
-
-- **[effect:resources](practices/typescript-effect.md#tie-cleanup-to-the-resource-scope)**
-
-  - Use Scope/acquireRelease for owned resource cleanup.
-  - Keep concurrency, cancellation, coordination, and observability in the owning Effect
-    workflow.
-
-- **[effect:execution_edges](practices/typescript-effect.md#return-the-workflow-not-a-running-promise)**
-
-  - Keep Effect.run* at explicit runtime/UI/browser/worker/framework edges.
-  - Internal orchestration returns Effect values.
-
-- **[effect:coherent_migration](practices/typescript-effect.md#migrate-one-connected-workflow)**
-
-  - Migrate connected callers of materially changed workflows coherently.
-  - Lift external Promises at integration edges and do not mix failure models
-    internally.
-
-- **[effect:no_competing_models](practices/typescript-effect.md#migrate-one-connected-workflow)**
-
-  - Prohibit new neverthrow, manual Promise error workflows, expected-failure
-    exceptions/rejections, and TS/Schema mirrors of Rust policy.
-
-- **[effect:legacy_debt](practices/typescript-effect.md#migrate-one-connected-workflow)**
-
-  - Untouched legacy neverthrow may remain migration debt but cannot spread.
-  - Do not force unrelated repository-wide migration.
-
-- **[effect:feedback](practices/typescript-effect.md#validation)**
-
-  - Use Effect LSP where available for a tight authoring/type-feedback loop.
-
+  - Use Effect for materially changed effectful workflows, including scripts and
+    tests; keep pure calculations with their existing domain owners.
 
 
 ## Task-specific practices
@@ -809,8 +816,8 @@ validation. Existing code does not weaken their requirements.
 
 - **File:** [Serial operation queues](practices/typescript-serial-operation-queues.md).
 - **Owns:** Ordered asynchronous work, per-operation failure, queue recovery, and idle barriers.
-- **Does not own:** Effect selection and resource/error composition belong to Effect workflows.
-- **Related:** [Effect workflows](practices/typescript-effect.md), [Function ownership](practices/typescript-function-ownership.md).
+- **Does not own:** Effect API guidance belongs to the installed upstream documentation.
+- **Related:** [Upstream Effect guidance](SKILL.md#effect-use-installed-documentation), [Function ownership](practices/typescript-function-ownership.md).
 
 - **[serial_operation_queues:effect_queue](practices/typescript-serial-operation-queues.md#keep-the-queue-and-results-typed)**
 
@@ -839,13 +846,15 @@ validation. Existing code does not weaken their requirements.
 - **[serial_operation_queues:admission_and_shutdown](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)**
 
   - Return Effect from enqueue and admit work when that effect runs.
+  - Convert Queue admission rejection into a typed admission failure before
+    awaiting completion; an unsubmitted job must not leave a caller waiting.
   - Scope the consumer and settle every in-flight/queued completion on shutdown, not
     only Queue waiters.
 
 - **[serial_operation_queues:validation](practices/typescript-serial-operation-queues.md#validation)**
 
   - Test FIFO, one active operation, typed caller failures, continuation, idle barriers,
-    cancellation, shutdown, and recovery against Effect v3.
+    cancellation, shutdown, and recovery against the pinned Effect release.
 
 
 
@@ -867,6 +876,14 @@ validation. Existing code does not weaken their requirements.
   - Builds do not replace type checks; run required builds without warnings and
     make lint warnings fail, using the installed tool's supported options.
   - Keep generated/vendor files with their owners and coordinate pipeline changes.
+  - Apply the branching checks; use upstream Effect guidance without an operator allowlist.
+
+- **[code_checks:branching](practices/typescript-code-checks.md#check-branching)**
+
+  - Reject IfStatement and ConditionalExpression across authored TypeScript/JavaScript.
+  - Require switch-exhaustiveness-check with allowDefaultCaseForExhaustiveSwitch
+    and considerDefaultExhaustiveForUnions both false, plus fallthrough checking.
+  - Verify missing variants fail lint even with a default; preserve existing restrictions.
 
 - **[code_checks:fix_diagnostics](practices/typescript-code-checks.md#fix-diagnostics-before-completion)**
 
@@ -953,8 +970,7 @@ Follow untrusted input from its decoder into the effectful workflow.
 
 - [no_unknown:decoder_scope](practices/typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge)
 - [no_unknown:typed_errors](practices/typescript-no-unknown.md#keep-failures-concrete)
-- [effect:typed_failures](practices/typescript-effect.md#preserve-the-typed-failure-channel)
-- [effect:no_competing_models](practices/typescript-effect.md#migrate-one-connected-workflow)
+- [effect:upstream](SKILL.md#effect-use-installed-documentation)
 
 ### Reactive state must have a meaningful initial state
 
@@ -1006,10 +1022,10 @@ implementation stack.
 Check the owner of an unavoidable boolean contract and the precise exception in the
 applicable language practice.
 
-- **Prohibited:** Generalize a TypeScript host-signature or private-predicate exception
-  into permission for Rust boolean application APIs.
-- **Preferred:** Keep TypeScript exceptions within their documented boundary. For Rust
-  work, consult the supplied Rust rules for destination-owned external conversions.
+- **Prohibited:** Treat a host signature or dependency predicate as permission
+  for authored boolean decisions in either language.
+- **Preferred:** Normalize required external booleans into named domain outcomes
+  before workflow behavior. Keep conversions on their TypeScript or Rust owner.
 
 **Compare:**
 
@@ -1047,5 +1063,4 @@ Trace each admitted job through success, failure, recovery, and scope shutdown.
 
 - [serial_operation_queues:typed_completion](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)
 - [serial_operation_queues:admission_and_shutdown](practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work)
-- [effect:resources](practices/typescript-effect.md#tie-cleanup-to-the-resource-scope)
-- [effect:execution_edges](practices/typescript-effect.md#return-the-workflow-not-a-running-promise)
+- [effect:upstream](SKILL.md#effect-use-installed-documentation)

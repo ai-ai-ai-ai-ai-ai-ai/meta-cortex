@@ -55,6 +55,77 @@ type PanelState =
   | { readonly kind: PanelKind.Closed };
 ```
 
+## Match domain values directly
+
+Apply the shared [branching rule](../../../../../docs/programming/branching-and-exhaustive-matching.md).
+
+- Use native `switch` for domain decisions.
+- Prohibit ordinary boolean `if`, `else if`, and `if`/`else` statements.
+
+These alternative method bodies receive `delivery: DeliveryKind` and return
+`AddressRequirement`. `DeliveryKind` has `Shipment` and `Download` variants;
+`AddressRequirement` has `Required` and `NotRequired` variants. Both compile;
+the boolean branch violates the practice.
+
+**Prohibited:** turn the delivery kind into a boolean.
+
+```ts
+if (delivery === DeliveryKind.Shipment) {
+  return AddressRequirement.Required;
+}
+return AddressRequirement.NotRequired;
+```
+
+**Preferred:** use the native switch.
+
+```ts
+switch (delivery) {
+  case DeliveryKind.Shipment:
+    return AddressRequirement.Required;
+  case DeliveryKind.Download:
+    return AddressRequirement.NotRequired;
+}
+```
+
+## Match decisions exhaustively
+
+- Name every enum or discriminated-union variant in `switch` cases.
+- Keep a transport union's discriminator attached to its payload so TypeScript
+  can narrow the variant before payload access.
+- Group named cases only when they intentionally share output.
+- Do not use `default` to absorb future variants in a closed domain decision.
+- Prohibit the ternary operator (`condition ? first : second`).
+- Apply the mandatory [branching checks](typescript-code-checks.md#check-branching).
+  TypeScript alone does not enforce every exhaustive switch.
+
+These alternative method bodies receive `field: PromptField` and return
+`Question`. `PromptField` is an enum-backed union with `Text`, `Integer`, and `Choice`
+variants of `FieldType`. All variants carry `question`; only `Choice` carries
+`options`. Assume the host owns the `Question` output shape: a required `title`
+and, for choice prompts, `options`.
+The first body returns its local `question` after the shown declaration.
+Both compile; only the preferred form requires each field kind to be named.
+
+**Prohibited:** a new field type silently receives the text-field prompt.
+
+```ts
+const question = field.type === FieldType.Choice
+  ? { title: field.question, options: field.options }
+  : { title: field.question };
+```
+
+**Preferred:** every field type is named, including cases that share output.
+
+```ts
+switch (field.type) {
+  case FieldType.Text:
+  case FieldType.Integer:
+    return { title: field.question };
+  case FieldType.Choice:
+    return { title: field.question, options: field.options };
+}
+```
+
 ## Normalize absence at entry
 
 Do not author null/undefined tokens or generic Option/Maybe/Present-Absent
@@ -104,7 +175,7 @@ switch (setting.kind) {
 
 ## Distinguish effects from absent values
 
-Allow void for complete unit returns, callbacks, Promise<void>, synchronous-or-
+Allow void for complete unit returns, callbacks, `Promise<void>`, synchronous-or-
 asynchronous effects, and unary discard. Reject T | void and nested value-or-void
 contracts. Model value absence explicitly instead.
 

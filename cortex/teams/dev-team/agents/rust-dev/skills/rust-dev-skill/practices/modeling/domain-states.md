@@ -120,10 +120,9 @@ pub struct NoteText(String);
 
 impl From<String> for Note {
     fn from(text: String) -> Self {
-        if text.is_empty() {
-            Self::Empty
-        } else {
-            Self::Text(NoteText(text))
+        match text.as_str() {
+            "" => Self::Empty,
+            _ => Self::Text(NoteText(text)),
         }
     }
 }
@@ -252,13 +251,19 @@ pub struct SyncRequest {
 
 impl From<bool> for SyncMode {
     fn from(force: bool) -> Self {
-        if force { Self::Forced } else { Self::Scheduled }
+        match force {
+            true => Self::Forced,
+            false => Self::Scheduled,
+        }
     }
 }
 
 impl From<bool> for UploadMode {
     fn from(upload: bool) -> Self {
-        if upload { Self::Enabled } else { Self::Disabled }
+        match upload {
+            true => Self::Enabled,
+            false => Self::Disabled,
+        }
     }
 }
 
@@ -281,10 +286,64 @@ legal combinations and reject invalid input instead of copying the flag matrix.
 For raw JSON, decode into those owned enums; do not invent an intermediate
 application-authored struct of booleans.
 
-Library predicates and operators necessarily produce boolean expressions. Consume
-those directly in control flow, as with membership insertion below; do not store
-them as values or expose an authored boolean predicate. This is not permission
-for boolean domain models or duplicate serialized flags derived from enums.
+### Name predicate outcomes before choosing behavior
+
+When a library predicate or comparison returns `bool`, convert that result
+into a named domain outcome where the expression is evaluated.
+
+- Match the expression directly; do not store its boolean result.
+- Return the decision's enum from the conversion.
+- Choose workflow actions by matching that enum.
+- Apply this rule to private helpers and mechanical decisions too.
+- Do not expose the enum through a boolean getter or serialize a duplicate flag.
+
+These alternatives belong to `JobQueue`, which owns `jobs: Vec<Job>`.
+The call sites assume a worker with `wait()` and `process()` operations.
+Both alternatives compile; the first violates the boolean API rule.
+
+**Prohibited:** the helper exposes a boolean and the caller chooses actions
+from `true` and `false`.
+
+```rust
+// Inside impl JobQueue:
+fn is_empty(&self) -> bool {
+    self.jobs.is_empty()
+}
+
+// At the call site:
+match queue.is_empty() {
+    true => worker.wait(),
+    false => worker.process(),
+}
+```
+
+**Preferred:** the helper names the state before the caller chooses an action.
+
+```rust
+pub enum QueueState {
+    Empty,
+    Ready,
+}
+
+// Inside impl JobQueue:
+fn state(&self) -> QueueState {
+    match self.jobs.is_empty() {
+        true => QueueState::Empty,
+        false => QueueState::Ready,
+    }
+}
+
+// At the call site:
+match queue.state() {
+    QueueState::Empty => worker.wait(),
+    QueueState::Ready => worker.process(),
+}
+```
+
+The library boolean stays inside `state()`. The caller receives the queue's
+meaningful alternatives. Keep this conversion on the existing owner; the shared
+[branching rule](../../../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)
+prohibits decorative `True`/`False` enums and generic branching helpers.
 
 ## Put payloads on their owning variants
 
@@ -361,12 +420,77 @@ pub enum DeliveryMode {
 pub enum ShippingSpeed { Standard, Express }
 ```
 
+## Match domain values directly
+
+Apply the shared [branching rule](../../../../../../docs/programming/branching-and-exhaustive-matching.md).
+Use native `match` for domain decisions. Ordinary boolean `if`, `else if`, and
+`if`/`else` expressions are prohibited, including guards, adapters, and tests.
+
+These alternative method bodies receive `delivery: DeliveryKind` and return
+`AddressRequirement`. `DeliveryKind` has `Shipment` and `Download` variants;
+`AddressRequirement` has `Required` and `NotRequired` variants. Both compile;
+the boolean branch violates the practice.
+
+**Prohibited:** turn the delivery kind into a boolean.
+
+```rust
+if matches!(delivery, DeliveryKind::Shipment) {
+    AddressRequirement::Required
+} else {
+    AddressRequirement::NotRequired
+}
+```
+
+**Preferred:** match the delivery kind directly.
+
+```rust
+match delivery {
+    DeliveryKind::Shipment => AddressRequirement::Required,
+    DeliveryKind::Download => AddressRequirement::NotRequired,
+}
+```
+
+## Encourage Rust conditional patterns
+
+- Use Rust `if let`, `else if let`, `if let ... else`, and `let ... else` for
+  focused variant handling or payload extraction. These forms are pattern
+  matching; unmatched cases may intentionally share a fallback or do nothing.
+- Use a full exhaustive `match` when variants need distinct decisions that must
+  be revisited when the enum grows.
+- Require a genuine pattern on the value. Do not disguise a boolean condition
+  as `if let true = predicate`, append boolean conditions to a let-chain, or put
+  an ordinary `else if condition` after a pattern branch.
+- Match guards may refine a pattern while preserving the exhaustive handling
+  required for closed domain alternatives.
+
+**Prohibited:** use `if let true = matches!(event, Event::Progress(_))` to
+reintroduce a boolean guard and discard its payload.
+
+**Preferred:** match the progress variant and use its payload. These alternative
+fragments assume existing event and reporting owners; each intentionally treats
+all non-progress events alike.
+
+```rust
+if let Event::Progress(update) = event {
+    reporter.progress(update);
+} else {
+    reporter.idle();
+}
+```
+
+```rust
+let Event::Progress(update) = event else {
+    return;
+};
+reporter.progress(update);
+```
+
 ## Match decisions exhaustively
 
-When variants require distinct behavior, name every arm. A wildcard or early
-return must not silently assign future variants an existing policy. Use `if let`
-or positive `let ... else` only when all unmatched variants intentionally share
-one behavior. Avoid negated compound conditions and deeply nested matches.
+When variants require distinct behavior, name every arm so a new variant requires
+a new decision. For focused payload extraction, use
+[conditional patterns](#encourage-rust-conditional-patterns) with intentional
+unmatched handling. Keep decisions with their owners and avoid deeply nested matches.
 
 These alternatives convert the existing domain `DeliveryKind` into the
 consumer-owned `AddressRequirement`.
@@ -419,10 +543,10 @@ pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
 
 ```rust
 pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
-    if !self.seen.insert(id) {
-        return Err(RegistrationError::Duplicate);
+    match self.seen.insert(id) {
+        true => Ok(self),
+        false => Err(RegistrationError::Duplicate),
     }
-    Ok(self)
 }
 ```
 

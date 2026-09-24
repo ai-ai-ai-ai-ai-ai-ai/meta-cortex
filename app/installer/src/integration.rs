@@ -187,14 +187,14 @@ pub struct HarnessInfo {
 
 pub enum IntegrationPlan {
     Skip,
-    Write(PreparedInstructions),
+    Write { instructions: PreparedInstructions },
 }
 
 impl IntegrationPlan {
     pub fn apply(self) -> Result<(), InstructionError> {
         match self {
             Self::Skip => Ok(()),
-            Self::Write(instructions) => instructions.write(),
+            Self::Write { instructions } => instructions.write(),
         }
     }
 }

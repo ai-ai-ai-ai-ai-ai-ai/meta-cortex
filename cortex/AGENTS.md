@@ -109,8 +109,18 @@ in this thread.
 Identify both roots before planning development work:
 
 - **Library root**
-  - The directory containing this file and `meta-cortex.toml`.
+  - Run from this file's directory; continue only if it succeeds:
+
+    ```sh
+    export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:$PATH" &&
+    bun scripts/src/ts/check-library-root.ts
+    ```
+
   - Supplies Meta-Cortex instructions, roles, skills, and configuration.
+  - Use this PATH for subsequent framework script commands. Supply it again when
+    the host starts a new shell for each tool call.
+  - Initialization installs mise, Bun, Vale, and the shared workspace dependencies. If they are missing,
+    rerun Framework / Initialize; individual skills do not reinstall them.
 - **Project root**
   - The consuming repository that owns the user's development task.
   - Identify it from the host workspace and the project's instructions.

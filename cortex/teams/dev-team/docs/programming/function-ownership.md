@@ -35,9 +35,6 @@ to reconstruct that decision.
 - Let callers act on the outcome without reconstructing its prerequisites.
 - Apply the same placement rule recursively inside the extracted behavior.
 - Keep each nested decision with the domain that owns its meaning.
-- Treat more than three nested branches or matches as a signal of mixed
-  responsibilities or misplaced domain knowledge.
-- Extract those decisions into meaningful owner types with intent-named methods.
 - Preserve short-circuit behavior when it protects admission or effects.
 - Keep transport records structural at their external boundary.
 - Admit those records into meaningful owners when authored behavior needs them.
@@ -52,6 +49,49 @@ A compound condition is evidence, not a mechanical extraction rule. Conditions
 that relate independent owners belong to the operation that owns that relation.
 An empty wrapper around the original expression does not establish ownership.
 
+### Limit nesting and abstraction
+
+- Keep at most two nested execution scopes inside an operation.
+- Count callbacks, closures, branches, and loops together along each execution path.
+- Start the operation's body at zero; each nested execution scope adds one.
+- Count a match and its alternatives as one level.
+- Do not add together sibling branches or sequential callbacks.
+- Exclude type and module bodies, data literals, and grouping syntax from execution depth.
+- Apply the [branching rules](branching-and-exhaustive-matching.md) when choosing
+  control flow.
+- Flatten first with sequential steps, named values, and existing operations.
+- Do not add a callback that only forwards its argument.
+- Extract a meaningful stage or repeated behavior onto its existing owner when
+  flattening alone is insufficient.
+- Reject a chain of forwarding helpers, new types, services, or generic
+  combinators created only to satisfy the depth limit. A small operation must
+  remain understandable without following a chain of trivial methods.
+- Evaluate the whole operation, not only its deepest expression. Passing a
+  nesting check does not justify unnecessary abstraction or repeated wrapping.
+
+These language-neutral sketches assume the catalog already exposes its titles.
+They illustrate structure, not executable syntax or a library recipe.
+
+**Prohibited:** add a third nested loop to perform a catalog-wide operation.
+
+```text
+Catalog.printTitles(printer):
+  for shelf in shelves:
+    for book in shelf.books:
+      for title in book.titles:
+        printer.print(title)
+```
+
+**Preferred:** use the catalog's existing traversal operation.
+
+```text
+Catalog.printTitles(printer):
+  for title in titles():
+    printer.print(title)
+```
+
+Do not create a chain of forwarding helpers merely to reproduce this shape.
+
 ### Precise receivers
 
 - Inspect the data used by every helper, including single-field predicates.
@@ -63,7 +103,6 @@ An empty wrapper around the original expression does not establish ownership.
 - Let a meaningful aggregate API delegate to its nested semantic owner.
 - Pass only the related value needed by a comparison or relationship.
 - Reuse the existing enum or dependency discriminator in that owner.
-- Preserve compiler narrowing where a transport variant exposes its payload.
 
 For example, an article renderer owns whether a block contributes to an article
 body. Depending only on the block kind does not move article policy into the
@@ -102,8 +141,7 @@ only its own behavior and has no dependency on address policy.
 - Put constants on the type that owns their meaning.
 - Keep mutable state in instance fields, not globals or mutable static members.
 - Keep parameters, temporary variables, and local constants inside their owning operation.
-- Treat function-valued variables as functions; assigning a helper to a variable
-  does not bypass ownership.
+- Keep reusable behavior with its owner regardless of declaration syntax.
 - Shared state needs an explicit owner passed to its consumers.
 
 **Prohibited:** a module exports a retry limit, a mutable attempt counter, and
@@ -180,6 +218,9 @@ other domain rules owned elsewhere.
   variable as a P1 review finding.
 - Treat misplaced domain decisions or mixed owner responsibilities in new or
   changed code as P1 findings.
+- Reject more than two nested execution scopes and abstraction added merely to
+  evade that limit. Review mixed nesting across callbacks and branches together;
+  language linters may count these constructs separately.
 - Inspect public, private, nested, test, callback, and adapter functions, plus
   module-level declarations and mutable static members.
 - Verify that the selected owner has semantic knowledge or capability required

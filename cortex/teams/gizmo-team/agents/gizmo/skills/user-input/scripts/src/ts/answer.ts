@@ -52,13 +52,13 @@ export class FieldAnswer {
       case FieldType.Integer: {
         if (typeof value === "string" && !/^[+-]?\d+$/.test(value.trim()))
           return this.invalid(IssueCode.Integer);
-        const parsed = Schema.decodeUnknownEither(FormSchema.integer)(
+        const parsed = Schema.decodeUnknownResult(FormSchema.integer)(
           Number(value),
         );
         switch (parsed._tag) {
-          case "Right":
-            return { kind: AnswerKind.Accepted, value: parsed.right };
-          case "Left":
+          case "Success":
+            return { kind: AnswerKind.Accepted, value: parsed.success };
+          case "Failure":
             return this.invalid(IssueCode.Integer);
         }
       }

@@ -57,7 +57,8 @@ impl Ledger<Located<Feature>> {
             worktree: request.input.worktree.canonicalize()?,
         };
         request.repository.require_feature(&feature)?;
-        let path = request.repository.ledger_path(&feature.id);
+        request.repository.initialize()?;
+        let path = request.repository.ledger_path(&feature.id)?;
         fs::create_dir_all(
             path.parent()
                 .ok_or(LedgerError::Invalid("ledger path has no parent"))?,
@@ -72,7 +73,7 @@ impl Ledger<Located<Feature>> {
 
 impl Ledger<Located<FeatureId>> {
     fn locate(request: OpenLedger) -> Result<Self, LedgerError> {
-        let path = request.repository.ledger_path(&request.feature);
+        let path = request.repository.ledger_path(&request.feature)?;
         if !path.is_file() {
             return Err(LedgerError::Uninitialized);
         }
@@ -187,12 +188,12 @@ impl Ledger<SchemaReady<FeatureId>> {
 #[cfg(test)]
 pub mod tests {
     use super::{InitializeLedger, Ledger, OpenLedger};
-    use crate::LedgerError;
     use crate::git::Repository;
     use crate::request::InitFeature;
     use crate::store::schema::FeatureTable;
     use crate::store::sql::SqlStatement;
     use crate::values::{BranchName, FeatureId, Note};
+    use crate::{DataDirectory, LedgerError};
     use sea_query::Query;
     use tokio::runtime;
     use turso::Builder;
@@ -207,7 +208,9 @@ pub mod tests {
         let tree_id = git.index()?.write_tree()?;
         let tree = git.find_tree(tree_id)?;
         git.commit(Some("HEAD"), &signature, &signature, "initial", &tree, &[])?;
-        let repository = Repository::discover(directory.path())?;
+        let data = tempfile::tempdir()?;
+        let repository = Repository::discover(directory.path())?
+            .with_data_directory(DataDirectory::from(data.path().to_owned()));
         let feature = FeatureId::try_from("feature".to_owned())?;
         let branch = BranchName::try_from("codex/feature".to_owned())?;
         runtime::Builder::new_current_thread()

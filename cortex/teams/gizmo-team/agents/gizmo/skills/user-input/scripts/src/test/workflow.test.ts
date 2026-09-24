@@ -184,8 +184,8 @@ describe("request/state boundary", () => {
   ])("rejects malformed request or fabricated state %s", (request) => {
     const sources: InputSources = { schema: FormScenario.profile, request };
     const result = Effect.runSync(
-      Effect.either(new InputApplication(sources).run()),
+      Effect.result(new InputApplication(sources).run()),
     );
-    expect(result._tag).toBe("Left");
+    expect(result._tag).toBe("Failure");
   });
 });

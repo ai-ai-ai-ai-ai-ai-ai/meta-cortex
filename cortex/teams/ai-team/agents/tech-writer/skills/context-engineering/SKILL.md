@@ -75,93 +75,73 @@ Its local links resolve; the code example was reviewed but not executed.”
 
 ## Executable audits
 
-Use the co-located [scripts](scripts/package.json) for deterministic checks of
-supplied document facts. They provide a local YAML command interface with a
-command catalog; they do not require an MCP server or Loom.
+Run the bundled Vale and remark checks against actual Markdown files.
+Initialization installs mise, Bun, Vale, and the shared script dependencies.
+Individual skills reuse those installations. Run these commands from the
+library root (`cortex/` here, `.meta-cortex/` in an installed project).
 
-### Prepare and discover
+Check the framework:
 
-1. Resolve the Meta-Cortex library root as `library_root` (`cortex/` in this
-   repository, `.meta-cortex/` in an installed project).
-2. Install the root workspace once with Bun 1.3.14:
+```sh
+bun run docs:check
+```
 
-   ```sh
-   cd "$library_root"
-   bun install --frozen-lockfile --ignore-scripts
-   ```
+Check selected project documents using paths relative to the library root:
 
-   The root manifest and lockfile cover all skill script packages. The hoisted
-   linker shares one root `node_modules/`; Bun reuses its home-directory cache
-   (`~/.bun/install/cache`). Do not create per-skill installs, lockfiles, caches,
-   or temporary runtime copies. Keep dependency versions aligned across skills
-   so Bun does not need nested installations for conflicts.
+```sh
+bun run docs:check ../AGENTS.md ../docs
+```
 
-3. Discover command schemas and complete YAML examples:
+Quoted glob patterns and absolute paths are also supported. Dependency folders,
+Git metadata, and Rust build output are excluded. A selection matching no
+Markdown files fails. Both tools report file locations; a finding or tool failure
+makes the command fail. Checks never rewrite documents.
 
-   ```sh
-   bun teams/ai-team/agents/tech-writer/skills/context-engineering/scripts/src/ts/cli.ts --request-yaml='version: 1
-   tools:
-     list: {}'
-   ```
+**Prohibited:** send an agent-authored description of a document and claim its
+source was checked.
 
-4. Adapt a returned `exampleYaml` to the assigned documents and pass it as one
-   quoted `--request-yaml` argument. Responses are YAML on stdout.
-   Exit codes: `0` for discovery or no findings, `1` for findings, `2` for an
-   invalid request or a response exceeding its limit.
+**Preferred:** pass its path, run the checks, and fix the findings in the file.
 
-**Prohibited:** claim that catalog discovery audited the repository.
+### Check coverage
 
-**Preferred:** invoke an audit with the relevant facts and report its findings
-separately from semantic review.
+- **Vale:** checks repeated words, sentence spacing, and Cortex product-name
+  spellings. The selected [styles](scripts/styles/README.md) ship with the framework;
+  no per-task style download is needed.
+- **remark:** parses Markdown, including frontmatter and GitHub tables. Standard
+  plugins check local file links, heading anchors, reference definitions, and
+  authored HTML. External URLs are not fetched.
+- **Article plugin:** checks empty H2/H3 sections, more than three consecutive
+  prose paragraphs, procedure headings without numbered actions, and tables.
+- **Practice-index plugin:** checks local `practices/` files against the index's
+  `File:` or `Source:` entries, duplicate owning entries, duplicate rule names,
+  and rule links missing heading anchors. Links to shared practices outside that
+  directory remain prerequisites; semantic ownership still needs review.
 
-### Select a command
+Meaning, rule completeness, and cross-document policy conflicts remain semantic
+review tasks. An absent index is not proof of coverage. The checker validates
+existing practice indexes and does not invent them.
 
-- **`articles.audit`:** accepts document paths and ordered semantic blocks.
-  It checks empty H2/H3 articles, more than three consecutive prose blocks,
-  explicitly procedure-labeled sections without ordered actions, and tables.
-  These checks adapt Nook's skill scripts; they do not prove writing quality.
-- **`navigation.audit`:** accepts documents, their owning graph paths and exact
-  heading anchors, and the graphs' named owning entries. It checks missing owners,
-  missing entries or targets, missing anchors, foreign ownership, and duplicate
-  rule names within a graph. Distinct rules may link to the same section.
+**Prohibited:** report complete semantic coverage because the command passed.
 
-Supply the complete document/graph inventory for the scope being checked.
-Only put owning entries in `graphs.entries`; related links and prerequisites
-are not ownership declarations. Each entry supplies its `rule` name, `target`,
-`anchor`, and source `line`. Paths identify supplied facts, not files to open.
-Catalog examples and unit fixtures use synthetic paths; replace them with facts
-from the assigned documents.
-Use normalized project-relative paths and resolve relative links before passing
-navigation facts. An empty `anchor` means a document-level link.
+**Preferred:** report which files passed and separately describe the ownership,
+policy, and example review performed.
 
-Article blocks distinguish substantive `paragraph`, `visible-ordered-list`, and
-`structure` content from `transparent` definitions or empty elements. Use
-`density-separator` for image-only paragraphs or thematic breaks, `heading`
-with depth/text, and `table` for rendered Markdown tables. An ordered example
-inside a quote, code block, or footnote is not a `visible-ordered-list` action.
+### Maintain the checks
 
-This iteration does not parse Markdown, discover files, generate graphs, check
-HTML, or infer semantic ownership. The caller supplies those facts; omitted or
-incorrect facts limit the evidence. Requests are limited to 64 KiB and responses
-to 256 KiB. The scripts reject unknown fields, versions, duplicate YAML keys,
-anchors, aliases, tags, directives, and multiple YAML documents.
+1. Prefer existing Vale rules and remark plugins for standard checks.
+2. Keep only Cortex-specific structural rules in `scripts/src/ts`.
+3. Put regression fixtures in `scripts/src/test` and run the workspace checks.
+4. Preserve [Nook's MIT notice](scripts/LICENSE.nook) for the adapted article checks
+   and Google's notice alongside its selected rule.
 
-- **Prohibited:** send a filename alone and report that its contents were checked.
+Run after changing the implementation:
 
-- **Preferred:** supply the document's semantic blocks or navigation inventory,
-  inspect the returned findings, and state the audited scope.
+```sh
+bun run verify
+bun run docs:check
+```
 
-### Maintain scripts
+**Prohibited:** add a custom request protocol or Markdown parser around the tools.
 
-- Keep source in `scripts/src/ts` and tests in `scripts/src/test`.
-- Run `bun run verify` at the library root after changing code.
-- Update dependencies through the root workspace and commit its `bun.lock`.
-- Update discovery examples with their request contracts. Every example must
-  remain directly invocable.
-- Preserve [Nook's MIT notice](scripts/LICENSE.nook) with the adapted code.
-- Keep Nook's policy registry, Loom adapters, and agent lifecycle outside this
-  skill. Audit commands only return findings about supplied facts.
-
-**Prohibited:** make an audit dispatch agents or read commands from Markdown.
-
-**Preferred:** keep execution limited to the selected, statically defined audit.
+**Preferred:** configure the maintained tools and add a small plugin only for a
+Cortex rule they do not provide.

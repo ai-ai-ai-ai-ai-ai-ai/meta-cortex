@@ -10,7 +10,16 @@
 - Extend the existing project-owned check entry point when a gate is missing.
 - Use the chosen package manager and locally installed tools.
 - Preserve the project's formatter, linter, framework, and compiler settings.
+- Apply the [branching checks](#check-branching) to authored TypeScript and
+  JavaScript. Consult the [upstream Effect guidance](../SKILL.md#effect-use-installed-documentation)
+  for Effect code; do not add a separate operator allowlist to the lint gate.
 - Coordinate pipeline changes with the CI/CD owner under the active development mode.
+- Enforce `max-depth: ["error", 2]` and `max-nested-callbacks` with
+  `{ max: 2, checkConstructorCallCallbacks: true }` in adopted packages. Verify
+  the installed ESLint version supports the constructor option. These are
+  separate structural checks; review mixed callback/branch depth under the
+  [TypeScript scope rules](typescript-function-ownership.md#count-execution-scopes).
+  Confirm the previously nested form fails and the flattened form passes.
 
 This `package.json` fragment assumes the package already uses npm, Prettier,
 TypeScript, and ESLint.
@@ -51,6 +60,37 @@ or run ESLint with its default warning threshold and accept remaining warnings.
 
 **Preferred:** run formatter checks, the appropriate type/component checker,
 and lint with zero warnings, then run the required build and tests.
+
+### Check branching
+
+- Reject `IfStatement` and `ConditionalExpression` through the existing lint gate.
+  Include pure code, adapters, tests, and tooling; Effect is not a scope boundary.
+- Require `@typescript-eslint/switch-exhaustiveness-check` with
+  `allowDefaultCaseForExhaustiveSwitch: false` and
+  `considerDefaultExhaustiveForUnions: false`.
+- Require fallthrough checking alongside exhaustiveness checking.
+- Verify that a missing enum case fails lint, even when a `default` is present.
+  TypeScript compilation alone does not prove every switch is exhaustive.
+
+**Prohibited:** accept a switch because its `default` hides a newly added variant.
+
+**Preferred:** apply these rules in the existing ESLint configuration. This is
+its `rules` fragment; it assumes type-aware typescript-eslint is already configured.
+
+```json
+{
+  "no-restricted-syntax": ["error", "IfStatement", "ConditionalExpression"],
+  "no-fallthrough": "error",
+  "@typescript-eslint/switch-exhaustiveness-check": ["error", {
+    "allowDefaultCaseForExhaustiveSwitch": false,
+    "considerDefaultExhaustiveForUnions": false
+  }]
+}
+```
+
+Merge the selectors with existing restrictions. Use the
+[domain-switch examples](typescript-explicit-state.md#match-decisions-exhaustively)
+to review the resulting code; the lint gate supplies enforcement.
 
 ### Fix diagnostics before completion
 

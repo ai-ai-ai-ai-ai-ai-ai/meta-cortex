@@ -1,13 +1,18 @@
 import { Effect } from "effect";
-import { FormSchema } from "./schema.ts";
-import { InputProtocol } from "./protocol.ts";
+import { FormSchema, type Form } from "./schema.ts";
+import { InputProtocol, type InputRequest } from "./protocol.ts";
 import { YamlInput, type YamlDecodeRequest } from "./transport.ts";
-import {
-  InputWorkflow,
-  type WorkflowRequest,
-  type WorkflowResult,
-} from "./workflow.ts";
+import { InputWorkflow, type WorkflowResult } from "./workflow.ts";
 import type { InputFailure } from "./failure.ts";
+
+type FormDecodeRequest = YamlDecodeRequest<
+  Form,
+  typeof FormSchema.value.Encoded
+>;
+type InputDecodeRequest = YamlDecodeRequest<
+  InputRequest,
+  typeof InputProtocol.value.Encoded
+>;
 
 export interface InputSources {
   readonly schema: string;
@@ -15,20 +20,23 @@ export interface InputSources {
 }
 export class InputApplication {
   constructor(private readonly sources: InputSources) {}
-  run(): Effect.Effect<WorkflowResult, InputFailure> {
-    return Effect.gen(this, function* () {
-      const formRequest: YamlDecodeRequest<
-        typeof FormSchema.value.Type,
-        typeof FormSchema.value.Encoded
-      > = { source: this.sources.schema, schema: FormSchema.value };
-      const inputRequest: YamlDecodeRequest<
-        typeof InputProtocol.value.Type,
-        typeof InputProtocol.value.Encoded
-      > = { source: this.sources.request, schema: InputProtocol.value };
-      const form = yield* new YamlInput(formRequest).decode();
-      const input = yield* new YamlInput(inputRequest).decode();
-      const workflow: WorkflowRequest = { form, input };
-      return yield* new InputWorkflow(workflow).advance();
-    });
-  }
+  readonly run = Effect.fnUntraced(function* (
+    this: InputApplication,
+  ): Effect.fn.Return<WorkflowResult, InputFailure> {
+    const formRequest: FormDecodeRequest = {
+      source: this.sources.schema,
+      schema: FormSchema.value,
+    };
+    const inputRequest: InputDecodeRequest = {
+      source: this.sources.request,
+      schema: InputProtocol.value,
+    };
+    const form = new YamlInput(formRequest).decode();
+    const input = new YamlInput(inputRequest).decode();
+    const inputs = { form, input };
+    const decoded = Effect.all(inputs);
+
+    const workflow = yield* decoded;
+    return yield* new InputWorkflow(workflow).advance();
+  });
 }

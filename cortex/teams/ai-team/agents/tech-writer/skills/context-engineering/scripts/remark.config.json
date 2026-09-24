@@ -1,0 +1,18 @@
+{
+  "plugins": [
+    "remark-frontmatter",
+    "remark-gfm",
+    "remark-lint",
+    "remark-lint-no-undefined-references",
+    "remark-lint-no-duplicate-definitions",
+    "remark-lint-no-html",
+    [
+      "remark-validate-links",
+      {
+        "repository": false
+      }
+    ],
+    "./src/ts/articles.ts",
+    "./src/ts/navigation.ts"
+  ]
+}

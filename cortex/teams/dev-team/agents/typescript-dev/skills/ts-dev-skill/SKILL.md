@@ -20,14 +20,15 @@ selected language practices. Reuse it if already loaded for this assignment.
 
 ## Required actions
 
-For every TypeScript or JavaScript implementation or tooling assignment, load
-and apply [TypeScript code checks](practices/typescript-code-checks.md). This
-prerequisite is mandatory, independent of the selected implementation practices.
-
-For any YAML-producing code, load and apply
-[typed YAML construction](practices/typescript-domain-structure.md#serialize-yaml-from-typed-values)
-before implementation or review. This includes static discovery/recovery examples
-and valid fixtures; string construction is prohibited.
+- For every TypeScript or JavaScript implementation or tooling assignment, load
+  and apply [branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md)
+  and its [TypeScript branching guidance](practices/typescript-explicit-state.md#match-domain-values-directly),
+  plus [TypeScript code checks](practices/typescript-code-checks.md), regardless
+  of the selected implementation practices.
+- For any YAML-producing code, load and apply
+  [typed YAML construction](practices/typescript-domain-structure.md#serialize-yaml-from-typed-values)
+  before implementation or review. This includes static discovery/recovery
+  examples and valid fixtures; string construction is prohibited.
 
 **Prohibited:** select only browser practices and omit type checking and linting.
 
@@ -40,6 +41,38 @@ rule ownership and individual requirements. Follow its loading requirements and
 read the selected practices in full. Before changing a rule, inspect its owner and affected related practices;
 update the same namespaced rules, summaries, exceptions, and section links whenever the
 requirements or their placement change.
+
+## Effect: use installed documentation
+
+Before writing Effect code, read the installed `effect/AGENTS.md` completely.
+
+### Choose Effect for workflows
+
+- Use Effect for new or materially changed asynchronous, fallible, resource-owning,
+  concurrent, service-dependent, and untrusted-decoding workflows.
+- Apply this requirement to scripts and tests too.
+- Keep pure calculations with their existing domain owners.
+
+**Prohibited:** a script introduces a separate Promise-based queue for its workflow.
+
+**Preferred:** the script uses Effect for scheduling; pure calculations remain
+methods on their domain owners.
+
+### Manage the pinned release
+
+- When adopting or upgrading Effect, select the latest release on the project's
+  chosen release channel.
+- Pin one exact release across workspace packages and verify the lockfile.
+- Use that pin and its installed docs during routine development.
+- Identify prereleases in delivery evidence.
+- Follow the applicable [official migration guidance](https://github.com/Effect-TS/skills)
+  for upgrades, then run the project's required checks and tests.
+
+**Prohibited:** use a floating `latest` dependency or silently upgrade Effect
+while implementing an unrelated change.
+
+**Preferred:** select a release during an upgrade, pin it consistently, and
+validate the migration before using its APIs.
 
 ## TypeScript security practices
 

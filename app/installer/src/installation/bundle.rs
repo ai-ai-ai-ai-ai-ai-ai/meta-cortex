@@ -16,7 +16,13 @@ impl Bundle<'_> {
 
     pub(super) fn install(self, configuration: ConfigText) -> Result<(), InstallError> {
         // Claim the destination without replacing an existing entry.
-        fs::create_dir(&self.destination)?;
+        match fs::create_dir(&self.destination) {
+            Ok(()) => {}
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                self.verify_identity_only()?;
+            }
+            Err(error) => return Err(error.into()),
+        }
         self.directory.extract(&self.destination)?;
         fs::write(self.destination.join("LICENSE"), Self::LICENSE)?;
         fs::write(
@@ -28,6 +34,22 @@ impl Bundle<'_> {
             Version::CURRENT.as_str(),
         )?;
         Ok(())
+    }
+
+    // Feature initialization or initialization in a linked worktree can create
+    // the shared identity before the framework is installed in the main checkout.
+    pub(super) fn verify_identity_only(&self) -> Result<(), InstallError> {
+        match fs::symlink_metadata(&self.destination)? {
+            metadata if metadata.is_dir() => {}
+            _ => return Err(InstallError::Conflict(self.destination.clone())),
+        }
+        let entries = fs::read_dir(&self.destination)?.collect::<Result<Vec<_>, _>>()?;
+        match entries.as_slice() {
+            [entry] if entry.file_name() == "repository-id" && entry.file_type()?.is_file() => {
+                Ok(())
+            }
+            _ => Err(InstallError::Conflict(self.destination.clone())),
+        }
     }
 
     pub(super) fn verify(&self) -> Result<(), InstallError> {
@@ -86,6 +108,16 @@ impl Bundle<'_> {
                     return Err(InstallError::Conflict(entry.path()));
                 }
                 continue;
+            }
+            match (
+                self.directory.path().as_os_str().is_empty(),
+                entry.file_name(),
+            ) {
+                (true, name) if name == "repository-id" => match entry.file_type()? {
+                    kind if kind.is_file() => continue,
+                    _ => return Err(InstallError::Conflict(entry.path())),
+                },
+                _ => {}
             }
             actual += 1;
         }

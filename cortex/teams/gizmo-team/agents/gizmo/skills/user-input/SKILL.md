@@ -16,10 +16,10 @@ The [protocol](references/protocol.md) owns schema and helper request details.
 
 ### Run a form
 
-Prerequisite: Bun and this library's workspace dependencies. From the resolved
-library root, run `bun install --frozen-lockfile --ignore-scripts` if dependencies
-are missing. Keep one installation at the library root. Report missing Bun or
-installation failure as a blocker; do not bypass validation or choose a default.
+Prerequisite: Bun and this library's shared workspace dependencies, installed
+during framework initialization. Use that installation; if it is missing, rerun
+Framework / Initialize. Report missing Bun or installation failure as a blocker;
+do not bypass validation or choose a default.
 
 Read the protocol before invoking the helper. Use
 [development.yaml](../../../../../../development.yaml) for task configuration or

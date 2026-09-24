@@ -1,16 +1,44 @@
 use thiserror::Error;
 mod bundle;
+mod dependencies;
+mod tools;
+
+use tools::ToolRequest;
+pub use tools::{Tool, ToolSetup};
 
 use crate::configuration::{ConfigError, ConfigText, Configuration};
 use crate::information::{ProjectInfo, Version, VersionError};
 use crate::integration::{InstructionError, IntegrationOptions, ProjectHarnesses};
 use bundle::Bundle;
+use dependencies::WorkspaceDependencies;
+use meta_cortex_workbench::{DataDirectory, LedgerError, Workbench};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Error)]
 pub enum InstallError {
+    #[error("repository initialization failed: {0}")]
+    Repository(#[from] LedgerError),
+    #[error("Meta-Cortex requires a Git repository: {0}")]
+    Git(#[from] git2::Error),
+    #[error(
+        "{tool} setup failed for {path}; use InstallMissing or install {tool} manually and rerun Framework / Initialize: {source}"
+    )]
+    ToolUnavailable {
+        tool: Tool,
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
+    #[error(
+        "could not install framework dependencies in {path}; install Bun and rerun Framework / Initialize: {source}"
+    )]
+    Dependencies {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
     #[error("filesystem operation failed: {0}")]
     Io(#[from] io::Error),
     #[error(
@@ -39,6 +67,7 @@ pub enum InstallError {
 
 pub struct Project {
     root: PathBuf,
+    data: DataDirectory,
 }
 
 pub struct Installation {
@@ -66,8 +95,10 @@ impl Project {
         if !path.is_dir() {
             return Err(InstallError::InvalidProject(path));
         }
+        git2::Repository::discover(&path)?;
         Ok(Self {
             root: path.canonicalize()?,
+            data: DataDirectory::discover()?,
         })
     }
 
@@ -103,12 +134,17 @@ impl Project {
         let destination = self.root.join(".meta-cortex");
         let bundle = match fs::symlink_metadata(&destination) {
             Ok(_) => {
-                Bundle {
+                let bundle = Bundle {
                     directory: &Bundle::FRAMEWORK,
                     destination: destination.clone(),
+                };
+                match bundle.verify_identity_only() {
+                    Ok(()) => BundleState::Absent,
+                    Err(_) => {
+                        bundle.verify()?;
+                        BundleState::Identical
+                    }
                 }
-                .verify()?;
-                BundleState::Identical
             }
             Err(error) if error.kind() == io::ErrorKind::NotFound => BundleState::Absent,
             Err(error) => return Err(error.into()),
@@ -122,6 +158,9 @@ impl Project {
 
 pub struct InitRequest {
     pub integration: IntegrationOptions,
+    pub mise: ToolSetup,
+    pub bun: ToolSetup,
+    pub vale: ToolSetup,
 }
 
 impl Installation {
@@ -130,23 +169,64 @@ impl Installation {
         let integration = request.integration.plan(ProjectHarnesses {
             root: self.project.root.clone(),
         })?;
+        request
+            .mise
+            .prepare(ToolRequest {
+                tool: Tool::Mise,
+                home: self.project.data.path().to_owned(),
+            })
+            .map_err(|source| InstallError::ToolUnavailable {
+                tool: Tool::Mise,
+                path: destination.clone(),
+                source,
+            })?;
+        let bun = request
+            .bun
+            .prepare(ToolRequest {
+                tool: Tool::Bun,
+                home: self.project.data.path().to_owned(),
+            })
+            .map_err(|source| InstallError::ToolUnavailable {
+                tool: Tool::Bun,
+                path: destination.clone(),
+                source,
+            })?;
+        request
+            .vale
+            .prepare(ToolRequest {
+                tool: Tool::Vale,
+                home: self.project.data.path().to_owned(),
+            })
+            .map_err(|source| InstallError::ToolUnavailable {
+                tool: Tool::Vale,
+                path: destination.clone(),
+                source,
+            })?;
+        let dependencies = WorkspaceDependencies {
+            directory: destination.clone(),
+            bun,
+        };
         match self.bundle {
             BundleState::Absent => {
                 let configuration = ConfigText::try_from(Configuration::bundled()?)?;
                 Bundle {
                     directory: &Bundle::FRAMEWORK,
-                    destination,
+                    destination: destination.clone(),
                 }
                 .install(configuration)?;
             }
             BundleState::Identical => {
                 Bundle {
                     directory: &Bundle::FRAMEWORK,
-                    destination,
+                    destination: destination.clone(),
                 }
                 .verify()?;
             }
         }
+        dependencies.install()?;
+        Workbench::discover(&self.project.root)?
+            .with_data_directory(self.project.data)
+            .initialize_repository()?;
         integration.apply()?;
         Ok(InstalledProject {
             root: self.project.root,
@@ -156,33 +236,60 @@ impl Installation {
 
 #[cfg(test)]
 pub mod tests {
-    use super::{InitRequest, InstallError, Project};
+    use super::{DataDirectory, InitRequest, InstallError, Project, ToolSetup};
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
     use std::fs;
     use std::io;
     use std::os::unix::fs::symlink;
+    use std::process::Command;
     use tempfile::{TempDir, tempdir};
 
     struct Fixture {
         directory: TempDir,
+        data: TempDir,
     }
     impl Fixture {
         fn create() -> Result<Self, InstallError> {
-            Ok(Self {
-                directory: tempdir()?,
-            })
+            let directory = tempdir()?;
+            git2::Repository::init(directory.path())?;
+            let fixture = Self {
+                directory,
+                data: tempdir()?,
+            };
+            fixture.seed_tools()?;
+            Ok(fixture)
+        }
+        fn seed_tools(&self) -> io::Result<()> {
+            // Tests supply managed installations from the runner's toolchain.
+            for name in ["mise", "bun", "vale"] {
+                let output = Command::new("sh")
+                    .args(["-c", "command -v \"$1\"", "sh", name])
+                    .output()?;
+                assert!(output.status.success(), "missing test tool: {name}");
+                let directory = self.data.path().join(name).join("bin");
+                fs::create_dir_all(&directory)?;
+                let executable = String::from_utf8(output.stdout).map_err(io::Error::other)?;
+                symlink(executable.trim(), directory.join(name))?;
+            }
+            Ok(())
         }
         fn install(&self) -> Result<(), InstallError> {
-            Project::open(self.directory.path().to_path_buf())?
-                .prepare()?
-                .install(InitRequest {
-                    integration: IntegrationOptions {
-                        harness: HarnessChoice::Selected(Harness::Codex),
-                        instructions: InstructionAction::Write,
-                    },
-                })?;
+            Project {
+                data: DataDirectory::from(self.data.path().to_owned()),
+                ..Project::open(self.directory.path().to_path_buf())?
+            }
+            .prepare()?
+            .install(InitRequest {
+                mise: ToolSetup::RequireExisting,
+                bun: ToolSetup::RequireExisting,
+                vale: ToolSetup::RequireExisting,
+                integration: IntegrationOptions {
+                    harness: HarnessChoice::Selected(Harness::Codex),
+                    instructions: InstructionAction::Write,
+                },
+            })?;
             Ok(())
         }
         fn preserves_and_repeats(self) -> Result<(), InstallError> {
@@ -201,15 +308,17 @@ pub mod tests {
             self.install()?;
             let root = self.directory.path().join(".meta-cortex");
             let modules = root.join("node_modules");
-            assert!(!modules.exists());
+            assert!(modules.join("effect/AGENTS.md").is_file());
             assert!(root.join("package.json").is_file());
             assert!(root.join("bun.lock").is_file());
-            fs::create_dir(&modules)?;
             let marker = modules.join("installed-package");
             fs::write(&marker, "local dependency")?;
             self.install()?;
             Project::open(self.directory.path().to_path_buf())?.info()?;
             assert_eq!(fs::read_to_string(marker)?, "local dependency");
+            fs::remove_dir_all(&modules)?;
+            self.install()?;
+            assert!(modules.join("effect/AGENTS.md").is_file());
             fs::write(root.join("unexpected-file"), "unexpected")?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             Ok(())
@@ -218,6 +327,7 @@ pub mod tests {
             self.install()?;
             let external = tempdir()?;
             let modules = self.directory.path().join(".meta-cortex/node_modules");
+            fs::remove_dir_all(&modules)?;
             symlink(external.path(), &modules)?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             fs::remove_file(&modules)?;
@@ -235,7 +345,11 @@ pub mod tests {
         }
         fn rejects_license_changed_after_prepare(self) -> Result<(), InstallError> {
             self.install()?;
-            let prepared = Project::open(self.directory.path().to_path_buf())?.prepare()?;
+            let prepared = Project {
+                data: DataDirectory::from(self.data.path().to_owned()),
+                ..Project::open(self.directory.path().to_path_buf())?
+            }
+            .prepare()?;
             let license = self
                 .directory
                 .path()
@@ -245,6 +359,9 @@ pub mod tests {
             let agents = self.directory.path().join("AGENTS.md");
             fs::remove_file(&agents)?;
             let result = prepared.install(InitRequest {
+                mise: ToolSetup::RequireExisting,
+                bun: ToolSetup::RequireExisting,
+                vale: ToolSetup::RequireExisting,
                 integration: IntegrationOptions {
                     harness: HarnessChoice::Selected(Harness::Codex),
                     instructions: InstructionAction::Write,

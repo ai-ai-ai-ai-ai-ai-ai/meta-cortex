@@ -18,7 +18,8 @@ reader can detect contradictions without opening every file.
 Related entries are review relationships, not instructions for leaf documents to
 link back here. Apply the relevant cross-language practices when the assignment crosses that boundary.
 
-For implementation, refactoring, review, and tooling, always load Domain types,
+For implementation, refactoring, review, and tooling, always load Branching and
+exhaustive matching, Domain types,
 Domain states, Module layout, and Rust code checks as required by the skill entry point. Select
 additional entries covering the decisions being changed and load those practices
 in full. Include related subjects when the change crosses their boundaries.
@@ -211,7 +212,7 @@ in full. Include related subjects when the change crosses their boundaries.
 ### Domain states
 
 - **File:** [Domain states](practices/modeling/domain-states.md).
-- **Owns:** Runtime alternatives, state-owned payloads, exhaustive decisions, Option/boolean prohibitions, and external-record conversion.
+- **Owns:** Runtime alternatives, state-owned payloads, native matching and conditional patterns, Option/boolean prohibitions, and external-record conversion.
 - **Does not own:** Legal transition sequences belong to Workflow typestate; value identity belongs to Domain types.
 - **Related:** [Domain types](practices/modeling/domain-types.md), [Workflow typestate](practices/behavior/workflow-typestate.md), [Error handling](practices/behavior/error-handling.md).
 
@@ -262,7 +263,7 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[domain_states:boolean_conversion](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
 
-  - Allow destination-owned From<bool> at external conversion boundaries, or TryFrom
+  - Allow destination-owned `From<bool>` at external conversion boundaries, or TryFrom
     when conversion can fail.
   - Prohibit enum-to-bool conversions and serde(into = "bool") by default.
   - Allow them only for a required external interface or established backward compatibility.
@@ -280,12 +281,14 @@ in full. Include related subjects when the change crosses their boundaries.
   - Do not redeclare external boolean DTOs or retain their raw records behind getters.
   - Decode raw JSON into owned states.
 
-- **[domain_states:mechanical_predicates](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
+- **[domain_states:mechanical_predicates](practices/modeling/domain-states.md#name-predicate-outcomes-before-choosing-behavior)**
 
-  - Consume library predicate/operator booleans directly in control flow.
-  - Do not expose authored boolean predicates or store mechanical results as policy.
+  - Normalize library predicate/operator booleans into named domain outcomes
+    at their boundary before workflow behavior.
+  - Match the expression directly; do not store its boolean result or expose an
+    authored boolean predicate. Apply this to private helpers and mechanical decisions.
 
-- **[domain_states:no_derived_flags](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
+- **[domain_states:no_derived_flags](practices/modeling/domain-states.md#name-predicate-outcomes-before-choosing-behavior)**
 
   - Do not add is_* methods that merely reveal a variant, decorative True/False
     variants, or duplicate serialized boolean fields derivable from an enum.
@@ -306,12 +309,25 @@ in full. Include related subjects when the change crosses their boundaries.
   - Keep authorization capability construction private.
   - Model legal action sequencing with typestate rather than runtime flag bags.
 
+- **[branching:rust_match](practices/modeling/domain-states.md#match-domain-values-directly)**
+
+  - Use native match for domain decisions; ordinary boolean if/else-if/if-else
+    expressions are prohibited, including guards, adapters, and tests.
+
+- **[branching:rust_patterns](practices/modeling/domain-states.md#encourage-rust-conditional-patterns)**
+
+  - Encourage if let, else if let, if-let-else, and let-else for focused pattern
+    handling when unmatched cases intentionally share behavior.
+  - Reject boolean disguises, boolean let-chain conditions, and ordinary else-if
+    conditions. Pattern guards may refine a match without hiding missing cases.
+  - Use exhaustive match when variants need distinct decisions as the enum grows.
+
 - **[domain_states:exhaustive_matching](practices/modeling/domain-states.md#match-decisions-exhaustively)**
 
   - Match evolving decisions exhaustively.
   - Wildcard/early-exit branches may not silently classify future variants.
-  - Use if let or positive let-else only when unmatched variants intentionally share
-    handling.
+  - Encourage genuine if let, if let-else, and positive let-else when unmatched
+    variants intentionally share handling under the Rust conditional-pattern rule.
 
 - **[domain_states:decision_locality](practices/modeling/domain-states.md#match-decisions-exhaustively)**
 
@@ -381,12 +397,46 @@ in full. Include related subjects when the change crosses their boundaries.
 
 - **[default_values:enum_defaults](practices/modeling/default-values.md#enums-mark-the-default-variant)**
 
-  - Use #[default] on the intended unit enum variant.
+  - Use `#[default]` on the intended unit enum variant.
   - Implement Default manually when the default variant carries data.
 
 
 
 ## Behavior
+
+### Branching and exhaustive matching
+
+- **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
+- **Owns:** Language-independent branching policy and exhaustive domain decisions.
+- **Does not own:** Language syntax, examples, and enforcement belong to the language practices.
+- **Related:** [Domain states](practices/modeling/domain-states.md), [Rust code checks](practices/tooling/rust-code-checks.md).
+
+- **[branching:no_boolean_if](../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions)**
+
+  - Match named domain alternatives directly; prohibit ordinary boolean conditions
+    throughout authored code, including guards, validation, tests, and tooling.
+  - Convert required raw inputs and dependency predicates at their boundary;
+    name boolean outcomes before choosing workflow actions.
+  - Keep conversions on existing owners without decorative branching abstractions.
+  - Prefer native patterns; use library matchers only when native constructs cannot
+    clearly express the pattern. Preserve exhaustiveness during migration.
+
+- **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
+
+  - Prohibit ternary conditional operators where available; use explicit patterns.
+
+- **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
+
+  - Name every variant in closed domain decisions and reject fallbacks that
+    silently absorb future variants; check exhaustiveness statically.
+  - Group named alternatives only when they share behavior.
+  - Distinguish full decisions from focused payload extraction and open-input matching.
+
+- **[branching:validation](../../../../docs/programming/branching-and-exhaustive-matching.md#validation)**
+
+  - Verify that adding a variant fails incomplete decisions under required static checks.
+  - Review focused patterns, unmatched handling, and boundary conversions.
+  - Test variants separately when outcomes or payloads differ.
 
 ### Function ownership
 
@@ -406,6 +456,13 @@ in full. Include related subjects when the change crosses their boundaries.
   - Use receiver methods for instance behavior, associated functions for owned
     construction/stateless behavior, and traits only for genuine shared contracts or
     external interfaces.
+
+- **[function_ownership:nesting](practices/behavior/function-ownership.md#choose-the-owner)**
+
+  - Limit combined match, closure, loop, and conditional-pattern nesting to two
+    execution scopes; flatten before extracting meaningful owned behavior.
+  - Reject forwarding layers added only to satisfy depth. Clippy's structural
+    threshold is a backstop, not an exact check of mixed execution scopes.
 
 - **[function_ownership:no_utility_containers](practices/behavior/function-ownership.md#choose-the-owner)**
 
@@ -511,7 +568,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[workflow_typestate:typed_owner](practices/behavior/workflow-typestate.md#state-and-transitions)**
 
   - Prioritize typestate for meaningful new/changed action flows: domain-named
-    owner<State>, distinct payload states, and transitions on specialized owner impls.
+    `owner<State>`, distinct payload states, and transitions on specialized owner impls.
 
 - **[workflow_typestate:consuming_transitions](practices/behavior/workflow-typestate.md#state-and-transitions)**
 
@@ -604,7 +661,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[error_handling:source_conversion](practices/behavior/error-handling.md#add-context-only-when-it-changes-the-error)**
 
   - Preserve typed sources.
-  - Use #[from] and ? for direct conversion, map_err for added context or selection
+  - Use `#[from]` and ? for direct conversion, map_err for added context or selection
     among same-source variants.
 
 - **[error_handling:required_input](practices/behavior/error-handling.md#required-actions)**
@@ -620,7 +677,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[error_handling:test_errors](practices/behavior/error-handling.md#keep-anyhow-in-tests)**
 
   - Fallible tests return concrete Result or anyhow::Result and use ?.
-  - Anyhow is test-only under dev-dependencies, not production or a Box<dyn Error>
+  - Anyhow is test-only under dev-dependencies, not production or a `Box<dyn Error>`
     substitute.
 
 - **[error_handling:codec_errors](practices/behavior/error-handling.md#required-actions)**
@@ -693,7 +750,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[serialization_boundaries:typed_abi](practices/boundaries/serialization-boundaries.md#generate-typed-javascript-contracts)**
 
   - Generate structural ABI from canonical typed declarations with Tsify.
-  - Use Ts<T> and fallible to_rust conversion rather than deprecated leaking ABI
+  - Use `Ts<T>` and fallible to_rust conversion rather than deprecated leaking ABI
     attributes.
 
 - **[serialization_boundaries:tsify_support](practices/boundaries/serialization-boundaries.md#generate-typed-javascript-contracts)**
@@ -792,7 +849,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **[wasm_contracts:abi](practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares)**
 
   - Follow the generated ABI: actual wasm-bindgen instances for class inputs and
-    generated structural objects for Tsify Ts<T> inputs.
+    generated structural objects for Tsify `Ts<T>` inputs.
   - Assertions cannot create allocations.
 
 - **[wasm_contracts:construction](practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares)**
@@ -977,6 +1034,9 @@ in full. Include related subjects when the change crosses their boundaries.
     wildcard-enum, argument-count, and nesting lints alongside existing checks.
   - Apply the prescribed thresholds; review authored Option usage separately.
   - Review semantic gaps; Clippy counts receivers and structural nesting.
+  - Review boolean if expressions separately from permitted Rust conditional
+    patterns under the Rust rules; reject boolean disguises and mixed let-chains.
+  - Review pattern guards and unmatched handling; the baseline does not ban if.
 
 - **[code_checks:fix_diagnostics](practices/tooling/rust-code-checks.md#fix-diagnostics-before-completion)**
 
@@ -1108,7 +1168,7 @@ in full. Include related subjects when the change crosses their boundaries.
 - **Owns:** Typed schema/query construction, identifiers, binding, and driver boundaries.
 - **Related:** [Dependency selection](practices/tooling/dependency-selection.md), [Domain types](practices/modeling/domain-types.md).
 
-- **[typed_sql:construction](practices/boundaries/typed-sql.md)**
+- **[typed_sql:construction](practices/boundaries/typed-sql.md#typed-sql-construction)**
 
   - Use established builders/ORMs and identifier enums for schemas, migrations,
     queries, and fixtures; never assemble SQL as application text.

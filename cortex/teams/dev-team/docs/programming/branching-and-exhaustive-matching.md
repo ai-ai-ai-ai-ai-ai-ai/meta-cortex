@@ -1,50 +1,101 @@
 # Branching and Exhaustive Matching
 
+Apply these rules to authored code in every language, including pure functions,
+effectful workflows, adapters, tests, tooling, and examples. Generated and
+dependency-owned code keeps its external form. Examples below are language-neutral
+pseudocode, not executable source.
+
 ## Required actions
+
+### Use patterns instead of boolean if conditions
+
+- Match named domain alternatives directly.
+- Do not reduce domain alternatives to booleans.
+- Prohibit ordinary boolean conditionals, including short guards, validation,
+  and mechanical predicates.
+- At a required raw-value boundary, match the input directly.
+- Convert dependency booleans into named outcomes before choosing workflow actions.
+- Keep conversions on the existing owner.
+- Give both outcomes meaningful names, even for a two-case decision.
+- Prefer clear native patterns.
+- Do not add callback pipelines, generic branching helpers, or true/false wrappers
+  just to avoid a condition.
+- Use a library matcher only when native constructs cannot clearly express the
+  required pattern.
+- Keep existing library matches exhaustive until they are migrated.
+
+**Prohibited:** erase the domain alternatives before choosing an action.
+
+```text
+is_shipment ← delivery equals Shipment
+IF is_shipment THEN require_address ELSE skip_address
+```
+
+**Preferred:** name both alternatives in the decision.
+
+```text
+MATCH delivery
+  Shipment → require_address
+  Download → skip_address
+```
 
 ### Do not use ternary conditionals
 
-Do not use the conditional (`condition ? first : second`) operator in authored
-code. It hides a decision inside an expression and lets a new domain alternative
-fall into an existing branch. Use a match or switch over a named closed state
-when alternatives determine behavior. Use ordinary `if` guards or `if`/`else`
-for local mechanical conditions, such as a range check, that are not domain
-alternatives.
+- Prohibit ternary conditional operators in languages that provide them.
+- Use explicit pattern matching.
+- Keep named alternatives visible even when a conditional would be shorter.
+
+**Prohibited:** hide the alternatives in a boolean expression.
+
+```text
+address_requirement ← is_shipment ? Required : NotRequired
+```
+
+**Preferred:** match the domain value directly.
+
+```text
+address_requirement ← MATCH delivery
+  Shipment → Required
+  Download → NotRequired
+```
 
 ### Close every domain match
 
-Match every variant of a closed enum or discriminated union explicitly. Group
-variants only when they intentionally share behavior. Do not use a wildcard,
-`default`, or an `else` branch to absorb future variants. The compiler or a
-required static check must reject a newly added variant until the decision is
-updated. In TypeScript, enable switch exhaustiveness checking and, where
-needed, assign the value remaining after the switch to `never`.
+- Name every variant when deciding over a closed set of alternatives.
+- Group variants only when they intentionally share behavior.
+- Do not let a wildcard or fallback silently absorb future variants.
+- Require the compiler or a static check to reject missing variants.
+- For focused payload extraction, make unmatched handling intentional.
+- Keep open-input catch-alls separate from closed-domain decisions.
 
-**Prohibited:** a new field type silently receives the text-field prompt.
+**Prohibited:** let a fallback decide the policy for future variants.
 
-```ts
-const question = field.type === FieldType.Choice
-  ? { title: field.question, options: field.options }
-  : { title: field.question };
+```text
+MATCH delivery
+  Shipment → Required
+  anything_else → NotRequired
 ```
 
-**Preferred:** every field type is named, including cases that share output.
+**Preferred:** name every variant, including those with the same result.
 
-```ts
-switch (field.type) {
-  case FieldType.Text:
-  case FieldType.Integer:
-    return { title: field.question };
-  case FieldType.Choice:
-    return { title: field.question, options: field.options };
-}
-const unhandled: never = field;
-return unhandled;
+```text
+MATCH delivery
+  Shipment → Required
+  Download → NotRequired
+  Pickup → NotRequired
 ```
+
+Adding another delivery kind must fail the static check until its policy is named.
 
 ## Validation
 
-- Check that adding a variant fails the relevant compiler or static check until
-  the new arm is handled.
-- Lint authored TypeScript and JavaScript against conditional expressions.
-- Test behavior for each variant when its outcome or payload differs.
+- Add a variant and verify that incomplete domain decisions fail the relevant
+  compiler or static check.
+- Review focused patterns, unmatched handling, and boundary conversions for
+  preserved domain meaning.
+- Test variants separately when their outcomes or payloads differ.
+
+**Prohibited:** claim exhaustive handling because tests cover today's variants.
+
+**Preferred:** also verify that adding a variant makes an incomplete decision
+fail the required static check.
