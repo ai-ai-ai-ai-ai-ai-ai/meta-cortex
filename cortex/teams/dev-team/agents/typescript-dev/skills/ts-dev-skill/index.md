@@ -29,6 +29,22 @@ validation. Existing code does not weaken their requirements.
 
 ## Core practices
 
+### Branching and exhaustive matching
+
+- **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
+- **Owns:** Conditional-expression prohibition and exhaustive domain decisions.
+- **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Code checks](practices/typescript-code-checks.md).
+
+- **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
+
+  - Prohibit conditional expressions in authored code; use a closed match for
+    domain alternatives and explicit control flow for mechanical conditions.
+
+- **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
+
+  - Name every enum or union variant; reject catch-all arms that absorb new
+    variants and check exhaustiveness statically.
+
 ### Function ownership
 
 - **File:** [Function ownership](practices/typescript-function-ownership.md).

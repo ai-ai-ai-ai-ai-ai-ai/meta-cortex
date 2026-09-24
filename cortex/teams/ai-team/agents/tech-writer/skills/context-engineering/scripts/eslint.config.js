@@ -15,6 +15,11 @@ export default [
       "no-restricted-syntax": [
         "error",
         {
+          selector: "ConditionalExpression",
+          message:
+            "Use exhaustive matching for alternatives, or explicit control flow for mechanical conditions.",
+        },
+        {
           selector: "CallExpression > ObjectExpression",
           message: "Pass a named, typed request instead of an inline object.",
         },

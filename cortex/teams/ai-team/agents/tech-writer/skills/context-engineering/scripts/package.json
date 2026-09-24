@@ -10,7 +10,7 @@
     "format": "prettier --write src package.json tsconfig.json eslint.config.js",
     "format:check": "prettier --check src package.json tsconfig.json eslint.config.js",
     "verify": "bun run format:check && bun run lint && bun run check && bun test src/test",
-    "lint": "eslint src"
+    "lint": "eslint src --max-warnings 0"
   },
   "dependencies": {
     "effect": "3.22.2",
