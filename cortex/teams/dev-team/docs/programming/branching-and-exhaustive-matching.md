@@ -2,41 +2,62 @@
 
 Apply these rules to authored code in every language, including pure functions,
 effectful workflows, adapters, tests, tooling, and examples. Generated and
-dependency-owned code keeps its external form.
+dependency-owned code keeps its external form. Examples below are language-neutral
+pseudocode, not executable source.
 
 ## Required actions
 
 ### Use patterns instead of boolean if conditions
 
-- Match named domain alternatives directly; do not reduce them to booleans.
+- Match named domain alternatives directly.
+- Do not reduce domain alternatives to booleans.
 - Prohibit ordinary boolean conditionals, including short guards, validation,
   and mechanical predicates.
-- At a required raw-value boundary, match the input directly. Convert dependency
-  booleans into named domain outcomes before choosing workflow actions.
-- Keep that conversion on the existing owner. Two-case decisions still need
-  meaningful names.
-- Prefer clear native patterns. Do not add matcher libraries, callback pipelines,
-  generic branching helpers, or decorative true/false wrappers to avoid a condition.
+- At a required raw-value boundary, match the input directly.
+- Convert dependency booleans into named outcomes before choosing workflow actions.
+- Keep conversions on the existing owner.
+- Give both outcomes meaningful names, even for a two-case decision.
+- Prefer clear native patterns.
+- Do not add callback pipelines, generic branching helpers, or true/false wrappers
+  just to avoid a condition.
 - Use a library matcher only when native constructs cannot clearly express the
-  required pattern. Existing library matches must remain exhaustive until migrated.
+  required pattern.
+- Keep existing library matches exhaustive until they are migrated.
 
-**Prohibited:** turn a delivery kind into an “is shipment” flag, then use that
-flag to decide whether an address is required.
+**Prohibited:** erase the domain alternatives before choosing an action.
 
-**Preferred:** match the delivery kind: shipment requires an address; download
-does not. Both alternatives retain their domain meaning.
+```text
+is_shipment ← delivery equals Shipment
+IF is_shipment THEN require_address ELSE skip_address
+```
+
+**Preferred:** name both alternatives in the decision.
+
+```text
+MATCH delivery
+  Shipment → require_address
+  Download → skip_address
+```
 
 ### Do not use ternary conditionals
 
 - Prohibit ternary conditional operators in languages that provide them.
-- Use explicit pattern matching; a shorter spelling does not justify losing
-  named alternatives.
+- Use explicit pattern matching.
+- Keep named alternatives visible even when a conditional would be shorter.
 
-**Prohibited:** choose an address requirement through a compact boolean
-conditional expression.
+**Prohibited:** hide the alternatives in a boolean expression.
 
-**Preferred:** name the delivery alternatives and their address requirements
-in the match.
+```text
+address_requirement ← is_shipment ? Required : NotRequired
+```
+
+**Preferred:** match the domain value directly.
+
+```text
+address_requirement ← MATCH delivery
+  Shipment → Required
+  Download → NotRequired
+```
 
 ### Close every domain match
 
@@ -44,14 +65,27 @@ in the match.
 - Group variants only when they intentionally share behavior.
 - Do not let a wildcard or fallback silently absorb future variants.
 - Require the compiler or a static check to reject missing variants.
-- Distinguish a complete domain decision from focused payload extraction with
-  intentional unmatched handling, or a catch-all for open external input.
+- For focused payload extraction, make unmatched handling intentional.
+- Keep open-input catch-alls separate from closed-domain decisions.
 
-**Prohibited:** handle shipment explicitly and treat every other delivery kind
-as address-free, including kinds added later.
+**Prohibited:** let a fallback decide the policy for future variants.
 
-**Preferred:** name shipment and download explicitly. Adding pickup requires
-reviewing its address policy before checks pass.
+```text
+MATCH delivery
+  Shipment → Required
+  anything_else → NotRequired
+```
+
+**Preferred:** name every variant, including those with the same result.
+
+```text
+MATCH delivery
+  Shipment → Required
+  Download → NotRequired
+  Pickup → NotRequired
+```
+
+Adding another delivery kind must fail the static check until its policy is named.
 
 ## Validation
 
