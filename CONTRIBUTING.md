@@ -80,6 +80,20 @@ Vale styles ship with the framework, so checks require no style downloads.
 
 ## Publish a release
 
+### Build caches
+
+- CI caches Cargo downloads and compiled dependencies with
+  [rust-cache](https://github.com/Swatinem/rust-cache).
+- Checks, coverage, and release targets use separate caches. Cargo decides what
+  needs rebuilding after source, dependency, or toolchain changes.
+- PRs and `main` build the four release packages without publishing them.
+  These package builds replace the check workflow's duplicate release build.
+- Builds on `main` populate caches that later release tags can restore.
+  GitHub does not share caches between different release tags.
+- Only version-tag pushes publish a release. The first build after a cache miss
+  still compiles dependencies.
+- macOS packages use GitHub-hosted Apple Silicon and Intel macOS runners.
+
 ### Distribution tooling
 
 [Cargo-dist](https://axodotdev.github.io/cargo-dist/book/) builds the platform
