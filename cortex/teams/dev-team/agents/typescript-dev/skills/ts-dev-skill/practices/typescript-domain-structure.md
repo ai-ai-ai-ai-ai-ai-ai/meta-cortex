@@ -33,6 +33,44 @@ class PanelId {
 interface PanelSelection { readonly id: PanelId; }
 ```
 
+## Name complex type expressions
+
+- Extract a type alias when nested generics, indexed access, or other type
+  expressions obscure a variable, field, or signature's purpose, even at one use.
+- Name the alias for its domain role, such as `FormDecodeRequest`.
+- Keep it near the owning code; export it only when consumers need the contract.
+- Reuse existing domain types and derive schema types from their source.
+- Use an alias for an existing type composition and an interface for a new object contract.
+- Keep simple generics inline; do not add chains of aliases merely to shorten names.
+- An alias preserves the existing type; it does not add
+  [nominal identity](#preserve-value-identity) or replace validation.
+
+These alternatives use the existing `YamlDecodeRequest` and `FormSchema`.
+`Form` already names `typeof FormSchema.value.Type`. The local request belongs
+inside the decoding adapter; the alias belongs beside its declarations.
+Both compile; the first makes the workflow spell out schema type details.
+
+**Prohibited:** expand a complex request type inside the workflow.
+
+```ts
+const formRequest: YamlDecodeRequest<
+  typeof FormSchema.value.Type,
+  typeof FormSchema.value.Encoded
+> = { source, schema: FormSchema.value };
+```
+
+**Preferred:** give that request a name and retain its exact schema types.
+
+```ts
+type FormDecodeRequest = YamlDecodeRequest<
+  Form,
+  typeof FormSchema.value.Encoded
+>;
+
+// Inside the adapter:
+const formRequest: FormDecodeRequest = { source, schema: FormSchema.value };
+```
+
 ## Construct trusted values at the boundary
 
 The preceding PanelId accepts any string. Constrained values need a validating
@@ -265,6 +303,8 @@ return Effect.fail(failure);
 ## Validation
 
 - Review nominal identity, named unions, ownership, external conversions, and version rejection.
+- Check that complex annotations have meaningful aliases without copied schemas,
+  weakened types, or unnecessary alias chains.
 - Check nested request/YAML shapes and enum field vocabularies. Review producers,
   examples, recovery responses, and fixtures for YAML string construction; trace
   each valid document from a concrete typed record to the serializer.

@@ -242,6 +242,13 @@ validation. Existing code does not weaken their requirements.
     locals, constants, containers, state, and tests.
   - Do not unwrap just to pass between layers.
 
+- **[domain_structure:type_aliases](practices/typescript-domain-structure.md#name-complex-type-expressions)**
+
+  - Name complex type expressions for their domain role, even at one use.
+  - Keep aliases near their owner and derive schema types from the source.
+  - Preserve exact types; aliases do not add nominal identity or validation.
+  - Keep simple generics inline and avoid unnecessary alias chains.
+
 - **[domain_structure:trusted_construction](practices/typescript-domain-structure.md#construct-trusted-values-at-the-boundary)**
 
   - Construct opaque values through validating owners with private brands/unchecked
