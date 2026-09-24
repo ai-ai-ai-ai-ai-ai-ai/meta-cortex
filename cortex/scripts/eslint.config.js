@@ -17,7 +17,13 @@ export default [
         {
           selector: "ConditionalExpression",
           message:
-            "Use exhaustive matching for alternatives, or explicit control flow for mechanical conditions.",
+            "Use simple Effect composition and exhaustive Match branches.",
+        },
+        {
+          selector:
+            ":matches(IfStatement, SwitchStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, TryStatement)",
+          message:
+            "Keep workflow control in Effect combinators and exhaustive Match branches; do not mix in procedural control flow.",
         },
         {
           selector: "CallExpression > ObjectExpression",

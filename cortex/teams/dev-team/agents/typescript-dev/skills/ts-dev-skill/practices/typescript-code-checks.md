@@ -10,6 +10,10 @@
 - Extend the existing project-owned check entry point when a gate is missing.
 - Use the chosen package manager and locally installed tools.
 - Preserve the project's formatter, linter, framework, and compiler settings.
+- Enforce the [Effect composition rules](typescript-effect.md#compose-workflows-with-simple-functional-operations)
+  in adopted workflow modules or packages through the existing lint gate.
+  Reject procedural branches, loops, and exception handling there; verify that
+  the rejected pattern fails and its functional replacement passes.
 - Coordinate pipeline changes with the CI/CD owner under the active development mode.
 
 This `package.json` fragment assumes the package already uses npm, Prettier,

@@ -9,7 +9,8 @@ code. It hides a decision inside an expression and lets a new domain alternative
 fall into an existing branch. Use a match or switch over a named closed state
 when alternatives determine behavior. Use ordinary `if` guards or `if`/`else`
 for local mechanical conditions, such as a range check, that are not domain
-alternatives.
+alternatives, where the language's composition rules permit them. A language's
+functional workflow requirements take precedence over these procedural forms.
 
 ### Close every domain match
 

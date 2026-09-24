@@ -1,22 +1,31 @@
 import type { BunFile } from "bun";
-import { Effect } from "effect";
+import { Effect, Match } from "effect";
 
 class LibraryRootCheck {
   constructor(private readonly configuration: BunFile) {}
 
   run(): Effect.Effect<void> {
-    return Effect.gen(this, function* () {
-      if (!(yield* Effect.tryPromise(() => this.configuration.exists()))) {
-        process.stderr.write(
-          "Missing meta-cortex.toml in the current directory.\n",
-        );
-        process.exitCode = 1;
-        return;
-      }
-      process.stdout.write(
-        "Found meta-cortex.toml in the current directory.\n",
-      );
-    }).pipe(
+    return Effect.tryPromise(() => this.configuration.exists()).pipe(
+      Effect.flatMap((exists) =>
+        Match.value(exists).pipe(
+          Match.when(true, () =>
+            Effect.sync(() => {
+              process.stdout.write(
+                "Found meta-cortex.toml in the current directory.\n",
+              );
+            }),
+          ),
+          Match.when(false, () =>
+            Effect.sync(() => {
+              process.stderr.write(
+                "Missing meta-cortex.toml in the current directory.\n",
+              );
+              process.exitCode = 1;
+            }),
+          ),
+          Match.exhaustive,
+        ),
+      ),
       Effect.catchAll((error) =>
         Effect.sync(() => {
           process.stderr.write(

@@ -33,12 +33,13 @@ validation. Existing code does not weaken their requirements.
 
 - **File:** [Branching and exhaustive matching](../../../../docs/programming/branching-and-exhaustive-matching.md).
 - **Owns:** Conditional-expression prohibition and exhaustive domain decisions.
-- **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Code checks](practices/typescript-code-checks.md).
+- **Related:** [Explicit state](practices/typescript-explicit-state.md), [Enums instead of booleans](practices/typescript-enums-over-booleans.md), [Effect workflows](practices/typescript-effect.md), [Code checks](practices/typescript-code-checks.md).
 
 - **[branching:no_ternary](../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals)**
 
   - Prohibit conditional expressions in authored code; use a closed match for
-    domain alternatives and explicit control flow for mechanical conditions.
+    domain alternatives and explicit control flow for mechanical conditions
+    only where the language's composition rules permit it.
 
 - **[branching:closed_matches](../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match)**
 
@@ -526,7 +527,7 @@ validation. Existing code does not weaken their requirements.
 ### Effect workflows
 
 - **File:** [Effect workflows](practices/typescript-effect.md).
-- **Owns:** Effect-based failures, resources, concurrency, services, and boundary decoding.
+- **Owns:** Simple functional workflow composition, failures, resources, concurrency, services, and boundary decoding.
 - **Does not own:** Pure value modeling belongs to Domain structure; queue ordering semantics belong to Serial operation queues.
 - **Related:** [Domain structure](practices/typescript-domain-structure.md), [Explicit state](practices/typescript-explicit-state.md), [Concrete values](practices/typescript-no-unknown.md), [Serial operation queues](practices/typescript-serial-operation-queues.md).
 
@@ -542,6 +543,35 @@ validation. Existing code does not weaken their requirements.
     wrappers.
   - Effect preserves the project’s domain ownership, including Rust-owned policy in
     Rust/WASM projects.
+
+- **[effect:functional_control](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
+
+  - Use Effect combinators and basic exhaustive Match branches for workflow
+    decisions, traversal, and recovery; prohibit procedural branches, loops,
+    and try/catch in generators, callbacks, and helpers choosing workflow steps.
+  - A local variable or extracted helper does not exempt the same procedural
+    branch. General mechanical-guard allowances do not apply here.
+  - Match external booleans only at their adapter; preserve domain enum/union
+    vocabulary and reject fallbacks for closed alternatives.
+
+- **[effect:linear_generators](practices/typescript-effect.md#compose-workflows-with-simple-functional-operations)**
+
+  - Allow Effect.gen for linear dependent steps; use composition for decisions
+    and defer I/O through Effect or its owning adapter.
+  - Match branches return effects without executing them during construction.
+
+- **[effect:simple_composition](practices/typescript-effect.md#keep-the-composition-easy-to-read)**
+
+  - Prefer short pipelines, named intermediate values, and small callbacks.
+  - Reject generic wrappers, custom functional frameworks, deep composition,
+    and services or layers introduced only to express a branch.
+  - Extract meaningful or reused operations and keep pure calculations pure.
+
+- **[effect:composition_checks](practices/typescript-effect.md#validation)**
+
+  - Use existing lint gates in adopted modules/packages to reject procedural
+    control flow; review called helpers, exhaustiveness, deferred effects,
+    and unnecessary abstraction.
 
 - **[effect:typed_failures](practices/typescript-effect.md#preserve-the-typed-failure-channel)**
 
@@ -573,6 +603,7 @@ validation. Existing code does not weaken their requirements.
 - **[effect:coherent_migration](practices/typescript-effect.md#migrate-one-connected-workflow)**
 
   - Migrate connected callers of materially changed workflows coherently.
+  - Include mixed procedural Effect code in that migration.
   - Lift external Promises at integration edges and do not mix failure models
     internally.
 
@@ -583,7 +614,8 @@ validation. Existing code does not weaken their requirements.
 
 - **[effect:legacy_debt](practices/typescript-effect.md#migrate-one-connected-workflow)**
 
-  - Untouched legacy neverthrow may remain migration debt but cannot spread.
+  - Untouched legacy failure models and mixed procedural Effect workflows may
+    remain migration debt but cannot spread.
   - Do not force unrelated repository-wide migration.
 
 - **[effect:feedback](practices/typescript-effect.md#validation)**
@@ -867,6 +899,8 @@ validation. Existing code does not weaken their requirements.
   - Builds do not replace type checks; run required builds without warnings and
     make lint warnings fail, using the installed tool's supported options.
   - Keep generated/vendor files with their owners and coordinate pipeline changes.
+  - Enforce Effect composition in adopted modules/packages through the existing
+    lint gate; verify rejected procedural syntax fails and its replacement passes.
 
 - **[code_checks:fix_diagnostics](practices/typescript-code-checks.md#fix-diagnostics-before-completion)**
 

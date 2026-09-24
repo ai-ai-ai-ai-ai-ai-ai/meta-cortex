@@ -8,6 +8,69 @@ policy stays in Rust. Effect does not change the project's domain ownership.
 Examples are alternative fragments. Supporting domain types and collaborators
 are supplied by the application; method fragments belong to their named owner.
 
+## Compose workflows with simple functional operations
+
+Effect owns sequencing, decisions, failures, and cleanup in effectful workflows.
+Use `Effect.map` for pure transformations, `Effect.flatMap` for dependent effects,
+and basic exhaustive `Match` branches for alternatives. Use `Effect.forEach` for
+effectful traversal and Effect's error operators for recovery.
+
+Do not mix procedural `if`/`else`, `switch`, ternaries, loops, or `try`/`catch`
+with Effect workflow control. This includes generators, composition callbacks,
+and helpers that choose workflow steps. Assigning a yielded result to a local
+variable before an `if`, or moving the same branch into a helper, does not
+satisfy the rule. The general allowance for mechanical guards does not apply
+inside these workflows.
+
+`Effect.gen` may sequence dependent steps linearly. Branch through composition
+and matching; keep side effects inside `Effect.sync`, `Effect.tryPromise`, or
+the owning adapter. Match branches return effects without running them during
+construction. Match closed alternatives exhaustively without a fallback that
+hides a missing case. A platform boolean may be matched immediately at its
+adapter; domain decisions still use their meaningful enum or union.
+
+**Prohibited:**
+
+```ts
+// Inside the file-check adapter:
+return Effect.gen(this, function* () {
+  if (!(yield* Effect.tryPromise(() => this.configuration.exists()))) {
+    return yield* this.reportMissing();
+  }
+  return yield* this.reportFound();
+});
+```
+
+**Preferred:**
+
+```ts
+// reportFound and reportMissing return effects that write the CLI response.
+return Effect.tryPromise(() => this.configuration.exists()).pipe(
+  Effect.flatMap((exists) =>
+    Match.value(exists).pipe(
+      Match.when(true, () => this.reportFound()),
+      Match.when(false, () => this.reportMissing()),
+      Match.exhaustive,
+    ),
+  ),
+);
+```
+
+### Keep the composition easy to read
+
+Use a short pipeline, named intermediate values, and small callbacks. Extract
+an operation when it has a meaningful responsibility or reuse. Do not introduce
+generic combinator wrappers, custom functional frameworks, or services and
+layers merely to express a branch. Avoid deeply nested composition and chains
+that hide the data being passed. Pure calculations stay pure; they do not need
+Effect wrappers to look functional.
+
+**Prohibited:** introduce a generic branching service and several adapters to
+choose between two file-check outcomes.
+
+**Preferred:** use one exhaustive `Match` with two concrete branches and lift
+only their I/O into Effect.
+
 ## Return the workflow, not a running Promise
 
 Internal methods return Effect<Success, Failure, Services>. Keep Effect.run*
@@ -124,10 +187,10 @@ yield* resource.write(request);
 
 ## Migrate one connected workflow
 
-When materially changing legacy neverthrow/Promise-error work, migrate its
-connected callers to Effect rather than mixing models. Untouched legacy flows
-may remain debt; do not force unrelated migrations. Pure calculations, inert
-types, and rendering need no ceremonial Effect wrappers.
+When materially changing legacy neverthrow/Promise-error or mixed procedural
+Effect work, migrate its connected callers to consistent Effect composition.
+Untouched legacy flows may remain debt; do not force unrelated migrations.
+Pure calculations, inert types, and rendering need no ceremonial Effect wrappers.
 
 **Prohibited:**
 
@@ -145,6 +208,11 @@ return label.text;
 
 ## Validation
 
+- Reject procedural control flow in adopted Effect workflows through the existing
+  lint gate. Review called helpers as well as inline callbacks; moving a branch
+  must not bypass the rule. Keep enforcement scoped to adopted modules or packages.
+- Verify exhaustive matches and deferred side effects; reject unnecessary
+  wrappers, layers, and composition that obscures a simple operation.
 - Check that expected failures stay typed and run* appears only at execution edges.
 - Test failure propagation, service substitution, interruption, and resource cleanup.
 - Use Effect LSP where available for quick type feedback.
