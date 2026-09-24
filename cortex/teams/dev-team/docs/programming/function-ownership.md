@@ -51,18 +51,16 @@ An empty wrapper around the original expression does not establish ownership.
 
 ### Limit nesting and abstraction
 
-Keep at most two nested execution scopes inside an operation. This applies to
-TypeScript and Rust equally: count callbacks, closures, match branches,
-conditionals (including Rust `if let`), and loops together along each path.
-The operation's body starts at zero; entering one of those scopes adds one.
-Sibling branches or sequential callbacks do not accumulate. A match and its
-arms form one level, not two. Modules, classes, impl blocks, data literals,
-and parentheses do not add execution scopes. Other practices still determine
-which control-flow constructs are permitted.
-
-- Flatten first: use sequential steps, named intermediate values, and existing
-  library operations. Do not add a callback that only passes its argument to
-  another function.
+- Keep at most two nested execution scopes inside an operation.
+- Count callbacks, closures, branches, and loops together along each execution path.
+- Start the operation's body at zero; each nested execution scope adds one.
+- Count a match and its alternatives as one level.
+- Do not add together sibling branches or sequential callbacks.
+- Exclude type and module bodies, data literals, and grouping syntax from execution depth.
+- Apply the [branching rules](branching-and-exhaustive-matching.md) when choosing
+  control flow.
+- Flatten first with sequential steps, named values, and existing operations.
+- Do not add a callback that only forwards its argument.
 - Extract a meaningful stage or repeated behavior onto its existing owner when
   flattening alone is insufficient.
 - Reject a chain of forwarding helpers, new types, services, or generic
@@ -71,14 +69,28 @@ which control-flow constructs are permitted.
 - Evaluate the whole operation, not only its deepest expression. Passing a
   nesting check does not justify unnecessary abstraction or repeated wrapping.
 
-**Prohibited:** nest an Effect continuation, a match callback, and an I/O
-callback to print one file-check result. Each scope counts even though no
-ordinary `if` appears.
+These language-neutral sketches assume the catalog already exposes its titles.
+They illustrate structure, not executable syntax or a library recipe.
 
-**Preferred:** read the file-existence result and report it in two linear
-steps, using an exhaustive match and the library's console effect. Share actual
-failure-reporting behavior on the existing checker. Do not invent a reporting
-service or outcome hierarchy.
+**Prohibited:** add a third nested loop to perform a catalog-wide operation.
+
+```text
+Catalog.printTitles(printer):
+  for shelf in shelves:
+    for book in shelf.books:
+      for title in book.titles:
+        printer.print(title)
+```
+
+**Preferred:** use the catalog's existing traversal operation.
+
+```text
+Catalog.printTitles(printer):
+  for title in titles():
+    printer.print(title)
+```
+
+Do not create a chain of forwarding helpers merely to reproduce this shape.
 
 ### Precise receivers
 
@@ -91,7 +103,6 @@ service or outcome hierarchy.
 - Let a meaningful aggregate API delegate to its nested semantic owner.
 - Pass only the related value needed by a comparison or relationship.
 - Reuse the existing enum or dependency discriminator in that owner.
-- Preserve compiler narrowing where a transport variant exposes its payload.
 
 For example, an article renderer owns whether a block contributes to an article
 body. Depending only on the block kind does not move article policy into the
@@ -130,8 +141,7 @@ only its own behavior and has no dependency on address policy.
 - Put constants on the type that owns their meaning.
 - Keep mutable state in instance fields, not globals or mutable static members.
 - Keep parameters, temporary variables, and local constants inside their owning operation.
-- Treat function-valued variables as functions; assigning a helper to a variable
-  does not bypass ownership.
+- Keep reusable behavior with its owner regardless of declaration syntax.
 - Shared state needs an explicit owner passed to its consumers.
 
 **Prohibited:** a module exports a retry limit, a mutable attempt counter, and

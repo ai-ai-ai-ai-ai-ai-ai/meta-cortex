@@ -66,8 +66,11 @@ validation. Existing code does not weaken their requirements.
 ### Function ownership
 
 - **File:** [Function ownership](practices/typescript-function-ownership.md).
-- **Owns:** Owners of functions, constants, and state; static construction and component handlers.
-- **Does not own:** Parameter count belongs to Single parameter; nominal values belong to Domain structure.
+- **Owns:** TypeScript declaration placement, static construction, component handlers, and execution-scope counting.
+- **Does not own:**
+  - Shared ownership policy and depth limits belong to Function ownership in the team docs.
+  - Effect implementation guidance belongs to its installed documentation.
+  - Parameter count belongs to Single parameter; nominal values belong to Domain structure.
 - **Related:** [Single parameter](practices/typescript-single-parameter.md), [Domain structure](practices/typescript-domain-structure.md).
 
 - **[function_ownership:instances](practices/typescript-function-ownership.md#use-instances-for-owned-behavior)**
@@ -76,11 +79,12 @@ validation. Existing code does not weaken their requirements.
   - Static methods are only narrow construction builders, while
     execution/validation/formatting/dispatch belong to instances.
 
-- **[function_ownership:nesting](../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction)**
+- **[function_ownership:nesting](practices/typescript-function-ownership.md#count-execution-scopes)**
 
   - Limit combined callback and control-flow nesting to two execution scopes.
   - Flatten first; reject helper chains and new abstractions added only to meet
     the depth limit.
+  - Count switch cases as one level; exclude type and namespace bodies and data literals.
 
 - **[function_ownership:meaningful_state](practices/typescript-function-ownership.md#use-instances-for-owned-behavior)**
 
@@ -93,6 +97,7 @@ validation. Existing code does not weaken their requirements.
   - Put constants on their owner as static readonly and mutable state on instances.
   - Prohibit free functions, module const/let/var, function-valued global constants, and
     mutable statics.
+  - Assigning a function to a binding does not establish ownership.
   - Test-runner callbacks may contain scenario steps and assertions; put reusable
     test helpers on fixture or scenario owners.
 
@@ -356,13 +361,13 @@ validation. Existing code does not weaken their requirements.
 
 - **[branching:typescript_switch](practices/typescript-explicit-state.md#match-domain-values-directly)**
 
-  - Use native switch, including inside Effect generators; keep Effect sequencing
-    and error handling around native branches.
-  - Prohibit boolean if/else-if/if-else, including outside Effect.
+  - Use native switch for domain decisions.
+  - Prohibit boolean if/else-if/if-else.
 
 - **[branching:typescript_exhaustiveness](practices/typescript-explicit-state.md#match-decisions-exhaustively)**
 
   - Name every enum/union variant; group cases only for intentional shared output.
+  - Keep transport discriminators attached to their payloads for compiler narrowing.
   - Reject default cases hiding future variants and ternary conditional operators.
   - Require the branching lint checks; TypeScript alone is insufficient.
 

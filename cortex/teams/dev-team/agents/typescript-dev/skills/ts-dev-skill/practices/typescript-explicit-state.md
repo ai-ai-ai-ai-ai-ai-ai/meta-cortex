@@ -58,9 +58,9 @@ type PanelState =
 ## Match domain values directly
 
 Apply the shared [branching rule](../../../../../docs/programming/branching-and-exhaustive-matching.md).
-Use native `switch`, including inside Effect generators. Ordinary boolean `if`,
-`else if`, and `if`/`else` statements are prohibited. Keep Effect sequencing and
-error handling around native branches; the rule also applies outside Effect.
+
+- Use native `switch` for domain decisions.
+- Prohibit ordinary boolean `if`, `else if`, and `if`/`else` statements.
 
 These alternative method bodies receive `delivery: DeliveryKind` and return
 `AddressRequirement`. `DeliveryKind` has `Shipment` and `Download` variants;
@@ -90,6 +90,8 @@ switch (delivery) {
 ## Match decisions exhaustively
 
 - Name every enum or discriminated-union variant in `switch` cases.
+- Keep a transport union's discriminator attached to its payload so TypeScript
+  can narrow the variant before payload access.
 - Group named cases only when they intentionally share output.
 - Do not use `default` to absorb future variants in a closed domain decision.
 - Prohibit the ternary operator (`condition ? first : second`).

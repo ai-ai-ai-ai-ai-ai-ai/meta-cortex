@@ -457,7 +457,7 @@ in full. Include related subjects when the change crosses their boundaries.
     construction/stateless behavior, and traits only for genuine shared contracts or
     external interfaces.
 
-- **[function_ownership:nesting](../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction)**
+- **[function_ownership:nesting](practices/behavior/function-ownership.md#choose-the-owner)**
 
   - Limit combined match, closure, loop, and conditional-pattern nesting to two
     execution scopes; flatten before extracting meaningful owned behavior.

@@ -18,7 +18,7 @@
   `{ max: 2, checkConstructorCallCallbacks: true }` in adopted packages. Verify
   the installed ESLint version supports the constructor option. These are
   separate structural checks; review mixed callback/branch depth under the
-  shared [nesting limit](../../../../../docs/programming/function-ownership.md#limit-nesting-and-abstraction).
+  [TypeScript scope rules](typescript-function-ownership.md#count-execution-scopes).
   Confirm the previously nested form fails and the flattened form passes.
 
 This `package.json` fragment assumes the package already uses npm, Prettier,
