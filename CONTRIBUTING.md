@@ -68,11 +68,11 @@ cd app
 
 Install [sccache](https://github.com/mozilla/sccache) (`brew install sccache` on
 macOS). To use a remote cache, provision the `sccache-host`, `sccache-bucket`,
-`sccache-access-key`, and `sccache-secret-key` files under `~/.meta-cortex/cache/`.
+`sccache-access-key`, and `sccache-secret-key` files under `~/.meta-cortex/credentials/`.
 The [local wrapper](scripts/rustc-sccache.sh) reads those files at runtime;
 credentials never belong in Cargo configuration or Git. Restrict the credential
 files to your user (`chmod 600`). If `META_CORTEX_HOME` is set, the wrapper reads
-its `cache/` directory instead.
+its `credentials/` directory instead.
 
 From the repository root, enable caching for this checkout:
 
