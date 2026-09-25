@@ -1,18 +1,19 @@
 # Execution settings for Meta-Cortex agents.
 # Settings apply by role, regardless of agent directory.
-# mode accepts "standard" or "fast"; omitted mode defaults to "fast".
+# service_tier is required and accepts the host-native value "priority".
+# Host launch and verification: teams/gizmo-team/docs/agent-configuration.md
 
 [gizmo-prime]
 model = "gpt-6-luna"
 reasoning_effort = "max"
-mode = "fast"
+service_tier = "priority"
 
 [team.gizmo]
 model = "gpt-6-luna"
 reasoning_effort = "max"
-mode = "fast"
+service_tier = "priority"
 
 [team.agent]
 model = "gpt-6-luna"
 reasoning_effort = "max"
-mode = "fast"
+service_tier = "priority"

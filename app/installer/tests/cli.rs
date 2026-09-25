@@ -1,5 +1,12 @@
+#[path = "cli/report.rs"]
+mod report;
+
 use anyhow::{Context, bail};
 use meta_cortex_workbench::versions::ProtocolVersion;
+use report::{
+    InfoDocument, Integration, ModelAvailability, ReportHarness, ReportModels, ReportSchemaVersion,
+    ReportServiceTier, ReportVersion,
+};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
@@ -8,123 +15,6 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::rc::Rc;
 use tempfile::{Builder, TempDir};
-use thiserror::Error;
-
-// This is the CLI's external YAML contract, decoded independently of its writer.
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct InfoDocument {
-    schema_version: ReportSchemaVersion,
-    cli_version: ReportVersion,
-    framework_version: ReportVersion,
-    paths: ReportPaths,
-    integrations: Vec<ReportIntegration>,
-    models: ReportModels,
-    model_availability: ModelAvailability,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(try_from = "u32")]
-enum ReportSchemaVersion {
-    V4,
-}
-
-#[derive(Debug, Error)]
-enum ReportSchemaVersionError {
-    #[error("unsupported report schema version")]
-    Unsupported,
-}
-
-impl TryFrom<u32> for ReportSchemaVersion {
-    type Error = ReportSchemaVersionError;
-
-    fn try_from(version: u32) -> Result<Self, Self::Error> {
-        match version {
-            4 => Ok(Self::V4),
-            _ => Err(ReportSchemaVersionError::Unsupported),
-        }
-    }
-}
-
-// Independent decoder for the established semantic-release strings in report schema 4.
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-enum ReportVersion {
-    #[serde(rename = "0.6.2")]
-    V0_6_2,
-    #[serde(rename = "0.7.0")]
-    V0_7_0,
-    #[serde(rename = "0.8.0")]
-    V0_8_0,
-    #[serde(rename = "0.8.1")]
-    V0_8_1,
-    #[serde(rename = "0.9.0")]
-    V0_9_0,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-enum Integration {
-    Connected,
-    Missing,
-    Conflict,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-enum ReportHarness {
-    Codex,
-    Claude,
-    Cursor,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportIntegration {
-    harness: ReportHarness,
-    path: PathBuf,
-    status: Integration,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-enum ModelAvailability {
-    NotChecked,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportPaths {
-    project: PathBuf,
-    framework: PathBuf,
-    configuration: PathBuf,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportModels {
-    #[serde(rename = "gizmo-prime")]
-    gizmo_prime: ReportAgent,
-    team: ReportTeam,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportTeam {
-    gizmo: ReportAgent,
-    agent: ReportAgent,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct ReportAgent {
-    model: String,
-    reasoning_effort: String,
-    mode: ReportExecutionMode,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum ReportExecutionMode {
-    Standard,
-    Fast,
-}
 
 #[derive(Serialize)]
 struct Request {
@@ -311,8 +201,8 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     let customized = format!(
         "# Keep settings\n{}",
         fs::read_to_string(&config)?.replace(
-            "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"\nmode = \"fast\"",
-            "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\"\nmode = \"standard\""
+            "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"\nservice_tier = \"priority\"",
+            "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\"\nservice_tier = \"priority\""
         )
     );
     fs::write(&config, &customized)?;
@@ -325,7 +215,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
         instructions: Instructions::Write,
     })?;
     let info = scenario.info()?;
-    assert_eq!(info.schema_version, ReportSchemaVersion::V4);
+    assert_eq!(info.schema_version, ReportSchemaVersion::V5);
     assert_eq!(info.cli_version, ReportVersion::V0_9_0);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
@@ -347,8 +237,14 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(info.models.team.gizmo, info.models.gizmo_prime);
     assert_eq!(info.models.team.agent.model, "gpt-5.6-sol");
     assert_eq!(info.models.team.agent.reasoning_effort, "high");
-    assert_eq!(info.models.team.agent.mode, ReportExecutionMode::Standard);
-    assert_eq!(info.models.gizmo_prime.mode, ReportExecutionMode::Fast);
+    assert_eq!(
+        info.models.team.agent.service_tier,
+        ReportServiceTier::Priority
+    );
+    assert_eq!(
+        info.models.gizmo_prime.service_tier,
+        ReportServiceTier::Priority
+    );
     assert_eq!(fs::read_to_string(&config)?, customized);
     assert_eq!(fs::read(root.join("AGENTS.md"))?, guidance);
     fs::remove_file(root.join(".meta-cortex/.version"))?;
@@ -1036,28 +932,4 @@ fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
         assert!(output.stdout.is_empty());
     }
     Ok(())
-}
-
-#[test]
-fn report_consumer_rejects_undeclared_or_malformed_versions() {
-    for input in ["0", "1", "2", "3", "5", "-1", "3.5", "\"5\"", "null"] {
-        assert!(
-            serde_saphyr::from_str::<ReportSchemaVersion>(input).is_err(),
-            "{input}"
-        );
-    }
-    for input in [
-        "arbitrary",
-        "0.0.1",
-        "0.6.3",
-        "0.6.2-beta.1",
-        "v0.6.2",
-        "6",
-        "null",
-    ] {
-        assert!(
-            serde_saphyr::from_str::<ReportVersion>(input).is_err(),
-            "{input}"
-        );
-    }
 }

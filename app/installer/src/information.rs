@@ -20,7 +20,7 @@ pub enum VersionError {
     },
 }
 
-// Installed metadata and report schema 4 retain Cargo's semantic-version text.
+// Installed metadata and report schema 5 retain Cargo's semantic-version text.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(into = "&'static str")]
 pub enum Version {
@@ -120,17 +120,17 @@ pub struct ProjectInfo {
 #[derive(Clone, Serialize)]
 #[serde(into = "u32")]
 enum InfoSchemaVersion {
-    V4,
+    V5,
 }
 
 impl InfoSchemaVersion {
-    const CURRENT: Self = Self::V4;
+    const CURRENT: Self = Self::V5;
 }
 
 impl From<InfoSchemaVersion> for u32 {
     fn from(version: InfoSchemaVersion) -> Self {
         match version {
-            InfoSchemaVersion::V4 => 4,
+            InfoSchemaVersion::V5 => 5,
         }
     }
 }

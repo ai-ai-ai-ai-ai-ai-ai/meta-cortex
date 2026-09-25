@@ -28,7 +28,7 @@ apply only to `multi_agent` mode.
 
 For a new multi-agent task, read [Gizmo Prime](gizmo-team/agents/gizmo-prime/AGENTS.md) and launch it
 as a subagent through the host’s agent execution tool. This subagent is the
-root coordinator, using its configured model, reasoning effort, and execution mode.
+root coordinator, using its configured model, reasoning effort, and service tier.
 Carry the user's objective, constraints, acceptance criteria, project context,
 and the loaded circuit-breaker policy into the assignment.
 Follow-ups stay with the existing coordinator.

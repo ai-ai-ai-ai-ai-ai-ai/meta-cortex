@@ -1,60 +1,69 @@
 # Agent Configuration
 
 [meta-cortex.toml](../../../meta-cortex.toml) is the source of model,
-reasoning-effort, and execution-mode settings. Use the resolved configuration
-file from the active library, including the consuming project's configured values. Model names must
-not be hard-coded in launch instructions. Each role setting selects these values:
+reasoning-effort, and service-tier settings. Read the resolved configuration
+from the active library, including the consuming project's values. Each role
+selects its own section:
 
-- **Gizmo Prime**
-  - Configuration: `[gizmo-prime]`.
-- **Team Gizmo**
-  - Configuration: `[team.gizmo]`.
-- **Team agents**
-  - Configuration: `[team.agent]`.
-  - Applies to every non-coordinator role, including documentation, review,
-    integration, and PR delivery agents.
+- **Gizmo Prime:** `[gizmo-prime]`.
+- **Team Gizmo:** `[team.gizmo]`.
+- **Team agents:** `[team.agent]`, including documentation, review, integration,
+  and PR delivery agents.
 
-`mode` accepts `standard` or `fast`. An omitted `mode` defaults to `fast`;
-the bundled configuration explicitly selects `fast` for every role. This setting
-controls execution speed, independently of `reasoning_effort` and the session’s
-`single_agent` or `multi_agent` development mode.
+Each section requires `model`, `reasoning_effort`, and `service_tier`.
+The supported service tier is `priority`, using the host's native name.
+There is no execution `mode`, alias, or implicit tier default. The session's
+`single_agent` or `multi_agent` choice remains independent of these settings.
 
 ## Required actions
 
-Before each subagent launch, including Gizmo Prime:
+### Launch with the configured settings
 
-1. Read the current configuration file and select the setting for the agent
-   being launched, not the launching coordinator. Do not reuse remembered values
-   or bundled defaults in place of that file.
-   - If the configuration is missing, invalid, or unsupported by the host,
-     report the specific blocker. Do not silently substitute settings.
-2. Pass the selected configuration's exact `model`, `reasoning_effort`, and resolved `mode`
-   explicitly to the host's agent execution tool. Adapt parameter names to that
-   tool without changing their meaning. Use the host’s supported speed or service-tier
-   setting for `mode`. If the host cannot honor the selected mode, report the
-   blocker instead of silently changing modes.
-   - Choose a context-fork mode that permits explicit execution settings.
-     For hosts where `fork_turns="all"` inherits the parent's settings and
-     rejects overrides, use `fork_turns="none"` or a supported bounded history
-     value. Supply the complete [assignment context](../../AGENTS.md#assignment-context).
-   - Do not omit execution settings to make a full-history fork succeed.
-     Instructions in the assignment text cannot select a running agent's model.
-3. Reuse an existing agent session only if its model, reasoning effort, and
-   execution mode match the configuration for the assigned role. Otherwise, launch a new session
-   through a capable host.
+1. Read the current configuration and select the launched role's section.
+   Do not substitute remembered values, bundled defaults, or coordinator settings.
+2. Inspect the active host tool's parameters and tier contract for that model.
+   - If it exposes `service_tier`, pass the configured `priority` value explicitly.
+   - If it exposes no tier parameter but advertises only `priority` for that model,
+     use that host-managed tier without inventing an argument.
+   - If the effective tier is unknown or different, report the specific host
+     limitation before launching. Several supported tiers alone do not identify
+     the selected tier.
+3. Pass the exact configured `model` and `reasoning_effort` through the host tool.
+   Choose a context fork that permits those explicit settings. For hosts where
+   `fork_turns="all"` rejects overrides, use `fork_turns="none"` or a supported
+   bounded history value and supply the complete
+   [assignment context](../../AGENTS.md#assignment-context).
+4. Reuse a session only when its model, effort, and tier match the role settings.
+   Reading configuration or mentioning settings in a prompt does not change a
+   running session.
 
-Reading the configuration does not change an already-running session.
+**Prohibited:** send a nonexistent `mode` argument to `spawn_agent`, silently
+omit an unknown tier, or tell a child to change its model through assignment text.
 
-**Prohibited:** Team Gizmo launches a worker with inherited coordinator settings
-and tells it in the assignment text to use the team-agent model.
+**Preferred:** read `[team.agent]`, pass its model and effort explicitly, and use
+`priority` from the active host's model-specific contract when no tier selector
+exists. Report that the tier is host-managed, not an explicit launch argument.
 
-**Preferred:** After the user changes `[team.agent]`, Team Gizmo reads that
-section again for the next worker launch and passes all three resolved values explicitly
-with a compatible context-fork mode. If the host cannot honor those settings,
-report the blocker instead of launching with coordinator settings.
+### Verify the launch
+
+1. Check actual launch behavior through the host tool when validating execution.
+   Respect the session's development choice and any explicit test exception.
+2. Inspect host-returned execution metadata when available. Configuration
+   round trips, a child's self-report, and elapsed time do not verify the actual
+   processing tier.
+3. Report the launch result and tier evidence separately. If the host exposes no
+   processing-tier metadata, state that runtime tier confirmation is unavailable.
+   A successful launch verifies the launch path, not a latency guarantee.
+
+**Prohibited:** report “priority processing verified” after only reading the
+configuration or receiving a child's claim about its tier.
+
+**Preferred:** report “The live launch completed. The host advertises priority
+for this model, but its result exposes no actual processing-tier metadata.”
 
 ## Prohibited actions
 
-- Do not introduce model or reasoning-effort defaults, additional mode defaults,
-  or per-agent overrides. Skills have no execution settings.
+- Do not retain old execution-mode fields or translate aliases into service tiers.
+- Do not introduce model, effort, or tier defaults, or per-agent overrides.
 - Do not duplicate model choices in role instructions or delegation prompts.
+- Skills have no execution settings.
