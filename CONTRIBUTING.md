@@ -66,29 +66,22 @@ cd app
 
 ### Local Rust compiler cache
 
-Install [sccache](https://github.com/mozilla/sccache) (`brew install sccache` on
-macOS). To use a remote cache, provision the `sccache-host`, `sccache-bucket`,
-`sccache-access-key`, and `sccache-secret-key` files under `~/.meta-cortex/credentials/`.
-The [local wrapper](scripts/rustc-sccache.sh) reads those files at runtime;
-credentials never belong in Cargo configuration or Git. Restrict the credential
-files to your user (`chmod 600`). If `META_CORTEX_HOME` is set, the wrapper reads
-its `credentials/` directory instead.
+Rust builds use sccache by default through the committed
+[Cargo configuration](.cargo/config.toml). Install
+[sccache](https://github.com/mozilla/sccache) (`brew install sccache` on macOS)
+and provision `sccache-host`, `sccache-bucket`, `sccache-access-key`, and
+`sccache-secret-key` under `~/.meta-cortex/credentials/` before building locally.
+The [wrapper](scripts/rustc-sccache.sh) reads those files at runtime; credentials
+never belong in Cargo configuration or Git. Restrict the credential files to
+your user (`chmod 600`). If `META_CORTEX_HOME` is set, the wrapper reads its
+`credentials/` directory instead.
 
-From the repository root, enable caching for this checkout:
-
-```sh
-mkdir -p app/.cargo
-cat > app/.cargo/config.toml <<EOF
-[build]
-rustc-wrapper = "$PWD/scripts/rustc-sccache.sh"
-incremental = false
-EOF
-```
-
-This machine-local file is ignored by Git. If it already contains settings,
-merge the two build settings instead of replacing it. Run Cargo from `app/`
-as usual. Other checkouts opt in separately. Contributors without remote cache
-credentials do not need sccache. Remove these settings to disable the wrapper.
+Run Cargo from `app/` as usual. Every checkout uses the repository configuration;
+no machine-local Cargo configuration is needed. The workspace's
+[development profile](app/Cargo.toml) disables incremental compilation for dev
+and its inherited test profile. Release profiles already disable it by default.
+CI uses its configured sccache executable and Actions credentials; fork PRs
+still use sccache with local storage when remote credentials are unavailable.
 
 Sccache reads its storage configuration when its server starts. Stop an existing
 server with `sccache --stop-server` before switching cache configuration or

@@ -49,6 +49,9 @@ wildcard_enum_match_arm = "deny"
 too_many_arguments = "deny"
 excessive_nesting = "deny"
 
+[profile.dev]
+incremental = false
+
 [profile.dist]
 inherits = "release"
 lto = "thin"

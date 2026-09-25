@@ -61,6 +61,8 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - name: Set up sccache for Cargo metadata
+        uses: ./.github/actions/rust-sccache
       - name: Install dist
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
@@ -195,6 +197,8 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - name: Set up sccache for Cargo metadata
+        uses: ./.github/actions/rust-sccache
       - name: Install cached dist
         uses: actions/download-artifact@v8
         with:
@@ -246,6 +250,8 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - name: Set up sccache for Cargo metadata
+        uses: ./.github/actions/rust-sccache
       - name: Install cached dist
         uses: actions/download-artifact@v8
         with:

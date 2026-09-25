@@ -25,7 +25,6 @@ runs:
         CACHE_SECRET_KEY: ${{ inputs.secret-key }}
       run: |
         echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-        echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
         if [[ -n "$CACHE_ENDPOINT" && -n "$CACHE_BUCKET" && -n "$CACHE_ACCESS_KEY" && -n "$CACHE_SECRET_KEY" ]]; then
           {
             echo "SCCACHE_ENDPOINT=$CACHE_ENDPOINT"

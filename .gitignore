@@ -1,5 +1,2 @@
 .idea/
 target/
-
-# Optional machine-local compiler cache configuration.
-app/.cargo/config.toml
