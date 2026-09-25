@@ -64,6 +64,32 @@ cd app
    cargo build --release --locked --workspace
    ```
 
+### Local Rust compiler cache
+
+Rust builds use sccache by default through the committed
+[Cargo configuration](.cargo/config.toml). Install
+[sccache](https://github.com/mozilla/sccache) (`brew install sccache` on macOS)
+and provision `sccache-host`, `sccache-bucket`, `sccache-access-key`, and
+`sccache-secret-key` under `~/.meta-cortex/credentials/` before building locally.
+The [wrapper](scripts/rustc-sccache.sh) reads those files at runtime; credentials
+never belong in Cargo configuration or Git. Restrict the credential files to
+your user (`chmod 600`). If `META_CORTEX_HOME` is set, the wrapper reads its
+`credentials/` directory instead.
+
+Run Cargo from `app/` as usual. Every checkout uses the repository configuration;
+no machine-local Cargo configuration is needed. The workspace's
+[development profile](app/Cargo.toml) disables incremental compilation for dev
+and its inherited test profile. Release profiles already disable it by default.
+CI uses its configured sccache executable and Actions credentials; fork PRs
+still use sccache with local storage when remote credentials are unavailable.
+
+Sccache reads its storage configuration when its server starts. Stop an existing
+server with `sccache --stop-server` before switching cache configuration or
+credentials, after any active builds finish. Use `sccache --show-stats` to inspect
+hits, misses, and cache read/write errors. Incremental compilation is disabled
+because [sccache cannot cache incremental Rust builds](https://github.com/mozilla/sccache/blob/main/docs/Rust.md).
+Linking and some other compiler invocations still run locally.
+
 ### Check framework scripts and documentation
 
 Run from the repository root after making framework changes:
@@ -84,14 +110,27 @@ Vale styles ship with the framework, so checks require no style downloads.
 
 - CI caches Cargo downloads and compiled dependencies with
   [rust-cache](https://github.com/Swatinem/rust-cache).
-- Checks, coverage, and release targets use separate caches. Cargo decides what
-  needs rebuilding after source, dependency, or toolchain changes.
+- Checks, coverage, and release targets use separate Cargo target caches and a
+  shared S3 compiler cache through [sccache](.github/actions/rust-sccache/action.yml).
+  Cargo and sccache decide which artifacts can be reused across sources,
+  toolchains, platforms, and compiler flags.
+- The compiler cache uses HTTPS, the `meta-cortex/` object prefix, and region
+  `us-east-1`. Repository Actions variables `SCCACHE_ENDPOINT` (including
+  `https://`) and `SCCACHE_BUCKET` select the service. Actions secrets
+  `SCCACHE_ACCESS_KEY_ID` and `SCCACHE_SECRET_ACCESS_KEY` supply authentication.
+  Populate those secrets from the corresponding local credential files through
+  standard input to `gh secret set`; never paste credentials into workflows.
+- Fork and Dependabot PRs without those secrets use local sccache storage.
+  No privileged PR trigger is used to grant them remote cache access.
+- CI installs sccache 0.18.0, disables incremental Rust compilation, and reports
+  cache statistics in the action's post-build step. Keep the generated release
+  workflow's compiler-cache setup when updating cargo-dist.
 - PRs and `main` build the four release packages without publishing them.
   These package builds replace the check workflow's duplicate release build.
 - Builds on `main` populate caches that later release tags can restore.
   GitHub does not share caches between different release tags.
-- Only version-tag pushes publish a release. The first build after a cache miss
-  still compiles dependencies.
+- Only version-tag pushes publish a release. A miss in both Cargo's target cache
+  and the remote compiler cache still compiles dependencies.
 - macOS packages use GitHub-hosted Apple Silicon and Intel macOS runners.
 
 ### Distribution tooling
