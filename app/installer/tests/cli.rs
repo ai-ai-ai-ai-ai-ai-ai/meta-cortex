@@ -26,7 +26,7 @@ struct InfoDocument {
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(try_from = "u32")]
 enum ReportSchemaVersion {
-    V3,
+    V4,
 }
 
 #[derive(Debug, Error)]
@@ -40,13 +40,13 @@ impl TryFrom<u32> for ReportSchemaVersion {
 
     fn try_from(version: u32) -> Result<Self, Self::Error> {
         match version {
-            3 => Ok(Self::V3),
+            4 => Ok(Self::V4),
             _ => Err(ReportSchemaVersionError::Unsupported),
         }
     }
 }
 
-// Independent decoder for the established semantic-release strings in report schema 3.
+// Independent decoder for the established semantic-release strings in report schema 4.
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 enum ReportVersion {
     #[serde(rename = "0.6.2")]
@@ -114,6 +114,14 @@ struct ReportTeam {
 struct ReportAgent {
     model: String,
     reasoning_effort: String,
+    mode: ReportExecutionMode,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum ReportExecutionMode {
+    Standard,
+    Fast,
 }
 
 #[derive(Serialize)]
@@ -301,8 +309,8 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     let customized = format!(
         "# Keep settings\n{}",
         fs::read_to_string(&config)?.replace(
-            "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"",
-            "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\""
+            "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"\nmode = \"fast\"",
+            "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\"\nmode = \"standard\""
         )
     );
     fs::write(&config, &customized)?;
@@ -315,7 +323,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
         instructions: Instructions::Write,
     })?;
     let info = scenario.info()?;
-    assert_eq!(info.schema_version, ReportSchemaVersion::V3);
+    assert_eq!(info.schema_version, ReportSchemaVersion::V4);
     assert_eq!(info.cli_version, ReportVersion::V0_8_1);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
@@ -337,6 +345,8 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(info.models.team.gizmo, info.models.gizmo_prime);
     assert_eq!(info.models.team.agent.model, "gpt-5.6-sol");
     assert_eq!(info.models.team.agent.reasoning_effort, "high");
+    assert_eq!(info.models.team.agent.mode, ReportExecutionMode::Standard);
+    assert_eq!(info.models.gizmo_prime.mode, ReportExecutionMode::Fast);
     assert_eq!(fs::read_to_string(&config)?, customized);
     assert_eq!(fs::read(root.join("AGENTS.md"))?, guidance);
     fs::remove_file(root.join(".meta-cortex/.version"))?;
@@ -1028,7 +1038,7 @@ fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
 
 #[test]
 fn report_consumer_rejects_undeclared_or_malformed_versions() {
-    for input in ["0", "1", "2", "4", "-1", "3.5", "\"4\"", "null"] {
+    for input in ["0", "1", "2", "3", "5", "-1", "3.5", "\"5\"", "null"] {
         assert!(
             serde_saphyr::from_str::<ReportSchemaVersion>(input).is_err(),
             "{input}"
