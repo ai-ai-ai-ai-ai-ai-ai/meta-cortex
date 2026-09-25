@@ -64,6 +64,37 @@ cd app
    cargo build --release --locked --workspace
    ```
 
+### Local Rust compiler cache
+
+Install [sccache](https://github.com/mozilla/sccache) (`brew install sccache` on
+macOS). With Nook access, keep the existing `sccache-host`, `sccache-bucket`,
+`sccache-access-key`, and `sccache-secret-key` files under `~/.nook/cache/`.
+The [local wrapper](scripts/rustc-sccache.sh) reads those files at runtime;
+credentials never belong in Cargo configuration or Git.
+
+From the repository root, enable caching for this checkout:
+
+```sh
+mkdir -p app/.cargo
+cat > app/.cargo/config.toml <<EOF
+[build]
+rustc-wrapper = "$PWD/scripts/rustc-sccache.sh"
+incremental = false
+EOF
+```
+
+This machine-local file is ignored by Git. If it already contains settings,
+merge the two build settings instead of replacing it. Run Cargo from `app/`
+as usual. Other checkouts opt in separately; contributors without Nook access
+do not need sccache. Remove these settings to disable the wrapper.
+
+Sccache reads its storage configuration when its server starts. Stop an existing
+server with `sccache --stop-server` before switching cache configuration or
+credentials, after any active builds finish. Use `sccache --show-stats` to inspect
+hits, misses, and cache read/write errors. Incremental compilation is disabled
+because [sccache cannot cache incremental Rust builds](https://github.com/mozilla/sccache/blob/main/docs/Rust.md).
+Linking and some other compiler invocations still run locally.
+
 ### Check framework scripts and documentation
 
 Run from the repository root after making framework changes:
@@ -84,14 +115,27 @@ Vale styles ship with the framework, so checks require no style downloads.
 
 - CI caches Cargo downloads and compiled dependencies with
   [rust-cache](https://github.com/Swatinem/rust-cache).
-- Checks, coverage, and release targets use separate caches. Cargo decides what
-  needs rebuilding after source, dependency, or toolchain changes.
+- Checks, coverage, and release targets use separate Cargo target caches and a
+  shared S3 compiler cache through [sccache](.github/actions/rust-sccache/action.yml).
+  Cargo and sccache decide which artifacts can be reused across sources,
+  toolchains, platforms, and compiler flags.
+- The compiler cache uses HTTPS, the `meta-cortex/` object prefix, and region
+  `us-east-1`. Repository Actions variables `SCCACHE_ENDPOINT` (including
+  `https://`) and `SCCACHE_BUCKET` select the service. Actions secrets
+  `SCCACHE_ACCESS_KEY_ID` and `SCCACHE_SECRET_ACCESS_KEY` supply authentication.
+  Populate those secrets from the corresponding Nook credential files through
+  standard input to `gh secret set`; never paste credentials into workflows.
+- Fork and Dependabot PRs without those secrets use local sccache storage.
+  No privileged PR trigger is used to grant them remote cache access.
+- CI installs sccache 0.18.0, disables incremental Rust compilation, and reports
+  cache statistics in the action's post-build step. Keep the generated release
+  workflow's compiler-cache setup when updating cargo-dist.
 - PRs and `main` build the four release packages without publishing them.
   These package builds replace the check workflow's duplicate release build.
 - Builds on `main` populate caches that later release tags can restore.
   GitHub does not share caches between different release tags.
-- Only version-tag pushes publish a release. The first build after a cache miss
-  still compiles dependencies.
+- Only version-tag pushes publish a release. A miss in both Cargo's target cache
+  and the remote compiler cache still compiles dependencies.
 - macOS packages use GitHub-hosted Apple Silicon and Intel macOS runners.
 
 ### Distribution tooling

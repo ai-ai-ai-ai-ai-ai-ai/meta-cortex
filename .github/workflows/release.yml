@@ -141,6 +141,13 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+      - name: Set up compiler cache
+        uses: ./.github/actions/rust-sccache
+        with:
+          endpoint: ${{ vars.SCCACHE_ENDPOINT }}
+          bucket: ${{ vars.SCCACHE_BUCKET }}
+          access-key: ${{ secrets.SCCACHE_ACCESS_KEY_ID }}
+          secret-key: ${{ secrets.SCCACHE_SECRET_ACCESS_KEY }}
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:

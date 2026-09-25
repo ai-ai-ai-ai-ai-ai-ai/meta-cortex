@@ -1,0 +1,44 @@
+name: Rust compiler cache
+description: Use the Nook S3 compiler cache when credentials are available, otherwise local disk.
+inputs:
+  endpoint:
+    description: HTTPS S3 endpoint
+    required: false
+  bucket:
+    description: S3 bucket
+    required: false
+  access-key:
+    description: S3 access key
+    required: false
+  secret-key:
+    description: S3 secret key
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Configure compiler cache
+      shell: bash
+      env:
+        CACHE_ENDPOINT: ${{ inputs.endpoint }}
+        CACHE_BUCKET: ${{ inputs.bucket }}
+        CACHE_ACCESS_KEY: ${{ inputs.access-key }}
+        CACHE_SECRET_KEY: ${{ inputs.secret-key }}
+      run: |
+        echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+        echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+        if [[ -n "$CACHE_ENDPOINT" && -n "$CACHE_BUCKET" && -n "$CACHE_ACCESS_KEY" && -n "$CACHE_SECRET_KEY" ]]; then
+          {
+            echo "SCCACHE_ENDPOINT=$CACHE_ENDPOINT"
+            echo "SCCACHE_BUCKET=$CACHE_BUCKET"
+            echo "SCCACHE_REGION=us-east-1"
+            echo "SCCACHE_S3_USE_SSL=true"
+            echo "SCCACHE_S3_KEY_PREFIX=meta-cortex/"
+            echo "AWS_ACCESS_KEY_ID=$CACHE_ACCESS_KEY"
+            echo "AWS_SECRET_ACCESS_KEY=$CACHE_SECRET_KEY"
+          } >> "$GITHUB_ENV"
+        else
+          echo "Remote cache credentials unavailable; using the local compiler cache."
+        fi
+    - uses: Mozilla-Actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      with:
+        version: v0.18.0
