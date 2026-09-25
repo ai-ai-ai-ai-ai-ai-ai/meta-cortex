@@ -253,7 +253,7 @@ The [Rust workspace](app/Cargo.toml) contains two crates:
 - [installer](app/installer): the `meta-cortex` executable, framework installation,
   command discovery, and typed YAML transport.
 - [workbench](app/workbench): the `meta-cortex-workbench` library for durable agent
-  tasks, claims, progress, Git checkpoints, and per-feature Turso ledgers. It owns
+  tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
 
 ```sh
@@ -313,13 +313,14 @@ installation before retrying.
 ## Agent work ledger
 
 The `meta-cortex` binary includes an embedded Turso ledger at
-`~/.meta-cortex/<repo_id>/features/<feature-id>.db`. Framework or feature
+`~/.meta-cortex/<repo-name>/<repo_id>/workbench.db`. All agents, features, and
+worktrees in a repository use this same database. Framework or feature
 initialization generates a UUID once in the main checkout's
 `.meta-cortex/repository-id`. Initialization from any linked worktree reuses that
 ID. The file is locally ignored by Git, so a fresh clone gets a new identity;
 repositories with the same name remain separate. Repeated initialization and
-renaming the checkout preserve the ID and data location. Bun is shared across
-repositories at `~/.meta-cortex/bun`; Vale is shared at `~/.meta-cortex/vale`.
+renaming the checkout preserve the ID and the existing named data directory.
+Bun is shared across repositories at `~/.meta-cortex/bun`; Vale is shared at `~/.meta-cortex/vale`.
 `META_CORTEX_HOME` overrides the application directory. Keep the identity file when replacing an installed framework or
 restoring a repository whose ledgers you want to retain.
 Database files and their engine-managed sidecars are persistent state; keep them

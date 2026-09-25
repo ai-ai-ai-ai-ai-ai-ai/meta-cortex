@@ -87,7 +87,7 @@ impl Catalog {
         let examples = [
             CommandExample {
                 description: CommandSummary::from(
-                    "Discover existing feature IDs and database paths after a coordinator restart.",
+                    "Discover existing feature IDs in the shared repository database after a coordinator restart.",
                 ),
                 operation: Operation::Feature(FeatureOperation::List(EmptyArguments {})),
             },
@@ -109,7 +109,7 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Initialize or reopen this feature's isolated ledger after preparing its branch and worktree.",
+                    "Initialize or reopen this feature in the shared repository database after preparing its branch and worktree.",
                 ),
                 operation: Operation::Feature(FeatureOperation::Initialize(InitFeature {
                     feature: feature.clone(),
