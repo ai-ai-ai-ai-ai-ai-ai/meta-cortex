@@ -57,6 +57,8 @@ enum ReportVersion {
     V0_8_0,
     #[serde(rename = "0.8.1")]
     V0_8_1,
+    #[serde(rename = "0.9.0")]
+    V0_9_0,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
@@ -324,7 +326,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     })?;
     let info = scenario.info()?;
     assert_eq!(info.schema_version, ReportSchemaVersion::V4);
-    assert_eq!(info.cli_version, ReportVersion::V0_8_1);
+    assert_eq!(info.cli_version, ReportVersion::V0_9_0);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
         env!("CARGO_PKG_VERSION")

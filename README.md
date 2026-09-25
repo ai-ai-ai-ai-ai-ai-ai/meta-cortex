@@ -170,8 +170,8 @@ result:
     kind: framework_info
     value:
       schema_version: 4
-      cli_version: 0.8.1
-      framework_version: 0.8.1
+      cli_version: 0.9.0
+      framework_version: 0.9.0
       paths:
         project: /path/to/project
         framework: /path/to/project/.meta-cortex
