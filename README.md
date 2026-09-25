@@ -169,9 +169,9 @@ result:
   data:
     kind: framework_info
     value:
-      schema_version: 3
-      cli_version: 0.7.0
-      framework_version: 0.7.0
+      schema_version: 4
+      cli_version: 0.9.0
+      framework_version: 0.9.0
       paths:
         project: /path/to/project
         framework: /path/to/project/.meta-cortex
@@ -190,13 +190,16 @@ result:
         gizmo-prime:
           model: gpt-6-luna
           reasoning_effort: max
+          mode: fast
         team:
           gizmo:
             model: gpt-6-luna
             reasoning_effort: max
+            mode: fast
           agent:
             model: gpt-6-luna
             reasoning_effort: max
+            mode: fast
       model_availability: NotChecked
 ```
 
@@ -207,7 +210,8 @@ result:
 - `integrations` reports each harness's resolved instruction file and managed-block
   status: `Connected`, `Missing`, or `Conflict`. Multiple harnesses can share a file;
   this reports file contents, not which harness is running.
-- `models` preserves the configuration's role names and reads their project settings.
+- `models` preserves the configuration's role names and reads their project settings,
+  including each role’s resolved `mode` (`standard` or `fast`, defaulting to `fast`).
 - `model_availability: NotChecked` means the command has not queried your AI host.
 
 Inspection does not modify project files. Failures produce a structured error

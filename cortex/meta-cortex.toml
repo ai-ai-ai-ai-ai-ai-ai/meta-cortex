@@ -1,14 +1,18 @@
 # Execution settings for Meta-Cortex agents.
 # Settings apply by role, regardless of agent directory.
+# mode accepts "standard" or "fast"; omitted mode defaults to "fast".
 
 [gizmo-prime]
 model = "gpt-6-luna"
 reasoning_effort = "max"
+mode = "fast"
 
 [team.gizmo]
 model = "gpt-6-luna"
 reasoning_effort = "max"
+mode = "fast"
 
 [team.agent]
 model = "gpt-6-luna"
 reasoning_effort = "max"
+mode = "fast"
