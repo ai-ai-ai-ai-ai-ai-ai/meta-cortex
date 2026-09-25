@@ -158,7 +158,7 @@ It uses its own GitHub Actions token; no cross-repository token is required.
    [the release catalog](app/installer/src/information.rs). Update the workspace
    version in [app/Cargo.toml](app/Cargo.toml), regenerate [app/Cargo.lock](app/Cargo.lock),
    and update the independent report consumer's supported release enum in
-   [the CLI tests](app/installer/tests/cli.rs). `Version::CURRENT` is resolved from
+   [the CLI report consumer](app/installer/tests/cli/report.rs). `Version::CURRENT` is resolved from
    the package version at compile time; an undeclared release fails compilation.
    Keep only the releases whose installed metadata this executable supports.
 3. Run the local validation described above.

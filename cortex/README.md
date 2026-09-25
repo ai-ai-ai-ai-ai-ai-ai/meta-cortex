@@ -143,17 +143,17 @@ uses Bun and the shared workspace dependencies installed by Framework / Initiali
 - The helper validates data locally; the agent calls the host's native question tool.
 - Answers stay in session context.
 
-[meta-cortex.toml](meta-cortex.toml) selects the model, reasoning effort, and execution mode for
-each delegated role in multi-agent mode. Execution mode defaults to `fast` and
-can be set to `standard`. Single-agent mode keeps the current
-host settings. The [configuration rules](teams/gizmo-team/docs/agent-configuration.md) define how
+[meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for
+each delegated role in multi-agent mode. Speed comes from the host session.
+Single-agent mode keeps the current host settings. The
+[configuration rules](teams/gizmo-team/docs/agent-configuration.md) define how
 the host applies those settings.
 
-1. Check that the configured models, reasoning efforts, and execution modes are supported by your host.
-2. Adjust the role settings to match your intended execution setup.
+1. Check that the configured models and reasoning efforts are supported by your host.
+2. Adjust the role settings and select the desired speed in the host.
 3. Start the task through a host capable of running the configured roles.
-   - Unsupported settings or missing execution capabilities are reported as blockers.
-   - Agents must not silently substitute another configuration.
+   - Unsupported models, reasoning efforts, or missing execution capabilities are reported as blockers.
+   - Agents must not silently substitute another model or reasoning effort.
 
 ## Agent skills
 

@@ -5,7 +5,7 @@ rules for your assigned place in the Gizmo hierarchy.
 
 Own the documents assigned by Team Gizmo: agent instructions, specifications,
 skills, practices, and catalogs. Run as a team subagent with the configured
-team-agent model, reasoning effort, and execution mode.
+team-agent model and reasoning effort with the host session's speed.
 
 ## Knowledge
 

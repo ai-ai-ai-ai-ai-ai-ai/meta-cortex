@@ -1,60 +1,81 @@
 # Agent Configuration
 
-[meta-cortex.toml](../../../meta-cortex.toml) is the source of model,
-reasoning-effort, and execution-mode settings. Use the resolved configuration
-file from the active library, including the consuming project's configured values. Model names must
-not be hard-coded in launch instructions. Each role setting selects these values:
+[meta-cortex.toml](../../../meta-cortex.toml) is the source of model and
+reasoning-effort settings. Read the resolved configuration from the active
+library, including the consuming project's values. Each role selects its own section:
 
-- **Gizmo Prime**
-  - Configuration: `[gizmo-prime]`.
-- **Team Gizmo**
-  - Configuration: `[team.gizmo]`.
-- **Team agents**
-  - Configuration: `[team.agent]`.
-  - Applies to every non-coordinator role, including documentation, review,
-    integration, and PR delivery agents.
+- **Gizmo Prime:** `[gizmo-prime]`.
+- **Team Gizmo:** `[team.gizmo]`.
+- **Team agents:** `[team.agent]`, including documentation, review, integration,
+  and PR delivery agents.
 
-`mode` accepts `standard` or `fast`. An omitted `mode` defaults to `fast`;
-the bundled configuration explicitly selects `fast` for every role. This setting
-controls execution speed, independently of `reasoning_effort` and the session’s
-`single_agent` or `multi_agent` development mode.
+Each section requires `model` and `reasoning_effort`. Speed belongs to the host
+session. There is no framework execution `mode` or `service_tier` field. The
+session's `single_agent` or `multi_agent` choice remains independent of speed.
 
 ## Required actions
 
-Before each subagent launch, including Gizmo Prime:
+### Launch with the configured settings
 
-1. Read the current configuration file and select the setting for the agent
-   being launched, not the launching coordinator. Do not reuse remembered values
-   or bundled defaults in place of that file.
-   - If the configuration is missing, invalid, or unsupported by the host,
-     report the specific blocker. Do not silently substitute settings.
-2. Pass the selected configuration's exact `model`, `reasoning_effort`, and resolved `mode`
-   explicitly to the host's agent execution tool. Adapt parameter names to that
-   tool without changing their meaning. Use the host’s supported speed or service-tier
-   setting for `mode`. If the host cannot honor the selected mode, report the
-   blocker instead of silently changing modes.
-   - Choose a context-fork mode that permits explicit execution settings.
-     For hosts where `fork_turns="all"` inherits the parent's settings and
-     rejects overrides, use `fork_turns="none"` or a supported bounded history
-     value. Supply the complete [assignment context](../../AGENTS.md#assignment-context).
-   - Do not omit execution settings to make a full-history fork succeed.
-     Instructions in the assignment text cannot select a running agent's model.
-3. Reuse an existing agent session only if its model, reasoning effort, and
-   execution mode match the configuration for the assigned role. Otherwise, launch a new session
-   through a capable host.
+1. Read the current configuration and select the launched role's section.
+   Do not substitute remembered values, bundled defaults, or coordinator settings.
+2. Pass the exact configured `model` and `reasoning_effort` through the host tool.
+   Choose a context fork that permits those explicit settings. For hosts where
+   `fork_turns="all"` rejects overrides, use `fork_turns="none"` or a supported
+   bounded history value and supply the complete
+   [assignment context](../../AGENTS.md#assignment-context).
+3. Leave speed to the host as described below. Do not add a tier override to the
+   launch request or rewrite the user's host configuration.
+4. Reuse a session only when its model and effort match the role settings.
+   Reading configuration or mentioning settings in a prompt does not change a
+   running session.
 
-Reading the configuration does not change an already-running session.
+**Prohibited:** send a nonexistent `mode` argument to `spawn_agent`, or tell a
+child to change its model through assignment text.
 
-**Prohibited:** Team Gizmo launches a worker with inherited coordinator settings
-and tells it in the assignment text to use the team-agent model.
+**Preferred:** read `[team.agent]`, pass its model and effort explicitly, and
+leave the host's speed selection in place.
 
-**Preferred:** After the user changes `[team.agent]`, Team Gizmo reads that
-section again for the next worker launch and passes all three resolved values explicitly
-with a compatible context-fork mode. If the host cannot honor those settings,
-report the blocker instead of launching with coordinator settings.
+### Use the host speed setting
+
+The user selects speed in the host before launching agents. Use the host's
+native subagent workflow so that its session inheritance rules apply. Codex
+passes the root session's selected tier to new children when their model supports
+that tier, including launches with explicit model and reasoning-effort settings.
+Do not create a framework speed selector, alias, default, or translation layer.
+A list of supported service tiers describes availability, not the selected
+speed. If host metadata is available, inspect the active session's setting.
+Do not treat a global configuration file as proof of the active session setting.
+If speed changes during a task, follow the host's rules for new and existing
+agents; do not assume an existing child changes with its parent. A model that
+does not support the selected tier cannot be promised that speed.
+
+**Prohibited:** infer that an agent uses Fast because the tool advertises
+`priority`, or claim that omitting a tier argument proves inheritance.
+
+**Preferred:** select Fast in the host, launch through its native agent tool,
+and use host metadata to check the child's selected tier when available.
+
+### Verify the launch
+
+1. Check actual launch behavior through the host tool when validating execution.
+   Respect the session's development choice and any explicit test exception.
+2. Inspect host-returned execution metadata when available. Configuration
+   round trips, a child's self-report, and elapsed time do not verify the actual
+   processing tier.
+3. Report the launch result and tier evidence separately. If the host exposes no
+   processing-tier metadata, state that runtime tier confirmation is unavailable.
+   A successful launch verifies the launch path, not a latency guarantee.
+
+**Prohibited:** report “Fast processing verified” after only reading the
+configuration or receiving a child's claim about its tier.
+
+**Preferred:** report “The parent has Fast selected and the live child launch
+completed. The host exposes no actual processing-tier metadata for the child.”
 
 ## Prohibited actions
 
-- Do not introduce model or reasoning-effort defaults, additional mode defaults,
-  or per-agent overrides. Skills have no execution settings.
+- Do not retain execution-mode or service-tier fields in framework configuration.
+- Do not introduce model or effort defaults, or per-agent overrides.
 - Do not duplicate model choices in role instructions or delegation prompts.
+- Skills have no execution settings.

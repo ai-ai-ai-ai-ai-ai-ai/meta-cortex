@@ -70,21 +70,11 @@ impl Effort {
     ];
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ExecutionMode {
-    Standard,
-    #[default]
-    Fast,
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AgentSettings {
     pub model: Model,
     pub reasoning_effort: Effort,
-    #[serde(default)]
-    pub mode: ExecutionMode,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -156,8 +146,7 @@ impl TryFrom<Configuration> for ConfigText {
 #[cfg(test)]
 pub mod tests {
     use super::{
-        AgentSettings, ConfigError, ConfigText, Configuration, Effort, ExecutionMode, Model,
-        TeamSettings,
+        AgentSettings, ConfigError, ConfigText, Configuration, Effort, Model, TeamSettings,
     };
 
     impl Model {
@@ -171,7 +160,6 @@ pub mod tests {
                 let settings = AgentSettings {
                     model,
                     reasoning_effort,
-                    mode: ExecutionMode::Fast,
                 };
                 let config = Configuration {
                     gizmo_prime: settings,
@@ -198,22 +186,32 @@ pub mod tests {
     }
 
     #[test]
-    fn execution_modes_round_trip_and_default_to_fast() -> Result<(), ConfigError> {
+    fn bundled_configuration_leaves_speed_to_host() -> Result<(), ConfigError> {
         let bundled = Configuration::bundled()?;
-        for settings in [bundled.gizmo_prime, bundled.team.gizmo, bundled.team.agent] {
-            assert_eq!(settings.mode, ExecutionMode::Fast);
+        let encoded = ConfigText::try_from(bundled)?;
+        assert_eq!(encoded.parse()?, bundled);
+        assert!(!encoded.to_string().contains("service_tier"));
+        assert!(!encoded.to_string().contains("mode ="));
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_framework_speed_overrides() -> Result<(), ConfigError> {
+        let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
+        for section in ["[gizmo-prime]", "[team.gizmo]", "[team.agent]"] {
+            for field in [
+                "service_tier = \"priority\"",
+                "service_tier = \"default\"",
+                "mode = \"fast\"",
+                "mode = \"standard\"",
+            ] {
+                let invalid = text.replace(section, &format!("{section}\n{field}"));
+                assert!(matches!(
+                    ConfigText::from(invalid).parse(),
+                    Err(ConfigError::Decode(_))
+                ));
+            }
         }
-        let mut config = bundled;
-        config.gizmo_prime.mode = ExecutionMode::Standard;
-        config.team.agent.mode = ExecutionMode::Standard;
-        let encoded = ConfigText::try_from(config)?;
-        assert_eq!(encoded.parse()?, config);
-        let omitted = encoded.to_string().replace("mode = \"standard\"\n", "");
-        assert_eq!(ConfigText::from(omitted).parse()?, bundled);
-        let omitted = ConfigText::try_from(bundled)?
-            .to_string()
-            .replace("mode = \"fast\"\n", "");
-        assert_eq!(ConfigText::from(omitted).parse()?, bundled);
         Ok(())
     }
 
@@ -223,18 +221,15 @@ pub mod tests {
             gizmo_prime: AgentSettings {
                 model: Model::Terra,
                 reasoning_effort: Effort::Low,
-                mode: ExecutionMode::Fast,
             },
             team: TeamSettings {
                 gizmo: AgentSettings {
                     model: Model::Sol,
                     reasoning_effort: Effort::Medium,
-                    mode: ExecutionMode::Fast,
                 },
                 agent: AgentSettings {
                     model: Model::Luna,
                     reasoning_effort: Effort::Xhigh,
-                    mode: ExecutionMode::Fast,
                 },
             },
         })?
@@ -243,7 +238,6 @@ pub mod tests {
             text.replace("gpt-5.6-terra", "unknown-model"),
             text.replace("\"low\"", "\"extreme\""),
             text.replace("[team.agent]", "[team.other]"),
-            text.replace("\"fast\"", "\"turbo\""),
             text.replace("reasoning_effort = \"low\"", ""),
             format!("{text}\nextra = true\n"),
             String::from("not valid TOML"),
@@ -266,7 +260,6 @@ pub mod tests {
         let settings = AgentSettings {
             model: Model::Luna6,
             reasoning_effort: Effort::Ultra,
-            mode: ExecutionMode::Fast,
         };
         let config = Configuration {
             gizmo_prime: settings,
