@@ -183,7 +183,10 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     let reopen = scenario.initialization(Examples::feature()?.feature)?;
     let other = scenario.initialization(FeatureId::try_from("other-feature".to_owned())?)?;
     let scenario = scenario.initialize(Examples::feature()?.feature)?;
-    assert_eq!(scenario.ledger().storage_version, StorageVersion::IndexedV2);
+    assert_eq!(
+        scenario.ledger().storage_version,
+        StorageVersion::RelationalV3
+    );
     let Reply::Ledger(reopened) = scenario
         .client()
         .run(Operation::Feature(FeatureOperation::Initialize(reopen)))?
@@ -197,7 +200,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     else {
         bail!("other ledger")
     };
-    assert_ne!(scenario.ledger().path, other.path);
+    assert_eq!(scenario.ledger().path, other.path);
     let scenario = scenario.create_task(Examples::task()?)?;
     assert_eq!(scenario.created_task().id, Examples::query()?.task);
     assert!(matches!(scenario.created_task().state, State::Queued));
@@ -306,6 +309,42 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             .code,
         "not_found"
     );
+    let other_id = FeatureId::try_from("other-feature".to_owned())?;
+    let other_task = CreateTask {
+        feature: other_id.clone(),
+        ..Examples::task()?
+    };
+    scenario
+        .client()
+        .run(Operation::Task(TaskOperation::Create(other_task)))?;
+    assert_eq!(scenario.client().status(other_id.clone())?.len(), 1);
+    assert_eq!(
+        scenario.client().status(other_id.clone())?[0].task.revision,
+        Revision::INITIAL
+    );
+    assert_eq!(scenario.status()?.len(), 1);
+    assert_eq!(scenario.status()?[0].task.revision, after.task.revision);
+    let Reply::History(events) = scenario
+        .client()
+        .run(Operation::Task(TaskOperation::History(TaskQuery {
+            feature: other_id,
+            ..Examples::query()?
+        })))?
+    else {
+        bail!("expected other feature history")
+    };
+    assert_eq!(events.len(), 1);
+    let Reply::Features(features) =
+        scenario
+            .client()
+            .run(Operation::Feature(FeatureOperation::List(
+                EmptyArguments {},
+            )))?
+    else {
+        bail!("expected features")
+    };
+    assert_eq!(features.len(), 2);
+    assert!(features.iter().all(|feature| feature.path == other.path));
     let mut options = StatusOptions::new();
     options
         .include_ignored(false)

@@ -6,11 +6,11 @@ coordinator or worker recover without the final message.
 
 ## Storage and ownership
 
-Each feature has its own embedded Turso database. Resolve its location from any
-linked project worktree:
+All agents and features in one repository share one embedded Turso database.
+Resolve its location from any linked project worktree:
 
 ```text
-~/.meta-cortex/<repo_id>/features/<feature-id>.db
+~/.meta-cortex/<repo-name>/<repo_id>/workbench.db
 ```
 
 - **Repository identity**
@@ -26,13 +26,16 @@ linked project worktree:
 - **Storage location**
   - Keep application data outside `.git`.
   - `META_CORTEX_HOME` overrides the default `~/.meta-cortex` location.
+  - The repository name labels the directory; the UUID identifies it. A renamed
+    checkout reuses its existing named directory and database.
   - All repositories share Bun in that location's `bun/` directory.
 
 Pass the consuming project path and a stable feature
 ID to every command. Do not use the library's repository as the project. The
 feature ID stays fixed when a host session restarts. Reuse the ID and feature
-branch on follow-ups. Different features use different files, even when task IDs
-coincide. Preserve the database and its engine-managed sidecars together.
+branch on follow-ups. Task IDs are scoped to their feature, so different features
+can reuse a task ID inside the same database. Never create a database per task,
+agent, or worktree. Preserve the database and its engine-managed sidecars together.
 
 - Gizmo Prime owns the feature objective and branch decision.
 - Team Gizmo records assignments before launches, reads progress, and decides
@@ -227,11 +230,26 @@ the recorded task plus any newer Git changes.
 ## Versions and durable contracts
 
 Command protocol, persisted record, and physical database versions are distinct.
-This release writes command/record version `1` and database version `2`.
-Database migrations run transactionally: initial tables establish version `1`;
-version `2` adds the unique task/revision event index. Existing version `1` data
-is preserved. Unsupported versions are rejected; the CLI never resets a database
-or guesses how to decode an unknown record.
+This release writes command/record version `1` and database version `3`.
+Version `3` uses a feature primary key, a `(feature_id, id)` task primary key,
+and a `(feature_id, task_id, revision)` event primary key. Foreign keys require
+each task's feature and each event's task to exist; parent deletion and key
+changes are restricted while children exist. The primary-key indexes cover
+feature status and ordered task history without redundant indexes. Required
+columns reject nulls, revisions must be positive, and JSON IDs and revisions
+must match their relational columns. Every Workbench connection enables foreign
+keys. JSON retains progress, findings, checks, and task snapshots.
+
+Version `1` and `2` databases migrate transactionally, retaining records and
+history. On first access, Workbench imports the old
+`~/.meta-cortex/<repo_id>/features/<feature-id>.db` files into the shared database.
+Each feature imports atomically and only once; an invalid source leaves its
+import uncommitted and reports an error. Stop older agents before upgrading:
+old executables still write the old files. Sources and sidecars remain intact
+as backups; after verifying the imported history, they may be archived or
+removed together. Never resume older writers against those backups. Unsupported
+versions are rejected; the CLI never resets a database or guesses how to decode
+an unknown record.
 
 There are no historical command/record formats before this feature's version
 `1`. When evolving those formats, retain typed readers for the current version

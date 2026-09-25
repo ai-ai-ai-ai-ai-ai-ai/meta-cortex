@@ -1,10 +1,13 @@
-use super::schema::{FeatureTable, LedgerSchema};
+use super::legacy::LegacyImport;
+use super::relational::FeatureTable;
+use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
 use super::{Documents, FeatureLoaded, InitializeLedger, Ledger, OpenLedger};
 use crate::LedgerError;
+use crate::git::Repository;
 use crate::model::Feature;
 use crate::values::FeatureId;
-use crate::versions::RecordVersion;
+use crate::versions::{RecordVersion, StorageVersion};
 use sea_query::{OnConflict, Query};
 use std::fs;
 use std::time::Duration;
@@ -58,7 +61,7 @@ impl Ledger<Located<Feature>> {
         };
         request.repository.require_feature(&feature)?;
         request.repository.initialize()?;
-        let path = request.repository.ledger_path(&feature.id)?;
+        let path = request.repository.ledger_path()?;
         fs::create_dir_all(
             path.parent()
                 .ok_or(LedgerError::Invalid("ledger path has no parent"))?,
@@ -73,9 +76,13 @@ impl Ledger<Located<Feature>> {
 
 impl Ledger<Located<FeatureId>> {
     fn locate(request: OpenLedger) -> Result<Self, LedgerError> {
-        let path = request.repository.ledger_path(&request.feature)?;
-        if !path.is_file() {
-            return Err(LedgerError::Uninitialized);
+        let path = request.repository.ledger_path()?;
+        match (
+            path.is_file(),
+            request.repository.legacy_ledgers()?.is_empty(),
+        ) {
+            (false, true) => return Err(LedgerError::Uninitialized),
+            (true, _) | (false, false) => request.repository.initialize()?,
         }
         Ok(Self {
             state: Located {
@@ -114,6 +121,13 @@ impl<FeatureInput> Ledger<Connected<FeatureInput>> {
     async fn migrate(mut self) -> Result<Ledger<SchemaReady<FeatureInput>>, LedgerError> {
         // Turso's transaction API borrows its connection mutably; the owner is consumed.
         LedgerSchema::migrate(&mut self.state.connection).await?;
+        for path in self.repository.legacy_ledgers()? {
+            LegacyImport {
+                connection: &mut self.state.connection,
+            }
+            .import(&path)
+            .await?;
+        }
         Ok(Ledger {
             state: SchemaReady {
                 connection: self.state.connection,
@@ -135,18 +149,22 @@ impl Ledger<SchemaReady<Feature>> {
         SqlStatement::build(
             Query::insert()
                 .into_table(FeatureTable::Table)
-                .columns([FeatureTable::Singleton, FeatureTable::Document])
-                .values([1.into(), serde_json::to_string(&self.state.feature)?.into()])?
-                .on_conflict(
-                    OnConflict::column(FeatureTable::Singleton)
-                        .do_nothing()
-                        .to_owned(),
-                )
+                .columns([FeatureTable::Id, FeatureTable::Document])
+                .values([
+                    self.state.feature.id.to_string().into(),
+                    serde_json::to_string(&self.state.feature)?.into(),
+                ])?
+                .on_conflict(OnConflict::column(FeatureTable::Id).do_nothing().to_owned())
                 .to_owned(),
         )?
         .execute(&tx)
         .await?;
-        let stored = Documents { connection: &tx }.feature().await?;
+        let stored = Documents {
+            connection: &tx,
+            feature: &self.state.feature.id,
+        }
+        .feature()
+        .await?;
         if stored != self.state.feature {
             return Err(LedgerError::AlreadyExists);
         }
@@ -166,6 +184,7 @@ impl Ledger<SchemaReady<FeatureId>> {
     async fn load_feature(self) -> Result<Ledger, LedgerError> {
         let feature = Documents {
             connection: &self.state.connection,
+            feature: &self.state.feature,
         }
         .feature()
         .await?;
@@ -185,12 +204,55 @@ impl Ledger<SchemaReady<FeatureId>> {
     }
 }
 
+impl Ledger {
+    pub(crate) async fn features(
+        repository: &Repository,
+    ) -> Result<Vec<super::LedgerInfo>, LedgerError> {
+        let path = match repository.ledger_path() {
+            Ok(path) => path,
+            Err(LedgerError::Uninitialized) => return Ok(Vec::new()),
+            Err(error) => return Err(error),
+        };
+        match (path.is_file(), repository.legacy_ledgers()?.is_empty()) {
+            (false, true) => return Ok(Vec::new()),
+            (true, _) | (false, false) => repository.initialize()?,
+        }
+        let ledger = Ledger {
+            state: Located { feature: () },
+            path,
+            repository: repository.clone(),
+        }
+        .connect()
+        .await?
+        .migrate()
+        .await?;
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .column(FeatureTable::Document)
+                .from(FeatureTable::Table)
+                .order_by(FeatureTable::Id, sea_query::Order::Asc)
+                .to_owned(),
+        )?
+        .query(&ledger.state.connection)
+        .await?;
+        let mut features = Vec::new();
+        while let Some(row) = rows.next().await? {
+            features.push(super::LedgerInfo {
+                path: ledger.path.clone(),
+                storage_version: StorageVersion::CURRENT,
+                feature: serde_json::from_str(&row.get::<String>(0)?)?,
+            });
+        }
+        Ok(features)
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::{InitializeLedger, Ledger, OpenLedger};
     use crate::git::Repository;
     use crate::request::InitFeature;
-    use crate::store::schema::FeatureTable;
+    use crate::store::relational::FeatureTable;
     use crate::store::sql::SqlStatement;
     use crate::values::{BranchName, FeatureId, Note};
     use crate::{DataDirectory, LedgerError};
@@ -268,24 +330,17 @@ pub mod tests {
                 let connection = database.connect()?;
                 let mut mismatched = info.feature;
                 mismatched.id = FeatureId::try_from("another-feature".to_owned())?;
-                SqlStatement::build(
-                    Query::update()
-                        .table(FeatureTable::Table)
-                        .value(FeatureTable::Document, serde_json::to_string(&mismatched)?)
-                        .to_owned(),
-                )?
-                .execute(&connection)
-                .await?;
-                assert!(matches!(
-                    Ledger::open(OpenLedger {
-                        repository: repository.clone(),
-                        feature: feature.clone()
-                    })
-                    .await,
-                    Err(LedgerError::Invalid(
-                        "feature document does not match ledger location"
-                    ))
-                ));
+                assert!(
+                    SqlStatement::build(
+                        Query::update()
+                            .table(FeatureTable::Table)
+                            .value(FeatureTable::Document, serde_json::to_string(&mismatched)?)
+                            .to_owned(),
+                    )?
+                    .execute(&connection)
+                    .await
+                    .is_err()
+                );
                 SqlStatement::build(Query::delete().from_table(FeatureTable::Table).to_owned())?
                     .execute(&connection)
                     .await?;
