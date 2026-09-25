@@ -67,10 +67,12 @@ cd app
 ### Local Rust compiler cache
 
 Install [sccache](https://github.com/mozilla/sccache) (`brew install sccache` on
-macOS). With Nook access, keep the existing `sccache-host`, `sccache-bucket`,
-`sccache-access-key`, and `sccache-secret-key` files under `~/.nook/cache/`.
+macOS). To use a remote cache, provision the `sccache-host`, `sccache-bucket`,
+`sccache-access-key`, and `sccache-secret-key` files under `~/.meta-cortex/cache/`.
 The [local wrapper](scripts/rustc-sccache.sh) reads those files at runtime;
-credentials never belong in Cargo configuration or Git.
+credentials never belong in Cargo configuration or Git. Restrict the credential
+files to your user (`chmod 600`). If `META_CORTEX_HOME` is set, the wrapper reads
+its `cache/` directory instead.
 
 From the repository root, enable caching for this checkout:
 
@@ -85,8 +87,8 @@ EOF
 
 This machine-local file is ignored by Git. If it already contains settings,
 merge the two build settings instead of replacing it. Run Cargo from `app/`
-as usual. Other checkouts opt in separately; contributors without Nook access
-do not need sccache. Remove these settings to disable the wrapper.
+as usual. Other checkouts opt in separately. Contributors without remote cache
+credentials do not need sccache. Remove these settings to disable the wrapper.
 
 Sccache reads its storage configuration when its server starts. Stop an existing
 server with `sccache --stop-server` before switching cache configuration or
@@ -123,7 +125,7 @@ Vale styles ship with the framework, so checks require no style downloads.
   `us-east-1`. Repository Actions variables `SCCACHE_ENDPOINT` (including
   `https://`) and `SCCACHE_BUCKET` select the service. Actions secrets
   `SCCACHE_ACCESS_KEY_ID` and `SCCACHE_SECRET_ACCESS_KEY` supply authentication.
-  Populate those secrets from the corresponding Nook credential files through
+  Populate those secrets from the corresponding local credential files through
   standard input to `gh secret set`; never paste credentials into workflows.
 - Fork and Dependabot PRs without those secrets use local sccache storage.
   No privileged PR trigger is used to grant them remote cache access.

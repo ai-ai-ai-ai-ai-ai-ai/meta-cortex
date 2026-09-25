@@ -1,5 +1,5 @@
 name: Rust compiler cache
-description: Use the Nook S3 compiler cache when credentials are available, otherwise local disk.
+description: Use the configured S3 compiler cache when credentials are available, otherwise local disk.
 inputs:
   endpoint:
     description: HTTPS S3 endpoint

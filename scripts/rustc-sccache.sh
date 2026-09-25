@@ -1,8 +1,8 @@
 #!/bin/sh
-# Cargo rustc wrapper for the local Nook S3 compiler cache.
+# Cargo rustc wrapper for the local Meta-Cortex S3 compiler cache.
 set -eu
 
-cache_dir="$HOME/.nook/cache"
+cache_dir="${META_CORTEX_HOME:-$HOME/.meta-cortex}/cache"
 SCCACHE_ENDPOINT="https://$(cat "$cache_dir/sccache-host")"
 SCCACHE_BUCKET=$(cat "$cache_dir/sccache-bucket")
 AWS_ACCESS_KEY_ID=$(cat "$cache_dir/sccache-access-key")
