@@ -708,8 +708,8 @@ fn installs_missing_tools_once_and_shares_identity_when_worktree_initializes_fir
     assert!(
         main.data
             .path()
+            .join(main.project.path().file_name().context("repository name")?)
             .join(identity.trim())
-            .join("features")
             .is_dir()
     );
     assert!(!main.project.path().join(".git/meta-cortex").exists());

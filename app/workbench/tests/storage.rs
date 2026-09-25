@@ -1,6 +1,6 @@
 use anyhow::{Context, bail};
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
-use meta_cortex_workbench::model::{Progress, Workspace};
+use meta_cortex_workbench::model::{Event, EventKind, Progress, Task, Workspace};
 use meta_cortex_workbench::request::{
     ClaimTask, CreateTask, InitFeature, WorkerAction, WorkerUpdate,
 };
@@ -8,10 +8,10 @@ use meta_cortex_workbench::values::{
     BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use meta_cortex_workbench::versions::{
-    StorageVersion, VersionFamily, VersionNumber, VersionParseError,
+    RecordVersion, StorageVersion, VersionFamily, VersionNumber, VersionParseError,
 };
 use meta_cortex_workbench::{DataDirectory, Ledger, LedgerError, Workbench};
-use sea_query::{Expr, Iden, Index, Query, SqliteQueryBuilder};
+use sea_query::{Iden, Query, SqliteQueryBuilder};
 use std::env;
 use std::fs;
 use std::future;
@@ -37,14 +37,10 @@ enum TaskTable {
 enum EventTable {
     #[iden = "events"]
     Table,
+    FeatureId,
     TaskId,
     Revision,
     Document,
-}
-
-#[derive(Iden)]
-enum EventIndex {
-    EventsTaskRevision,
 }
 
 #[derive(Iden)]
@@ -128,7 +124,7 @@ impl Scenario {
 }
 
 #[test]
-fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<()> {
+fn future_database_is_untouched() -> anyhow::Result<()> {
     let scenario = Scenario::create()?;
     Builder::new_current_thread()
         .enable_time()
@@ -137,25 +133,6 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
             let ledger = scenario.initialize().await?;
             let path = ledger.info().path;
             drop(ledger);
-            {
-                let db = turso::Builder::new_local(path.to_str().context("path")?)
-                    .experimental_multiprocess_wal(true)
-                    .build()
-                    .await?;
-                let conn = db.connect()?;
-                conn.execute(
-                    Index::drop()
-                        .name(EventIndex::EventsTaskRevision.to_string())
-                        .to_string(SqliteQueryBuilder),
-                    (),
-                )
-                .await?;
-                conn.pragma_update(
-                    &DatabasePragma::UserVersion.to_string(),
-                    StorageVersion::DocumentsV1,
-                )
-                .await?;
-            }
             let ledger = scenario.open().await?;
             assert_eq!(ledger.status().await?.len(), 1);
             drop(ledger);
@@ -167,7 +144,7 @@ fn older_database_migrates_and_future_database_is_untouched() -> anyhow::Result<
                 let conn = db.connect()?;
                 assert_eq!(
                     Scenario::version(&conn).await?,
-                    VersionNumber::from(i64::from(StorageVersion::IndexedV2))
+                    VersionNumber::from(i64::from(StorageVersion::RelationalV3))
                 );
                 conn.pragma_update(
                     &DatabasePragma::UserVersion.to_string(),
@@ -227,28 +204,50 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
             let tx = connection
                 .transaction_with_behavior(TransactionBehavior::Immediate)
                 .await?;
-            // Deliberately invalid persisted documents; SeaQuery still owns SQL syntax.
+            let mut rows = tx
+                .query(
+                    Query::select()
+                        .column(TaskTable::Document)
+                        .from(TaskTable::Table)
+                        .to_string(SqliteQueryBuilder),
+                    (),
+                )
+                .await?;
+            let row = rows.next().await?.context("task")?;
+            let mut task: Task = serde_json::from_str(&row.get::<String>(0)?)?;
+            drop(rows);
+            task.revision = Revision::try_from(999)?;
+            task.objective = Note::from("Uncommitted progress".to_owned());
             tx.execute(
                 Query::update()
                     .table(TaskTable::Table)
-                    .value(TaskTable::Document, "uncommitted corruption")
-                    .value(TaskTable::Revision, 999)
+                    .value(TaskTable::Document, serde_json::to_string(&task)?)
+                    .value(TaskTable::Revision, i64::from(task.revision))
                     .to_string(SqliteQueryBuilder),
                 (),
             )
             .await?;
+            let event = Event {
+                version: RecordVersion::V1,
+                kind: EventKind::Progress,
+                actor: AgentId::Development(DevelopmentAgent::RustDev),
+                note: task.objective.clone(),
+                task,
+            };
             tx.execute(
                 Query::insert()
                     .into_table(EventTable::Table)
                     .columns([
+                        EventTable::FeatureId,
                         EventTable::TaskId,
                         EventTable::Revision,
                         EventTable::Document,
                     ])
                     .values([
-                        Expr::val("task"),
-                        Expr::val(999),
-                        Expr::val("uncommitted event"),
+                        event.task.feature.to_string().into(),
+                        event.task.id.to_string().into(),
+                        i64::from(event.task.revision).into(),
+                        serde_json::to_string(&event)?.into(),
                     ])?
                     .to_string(SqliteQueryBuilder),
                 (),
