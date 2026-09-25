@@ -5,7 +5,7 @@ use anyhow::{Context, bail};
 use meta_cortex_workbench::versions::ProtocolVersion;
 use report::{
     InfoDocument, Integration, ModelAvailability, ReportHarness, ReportModels, ReportSchemaVersion,
-    ReportServiceTier, ReportVersion,
+    ReportVersion,
 };
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -201,8 +201,8 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     let customized = format!(
         "# Keep settings\n{}",
         fs::read_to_string(&config)?.replace(
-            "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"\nservice_tier = \"priority\"",
-            "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\"\nservice_tier = \"priority\""
+            "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"",
+            "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\""
         )
     );
     fs::write(&config, &customized)?;
@@ -216,7 +216,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     })?;
     let info = scenario.info()?;
     assert_eq!(info.schema_version, ReportSchemaVersion::V5);
-    assert_eq!(info.cli_version, ReportVersion::V0_9_0);
+    assert_eq!(info.cli_version, ReportVersion::V0_9_1);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
         env!("CARGO_PKG_VERSION")
@@ -237,14 +237,6 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(info.models.team.gizmo, info.models.gizmo_prime);
     assert_eq!(info.models.team.agent.model, "gpt-5.6-sol");
     assert_eq!(info.models.team.agent.reasoning_effort, "high");
-    assert_eq!(
-        info.models.team.agent.service_tier,
-        ReportServiceTier::Priority
-    );
-    assert_eq!(
-        info.models.gizmo_prime.service_tier,
-        ReportServiceTier::Priority
-    );
     assert_eq!(fs::read_to_string(&config)?, customized);
     assert_eq!(fs::read(root.join("AGENTS.md"))?, guidance);
     fs::remove_file(root.join(".meta-cortex/.version"))?;

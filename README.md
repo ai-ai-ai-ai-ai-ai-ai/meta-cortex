@@ -58,9 +58,9 @@ meta-cortex run --request request.yaml
 ```
 
 Use `harness: none` and `instructions: skip` to install only the framework.
-Initialization installs `.meta-cortex/` with the bundled model, reasoning-effort,
-and service-tier settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
-host needs different settings. Repeating the request preserves valid project
+Initialization installs `.meta-cortex/` with the bundled model and reasoning-effort
+settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
+host needs different models or reasoning efforts. Repeating the request preserves valid project
 settings and does not replace a modified framework.
 
 Initialization requires a Git repository. It uses its own tools under
@@ -170,8 +170,8 @@ result:
     kind: framework_info
     value:
       schema_version: 5
-      cli_version: 0.9.0
-      framework_version: 0.9.0
+      cli_version: 0.9.1
+      framework_version: 0.9.1
       paths:
         project: /path/to/project
         framework: /path/to/project/.meta-cortex
@@ -190,16 +190,13 @@ result:
         gizmo-prime:
           model: gpt-6-luna
           reasoning_effort: max
-          service_tier: priority
         team:
           gizmo:
             model: gpt-6-luna
             reasoning_effort: max
-            service_tier: priority
           agent:
             model: gpt-6-luna
             reasoning_effort: max
-            service_tier: priority
       model_availability: NotChecked
 ```
 
@@ -210,17 +207,16 @@ result:
 - `integrations` reports each harness's resolved instruction file and managed-block
   status: `Connected`, `Missing`, or `Conflict`. Multiple harnesses can share a file;
   this reports file contents, not which harness is running.
-- `models` preserves the configuration's role names and reads their project settings,
-  including each role’s required `service_tier: priority`.
+- `models` preserves the configuration's role names and reports model and reasoning effort.
 - `model_availability: NotChecked` means the command has not queried your AI host.
 
 These are requested settings, not evidence of an agent's runtime configuration.
-The [agent configuration rules](cortex/teams/gizmo-team/docs/agent-configuration.md#launch-with-the-configured-settings)
-use the host's native `priority` tier, including hosts that manage it without a
-per-launch argument. The old execution `mode` field is rejected; set
-`service_tier = "priority"` in every role section instead. The CLI report uses
-schema version 5 for this field change. Actual processing-tier verification
-requires host runtime metadata.
+The [agent configuration rules](cortex/teams/gizmo-team/docs/agent-configuration.md#use-the-host-speed-setting)
+leave speed to the host session. Select Fast in the host before launching agents;
+Meta-Cortex does not configure or override the service tier. Remove `mode` and
+`service_tier` from role sections; both fields are rejected. The CLI report uses
+schema version 5 and reports only model and reasoning effort for each role.
+Actual processing-tier verification requires host runtime metadata.
 
 Inspection does not modify project files. Failures produce a structured error
 response on stdout with exit status 2.

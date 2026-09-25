@@ -71,18 +71,10 @@ impl Effort {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ServiceTier {
-    // Preserve the host-native service-tier name.
-    #[serde(rename = "priority")]
-    Priority,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AgentSettings {
     pub model: Model,
     pub reasoning_effort: Effort,
-    pub service_tier: ServiceTier,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -154,8 +146,7 @@ impl TryFrom<Configuration> for ConfigText {
 #[cfg(test)]
 pub mod tests {
     use super::{
-        AgentSettings, ConfigError, ConfigText, Configuration, Effort, Model, ServiceTier,
-        TeamSettings,
+        AgentSettings, ConfigError, ConfigText, Configuration, Effort, Model, TeamSettings,
     };
 
     impl Model {
@@ -169,7 +160,6 @@ pub mod tests {
                 let settings = AgentSettings {
                     model,
                     reasoning_effort,
-                    service_tier: ServiceTier::Priority,
                 };
                 let config = Configuration {
                     gizmo_prime: settings,
@@ -196,35 +186,31 @@ pub mod tests {
     }
 
     #[test]
-    fn priority_service_tier_replaces_execution_mode() -> Result<(), ConfigError> {
+    fn bundled_configuration_leaves_speed_to_host() -> Result<(), ConfigError> {
         let bundled = Configuration::bundled()?;
-        for settings in [bundled.gizmo_prime, bundled.team.gizmo, bundled.team.agent] {
-            assert_eq!(settings.service_tier, ServiceTier::Priority);
-        }
         let encoded = ConfigText::try_from(bundled)?;
         assert_eq!(encoded.parse()?, bundled);
-        assert!(encoded.to_string().contains("service_tier = \"priority\""));
+        assert!(!encoded.to_string().contains("service_tier"));
         assert!(!encoded.to_string().contains("mode ="));
         Ok(())
     }
 
     #[test]
-    fn rejects_missing_unsupported_and_legacy_service_tiers() -> Result<(), ConfigError> {
+    fn rejects_framework_speed_overrides() -> Result<(), ConfigError> {
         let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
-        for invalid in [
-            text.replace("service_tier = \"priority\"\n", ""),
-            text.replace("\"priority\"", "\"default\""),
-            text.replace("\"priority\"", "\"auto\""),
-            text.replace("\"priority\"", "\"fast\""),
-            text.replace("\"priority\"", "\"standard\""),
-            text.replace("service_tier = \"priority\"", "mode = \"fast\""),
-            text.replace("service_tier = \"priority\"", "mode = \"standard\""),
-            format!("{text}mode = \"fast\"\n"),
-        ] {
-            assert!(matches!(
-                ConfigText::from(invalid).parse(),
-                Err(ConfigError::Decode(_))
-            ));
+        for section in ["[gizmo-prime]", "[team.gizmo]", "[team.agent]"] {
+            for field in [
+                "service_tier = \"priority\"",
+                "service_tier = \"default\"",
+                "mode = \"fast\"",
+                "mode = \"standard\"",
+            ] {
+                let invalid = text.replace(section, &format!("{section}\n{field}"));
+                assert!(matches!(
+                    ConfigText::from(invalid).parse(),
+                    Err(ConfigError::Decode(_))
+                ));
+            }
         }
         Ok(())
     }
@@ -235,18 +221,15 @@ pub mod tests {
             gizmo_prime: AgentSettings {
                 model: Model::Terra,
                 reasoning_effort: Effort::Low,
-                service_tier: ServiceTier::Priority,
             },
             team: TeamSettings {
                 gizmo: AgentSettings {
                     model: Model::Sol,
                     reasoning_effort: Effort::Medium,
-                    service_tier: ServiceTier::Priority,
                 },
                 agent: AgentSettings {
                     model: Model::Luna,
                     reasoning_effort: Effort::Xhigh,
-                    service_tier: ServiceTier::Priority,
                 },
             },
         })?
@@ -255,7 +238,6 @@ pub mod tests {
             text.replace("gpt-5.6-terra", "unknown-model"),
             text.replace("\"low\"", "\"extreme\""),
             text.replace("[team.agent]", "[team.other]"),
-            text.replace("\"priority\"", "\"turbo\""),
             text.replace("reasoning_effort = \"low\"", ""),
             format!("{text}\nextra = true\n"),
             String::from("not valid TOML"),
@@ -278,7 +260,6 @@ pub mod tests {
         let settings = AgentSettings {
             model: Model::Luna6,
             reasoning_effort: Effort::Ultra,
-            service_tier: ServiceTier::Priority,
         };
         let config = Configuration {
             gizmo_prime: settings,

@@ -51,6 +51,8 @@ pub(super) enum ReportVersion {
     V0_8_1,
     #[serde(rename = "0.9.0")]
     V0_9_0,
+    #[serde(rename = "0.9.1")]
+    V0_9_1,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
@@ -108,13 +110,6 @@ pub(super) struct ReportTeam {
 pub(super) struct ReportAgent {
     pub(super) model: String,
     pub(super) reasoning_effort: String,
-    pub(super) service_tier: ReportServiceTier,
-}
-
-#[derive(Debug, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub(super) enum ReportServiceTier {
-    Priority,
 }
 
 #[cfg(test)]
