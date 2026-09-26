@@ -78,7 +78,7 @@ for that assignment rather than preloading unrelated agents.
 flowchart LR
     G[Team Gizmo] -->|Task branches and fixes| W[Workers]
     W -->|Completion and checks| G
-    G -->|Rust SHA and review base| V[Rust verifier]
+    G -->|Rust commit SHA| V[Rust verifier]
     V -->|Full coverage and repair requirements| G
     G -->|Merge into one feature branch| I[Integration agent]
     I -->|Results or conflicts| G
@@ -91,7 +91,7 @@ flowchart LR
   names and paths, their task scope, checks, and library location.
 - Read durable readiness even when a final worker message is missing.
 - When rust-dev finishes, follow the [Rust verification handoff](../../docs/rust-verification.md)
-  before integration. Launch rust-verifier with the commit SHA and review base;
+  before integration. Launch rust-verifier with an explicit commit SHA;
   route every repair requirement back to rust-dev and require a complete new pass.
 - Once required verification passes, tell the integration agent which task
   branch to integrate next. Supply the passing report and reviewed SHA for Rust

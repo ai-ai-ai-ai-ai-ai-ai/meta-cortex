@@ -11,6 +11,18 @@ builds alone cannot establish compliance.
 
 ## Required actions
 
+### Require the commit SHA
+
+1. Require an explicit commit SHA from Team Gizmo before starting verification.
+   If it is missing or cannot be resolved, stop and ask Gizmo to provide it.
+2. Review only that commit. Do not guess a revision, substitute `HEAD` or a
+   branch tip, or construct a task-wide commit range.
+
+**Prohibited:** start reviewing the current checkout when Gizmo supplies no SHA.
+
+**Preferred:** stop and tell Gizmo, “Provide the commit SHA to verify.” Resume
+only when Gizmo supplies a resolvable commit.
+
 ### Keep practice context index-only
 
 1. Start at the canonical [Rust catalog](../../../rust-dev/skills/rust-dev-skill/index.yaml).
@@ -39,31 +51,15 @@ decision. Report an unclear serialization exception as blocked for Gizmo.
 
 ### Establish the committed file inventory
 
-1. Resolve Gizmo's commit to a full SHA and confirm it matches the developer's
-   recorded ready checkpoint. Use the supplied review base. For an explicitly
-   single, ordinary commit, its sole parent can be the base; require an explicit
-   base for a merge commit. For a root commit, compare with the empty tree.
-2. For a task containing several commits, compare its assigned starting base
-   to the supplied final SHA. Include all task changes, not just the last
-   checkpoint's diff. Keep that base on repair passes so an unchanged violation
-   cannot disappear from the inventory.
-3. Use Git's name/status diff with rename detection and NUL-delimited paths to
-   enumerate additions, modifications, deletions, renames, and type changes.
-   Record old and new paths and status. Do not filter the inventory to `.rs`;
-   tests, manifests, build scripts, configuration, and other changed files matter.
-4. Read every changed text file in full from the reviewed commit, alongside its
-   diff. Read deleted files from the base and both sides of renames. Inspect
-   relevant callers and owning types at that same revision when needed to decide
-   compliance. Do not review a moving branch or uncommitted checkout as the SHA.
-5. Account for binary files, symlinks, submodules, generated files, and unreadable
-   content explicitly. Inspect what Git supplies and state provenance and any
-   review limitation. Missing required evidence is blocked, never an omission.
+1. Use Git to list all files changed by the supplied commit, not only `.rs` files.
+2. Read each changed file in full at that commit and inspect its diff. For deleted
+   files, inspect the deleted content in the commit. Report unreadable content
+   as blocked instead of skipping it.
 
-**Prohibited:** review only added diff lines at the current branch tip, leaving
-an earlier task commit, a deleted test, or a renamed module unexamined.
+**Prohibited:** review only the files mentioned in the developer's summary.
 
-**Preferred:** record the fixed base and SHA, inventory all statuses, read full
-committed files, and retain unavailable content as an explicit blocker.
+**Preferred:** obtain the changed-file list from the supplied commit and read
+every file before checking the practices.
 
 ### Build the practice and rule inventory
 
@@ -100,7 +96,7 @@ so the final coverage record can be checked against the original inventory.
    compared IDs, affected paths, and evidence or applicability reason.
 5. Collect every observed violation, including multiple violations of one rule
    in one file. Include severity, rule ID and source, committed path and lines
-   (base lines for deletions), observed behavior, required correction, and the
+   (deleted lines for deletions), observed behavior, required correction, and the
    evidence needed to verify the fix. Distinguish code defects from catalog or
    evidence blockers. Do not invent unrelated requirements.
 6. Verify supplied check evidence identifies the reviewed revision, commands,
@@ -128,7 +124,7 @@ with its own repair requirement. Continue through the last catalog entry.
    blockers, and satisfied validation requirements. Use `changes_required` for
    violations and `blocked` for incomplete or ambiguous verification; retain all
    known violations even when the overall verdict is blocked.
-3. Return the base and reviewed SHA, catalog snapshot, file inventory, practice
+3. Return the reviewed SHA, catalog snapshot, file inventory, practice
    inventory, rule/file outcomes, cross-rule outcomes, repair requirements,
    blockers, validation evidence, and expected/completed counts to Gizmo.
    The inventory and full outcomes are required, not just a summary of totals.
@@ -137,8 +133,8 @@ with its own repair requirement. Continue through the last catalog entry.
    can be ready as a review task; readiness is not a compliance pass. Keep an
    incomplete review blocked. Use continuation notes for the next unchecked
    practice/rule/file when interrupted; never mark pending entries complete.
-5. On a repair assignment, regenerate the inventory for the original base and
-   new SHA, then repeat the entire review. Track previous requirements as fixed,
+5. On a repair assignment, require the new commit SHA, regenerate its file
+   inventory, and repeat the entire review. Track previous requirements as fixed,
    still violated, or blocked using fresh evidence. Inspect new violations too.
 
 **Prohibited:** return “all rules passed” with no coverage record, reuse approval

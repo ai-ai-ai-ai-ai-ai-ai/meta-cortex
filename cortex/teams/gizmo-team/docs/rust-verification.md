@@ -9,25 +9,27 @@ the existing [agent ledger](agent-ledger.md), without another coordination servi
 
 ### Assign committed work for verification
 
-1. Record the task's starting base when assigning implementation. Give rust-dev
-   ordinary implementation requirements and [task completion](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#finish-task-work):
+1. Give rust-dev ordinary implementation requirements and
+   [task completion](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#finish-task-work):
    run required checks, commit the changes, verify clean status, and record the
    final checkpoint and readiness before notifying Gizmo.
    Keep verifier context out of the developer assignment: do not supply this
    handoff, the verifier role or skill, or review bookkeeping. Gizmo owns the
    decision to start verification after receiving the developer's result.
-2. Receive the branch, workspace, base, final commit SHA, changed-file list,
+2. Receive the branch, workspace, final commit SHA, changed-file list,
    validation evidence, and unresolved issues. Inspect durable readiness even
    when the notification is missing. No-change work does not need an empty commit;
    report that fact and the unchanged SHA explicitly.
 3. Before integrating rust-dev's branch, record and launch a read-only
    `Development/RustVerifier` task with those inputs, project/library roots,
    session choices, and normal [assignment context](../../AGENTS.md#assignment-context).
+   Supply the explicit SHA of the single commit to verify. Without a resolvable
+   SHA, the verifier must stop and ask Gizmo to provide it.
    Supply its own verification skill and canonical Rust YAML catalog root.
    Do not inherit the developer's full conversation or preload its skill and
    Markdown practices. Use a fresh review context when the host supports it;
    report a host limitation if that separation is unavailable.
-4. Record the worker task ID, base, and SHA in the verifier's objective or
+4. Record the worker task ID and SHA in the verifier's objective or
    continuation notes. Do not make the unintegrated developer task a ledger
    dependency: claims require dependencies to be integrated, which would
    deadlock this pre-integration review. Gizmo sequences the review after the
@@ -57,10 +59,10 @@ review, and require complete catalog coverage before considering integration.
    Route catalog ambiguity to the subject owner and any resulting
    instruction edits to the tech writer; do not ask rust-dev to guess policy.
 3. Requeue the developer task through the existing stopped-or-finished recovery
-   procedure before resuming it. Preserve its branch, worktree, and original
-   review base. The developer commits validated fixes and supplies its new SHA.
-4. Create a new read-only verifier task for a complete pass over that new SHA
-   and the original base. Keep the previous report in its original task history;
+   procedure before resuming it. Preserve its branch and worktree.
+   The developer commits validated fixes and supplies its new SHA.
+4. Create a new read-only verifier task for a complete pass over that commit.
+   Keep the previous report in its original task history;
    its ready state cannot approve the replacement commit.
    Refresh the catalog snapshot if an authorized clarification changed it.
    Recheck every rule and changed file, including unresolved previous findings
@@ -78,7 +80,7 @@ obtain complete coverage of the new committed result before integration.
 
 ### Integrate the reviewed revision
 
-1. Supply the integration agent with the passing report, reviewed base, SHA, and
+1. Supply the integration agent with the passing report, reviewed SHA, and
    task branch. Require its head and ready checkpoint to match that SHA. A later
    commit invalidates the report and returns to verification.
 2. Integrate through the existing local-feature workflow and run combined checks.

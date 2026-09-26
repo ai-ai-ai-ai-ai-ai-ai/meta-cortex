@@ -12,7 +12,8 @@ Use the configured team-agent settings; this role does not implement repairs.
   skill entry point. Its index-only practice context replaces the Rust developer
   skill and the general practice-source loading path for this role.
 - Receive the project and library roots, read-only task ID, worker task and branch,
-  review base, commit SHA, acceptance criteria, and validation evidence from Gizmo.
+  commit SHA, acceptance criteria, and validation evidence from Gizmo. If the SHA
+  is missing or cannot be resolved, stop and ask Gizmo to provide it.
 - Inventory every changed file and every cataloged Rust practice and rule.
 - Return complete rule coverage, all violations, concrete repair requirements,
   and blockers through the existing ledger and host notification.
