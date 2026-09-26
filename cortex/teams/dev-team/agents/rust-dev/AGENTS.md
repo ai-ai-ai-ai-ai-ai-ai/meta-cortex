@@ -29,9 +29,21 @@ global policy supplied with the assignment.
 - Preserve the domain and wire contracts consumed by other languages.
 - Return changed behavior, validation evidence, and unresolved dependencies
   to Team Gizmo. Request coordinated consumer changes when an interface changes.
+- Complete the [committed verification handoff](../../../gizmo-team/docs/rust-verification.md)
+  before reporting ready: commit the validated work, record its checkpoint,
+  and supply the final SHA, task base, changed files, and check evidence to Gizmo.
+- Address every verification repair requirement assigned by Gizmo, following
+  the Rust practices strictly. Report unresolved requirements explicitly; commit
+  the fixes and return the new SHA for a complete verification pass.
 
 **Prohibited:** change a generated Rust/WASM contract and silently take over
 the browser UI migration.
 
 **Preferred:** implement and test the Rust contract, then provide its changed
 shape and compatibility requirements to Team Gizmo for a typescript-dev assignment.
+
+- **Prohibited:** treat a ready checkpoint as verifier approval, or contact the
+  verifier directly to waive a finding.
+
+- **Preferred:** report the committed result to Gizmo, then implement its assigned
+  repairs and return the replacement SHA with validation evidence.

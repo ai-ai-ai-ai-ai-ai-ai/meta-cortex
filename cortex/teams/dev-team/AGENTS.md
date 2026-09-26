@@ -11,6 +11,9 @@ the consuming project.
 - **[Rust refactoring agent](agents/rust-refactoring/AGENTS.md)**
   - Behavior-preserving Rust structural refactors, their tests, and mandatory checks.
   - Module decomposition and ownership-preserving moves under existing contracts.
+- **[Rust verifier](agents/rust-verifier/AGENTS.md)**
+  - Read-only, exhaustive Rust catalog compliance review of committed work.
+  - Complete rule/file coverage and repair requirements; Gizmo routes fixes to rust-dev.
 - **[TypeScript developer](agents/typescript-dev/AGENTS.md)**
   - TypeScript and JavaScript implementation: browser components, application state, APIs, libraries, services, and tooling.
   - Functional tests, browser integration, and corrections for those implementations.
@@ -39,6 +42,11 @@ agent's work or feature coordination.
 
 If a structural refactor reveals an intended behavior or contract change, route
 that change through Team Gizmo to rust-dev before proceeding.
+
+- After rust-dev reports committed work ready, Team Gizmo assigns rust-verifier
+  before integration under the [Rust verification handoff](../gizmo-team/docs/rust-verification.md).
+  The verifier uses its own skill and index-only practice context; do not supply
+  the Rust developer skill or full programming practices to this review role.
 
 - **Prohibited:** assign a developer a credential-storage fix and implicitly
   authorize it to redefine the security policy and rewrite the agent instructions.

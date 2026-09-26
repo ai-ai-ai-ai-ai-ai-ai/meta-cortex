@@ -189,6 +189,11 @@ and links to the existing Markdown practice.
 
 ## Load only selected branches
 
+The dedicated [Rust verification skill](../../../../../../dev-team/agents/rust-verifier/skills/rust-verification/SKILL.md)
+defines an index-only, exhaustive review mode. For that role, use its loading
+procedure instead of the selective steps below. Ambiguous catalog cues block
+verification; they do not authorize guessing missing source requirements.
+
 1. Read the skill entry point and its mandatory prerequisites. These requirements
    still apply to focused assignments; catalog selection does not waive them.
 2. Read each entry of the current navigation catalog in sequence. Select branches

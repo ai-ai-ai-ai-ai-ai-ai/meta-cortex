@@ -37,6 +37,7 @@ pub enum GizmoAgent {
 pub enum DevelopmentAgent {
     RustDev,
     RustRefactoring,
+    RustVerifier,
     TypescriptDev,
     WebDesigner,
 }
@@ -77,6 +78,9 @@ impl AgentId {
             Self::Development(DevelopmentAgent::RustRefactoring) => {
                 "teams/dev-team/agents/rust-refactoring/AGENTS.md"
             }
+            Self::Development(DevelopmentAgent::RustVerifier) => {
+                "teams/dev-team/agents/rust-verifier/AGENTS.md"
+            }
             Self::Development(DevelopmentAgent::TypescriptDev) => {
                 "teams/dev-team/agents/typescript-dev/AGENTS.md"
             }
@@ -115,6 +119,7 @@ pub mod tests {
             AgentId::Gizmo(GizmoAgent::GizmoPrime),
             AgentId::Gizmo(GizmoAgent::Gizmo),
             AgentId::Development(DevelopmentAgent::RustDev),
+            AgentId::Development(DevelopmentAgent::RustVerifier),
             AgentId::Sre(SreAgent::DockerSpecialist),
         ] {
             let encoded = serde_json::to_string(&agent)?;
@@ -127,6 +132,7 @@ pub mod tests {
     fn decoder_rejects_cross_team_roles_flat_names_and_invented_identities() {
         for input in [
             r#"{"team":"Sre","role":"RustDev"}"#,
+            r#"{"team":"Gizmo","role":"RustVerifier"}"#,
             r#"{"team":"Development","role":"DockerSpecialist"}"#,
             r#"{"team":"Gizmo","role":"RustDev"}"#,
             r#"{"team":"Delivery","role":"Gizmo"}"#,

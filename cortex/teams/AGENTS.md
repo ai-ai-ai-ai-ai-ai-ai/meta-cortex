@@ -130,6 +130,11 @@ The receiving agent must, before starting work:
 3. Read its own role instructions and follow its linked skills.
 4. Report any required context it cannot access before doing dependent work.
 
+- The [Rust verifier](dev-team/agents/rust-verifier/AGENTS.md) uses its specialized
+  index-only practice context instead of loading the developer skill or shared
+  programming Markdown. Supply the operational context above and its own skill;
+  that skill requires exhaustive catalog traversal rather than branch selection.
+
 Coordinators carry the same requirements through their assignments. Agents
 report scope changes to their Gizmo for a decision and load newly relevant
 documents for the resulting assignment. The skill’s own `SKILL.md` still owns its technical
