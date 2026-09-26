@@ -1,0 +1,56 @@
+kind: practice
+owner: rust:serialization_boundaries
+title: Serialization boundaries
+source_title: Serialization boundaries
+source: ../serialization-boundaries.md
+owns:
+  - Typed encoding, decoding, and boundary conversion.
+excludes:
+  - Object ownership and wire naming.
+relationships: []
+related:
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+  - title: Error handling
+    path: ../../behavior/error-handling.md
+  - title: WASM contracts
+    path: ../wasm-contracts.md
+  - title: WASM name coherence
+    path: ../rust-wasm-name-coherence.md
+rules:
+  - id: serialization_boundaries:typed_decoding
+    source: ../serialization-boundaries.md#decode-known-schemas-into-their-types
+    summary: Decode known schemas into concrete types at I/O.
+  - id: serialization_boundaries:validated_deserialization
+    source: ../serialization-boundaries.md#decode-known-schemas-into-their-types
+    summary: Preserve domain validation during deserialization.
+  - id: serialization_boundaries:typed_construction
+    source: ../serialization-boundaries.md#construct-known-documents-from-typed-values
+    summary: Construct known JSON/YAML from typed values.
+  - id: serialization_boundaries:derive_first
+    source: ../serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate
+    summary: Prefer derives and established serialization adapters.
+  - id: serialization_boundaries:typed_storage
+    source: ../serialization-boundaries.md#keep-encoding-out-of-application-state
+    summary: Keep internal storage and APIs typed.
+  - id: serialization_boundaries:no_erased_values
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    summary: Reject erased JavaScript values in authored contracts.
+  - id: serialization_boundaries:typed_abi
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    summary: Generate structural ABI from canonical typed declarations.
+  - id: serialization_boundaries:tsify_support
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    summary: Use supported Tsify bindings without duplicate domain types.
+  - id: serialization_boundaries:no_absence_overrides
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    summary: Avoid ABI field overrides that introduce absence unions.
+  - id: serialization_boundaries:dependency_decoding
+    source: ../serialization-boundaries.md#convert-dependency-owned-values-immediately
+    summary: Decode dependency-owned values immediately at the boundary.
+  - id: serialization_boundaries:typed_tests
+    source: ../serialization-boundaries.md#test-the-typed-contract
+    summary: Test typed round trips and invalid-input rejection.
+  - id: serialization_boundaries:validation
+    source: ../serialization-boundaries.md#validation
+    summary: Check conversions, serialization tests, and regenerated bindings.

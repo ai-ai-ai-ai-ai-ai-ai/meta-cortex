@@ -1,0 +1,34 @@
+kind: practice
+owner: rust:api_inputs
+title: API inputs
+source_title: API inputs
+source: ../api-inputs.md
+owns:
+  - Input counts and semantic requests.
+excludes:
+  - Construction syntax and method placement.
+relationships: []
+related:
+  - title: Struct construction
+    path: ../../modeling/struct-construction.md
+  - title: Function ownership
+    path: ../function-ownership.md
+rules:
+  - id: api_inputs:one_input
+    source: ../api-inputs.md#one-non-receiver-input
+    summary: Accept at most one non-receiver input.
+  - id: api_inputs:semantic_requests
+    source: ../api-inputs.md#required-actions
+    summary: Group independent inputs into meaningful request types.
+  - id: api_inputs:command_decoding
+    source: ../api-inputs.md#required-actions
+    summary: Decode commands at the edge into typed requests.
+  - id: api_inputs:no_positional_bags
+    source: ../api-inputs.md#prohibited-actions
+    summary: Reject positional bags and meaningless request wrappers.
+  - id: api_inputs:external_signatures
+    source: ../api-inputs.md#fixed-signature-exceptions
+    summary: Isolate externally required signatures in adapters.
+  - id: api_inputs:validation
+    source: ../api-inputs.md#validation
+    summary: Check input counts, request meaning, and boundary exceptions.

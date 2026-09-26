@@ -1,0 +1,30 @@
+kind: practice
+owner: programming:branching
+title: Branching and exhaustive matching
+source_title: Branching and exhaustive matching
+source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md
+owns:
+  - Named alternatives and exhaustive decisions.
+excludes:
+  - Language-specific syntax and enforcement.
+relationships: []
+related:
+  - title: Explicit state
+    path: ../../typescript-explicit-state.md
+  - title: Enums instead of booleans
+    path: ../../typescript-enums-over-booleans.md
+  - title: Code checks
+    path: ../../typescript-code-checks.md
+rules:
+  - id: branching:no_boolean_if
+    source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions
+    summary: Branch on named domain alternatives instead of boolean conditions.
+  - id: branching:no_ternary
+    source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals
+    summary: Replace ternaries with explicit pattern matching.
+  - id: branching:closed_matches
+    source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match
+    summary: Handle every named variant without catch-all fallbacks.
+  - id: branching:validation
+    source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#validation
+    summary: Verify exhaustiveness and distinct variant behavior.

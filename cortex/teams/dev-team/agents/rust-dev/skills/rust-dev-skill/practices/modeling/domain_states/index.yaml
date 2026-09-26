@@ -1,0 +1,84 @@
+kind: practice
+owner: rust:domain_states
+title: Domain states
+source_title: Domain states
+source: ../domain-states.md
+owns:
+  - Runtime alternatives and state-owned payloads.
+excludes:
+  - Workflow sequencing and value identity.
+relationships: []
+related:
+  - title: Domain types
+    path: ../domain-types.md
+  - title: Workflow typestate
+    path: ../../behavior/workflow-typestate.md
+  - title: Error handling
+    path: ../../behavior/error-handling.md
+rules:
+  - id: domain_states:no_option
+    source: ../domain-states.md#replace-option-with-meaningful-states
+    summary: Replace authored Option values with meaningful state enums.
+  - id: domain_states:named_absence
+    source: ../domain-states.md#replace-option-with-meaningful-states
+    summary: Give absence domain meaning instead of generic wrappers.
+  - id: domain_states:dependency_options
+    source: ../domain-states.md#translate-dependency-results-immediately
+    summary: Consume dependency Option results at the boundary.
+  - id: domain_states:option_review
+    source: ../domain-states.md#review-the-option-prohibition
+    summary: Review authored and inferred Option usage semantically.
+  - id: domain_states:empty_text
+    source: ../domain-states.md#represent-empty-prose-as-a-value
+    summary: Model empty prose separately from invalid input.
+  - id: domain_states:required_values
+    source: ../domain-states.md#require-values-that-cannot-be-absent
+    summary: Validate required values instead of inventing absence states.
+  - id: domain_states:drafts
+    source: ../domain-states.md#require-values-that-cannot-be-absent
+    summary: Model legitimate drafts without changing established wire contracts.
+  - id: domain_states:no_booleans
+    source: ../domain-states.md#convert-external-records-into-owned-types
+    summary: Use named enums for application alternatives.
+  - id: domain_states:boolean_conversion
+    source: ../domain-states.md#convert-external-records-into-owned-types
+    summary: Confine boolean conversions to documented external boundaries.
+  - id: domain_states:external_records
+    source: ../domain-states.md#convert-external-records-into-owned-types
+    summary: Convert external flag records into owned domain states.
+  - id: domain_states:raw_records
+    source: ../domain-states.md#convert-external-records-into-owned-types
+    summary: Avoid retaining raw boolean records behind wrappers.
+  - id: domain_states:mechanical_predicates
+    source: ../domain-states.md#name-predicate-outcomes-before-choosing-behavior
+    summary: Convert mechanical predicates into named outcomes before branching.
+  - id: domain_states:no_derived_flags
+    source: ../domain-states.md#name-predicate-outcomes-before-choosing-behavior
+    summary: Avoid boolean mirrors of enum variants.
+  - id: domain_states:variant_payloads
+    source: ../domain-states.md#put-payloads-on-their-owning-variants
+    summary: Keep payloads on their owning variants.
+  - id: domain_states:independent_dimensions
+    source: ../domain-states.md#separate-independent-dimensions-nest-refinements
+    summary: Model independent state dimensions separately.
+  - id: domain_states:capabilities
+    source: ../domain-states.md#put-payloads-on-their-owning-variants
+    summary: Restrict capability construction and encode legal sequencing.
+  - id: branching:rust_match
+    source: ../domain-states.md#match-domain-values-directly
+    summary: Use native match for Rust domain decisions.
+  - id: branching:rust_patterns
+    source: ../domain-states.md#encourage-rust-conditional-patterns
+    summary: Use conditional patterns for focused payload handling.
+  - id: domain_states:exhaustive_matching
+    source: ../domain-states.md#match-decisions-exhaustively
+    summary: Keep evolving domain decisions exhaustive.
+  - id: domain_states:decision_locality
+    source: ../domain-states.md#match-decisions-exhaustively
+    summary: Keep decisions shallow and with their owners.
+  - id: domain_states:membership
+    source: ../domain-states.md#consume-membership-results-as-control-flow
+    summary: Use membership collections for uniqueness checks.
+  - id: domain_states:validation
+    source: ../domain-states.md#validation
+    summary: Test state behavior, invalid input, and exhaustiveness.

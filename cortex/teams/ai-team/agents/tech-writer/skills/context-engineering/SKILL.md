@@ -75,7 +75,8 @@ Its local links resolve; the code example was reviewed but not executed.”
 
 ## Executable audits
 
-Run the bundled Vale and remark checks against actual Markdown files.
+Run the bundled Vale and remark checks against actual Markdown files, and the
+catalog audit against actual YAML indexes.
 Initialization installs mise, Bun, Vale, and the shared script dependencies.
 Individual skills reuse those installations. Run these commands from the
 library root (`cortex/` here, `.meta-cortex/` in an installed project).
@@ -94,8 +95,8 @@ bun run docs:check ../AGENTS.md ../docs
 
 Quoted glob patterns and absolute paths are also supported. Dependency folders,
 Git metadata, and Rust build output are excluded. A selection matching no
-Markdown files fails. Both tools report file locations; a finding or tool failure
-makes the command fail. Checks never rewrite documents.
+Markdown files or YAML indexes fails. The checks report file locations; a finding
+or tool failure makes the command fail. Checks never rewrite documents.
 
 **Prohibited:** send an agent-authored description of a document and claim its
 source was checked.
@@ -112,14 +113,20 @@ source was checked.
   authored HTML. External URLs are not fetched.
 - **Article plugin:** checks empty H2/H3 sections, more than three consecutive
   prose paragraphs, procedure headings without numbered actions, and tables.
-- **Practice-index plugin:** checks local `practices/` files against the index's
-  `File:` or `Source:` entries, duplicate owning entries, duplicate rule names,
-  and rule links missing heading anchors. Links to shared practices outside that
-  directory remain prerequisites; semantic ownership still needs review.
+- **YAML catalog audit:** validates navigation, practice, and check shapes;
+  decodes rule names and practice owners through closed enums; follows child
+  indexes; checks owning entries for local `practices/` files;
+  rejects duplicate ownership, duplicate rule IDs, unknown comparison IDs,
+  inconsistent comparison sources, catalog cycles, and unlinked catalogs.
+  Reuses remark's link validator for file paths and exact Markdown section anchors.
+  Shared practices outside the skill remain prerequisites; ownership and policy
+  meaning still need semantic review.
 
 Meaning, rule completeness, and cross-document policy conflicts remain semantic
 review tasks. An absent index is not proof of coverage. The checker validates
-existing practice indexes and does not invent them.
+existing practice indexes and does not invent them. An isolated comparison leaf
+checks paths and section anchors; run its skill root audit to verify compared
+rule IDs and agreement with their cataloged sources.
 
 **Prohibited:** report complete semantic coverage because the command passed.
 

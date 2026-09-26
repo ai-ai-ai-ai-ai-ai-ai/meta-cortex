@@ -55,7 +55,7 @@ result, with a link to the run and any checks still unresolved.
    assigning Team Gizmo for a repair decision. For assigned infrastructure repairs, inspect the affected project
    files and load the applicable programming or specialist skill before editing.
 3. Preserve trust boundaries for forks, secrets, environments, and artifacts.
-   Use [security knowledge](../../../../../security-team/docs/index.md) when the
+   Use [security knowledge](../../../../../security-team/docs/index.yaml) when the
    repair affects secret handling. Load Docker or Kubernetes expertise only when
    the failure reaches that subject.
 4. Rerun only when a repair, diagnosed transient failure, or explicit request

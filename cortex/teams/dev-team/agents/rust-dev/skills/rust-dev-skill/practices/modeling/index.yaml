@@ -1,0 +1,15 @@
+kind: navigation
+title: Modeling
+entries:
+  - title: Domain types
+    path: domain_types/index.yaml
+    summary: Nominal values, validation, and conversion.
+  - title: Domain states
+    path: domain_states/index.yaml
+    summary: Runtime alternatives and state-owned payloads.
+  - title: Struct construction
+    path: struct_construction/index.yaml
+    summary: Literals and validated construction paths.
+  - title: Default values
+    path: default_values/index.yaml
+    summary: Valid defaults for structs and enums.

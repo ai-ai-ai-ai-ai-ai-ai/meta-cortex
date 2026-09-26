@@ -1,0 +1,33 @@
+kind: practice
+owner: sre:cloud_native
+title: Cloud-native operations
+source_title: Cloud-native operations
+source: ../cloud-native-operations.md
+owns:
+  - Operational scope, credentials, recovery, and verification.
+excludes:
+  - Provider selection, releases, and Kubernetes runtime rules.
+relationships: []
+related:
+  - title: Project execution policy
+    path: ../../../../../../docs/project-execution-policy.md
+  - title: Kubernetes runtime boundary
+    path: ../../../kubernetes-skill/practices/kubernetes-runtime-boundary.md
+  - title: secret lifecycle
+    path: ../../../../../../../security-team/docs/secret-lifecycle.md
+rules:
+  - id: cloud_native:scope
+    source: ../cloud-native-operations.md#identify-the-target-and-current-state
+    summary: Identify the target before making changes.
+  - id: cloud_native:current_state
+    source: ../cloud-native-operations.md#identify-the-target-and-current-state
+    summary: Inspect live state and the proposed change.
+  - id: cloud_native:secret_lifecycle
+    source: ../cloud-native-operations.md#protect-operational-credentials
+    summary: Apply shared credential storage, rotation, and revocation rules.
+  - id: cloud_native:recovery
+    source: ../cloud-native-operations.md#preserve-a-recovery-path
+    summary: Establish recovery ownership and rollback before impactful changes.
+  - id: cloud_native:live_verification
+    source: ../cloud-native-operations.md#verify-live-behavior
+    summary: Verify live workload behavior after changes.

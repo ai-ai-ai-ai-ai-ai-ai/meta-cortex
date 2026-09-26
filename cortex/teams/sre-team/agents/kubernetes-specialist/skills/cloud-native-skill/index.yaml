@@ -1,0 +1,6 @@
+kind: navigation
+title: Cloud-Native Skill Knowledge Graph
+entries:
+  - title: Practices
+    path: practices/index.yaml
+    summary: Cloud-native operations.

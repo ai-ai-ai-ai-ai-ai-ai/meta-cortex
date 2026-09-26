@@ -1,0 +1,18 @@
+kind: practice
+owner: rust:typed_sql
+title: Typed SQL construction
+source_title: Typed SQL construction
+source: ../../boundaries/typed-sql.md
+owns:
+  - Typed queries, identifiers, and driver boundaries.
+excludes: []
+relationships: []
+related:
+  - title: Dependency selection
+    path: ../dependency-selection.md
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+rules:
+  - id: typed_sql:construction
+    source: ../../boundaries/typed-sql.md#typed-sql-construction
+    summary: Build SQL through typed builders and bound values.

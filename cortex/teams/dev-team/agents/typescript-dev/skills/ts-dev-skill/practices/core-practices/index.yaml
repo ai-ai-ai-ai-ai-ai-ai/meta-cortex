@@ -1,0 +1,30 @@
+kind: navigation
+title: Core practices
+entries:
+  - title: Branching and exhaustive matching
+    path: branching/index.yaml
+    summary: Named alternatives and exhaustive decisions.
+  - title: Function ownership
+    path: function_ownership/index.yaml
+    summary: Declaration placement and owned execution.
+  - title: Single parameter
+    path: single_parameter/index.yaml
+    summary: Input counts and fixed-signature exceptions.
+  - title: Named arguments
+    path: named_args/index.yaml
+    summary: Named object contracts and typed arguments.
+  - title: Domain structure
+    path: domain_structure/index.yaml
+    summary: Nominal values and named application contracts.
+  - title: Explicit state
+    path: explicit_state/index.yaml
+    summary: Named states and explicit absence.
+  - title: Enums instead of booleans
+    path: enums_over_booleans/index.yaml
+    summary: Semantic alternatives and boolean boundary exceptions.
+  - title: Concrete values
+    path: no_unknown/index.yaml
+    summary: Concrete values and immediate boundary decoding.
+  - title: Effect workflows
+    path: effect/index.yaml
+    summary: Installed Effect API and implementation guidance.

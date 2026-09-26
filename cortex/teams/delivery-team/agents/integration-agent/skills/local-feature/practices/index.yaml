@@ -1,0 +1,6 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Local feature integration
+    path: local_feature/index.yaml
+    summary: Local workspaces, integration, validation, and cleanup.

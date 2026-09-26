@@ -1,0 +1,30 @@
+kind: navigation
+title: Cross-rule consistency checks
+entries:
+  - title: One parameter still needs a named argument
+    path: one-parameter-still-needs-a-named-argument/index.yaml
+    summary: Check parameter declarations and object call arguments.
+  - title: Named containers still need domain types
+    path: named-containers-still-need-domain-types/index.yaml
+    summary: Inspect types inside requests and state payloads.
+  - title: Decoding ends before application workflows begin
+    path: decoding-ends-before-application-workflows-begin/index.yaml
+    summary: Check decoder output and workflow error types.
+  - title: Reactive state must have a meaningful initial state
+    path: reactive-state-must-have-a-meaningful-initial-state/index.yaml
+    summary: Check initialization and external absence together.
+  - title: Shared vocabulary is not shared mutable state
+    path: shared-vocabulary-is-not-shared-mutable-state/index.yaml
+    summary: Check enum extraction against state ownership.
+  - title: Integration guidance does not select a replacement UI stack
+    path: integration-guidance-does-not-select-a-replacement-ui-stack/index.yaml
+    summary: Match integration guidance to the selected framework.
+  - title: Boolean exceptions stay with their language and boundary
+    path: boolean-exceptions-stay-with-their-language-and-boundary/index.yaml
+    summary: Check language-specific boolean boundary exceptions.
+  - title: Static findings must agree with browser reachability
+    path: static-findings-must-agree-with-browser-reachability/index.yaml
+    summary: Verify reachability before deleting reported unused symbols.
+  - title: Queue continuation must preserve completion and cleanup
+    path: queue-continuation-must-preserve-completion-and-cleanup/index.yaml
+    summary: Trace admitted jobs through completion and shutdown.

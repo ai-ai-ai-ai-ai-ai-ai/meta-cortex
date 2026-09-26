@@ -1,7 +1,9 @@
 import { Effect } from "effect";
 import { globby, type Options } from "globby";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { basename, extname, join } from "node:path";
+
+import { Navigation } from "./navigation.ts";
 
 type LintCommand = Bun.SpawnOptions.OptionsObject<
   "ignore",
@@ -25,17 +27,41 @@ class DocumentationCheck {
       const options: Options = {
         absolute: true,
         dot: true,
-        expandDirectories: { extensions: ["md"] },
+        expandDirectories: { extensions: ["md", "yaml"] },
         ignore: ["**/node_modules/**", "**/.git/**", "**/target/**"],
       };
-      const files = yield* Effect.tryPromise(() =>
+      const matched = yield* Effect.tryPromise(() =>
         globby(this.inputs, options),
       );
-      switch (files.length) {
+      const files = matched.filter((path) => extname(path) === ".md");
+      const catalogs = matched.filter(
+        (path) => basename(path) === "index.yaml",
+      );
+      switch (files.length + catalogs.length) {
         case 0:
           return yield* Effect.fail(
-            new Error("No Markdown files matched the supplied paths."),
+            new Error(
+              "No Markdown files or YAML indexes matched the supplied paths.",
+            ),
           );
+        default:
+          break;
+      }
+      const audited = yield* new Navigation(catalogs).audit();
+      const findings: string[] = [];
+      for (const file of audited) {
+        findings.push(
+          ...file.messages.map(
+            (message) =>
+              `${file.path}: ${message.reason} [${message.source}:${message.ruleId}]`,
+          ),
+        );
+      }
+      for (const finding of findings) console.error(finding);
+      switch (files.length) {
+        case 0:
+          process.exitCode = Math.min(findings.length, 1);
+          return;
         default:
           break;
       }
@@ -71,7 +97,11 @@ class DocumentationCheck {
       const prose = yield* Effect.tryPromise(() => Bun.spawn(vale).exited);
       const markdown = yield* Effect.tryPromise(() => Bun.spawn(remark).exited);
       yield* Effect.sync(() => {
-        process.exitCode = Math.max(prose, markdown);
+        process.exitCode = Math.max(
+          prose,
+          markdown,
+          Math.min(findings.length, 1),
+        );
       });
     },
     Effect.catch((error) =>
@@ -86,7 +116,7 @@ class DocumentationCheck {
     const paths = process.argv.slice(2);
     switch (paths.length) {
       case 0:
-        return new DocumentationCheck(["**/*.md"]);
+        return new DocumentationCheck(["**/*.md", "**/index.yaml"]);
       default:
         return new DocumentationCheck(paths);
     }

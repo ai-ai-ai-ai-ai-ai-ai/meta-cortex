@@ -1,0 +1,9 @@
+kind: navigation
+title: Gizmo Documentation
+entries:
+  - title: Agent configuration
+    path: agent-configuration.md
+    summary: Role settings, launches, context, and session reuse.
+  - title: Agent work ledger
+    path: agent-ledger.md
+    summary: Durable task progress and recovery.

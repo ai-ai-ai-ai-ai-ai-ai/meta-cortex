@@ -1,0 +1,6 @@
+kind: navigation
+title: Delivery Documentation
+entries:
+  - title: Project Delivery Policy
+    path: project-delivery-policy.md
+    summary: Delivery mode, publishing, review, and merge ownership.

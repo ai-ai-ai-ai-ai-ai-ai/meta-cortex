@@ -1,0 +1,9 @@
+kind: navigation
+title: TypeScript Knowledge Graph
+entries:
+  - title: Practices
+    path: practices/index.yaml
+    summary: Core practices; Task-specific practices; Supporting practices.
+  - title: Cross-rule consistency checks
+    path: checks/index.yaml
+    summary: Interactions between related rules.

@@ -1,0 +1,15 @@
+kind: check
+title: UI state does not transfer WASM ownership
+overview:
+  - Check allocation ownership during UI replacement and cleanup.
+prohibited:
+  - Free borrowed objects or JSON-clone WASM instances.
+preferred:
+  - Preserve instances and leave cleanup with their owner.
+compare:
+  - id: wasm_contracts:ownership
+    source: ../../practices/boundaries/wasm-contracts.md#give-retained-objects-one-owner
+  - id: wasm_contracts:replacement
+    source: ../../practices/boundaries/wasm-contracts.md#give-retained-objects-one-owner
+  - id: wasm_ui_integration:no_cloning
+    source: ../../practices/boundaries/wasm-ui-integration.md#pass-the-declared-value-without-cloning-it

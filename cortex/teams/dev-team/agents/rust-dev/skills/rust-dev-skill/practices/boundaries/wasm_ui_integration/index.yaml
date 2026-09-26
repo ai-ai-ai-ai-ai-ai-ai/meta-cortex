@@ -1,0 +1,40 @@
+kind: practice
+owner: rust:wasm_ui_integration
+title: WASM UI integration
+source_title: WASM UI integration
+source: ../wasm-ui-integration.md
+owns:
+  - Reactive DTOs and preserved WASM instances.
+excludes:
+  - Allocation ownership and portable policy.
+relationships: []
+related:
+  - title: WASM contracts
+    path: ../wasm-contracts.md
+  - title: Rust–TypeScript separation
+    path: ../rust-typescript-code-separation.md
+rules:
+  - id: wasm_ui_integration:typed_values
+    source: ../wasm-ui-integration.md#pass-the-declared-value-without-cloning-it
+    summary: Preserve DTO shapes and generated instance identity.
+  - id: wasm_ui_integration:no_cloning
+    source: ../wasm-ui-integration.md#pass-the-declared-value-without-cloning-it
+    summary: Avoid cloning or casting generated objects to remove reactivity.
+  - id: wasm_ui_integration:svelte_state
+    source: ../wasm-ui-integration.md#svelte
+    summary: Snapshot reactive DTOs at their Svelte caller.
+  - id: wasm_ui_integration:svelte_boundaries
+    source: ../wasm-ui-integration.md#svelte
+    summary: Keep Svelte adaptation outside domain modules.
+  - id: wasm_ui_integration:vue
+    source: ../wasm-ui-integration.md#vue
+    summary: Preserve WASM instances across Vue reactivity.
+  - id: wasm_ui_integration:react
+    source: ../wasm-ui-integration.md#react
+    summary: Manage React handles and ownership through lifecycle boundaries.
+  - id: wasm_ui_integration:caller_adaptation
+    source: ../wasm-ui-integration.md#keep-ui-adaptation-at-the-caller
+    summary: Adapt UI proxies at callers without redundant wrappers.
+  - id: wasm_ui_integration:validation
+    source: ../wasm-ui-integration.md#validation
+    summary: Test reactive submission, instance identity, and cleanup.

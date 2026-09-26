@@ -1,0 +1,30 @@
+kind: practice
+owner: rust:struct_construction
+title: Struct construction
+source_title: Struct construction
+source: ../struct-construction.md
+owns:
+  - Literals and validated construction paths.
+excludes:
+  - Default selection and capability transitions.
+relationships: []
+related:
+  - title: Default values
+    path: ../default-values.md
+  - title: Domain types
+    path: ../domain-types.md
+  - title: Workflow typestate
+    path: ../../behavior/workflow-typestate.md
+rules:
+  - id: struct_construction:no_new
+    source: ../struct-construction.md#no-constructor-indirection
+    summary: Avoid constructors that merely hide field assignments.
+  - id: struct_construction:derive_from
+    source: ../struct-construction.md#single-field-derive-from
+    summary: Derive infallible wrapper conversions; preserve validating construction.
+  - id: struct_construction:initial_state
+    source: ../struct-construction.md#single-field-derive-from
+    summary: Restrict workflow construction to allowed initial states.
+  - id: struct_construction:struct_literals
+    source: ../struct-construction.md#multiple-fields-use-a-struct-literal
+    summary: Use named literals without exposing restricted fields.

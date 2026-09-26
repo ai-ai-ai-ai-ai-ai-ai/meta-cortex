@@ -1,0 +1,39 @@
+kind: practice
+owner: typescript:named_args
+title: Named arguments
+source_title: Named arguments
+source: ../../typescript-named-args.md
+owns:
+  - Named object contracts and typed arguments.
+excludes:
+  - Parameter counts and domain identity.
+relationships: []
+related:
+  - title: Single parameter
+    path: ../../typescript-single-parameter.md
+  - title: Domain structure
+    path: ../../typescript-domain-structure.md
+  - title: Svelte state modeling
+    path: ../../svelte-state-modeling.md
+rules:
+  - id: named_args:named_contracts
+    source: ../../typescript-named-args.md#name-the-parameter-contract
+    summary: Give object-shaped parameters semantic named contracts.
+  - id: named_args:typed_bindings
+    source: ../../typescript-named-args.md#name-and-type-object-arguments
+    summary: Pass object arguments through explicitly typed named bindings.
+  - id: named_args:literal_locations
+    source: ../../typescript-named-args.md#name-and-type-object-arguments
+    summary: Use literals for named construction and returned values.
+  - id: named_args:no_bypasses
+    source: ../../typescript-named-args.md#name-and-type-object-arguments
+    summary: Reject expression tricks that bypass named arguments.
+  - id: named_args:rune_exceptions
+    source: ../../typescript-named-args.md#limit-rune-exceptions-to-the-compiler-forms
+    summary: Limit direct-object exceptions to supported compiler runes.
+  - id: named_args:no_object_defaults
+    source: ../../typescript-named-args.md#keep-object-defaults-out-of-parameters
+    summary: Keep object defaults out of parameter declarations.
+  - id: named_args:validation
+    source: ../../typescript-named-args.md#validation
+    summary: Check named contracts through wrappers and imported types.

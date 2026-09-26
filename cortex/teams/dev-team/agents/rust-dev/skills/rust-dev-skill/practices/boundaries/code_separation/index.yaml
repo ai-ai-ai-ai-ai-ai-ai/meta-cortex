@@ -1,0 +1,43 @@
+kind: practice
+owner: rust:code_separation
+title: Rust–TypeScript separation
+source_title: Rust–TypeScript separation
+source: ../rust-typescript-code-separation.md
+owns:
+  - Rust policy, browser presentation, and bridges.
+excludes:
+  - ABI representation and reactive integration.
+relationships: []
+related:
+  - title: WASM contracts
+    path: ../wasm-contracts.md
+  - title: WASM UI integration
+    path: ../wasm-ui-integration.md
+rules:
+  - id: code_separation:ownership
+    source: ../rust-typescript-code-separation.md#application-structure
+    summary: Separate Rust product policy from TypeScript presentation.
+  - id: code_separation:extensions
+    source: ../rust-typescript-code-separation.md#application-structure
+    summary: Apply the same ownership split to browser extensions.
+  - id: code_separation:core_contracts
+    source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
+    summary: Define portable contracts in Rust; consume generated types.
+  - id: code_separation:abandoned_state
+    source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
+    summary: Remove unused state instead of exporting it.
+  - id: code_separation:core_annotations
+    source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
+    summary: Keep core annotations free of browser behavior.
+  - id: code_separation:observation_policy
+    source: ../rust-typescript-code-separation.md#separate-observation-from-policy
+    summary: Separate browser observations from portable product decisions.
+  - id: code_separation:browser_adapters
+    source: ../rust-typescript-code-separation.md#separate-observation-from-policy
+    summary: Keep browser I/O behind established bridge adapters.
+  - id: code_separation:visual_state
+    source: ../rust-typescript-code-separation.md#keep-visual-state-in-typescript
+    summary: Keep visual state and DOM lifecycle in TypeScript.
+  - id: code_separation:validation
+    source: ../rust-typescript-code-separation.md#validation
+    summary: Test domain decisions, generated transport, and affected consumers.

@@ -1,0 +1,15 @@
+kind: check
+title: Decoding ends before application workflows begin
+overview:
+  - Check decoder output and workflow error types.
+prohibited:
+  - Forward unknown values or add competing failure wrappers.
+preferred:
+  - Decode concrete values and preserve typed Effect failures.
+compare:
+  - id: no_unknown:decoder_scope
+    source: ../../practices/typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge
+  - id: no_unknown:typed_errors
+    source: ../../practices/typescript-no-unknown.md#keep-failures-concrete
+  - id: effect:upstream
+    source: ../../SKILL.md#effect-use-installed-documentation

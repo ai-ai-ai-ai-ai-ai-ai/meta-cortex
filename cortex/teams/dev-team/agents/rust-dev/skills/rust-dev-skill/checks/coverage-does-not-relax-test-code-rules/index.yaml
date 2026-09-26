@@ -1,0 +1,15 @@
+kind: check
+title: Coverage does not relax test code rules
+overview:
+  - Check fixture setup and inline test placement.
+prohibited:
+  - Unwrap fixtures or extract tests to evade size limits.
+preferred:
+  - Propagate setup errors; keep tests with focused owners.
+compare:
+  - id: error_handling:no_panics
+    source: ../../practices/behavior/error-handling.md#propagate-errors-instead-of-panicking
+  - id: testing:no_size_evasion
+    source: ../../practices/tooling/rust-testing.md#split-production-ownership-before-tests
+  - id: testing:coverage
+    source: ../../practices/tooling/rust-testing.md#90-rust-line-coverage-floor

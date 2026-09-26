@@ -1,0 +1,15 @@
+kind: check
+title: Construction cannot skip workflow states
+overview:
+  - Check construction against legal workflow transitions.
+prohibited:
+  - Construct advanced states through blanket conversions.
+preferred:
+  - Restrict construction to initial states and legal transitions.
+compare:
+  - id: struct_construction:initial_state
+    source: ../../practices/modeling/struct-construction.md#single-field-derive-from
+  - id: struct_construction:struct_literals
+    source: ../../practices/modeling/struct-construction.md#multiple-fields-use-a-struct-literal
+  - id: workflow_typestate:no_forged_capabilities
+    source: ../../practices/behavior/workflow-typestate.md#capability-construction

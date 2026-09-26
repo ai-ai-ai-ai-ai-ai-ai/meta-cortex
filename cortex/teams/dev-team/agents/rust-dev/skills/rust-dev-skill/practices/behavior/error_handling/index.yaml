@@ -1,0 +1,42 @@
+kind: practice
+owner: rust:error_handling
+title: Error handling
+source_title: Error handling
+source: ../error-handling.md
+owns:
+  - Typed errors, propagation, and panic restrictions.
+excludes:
+  - Domain alternatives and decoding representations.
+relationships: []
+related:
+  - title: Domain states
+    path: ../../modeling/domain-states.md
+  - title: Serialization boundaries
+    path: ../../boundaries/serialization-boundaries.md
+  - title: Rust testing
+    path: ../../tooling/rust-testing.md
+rules:
+  - id: error_handling:typed_failures
+    source: ../error-handling.md#required-actions
+    summary: Return concrete operation-specific errors through Result.
+  - id: error_handling:source_conversion
+    source: ../error-handling.md#add-context-only-when-it-changes-the-error
+    summary: Preserve typed causes during error conversion.
+  - id: error_handling:required_input
+    source: ../error-handling.md#required-actions
+    summary: Report missing required input as a typed failure.
+  - id: error_handling:no_panics
+    source: ../error-handling.md#propagate-errors-instead-of-panicking
+    summary: Avoid unwrap, expect, and expect_err throughout authored Rust.
+  - id: error_handling:test_errors
+    source: ../error-handling.md#keep-anyhow-in-tests
+    summary: Propagate test failures; keep anyhow test-only.
+  - id: error_handling:codec_errors
+    source: ../error-handling.md#required-actions
+    summary: Use serde_json::Result for JSON-only failures.
+  - id: error_handling:error_tests
+    source: ../error-handling.md#validation
+    summary: Assert error variants and enforce panic-related lints.
+  - id: error_handling:enforcement
+    source: ../error-handling.md#validation
+    summary: Check error dependencies with existing tools.

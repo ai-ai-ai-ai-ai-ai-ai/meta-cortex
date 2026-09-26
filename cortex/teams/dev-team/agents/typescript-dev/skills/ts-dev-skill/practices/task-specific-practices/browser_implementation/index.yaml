@@ -1,0 +1,58 @@
+kind: practice
+owner: typescript:browser_implementation
+title: Browser implementation
+source_title: Browser implementation
+source: ../../browser-implementation.md
+owns:
+  - UI integration, capabilities, and delivery.
+excludes:
+  - Regression design and rune state.
+relationships: []
+related:
+  - title: Browser testing
+    path: ../../browser-testing.md
+  - title: Svelte state modeling
+    path: ../../svelte-state-modeling.md
+rules:
+  - id: browser_implementation:stack
+    source: ../../browser-implementation.md#use-the-existing-ui-stack
+    summary: Follow the project's selected UI stack.
+  - id: browser_implementation:ui_libraries
+    source: ../../browser-implementation.md#use-the-existing-ui-stack
+    summary: Reuse the project's component and motion libraries.
+  - id: browser_implementation:no_parallel_stack
+    source: ../../browser-implementation.md#use-the-existing-ui-stack
+    summary: Avoid introducing a parallel UI system.
+  - id: browser_implementation:impeccable
+    source: ../../browser-implementation.md#use-the-existing-ui-stack
+    summary: Use Impeccable only when explicitly requested.
+  - id: browser_implementation:component_contracts
+    source: ../../browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions
+    summary: Keep components thin, typed, and semantically accessible.
+  - id: browser_implementation:explicit_state
+    source: ../../browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions
+    summary: Apply explicit-state rules in components.
+  - id: browser_implementation:cleanup
+    source: ../../browser-implementation.md#release-lifecycle-resources
+    summary: Release UI resources through framework lifecycle cleanup.
+  - id: browser_implementation:controllers
+    source: ../../browser-implementation.md#release-lifecycle-resources
+    summary: Reuse the project's existing state ownership pattern.
+  - id: browser_implementation:rust_ownership
+    source: ../../browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions
+    summary: Keep domain decisions in their project-defined owner.
+  - id: browser_implementation:secret_surfaces
+    source: ../../browser-implementation.md#keep-secrets-out-of-incidental-surfaces
+    summary: Keep secrets out of exposed or persistent UI surfaces.
+  - id: browser_implementation:disclosure_and_passkeys
+    source: ../../browser-implementation.md#keep-secrets-out-of-incidental-surfaces
+    summary: Require explicit secret disclosure and passkey creation.
+  - id: browser_implementation:capabilities
+    source: ../../browser-implementation.md#detect-capabilities-not-screen-size
+    summary: Detect actual capabilities instead of inferring from viewport size.
+  - id: browser_implementation:translations
+    source: ../../browser-implementation.md#translate-visible-and-accessible-text
+    summary: Route UI and accessibility text through translation catalogs.
+  - id: browser_implementation:validation
+    source: ../../browser-implementation.md#validation
+    summary: Check affected UI behavior and inspect failure logs.

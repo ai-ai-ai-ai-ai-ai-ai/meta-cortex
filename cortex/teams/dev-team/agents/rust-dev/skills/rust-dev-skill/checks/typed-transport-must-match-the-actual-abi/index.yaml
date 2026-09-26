@@ -1,0 +1,15 @@
+kind: check
+title: Typed transport must match the actual ABI
+overview:
+  - Compare caller values with the generated ABI.
+prohibited:
+  - Substitute erased values or pretend records are classes.
+preferred:
+  - Pass the declared record or actual generated instance.
+compare:
+  - id: serialization_boundaries:typed_abi
+    source: ../../practices/boundaries/serialization-boundaries.md#generate-typed-javascript-contracts
+  - id: wasm_contracts:abi
+    source: ../../practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares
+  - id: wasm_contracts:construction
+    source: ../../practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares

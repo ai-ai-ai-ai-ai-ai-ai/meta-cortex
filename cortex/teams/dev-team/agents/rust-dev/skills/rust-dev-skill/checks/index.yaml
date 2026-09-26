@@ -1,0 +1,30 @@
+kind: navigation
+title: Cross-rule consistency checks
+entries:
+  - title: External inputs stop at the conversion boundary
+    path: external-inputs-stop-at-the-conversion-boundary/index.yaml
+    summary: Check converted values for retained raw fields.
+  - title: Construction preserves validation and dependency direction
+    path: construction-preserves-validation-and-dependency-direction/index.yaml
+    summary: Distinguish conversion, validation, and policy operations.
+  - title: Construction cannot skip workflow states
+    path: construction-cannot-skip-workflow-states/index.yaml
+    summary: Check construction against legal workflow transitions.
+  - title: Missing required input is a failure
+    path: missing-required-input-is-a-failure/index.yaml
+    summary: Distinguish legitimate absence from missing required input.
+  - title: Typed transport must match the actual ABI
+    path: typed-transport-must-match-the-actual-abi/index.yaml
+    summary: Compare caller values with the generated ABI.
+  - title: External spelling does not rename application contracts
+    path: external-spelling-does-not-rename-application-contracts/index.yaml
+    summary: Identify who owns each protocol name.
+  - title: UI state does not transfer WASM ownership
+    path: ui-state-does-not-transfer-wasm-ownership/index.yaml
+    summary: Check allocation ownership during UI replacement and cleanup.
+  - title: Approved derives do not justify local macros
+    path: approved-derives-do-not-justify-local-macros/index.yaml
+    summary: Distinguish approved derives from authored macros.
+  - title: Coverage does not relax test code rules
+    path: coverage-does-not-relax-test-code-rules/index.yaml
+    summary: Check fixture setup and inline test placement.

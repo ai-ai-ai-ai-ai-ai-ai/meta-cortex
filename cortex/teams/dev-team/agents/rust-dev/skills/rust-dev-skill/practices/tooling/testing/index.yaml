@@ -1,0 +1,34 @@
+kind: practice
+owner: rust:testing
+title: Rust testing
+source_title: Rust testing
+source: ../rust-testing.md
+owns:
+  - Test placement, boundaries, and coverage.
+excludes:
+  - Error propagation and serialization assertions.
+relationships: []
+related:
+  - title: Error handling
+    path: ../../behavior/error-handling.md
+  - title: Serialization boundaries
+    path: ../../boundaries/serialization-boundaries.md
+rules:
+  - id: testing:domain_and_boundary
+    source: ../rust-testing.md#domain-and-boundary-tests
+    summary: Prove domain behavior in Rust and boundaries in WASM.
+  - id: testing:colocation
+    source: ../rust-testing.md#test-placement
+    summary: Keep unit tests inline with their production owner.
+  - id: testing:no_size_evasion
+    source: ../rust-testing.md#split-production-ownership-before-tests
+    summary: Split responsibilities without moving tests to evade size limits.
+  - id: testing:coverage
+    source: ../rust-testing.md#90-rust-line-coverage-floor
+    summary: Measure combined portable coverage against the required floor.
+  - id: testing:regression_first
+    source: ../rust-testing.md#regression-tests-precede-the-fix
+    summary: Add focused regressions at the failing boundary.
+  - id: testing:evidence
+    source: ../rust-testing.md#validation-evidence
+    summary: Report test results, measured coverage, and missing checks.

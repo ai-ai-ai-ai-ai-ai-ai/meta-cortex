@@ -1,0 +1,34 @@
+kind: practice
+owner: typescript:serial_operation_queues
+title: Serial operation queues
+source_title: Serial operation queues
+source: ../../typescript-serial-operation-queues.md
+owns:
+  - Ordered work, completion, and recovery.
+excludes:
+  - Upstream Effect API guidance.
+relationships: []
+related:
+  - title: Upstream Effect guidance
+    path: ../../../SKILL.md#effect-use-installed-documentation
+  - title: Function ownership
+    path: ../../typescript-function-ownership.md
+rules:
+  - id: serial_operation_queues:effect_queue
+    source: ../../typescript-serial-operation-queues.md#keep-the-queue-and-results-typed
+    summary: Use an Effect queue with one scoped FIFO consumer.
+  - id: serial_operation_queues:typed_completion
+    source: ../../typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
+    summary: Deliver each job's typed completion independently.
+  - id: serial_operation_queues:idle_and_recovery
+    source: ../../typescript-serial-operation-queues.md#define-idle-and-recovery-explicitly
+    summary: Use ordered idle barriers and settle work during recovery.
+  - id: serial_operation_queues:scheduling
+    source: ../../typescript-serial-operation-queues.md#keep-the-queue-and-results-typed
+    summary: Separate scheduling from policy and preserve required capabilities.
+  - id: serial_operation_queues:admission_and_shutdown
+    source: ../../typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
+    summary: Handle admission failures and settle all work on shutdown.
+  - id: serial_operation_queues:validation
+    source: ../../typescript-serial-operation-queues.md#validation
+    summary: Test ordering, completion, continuation, cancellation, and recovery.

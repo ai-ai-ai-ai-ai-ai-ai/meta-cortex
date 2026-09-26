@@ -1,0 +1,27 @@
+kind: practice
+owner: rust:module_layout
+title: Module layout
+source_title: Module layout
+source: ../module-layout.md
+owns:
+  - Module filenames, layout, and moves.
+excludes:
+  - Domain ownership and test placement.
+relationships: []
+related:
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+  - title: Rust testing
+    path: ../rust-testing.md
+  - title: Paths and imports
+    path: ../path-imports.md
+rules:
+  - id: module_layout:named_files
+    source: ../module-layout.md#use-named-module-files
+    summary: Use named module files instead of mod.rs.
+  - id: module_layout:preserve_resolution
+    source: ../module-layout.md#preserve-resolution-when-moving-modules
+    summary: Preserve module identity and references when moving files.
+  - id: module_layout:validation
+    source: ../module-layout.md#validation
+    summary: Validate module resolution, embedded assets, and public behavior.

@@ -1,0 +1,45 @@
+kind: practice
+owner: rust:workflow_typestate
+title: Workflow typestate
+source_title: Workflow typestate
+source: ../workflow-typestate.md
+owns:
+  - Typed phases and legal transitions.
+excludes:
+  - Runtime alternatives and same-state updates.
+relationships: []
+related:
+  - title: Domain states
+    path: ../../modeling/domain-states.md
+  - title: Owned updates
+    path: ../owned-updates.md
+  - title: Struct construction
+    path: ../../modeling/struct-construction.md
+rules:
+  - id: workflow_typestate:typed_owner
+    source: ../workflow-typestate.md#state-and-transitions
+    summary: Model meaningful workflows with typed owner states.
+  - id: workflow_typestate:consuming_transitions
+    source: ../workflow-typestate.md#state-and-transitions
+    summary: Consume owners when transitions replace capabilities.
+  - id: workflow_typestate:independent_states
+    source: ../workflow-typestate.md#state-and-transitions
+    summary: Separate independent state dimensions.
+  - id: workflow_typestate:private_capabilities
+    source: ../workflow-typestate.md#capability-construction
+    summary: Restrict capability construction to validated entry paths.
+  - id: workflow_typestate:no_forged_capabilities
+    source: ../workflow-typestate.md#capability-construction
+    summary: Prevent forged or duplicated workflow capabilities.
+  - id: workflow_typestate:runtime_authorization
+    source: ../workflow-typestate.md#capability-construction
+    summary: Recheck authorization and freshness at runtime effects.
+  - id: workflow_typestate:no_artificial_phases
+    source: ../workflow-typestate.md#prohibited-actions
+    summary: Avoid artificial phases and generic workflow frameworks.
+  - id: workflow_typestate:initial_conversion
+    source: ../workflow-typestate.md#publication-pipeline
+    summary: Limit direct owner conversion to initial states.
+  - id: workflow_typestate:validation
+    source: ../workflow-typestate.md#validation
+    summary: Test valid outcomes and reject illegal workflow transitions.

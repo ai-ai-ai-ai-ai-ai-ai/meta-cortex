@@ -1,0 +1,6 @@
+kind: navigation
+title: Development Documentation
+entries:
+  - title: Programming
+    path: programming/index.yaml
+    summary: Shared design, testing, and dependency requirements.

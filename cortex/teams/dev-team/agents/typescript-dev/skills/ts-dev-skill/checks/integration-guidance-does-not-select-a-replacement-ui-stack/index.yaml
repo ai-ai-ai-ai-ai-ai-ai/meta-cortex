@@ -1,0 +1,13 @@
+kind: check
+title: Integration guidance does not select a replacement UI stack
+overview:
+  - Match integration guidance to the selected framework.
+prohibited:
+  - Replace Svelte because examples also demonstrate React.
+preferred:
+  - Apply matching guidance within the existing stack.
+compare:
+  - id: browser_implementation:stack
+    source: ../../practices/browser-implementation.md#use-the-existing-ui-stack
+  - id: browser_implementation:no_parallel_stack
+    source: ../../practices/browser-implementation.md#use-the-existing-ui-stack

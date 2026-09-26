@@ -1,0 +1,36 @@
+kind: practice
+owner: sre:docker
+title: Docker container and BuildKit practice
+source_title: Docker container and BuildKit practice
+source: ../docker-container-harness.md
+owns:
+  - Build inputs, caching, and secret boundaries.
+excludes:
+  - Project commands, credential lifecycle, and Kubernetes execution.
+relationships: []
+related:
+  - title: Project execution policy
+    path: ../../../../../../docs/project-execution-policy.md
+  - title: operations circuit breaker
+    path: ../../../../../../CIRCUIT-BREAKER.md
+  - title: secret lifecycle
+    path: ../../../../../../../security-team/docs/secret-lifecycle.md
+rules:
+  - id: docker:input_isolation
+    source: ../docker-container-harness.md#isolate-build-inputs
+    summary: Limit each build stage to its required inputs.
+  - id: docker:late_revision_identity
+    source: ../docker-container-harness.md#introduce-build-identity-at-its-consumer
+    summary: Introduce revision metadata only where consumed.
+  - id: docker:buildkit_authority
+    source: ../docker-container-harness.md#let-buildkit-own-cache-validity
+    summary: Let BuildKit own cache validity and reuse.
+  - id: docker:real_cache_evidence
+    source: ../docker-container-harness.md#prove-cold-warm-import-and-export-builds
+    summary: Verify cold, warm, import, and export cache behavior.
+  - id: docker:secret_boundary
+    source: ../docker-container-harness.md#keep-secrets-out-of-build-inputs
+    summary: Supply build secrets through nonpersisted secret mounts.
+  - id: docker:validation
+    source: ../docker-container-harness.md#validation
+    summary: Check stage boundaries, cache artifacts, and diagnostic output.

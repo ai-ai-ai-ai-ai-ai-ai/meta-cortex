@@ -1,0 +1,6 @@
+kind: navigation
+title: Docker Skill Knowledge Graph
+entries:
+  - title: Practices
+    path: practices/index.yaml
+    summary: Docker container and BuildKit practice.

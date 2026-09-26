@@ -1,0 +1,28 @@
+kind: practice
+owner: rust:owned_updates
+title: Owned updates
+source_title: Owned updates
+source: ../owned-updates.md
+owns:
+  - Consuming updates and justified mutation.
+excludes:
+  - Workflow transitions and operation placement.
+relationships: []
+related:
+  - title: Workflow typestate
+    path: ../workflow-typestate.md
+  - title: Function ownership
+    path: ../function-ownership.md
+rules:
+  - id: owned_updates:consume_replacement
+    source: ../owned-updates.md#replace-an-owned-value
+    summary: Consume value owners and use their returned replacements.
+  - id: owned_updates:external_mutation
+    source: ../owned-updates.md#required-actions
+    summary: Retain borrowed mutation only for required external contracts.
+  - id: owned_updates:no_fake_actors
+    source: ../owned-updates.md#required-actions
+    summary: Avoid artificial actors or phases for value updates.
+  - id: owned_updates:validation
+    source: ../owned-updates.md#validation
+    summary: Verify consumption and preservation of unchanged fields.

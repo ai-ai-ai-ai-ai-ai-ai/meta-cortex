@@ -1,0 +1,28 @@
+kind: practice
+owner: delivery:local_feature
+title: Local feature integration
+source_title: Local feature integration
+source: ../local-feature-integration.md
+owns:
+  - Local workspaces, integration, validation, and cleanup.
+excludes:
+  - Routing, programming rules, and remote delivery.
+relationships:
+  - Complete tasks before integration; validate before cleanup.
+related: []
+rules:
+  - id: local_feature:workspace
+    source: ../local-feature-integration.md#set-up-workspaces
+    summary: Use one feature workspace and isolated task worktrees.
+  - id: local_feature:completion
+    source: ../local-feature-integration.md#finish-task-work
+    summary: Validate and commit assigned changes before reporting completion.
+  - id: local_feature:integration
+    source: ../local-feature-integration.md#integrate-finished-branches
+    summary: Merge finished tasks in order; validate the combined feature.
+  - id: local_feature:repair
+    source: ../local-feature-integration.md#resolve-integration-failures
+    summary: Preserve failed work and repair through the task branch.
+  - id: local_feature:cleanup
+    source: ../local-feature-integration.md#complete-and-clean-up
+    summary: Remove only finished, merged task workspaces after validation.

@@ -110,7 +110,7 @@ following from the active library and supplies them in the launch instructions:
 - The assigned agent’s team directory and team `AGENTS.md`.
 - The team’s `CIRCUIT-BREAKER.md`, when present, plus any other team rules that
   apply to the assignment’s subject.
-- The team’s `docs/` directory, its `index.md` when present, and the documents
+- The team’s `docs/` directory, its `index.yaml` when present, and the documents
   relevant to the assignment. Include referenced subject documents from other
   teams when the task depends on them.
 - The assigned agent’s own `AGENTS.md` and the execution configuration context.

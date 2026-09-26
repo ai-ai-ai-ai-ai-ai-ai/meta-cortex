@@ -1,0 +1,15 @@
+kind: check
+title: Boolean exceptions stay with their language and boundary
+overview:
+  - Check language-specific boolean boundary exceptions.
+prohibited:
+  - Extend host exceptions to application decisions.
+preferred:
+  - Normalize external booleans before workflow behavior.
+compare:
+  - id: enums_over_booleans:boundary_exceptions
+    source: ../../practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts
+  - id: enums_over_booleans:observations
+    source: ../../practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts
+  - id: enums_over_booleans:exception_evidence
+    source: ../../practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts

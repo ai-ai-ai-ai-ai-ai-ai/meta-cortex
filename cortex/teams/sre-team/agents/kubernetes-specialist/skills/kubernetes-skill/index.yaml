@@ -1,0 +1,6 @@
+kind: navigation
+title: Kubernetes Skill Knowledge Graph
+entries:
+  - title: Practices
+    path: practices/index.yaml
+    summary: Kubernetes runtime boundary.

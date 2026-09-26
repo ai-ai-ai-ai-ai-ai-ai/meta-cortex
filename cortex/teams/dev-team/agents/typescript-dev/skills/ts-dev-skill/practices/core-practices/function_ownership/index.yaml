@@ -1,0 +1,34 @@
+kind: practice
+owner: typescript:function_ownership
+title: Function ownership
+source_title: Function ownership
+source: ../../typescript-function-ownership.md
+owns:
+  - Declaration placement and owned execution.
+excludes:
+  - Shared ownership policy; Effect APIs; parameters; nominal values.
+relationships: []
+related:
+  - title: Single parameter
+    path: ../../typescript-single-parameter.md
+  - title: Domain structure
+    path: ../../typescript-domain-structure.md
+rules:
+  - id: function_ownership:instances
+    source: ../../typescript-function-ownership.md#use-instances-for-owned-behavior
+    summary: Put execution on instances with meaningful ownership.
+  - id: function_ownership:nesting
+    source: ../../typescript-function-ownership.md#count-execution-scopes
+    summary: Keep execution nesting within two scopes.
+  - id: function_ownership:meaningful_state
+    source: ../../typescript-function-ownership.md#use-instances-for-owned-behavior
+    summary: Give instances real state, requests, or capabilities.
+  - id: function_ownership:constants
+    source: ../../typescript-function-ownership.md#own-constants-and-mutable-state
+    summary: Keep constants and mutable state on owners.
+  - id: function_ownership:component_scope
+    source: ../../typescript-function-ownership.md#keep-component-ownership-local
+    summary: Keep interaction-specific handlers and state within components.
+  - id: function_ownership:shared_behavior
+    source: ../../typescript-function-ownership.md#keep-component-ownership-local
+    summary: Move shared component behavior to its domain owner.

@@ -1,0 +1,45 @@
+kind: practice
+owner: rust:libraries
+title: Libraries
+source_title: Libraries
+source: ../libraries.md
+owns:
+  - Required crates and capability-specific choices.
+excludes:
+  - Adoption thresholds and subject-specific usage.
+relationships: []
+related:
+  - title: Dependency selection
+    path: ../dependency-selection.md
+  - title: Error handling
+    path: ../../behavior/error-handling.md
+  - title: Serialization boundaries
+    path: ../../boundaries/serialization-boundaries.md
+rules:
+  - id: libraries:required_core
+    source: ../libraries.md#required-core
+    summary: Use the prescribed core crates with required features.
+  - id: libraries:no_custom_commodity
+    source: ../libraries.md#required-core
+    summary: Reuse established serialization, error, conversion, and logging tools.
+  - id: libraries:concurrency
+    source: ../libraries.md#concurrency
+    summary: Use Tokio and Flume for native concurrency.
+  - id: libraries:networking
+    source: ../libraries.md#web-and-networking
+    summary: Use the prescribed client and server libraries.
+  - id: libraries:wasm_contracts
+    source: ../libraries.md#rustjavascript-contracts
+    summary: Use established WASM contract and event-loop bindings.
+  - id: libraries:browser_storage
+    source: ../libraries.md#browser-apis-and-storage
+    summary: Use established typed browser storage and file adapters.
+  - id: libraries:direct_browser_bindings
+    source: ../libraries.md#browser-apis-and-storage
+    summary: Limit direct browser bindings to uncovered APIs.
+  - id: libraries:diagnostics
+    source: ../libraries.md#diagnostics-and-tests
+    summary: Use the prescribed browser diagnostics and WASM tests.
+  - id: libraries:typed_boundaries
+    source: ../libraries.md#diagnostics-and-tests
+    summary: Preserve typed contracts across browser boundaries.

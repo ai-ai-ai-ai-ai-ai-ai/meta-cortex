@@ -1,0 +1,46 @@
+kind: practice
+owner: typescript:enums_over_booleans
+title: Enums instead of booleans
+source_title: Enums instead of booleans
+source: ../../typescript-enums-over-booleans.md
+owns:
+  - Semantic alternatives and boolean boundary exceptions.
+excludes:
+  - General unions and absence modeling.
+relationships: []
+related:
+  - title: Explicit state
+    path: ../../typescript-explicit-state.md
+  - title: Domain structure
+    path: ../../typescript-domain-structure.md
+rules:
+  - id: enums_over_booleans:semantic_enums
+    source: ../../typescript-enums-over-booleans.md#name-the-decision-at-the-call-site
+    summary: Model application alternatives with meaningful enums.
+  - id: enums_over_booleans:distinct_decisions
+    source: ../../typescript-enums-over-booleans.md#name-the-decision-at-the-call-site
+    summary: Give distinct policies distinct enum types.
+  - id: enums_over_booleans:no_decorative_enums
+    source: ../../typescript-enums-over-booleans.md#name-the-decision-at-the-call-site
+    summary: Name domain decisions instead of disguising booleans.
+  - id: enums_over_booleans:payloads
+    source: ../../typescript-enums-over-booleans.md#model-related-flags-as-one-state
+    summary: Keep payloads with their owning alternatives.
+  - id: enums_over_booleans:preserve_members
+    source: ../../typescript-enums-over-booleans.md#model-related-flags-as-one-state
+    summary: Preserve enum members through calls and protocols.
+  - id: enums_over_booleans:boundary_exceptions
+    source: ../../typescript-enums-over-booleans.md#contain-required-boolean-contracts
+    summary: Normalize required external booleans at their boundary.
+  - id: enums_over_booleans:predicate_outcomes
+    source: ../../typescript-enums-over-booleans.md#name-predicate-outcomes-before-choosing-behavior
+    summary: Convert predicate results into named domain outcomes.
+  - id: enums_over_booleans:observations
+    source: ../../typescript-enums-over-booleans.md#contain-required-boolean-contracts
+    summary: Normalize observations before applying domain policy.
+  - id: enums_over_booleans:exception_evidence
+    source: ../../typescript-enums-over-booleans.md#contain-required-boolean-contracts
+    summary: Document each retained boolean boundary exception.
+  - id: enums_over_booleans:validation
+    source: ../../typescript-enums-over-booleans.md#validation
+    summary: Review boolean contracts and test legal transitions.

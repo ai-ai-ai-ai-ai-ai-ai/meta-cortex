@@ -1,0 +1,9 @@
+kind: navigation
+title: Rust Knowledge Graph
+entries:
+  - title: Practices
+    path: practices/index.yaml
+    summary: Modeling; Behavior; Boundaries; Tooling.
+  - title: Cross-rule consistency checks
+    path: checks/index.yaml
+    summary: Interactions between related rules.

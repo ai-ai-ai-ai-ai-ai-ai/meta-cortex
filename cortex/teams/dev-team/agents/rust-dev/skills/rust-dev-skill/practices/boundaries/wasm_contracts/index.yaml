@@ -1,0 +1,42 @@
+kind: practice
+owner: rust:wasm_contracts
+title: WASM contracts
+source_title: WASM contracts
+source: ../wasm-contracts.md
+owns:
+  - Generated representations and allocation ownership.
+excludes:
+  - Decoding failures and reactive wrappers.
+relationships: []
+related:
+  - title: Serialization boundaries
+    path: ../serialization-boundaries.md
+  - title: WASM UI integration
+    path: ../wasm-ui-integration.md
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+rules:
+  - id: wasm_contracts:abi
+    source: ../wasm-contracts.md#construct-what-the-abi-declares
+    summary: Match generated class and structural ABI representations.
+  - id: wasm_contracts:construction
+    source: ../wasm-contracts.md#construct-what-the-abi-declares
+    summary: Construct instances through generated APIs.
+  - id: wasm_contracts:canonical_enums
+    source: ../wasm-contracts.md#export-canonical-enums-without-mirrors
+    summary: Export canonical enums without duplicating vocabulary.
+  - id: wasm_contracts:nominal_identifiers
+    source: ../wasm-contracts.md#verify-generated-identifier-types
+    summary: Verify identifiers remain nominal across bindings.
+  - id: wasm_contracts:retained_values
+    source: ../wasm-contracts.md#give-retained-objects-one-owner
+    summary: Retain generated objects when UI state needs them.
+  - id: wasm_contracts:ownership
+    source: ../wasm-contracts.md#give-retained-objects-one-owner
+    summary: Track one owner per allocation and explicit transfers.
+  - id: wasm_contracts:replacement
+    source: ../wasm-contracts.md#give-retained-objects-one-owner
+    summary: Release replaced objects exactly once after final use.
+  - id: wasm_contracts:validation
+    source: ../wasm-contracts.md#validation
+    summary: Test generated shapes, ownership transfers, and lifecycle cleanup.

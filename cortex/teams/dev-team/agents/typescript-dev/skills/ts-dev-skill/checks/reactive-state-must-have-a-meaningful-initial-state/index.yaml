@@ -1,0 +1,15 @@
+kind: check
+title: Reactive state must have a meaningful initial state
+overview:
+  - Check initialization and external absence together.
+prohibited:
+  - Leave runes uninitialized or retain external absence sentinels.
+preferred:
+  - Initialize semantic states and normalize incoming absence.
+compare:
+  - id: explicit_state:external_absence
+    source: ../../practices/typescript-explicit-state.md#normalize-absence-at-entry
+  - id: svelte_state_modeling:initialization
+    source: ../../practices/svelte-state-modeling.md#initialize-every-modeled-rune
+  - id: svelte_state_modeling:state_payloads
+    source: ../../practices/svelte-state-modeling.md#move-related-values-together

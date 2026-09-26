@@ -1,0 +1,37 @@
+kind: practice
+owner: typescript:browser_testing
+title: Browser testing
+source_title: Browser testing
+source: ../../browser-testing.md
+owns:
+  - Browser regressions and failure investigation.
+excludes:
+  - UI implementation and unused-code checks.
+relationships: []
+related:
+  - title: Browser implementation
+    path: ../../browser-implementation.md
+  - title: Unused code
+    path: ../../web-unused-code.md
+rules:
+  - id: browser_testing:browser_boundary
+    source: ../../browser-testing.md#test-the-boundary-that-can-fail
+    summary: Test observable browser integration with project tooling.
+  - id: browser_testing:suite_gates
+    source: ../../browser-testing.md#validation
+    summary: Include each behavior spec in an executable gate.
+  - id: browser_testing:diagnose_first
+    source: ../../browser-testing.md#repair-from-evidence-with-a-regression-first
+    summary: Inspect failure evidence before choosing a repair.
+  - id: browser_testing:regression_first
+    source: ../../browser-testing.md#repair-from-evidence-with-a-regression-first
+    summary: Add a focused regression before fixing the owner.
+  - id: browser_testing:retain_acceptance
+    source: ../../browser-testing.md#repair-from-evidence-with-a-regression-first
+    summary: Retain browser acceptance coverage through repairs.
+  - id: browser_testing:no_weakened_tests
+    source: ../../browser-testing.md#do-not-weaken-the-failing-scenario
+    summary: Fix failures without weakening tests.
+  - id: browser_testing:evidence
+    source: ../../browser-testing.md#validation
+    summary: Report changed-flow results and executable coverage gaps.

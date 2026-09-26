@@ -1,0 +1,15 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Modeling
+    path: modeling/index.yaml
+    summary: Domain values, states, construction, and defaults.
+  - title: Behavior
+    path: behavior/index.yaml
+    summary: Ownership, inputs, transitions, updates, and errors.
+  - title: Boundaries
+    path: boundaries/index.yaml
+    summary: Serialization, language boundaries, and WASM integration.
+  - title: Tooling
+    path: tooling/index.yaml
+    summary: Checks, libraries, layout, dependencies, and tests.

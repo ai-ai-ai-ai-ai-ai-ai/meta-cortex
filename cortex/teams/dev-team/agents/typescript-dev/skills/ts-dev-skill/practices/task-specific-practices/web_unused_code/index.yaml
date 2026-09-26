@@ -1,0 +1,34 @@
+kind: practice
+owner: typescript:web_unused_code
+title: Unused code
+source_title: Unused code
+source: ../../web-unused-code.md
+owns:
+  - Unused code, dependencies, and tooling limits.
+excludes:
+  - Browser regressions and dependency adoption.
+relationships: []
+related:
+  - title: Browser testing
+    path: ../../browser-testing.md
+  - title: Dependency selection
+    path: ../../dependency-selection.md
+rules:
+  - id: web_unused_code:audit_scope
+    source: ../../web-unused-code.md#check-what-the-installed-tool-cannot-see
+    summary: Audit unused code and dependencies across authored web projects.
+  - id: web_unused_code:tool_blind_spots
+    source: ../../web-unused-code.md#check-what-the-installed-tool-cannot-see
+    summary: Review callers that static tools cannot trace.
+  - id: web_unused_code:fix_findings
+    source: ../../web-unused-code.md#fix-findings-without-deleting-live-behavior
+    summary: Remove or connect unused code without suppressing findings.
+  - id: web_unused_code:live_markup
+    source: ../../web-unused-code.md#fix-findings-without-deleting-live-behavior
+    summary: Verify live markup callers before narrowing controller APIs.
+  - id: web_unused_code:no_json_roundtrip
+    source: ../../web-unused-code.md#do-not-hide-reactive-state-behind-json
+    summary: Avoid JSON round trips for reactive unwrapping.
+  - id: web_unused_code:validation
+    source: ../../web-unused-code.md#validation
+    summary: Resolve tool findings and separately review untraceable members.

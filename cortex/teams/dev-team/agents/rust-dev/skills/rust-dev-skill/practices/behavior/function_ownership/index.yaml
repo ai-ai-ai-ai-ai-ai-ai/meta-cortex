@@ -1,0 +1,54 @@
+kind: practice
+owner: rust:function_ownership
+title: Function ownership
+source_title: Function ownership
+source: ../function-ownership.md
+owns:
+  - Method ownership and dependency direction.
+excludes:
+  - Input shapes and consuming updates.
+relationships: []
+related:
+  - title: API inputs
+    path: ../api-inputs.md
+  - title: Owned updates
+    path: ../owned-updates.md
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+rules:
+  - id: function_ownership:meaningful_owners
+    source: ../function-ownership.md#choose-the-owner
+    summary: Place functions on meaningful domain owners.
+  - id: function_ownership:method_kinds
+    source: ../function-ownership.md#choose-the-owner
+    summary: Choose receivers, associated functions, and traits by ownership.
+  - id: function_ownership:nesting
+    source: ../function-ownership.md#choose-the-owner
+    summary: Keep execution nesting within two scopes.
+  - id: function_ownership:no_utility_containers
+    source: ../function-ownership.md#choose-the-owner
+    summary: Avoid utility containers and artificial owners.
+  - id: function_ownership:constants_and_state
+    source: ../function-ownership.md#own-constants-and-state
+    summary: Keep constants and mutable state on their owners.
+  - id: function_ownership:dependency_direction
+    source: ../function-ownership.md#respect-domain-dependencies
+    summary: Place behavior according to knowledge and dependency direction.
+  - id: function_ownership:operations
+    source: ../function-ownership.md#respect-domain-dependencies
+    summary: Keep policy and effects in named operations.
+  - id: function_ownership:boundary_functions
+    source: ../function-ownership.md#keep-required-free-functions-at-the-boundary
+    summary: Limit free functions to required external boundaries.
+  - id: function_ownership:external_requirements
+    source: ../function-ownership.md#keep-required-free-functions-at-the-boundary
+    summary: Justify boundary exceptions with the actual external contract.
+  - id: function_ownership:lint_exceptions
+    source: ../function-ownership.md#check-ownership
+    summary: Use narrow, documented ownership-lint exceptions.
+  - id: function_ownership:lint_evidence
+    source: ../function-ownership.md#check-ownership
+    summary: Test exception enforcement and review ownership semantics.
+  - id: function_ownership:migration
+    source: ../function-ownership.md#check-ownership
+    summary: Migrate cohesive flows while preserving required external contracts.

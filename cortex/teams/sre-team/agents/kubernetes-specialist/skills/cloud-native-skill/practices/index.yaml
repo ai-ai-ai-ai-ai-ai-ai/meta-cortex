@@ -1,0 +1,6 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Cloud-native operations
+    path: cloud_native/index.yaml
+    summary: Operational scope, credentials, recovery, and verification.

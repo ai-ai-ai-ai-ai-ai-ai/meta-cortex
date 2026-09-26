@@ -1,0 +1,30 @@
+kind: practice
+owner: rust:code_checks
+title: Rust code checks
+source_title: Rust code checks
+source: ../rust-code-checks.md
+owns:
+  - Formatting, compilation, linting, and evidence.
+excludes:
+  - Behavioral coverage and pipeline implementation.
+relationships: []
+related:
+  - title: Rust testing
+    path: ../rust-testing.md
+  - title: Paths and imports
+    path: ../path-imports.md
+  - title: Error handling
+    path: ../../behavior/error-handling.md
+rules:
+  - id: code_checks:establish
+    source: ../rust-code-checks.md#establish-repeatable-checks
+    summary: Establish complete, repeatable project validation gates.
+  - id: code_checks:lint_baseline
+    source: ../rust-code-checks.md#enforce-the-lint-baseline
+    summary: Apply the prescribed lints and review semantic gaps.
+  - id: code_checks:fix_diagnostics
+    source: ../rust-code-checks.md#fix-diagnostics-before-completion
+    summary: Fix diagnostics and rerun checks after final edits.
+  - id: code_checks:evidence
+    source: ../rust-code-checks.md#report-verification-evidence
+    summary: Report actual check results and unresolved verification gaps.

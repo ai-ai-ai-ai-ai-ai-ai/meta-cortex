@@ -1,0 +1,28 @@
+kind: practice
+owner: rust:path_imports
+title: Paths and imports
+source_title: Paths and imports
+source: ../path-imports.md
+owns:
+  - Path qualification and import conventions.
+excludes:
+  - Cross-language naming and module placement.
+relationships: []
+related:
+  - title: WASM name coherence
+    path: ../../boundaries/rust-wasm-name-coherence.md
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+rules:
+  - id: path_imports:two_segments
+    source: ../path-imports.md#required-actions
+    summary: Keep non-import paths within two segments.
+  - id: path_imports:all_roots
+    source: ../path-imports.md#prohibited-actions
+    summary: Apply path limits consistently across all roots.
+  - id: path_imports:qualified_functions
+    source: ../path-imports.md#examples
+    summary: Retain meaningful module qualification at function calls.
+  - id: path_imports:validation
+    source: ../path-imports.md#validation
+    summary: Check path lengths and semantic import context.

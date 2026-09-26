@@ -1,0 +1,15 @@
+kind: check
+title: External spelling does not rename application contracts
+overview:
+  - Identify who owns each protocol name.
+prohibited:
+  - Rename project-owned fields for JavaScript casing.
+preferred:
+  - Preserve canonical names; adapt fixed external names locally.
+compare:
+  - id: wasm_name_coherence:same_names
+    source: ../../practices/boundaries/rust-wasm-name-coherence.md#preserve-imported-and-exported-names
+  - id: wasm_name_coherence:external_names
+    source: ../../practices/boundaries/rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter
+  - id: domain_types:wasm_values
+    source: ../../practices/modeling/domain-types.md#wasm--js-boundary

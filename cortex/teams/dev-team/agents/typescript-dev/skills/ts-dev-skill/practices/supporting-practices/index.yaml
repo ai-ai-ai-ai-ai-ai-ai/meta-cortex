@@ -1,0 +1,9 @@
+kind: navigation
+title: Supporting practices
+entries:
+  - title: TypeScript code checks
+    path: code_checks/index.yaml
+    summary: Formatting, types, linting, and build evidence.
+  - title: Dependency selection
+    path: dependency_selection/index.yaml
+    summary: Dependency adoption thresholds and verification.

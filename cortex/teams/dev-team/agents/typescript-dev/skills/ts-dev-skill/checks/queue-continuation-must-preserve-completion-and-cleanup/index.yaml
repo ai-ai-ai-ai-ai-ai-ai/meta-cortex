@@ -1,0 +1,15 @@
+kind: check
+title: Queue continuation must preserve completion and cleanup
+overview:
+  - Trace admitted jobs through completion and shutdown.
+prohibited:
+  - Discard failures or leave admitted jobs unresolved.
+preferred:
+  - Deliver typed outcomes and settle work during shutdown.
+compare:
+  - id: serial_operation_queues:typed_completion
+    source: ../../practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
+  - id: serial_operation_queues:admission_and_shutdown
+    source: ../../practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
+  - id: effect:upstream
+    source: ../../SKILL.md#effect-use-installed-documentation

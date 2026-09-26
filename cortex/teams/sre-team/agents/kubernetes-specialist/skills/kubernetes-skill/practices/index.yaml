@@ -1,0 +1,6 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Kubernetes runtime boundary
+    path: kubernetes/index.yaml
+    summary: Workload execution and runtime boundaries.

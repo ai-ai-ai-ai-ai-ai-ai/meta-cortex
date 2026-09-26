@@ -1,0 +1,37 @@
+kind: practice
+owner: typescript:single_parameter
+title: Single parameter
+source_title: Single parameter
+source: ../../typescript-single-parameter.md
+owns:
+  - Input counts and fixed-signature exceptions.
+excludes:
+  - Object declarations and function placement.
+relationships: []
+related:
+  - title: Named arguments
+    path: ../../typescript-named-args.md
+  - title: Function ownership
+    path: ../../typescript-function-ownership.md
+rules:
+  - id: single_parameter:one_parameter
+    source: ../../typescript-single-parameter.md#collect-independent-inputs-in-one-request
+    summary: Accept at most one parameter in authored functions.
+  - id: single_parameter:semantic_request
+    source: ../../typescript-single-parameter.md#collect-independent-inputs-in-one-request
+    summary: Group inputs into one semantic request.
+  - id: single_parameter:named_shapes
+    source: ../../typescript-single-parameter.md#name-object-shaped-parameters
+    summary: Name object-shaped input contracts.
+  - id: single_parameter:explicit_omission
+    source: ../../typescript-single-parameter.md#do-not-disguise-additional-inputs
+    summary: Model omitted inputs explicitly.
+  - id: single_parameter:callback_returns
+    source: ../../typescript-single-parameter.md#name-object-shaped-parameters
+    summary: Separate callback return allowances from input requirements.
+  - id: single_parameter:host_signatures
+    source: ../../typescript-single-parameter.md#keep-fixed-host-signatures-at-the-edge
+    summary: Isolate required multi-input host signatures at the boundary.
+  - id: single_parameter:validation
+    source: ../../typescript-single-parameter.md#validation
+    summary: Enforce parameter counts and review host exceptions.

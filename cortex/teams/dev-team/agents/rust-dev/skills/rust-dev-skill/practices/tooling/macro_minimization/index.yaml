@@ -1,0 +1,28 @@
+kind: practice
+owner: rust:macro_minimization
+title: Macro minimization
+source_title: Macro minimization
+source: ../rust-macro-minimization.md
+owns:
+  - Authored macro limits and ecosystem exceptions.
+excludes:
+  - Crate selection and subject-specific examples.
+relationships: []
+related:
+  - title: Libraries
+    path: ../libraries.md
+  - title: Struct construction
+    path: ../../modeling/struct-construction.md
+rules:
+  - id: macro_minimization:no_local_macros
+    source: ../rust-macro-minimization.md#keep-routine-code-explicit
+    summary: Avoid authored macros for routine application code.
+  - id: macro_minimization:explicit_mappings
+    source: ../rust-macro-minimization.md#keep-domain-mappings-in-their-destination-impl
+    summary: Prefer explicit Rust over unnecessary macro indirection.
+  - id: macro_minimization:ecosystem_macros
+    source: ../rust-macro-minimization.md#keep-approved-ecosystem-macros
+    summary: Retain supported compiler and ecosystem macros.
+  - id: macro_minimization:safe_replacement
+    source: ../rust-macro-minimization.md#replace-a-macro-without-changing-its-contract
+    summary: Replace redundant macros while preserving behavior.

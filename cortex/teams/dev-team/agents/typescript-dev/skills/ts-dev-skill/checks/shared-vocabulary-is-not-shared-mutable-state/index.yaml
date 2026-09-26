@@ -1,0 +1,15 @@
+kind: check
+title: Shared vocabulary is not shared mutable state
+overview:
+  - Check enum extraction against state ownership.
+prohibited:
+  - Move component state into module-global singletons.
+preferred:
+  - Export enums; retain state with its interaction owner.
+compare:
+  - id: explicit_state:component_enums
+    source: ../../practices/typescript-explicit-state.md#keep-component-enums-in-an-importable-module
+  - id: function_ownership:component_scope
+    source: ../../practices/typescript-function-ownership.md#keep-component-ownership-local
+  - id: browser_implementation:cleanup
+    source: ../../practices/browser-implementation.md#release-lifecycle-resources

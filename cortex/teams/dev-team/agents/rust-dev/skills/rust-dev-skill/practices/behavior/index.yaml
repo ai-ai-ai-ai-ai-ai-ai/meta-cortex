@@ -1,0 +1,21 @@
+kind: navigation
+title: Behavior
+entries:
+  - title: Branching and exhaustive matching
+    path: branching/index.yaml
+    summary: Named alternatives and exhaustive decisions.
+  - title: Function ownership
+    path: function_ownership/index.yaml
+    summary: Method ownership and dependency direction.
+  - title: API inputs
+    path: api_inputs/index.yaml
+    summary: Input counts and semantic requests.
+  - title: Workflow typestate
+    path: workflow_typestate/index.yaml
+    summary: Typed phases and legal transitions.
+  - title: Owned updates
+    path: owned_updates/index.yaml
+    summary: Consuming updates and justified mutation.
+  - title: Error handling
+    path: error_handling/index.yaml
+    summary: Typed errors, propagation, and panic restrictions.

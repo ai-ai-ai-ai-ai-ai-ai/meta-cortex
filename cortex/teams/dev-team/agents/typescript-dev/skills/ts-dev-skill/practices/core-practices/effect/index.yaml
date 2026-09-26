@@ -1,0 +1,24 @@
+kind: practice
+owner: typescript:effect
+title: Effect workflows
+source_title: Installed Effect documentation
+source: ../../../SKILL.md#effect-use-installed-documentation
+owns:
+  - Installed Effect API and implementation guidance.
+excludes: []
+relationships: []
+related:
+  - title: Domain structure
+    path: ../../typescript-domain-structure.md
+  - title: Serial operation queues
+    path: ../../typescript-serial-operation-queues.md
+rules:
+  - id: effect:upstream
+    source: ../../../SKILL.md#effect-use-installed-documentation
+    summary: Read the installed Effect guidance before implementation.
+  - id: effect:version
+    source: ../../../SKILL.md#manage-the-pinned-release
+    summary: Pin one release and use its matching documentation.
+  - id: effect:effectful_work
+    source: ../../../SKILL.md#choose-effect-for-workflows
+    summary: Use Effect for changed effectful workflows.

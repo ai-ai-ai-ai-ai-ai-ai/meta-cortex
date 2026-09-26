@@ -1,0 +1,6 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Docker container and BuildKit practice
+    path: docker/index.yaml
+    summary: Build inputs, caching, and secret boundaries.

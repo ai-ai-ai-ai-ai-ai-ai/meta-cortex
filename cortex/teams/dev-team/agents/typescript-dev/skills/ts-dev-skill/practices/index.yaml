@@ -1,0 +1,12 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Core practices
+    path: core-practices/index.yaml
+    summary: Ownership, contracts, state, types, and effects.
+  - title: Task-specific practices
+    path: task-specific-practices/index.yaml
+    summary: UI implementation, state, tests, and queues.
+  - title: Supporting practices
+    path: supporting-practices/index.yaml
+    summary: Code checks and dependency selection.

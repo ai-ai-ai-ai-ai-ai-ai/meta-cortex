@@ -1,0 +1,75 @@
+kind: practice
+owner: typescript:domain_structure
+title: Domain structure
+source_title: Domain structure
+source: ../../typescript-domain-structure.md
+owns:
+  - Nominal values and named application contracts.
+excludes:
+  - Detailed ownership and absence modeling.
+relationships: []
+related:
+  - title: Function ownership
+    path: ../../typescript-function-ownership.md
+  - title: Explicit state
+    path: ../../typescript-explicit-state.md
+  - title: Concrete values
+    path: ../../typescript-no-unknown.md
+rules:
+  - id: domain_structure:named_values
+    source: ../../typescript-domain-structure.md#preserve-value-identity
+    summary: Give application values meaningful domain types.
+  - id: domain_structure:vocabulary_ownership
+    source: ../../typescript-domain-structure.md#preserve-value-identity
+    summary: Keep vocabulary with its owning language and domain.
+  - id: domain_structure:nominal_identity
+    source: ../../typescript-domain-structure.md#preserve-value-identity
+    summary: Use nominal scalars and named aggregates.
+  - id: domain_structure:preserve_types
+    source: ../../typescript-domain-structure.md#preserve-value-identity
+    summary: Preserve domain types throughout contracts and containers.
+  - id: domain_structure:type_aliases
+    source: ../../typescript-domain-structure.md#name-complex-type-expressions
+    summary: Name complex type expressions by domain role.
+  - id: domain_structure:trusted_construction
+    source: ../../typescript-domain-structure.md#construct-trusted-values-at-the-boundary
+    summary: Construct opaque values through validating owners.
+  - id: domain_structure:external_conversion
+    source: ../../typescript-domain-structure.md#construct-trusted-values-at-the-boundary
+    summary: Normalize external data before application use.
+  - id: domain_structure:typed_failures
+    source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
+    summary: Decode through Effect Schema and preserve typed failures.
+  - id: domain_structure:behavior_ownership
+    source: ../../typescript-domain-structure.md#keep-capabilities-behind-their-transitions
+    summary: Place behavior on meaningful owners.
+  - id: domain_structure:legal_transitions
+    source: ../../typescript-domain-structure.md#keep-capabilities-behind-their-transitions
+    summary: Expose operations appropriate to each named state.
+  - id: domain_structure:typed_yaml
+    source: ../../typescript-domain-structure.md#serialize-yaml-from-typed-values
+    summary: Serialize typed records instead of assembling YAML strings.
+  - id: domain_structure:versioned_schemas
+    source: ../../typescript-domain-structure.md#version-owned-persisted-formats
+    summary: Define supported versions and explicit schema migrations.
+  - id: domain_structure:secrets
+    source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
+    summary: Apply the shared secret lifecycle requirements.
+  - id: domain_structure:nested_vocabulary
+    source: ../../typescript-domain-structure.md#nest-vocabulary-that-shares-an-owner
+    summary: Nest related vocabulary under its domain owner.
+  - id: domain_structure:field_vocabulary
+    source: ../../typescript-domain-structure.md#nest-vocabulary-that-shares-an-owner
+    summary: Use enums for closed field allow-lists.
+  - id: domain_structure:failure_codes
+    source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
+    summary: Use enum failure codes with typed context.
+  - id: domain_structure:no_result_utilities
+    source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
+    summary: Use Effect instead of competing failure utilities.
+  - id: domain_structure:codec_outcomes
+    source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
+    summary: Keep accumulated decoding issues local to codecs.
+  - id: domain_structure:validation
+    source: ../../typescript-domain-structure.md#validation
+    summary: Review domain types, failures, versions, ownership, and secrets.

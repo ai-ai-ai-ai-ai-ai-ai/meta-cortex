@@ -1,0 +1,18 @@
+kind: navigation
+title: Boundaries
+entries:
+  - title: Serialization boundaries
+    path: serialization_boundaries/index.yaml
+    summary: Typed encoding, decoding, and boundary conversion.
+  - title: Rust–TypeScript separation
+    path: code_separation/index.yaml
+    summary: Rust policy, browser presentation, and bridges.
+  - title: WASM contracts
+    path: wasm_contracts/index.yaml
+    summary: Generated representations and allocation ownership.
+  - title: WASM UI integration
+    path: wasm_ui_integration/index.yaml
+    summary: Reactive DTOs and preserved WASM instances.
+  - title: WASM and command name coherence
+    path: wasm_name_coherence/index.yaml
+    summary: Canonical symbols and external naming exceptions.

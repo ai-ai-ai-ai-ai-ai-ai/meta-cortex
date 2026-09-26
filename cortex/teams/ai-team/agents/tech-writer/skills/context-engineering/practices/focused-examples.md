@@ -49,9 +49,9 @@ does not establish that its behavior was tested.
 
 - Keep the rule and its examples in one owning practice.
 - Keep team documentation catalogs limited to links and brief summaries.
-- Skill knowledge graphs may summarize requirements, exceptions, and cross-rule
-  comparisons under the [knowledge-graph rules](knowledge-graphs.md). The source
-  practice remains authoritative; a summary must not introduce a new policy.
+- Skill knowledge graphs use brief decision and comparison cues under the
+  [knowledge-graph rules](knowledge-graphs.md). Full requirements, exceptions,
+  and examples stay in the authoritative source practice.
 - Require a pair when a catalog entry introduces a new rule; move that rule
   into its owning practice instead of expanding the catalog.
 
@@ -62,8 +62,7 @@ unless it was run. Bad: ‘passes.’ Good: ‘execution unverified.’”
 examples,” linked to the owning practice containing the rule and pair.
 
 The team catalog identifies what to load. The practice supplies the explanation.
-A skill graph can include a synchronized rule summary and a comparison example
-to expose interactions between existing rules.
+A skill graph can link related rules with short comparison cues.
 
 ## Prohibited actions
 

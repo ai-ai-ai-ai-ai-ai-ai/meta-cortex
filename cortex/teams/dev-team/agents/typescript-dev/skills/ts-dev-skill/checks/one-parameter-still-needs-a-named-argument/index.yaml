@@ -1,0 +1,15 @@
+kind: check
+title: One parameter still needs a named argument
+overview:
+  - Check parameter declarations and object call arguments.
+prohibited:
+  - Pass an anonymous object to an ordinary method.
+preferred:
+  - Pass an explicitly typed binding to a named contract.
+compare:
+  - id: single_parameter:semantic_request
+    source: ../../practices/typescript-single-parameter.md#collect-independent-inputs-in-one-request
+  - id: named_args:typed_bindings
+    source: ../../practices/typescript-named-args.md#name-and-type-object-arguments
+  - id: named_args:rune_exceptions
+    source: ../../practices/typescript-named-args.md#limit-rune-exceptions-to-the-compiler-forms

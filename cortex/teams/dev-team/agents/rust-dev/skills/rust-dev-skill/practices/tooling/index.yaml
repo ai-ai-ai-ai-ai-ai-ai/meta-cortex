@@ -1,0 +1,27 @@
+kind: navigation
+title: Tooling
+entries:
+  - title: Rust code checks
+    path: code_checks/index.yaml
+    summary: Formatting, compilation, linting, and evidence.
+  - title: Libraries
+    path: libraries/index.yaml
+    summary: Required crates and capability-specific choices.
+  - title: Module layout
+    path: module_layout/index.yaml
+    summary: Module filenames, layout, and moves.
+  - title: Paths and imports
+    path: path_imports/index.yaml
+    summary: Path qualification and import conventions.
+  - title: Typed SQL construction
+    path: typed_sql/index.yaml
+    summary: Typed queries, identifiers, and driver boundaries.
+  - title: Dependency selection
+    path: dependency_selection/index.yaml
+    summary: Dependency adoption thresholds and verification.
+  - title: Macro minimization
+    path: macro_minimization/index.yaml
+    summary: Authored macro limits and ecosystem exceptions.
+  - title: Rust testing
+    path: testing/index.yaml
+    summary: Test placement, boundaries, and coverage.

@@ -1,0 +1,20 @@
+kind: practice
+owner: rust:dependency_selection
+title: Dependency selection
+source_title: Dependency selection
+source: ../dependency-selection.md
+owns:
+  - Dependency adoption thresholds and verification.
+excludes:
+  - Prescribed crate choices.
+relationships: []
+related:
+  - title: Libraries
+    path: ../libraries.md
+rules:
+  - id: dependency_selection:thresholds
+    source: ../dependency-selection.md#adoption-thresholds
+    summary: Apply the ecosystem's required adoption thresholds.
+  - id: dependency_selection:verification
+    source: ../dependency-selection.md#adoption-thresholds
+    summary: Verify dependency adoption and documented exclusions.

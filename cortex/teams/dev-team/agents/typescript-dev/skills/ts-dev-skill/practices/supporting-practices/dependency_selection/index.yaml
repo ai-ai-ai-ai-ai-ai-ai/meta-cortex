@@ -1,0 +1,22 @@
+kind: practice
+owner: typescript:dependency_selection
+title: Dependency selection
+source_title: Dependency selection
+source: ../../dependency-selection.md
+owns:
+  - Dependency adoption thresholds and verification.
+excludes:
+  - Framework choices and unused dependencies.
+relationships: []
+related:
+  - title: Browser implementation
+    path: ../../browser-implementation.md
+  - title: Unused code
+    path: ../../web-unused-code.md
+rules:
+  - id: dependency_selection:thresholds
+    source: ../../dependency-selection.md#adoption-thresholds
+    summary: Apply the ecosystem's required adoption thresholds.
+  - id: dependency_selection:verification
+    source: ../../dependency-selection.md#adoption-thresholds
+    summary: Verify dependency adoption and documented exclusions.

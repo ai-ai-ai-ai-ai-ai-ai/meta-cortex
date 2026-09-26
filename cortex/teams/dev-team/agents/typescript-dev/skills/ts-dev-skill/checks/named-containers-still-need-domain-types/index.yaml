@@ -1,0 +1,15 @@
+kind: check
+title: Named containers still need domain types
+overview:
+  - Inspect types inside requests and state payloads.
+prohibited:
+  - Hide raw identifiers and boolean flags inside named requests.
+preferred:
+  - Use nominal identifiers and semantic state variants.
+compare:
+  - id: domain_structure:nominal_identity
+    source: ../../practices/typescript-domain-structure.md#preserve-value-identity
+  - id: explicit_state:named_unions
+    source: ../../practices/typescript-explicit-state.md#name-the-state-and-its-payload
+  - id: enums_over_booleans:semantic_enums
+    source: ../../practices/typescript-enums-over-booleans.md#name-the-decision-at-the-call-site

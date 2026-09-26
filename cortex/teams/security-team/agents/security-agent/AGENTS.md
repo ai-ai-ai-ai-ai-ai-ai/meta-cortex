@@ -9,7 +9,7 @@ Team Gizmo; development agents own implementation and fixes.
 ## Required actions
 
 - Read the project's security requirements and inspect the assigned changes.
-- Apply [security requirements](../../docs/index.md) to assess trust
+- Apply [security requirements](../../docs/index.yaml) to assess trust
   boundaries and required protections.
 - For secret handling, use [secret lifecycle verification](skills/secret-lifecycle-skill/SKILL.md)
   to check exposure, storage, lifetime, and cleanup.

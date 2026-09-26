@@ -1,0 +1,99 @@
+kind: practice
+owner: rust:domain_types
+title: Domain types
+source_title: Domain types
+source: ../domain-types.md
+owns:
+  - Nominal values, validation, and conversion.
+excludes:
+  - Runtime states and construction syntax.
+relationships: []
+related:
+  - title: Domain states
+    path: ../domain-states.md
+  - title: Struct construction
+    path: ../struct-construction.md
+  - title: Serialization boundaries
+    path: ../../boundaries/serialization-boundaries.md
+rules:
+  - id: domain_types:reuse
+    source: ../domain-types.md#required-actions
+    summary: Reuse equivalent core types before introducing new ones.
+  - id: domain_types:concrete_modules
+    source: ../domain-types.md#required-actions
+    summary: Keep types, validation, and tests in owning modules.
+  - id: domain_types:nominal_values
+    source: ../domain-types.md#required-actions
+    summary: Give domain scalars distinct nominal types.
+  - id: domain_types:primitive_storage
+    source: ../domain-types.md#required-actions
+    summary: Confine primitive representation to value owners and external edges.
+  - id: domain_types:metadata_meaning
+    source: ../domain-types.md#classify-metadata-by-meaning
+    summary: Model metadata according to its domain meaning.
+  - id: domain_types:structured_strings
+    source: ../domain-types.md#normalize-structured-strings-into-domain-components
+    summary: Represent structured strings as typed components.
+  - id: domain_types:validated_records
+    source: ../domain-types.md#construction-and-representation
+    summary: Preserve required-value validation in persisted records.
+  - id: domain_types:parsing
+    source: ../domain-types.md#parse-according-to-domain-structure
+    summary: Parse domain values through reusable validating conversions.
+  - id: domain_types:closed_vocabulary
+    source: ../domain-types.md#model-a-known-vocabulary-as-a-closed-enum
+    summary: Use complete enums for known identities.
+  - id: domain_types:ownership_hierarchy
+    source: ../domain-types.md#preserve-ownership-hierarchies-in-enum-payloads
+    summary: Preserve catalog ownership through nested enums.
+  - id: domain_types:external_conversions
+    source: ../domain-types.md#external-raw-values
+    summary: Convert external primitives immediately into owned types.
+  - id: domain_types:external_records
+    source: ../domain-types.md#external-raw-values
+    summary: Convert raw records through destination-owned field types.
+  - id: domain_types:conversion_traits
+    source: ../domain-types.md#standard-conversions
+    summary: Use From or fallible TryFrom according to validation.
+  - id: domain_types:operation_boundaries
+    source: ../domain-types.md#standard-conversions
+    summary: Keep policy and effects outside conversion traits.
+  - id: domain_types:private_construction
+    source: ../domain-types.md#standard-conversions
+    summary: Preserve private construction and legal capability transitions.
+  - id: domain_types:wasm_values
+    source: ../domain-types.md#wasm--js-boundary
+    summary: Preserve nominal values across Rust/WASM boundaries.
+  - id: domain_types:constants
+    source: ../domain-types.md#single-field-primitive-wrapper
+    summary: Name common domain values with associated constants.
+  - id: domain_types:wire_shape
+    source: ../domain-types.md#single-field-primitive-wrapper
+    summary: Match serialization to the required wire shape.
+  - id: domain_types:wrapper_access
+    source: ../domain-types.md#access-wrappers-through-patterns-or-domain-methods
+    summary: Access wrappers through meaningful patterns or domain methods.
+  - id: domain_types:aggregates
+    source: ../domain-types.md#aggregate-construction
+    summary: Construct aggregates with named fields.
+  - id: domain_types:versions
+    source: ../domain-types.md#model-supported-schema-revisions-explicitly
+    summary: Model supported schema versions explicitly and dispatch exhaustively.
+  - id: domain_types:release_versions
+    source: ../domain-types.md#enumerate-supported-application-releases
+    summary: Represent supported releases with closed enums.
+  - id: domain_types:update_revisions
+    source: ../domain-types.md#distinguish-schema-revisions-from-update-counters
+    summary: Model optimistic-lock revisions as open validated counters.
+  - id: domain_types:named_records
+    source: ../domain-types.md#replace-positional-tuples-with-named-records
+    summary: Replace positional tuples with named records.
+  - id: domain_types:api_inventory
+    source: ../domain-types.md#domain-api-enforcement
+    summary: Review primitive APIs recursively, including inherited contracts.
+  - id: domain_types:lint_exceptions
+    source: ../domain-types.md#domain-api-enforcement
+    summary: Keep external-boundary lint exceptions narrow and documented.
+  - id: domain_types:semantic_review
+    source: ../domain-types.md#validation
+    summary: Review domain meaning beyond mechanical lint coverage.

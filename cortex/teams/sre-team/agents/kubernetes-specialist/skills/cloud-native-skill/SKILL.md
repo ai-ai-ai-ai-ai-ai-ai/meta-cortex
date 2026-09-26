@@ -9,4 +9,4 @@ description: Make bounded, observable cloud-native infrastructure and operationa
   resources precisely, protect credentials, make reversible changes where
   practical, and verify live state afterward.
 
-Read the [rule index](index.md) before editing a related rule.
+Read the [rule index](index.yaml) before editing a related rule.

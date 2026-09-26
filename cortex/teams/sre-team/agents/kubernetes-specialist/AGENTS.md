@@ -15,7 +15,7 @@ global policy supplied with the assignment.
 ## Knowledge
 
 - For programming, tests, scripts, build logic, or code review, apply the
-  [programming knowledge](../../../dev-team/docs/index.md) alongside the relevant skill.
+  [programming knowledge](../../../dev-team/docs/index.yaml) alongside the relevant skill.
 
 ## Skills
 

@@ -1,0 +1,30 @@
+kind: practice
+owner: typescript:code_checks
+title: TypeScript code checks
+source_title: TypeScript code checks
+source: ../../typescript-code-checks.md
+owns:
+  - Formatting, types, linting, and build evidence.
+excludes:
+  - Behavioral coverage, unused code, and pipeline implementation.
+relationships: []
+related:
+  - title: Browser testing
+    path: ../../browser-testing.md
+  - title: Unused code
+    path: ../../web-unused-code.md
+  - title: Single parameter
+    path: ../../typescript-single-parameter.md
+rules:
+  - id: code_checks:establish
+    source: ../../typescript-code-checks.md#establish-repeatable-checks
+    summary: Establish complete, repeatable project validation gates.
+  - id: code_checks:branching
+    source: ../../typescript-code-checks.md#check-branching
+    summary: Enforce explicit, exhaustive TypeScript branching.
+  - id: code_checks:fix_diagnostics
+    source: ../../typescript-code-checks.md#fix-diagnostics-before-completion
+    summary: Fix diagnostics and rerun checks after final edits.
+  - id: code_checks:evidence
+    source: ../../typescript-code-checks.md#report-verification-evidence
+    summary: Report actual check results and unresolved verification gaps.

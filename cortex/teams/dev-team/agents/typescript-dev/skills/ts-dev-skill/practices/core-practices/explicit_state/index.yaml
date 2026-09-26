@@ -1,0 +1,80 @@
+kind: practice
+owner: typescript:explicit_state
+title: Explicit state
+source_title: Explicit state
+source: ../../typescript-explicit-state.md
+owns:
+  - Named states and explicit absence.
+excludes:
+  - Boolean policy and rune initialization.
+relationships: []
+related:
+  - title: Domain structure
+    path: ../../typescript-domain-structure.md
+  - title: Enums instead of booleans
+    path: ../../typescript-enums-over-booleans.md
+  - title: Svelte state modeling
+    path: ../../svelte-state-modeling.md
+  - title: Upstream Effect guidance
+    path: ../../../SKILL.md#effect-use-installed-documentation
+rules:
+  - id: explicit_state:named_unions
+    source: ../../typescript-explicit-state.md#name-the-state-and-its-payload
+    summary: Model alternatives as named discriminated unions.
+  - id: explicit_state:vocabulary_ownership
+    source: ../../typescript-explicit-state.md#use-enum-members-throughout-the-contract
+    summary: Keep state vocabulary with its domain owner.
+  - id: explicit_state:enum_members
+    source: ../../typescript-explicit-state.md#use-enum-members-throughout-the-contract
+    summary: Use enum members for closed discriminants.
+  - id: explicit_state:coherent_vocabulary
+    source: ../../typescript-explicit-state.md#use-enum-members-throughout-the-contract
+    summary: Keep vocabularies cohesive and preserve required wire values.
+  - id: branching:typescript_switch
+    source: ../../typescript-explicit-state.md#match-domain-values-directly
+    summary: Use native switch for TypeScript domain decisions.
+  - id: branching:typescript_exhaustiveness
+    source: ../../typescript-explicit-state.md#match-decisions-exhaustively
+    summary: Name every variant and enforce exhaustive switching.
+  - id: explicit_state:component_enums
+    source: ../../typescript-explicit-state.md#keep-component-enums-in-an-importable-module
+    summary: Define component enums in adjacent TypeScript modules.
+  - id: explicit_state:state_payloads
+    source: ../../typescript-explicit-state.md#name-the-state-and-its-payload
+    summary: Keep transitioning values with their owning state.
+  - id: explicit_state:typed_failures
+    source: ../../typescript-explicit-state.md#keep-failure-state-typed
+    summary: Store typed failures and localize presentation text.
+  - id: explicit_state:no_implicit_absence
+    source: ../../typescript-explicit-state.md#normalize-absence-at-entry
+    summary: Model absence explicitly in authored state.
+  - id: explicit_state:external_absence
+    source: ../../typescript-explicit-state.md#normalize-absence-at-entry
+    summary: Normalize external absence immediately into semantic states.
+  - id: explicit_state:no_sentinel_wrappers
+    source: ../../typescript-explicit-state.md#normalize-absence-at-entry
+    summary: Avoid sentinels, fake defaults, and generic absence wrappers.
+  - id: explicit_state:unit_void
+    source: ../../typescript-explicit-state.md#distinguish-effects-from-absent-values
+    summary: Reserve void for complete effect returns.
+  - id: explicit_state:no_nullish
+    source: ../../typescript-explicit-state.md#keep-defaults-inside-the-selected-branch
+    summary: Use explicit state branches instead of nullish fallbacks.
+  - id: explicit_state:defaults
+    source: ../../typescript-explicit-state.md#keep-defaults-inside-the-selected-branch
+    summary: Use defaults only for contract-defined omission values.
+  - id: explicit_state:exhaustive_transitions
+    source: ../../typescript-explicit-state.md#keep-failure-state-typed
+    summary: Match state transitions exhaustively.
+  - id: explicit_state:effect_errors
+    source: ../../typescript-explicit-state.md#keep-failure-state-typed
+    summary: Use typed Effect failures for effectful workflows.
+  - id: explicit_state:semantic_assertions
+    source: ../../typescript-explicit-state.md#assert-states-not-absence-sentinels
+    summary: Assert semantic states instead of absence sentinels.
+  - id: explicit_state:generated_exclusions
+    source: ../../typescript-explicit-state.md#validation
+    summary: Exclude generated declarations; normalize their boundary results.
+  - id: explicit_state:validation
+    source: ../../typescript-explicit-state.md#validation
+    summary: Check state transitions, enforcement fixtures, and boundary types.

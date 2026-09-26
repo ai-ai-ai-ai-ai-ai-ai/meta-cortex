@@ -1,0 +1,15 @@
+kind: check
+title: Approved derives do not justify local macros
+overview:
+  - Distinguish approved derives from authored macros.
+prohibited:
+  - Justify local mapping macros with derive_more.
+preferred:
+  - Use approved derives and explicit domain mappings.
+compare:
+  - id: libraries:required_core
+    source: ../../practices/tooling/libraries.md#required-core
+  - id: macro_minimization:explicit_mappings
+    source: ../../practices/tooling/rust-macro-minimization.md#keep-domain-mappings-in-their-destination-impl
+  - id: macro_minimization:ecosystem_macros
+    source: ../../practices/tooling/rust-macro-minimization.md#keep-approved-ecosystem-macros

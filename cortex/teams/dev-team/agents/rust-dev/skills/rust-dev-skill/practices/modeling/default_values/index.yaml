@@ -1,0 +1,25 @@
+kind: practice
+owner: rust:default_values
+title: Default values
+source_title: Default values
+source: ../default-values.md
+owns:
+  - Valid defaults for structs and enums.
+excludes:
+  - Construction syntax and absence modeling.
+relationships: []
+related:
+  - title: Struct construction
+    path: ../struct-construction.md
+  - title: Domain states
+    path: ../domain-states.md
+rules:
+  - id: default_values:valid_defaults
+    source: ../default-values.md#choose-a-valid-default
+    summary: Define defaults only for valid starting values.
+  - id: default_values:struct_defaults
+    source: ../default-values.md#structs-derive-field-defaults
+    summary: Derive defaults when field semantics agree.
+  - id: default_values:enum_defaults
+    source: ../default-values.md#enums-mark-the-default-variant
+    summary: Choose an explicit default enum variant.
