@@ -3,8 +3,7 @@ import { Effect } from "effect";
 import { globby, type Options } from "globby";
 import { fileURLToPath } from "node:url";
 import { CatalogReader } from "../ts/catalog-document.ts";
-import { RuleName } from "../ts/rule-name.ts";
-import { PracticeOwner } from "../ts/practice-owner.ts";
+import { CatalogSchema } from "../ts/catalog.ts";
 
 class ShippedCatalogs {
   private readonly options: Options = {
@@ -31,8 +30,12 @@ class ShippedCatalogs {
     );
     const sources = catalogs.flatMap((catalog) => catalog.sources());
     const owners = new Set(sources.map((source) => source.owner));
-    expect([...rules].sort()).toEqual(Object.values(RuleName).sort());
-    expect([...owners].sort()).toEqual(Object.values(PracticeOwner).sort());
+    expect([...rules].sort()).toEqual(
+      [...CatalogSchema.ruleName.literals].sort(),
+    );
+    expect([...owners].sort()).toEqual(
+      [...CatalogSchema.practiceOwner.literals].sort(),
+    );
     for (const owner of owners) {
       const paths = new Set(
         sources

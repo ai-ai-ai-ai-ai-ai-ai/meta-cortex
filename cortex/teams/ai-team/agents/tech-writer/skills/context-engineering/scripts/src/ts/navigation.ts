@@ -6,8 +6,8 @@ import { CatalogLinkAudit } from "./catalog-links.ts";
 import { CatalogKind, type CatalogComparison } from "./catalog.ts";
 import { CatalogDocument, CatalogReader } from "./catalog-document.ts";
 
-import { RuleName } from "./rule-name.ts";
-import { PracticeOwner } from "./practice-owner.ts";
+import type { RuleName } from "./rule-name.ts";
+import type { PracticeOwner } from "./practice-owner.ts";
 
 type CatalogPaths = readonly string[];
 interface RuleLocation {

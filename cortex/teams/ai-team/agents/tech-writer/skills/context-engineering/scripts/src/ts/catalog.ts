@@ -2,8 +2,56 @@ import { Effect, Schema } from "effect";
 import type { ParseOptions } from "effect/SchemaAST";
 import { parse, type ParseOptions as YamlParseOptions } from "yaml";
 
-import { RuleName } from "./rule-name.ts";
-import { PracticeOwner } from "./practice-owner.ts";
+import {
+  ApiInputsRule,
+  BranchingRule,
+  BrowserImplementationRule,
+  BrowserTestingRule,
+  CloudNativeRule,
+  CodeChecksRule,
+  CodeSeparationRule,
+  DefaultValuesRule,
+  DependencySelectionRule,
+  DockerRule,
+  DomainStatesRule,
+  DomainStructureRule,
+  DomainTypesRule,
+  EffectRule,
+  EnumsOverBooleansRule,
+  ErrorHandlingRule,
+  ExplicitStateRule,
+  FunctionOwnershipRule,
+  KubernetesRule,
+  LibrariesRule,
+  LocalFeatureRule,
+  MacroMinimizationRule,
+  ModuleLayoutRule,
+  NamedArgsRule,
+  NoUnknownRule,
+  OwnedUpdatesRule,
+  PathImportsRule,
+  SerialOperationQueuesRule,
+  SerializationBoundariesRule,
+  SingleParameterRule,
+  StructConstructionRule,
+  SvelteStateModelingRule,
+  TestingRule,
+  TypedSqlRule,
+  WasmContractsRule,
+  WasmNameCoherenceRule,
+  WasmUiIntegrationRule,
+  WebUnusedCodeRule,
+  WorkflowTypestateRule,
+  type RuleName,
+} from "./rule-name.ts";
+import {
+  DeliveryPracticeOwner,
+  ProgrammingPracticeOwner,
+  RustPracticeOwner,
+  SrePracticeOwner,
+  TypescriptPracticeOwner,
+  type PracticeOwner,
+} from "./practice-owner.ts";
 
 export enum CatalogKind {
   Navigation = "navigation",
@@ -18,12 +66,54 @@ export class CatalogSchema {
   private static readonly ownerAnnotations = {
     identifier: "registered PracticeOwner",
   } satisfies Schema.Annotations.Bottom<PracticeOwner, readonly []>;
-  static readonly ruleName = Schema.Enum(RuleName).annotate(
-    CatalogSchema.ruleAnnotations,
-  );
-  static readonly practiceOwner = Schema.Enum(PracticeOwner).annotate(
-    CatalogSchema.ownerAnnotations,
-  );
+  static readonly ruleName = Schema.Literals([
+    ...Object.values(ApiInputsRule),
+    ...Object.values(BranchingRule),
+    ...Object.values(BrowserImplementationRule),
+    ...Object.values(BrowserTestingRule),
+    ...Object.values(CloudNativeRule),
+    ...Object.values(CodeChecksRule),
+    ...Object.values(CodeSeparationRule),
+    ...Object.values(DefaultValuesRule),
+    ...Object.values(DependencySelectionRule),
+    ...Object.values(DockerRule),
+    ...Object.values(DomainStatesRule),
+    ...Object.values(DomainStructureRule),
+    ...Object.values(DomainTypesRule),
+    ...Object.values(EffectRule),
+    ...Object.values(EnumsOverBooleansRule),
+    ...Object.values(ErrorHandlingRule),
+    ...Object.values(ExplicitStateRule),
+    ...Object.values(FunctionOwnershipRule),
+    ...Object.values(KubernetesRule),
+    ...Object.values(LibrariesRule),
+    ...Object.values(LocalFeatureRule),
+    ...Object.values(MacroMinimizationRule),
+    ...Object.values(ModuleLayoutRule),
+    ...Object.values(NamedArgsRule),
+    ...Object.values(NoUnknownRule),
+    ...Object.values(OwnedUpdatesRule),
+    ...Object.values(PathImportsRule),
+    ...Object.values(SerialOperationQueuesRule),
+    ...Object.values(SerializationBoundariesRule),
+    ...Object.values(SingleParameterRule),
+    ...Object.values(StructConstructionRule),
+    ...Object.values(SvelteStateModelingRule),
+    ...Object.values(TestingRule),
+    ...Object.values(TypedSqlRule),
+    ...Object.values(WasmContractsRule),
+    ...Object.values(WasmNameCoherenceRule),
+    ...Object.values(WasmUiIntegrationRule),
+    ...Object.values(WebUnusedCodeRule),
+    ...Object.values(WorkflowTypestateRule),
+  ]).annotate(CatalogSchema.ruleAnnotations);
+  static readonly practiceOwner = Schema.Literals([
+    ...Object.values(DeliveryPracticeOwner),
+    ...Object.values(ProgrammingPracticeOwner),
+    ...Object.values(RustPracticeOwner),
+    ...Object.values(SrePracticeOwner),
+    ...Object.values(TypescriptPracticeOwner),
+  ]).annotate(CatalogSchema.ownerAnnotations);
   static readonly referenceFields = {
     title: Schema.NonEmptyString,
     path: Schema.NonEmptyString,

@@ -1,320 +1,476 @@
-// Closed rule vocabulary. Keep it synchronized with the shipped YAML catalogs.
-export enum RuleName {
-  ApiInputsCommandDecoding = "api_inputs:command_decoding",
-  ApiInputsExternalSignatures = "api_inputs:external_signatures",
-  ApiInputsNoPositionalBags = "api_inputs:no_positional_bags",
-  ApiInputsOneInput = "api_inputs:one_input",
-  ApiInputsSemanticRequests = "api_inputs:semantic_requests",
-  ApiInputsValidation = "api_inputs:validation",
-  BranchingClosedMatches = "branching:closed_matches",
-  BranchingNoBooleanIf = "branching:no_boolean_if",
-  BranchingNoTernary = "branching:no_ternary",
-  BranchingRustMatch = "branching:rust_match",
-  BranchingRustPatterns = "branching:rust_patterns",
-  BranchingTypescriptExhaustiveness = "branching:typescript_exhaustiveness",
-  BranchingTypescriptSwitch = "branching:typescript_switch",
-  BranchingValidation = "branching:validation",
-  BrowserImplementationCapabilities = "browser_implementation:capabilities",
-  BrowserImplementationCleanup = "browser_implementation:cleanup",
-  BrowserImplementationComponentContracts = "browser_implementation:component_contracts",
-  BrowserImplementationControllers = "browser_implementation:controllers",
-  BrowserImplementationDisclosureAndPasskeys = "browser_implementation:disclosure_and_passkeys",
-  BrowserImplementationExplicitState = "browser_implementation:explicit_state",
-  BrowserImplementationImpeccable = "browser_implementation:impeccable",
-  BrowserImplementationNoParallelStack = "browser_implementation:no_parallel_stack",
-  BrowserImplementationRustOwnership = "browser_implementation:rust_ownership",
-  BrowserImplementationSecretSurfaces = "browser_implementation:secret_surfaces",
-  BrowserImplementationStack = "browser_implementation:stack",
-  BrowserImplementationTranslations = "browser_implementation:translations",
-  BrowserImplementationUiLibraries = "browser_implementation:ui_libraries",
-  BrowserImplementationValidation = "browser_implementation:validation",
-  BrowserTestingBrowserBoundary = "browser_testing:browser_boundary",
-  BrowserTestingDiagnoseFirst = "browser_testing:diagnose_first",
-  BrowserTestingEvidence = "browser_testing:evidence",
-  BrowserTestingNoWeakenedTests = "browser_testing:no_weakened_tests",
-  BrowserTestingRegressionFirst = "browser_testing:regression_first",
-  BrowserTestingRetainAcceptance = "browser_testing:retain_acceptance",
-  BrowserTestingSuiteGates = "browser_testing:suite_gates",
-  CloudNativeCurrentState = "cloud_native:current_state",
-  CloudNativeLiveVerification = "cloud_native:live_verification",
-  CloudNativeRecovery = "cloud_native:recovery",
-  CloudNativeScope = "cloud_native:scope",
-  CloudNativeSecretLifecycle = "cloud_native:secret_lifecycle",
-  CodeChecksBranching = "code_checks:branching",
-  CodeChecksEstablish = "code_checks:establish",
-  CodeChecksEvidence = "code_checks:evidence",
-  CodeChecksFixDiagnostics = "code_checks:fix_diagnostics",
-  CodeChecksLintBaseline = "code_checks:lint_baseline",
-  CodeSeparationAbandonedState = "code_separation:abandoned_state",
-  CodeSeparationBrowserAdapters = "code_separation:browser_adapters",
-  CodeSeparationCoreAnnotations = "code_separation:core_annotations",
-  CodeSeparationCoreContracts = "code_separation:core_contracts",
-  CodeSeparationExtensions = "code_separation:extensions",
-  CodeSeparationObservationPolicy = "code_separation:observation_policy",
-  CodeSeparationOwnership = "code_separation:ownership",
-  CodeSeparationValidation = "code_separation:validation",
-  CodeSeparationVisualState = "code_separation:visual_state",
-  DefaultValuesEnumDefaults = "default_values:enum_defaults",
-  DefaultValuesStructDefaults = "default_values:struct_defaults",
-  DefaultValuesValidDefaults = "default_values:valid_defaults",
-  DependencySelectionThresholds = "dependency_selection:thresholds",
-  DependencySelectionVerification = "dependency_selection:verification",
-  DockerBuildkitAuthority = "docker:buildkit_authority",
-  DockerInputIsolation = "docker:input_isolation",
-  DockerLateRevisionIdentity = "docker:late_revision_identity",
-  DockerRealCacheEvidence = "docker:real_cache_evidence",
-  DockerSecretBoundary = "docker:secret_boundary",
-  DockerValidation = "docker:validation",
-  DomainStatesBooleanConversion = "domain_states:boolean_conversion",
-  DomainStatesCapabilities = "domain_states:capabilities",
-  DomainStatesDecisionLocality = "domain_states:decision_locality",
-  DomainStatesDependencyOptions = "domain_states:dependency_options",
-  DomainStatesDrafts = "domain_states:drafts",
-  DomainStatesEmptyText = "domain_states:empty_text",
-  DomainStatesExhaustiveMatching = "domain_states:exhaustive_matching",
-  DomainStatesExternalRecords = "domain_states:external_records",
-  DomainStatesIndependentDimensions = "domain_states:independent_dimensions",
-  DomainStatesMechanicalPredicates = "domain_states:mechanical_predicates",
-  DomainStatesMembership = "domain_states:membership",
-  DomainStatesNamedAbsence = "domain_states:named_absence",
-  DomainStatesNoBooleans = "domain_states:no_booleans",
-  DomainStatesNoDerivedFlags = "domain_states:no_derived_flags",
-  DomainStatesNoOption = "domain_states:no_option",
-  DomainStatesOptionReview = "domain_states:option_review",
-  DomainStatesRawRecords = "domain_states:raw_records",
-  DomainStatesRequiredValues = "domain_states:required_values",
-  DomainStatesValidation = "domain_states:validation",
-  DomainStatesVariantPayloads = "domain_states:variant_payloads",
-  DomainStructureBehaviorOwnership = "domain_structure:behavior_ownership",
-  DomainStructureCodecOutcomes = "domain_structure:codec_outcomes",
-  DomainStructureExternalConversion = "domain_structure:external_conversion",
-  DomainStructureFailureCodes = "domain_structure:failure_codes",
-  DomainStructureFieldVocabulary = "domain_structure:field_vocabulary",
-  DomainStructureLegalTransitions = "domain_structure:legal_transitions",
-  DomainStructureNamedValues = "domain_structure:named_values",
-  DomainStructureNestedVocabulary = "domain_structure:nested_vocabulary",
-  DomainStructureNoResultUtilities = "domain_structure:no_result_utilities",
-  DomainStructureNominalIdentity = "domain_structure:nominal_identity",
-  DomainStructurePreserveTypes = "domain_structure:preserve_types",
-  DomainStructureSecrets = "domain_structure:secrets",
-  DomainStructureTrustedConstruction = "domain_structure:trusted_construction",
-  DomainStructureTypeAliases = "domain_structure:type_aliases",
-  DomainStructureTypedFailures = "domain_structure:typed_failures",
-  DomainStructureTypedYaml = "domain_structure:typed_yaml",
-  DomainStructureValidation = "domain_structure:validation",
-  DomainStructureVersionedSchemas = "domain_structure:versioned_schemas",
-  DomainStructureVocabularyOwnership = "domain_structure:vocabulary_ownership",
-  DomainTypesAggregates = "domain_types:aggregates",
-  DomainTypesApiInventory = "domain_types:api_inventory",
-  DomainTypesClosedVocabulary = "domain_types:closed_vocabulary",
-  DomainTypesConcreteModules = "domain_types:concrete_modules",
-  DomainTypesConstants = "domain_types:constants",
-  DomainTypesConversionTraits = "domain_types:conversion_traits",
-  DomainTypesExternalConversions = "domain_types:external_conversions",
-  DomainTypesExternalRecords = "domain_types:external_records",
-  DomainTypesLintExceptions = "domain_types:lint_exceptions",
-  DomainTypesMetadataMeaning = "domain_types:metadata_meaning",
-  DomainTypesNamedRecords = "domain_types:named_records",
-  DomainTypesNominalValues = "domain_types:nominal_values",
-  DomainTypesOperationBoundaries = "domain_types:operation_boundaries",
-  DomainTypesOwnershipHierarchy = "domain_types:ownership_hierarchy",
-  DomainTypesParsing = "domain_types:parsing",
-  DomainTypesPrimitiveStorage = "domain_types:primitive_storage",
-  DomainTypesPrivateConstruction = "domain_types:private_construction",
-  DomainTypesReleaseVersions = "domain_types:release_versions",
-  DomainTypesReuse = "domain_types:reuse",
-  DomainTypesSemanticReview = "domain_types:semantic_review",
-  DomainTypesStructuredStrings = "domain_types:structured_strings",
-  DomainTypesUpdateRevisions = "domain_types:update_revisions",
-  DomainTypesValidatedRecords = "domain_types:validated_records",
-  DomainTypesVersions = "domain_types:versions",
-  DomainTypesWasmValues = "domain_types:wasm_values",
-  DomainTypesWireShape = "domain_types:wire_shape",
-  DomainTypesWrapperAccess = "domain_types:wrapper_access",
-  EffectEffectfulWork = "effect:effectful_work",
-  EffectUpstream = "effect:upstream",
-  EffectVersion = "effect:version",
-  EnumsOverBooleansBoundaryExceptions = "enums_over_booleans:boundary_exceptions",
-  EnumsOverBooleansDistinctDecisions = "enums_over_booleans:distinct_decisions",
-  EnumsOverBooleansExceptionEvidence = "enums_over_booleans:exception_evidence",
-  EnumsOverBooleansNoDecorativeEnums = "enums_over_booleans:no_decorative_enums",
-  EnumsOverBooleansObservations = "enums_over_booleans:observations",
-  EnumsOverBooleansPayloads = "enums_over_booleans:payloads",
-  EnumsOverBooleansPredicateOutcomes = "enums_over_booleans:predicate_outcomes",
-  EnumsOverBooleansPreserveMembers = "enums_over_booleans:preserve_members",
-  EnumsOverBooleansSemanticEnums = "enums_over_booleans:semantic_enums",
-  EnumsOverBooleansValidation = "enums_over_booleans:validation",
-  ErrorHandlingCodecErrors = "error_handling:codec_errors",
-  ErrorHandlingEnforcement = "error_handling:enforcement",
-  ErrorHandlingErrorTests = "error_handling:error_tests",
-  ErrorHandlingNoPanics = "error_handling:no_panics",
-  ErrorHandlingRequiredInput = "error_handling:required_input",
-  ErrorHandlingSourceConversion = "error_handling:source_conversion",
-  ErrorHandlingTestErrors = "error_handling:test_errors",
-  ErrorHandlingTypedFailures = "error_handling:typed_failures",
-  ExplicitStateCoherentVocabulary = "explicit_state:coherent_vocabulary",
-  ExplicitStateComponentEnums = "explicit_state:component_enums",
-  ExplicitStateDefaults = "explicit_state:defaults",
-  ExplicitStateEffectErrors = "explicit_state:effect_errors",
-  ExplicitStateEnumMembers = "explicit_state:enum_members",
-  ExplicitStateExhaustiveTransitions = "explicit_state:exhaustive_transitions",
-  ExplicitStateExternalAbsence = "explicit_state:external_absence",
-  ExplicitStateGeneratedExclusions = "explicit_state:generated_exclusions",
-  ExplicitStateNamedUnions = "explicit_state:named_unions",
-  ExplicitStateNoImplicitAbsence = "explicit_state:no_implicit_absence",
-  ExplicitStateNoNullish = "explicit_state:no_nullish",
-  ExplicitStateNoSentinelWrappers = "explicit_state:no_sentinel_wrappers",
-  ExplicitStateSemanticAssertions = "explicit_state:semantic_assertions",
-  ExplicitStateStatePayloads = "explicit_state:state_payloads",
-  ExplicitStateTypedFailures = "explicit_state:typed_failures",
-  ExplicitStateUnitVoid = "explicit_state:unit_void",
-  ExplicitStateValidation = "explicit_state:validation",
-  ExplicitStateVocabularyOwnership = "explicit_state:vocabulary_ownership",
-  FunctionOwnershipBoundaryFunctions = "function_ownership:boundary_functions",
-  FunctionOwnershipComponentScope = "function_ownership:component_scope",
-  FunctionOwnershipConstants = "function_ownership:constants",
-  FunctionOwnershipConstantsAndState = "function_ownership:constants_and_state",
-  FunctionOwnershipDependencyDirection = "function_ownership:dependency_direction",
-  FunctionOwnershipExternalRequirements = "function_ownership:external_requirements",
-  FunctionOwnershipInstances = "function_ownership:instances",
-  FunctionOwnershipLintEvidence = "function_ownership:lint_evidence",
-  FunctionOwnershipLintExceptions = "function_ownership:lint_exceptions",
-  FunctionOwnershipMeaningfulOwners = "function_ownership:meaningful_owners",
-  FunctionOwnershipMeaningfulState = "function_ownership:meaningful_state",
-  FunctionOwnershipMethodKinds = "function_ownership:method_kinds",
-  FunctionOwnershipMigration = "function_ownership:migration",
-  FunctionOwnershipNesting = "function_ownership:nesting",
-  FunctionOwnershipNoUtilityContainers = "function_ownership:no_utility_containers",
-  FunctionOwnershipOperations = "function_ownership:operations",
-  FunctionOwnershipSharedBehavior = "function_ownership:shared_behavior",
-  KubernetesBuildExecutionSeparation = "kubernetes:build_execution_separation",
-  KubernetesDirectExecution = "kubernetes:direct_execution",
-  KubernetesNoNestedRuntime = "kubernetes:no_nested_runtime",
-  KubernetesNoRuntimeSocket = "kubernetes:no_runtime_socket",
-  KubernetesValidation = "kubernetes:validation",
-  LibrariesBrowserStorage = "libraries:browser_storage",
-  LibrariesConcurrency = "libraries:concurrency",
-  LibrariesDiagnostics = "libraries:diagnostics",
-  LibrariesDirectBrowserBindings = "libraries:direct_browser_bindings",
-  LibrariesNetworking = "libraries:networking",
-  LibrariesNoCustomCommodity = "libraries:no_custom_commodity",
-  LibrariesRequiredCore = "libraries:required_core",
-  LibrariesTypedBoundaries = "libraries:typed_boundaries",
-  LibrariesWasmContracts = "libraries:wasm_contracts",
-  LocalFeatureCleanup = "local_feature:cleanup",
-  LocalFeatureCompletion = "local_feature:completion",
-  LocalFeatureIntegration = "local_feature:integration",
-  LocalFeatureRepair = "local_feature:repair",
-  LocalFeatureWorkspace = "local_feature:workspace",
-  MacroMinimizationEcosystemMacros = "macro_minimization:ecosystem_macros",
-  MacroMinimizationExplicitMappings = "macro_minimization:explicit_mappings",
-  MacroMinimizationNoLocalMacros = "macro_minimization:no_local_macros",
-  MacroMinimizationSafeReplacement = "macro_minimization:safe_replacement",
-  ModuleLayoutNamedFiles = "module_layout:named_files",
-  ModuleLayoutPreserveResolution = "module_layout:preserve_resolution",
-  ModuleLayoutValidation = "module_layout:validation",
-  NamedArgsLiteralLocations = "named_args:literal_locations",
-  NamedArgsNamedContracts = "named_args:named_contracts",
-  NamedArgsNoBypasses = "named_args:no_bypasses",
-  NamedArgsNoObjectDefaults = "named_args:no_object_defaults",
-  NamedArgsRuneExceptions = "named_args:rune_exceptions",
-  NamedArgsTypedBindings = "named_args:typed_bindings",
-  NamedArgsValidation = "named_args:validation",
-  NoUnknownCatchBindings = "no_unknown:catch_bindings",
-  NoUnknownConcreteInputs = "no_unknown:concrete_inputs",
-  NoUnknownDecoderScope = "no_unknown:decoder_scope",
-  NoUnknownEnforcement = "no_unknown:enforcement",
-  NoUnknownNoErasedSubstitutes = "no_unknown:no_erased_substitutes",
-  NoUnknownNoObject = "no_unknown:no_object",
-  NoUnknownTypedErrors = "no_unknown:typed_errors",
-  NoUnknownUnknownBoundary = "no_unknown:unknown_boundary",
-  OwnedUpdatesConsumeReplacement = "owned_updates:consume_replacement",
-  OwnedUpdatesExternalMutation = "owned_updates:external_mutation",
-  OwnedUpdatesNoFakeActors = "owned_updates:no_fake_actors",
-  OwnedUpdatesValidation = "owned_updates:validation",
-  PathImportsAllRoots = "path_imports:all_roots",
-  PathImportsQualifiedFunctions = "path_imports:qualified_functions",
-  PathImportsTwoSegments = "path_imports:two_segments",
-  PathImportsValidation = "path_imports:validation",
-  SerialOperationQueuesAdmissionAndShutdown = "serial_operation_queues:admission_and_shutdown",
-  SerialOperationQueuesEffectQueue = "serial_operation_queues:effect_queue",
-  SerialOperationQueuesIdleAndRecovery = "serial_operation_queues:idle_and_recovery",
-  SerialOperationQueuesScheduling = "serial_operation_queues:scheduling",
-  SerialOperationQueuesTypedCompletion = "serial_operation_queues:typed_completion",
-  SerialOperationQueuesValidation = "serial_operation_queues:validation",
-  SerializationBoundariesDependencyDecoding = "serialization_boundaries:dependency_decoding",
-  SerializationBoundariesDeriveFirst = "serialization_boundaries:derive_first",
-  SerializationBoundariesNoAbsenceOverrides = "serialization_boundaries:no_absence_overrides",
-  SerializationBoundariesNoErasedValues = "serialization_boundaries:no_erased_values",
-  SerializationBoundariesTsifySupport = "serialization_boundaries:tsify_support",
-  SerializationBoundariesTypedAbi = "serialization_boundaries:typed_abi",
-  SerializationBoundariesTypedConstruction = "serialization_boundaries:typed_construction",
-  SerializationBoundariesTypedDecoding = "serialization_boundaries:typed_decoding",
-  SerializationBoundariesTypedStorage = "serialization_boundaries:typed_storage",
-  SerializationBoundariesTypedTests = "serialization_boundaries:typed_tests",
-  SerializationBoundariesValidatedDeserialization = "serialization_boundaries:validated_deserialization",
-  SerializationBoundariesValidation = "serialization_boundaries:validation",
-  SingleParameterCallbackReturns = "single_parameter:callback_returns",
-  SingleParameterExplicitOmission = "single_parameter:explicit_omission",
-  SingleParameterHostSignatures = "single_parameter:host_signatures",
-  SingleParameterNamedShapes = "single_parameter:named_shapes",
-  SingleParameterOneParameter = "single_parameter:one_parameter",
-  SingleParameterSemanticRequest = "single_parameter:semantic_request",
-  SingleParameterValidation = "single_parameter:validation",
-  StructConstructionDeriveFrom = "struct_construction:derive_from",
-  StructConstructionInitialState = "struct_construction:initial_state",
-  StructConstructionNoNew = "struct_construction:no_new",
-  StructConstructionStructLiterals = "struct_construction:struct_literals",
-  SvelteStateModelingExternalAbsence = "svelte_state_modeling:external_absence",
-  SvelteStateModelingGeneratedTypes = "svelte_state_modeling:generated_types",
-  SvelteStateModelingInitialization = "svelte_state_modeling:initialization",
-  SvelteStateModelingStatePayloads = "svelte_state_modeling:state_payloads",
-  SvelteStateModelingValidation = "svelte_state_modeling:validation",
-  TestingColocation = "testing:colocation",
-  TestingCoverage = "testing:coverage",
-  TestingDomainAndBoundary = "testing:domain_and_boundary",
-  TestingEvidence = "testing:evidence",
-  TestingNoSizeEvasion = "testing:no_size_evasion",
-  TestingRegressionFirst = "testing:regression_first",
-  TypedSqlConstruction = "typed_sql:construction",
-  WasmContractsAbi = "wasm_contracts:abi",
-  WasmContractsCanonicalEnums = "wasm_contracts:canonical_enums",
-  WasmContractsConstruction = "wasm_contracts:construction",
-  WasmContractsNominalIdentifiers = "wasm_contracts:nominal_identifiers",
-  WasmContractsOwnership = "wasm_contracts:ownership",
-  WasmContractsReplacement = "wasm_contracts:replacement",
-  WasmContractsRetainedValues = "wasm_contracts:retained_values",
-  WasmContractsValidation = "wasm_contracts:validation",
-  WasmNameCoherenceCommandGroups = "wasm_name_coherence:command_groups",
-  WasmNameCoherenceCommandNames = "wasm_name_coherence:command_names",
-  WasmNameCoherenceExportNames = "wasm_name_coherence:export_names",
-  WasmNameCoherenceExternalNames = "wasm_name_coherence:external_names",
-  WasmNameCoherenceMigrations = "wasm_name_coherence:migrations",
-  WasmNameCoherenceNoAliases = "wasm_name_coherence:no_aliases",
-  WasmNameCoherenceSameNames = "wasm_name_coherence:same_names",
-  WasmNameCoherenceSerializationNames = "wasm_name_coherence:serialization_names",
-  WasmNameCoherenceValidation = "wasm_name_coherence:validation",
-  WasmUiIntegrationCallerAdaptation = "wasm_ui_integration:caller_adaptation",
-  WasmUiIntegrationNoCloning = "wasm_ui_integration:no_cloning",
-  WasmUiIntegrationReact = "wasm_ui_integration:react",
-  WasmUiIntegrationSvelteBoundaries = "wasm_ui_integration:svelte_boundaries",
-  WasmUiIntegrationSvelteState = "wasm_ui_integration:svelte_state",
-  WasmUiIntegrationTypedValues = "wasm_ui_integration:typed_values",
-  WasmUiIntegrationValidation = "wasm_ui_integration:validation",
-  WasmUiIntegrationVue = "wasm_ui_integration:vue",
-  WebUnusedCodeAuditScope = "web_unused_code:audit_scope",
-  WebUnusedCodeFixFindings = "web_unused_code:fix_findings",
-  WebUnusedCodeLiveMarkup = "web_unused_code:live_markup",
-  WebUnusedCodeNoJsonRoundtrip = "web_unused_code:no_json_roundtrip",
-  WebUnusedCodeToolBlindSpots = "web_unused_code:tool_blind_spots",
-  WebUnusedCodeValidation = "web_unused_code:validation",
-  WorkflowTypestateConsumingTransitions = "workflow_typestate:consuming_transitions",
-  WorkflowTypestateIndependentStates = "workflow_typestate:independent_states",
-  WorkflowTypestateInitialConversion = "workflow_typestate:initial_conversion",
-  WorkflowTypestateNoArtificialPhases = "workflow_typestate:no_artificial_phases",
-  WorkflowTypestateNoForgedCapabilities = "workflow_typestate:no_forged_capabilities",
-  WorkflowTypestatePrivateCapabilities = "workflow_typestate:private_capabilities",
-  WorkflowTypestateRuntimeAuthorization = "workflow_typestate:runtime_authorization",
-  WorkflowTypestateTypedOwner = "workflow_typestate:typed_owner",
-  WorkflowTypestateValidation = "workflow_typestate:validation",
+// Rule identities grouped by namespace; serialized catalog IDs remain unchanged.
+
+export enum ApiInputsRule {
+  CommandDecoding = "api_inputs:command_decoding",
+  ExternalSignatures = "api_inputs:external_signatures",
+  NoPositionalBags = "api_inputs:no_positional_bags",
+  OneInput = "api_inputs:one_input",
+  SemanticRequests = "api_inputs:semantic_requests",
+  Validation = "api_inputs:validation",
 }
+
+export enum BranchingRule {
+  ClosedMatches = "branching:closed_matches",
+  NoBooleanIf = "branching:no_boolean_if",
+  NoTernary = "branching:no_ternary",
+  RustMatch = "branching:rust_match",
+  RustPatterns = "branching:rust_patterns",
+  TypescriptExhaustiveness = "branching:typescript_exhaustiveness",
+  TypescriptSwitch = "branching:typescript_switch",
+  Validation = "branching:validation",
+}
+
+export enum BrowserImplementationRule {
+  Capabilities = "browser_implementation:capabilities",
+  Cleanup = "browser_implementation:cleanup",
+  ComponentContracts = "browser_implementation:component_contracts",
+  Controllers = "browser_implementation:controllers",
+  DisclosureAndPasskeys = "browser_implementation:disclosure_and_passkeys",
+  ExplicitState = "browser_implementation:explicit_state",
+  Impeccable = "browser_implementation:impeccable",
+  NoParallelStack = "browser_implementation:no_parallel_stack",
+  RustOwnership = "browser_implementation:rust_ownership",
+  SecretSurfaces = "browser_implementation:secret_surfaces",
+  Stack = "browser_implementation:stack",
+  Translations = "browser_implementation:translations",
+  UiLibraries = "browser_implementation:ui_libraries",
+  Validation = "browser_implementation:validation",
+}
+
+export enum BrowserTestingRule {
+  BrowserBoundary = "browser_testing:browser_boundary",
+  DiagnoseFirst = "browser_testing:diagnose_first",
+  Evidence = "browser_testing:evidence",
+  NoWeakenedTests = "browser_testing:no_weakened_tests",
+  RegressionFirst = "browser_testing:regression_first",
+  RetainAcceptance = "browser_testing:retain_acceptance",
+  SuiteGates = "browser_testing:suite_gates",
+}
+
+export enum CloudNativeRule {
+  CurrentState = "cloud_native:current_state",
+  LiveVerification = "cloud_native:live_verification",
+  Recovery = "cloud_native:recovery",
+  Scope = "cloud_native:scope",
+  SecretLifecycle = "cloud_native:secret_lifecycle",
+}
+
+export enum CodeChecksRule {
+  Branching = "code_checks:branching",
+  Establish = "code_checks:establish",
+  Evidence = "code_checks:evidence",
+  FixDiagnostics = "code_checks:fix_diagnostics",
+  LintBaseline = "code_checks:lint_baseline",
+}
+
+export enum CodeSeparationRule {
+  AbandonedState = "code_separation:abandoned_state",
+  BrowserAdapters = "code_separation:browser_adapters",
+  CoreAnnotations = "code_separation:core_annotations",
+  CoreContracts = "code_separation:core_contracts",
+  Extensions = "code_separation:extensions",
+  ObservationPolicy = "code_separation:observation_policy",
+  Ownership = "code_separation:ownership",
+  Validation = "code_separation:validation",
+  VisualState = "code_separation:visual_state",
+}
+
+export enum DefaultValuesRule {
+  EnumDefaults = "default_values:enum_defaults",
+  StructDefaults = "default_values:struct_defaults",
+  ValidDefaults = "default_values:valid_defaults",
+}
+
+export enum DependencySelectionRule {
+  Thresholds = "dependency_selection:thresholds",
+  Verification = "dependency_selection:verification",
+}
+
+export enum DockerRule {
+  BuildkitAuthority = "docker:buildkit_authority",
+  InputIsolation = "docker:input_isolation",
+  LateRevisionIdentity = "docker:late_revision_identity",
+  RealCacheEvidence = "docker:real_cache_evidence",
+  SecretBoundary = "docker:secret_boundary",
+  Validation = "docker:validation",
+}
+
+export enum DomainStatesRule {
+  BooleanConversion = "domain_states:boolean_conversion",
+  Capabilities = "domain_states:capabilities",
+  DecisionLocality = "domain_states:decision_locality",
+  DependencyOptions = "domain_states:dependency_options",
+  Drafts = "domain_states:drafts",
+  EmptyText = "domain_states:empty_text",
+  ExhaustiveMatching = "domain_states:exhaustive_matching",
+  ExternalRecords = "domain_states:external_records",
+  IndependentDimensions = "domain_states:independent_dimensions",
+  MechanicalPredicates = "domain_states:mechanical_predicates",
+  Membership = "domain_states:membership",
+  NamedAbsence = "domain_states:named_absence",
+  NoBooleans = "domain_states:no_booleans",
+  NoDerivedFlags = "domain_states:no_derived_flags",
+  NoOption = "domain_states:no_option",
+  OptionReview = "domain_states:option_review",
+  RawRecords = "domain_states:raw_records",
+  RequiredValues = "domain_states:required_values",
+  Validation = "domain_states:validation",
+  VariantPayloads = "domain_states:variant_payloads",
+}
+
+export enum DomainStructureRule {
+  BehaviorOwnership = "domain_structure:behavior_ownership",
+  CodecOutcomes = "domain_structure:codec_outcomes",
+  ExternalConversion = "domain_structure:external_conversion",
+  FailureCodes = "domain_structure:failure_codes",
+  FieldVocabulary = "domain_structure:field_vocabulary",
+  LegalTransitions = "domain_structure:legal_transitions",
+  NamedValues = "domain_structure:named_values",
+  NestedVocabulary = "domain_structure:nested_vocabulary",
+  NoResultUtilities = "domain_structure:no_result_utilities",
+  NominalIdentity = "domain_structure:nominal_identity",
+  PreserveTypes = "domain_structure:preserve_types",
+  Secrets = "domain_structure:secrets",
+  TrustedConstruction = "domain_structure:trusted_construction",
+  TypeAliases = "domain_structure:type_aliases",
+  TypedFailures = "domain_structure:typed_failures",
+  TypedYaml = "domain_structure:typed_yaml",
+  Validation = "domain_structure:validation",
+  VersionedSchemas = "domain_structure:versioned_schemas",
+  VocabularyOwnership = "domain_structure:vocabulary_ownership",
+}
+
+export enum DomainTypesRule {
+  Aggregates = "domain_types:aggregates",
+  ApiInventory = "domain_types:api_inventory",
+  ClosedVocabulary = "domain_types:closed_vocabulary",
+  ConcreteModules = "domain_types:concrete_modules",
+  Constants = "domain_types:constants",
+  ConversionTraits = "domain_types:conversion_traits",
+  ExternalConversions = "domain_types:external_conversions",
+  ExternalRecords = "domain_types:external_records",
+  LintExceptions = "domain_types:lint_exceptions",
+  MetadataMeaning = "domain_types:metadata_meaning",
+  NamedRecords = "domain_types:named_records",
+  NominalValues = "domain_types:nominal_values",
+  OperationBoundaries = "domain_types:operation_boundaries",
+  OwnershipHierarchy = "domain_types:ownership_hierarchy",
+  Parsing = "domain_types:parsing",
+  PrimitiveStorage = "domain_types:primitive_storage",
+  PrivateConstruction = "domain_types:private_construction",
+  ReleaseVersions = "domain_types:release_versions",
+  Reuse = "domain_types:reuse",
+  SemanticReview = "domain_types:semantic_review",
+  StructuredStrings = "domain_types:structured_strings",
+  UpdateRevisions = "domain_types:update_revisions",
+  ValidatedRecords = "domain_types:validated_records",
+  Versions = "domain_types:versions",
+  WasmValues = "domain_types:wasm_values",
+  WireShape = "domain_types:wire_shape",
+  WrapperAccess = "domain_types:wrapper_access",
+}
+
+export enum EffectRule {
+  EffectfulWork = "effect:effectful_work",
+  Upstream = "effect:upstream",
+  Version = "effect:version",
+}
+
+export enum EnumsOverBooleansRule {
+  BoundaryExceptions = "enums_over_booleans:boundary_exceptions",
+  DistinctDecisions = "enums_over_booleans:distinct_decisions",
+  ExceptionEvidence = "enums_over_booleans:exception_evidence",
+  NoDecorativeEnums = "enums_over_booleans:no_decorative_enums",
+  Observations = "enums_over_booleans:observations",
+  Payloads = "enums_over_booleans:payloads",
+  PredicateOutcomes = "enums_over_booleans:predicate_outcomes",
+  PreserveMembers = "enums_over_booleans:preserve_members",
+  SemanticEnums = "enums_over_booleans:semantic_enums",
+  Validation = "enums_over_booleans:validation",
+}
+
+export enum ErrorHandlingRule {
+  CodecErrors = "error_handling:codec_errors",
+  Enforcement = "error_handling:enforcement",
+  ErrorTests = "error_handling:error_tests",
+  NoPanics = "error_handling:no_panics",
+  RequiredInput = "error_handling:required_input",
+  SourceConversion = "error_handling:source_conversion",
+  TestErrors = "error_handling:test_errors",
+  TypedFailures = "error_handling:typed_failures",
+}
+
+export enum ExplicitStateRule {
+  CoherentVocabulary = "explicit_state:coherent_vocabulary",
+  ComponentEnums = "explicit_state:component_enums",
+  Defaults = "explicit_state:defaults",
+  EffectErrors = "explicit_state:effect_errors",
+  EnumMembers = "explicit_state:enum_members",
+  ExhaustiveTransitions = "explicit_state:exhaustive_transitions",
+  ExternalAbsence = "explicit_state:external_absence",
+  GeneratedExclusions = "explicit_state:generated_exclusions",
+  NamedUnions = "explicit_state:named_unions",
+  NoImplicitAbsence = "explicit_state:no_implicit_absence",
+  NoNullish = "explicit_state:no_nullish",
+  NoSentinelWrappers = "explicit_state:no_sentinel_wrappers",
+  SemanticAssertions = "explicit_state:semantic_assertions",
+  StatePayloads = "explicit_state:state_payloads",
+  TypedFailures = "explicit_state:typed_failures",
+  UnitVoid = "explicit_state:unit_void",
+  Validation = "explicit_state:validation",
+  VocabularyOwnership = "explicit_state:vocabulary_ownership",
+}
+
+export enum FunctionOwnershipRule {
+  BoundaryFunctions = "function_ownership:boundary_functions",
+  ComponentScope = "function_ownership:component_scope",
+  Constants = "function_ownership:constants",
+  ConstantsAndState = "function_ownership:constants_and_state",
+  DependencyDirection = "function_ownership:dependency_direction",
+  ExternalRequirements = "function_ownership:external_requirements",
+  Instances = "function_ownership:instances",
+  LintEvidence = "function_ownership:lint_evidence",
+  LintExceptions = "function_ownership:lint_exceptions",
+  MeaningfulOwners = "function_ownership:meaningful_owners",
+  MeaningfulState = "function_ownership:meaningful_state",
+  MethodKinds = "function_ownership:method_kinds",
+  Migration = "function_ownership:migration",
+  Nesting = "function_ownership:nesting",
+  NoUtilityContainers = "function_ownership:no_utility_containers",
+  Operations = "function_ownership:operations",
+  SharedBehavior = "function_ownership:shared_behavior",
+}
+
+export enum KubernetesRule {
+  BuildExecutionSeparation = "kubernetes:build_execution_separation",
+  DirectExecution = "kubernetes:direct_execution",
+  NoNestedRuntime = "kubernetes:no_nested_runtime",
+  NoRuntimeSocket = "kubernetes:no_runtime_socket",
+  Validation = "kubernetes:validation",
+}
+
+export enum LibrariesRule {
+  BrowserStorage = "libraries:browser_storage",
+  Concurrency = "libraries:concurrency",
+  Diagnostics = "libraries:diagnostics",
+  DirectBrowserBindings = "libraries:direct_browser_bindings",
+  Networking = "libraries:networking",
+  NoCustomCommodity = "libraries:no_custom_commodity",
+  RequiredCore = "libraries:required_core",
+  TypedBoundaries = "libraries:typed_boundaries",
+  WasmContracts = "libraries:wasm_contracts",
+}
+
+export enum LocalFeatureRule {
+  Cleanup = "local_feature:cleanup",
+  Completion = "local_feature:completion",
+  Integration = "local_feature:integration",
+  Repair = "local_feature:repair",
+  Workspace = "local_feature:workspace",
+}
+
+export enum MacroMinimizationRule {
+  EcosystemMacros = "macro_minimization:ecosystem_macros",
+  ExplicitMappings = "macro_minimization:explicit_mappings",
+  NoLocalMacros = "macro_minimization:no_local_macros",
+  SafeReplacement = "macro_minimization:safe_replacement",
+}
+
+export enum ModuleLayoutRule {
+  NamedFiles = "module_layout:named_files",
+  PreserveResolution = "module_layout:preserve_resolution",
+  Validation = "module_layout:validation",
+}
+
+export enum NamedArgsRule {
+  LiteralLocations = "named_args:literal_locations",
+  NamedContracts = "named_args:named_contracts",
+  NoBypasses = "named_args:no_bypasses",
+  NoObjectDefaults = "named_args:no_object_defaults",
+  RuneExceptions = "named_args:rune_exceptions",
+  TypedBindings = "named_args:typed_bindings",
+  Validation = "named_args:validation",
+}
+
+export enum NoUnknownRule {
+  CatchBindings = "no_unknown:catch_bindings",
+  ConcreteInputs = "no_unknown:concrete_inputs",
+  DecoderScope = "no_unknown:decoder_scope",
+  Enforcement = "no_unknown:enforcement",
+  NoErasedSubstitutes = "no_unknown:no_erased_substitutes",
+  NoObject = "no_unknown:no_object",
+  TypedErrors = "no_unknown:typed_errors",
+  UnknownBoundary = "no_unknown:unknown_boundary",
+}
+
+export enum OwnedUpdatesRule {
+  ConsumeReplacement = "owned_updates:consume_replacement",
+  ExternalMutation = "owned_updates:external_mutation",
+  NoFakeActors = "owned_updates:no_fake_actors",
+  Validation = "owned_updates:validation",
+}
+
+export enum PathImportsRule {
+  AllRoots = "path_imports:all_roots",
+  QualifiedFunctions = "path_imports:qualified_functions",
+  TwoSegments = "path_imports:two_segments",
+  Validation = "path_imports:validation",
+}
+
+export enum SerialOperationQueuesRule {
+  AdmissionAndShutdown = "serial_operation_queues:admission_and_shutdown",
+  EffectQueue = "serial_operation_queues:effect_queue",
+  IdleAndRecovery = "serial_operation_queues:idle_and_recovery",
+  Scheduling = "serial_operation_queues:scheduling",
+  TypedCompletion = "serial_operation_queues:typed_completion",
+  Validation = "serial_operation_queues:validation",
+}
+
+export enum SerializationBoundariesRule {
+  DependencyDecoding = "serialization_boundaries:dependency_decoding",
+  DeriveFirst = "serialization_boundaries:derive_first",
+  NoAbsenceOverrides = "serialization_boundaries:no_absence_overrides",
+  NoErasedValues = "serialization_boundaries:no_erased_values",
+  TsifySupport = "serialization_boundaries:tsify_support",
+  TypedAbi = "serialization_boundaries:typed_abi",
+  TypedConstruction = "serialization_boundaries:typed_construction",
+  TypedDecoding = "serialization_boundaries:typed_decoding",
+  TypedStorage = "serialization_boundaries:typed_storage",
+  TypedTests = "serialization_boundaries:typed_tests",
+  ValidatedDeserialization = "serialization_boundaries:validated_deserialization",
+  Validation = "serialization_boundaries:validation",
+}
+
+export enum SingleParameterRule {
+  CallbackReturns = "single_parameter:callback_returns",
+  ExplicitOmission = "single_parameter:explicit_omission",
+  HostSignatures = "single_parameter:host_signatures",
+  NamedShapes = "single_parameter:named_shapes",
+  OneParameter = "single_parameter:one_parameter",
+  SemanticRequest = "single_parameter:semantic_request",
+  Validation = "single_parameter:validation",
+}
+
+export enum StructConstructionRule {
+  DeriveFrom = "struct_construction:derive_from",
+  InitialState = "struct_construction:initial_state",
+  NoNew = "struct_construction:no_new",
+  StructLiterals = "struct_construction:struct_literals",
+}
+
+export enum SvelteStateModelingRule {
+  ExternalAbsence = "svelte_state_modeling:external_absence",
+  GeneratedTypes = "svelte_state_modeling:generated_types",
+  Initialization = "svelte_state_modeling:initialization",
+  StatePayloads = "svelte_state_modeling:state_payloads",
+  Validation = "svelte_state_modeling:validation",
+}
+
+export enum TestingRule {
+  Colocation = "testing:colocation",
+  Coverage = "testing:coverage",
+  DomainAndBoundary = "testing:domain_and_boundary",
+  Evidence = "testing:evidence",
+  NoSizeEvasion = "testing:no_size_evasion",
+  RegressionFirst = "testing:regression_first",
+}
+
+export enum TypedSqlRule {
+  Construction = "typed_sql:construction",
+}
+
+export enum WasmContractsRule {
+  Abi = "wasm_contracts:abi",
+  CanonicalEnums = "wasm_contracts:canonical_enums",
+  Construction = "wasm_contracts:construction",
+  NominalIdentifiers = "wasm_contracts:nominal_identifiers",
+  Ownership = "wasm_contracts:ownership",
+  Replacement = "wasm_contracts:replacement",
+  RetainedValues = "wasm_contracts:retained_values",
+  Validation = "wasm_contracts:validation",
+}
+
+export enum WasmNameCoherenceRule {
+  CommandGroups = "wasm_name_coherence:command_groups",
+  CommandNames = "wasm_name_coherence:command_names",
+  ExportNames = "wasm_name_coherence:export_names",
+  ExternalNames = "wasm_name_coherence:external_names",
+  Migrations = "wasm_name_coherence:migrations",
+  NoAliases = "wasm_name_coherence:no_aliases",
+  SameNames = "wasm_name_coherence:same_names",
+  SerializationNames = "wasm_name_coherence:serialization_names",
+  Validation = "wasm_name_coherence:validation",
+}
+
+export enum WasmUiIntegrationRule {
+  CallerAdaptation = "wasm_ui_integration:caller_adaptation",
+  NoCloning = "wasm_ui_integration:no_cloning",
+  React = "wasm_ui_integration:react",
+  SvelteBoundaries = "wasm_ui_integration:svelte_boundaries",
+  SvelteState = "wasm_ui_integration:svelte_state",
+  TypedValues = "wasm_ui_integration:typed_values",
+  Validation = "wasm_ui_integration:validation",
+  Vue = "wasm_ui_integration:vue",
+}
+
+export enum WebUnusedCodeRule {
+  AuditScope = "web_unused_code:audit_scope",
+  FixFindings = "web_unused_code:fix_findings",
+  LiveMarkup = "web_unused_code:live_markup",
+  NoJsonRoundtrip = "web_unused_code:no_json_roundtrip",
+  ToolBlindSpots = "web_unused_code:tool_blind_spots",
+  Validation = "web_unused_code:validation",
+}
+
+export enum WorkflowTypestateRule {
+  ConsumingTransitions = "workflow_typestate:consuming_transitions",
+  IndependentStates = "workflow_typestate:independent_states",
+  InitialConversion = "workflow_typestate:initial_conversion",
+  NoArtificialPhases = "workflow_typestate:no_artificial_phases",
+  NoForgedCapabilities = "workflow_typestate:no_forged_capabilities",
+  PrivateCapabilities = "workflow_typestate:private_capabilities",
+  RuntimeAuthorization = "workflow_typestate:runtime_authorization",
+  TypedOwner = "workflow_typestate:typed_owner",
+  Validation = "workflow_typestate:validation",
+}
+
+export type RuleName =
+  | ApiInputsRule
+  | BranchingRule
+  | BrowserImplementationRule
+  | BrowserTestingRule
+  | CloudNativeRule
+  | CodeChecksRule
+  | CodeSeparationRule
+  | DefaultValuesRule
+  | DependencySelectionRule
+  | DockerRule
+  | DomainStatesRule
+  | DomainStructureRule
+  | DomainTypesRule
+  | EffectRule
+  | EnumsOverBooleansRule
+  | ErrorHandlingRule
+  | ExplicitStateRule
+  | FunctionOwnershipRule
+  | KubernetesRule
+  | LibrariesRule
+  | LocalFeatureRule
+  | MacroMinimizationRule
+  | ModuleLayoutRule
+  | NamedArgsRule
+  | NoUnknownRule
+  | OwnedUpdatesRule
+  | PathImportsRule
+  | SerialOperationQueuesRule
+  | SerializationBoundariesRule
+  | SingleParameterRule
+  | StructConstructionRule
+  | SvelteStateModelingRule
+  | TestingRule
+  | TypedSqlRule
+  | WasmContractsRule
+  | WasmNameCoherenceRule
+  | WasmUiIntegrationRule
+  | WebUnusedCodeRule
+  | WorkflowTypestateRule;

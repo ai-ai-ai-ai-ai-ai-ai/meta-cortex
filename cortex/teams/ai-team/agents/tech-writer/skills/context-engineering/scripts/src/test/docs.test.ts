@@ -9,8 +9,8 @@ import { VFile, type Options as FileOptions } from "vfile";
 import { stringify } from "yaml";
 import { CatalogKind, type Catalog } from "../ts/catalog.ts";
 
-import { RuleName } from "../ts/rule-name.ts";
-import { PracticeOwner } from "../ts/practice-owner.ts";
+import { DomainStatesRule, DomainTypesRule } from "../ts/rule-name.ts";
+import { RustPracticeOwner } from "../ts/practice-owner.ts";
 
 interface CatalogFixture {
   readonly path: string;
@@ -208,7 +208,7 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
           path: "practices/known/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
-            owner: PracticeOwner.RustDomainTypes,
+            owner: RustPracticeOwner.DomainTypes,
             title: "Known",
             source_title: "Known",
             source: "../known.md",
@@ -218,7 +218,7 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
             related: [],
             rules: [
               {
-                id: RuleName.DomainTypesReuse,
+                id: DomainTypesRule.Reuse,
                 source: "../known.md#same-1",
                 items: [
                   'Preserve "quotes": and YAML-like values.\nKeep the exception too.',
@@ -237,7 +237,7 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
             preferred: ["Preserve the exception."],
             compare: [
               {
-                id: RuleName.DomainTypesReuse,
+                id: DomainTypesRule.Reuse,
                 source: "../practices/known.md#same-1",
               },
             ],
@@ -293,7 +293,7 @@ test("reports lost practice coverage, duplicate ownership and rules, and broken 
           path: "practices/known/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
-            owner: PracticeOwner.RustDomainTypes,
+            owner: RustPracticeOwner.DomainTypes,
             title: "Known",
             source_title: "Known",
             source: "../known.md",
@@ -303,12 +303,12 @@ test("reports lost practice coverage, duplicate ownership and rules, and broken 
             related: [{ title: "Missing", path: "../missing.md" }],
             rules: [
               {
-                id: RuleName.DomainTypesReuse,
+                id: DomainTypesRule.Reuse,
                 source: "../known.md",
                 items: ["A rule without an anchor."],
               },
               {
-                id: RuleName.DomainTypesConcreteModules,
+                id: DomainTypesRule.ConcreteModules,
                 source: "../known.md#absent",
                 items: ["A rule with the wrong anchor."],
               },
@@ -494,7 +494,7 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
           path: "practices/known/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
-            owner: PracticeOwner.RustDomainTypes,
+            owner: RustPracticeOwner.DomainTypes,
             title: "Known",
             source_title: "Known",
             source: "../known.md",
@@ -504,7 +504,7 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
             related: [],
             rules: [
               {
-                id: RuleName.DomainTypesReuse,
+                id: DomainTypesRule.Reuse,
                 source: "../known.md#first",
                 items: ["Use the first rule."],
               },
@@ -521,11 +521,11 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
             preferred: ["Canonical sources."],
             compare: [
               {
-                id: RuleName.DomainTypesReuse,
+                id: DomainTypesRule.Reuse,
                 source: "../practices/known.md#second",
               },
               {
-                id: RuleName.DomainTypesNominalValues,
+                id: DomainTypesRule.NominalValues,
                 source: "../practices/known.md#first",
               },
             ],
@@ -562,9 +562,7 @@ test("validates a focused comparison leaf without requiring unrelated rule inven
             overview: ["Inspect conversion."],
             prohibited: ["Discard validation."],
             preferred: ["Preserve validation."],
-            compare: [
-              { id: RuleName.DomainTypesReuse, source: "known.md#known" },
-            ],
+            compare: [{ id: DomainTypesRule.Reuse, source: "known.md#known" }],
           },
         };
         const practice: FileOptions = {
@@ -634,7 +632,7 @@ test("rejects different registered owners claiming the same canonical source", (
           path: "types/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
-            owner: PracticeOwner.RustDomainTypes,
+            owner: RustPracticeOwner.DomainTypes,
             title: "Types",
             source_title: "Known",
             source: "../known.md",
@@ -644,7 +642,7 @@ test("rejects different registered owners claiming the same canonical source", (
             related: [],
             rules: [
               {
-                id: RuleName.DomainTypesReuse,
+                id: DomainTypesRule.Reuse,
                 source: "../known.md#known",
                 items: ["Reuse types."],
               },
@@ -655,7 +653,7 @@ test("rejects different registered owners claiming the same canonical source", (
           path: "states/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
-            owner: PracticeOwner.RustDomainStates,
+            owner: RustPracticeOwner.DomainStates,
             title: "States",
             source_title: "Known",
             source: "../known.md",
@@ -665,7 +663,7 @@ test("rejects different registered owners claiming the same canonical source", (
             related: [],
             rules: [
               {
-                id: RuleName.DomainStatesBooleanConversion,
+                id: DomainStatesRule.BooleanConversion,
                 source: "../known.md#known",
                 items: ["Convert flags."],
               },

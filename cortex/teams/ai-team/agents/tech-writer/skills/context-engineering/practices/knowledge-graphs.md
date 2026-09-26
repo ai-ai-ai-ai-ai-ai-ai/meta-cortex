@@ -163,9 +163,10 @@ practice. A real catalog must resolve its links from its own location.
   prose use item sequences. Related entries contain `title` and `path`; rules
   contain `id`, `source`, and ordered `items`. Empty metadata sequences are valid
   when no metadata applies; rule and item sequences are nonempty.
-- Use the closed [rule-name enum](../scripts/src/ts/rule-name.ts) for rule and
-  comparison IDs and the [practice-owner enum](../scripts/src/ts/practice-owner.ts)
-  for each practice's `owner`. Keep source locations separate from owner identity.
+- Use the closed [rule-name enums](../scripts/src/ts/rule-name.ts) for rule and
+  comparison IDs and the [practice-owner enums](../scripts/src/ts/practice-owner.ts)
+  for each practice's `owner`. Group enums by namespace or subject; their union
+  types key shared maps. Keep source locations separate from owner identity.
   Add or remove enum members with the corresponding catalog entries; the vocabulary
   parity test rejects missing or unused members. Decoding rejects unregistered names.
 - Preserve original subject groupings. Keep readable `practice:decision` IDs

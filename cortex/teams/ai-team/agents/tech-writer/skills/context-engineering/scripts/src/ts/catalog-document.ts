@@ -12,7 +12,7 @@ import {
   type CatalogComparison,
 } from "./catalog.ts";
 
-import { PracticeOwner } from "./practice-owner.ts";
+import type { PracticeOwner } from "./practice-owner.ts";
 
 export interface PracticeSource {
   readonly owner: PracticeOwner;
