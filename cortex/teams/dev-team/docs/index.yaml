@@ -1,0 +1,7 @@
+kind: navigation
+title: Development Documentation
+entries:
+  - title: Programming
+    path: programming/index.yaml
+    summary: Function ownership; Domain API integrity; Branching and exhaustive matching;
+      Source file size; Testing and regression; Library selection.

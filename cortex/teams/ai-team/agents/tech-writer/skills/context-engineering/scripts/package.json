@@ -25,7 +25,11 @@
     "remark-validate-links": "13.1.0",
     "unified": "11.0.5",
     "unist-util-select": "5.1.0",
-    "vfile": "6.0.3"
+    "vfile": "6.0.3",
+    "yaml": "2.9.0",
+    "remark-parse": "11.0.0",
+    "unified-engine": "11.2.2",
+    "remark-stringify": "11.0.0"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

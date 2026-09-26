@@ -8,7 +8,7 @@ description: Apply Rust practices for mandatory code checks, warning-free compil
 Apply these practices to authored Rust product code, tooling, tests, examples,
 and build scripts.
 
-Apply [programming requirements](../../../../docs/index.md) before the
+Apply [programming requirements](../../../../docs/index.yaml) before the
 selected language practices. Reuse it if already loaded for this assignment.
 
 ## Required actions
@@ -96,8 +96,14 @@ Require a compile-time check that the package release belongs to that enum.
 
 ## Practice selection
 
-Read the [rule index](index.md) to select practices and identify
-rule ownership and individual requirements. Follow its loading requirements and read the selected practices
+For implementation, refactoring, review, and tooling, always load Branching and
+exhaustive matching, Domain types,
+Domain states, Module layout, and Rust code checks as required by the skill entry point. Select
+additional entries covering the decisions being changed and load those practices
+in full. Include related subjects when the change crosses their boundaries.
+
+Read the [rule index](index.yaml) to select practices and identify
+rule ownership and individual requirements. Follow the skill’s loading requirements and read the selected practices
 in full. Before changing a rule, inspect its owner and affected related practices;
 update the same namespaced rules, summaries, exceptions, and section links whenever the
 requirements or their placement change.

@@ -13,7 +13,7 @@ global policy supplied with the assignment.
 ## Knowledge
 
 - For programming, tests, scripts, build logic, or code review, apply the
-  [programming knowledge](../../docs/index.md) alongside the canonical Rust skill.
+  [programming knowledge](../../docs/index.yaml) alongside the canonical Rust skill.
 
 ## Skills
 

@@ -1,0 +1,57 @@
+kind: practice
+title: Local feature integration
+source_title: Local feature integration
+source: ../local-feature-integration.md
+owns:
+  - local branches, worktrees, integration, validation, and cleanup.
+excludes:
+  - agent routing, language practices, publishing, and PR lifecycle.
+relationships:
+  - task completion precedes integration; validation precedes cleanup.
+related: []
+rules:
+  - id: local_feature:workspace
+    source: ../local-feature-integration.md#set-up-workspaces
+    items:
+      - Preserve existing work; use the selected base branch or current checked-out
+        branch, resolving a missing choice without an implicit fetch.
+      - Use one feature branch/worktree for the entire feature, including corrections.
+        Many worker task branches feed that feature branch; isolate each write task in a
+        separate linked Git worktree outside the original checkout. Verify branch names,
+        clean status, and the worktree mapping; inspect existing paths or branches on
+        creation failure rather than overwriting them.
+      - Report workspace mappings to Team Gizmo; Gizmo orders tasks and supplies scopes,
+        branch names, paths, checks, and the actual library location. Read-only work
+        needs no write workspace.
+  - id: local_feature:completion
+    source: ../local-feature-integration.md#finish-task-work
+    items:
+      - Inspect and stage assigned files explicitly, save them on the task branch, and
+        validate finished content.
+      - Finish with a clean worktree and report completion or outstanding problems to
+        Team Gizmo.
+  - id: local_feature:integration
+    source: ../local-feature-integration.md#integrate-finished-branches
+    items:
+      - Integrate finished branches in dependency order with one feature writer.
+      - Use a clean feature worktree and resolve unfinished Git operations first.
+      - Inspect scope and merge branches by name, preserving history; resolve
+        incompatible merge policy rather than substituting squash or history rewriting.
+      - Validate combined changes and report merged tasks and check results.
+  - id: local_feature:repair
+    source: ../local-feature-integration.md#resolve-integration-failures
+    items:
+      - Abort conflicted merges and report them to Team Gizmo for a repair decision.
+        Gizmo assigns task-branch repairs; workers report their results to Gizmo.
+        Resolve and stage conflicting files before finishing the worker merge. Do not
+        abort an already completed merge when combined checks fail.
+      - Retain branches on failure; integrate repairs and revalidate before dependent
+        work or cleanup. Preserve and report Git state if an operation cannot finish.
+  - id: local_feature:cleanup
+    source: ../local-feature-integration.md#complete-and-clean-up
+    items:
+      - Verify task branches are fully merged and complete feature validation.
+      - Remove only finished workspaces using ordinary Git; retain active or unmerged
+        branches and stop rather than force cleanup.
+      - Keep the feature workspace and report branch locations, merged tasks, checks,
+        and unfinished work. Publishing and base-branch integration remain separate.

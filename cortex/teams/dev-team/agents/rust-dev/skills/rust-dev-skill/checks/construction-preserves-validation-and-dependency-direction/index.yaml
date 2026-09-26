@@ -1,0 +1,21 @@
+kind: check
+title: Construction preserves validation and dependency direction
+overview:
+  - Check whether construction is infallible, requires validation, or performs an
+    operation.
+prohibited:
+  - Derive `From` for a constrained value to avoid reporting validation errors, or put
+    consuming-domain policy on the source type.
+preferred:
+  - The destination owns `From` for infallible conversion/classification and `TryFrom`
+    for fallible parsing and validation, including constrained wrappers;
+    context-dependent policy stays a named operation.
+compare:
+  - id: domain_types:conversion_traits
+    source: ../../practices/modeling/domain-types.md#standard-conversions
+  - id: domain_types:operation_boundaries
+    source: ../../practices/modeling/domain-types.md#standard-conversions
+  - id: function_ownership:dependency_direction
+    source: ../../practices/behavior/function-ownership.md#respect-domain-dependencies
+  - id: struct_construction:derive_from
+    source: ../../practices/modeling/struct-construction.md#single-field-derive-from

@@ -1,0 +1,38 @@
+kind: navigation
+title: Cross-rule consistency checks
+entries:
+  - title: External inputs stop at the conversion boundary
+    path: external-inputs-stop-at-the-conversion-boundary/index.yaml
+    summary: Check the destination type and its stored fields after converting a
+      dependency-owned value.
+  - title: Construction preserves validation and dependency direction
+    path: construction-preserves-validation-and-dependency-direction/index.yaml
+    summary: Check whether construction is infallible, requires validation, or performs an
+      operation.
+  - title: Construction cannot skip workflow states
+    path: construction-cannot-skip-workflow-states/index.yaml
+    summary: Check whether a literal or conversion can create an advanced state without its
+      required transition.
+  - title: Missing required input is a failure
+    path: missing-required-input-is-a-failure/index.yaml
+    summary: Check whether absence is a legitimate domain state or invalid input to a
+      required value.
+  - title: Typed transport must match the actual ABI
+    path: typed-transport-must-match-the-actual-abi/index.yaml
+    summary: Compare the generated declaration with the value constructed and passed by the
+      caller.
+  - title: External spelling does not rename application contracts
+    path: external-spelling-does-not-rename-application-contracts/index.yaml
+    summary: Check who controls the protocol before introducing a field rename or type alias.
+  - title: UI state does not transfer WASM ownership
+    path: ui-state-does-not-transfer-wasm-ownership/index.yaml
+    summary: Check allocation ownership when a component retains, replaces, or releases a
+      WASM value.
+  - title: Approved derives do not justify local macros
+    path: approved-derives-do-not-justify-local-macros/index.yaml
+    summary: Check whether the macro is an approved ecosystem tool or an authored
+      abstraction hiding routine code.
+  - title: Coverage does not relax test code rules
+    path: coverage-does-not-relax-test-code-rules/index.yaml
+    summary: Review fixture setup and test placement when adding tests to meet the coverage
+      floor.

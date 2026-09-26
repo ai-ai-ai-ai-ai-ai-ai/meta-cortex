@@ -1,0 +1,200 @@
+kind: practice
+title: Domain types
+source_title: Domain types
+source: ../domain-types.md
+owns:
+  - Value identity, newtypes, validation, external raw-value conversions, and
+    domain-module placement.
+excludes:
+  - Runtime alternatives belong to Domain states; constructor syntax belongs to Struct
+    construction.
+relationships: []
+related:
+  - title: Domain states
+    path: ../domain-states.md
+  - title: Struct construction
+    path: ../struct-construction.md
+  - title: Serialization boundaries
+    path: ../../boundaries/serialization-boundaries.md
+rules:
+  - id: domain_types:reuse
+    source: ../domain-types.md#required-actions
+    items:
+      - Reuse an equivalent core type before adding another struct or enum.
+      - Use concrete values unless a real shared contract requires generics or trait
+        objects.
+  - id: domain_types:concrete_modules
+    source: ../domain-types.md#required-actions
+    items:
+      - Keep domain types, their validation, and focused tests in owning domain modules,
+        not loose files at the core src root.
+      - Re-export stable public types through lib.rs.
+  - id: domain_types:nominal_values
+    source: ../domain-types.md#required-actions
+    items:
+      - Give every domain scalar a distinct newtype in public/private fields,
+        parameters, returns, locals, constants, tests, and recursively nested
+        containers.
+      - Variable names and primitive aliases do not suffice.
+  - id: domain_types:primitive_storage
+    source: ../domain-types.md#required-actions
+    items:
+      - Keep primitive representation inside its owning value or a required external
+        edge.
+      - User text and locale keys also require meaningful domain types.
+  - id: domain_types:metadata_meaning
+    source: ../domain-types.md#classify-metadata-by-meaning
+    items:
+      - "Classify metadata contents before choosing types: enums for choices, named
+        records for composites, and distinct newtypes for atomic prose."
+      - Help text and output placement do not exempt structured content from modeling.
+      - Structured examples follow Serialization boundaries' typed construction rule.
+  - id: domain_types:structured_strings
+    source: ../domain-types.md#normalize-structured-strings-into-domain-components
+    items:
+      - Normalize structured strings into independently meaningful typed components; use
+        domain types for dynamic parts and reuse canonical behavioral values.
+      - Keep fixed wording in renderers, free-form prose in named text values, and
+        external parsing/encoding at adapters; do not store redundant composite text.
+      - Existing string wire contracts may render normalized models at the edge;
+        wire-shape changes follow versioning/migration policy.
+  - id: domain_types:validated_records
+    source: ../domain-types.md#construction-and-representation
+    items:
+      - Required persisted or signed values use validated required newtypes.
+      - Preserve validation during deserialization.
+  - id: domain_types:parsing
+    source: ../domain-types.md#parse-according-to-domain-structure
+    items:
+      - Inspect strings for internal domain structure; use typed fields for components
+        and enums for genuine alternatives. Atomic IDs need no artificial structure.
+      - Return Result with concrete errors for direct parsing and validation, including
+        constrained wrappers; prohibit duplicate Parsed/Invalid outcome enums.
+      - Keep validated fields private and reuse TryFrom/FromStr conversions in callers
+        and Serde without duplicating validation or changing the wire shape.
+  - id: domain_types:closed_vocabulary
+    source: ../domain-types.md#model-a-known-vocabulary-as-a-closed-enum
+    items:
+      - Inspect the owning catalog; use a complete closed enum for known identities and
+        reject unregistered names. Keep dynamic session/task identities separate.
+      - Construct variants directly and use named typed constants for reusable
+        quantities.
+  - id: domain_types:ownership_hierarchy
+    source: ../domain-types.md#preserve-ownership-hierarchies-in-enum-payloads
+    items:
+      - "Preserve catalog containment in nested enums: each team encloses only its role
+        enum, and coordinators retain their own group. Reject flat leaf catalogs and
+        independent owner/role fields that permit invalid combinations."
+      - Team-specific APIs take the team's leaf enum; shared ledgers take the enclosing
+        identity. Preserve containment in wire schemas, assignments, and history.
+      - Verify role membership against each parent's catalog, not just a combined set;
+        prove invalid combinations fail compilation and boundary decoding.
+  - id: domain_types:external_conversions
+    source: ../domain-types.md#external-raw-values
+    items:
+      - Convert uncontrolled external primitives and records immediately through
+        destination-owned From when infallible, or TryFrom for fallible parsing and
+        validation.
+      - Conversion parameters may be raw, but application contracts may not.
+  - id: domain_types:external_records
+    source: ../domain-types.md#external-raw-values
+    items:
+      - Do not retain a dependency-owned raw record inside an application wrapper.
+      - Let destination field types own their conversions.
+  - id: domain_types:conversion_traits
+    source: ../domain-types.md#standard-conversions
+    items:
+      - Use From for infallible conversion/classification and TryFrom with a concrete
+        error for fallible parsing and validation, including constrained wrappers.
+      - Do not panic, discard meaning, or default invalid input to force From.
+  - id: domain_types:operation_boundaries
+    source: ../domain-types.md#standard-conversions
+    items:
+      - Keep context-dependent policy, effects, and authorization-sensitive transitions
+        as named operations.
+      - A single argument alone does not make an operation a conversion.
+  - id: domain_types:private_construction
+    source: ../domain-types.md#standard-conversions
+    items:
+      - Preserve private validated construction and legal capability transitions when
+        implementing conversion traits.
+  - id: domain_types:wasm_values
+    source: ../domain-types.md#wasm--js-boundary
+    items:
+      - Preserve identifier/count wrappers across Rust/WASM calls.
+      - Unwrap only at a required external edge and parse incoming wire strings before
+        core behavior.
+  - id: domain_types:constants
+    source: ../domain-types.md#single-field-primitive-wrapper
+    items:
+      - Use meaningful associated constants for common values.
+      - Keep dynamic values on the conversion path.
+  - id: domain_types:wire_shape
+    source: ../domain-types.md#single-field-primitive-wrapper
+    items:
+      - Choose transparent serialization only when the wire must remain primitive.
+      - Retain the wrapper shape when the wire requires a value field.
+  - id: domain_types:wrapper_access
+    source: ../domain-types.md#access-wrappers-through-patterns-or-domain-methods
+    items:
+      - Prohibit numeric field access throughout authored code, including wrapper
+        implementations, conversions, tests, and adapters.
+      - Use meaningful destructuring patterns or domain methods that retain domain
+        types; preserve privacy and keep primitive extraction at its owning boundary.
+      - Retain approved derives and the existing prohibition on application tuples.
+  - id: domain_types:aggregates
+    source: ../domain-types.md#aggregate-construction
+    items:
+      - Construct multi-field aggregates with named literals and reject From<(A, B, C)>
+        for independent fields.
+      - Validation must not expose restricted fields.
+  - id: domain_types:versions
+    source: ../domain-types.md#model-supported-schema-revisions-explicitly
+    items:
+      - Name each supported schema revision; use exhaustive version dispatch and
+        separate payload types for differing shapes. Reject unsupported wire values at
+        entry.
+      - Keep independent consumer/test version fields typed; primitive wire values stay
+        in boundary classifiers and invalid fixtures, not decoded application records.
+      - Retain documented migration support before advancing the current version.
+  - id: domain_types:release_versions
+    source: ../domain-types.md#enumerate-supported-application-releases
+    items:
+      - Parse supported application/framework releases into closed enums, not validated
+        strings or arbitrary semantic-version records. Reject unknown/retired
+        identities.
+      - Require package-version/enum correspondence at compile time, exhaustive wire
+        mappings, and typed consumer decoding; test both known and unsupported releases.
+  - id: domain_types:update_revisions
+    source: ../domain-types.md#distinguish-schema-revisions-from-update-counters
+    items:
+      - Keep optimistic-lock revisions as open validated counters; use observed tokens
+        and named domain transitions instead of guessed numeric fixtures.
+  - id: domain_types:named_records
+    source: ../domain-types.md#replace-positional-tuples-with-named-records
+    items:
+      - Replace positional multi-value tuples with named domain structs throughout
+        application code and fixtures; match existing records directly.
+      - Unit and single-field newtypes are distinct; contain dependency-required tuples
+        at the exact adapter boundary.
+  - id: domain_types:api_inventory
+    source: ../domain-types.md#domain-api-enforcement
+    items:
+      - Inventory primitive APIs recursively, including generic defaults, bounds,
+        aliases, re-exports, and inherited methods.
+      - A public numeric lint alone does not cover the rule.
+  - id: domain_types:lint_exceptions
+    source: ../domain-types.md#domain-api-enforcement
+    items:
+      - Use raw_numeric_public_api where available.
+      - Scope any required serialization/database/FFI lint expectation to the exact item
+        and document the edge, never blanket-suppress a crate/module/type.
+  - id: domain_types:semantic_review
+    source: ../domain-types.md#validation
+    items:
+      - Before handoff, inventory changed code and touched aggregates, including
+        siblings, private fields, constants, examples, tests, and moved code.
+      - Classify choices, open content, representation storage, and exact external
+        contracts; preserve named values through construction and encoding.
+      - Report semantic review scope and exceptions separately from mechanical checks;
+        numeric lints and text searches do not establish full compliance.

@@ -1,0 +1,43 @@
+kind: practice
+title: Cloud-native operations
+source_title: Cloud-native operations
+source: ../cloud-native-operations.md
+owns:
+  - mutation scope, current-state inspection, operational credentials, recovery
+    readiness, and live verification.
+excludes:
+  - provider selection, project release procedures, or Kubernetes runtime rules.
+relationships: []
+related:
+  - title: Project execution policy
+    path: ../../../../../../docs/project-execution-policy.md
+  - title: Kubernetes runtime boundary
+    path: ../../../kubernetes-skill/practices/kubernetes-runtime-boundary.md
+  - title: secret lifecycle
+    path: ../../../../../../../security-team/docs/secret-lifecycle.md
+rules:
+  - id: cloud_native:scope
+    source: ../cloud-native-operations.md#identify-the-target-and-current-state
+    items:
+      - Identify the intended project, account, region, and resource before mutation.
+  - id: cloud_native:current_state
+    source: ../cloud-native-operations.md#identify-the-target-and-current-state
+    items:
+      - Read current state through supported provider tooling and review the proposed
+        plan or diff when available.
+  - id: cloud_native:secret_lifecycle
+    source: ../cloud-native-operations.md#protect-operational-credentials
+    items:
+      - Use scoped, short-lived identities where available, approved secret storage, and
+        redacted output under the shared lifecycle requirements.
+      - Follow project-owned rotation and revocation procedures.
+  - id: cloud_native:recovery
+    source: ../cloud-native-operations.md#preserve-a-recovery-path
+    items:
+      - Prefer scoped, reversible changes when practical; identify the recovery owner
+        and supported rollback path before impactful mutations.
+  - id: cloud_native:live_verification
+    source: ../cloud-native-operations.md#verify-live-behavior
+    items:
+      - Verify required configuration and workload health after mutation.
+      - Control-plane readiness alone does not establish serving behavior.

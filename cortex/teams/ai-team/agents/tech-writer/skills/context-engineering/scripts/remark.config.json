@@ -12,7 +12,6 @@
         "repository": false
       }
     ],
-    "./src/ts/articles.ts",
-    "./src/ts/navigation.ts"
+    "./src/ts/articles.ts"
   ]
 }

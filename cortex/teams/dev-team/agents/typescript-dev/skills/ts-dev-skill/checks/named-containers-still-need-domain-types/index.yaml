@@ -1,0 +1,17 @@
+kind: check
+title: Named containers still need domain types
+overview:
+  - Inspect fields inside requests and state payloads, not just the outer type name.
+prohibited:
+  - Call a request strongly typed while its identifiers are interchangeable strings and
+    its decisions are boolean flags.
+preferred:
+  - Use distinct identifier types, semantic enums for decisions, and named unions whose
+    variants own their payloads.
+compare:
+  - id: domain_structure:nominal_identity
+    source: ../../practices/typescript-domain-structure.md#preserve-value-identity
+  - id: explicit_state:named_unions
+    source: ../../practices/typescript-explicit-state.md#name-the-state-and-its-payload
+  - id: enums_over_booleans:semantic_enums
+    source: ../../practices/typescript-enums-over-booleans.md#name-the-decision-at-the-call-site

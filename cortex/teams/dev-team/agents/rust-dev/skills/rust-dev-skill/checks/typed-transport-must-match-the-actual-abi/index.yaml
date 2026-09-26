@@ -1,0 +1,18 @@
+kind: check
+title: Typed transport must match the actual ABI
+overview:
+  - Compare the generated declaration with the value constructed and passed by the
+    caller.
+prohibited:
+  - Treat a structural transport record as a WASM class, or replace a generated typed
+    contract with authored `JsValue`.
+preferred:
+  - Pass the declared typed record for a structural ABI; use an actual exported instance
+    when the API requires a class.
+compare:
+  - id: serialization_boundaries:typed_abi
+    source: ../../practices/boundaries/serialization-boundaries.md#generate-typed-javascript-contracts
+  - id: wasm_contracts:abi
+    source: ../../practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares
+  - id: wasm_contracts:construction
+    source: ../../practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares

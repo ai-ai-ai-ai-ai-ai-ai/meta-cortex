@@ -1,0 +1,71 @@
+kind: practice
+title: WASM and command name coherence
+source_title: WASM name coherence
+source: ../rust-wasm-name-coherence.md
+owns:
+  - Cross-language symbol names, command identities, and fixed external wire-name
+    exceptions.
+excludes:
+  - Value representations belong to Domain types; decoding mechanics belong to
+    Serialization boundaries.
+relationships: []
+related:
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+  - title: Serialization boundaries
+    path: ../serialization-boundaries.md
+rules:
+  - id: wasm_name_coherence:same_names
+    source: ../rust-wasm-name-coherence.md#preserve-imported-and-exported-names
+    items:
+      - For project-owned Rust/WASM/TS contracts preserve type, method, property, field,
+        and variant names.
+      - JavaScript casing is not grounds for renaming.
+  - id: wasm_name_coherence:no_aliases
+    source: ../rust-wasm-name-coherence.md#preserve-imported-and-exported-names
+    items:
+      - Prohibit generated import/re-export aliases and local type aliases that rename
+        the contract.
+  - id: wasm_name_coherence:export_names
+    source: ../rust-wasm-name-coherence.md#preserve-method-and-property-names
+    items:
+      - Do not use js_name to rename Rust exports.
+      - Getters and setters retain the canonical field name.
+  - id: wasm_name_coherence:serialization_names
+    source: ../rust-wasm-name-coherence.md#preserve-fields-and-enum-variants
+    items:
+      - Do not add serde rename/rename_all to project-owned schemas, rebuild
+        case-renamed objects, or rename destructured fields.
+  - id: wasm_name_coherence:command_names
+    source: ../rust-wasm-name-coherence.md#preserve-command-identities
+    items:
+      - Use descriptive Rust variants directly as command identities in YAML/JSON,
+        discovery, and consumers; no invented dotted aliases or casing transforms.
+      - Load this rule for CLI/discovery work even without WASM or TypeScript.
+      - Generate examples from the enum, update callers/docs together, and require a
+        concrete external contract for any unavoidable adapter.
+  - id: wasm_name_coherence:command_groups
+    source: ../rust-wasm-name-coherence.md#group-operations-by-their-owning-domain
+    items:
+      - Aggregate related operations in domain-specific enums carried by enclosing group
+        variants; do not flatten repeated prefixes/suffixes or allow arbitrary
+        group/operation pairs.
+      - Preserve groups through requests, schemas, discovery, and consumers; dispatch
+        exhaustively through the owning enum and reject mismatched groups at decoding.
+  - id: wasm_name_coherence:external_names
+    source: ../rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter
+    items:
+      - For a fixed external protocol, retain Rust naming and map its exact wire key
+        only in the external adapter.
+      - Do not suppress Rust naming lints or spread external names into domain APIs.
+  - id: wasm_name_coherence:migrations
+    source: ../rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter
+    items:
+      - Preserve established persisted/published wire names until the owning migration
+        authorizes change.
+      - Keep compatibility mappings at that boundary.
+  - id: wasm_name_coherence:validation
+    source: ../rust-wasm-name-coherence.md#validation
+    items:
+      - Inventory aliases/js_name/serialization mappings, identify the external owner
+        for every exception, regenerate names, and test consumers and migrations.

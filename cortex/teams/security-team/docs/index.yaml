@@ -1,0 +1,6 @@
+kind: navigation
+title: Security Documentation
+entries:
+  - title: Secret lifecycle
+    path: secret-lifecycle.md
+    summary: cross-language secret ownership, storage, redaction, lifetime, and cleanup.

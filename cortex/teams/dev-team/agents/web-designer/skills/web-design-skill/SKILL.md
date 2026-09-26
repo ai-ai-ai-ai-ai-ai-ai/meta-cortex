@@ -6,7 +6,7 @@ description: Design and validate web layouts, typography, navigation, visual sta
 # Web Design Skill
 
 For authored markup, styles, or components, apply
-[programming requirements](../../../../docs/index.md). Design-only work does
+[programming requirements](../../../../docs/index.yaml). Design-only work does
 not require coding prerequisites.
 
 ## Design practices

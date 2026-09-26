@@ -5,7 +5,7 @@ subagents, with their distinct execution settings from the framework configurati
 
 ## Knowledge
 
-Read the [documentation index](docs/index.md) and apply the shared
+Read the [documentation index](docs/index.yaml) and apply the shared
 [agent configuration rules](docs/agent-configuration.md) when launching agents.
 
 ## Agent catalog

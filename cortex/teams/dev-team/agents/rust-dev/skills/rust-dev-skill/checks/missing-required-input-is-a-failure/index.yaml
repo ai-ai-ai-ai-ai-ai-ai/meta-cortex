@@ -1,0 +1,18 @@
+kind: check
+title: Missing required input is a failure
+overview:
+  - Check whether absence is a legitimate domain state or invalid input to a required
+    value.
+prohibited:
+  - Replace a missing required identifier with a successful `Missing` variant merely to
+    avoid `Option`.
+preferred:
+  - Reject the missing identifier with a typed error. Use named states for legitimate
+    alternatives, such as an unfinished draft.
+compare:
+  - id: domain_states:required_values
+    source: ../../practices/modeling/domain-states.md#require-values-that-cannot-be-absent
+  - id: domain_states:drafts
+    source: ../../practices/modeling/domain-states.md#require-values-that-cannot-be-absent
+  - id: error_handling:required_input
+    source: ../../practices/behavior/error-handling.md#required-actions

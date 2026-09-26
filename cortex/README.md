@@ -175,12 +175,13 @@ Engineering and Code Practice Writing for documentation and programming examples
 
 Teams live directly under `teams/`. Each team groups its agents in `agents/`;
 the Gizmo team contains both coordinators. Shared subject knowledge lives in
-each owning team’s `docs/`. Its `index.md` contains only navigation links and
-brief topic summaries. Rules, explanations, and examples live in descriptively
-named documents.
-The [development documentation catalog](teams/dev-team/docs/index.md)
+each owning team’s `docs/`. Its `index.yaml` contains only navigation links and
+brief topic summaries. Skill catalogs branch into subject and namespace indexes
+so focused assignments load only relevant rule summaries and related checks.
+Rules, explanations, and examples remain in descriptively named Markdown documents.
+The [development documentation catalog](teams/dev-team/docs/index.yaml)
 links language-independent programming rules. The
-[security documentation catalog](teams/security-team/docs/index.md)
+[security documentation catalog](teams/security-team/docs/index.yaml)
 links shared secret-handling requirements. Agents link relevant knowledge and
 skills directly; there is no global knowledge directory or selection registry.
 

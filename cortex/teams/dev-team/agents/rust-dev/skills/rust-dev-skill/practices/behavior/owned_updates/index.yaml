@@ -1,0 +1,39 @@
+kind: practice
+title: Owned updates
+source_title: Owned updates
+source: ../owned-updates.md
+owns:
+  - Consuming replacement and justified in-place mutation.
+excludes:
+  - Phase transitions belong to Workflow typestate; operation placement belongs to
+    Function ownership.
+relationships: []
+related:
+  - title: Workflow typestate
+    path: ../workflow-typestate.md
+  - title: Function ownership
+    path: ../function-ownership.md
+rules:
+  - id: owned_updates:consume_replacement
+    source: ../owned-updates.md#replace-an-owned-value
+    items:
+      - Consume mut self for replacement updates and return Self or a typed result while
+        preserving unchanged fields.
+      - Prohibit borrowed mutation on authored value-update APIs, including private
+        collection helpers and equivalent helpers taking &mut Owner.
+      - Mark replacements must_use and rebind, chain, or fold their returned owners.
+        Local mutation inside the consuming method remains permitted.
+  - id: owned_updates:external_mutation
+    source: ../owned-updates.md#required-actions
+    items:
+      - Retain &mut self only at a required trait or externally owned mutation boundary
+        with its exact justification.
+  - id: owned_updates:no_fake_actors
+    source: ../owned-updates.md#required-actions
+    items:
+      - Do not add fake phases or actors to avoid a value update.
+      - Use channels only for a real actor/concurrent owner.
+  - id: owned_updates:validation
+    source: ../owned-updates.md#validation
+    items:
+      - Verify the previous value is consumed and all unaffected fields are preserved.

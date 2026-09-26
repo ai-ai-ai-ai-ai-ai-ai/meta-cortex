@@ -1,0 +1,6 @@
+kind: navigation
+title: Local Feature Rule Map
+entries:
+  - title: Practices
+    path: practices/index.yaml
+    summary: Local feature integration.

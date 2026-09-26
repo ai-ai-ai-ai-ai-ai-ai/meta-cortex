@@ -1,0 +1,7 @@
+kind: navigation
+title: SRE Documentation
+entries:
+  - title: Project Execution Policy
+    path: project-execution-policy.md
+    summary: validation commands, execution environments, and project-owned deployment
+      procedures.

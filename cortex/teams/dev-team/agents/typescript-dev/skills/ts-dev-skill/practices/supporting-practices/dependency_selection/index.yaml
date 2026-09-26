@@ -1,0 +1,26 @@
+kind: practice
+title: Dependency selection
+source_title: Dependency selection
+source: ../../dependency-selection.md
+owns:
+  - TypeScript ecosystem adoption thresholds and manifest verification.
+excludes:
+  - Prescribed framework choices belong to Browser implementation; dead dependencies
+    belong to Unused code.
+relationships: []
+related:
+  - title: Browser implementation
+    path: ../../browser-implementation.md
+  - title: Unused code
+    path: ../../web-unused-code.md
+rules:
+  - id: dependency_selection:thresholds
+    source: ../../dependency-selection.md#adoption-thresholds
+    items:
+      - Require at least 10,000 weekly npm downloads and 100 GitHub stars when a
+        repository exists.
+  - id: dependency_selection:verification
+    source: ../../dependency-selection.md#adoption-thresholds
+    items:
+      - Inspect manifests and verify counts for dependency adoption/review.
+      - Retain common exclusions for generated bindings and toolchain-pinned packages.

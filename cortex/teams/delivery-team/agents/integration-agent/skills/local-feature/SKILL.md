@@ -15,7 +15,7 @@ role instructions define assignments and communication.
   feature setup and integration records.
 - Read [local feature integration](practices/local-feature-integration.md)
   before creating task worktrees or integrating changes.
-- Use the [rule map](index.md) to locate individual decisions when
+- Use the [rule map](index.yaml) to locate individual decisions when
   reviewing or changing this practice.
 
 **Prohibited:** have the integration role take over remote publishing, or publish

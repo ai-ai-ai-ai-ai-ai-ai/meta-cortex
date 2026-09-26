@@ -1,0 +1,18 @@
+kind: check
+title: UI state does not transfer WASM ownership
+overview:
+  - Check allocation ownership when a component retains, replaces, or releases a WASM
+    value.
+prohibited:
+  - Clone a WASM class through JSON for reactive state, or free an object merely because
+    a borrowing component unmounted.
+preferred:
+  - Retain the declared value and let its allocation owner perform replacement and
+    cleanup; framework refs do not create ownership.
+compare:
+  - id: wasm_contracts:ownership
+    source: ../../practices/boundaries/wasm-contracts.md#give-retained-objects-one-owner
+  - id: wasm_contracts:replacement
+    source: ../../practices/boundaries/wasm-contracts.md#give-retained-objects-one-owner
+  - id: wasm_ui_integration:no_cloning
+    source: ../../practices/boundaries/wasm-ui-integration.md#pass-the-declared-value-without-cloning-it

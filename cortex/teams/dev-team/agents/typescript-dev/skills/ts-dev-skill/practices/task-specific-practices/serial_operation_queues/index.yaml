@@ -1,0 +1,53 @@
+kind: practice
+title: Serial operation queues
+source_title: Serial operation queues
+source: ../../typescript-serial-operation-queues.md
+owns:
+  - Ordered asynchronous work, per-operation failure, queue recovery, and idle barriers.
+excludes:
+  - Effect API guidance belongs to the installed upstream documentation.
+relationships: []
+related:
+  - title: Upstream Effect guidance
+    path: ../../../SKILL.md#effect-use-installed-documentation
+  - title: Function ownership
+    path: ../../typescript-function-ownership.md
+rules:
+  - id: serial_operation_queues:effect_queue
+    source: ../../typescript-serial-operation-queues.md#keep-the-queue-and-results-typed
+    items:
+      - Use an Effect Queue and one scoped FIFO consumer.
+      - Keep internal scheduling in Effect and external Promise APIs at adapters,
+        without public mutable Promise tails.
+  - id: serial_operation_queues:typed_completion
+    source: ../../typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
+    items:
+      - Give each job a typed Deferred completion.
+      - Publish its Exit to its caller so a failed operation does not stop later jobs.
+  - id: serial_operation_queues:idle_and_recovery
+    source: ../../typescript-serial-operation-queues.md#define-idle-and-recovery-explicitly
+    items:
+      - Implement onIdle as an ordered barrier after prior admissions, not an
+        empty-queue check.
+      - Recovery must settle/interrupt admitted work and release the old consumer.
+  - id: serial_operation_queues:scheduling
+    source: ../../typescript-serial-operation-queues.md#keep-the-queue-and-results-typed
+    items:
+      - Keep scheduling in TypeScript and policy in its domain owner, which is Rust in
+        Rust/WASM projects.
+      - Choose capacity/backpressure and retain richer
+        priority/cancellation/expiry/close schedulers where required.
+  - id: serial_operation_queues:admission_and_shutdown
+    source: ../../typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
+    items:
+      - Return Effect from enqueue and admit work when that effect runs.
+      - Convert Queue admission rejection into a typed admission failure before awaiting
+        completion; an unsubmitted job must not leave a caller waiting.
+      - Scope the consumer and settle every in-flight/queued completion on shutdown, not
+        only Queue waiters.
+  - id: serial_operation_queues:validation
+    source: ../../typescript-serial-operation-queues.md#validation
+    items:
+      - Test FIFO, one active operation, typed caller failures, continuation, idle
+        barriers, cancellation, shutdown, and recovery against the pinned Effect
+        release.

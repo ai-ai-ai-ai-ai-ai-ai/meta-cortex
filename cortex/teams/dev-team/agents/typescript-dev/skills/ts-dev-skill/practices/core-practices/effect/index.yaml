@@ -1,0 +1,31 @@
+kind: practice
+title: Effect workflows
+source_title: Installed Effect documentation
+source: ../../../SKILL.md#effect-use-installed-documentation
+owns:
+  - Effect's installed documentation owns API and implementation guidance.
+excludes: []
+relationships: []
+related:
+  - title: Domain structure
+    path: ../../typescript-domain-structure.md
+  - title: Serial operation queues
+    path: ../../typescript-serial-operation-queues.md
+rules:
+  - id: effect:upstream
+    source: ../../../SKILL.md#effect-use-installed-documentation
+    items:
+      - Before writing Effect code, read the installed `effect/AGENTS.md` completely.
+  - id: effect:version
+    source: ../../../SKILL.md#manage-the-pinned-release
+    items:
+      - Select the latest release on the chosen release channel when adopting or
+        upgrading.
+      - Pin one exact release across workspace packages; routine work uses its installed
+        docs.
+      - Identify prereleases and follow official migration guidance with required checks.
+  - id: effect:effectful_work
+    source: ../../../SKILL.md#choose-effect-for-workflows
+    items:
+      - Use Effect for materially changed effectful workflows, including scripts and
+        tests; keep pure calculations with their existing domain owners.

@@ -1,0 +1,18 @@
+kind: check
+title: Construction cannot skip workflow states
+overview:
+  - Check whether a literal or conversion can create an advanced state without its
+    required transition.
+prohibited:
+  - A blanket `From<State>` implementation lets callers construct an approved
+    publication directly.
+preferred:
+  - Expose only the initial-state conversion; keep advanced capability construction
+    private to legal transitions.
+compare:
+  - id: struct_construction:initial_state
+    source: ../../practices/modeling/struct-construction.md#single-field-derive-from
+  - id: struct_construction:struct_literals
+    source: ../../practices/modeling/struct-construction.md#multiple-fields-use-a-struct-literal
+  - id: workflow_typestate:no_forged_capabilities
+    source: ../../practices/behavior/workflow-typestate.md#capability-construction

@@ -1,0 +1,17 @@
+kind: check
+title: Decoding ends before application workflows begin
+overview:
+  - Follow untrusted input from its decoder into the effectful workflow.
+prohibited:
+  - Forward `unknown` beyond decoding, or make the workflow use a second failure wrapper
+    because an external API returns a Promise.
+preferred:
+  - Decode to a concrete value or concrete failure at the edge; preserve expected
+    failures in the Effect error channel.
+compare:
+  - id: no_unknown:decoder_scope
+    source: ../../practices/typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge
+  - id: no_unknown:typed_errors
+    source: ../../practices/typescript-no-unknown.md#keep-failures-concrete
+  - id: effect:upstream
+    source: ../../SKILL.md#effect-use-installed-documentation

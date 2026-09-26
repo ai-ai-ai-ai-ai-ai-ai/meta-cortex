@@ -1,0 +1,45 @@
+kind: practice
+title: Struct construction
+source_title: Struct construction
+source: ../struct-construction.md
+owns:
+  - Struct literals, single-field conversions, and constructor restrictions.
+excludes:
+  - Choosing meaningful defaults belongs to Default values; capability transitions
+    belong to Workflow typestate.
+relationships: []
+related:
+  - title: Default values
+    path: ../default-values.md
+  - title: Domain types
+    path: ../domain-types.md
+  - title: Workflow typestate
+    path: ../../behavior/workflow-typestate.md
+rules:
+  - id: struct_construction:no_new
+    source: ../struct-construction.md#no-constructor-indirection
+    items:
+      - Do not define new constructors or rename trivial construction to create.
+      - Construction must keep field assignments visible.
+      - Preserve validating conversions, invariant-enforcing fallible constructors, and
+        legal capability transitions.
+  - id: struct_construction:derive_from
+    source: ../struct-construction.md#single-field-derive-from
+    items:
+      - Derive derive_more::From with its from feature for infallible single-field
+        wrappers.
+      - Constrained wrappers use TryFrom/FromStr returning Result; keep their fields
+        private.
+  - id: struct_construction:initial_state
+    source: ../struct-construction.md#single-field-derive-from
+    items:
+      - For generic workflows, manually implement only the allowed initial-state
+        conversion.
+      - Never derive blanket construction for advanced states.
+  - id: struct_construction:struct_literals
+    source: ../struct-construction.md#multiple-fields-use-a-struct-literal
+    items:
+      - Use named struct literals for multiple independent fields.
+      - Do not expose private validated capability fields to permit literals.
+      - A named fallible constructor may accept one typed request to enforce an
+        aggregate invariant; a renamed trivial constructor is still prohibited.

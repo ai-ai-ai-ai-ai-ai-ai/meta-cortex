@@ -1,0 +1,18 @@
+kind: check
+title: Approved derives do not justify local macros
+overview:
+  - Check whether the macro is an approved ecosystem tool or an authored abstraction
+    hiding routine code.
+prohibited:
+  - Use the required `derive_more` dependency as justification for a local
+    domain-mapping macro.
+preferred:
+  - Use approved derives for their supported jobs; write domain mappings explicitly in
+    the destination implementation.
+compare:
+  - id: libraries:required_core
+    source: ../../practices/tooling/libraries.md#required-core
+  - id: macro_minimization:explicit_mappings
+    source: ../../practices/tooling/rust-macro-minimization.md#keep-domain-mappings-in-their-destination-impl
+  - id: macro_minimization:ecosystem_macros
+    source: ../../practices/tooling/rust-macro-minimization.md#keep-approved-ecosystem-macros

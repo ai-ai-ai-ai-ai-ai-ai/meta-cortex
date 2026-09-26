@@ -1,0 +1,96 @@
+kind: practice
+title: Serialization boundaries
+source_title: Serialization boundaries
+source: ../serialization-boundaries.md
+owns:
+  - Typed decoding/encoding, erased-value restrictions, dependency conversion, and
+    serialization tests.
+excludes:
+  - Object ownership belongs to WASM contracts; wire-name mapping belongs to WASM name
+    coherence.
+relationships: []
+related:
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+  - title: Error handling
+    path: ../../behavior/error-handling.md
+  - title: WASM contracts
+    path: ../wasm-contracts.md
+  - title: WASM name coherence
+    path: ../rust-wasm-name-coherence.md
+rules:
+  - id: serialization_boundaries:typed_decoding
+    source: ../serialization-boundaries.md#decode-known-schemas-into-their-types
+    items:
+      - Decode known schemas directly into concrete records/enums at the I/O edge.
+      - JSON trees, dyn Any, erased bags, and generic maps are not domain models.
+  - id: serialization_boundaries:validated_deserialization
+    source: ../serialization-boundaries.md#decode-known-schemas-into-their-types
+    items:
+      - Preserve validated newtype invariants during Deserialize.
+      - An automatic derive must not bypass validating construction.
+  - id: serialization_boundaries:typed_construction
+    source: ../serialization-boundaries.md#construct-known-documents-from-typed-values
+    items:
+      - Construct known JSON/YAML from structs and enums, including catalog examples and
+        valid fixtures; encode only at I/O.
+      - Prohibit YAML string literals/fragments, string assembly, replacement, and
+        encode-then-parse construction, including static discovery examples; text
+        wrappers do not provide schema safety.
+      - Keep malformed inputs raw at the decoder and dynamic values inside explicitly
+        open extensions.
+  - id: serialization_boundaries:derive_first
+    source: ../serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate
+    items:
+      - Derive serialization and preserve enums in new owned wire contracts.
+      - Apply domain-state exceptions before using boolean conversion attributes.
+      - Prohibit handwritten traits, visitors, and callbacks that duplicate this support.
+      - Reuse the domain validating conversion with serde(try_from = "String") or the
+        actual wire type; do not introduce a result-shaped parse enum.
+      - Document unsupported contracts and evaluate established adapters before custom
+        machinery.
+      - Review manually and test wire values; standard Clippy does not enforce this rule.
+  - id: serialization_boundaries:typed_storage
+    source: ../serialization-boundaries.md#keep-encoding-out-of-application-state
+    items:
+      - Store and return typed records internally.
+      - Keep raw JSON/YAML at I/O and encode only for an external consumer requiring it.
+  - id: serialization_boundaries:no_erased_values
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    items:
+      - Prohibit authored JsValue/js_sys::Object fields, signatures, aliases, or stored
+        state, including tests.
+      - Wrappers, casts, and TS type hints cannot restore an erased contract.
+  - id: serialization_boundaries:typed_abi
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    items:
+      - Generate structural ABI from canonical typed declarations with Tsify.
+      - Use `Ts<T>` and fallible to_rust conversion rather than deprecated leaking ABI
+        attributes.
+  - id: serialization_boundaries:tsify_support
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    items:
+      - Use the js feature for the illustrated Tsify JavaScript binding.
+      - Do not create a second domain copy just to derive ABI support.
+  - id: serialization_boundaries:no_absence_overrides
+    source: ../serialization-boundaries.md#generate-typed-javascript-contracts
+    items:
+      - Do not override fields with undefined/null/void unions.
+      - Normal TypeScript void effect returns remain valid.
+  - id: serialization_boundaries:dependency_decoding
+    source: ../serialization-boundaries.md#convert-dependency-owned-values-immediately
+    items:
+      - Decode dependency-owned JS values immediately into the expected record and
+        preserve typed conversion errors.
+      - Do not forward erased values into application APIs.
+  - id: serialization_boundaries:typed_tests
+    source: ../serialization-boundaries.md#test-the-typed-contract
+    items:
+      - Test concrete typed round trips and invalid-input rejection.
+      - Use raw JSON/YAML only for malformed/unknown input or exact property presence,
+        never instead of a typed domain assertion.
+  - id: serialization_boundaries:validation
+    source: ../serialization-boundaries.md#validation
+    items:
+      - Review ABI overrides and conversion sites, run serialization tests, and
+        regenerate/type-check changed bindings.

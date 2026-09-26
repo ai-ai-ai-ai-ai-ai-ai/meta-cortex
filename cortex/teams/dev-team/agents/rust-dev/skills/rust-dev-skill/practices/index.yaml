@@ -1,0 +1,18 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Modeling
+    path: modeling/index.yaml
+    summary: Domain types; Domain states; Struct construction; Default values.
+  - title: Behavior
+    path: behavior/index.yaml
+    summary: Branching and exhaustive matching; Function ownership; API inputs; Workflow
+      typestate; Owned updates; Error handling.
+  - title: Boundaries
+    path: boundaries/index.yaml
+    summary: Serialization boundaries; Rust–TypeScript separation; WASM contracts; WASM UI
+      integration; WASM and command name coherence.
+  - title: Tooling
+    path: tooling/index.yaml
+    summary: Rust code checks; Libraries; Module layout; Paths and imports; Typed SQL
+      construction; Dependency selection; Macro minimization; Rust testing.

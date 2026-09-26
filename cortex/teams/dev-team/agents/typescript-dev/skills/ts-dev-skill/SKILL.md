@@ -15,7 +15,7 @@ the project uses Rust/WASM for portable product or security logic, preserve that
 ownership and consume its generated contracts. Load Svelte-specific practices
 only for Svelte code; they do not authorize replacing another UI framework.
 
-Apply [programming requirements](../../../../docs/index.md) before the
+Apply [programming requirements](../../../../docs/index.yaml) before the
 selected language practices. Reuse it if already loaded for this assignment.
 
 ## Required actions
@@ -36,8 +36,17 @@ selected language practices. Reuse it if already loaded for this assignment.
 
 ## Practice selection
 
-Read the [rule index](index.md) to select practices and identify
-rule ownership and individual requirements. Follow its loading requirements and
+For implementation, apply the core practices. Load Domain structure and Explicit
+state together. Load the upstream Effect guidance before effectful work, including
+Serial operation queues. Select task-specific and supporting practices when their
+subjects are involved; Svelte practices apply only to Svelte projects. Preserve
+the project’s stack and command runner. Rust ownership applies when the project
+uses Rust/WASM; TypeScript may own domains otherwise. Read selected practices in
+full, including exceptions and
+validation. Existing code does not weaken their requirements.
+
+Read the [rule index](index.yaml) to select practices and identify
+rule ownership and individual requirements. Follow the skill’s loading requirements and
 read the selected practices in full. Before changing a rule, inspect its owner and affected related practices;
 update the same namespaced rules, summaries, exceptions, and section links whenever the
 requirements or their placement change.

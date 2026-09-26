@@ -12,4 +12,4 @@ Team Gizmo assigns reviews and routes findings to implementation owners.
 
 ## Team documentation
 
-- [Security documentation](docs/index.md).
+- [Security documentation](docs/index.yaml).

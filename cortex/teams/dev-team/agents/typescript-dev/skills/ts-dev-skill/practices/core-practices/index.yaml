@@ -1,0 +1,34 @@
+kind: navigation
+title: Core practices
+entries:
+  - title: Branching and exhaustive matching
+    path: branching/index.yaml
+    summary: Language-independent branching policy and exhaustive domain decisions.
+  - title: Function ownership
+    path: function_ownership/index.yaml
+    summary: TypeScript declaration placement, static construction, component handlers, and
+      execution-scope counting.
+  - title: Single parameter
+    path: single_parameter/index.yaml
+    summary: Argument count, semantic request aggregation, and fixed-signature exceptions.
+  - title: Named arguments
+    path: named_args/index.yaml
+    summary: Named object parameter types and explicitly typed call arguments, including
+      compiler-rune exceptions.
+  - title: Domain structure
+    path: domain_structure/index.yaml
+    summary: Nominal values, named domain contracts, and application API structure.
+  - title: Explicit state
+    path: explicit_state/index.yaml
+    summary: Enum-backed unions, absence normalization, forbidden sentinels, and unit versus
+      value-returning void.
+  - title: Enums instead of booleans
+    path: enums_over_booleans/index.yaml
+    summary: Semantic alternatives instead of boolean policy and state, with narrow boundary
+      exceptions.
+  - title: Concrete values
+    path: no_unknown/index.yaml
+    summary: Restrictions on object, unknown, any, and erased bags; immediate boundary decoding.
+  - title: Effect workflows
+    path: effect/index.yaml
+    summary: Effect's installed documentation owns API and implementation guidance.

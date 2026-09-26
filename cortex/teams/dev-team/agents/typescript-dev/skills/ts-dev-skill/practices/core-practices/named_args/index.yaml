@@ -1,0 +1,63 @@
+kind: practice
+title: Named arguments
+source_title: Named arguments
+source: ../../typescript-named-args.md
+owns:
+  - Named object parameter types and explicitly typed call arguments, including
+    compiler-rune exceptions.
+excludes:
+  - Argument count belongs to Single parameter; domain value identity belongs to Domain
+    structure.
+relationships: []
+related:
+  - title: Single parameter
+    path: ../../typescript-single-parameter.md
+  - title: Domain structure
+    path: ../../typescript-domain-structure.md
+  - title: Svelte state modeling
+    path: ../../svelte-state-modeling.md
+rules:
+  - id: named_args:named_contracts
+    source: ../../typescript-named-args.md#name-the-parameter-contract
+    items:
+      - Every object-shaped parameter uses a semantic named type/interface/generated
+        contract, including mapped types, arrays, tuples, sets, maps, and records.
+      - Apply to authored source, tests, configuration, and tooling; generated
+        declarations are excluded.
+  - id: named_args:typed_bindings
+    source: ../../typescript-named-args.md#name-and-type-object-arguments
+    items:
+      - Every object call argument is a named explicitly typed value.
+      - Reject inline literals, generic operation-only names, and generated-name/import
+        tricks.
+  - id: named_args:literal_locations
+    source: ../../typescript-named-args.md#name-and-type-object-arguments
+    items:
+      - Allow object literals when constructing that named value or returning from a
+        function/build callback.
+      - Callback object returns do not exempt input contracts.
+  - id: named_args:no_bypasses
+    source: ../../typescript-named-args.md#name-and-type-object-arguments
+    items:
+      - Do not bypass named arguments with assertions,
+        conditional/assignment/logical/sequence expressions, or statically resolvable
+        spread values.
+  - id: named_args:rune_exceptions
+    source: ../../typescript-named-args.md#limit-rune-exceptions-to-the-compiler-forms
+    items:
+      - Direct object arguments to $state, $state.raw, $derived, and $bindable are
+        compiler-rune exceptions.
+      - $state.snapshot and ordinary calls are not.
+  - id: named_args:no_object_defaults
+    source: ../../typescript-named-args.md#keep-object-defaults-out-of-parameters
+    items:
+      - Reject object-valued parameter defaults of every shape, including
+        bindings/factory results/class instances.
+      - Apply defaults at the caller or body.
+  - id: named_args:validation
+    source: ../../typescript-named-args.md#validation
+    items:
+      - Checks must recursively inspect wrapped/qualified references, inline
+        arrays/tuples and imported generic names.
+      - Prefer callee-exported or generated domain request types and keep lint checks
+        passing.

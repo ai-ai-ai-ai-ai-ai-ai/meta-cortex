@@ -1,0 +1,69 @@
+kind: practice
+title: Workflow typestate
+source_title: Workflow typestate
+source: ../workflow-typestate.md
+owns:
+  - Legal action sequencing, typed phases, consuming transitions, and private capability
+    construction.
+excludes:
+  - Runtime alternatives belong to Domain states; same-state replacement belongs to
+    Owned updates.
+relationships: []
+related:
+  - title: Domain states
+    path: ../../modeling/domain-states.md
+  - title: Owned updates
+    path: ../owned-updates.md
+  - title: Struct construction
+    path: ../../modeling/struct-construction.md
+rules:
+  - id: workflow_typestate:typed_owner
+    source: ../workflow-typestate.md#state-and-transitions
+    items:
+      - "Prioritize typestate for meaningful new/changed action flows: domain-named
+        `owner<State>`, distinct payload states, and transitions on specialized owner
+        impls."
+  - id: workflow_typestate:consuming_transitions
+    source: ../workflow-typestate.md#state-and-transitions
+    items:
+      - Consume self when a transition replaces capabilities.
+      - Carry validated values forward and return exhaustive outcome enums for
+        alternative next states and typed errors for failures.
+  - id: workflow_typestate:independent_states
+    source: ../workflow-typestate.md#state-and-transitions
+    items:
+      - Keep independent state dimensions/domain objects separate.
+      - Seal generic phases when external implementations could forge states.
+  - id: workflow_typestate:private_capabilities
+    source: ../workflow-typestate.md#capability-construction
+    items:
+      - Keep advanced fields private, validate untrusted input before admitting
+        capabilities, and permit construction only at allowed entry states.
+  - id: workflow_typestate:no_forged_capabilities
+    source: ../workflow-typestate.md#capability-construction
+    items:
+      - Review Default/Deserialize/From/Clone/Copy for forged or duplicated capabilities.
+      - Never deserialize directly into restricted states or clone one-use rights.
+  - id: workflow_typestate:runtime_authorization
+    source: ../workflow-typestate.md#capability-construction
+    items:
+      - Recheck runtime authorization/freshness at effects and preserve cryptographic
+        trust boundaries.
+      - Typestate does not prove either.
+  - id: workflow_typestate:no_artificial_phases
+    source: ../workflow-typestate.md#prohibited-actions
+    items:
+      - Do not impose a generic Session/Phase framework, optional stage field bags, or
+        artificial phases on pure operations.
+  - id: workflow_typestate:initial_conversion
+    source: ../workflow-typestate.md#publication-pipeline
+    items:
+      - Limit initial From to the initial state.
+      - Let validated-data conversion validate and the workflow transition construct the
+        advanced owner.
+  - id: workflow_typestate:validation
+    source: ../workflow-typestate.md#validation
+    items:
+      - Migrate a focused flow without unrelated rewrites.
+      - Test every outcome, typed failure, invalid input, secret destruction, and
+        compile-time rejection of illegal construction/order/reuse.

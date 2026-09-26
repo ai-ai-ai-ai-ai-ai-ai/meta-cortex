@@ -1,0 +1,10 @@
+kind: navigation
+title: Supporting practices
+entries:
+  - title: TypeScript code checks
+    path: code_checks/index.yaml
+    summary: Mandatory formatting, type checking, linting, warning-free builds, and check
+      evidence.
+  - title: Dependency selection
+    path: dependency_selection/index.yaml
+    summary: TypeScript ecosystem adoption thresholds and manifest verification.

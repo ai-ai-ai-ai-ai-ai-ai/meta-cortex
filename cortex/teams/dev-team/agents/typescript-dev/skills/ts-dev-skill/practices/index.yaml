@@ -1,0 +1,15 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Core practices
+    path: core-practices/index.yaml
+    summary: Branching and exhaustive matching; Function ownership; Single parameter; Named
+      arguments; Domain structure; Explicit state; Enums instead of booleans; Concrete
+      values; Effect workflows.
+  - title: Task-specific practices
+    path: task-specific-practices/index.yaml
+    summary: Browser implementation; Svelte state modeling; Browser testing; Unused code;
+      Serial operation queues.
+  - title: Supporting practices
+    path: supporting-practices/index.yaml
+    summary: TypeScript code checks; Dependency selection.

@@ -1,0 +1,62 @@
+kind: practice
+title: Error handling
+source_title: Error handling
+source: ../error-handling.md
+owns:
+  - Typed failures and sources, propagation, panic restrictions, and test error
+    contracts.
+excludes:
+  - Nonfailure alternatives belong to Domain states; decoding representations belongs to
+    Serialization boundaries.
+relationships: []
+related:
+  - title: Domain states
+    path: ../../modeling/domain-states.md
+  - title: Serialization boundaries
+    path: ../../boundaries/serialization-boundaries.md
+  - title: Rust testing
+    path: ../../tooling/rust-testing.md
+rules:
+  - id: error_handling:typed_failures
+    source: ../error-handling.md#required-actions
+    items:
+      - Return standard Result and concrete operation-specific thiserror failures in
+        production libraries, binaries, examples, and build scripts.
+  - id: error_handling:source_conversion
+    source: ../error-handling.md#add-context-only-when-it-changes-the-error
+    items:
+      - Preserve typed sources.
+      - Use `#[from]` and ? for direct conversion, map_err for added context or
+        selection among same-source variants.
+  - id: error_handling:required_input
+    source: ../error-handling.md#required-actions
+    items:
+      - Return a typed failure for missing/invalid required input.
+      - Never erase the source into a string.
+  - id: error_handling:no_panics
+    source: ../error-handling.md#propagate-errors-instead-of-panicking
+    items:
+      - Prohibit unwrap, expect, and expect_err throughout authored Rust, including
+        fixture setup and tests.
+  - id: error_handling:test_errors
+    source: ../error-handling.md#keep-anyhow-in-tests
+    items:
+      - Fallible tests return concrete Result or anyhow::Result and use ?.
+      - Anyhow is test-only under dev-dependencies, not production or a `Box<dyn Error>`
+        substitute.
+  - id: error_handling:codec_errors
+    source: ../error-handling.md#required-actions
+    items:
+      - Use serde_json::Result when encoding/decoding JSON is the only failure.
+  - id: error_handling:error_tests
+    source: ../error-handling.md#validation
+    items:
+      - Test expected error variants explicitly.
+      - Deny unwrap_used/expect_used for all targets and keep their test allowances
+        false.
+  - id: error_handling:enforcement
+    source: ../error-handling.md#validation
+    items:
+      - Check production anyhow paths and dependency placement with available preflight
+        tooling.
+      - Do not duplicate Clippy using a bespoke scanner.

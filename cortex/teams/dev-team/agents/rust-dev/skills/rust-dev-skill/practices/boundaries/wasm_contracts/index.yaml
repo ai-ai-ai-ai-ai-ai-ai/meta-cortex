@@ -1,0 +1,66 @@
+kind: practice
+title: WASM contracts
+source_title: WASM contracts
+source: ../wasm-contracts.md
+owns:
+  - Generated classes versus structural DTOs, canonical enum exports, nominal
+    identifiers, and object lifetime.
+excludes:
+  - Decoding failures belong to Serialization boundaries; reactive wrappers belong to
+    WASM UI integration.
+relationships: []
+related:
+  - title: Serialization boundaries
+    path: ../serialization-boundaries.md
+  - title: WASM UI integration
+    path: ../wasm-ui-integration.md
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+rules:
+  - id: wasm_contracts:abi
+    source: ../wasm-contracts.md#construct-what-the-abi-declares
+    items:
+      - "Follow the generated ABI: actual wasm-bindgen instances for class inputs and
+        generated structural objects for Tsify `Ts<T>` inputs."
+      - Assertions cannot create allocations.
+  - id: wasm_contracts:construction
+    source: ../wasm-contracts.md#construct-what-the-abi-declares
+    items:
+      - Obtain new class instances through generated construction APIs.
+      - Do not wrap structural DTOs in unnecessary classes.
+  - id: wasm_contracts:canonical_enums
+    source: ../wasm-contracts.md#export-canonical-enums-without-mirrors
+    items:
+      - Export canonical supported fieldless enums directly.
+      - Use typed structural ABI or thin required wrappers for payload enums without
+        copying vocabulary or changing validation/payload shape.
+  - id: wasm_contracts:nominal_identifiers
+    source: ../wasm-contracts.md#verify-generated-identifier-types
+    items:
+      - Verify identifiers are actually nominal/opaque/class-backed.
+      - String aliases do not prevent swaps.
+      - Fix the binding representation rather than inventing local mirrors or cast
+        brands.
+  - id: wasm_contracts:retained_values
+    source: ../wasm-contracts.md#give-retained-objects-one-owner
+    items:
+      - Retain generated objects in UI state/props instead of equivalent summaries made
+        solely to free wrappers.
+      - Separate view models require genuinely different UI concerns.
+  - id: wasm_contracts:ownership
+    source: ../wasm-contracts.md#give-retained-objects-one-owner
+    items:
+      - Give each allocation one owner.
+      - Borrowed calls preserve ownership and consuming calls transfer it.
+      - Never use or free a moved or borrowed object as its owner.
+  - id: wasm_contracts:replacement
+    source: ../wasm-contracts.md#give-retained-objects-one-owner
+    items:
+      - Release replaced/reset/teardown objects exactly once after final use.
+      - Replacement examples require distinct instances and no remaining borrowers.
+  - id: wasm_contracts:validation
+    source: ../wasm-contracts.md#validation
+    items:
+      - Test actual generated shapes, nominal incompatibility,
+        replacement/reset/transfer, leaks and double frees.
+      - Build WASM and type-check consumers.

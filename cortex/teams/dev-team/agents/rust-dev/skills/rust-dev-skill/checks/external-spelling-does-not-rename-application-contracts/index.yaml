@@ -1,0 +1,17 @@
+kind: check
+title: External spelling does not rename application contracts
+overview:
+  - Check who controls the protocol before introducing a field rename or type alias.
+prohibited:
+  - Rename project-owned `order_id` to `orderId` across WASM, or alias its domain
+    identifier to a primitive.
+preferred:
+  - Keep project-owned names and domain types intact. Map a fixed external `orderId` to
+    Rust `order_id` only in its adapter.
+compare:
+  - id: wasm_name_coherence:same_names
+    source: ../../practices/boundaries/rust-wasm-name-coherence.md#preserve-imported-and-exported-names
+  - id: wasm_name_coherence:external_names
+    source: ../../practices/boundaries/rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter
+  - id: domain_types:wasm_values
+    source: ../../practices/modeling/domain-types.md#wasm--js-boundary

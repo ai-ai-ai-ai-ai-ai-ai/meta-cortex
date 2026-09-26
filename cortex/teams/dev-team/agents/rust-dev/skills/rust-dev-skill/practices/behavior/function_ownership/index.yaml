@@ -1,0 +1,90 @@
+kind: practice
+title: Function ownership
+source_title: Function ownership
+source: ../function-ownership.md
+owns:
+  - Owners of methods, constants, and state; dependency direction; conversions versus
+    operations.
+excludes:
+  - Input shape belongs to API inputs; consuming updates belong to Owned updates.
+relationships: []
+related:
+  - title: API inputs
+    path: ../api-inputs.md
+  - title: Owned updates
+    path: ../owned-updates.md
+  - title: Domain types
+    path: ../../modeling/domain-types.md
+rules:
+  - id: function_ownership:meaningful_owners
+    source: ../function-ownership.md#choose-the-owner
+    items:
+      - Place every authored function on its meaningful struct, enum, or trait,
+        including private/nested helpers and test fixtures.
+      - Keep immediately used closures local.
+  - id: function_ownership:method_kinds
+    source: ../function-ownership.md#choose-the-owner
+    items:
+      - Use receiver methods for instance behavior, associated functions for owned
+        construction/stateless behavior, and traits only for genuine shared contracts or
+        external interfaces.
+  - id: function_ownership:nesting
+    source: ../function-ownership.md#choose-the-owner
+    items:
+      - Limit combined match, closure, loop, and conditional-pattern nesting to two
+        execution scopes; flatten before extracting meaningful owned behavior.
+      - Reject forwarding layers added only to satisfy depth. Clippy's structural
+        threshold is a backstop, not an exact check of mixed execution scopes.
+  - id: function_ownership:no_utility_containers
+    source: ../function-ownership.md#choose-the-owner
+    items:
+      - Do not treat modules, Utils containers, empty catch-all types, or artificial
+        lifecycles as meaningful ownership.
+  - id: function_ownership:constants_and_state
+    source: ../function-ownership.md#own-constants-and-state
+    items:
+      - Put constants in the owner impl and mutable state in struct fields.
+      - Forbid module const/static/static mut unless an exact external contract requires
+        them.
+  - id: function_ownership:dependency_direction
+    source: ../function-ownership.md#respect-domain-dependencies
+    items:
+      - "Choose owners by knowledge and dependency direction: consumer interpretation
+        belongs to the consumer."
+      - Direct conversions use destination From/TryFrom.
+  - id: function_ownership:operations
+    source: ../function-ownership.md#respect-domain-dependencies
+    items:
+      - Keep effectful/context-dependent policy as named operations and preserve
+        validation and transition boundaries.
+  - id: function_ownership:boundary_functions
+    source: ../function-ownership.md#keep-required-free-functions-at-the-boundary
+    items:
+      - Allow free compiler entrypoints, test-harness entries, and required external
+        callbacks only at their exact boundary.
+      - Delegate application behavior to an owner, not another free helper.
+      - Test entrypoints may contain scenario setup, actions, and assertions; reusable
+        test helpers belong to fixture owners.
+  - id: function_ownership:external_requirements
+    source: ../function-ownership.md#keep-required-free-functions-at-the-boundary
+    items:
+      - Identify the actual compiler/harness/FFI/framework requirement.
+      - Generated foreign declarations are not authored implementations, and local
+        macros cannot bypass ownership.
+  - id: function_ownership:lint_exceptions
+    source: ../function-ownership.md#check-ownership
+    items:
+      - Use ownership/suppression lints where available.
+      - Document per-function checked FFI/framework expectations and reject blanket
+        exemptions.
+  - id: function_ownership:lint_evidence
+    source: ../function-ownership.md#check-ownership
+    items:
+      - Test lint exceptions against lookalike helpers and missing reasons.
+      - Semantic review must still verify cohesion and behavior.
+  - id: function_ownership:migration
+    source: ../function-ownership.md#check-ownership
+    items:
+      - Migrate one cohesive flow at a time, inventory construction and free functions,
+        preserve unassigned ABI/wire contracts, and activate checks after migration.
+      - Legacy functions are debt, not exceptions.

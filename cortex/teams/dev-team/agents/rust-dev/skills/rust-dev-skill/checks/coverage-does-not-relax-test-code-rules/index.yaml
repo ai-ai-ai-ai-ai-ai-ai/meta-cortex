@@ -1,0 +1,17 @@
+kind: check
+title: Coverage does not relax test code rules
+overview:
+  - Review fixture setup and test placement when adding tests to meet the coverage floor.
+prohibited:
+  - Use `unwrap()` in fixture setup or extract unit tests to get the implementation file
+    below the size limit.
+preferred:
+  - Propagate setup errors from fallible tests. Split production ownership and keep
+    tests inline with each owner before measuring combined coverage.
+compare:
+  - id: error_handling:no_panics
+    source: ../../practices/behavior/error-handling.md#propagate-errors-instead-of-panicking
+  - id: testing:no_size_evasion
+    source: ../../practices/tooling/rust-testing.md#split-production-ownership-before-tests
+  - id: testing:coverage
+    source: ../../practices/tooling/rust-testing.md#90-rust-line-coverage-floor

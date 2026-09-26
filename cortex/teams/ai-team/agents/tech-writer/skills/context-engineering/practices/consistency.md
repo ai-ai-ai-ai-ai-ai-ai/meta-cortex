@@ -42,7 +42,7 @@ Implementation establishes current behavior; it does not authorize changing poli
 which launches coordination and selects that same language skill again.
 
 **Preferred:** a language skill links directly to its team’s programming documents
-through `../../../../docs/index.md`. Those documents supply shared requirements
+through `../../../../docs/index.yaml`. Those documents supply shared requirements
 without loading the language skill or restarting agent coordination.
 
 ### Bounded review

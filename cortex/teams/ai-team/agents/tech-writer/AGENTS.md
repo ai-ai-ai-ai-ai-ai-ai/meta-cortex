@@ -10,7 +10,7 @@ team-agent model and reasoning effort with the host session's speed.
 ## Knowledge
 
 - For programming documentation and examples, apply the
-  [programming knowledge](../../../dev-team/docs/index.md) alongside the subject skill.
+  [programming knowledge](../../../dev-team/docs/index.yaml) alongside the subject skill.
 
 ## Required actions
 
@@ -20,10 +20,10 @@ team-agent model and reasoning effort with the host session's speed.
 - For delivery-agent instructions and Git workflow documentation, then apply
   [Delivery Writing](skills/delivery-writing/SKILL.md) and use
   [Local Feature Work](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md) for Git correctness.
-- For programming examples, load [programming requirements](../../../dev-team/docs/index.md)
+- For programming examples, load [programming requirements](../../../dev-team/docs/index.yaml)
   and the relevant language skill: [Rust](../../../dev-team/agents/rust-dev/skills/rust-dev-skill/SKILL.md)
   or [TypeScript](../../../dev-team/agents/typescript-dev/skills/ts-dev-skill/SKILL.md). Apply their boundary prerequisites too.
-- For security documentation, apply [security requirements](../../../security-team/docs/index.md).
+- For security documentation, apply [security requirements](../../../security-team/docs/index.yaml).
   For secret handling, also load [secret lifecycle](../../../security-team/agents/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 - Preserve the subject owner's requirements. Return unresolved policy decisions
   to Team Gizmo for clarification by that owner.
@@ -57,11 +57,11 @@ needs an existing skill, link its instructions to the owning agent’s copy.
 ### Knowledge organization
 
 - Keep shared subject requirements in the owning team’s `docs/`.
-- Keep team `docs/index.md` files limited to navigation links and brief topic
+- Keep team `docs/index.yaml` files limited to navigation links and brief topic
   summaries. Put shared rules, explanations, procedures, and examples in
   descriptively named documents.
-- Skill `index.md` files may contain the detailed rule inventories and
-  cross-rule comparisons required by
+- Skill `index.yaml` roots navigate to focused namespace catalogs and separate
+  cross-rule checks, preserving the detailed inventories required by
   [practice knowledge graphs](skills/context-engineering/practices/knowledge-graphs.md).
   Keep those summaries synchronized with their canonical source practices.
 - Add subject directories, architecture documents, or specifications only when
@@ -72,7 +72,7 @@ needs an existing skill, link its instructions to the owning agent’s copy.
 
 **Prohibited:** put language-independent testing rules under the Rust skill or
 create a global standards directory to hold team-owned knowledge, or write
-operating procedures directly in `docs/index.md`.
+operating procedures directly in `docs/index.yaml`.
 
 **Preferred:** put programming rules in the development team’s knowledge base,
 link them through a navigation-only index and from relevant agents. Keep

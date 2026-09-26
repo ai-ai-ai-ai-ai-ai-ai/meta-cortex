@@ -1,0 +1,18 @@
+kind: check
+title: Static findings must agree with browser reachability
+overview:
+  - Check markup, framework entrypoints, and runtime behavior before deleting a reported
+    unused symbol.
+prohibited:
+  - Delete a handler used from markup because static tooling missed its call site, then
+    weaken the failing browser test.
+preferred:
+  - Confirm reachability, correct the finding or remove genuinely dead code, and keep
+    the browser acceptance scenario intact.
+compare:
+  - id: web_unused_code:tool_blind_spots
+    source: ../../practices/web-unused-code.md#check-what-the-installed-tool-cannot-see
+  - id: web_unused_code:live_markup
+    source: ../../practices/web-unused-code.md#fix-findings-without-deleting-live-behavior
+  - id: browser_testing:no_weakened_tests
+    source: ../../practices/browser-testing.md#do-not-weaken-the-failing-scenario

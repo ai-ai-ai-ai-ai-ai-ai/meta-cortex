@@ -50,7 +50,7 @@ that change through Team Gizmo to rust-dev before proceeding.
 
 ## Team knowledge
 
-The [knowledge base](docs/index.md) holds the team’s shared subject
+The [knowledge base](docs/index.yaml) holds the team’s shared subject
 requirements. Agents link the relevant knowledge alongside their own skills.
 
 ## Team circuit breaker

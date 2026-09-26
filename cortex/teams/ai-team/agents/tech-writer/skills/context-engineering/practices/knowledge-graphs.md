@@ -1,7 +1,8 @@
 # Practice Knowledge Graphs
 
-Use a skill's `index.md` as a rule-level map before editing its
-practices. A file list is not enough: readers need the actual requirements,
+Use a skill's hierarchical `index.yaml` catalogs as a rule-level map before
+editing its Markdown practices. A file list is not enough: readers need the
+actual requirements,
 prohibitions, exceptions, and checks to detect contradictions across subjects.
 The source practice remains the authority for explanation and examples.
 
@@ -15,9 +16,9 @@ For every rule, record:
   `wasm_contracts:abi`; do not use opaque numbered codes.
 - **Decision:** the required or prohibited behavior, not a topic label.
 - **Scope and exceptions:** when it applies and what narrowly permits deviation.
-- **Source:** a mandatory link to the exact Markdown section containing the
-  rule and its examples. Link the rule name itself as `path.md#section-heading`;
-  a document-only link is insufficient.
+- **Source:** a mandatory `source: path.md#section-heading` reference to the exact
+  Markdown section containing the rule and its examples; a document-only path
+  is insufficient.
 
 Include validation, migration, and boundary constraints. Merge repeated wording
 of the same decision; do not drop its exception or replace several decisions
@@ -25,30 +26,35 @@ with “follow best practices.” Keep code and extended rationale in the source
 
 **Prohibited:** “Domain states — enums, options, and booleans.”
 
-**Preferred:** keep the linked rule name on its own line, with separate nested
-bullets for its requirements and exceptions:
+**Preferred:** keep each decision in a named YAML entry, with separate ordered
+items for its requirements and exceptions:
 
-```markdown
-- **[domain_states:boolean_conversion](practices/modeling/domain-states.md#convert-external-records-into-owned-types)**
-
-  - Allow destination-owned `From<bool>` only to convert external flags.
-  - Use TryFrom when validation can fail.
-  - Boolean application fields and APIs remain prohibited.
+```yaml
+rules:
+  - id: domain_states:boolean_conversion
+    source: ../domain-states.md#convert-external-records-into-owned-types
+    items:
+      - Allow destination-owned From<bool> only to convert external flags.
+      - Use TryFrom when validation can fail.
+      - Boolean application fields and APIs remain prohibited.
 ```
 
-Keep file, ownership, and related-practice metadata at the practice level.
-Add requirements beneath the existing rule name instead of extending a single
-paragraph. Wrap long bullet text across source lines; keep each link intact.
+Keep file, ownership, exclusions, and related-practice metadata at the practice
+level. Preserve every existing summary item, exception, check, and relationship
+when migrating a catalog. Wrap long scalar text across YAML lines; do not combine
+separate decisions into one prose block. Rules, rationale, and examples remain
+in their canonical Markdown practices.
 
-**Prohibited:** append decisions, exceptions, and checks to one long line after
-the rule link, separated by semicolons.
+**Prohibited:** replace the rule's item sequence with a long scalar containing
+all its requirements, or move the authoritative practice into YAML.
 
 The summary is precise enough to compare with another rule without guessing its
 policy. It does not create a second independently editable policy.
 
 ## Find the owner and inspect overlaps
 
-1. Read the target skill's entry point and complete knowledge graph.
+1. Read the target skill's entry point and navigate to the affected catalog
+   branches using the loading procedure below.
 2. Locate the affected rule names and their canonical owners. Read those practices
    in full, including examples that can contradict the stated rule.
 3. Read related rules and the prerequisites loaded for the assignment. Compare
@@ -74,10 +80,12 @@ its name and point it to the new owner. When splitting one decision into several
 retain the original name for the surviving decision and choose new names for the
 others. Remove deleted names and update every reference; do not retain meaningless aliases.
 
-Catalog each practice once as an owning entry. Related links and cross-rule
+Catalog each practice once as an owning entry within its skill. Related links
+and cross-rule
 references may repeat, but identify one canonical owner for each decision.
-Keep the skill entry point linked to the graph instead of maintaining another
-full index. Preserve implementation loading requirements when moving an index.
+Keep the skill entry point linked to the root catalog instead of maintaining
+another full index. Keep loading requirements in that skill entry point and
+preserve them when moving an index.
 Leaf practices may link directly to shared prerequisites, including through
 `../` paths, without circular loading or restarting agent routing.
 
@@ -125,7 +133,8 @@ the queue and Effect requirements still need a documented boundary decision.”
 
 ## Make rules directly navigable
 
-Use heading-derived anchors and validate the actual heading, including duplicate
+Use heading-derived `source` anchors and validate the actual heading, including
+duplicate
 heading suffixes. Put the rule and its examples under a focused heading when an
 existing section is too broad. Update callers whenever a heading changes. Do not
 add HTML anchors, numeric codes, or circular links just to manufacture a target.
@@ -134,9 +143,75 @@ add HTML anchors, numeric codes, or circular links just to manufacture a target.
 
 **Preferred:** use the readable rule name and its exact source section:
 
-```markdown
-[wasm_contracts:abi](practices/boundaries/wasm-contracts.md#construct-what-the-abi-declares)
+```yaml
+id: wasm_contracts:abi
+source: ../wasm-contracts.md#construct-what-the-abi-declares
 ```
 
-The links above are illustrative syntax, not paths relative to this authoring
+The paths above are illustrative syntax, not paths relative to this authoring
 practice. A real catalog must resolve its links from its own location.
+
+## Split catalogs by subject
+
+- Every catalog directory has its own `index.yaml`. Parent catalogs contain
+  `kind: navigation`, a `title`, and an ordered `entries` sequence. Each entry
+  contains `title`, a relative `path`, and a brief `summary`.
+- Group large catalogs by subject, then give each practice namespace a directory
+  such as `practices/modeling/domain_types/index.yaml`. Do not inline every
+  descendant rule in its parent. Do not create empty directories or indexes.
+- A `kind: practice` leaf contains `title`, `source_title`, `source`, `owns`,
+  `excludes`, `relationships`, `related`, and `rules`. Ownership and relationship
+  prose use item sequences. Related entries contain `title` and `path`; rules
+  contain `id`, `source`, and ordered `items`. Empty metadata sequences are valid
+  when the previous catalog supplied none; rule and item sequences are nonempty.
+- Preserve original subject groupings. Keep readable `practice:decision` IDs
+  stable; the namespace identifies a decision, while `source` identifies its
+  canonical Markdown owner. A practice can own a related namespace's decision.
+- Put each cross-rule comparison in its own `kind: check` leaf, with `title`,
+  `overview`, `prohibited`, `preferred`, and `compare`. Preserve the prose as item
+  sequences and the compared rules as `id` and `source` references. Its parent
+  catalog supplies a short summary so readers can select the relevant check.
+- Resolve every path relative to the YAML file containing it. Update all callers
+  when moving an index. Keep one catalog copy; remove superseded Markdown indexes.
+- Keep team documentation catalogs navigation-only. Put their rules and
+  explanations in the owning Markdown documents.
+
+**Prohibited:** rename a 1,400-line Markdown index to YAML and make every worker
+load it, or copy its rules into each parent catalog.
+
+**Preferred:** a small root points to Modeling; Modeling points to
+`domain_types/index.yaml`; that leaf contains the domain-type rule summaries
+and links to the existing Markdown practice.
+
+## Load only selected branches
+
+1. Read the skill entry point and its mandatory prerequisites. These requirements
+   still apply to focused assignments; catalog selection does not waive them.
+2. Read each entry of the current navigation catalog in sequence. Select branches
+   covering the assignment using their summaries. Record the selected paths and
+   scope; do not recursively load unrelated branches.
+3. For each selected practice leaf, visit every rule and its `items` in order.
+   Read its canonical Markdown practice in full, including exceptions and
+   examples. For each rule, record applicability and the resulting check or
+   action; give a reason when it does not apply. Reuse a source already loaded.
+4. Load related practices and cross-rule checks when the task crosses their
+   boundaries. These references describe review relationships; they do not
+   instruct a leaf to reload its parent or restart routing. Apply cross-language
+   prerequisites when that boundary is involved.
+5. Supply subagents only the required role and skill context, mandatory
+   prerequisites, selected catalog paths, and relevant Markdown sources. Retain
+   the selected paths and rule IDs in the assignment so coverage can be reviewed.
+6. When scope expands, select the newly relevant branches before further work.
+   For catalog maintenance, update affected rule summaries, exceptions, ownership,
+   section references, and comparisons in the same change as their source.
+
+**Prohibited:** skim the first rule, assume the remaining entries were applied,
+or load every sibling namespace into a focused review.
+
+**Preferred:** for a domain-type review, traverse each item in the selected
+`domain_types/index.yaml`, check it against the changed code, and bring in
+construction or serialization guidance only when those boundaries are involved.
+
+A parser can validate structure and tooling can enumerate entries in a fixed
+order. YAML alone does not prove that an agent read, understood, or correctly
+applied a rule. Keep mechanical validation separate from that judgment.

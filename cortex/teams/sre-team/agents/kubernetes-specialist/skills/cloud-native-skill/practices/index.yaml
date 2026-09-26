@@ -1,0 +1,7 @@
+kind: navigation
+title: Practices
+entries:
+  - title: Cloud-native operations
+    path: cloud_native/index.yaml
+    summary: mutation scope, current-state inspection, operational credentials, recovery
+      readiness, and live verification.

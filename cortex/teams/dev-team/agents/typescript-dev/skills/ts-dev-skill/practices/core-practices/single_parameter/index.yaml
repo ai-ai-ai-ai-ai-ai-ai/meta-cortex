@@ -1,0 +1,55 @@
+kind: practice
+title: Single parameter
+source_title: Single parameter
+source: ../../typescript-single-parameter.md
+owns:
+  - Argument count, semantic request aggregation, and fixed-signature exceptions.
+excludes:
+  - Object argument declarations belong to Named arguments; placement belongs to
+    Function ownership.
+relationships: []
+related:
+  - title: Named arguments
+    path: ../../typescript-named-args.md
+  - title: Function ownership
+    path: ../../typescript-function-ownership.md
+rules:
+  - id: single_parameter:one_parameter
+    source: ../../typescript-single-parameter.md#collect-independent-inputs-in-one-request
+    items:
+      - Limit every authored function, method, constructor, and arrow to zero or one
+        parameter, including tooling and Svelte.
+      - Generated bindings are excluded.
+  - id: single_parameter:semantic_request
+    source: ../../typescript-single-parameter.md#collect-independent-inputs-in-one-request
+    items:
+      - Use one named semantic request for multiple inputs.
+      - Reject generic Args/CallbackArgs/PutArgs/line-derived names.
+  - id: single_parameter:named_shapes
+    source: ../../typescript-single-parameter.md#name-object-shaped-parameters
+    items:
+      - Object-shaped parameters, including arrays/tuples/maps/sets/records/mapped
+        types, require named contracts.
+      - Reject inline object/array/tuple annotations even in helpers and destructuring.
+  - id: single_parameter:explicit_omission
+    source: ../../typescript-single-parameter.md#do-not-disguise-additional-inputs
+    items:
+      - Do not fake multiple inputs with optional undefined parameters.
+      - Model omissions explicitly.
+      - Defaults belong at the call site or body, not in another positional argument.
+  - id: single_parameter:callback_returns
+    source: ../../typescript-single-parameter.md#name-object-shaped-parameters
+    items:
+      - An object return type inside a function-valued parameter may be inline.
+      - That does not exempt the callback own input contract.
+  - id: single_parameter:host_signatures
+    source: ../../typescript-single-parameter.md#keep-fixed-host-signatures-at-the-edge
+    items:
+      - Retain multi-input host callbacks only at the required external edge, with a
+        focused documented suppression.
+      - Never exempt project-authored APIs.
+  - id: single_parameter:validation
+    source: ../../typescript-single-parameter.md#validation
+    items:
+      - "Enforce `max-params: [error, 1]` plus semantic request review and verify every
+        host exception."

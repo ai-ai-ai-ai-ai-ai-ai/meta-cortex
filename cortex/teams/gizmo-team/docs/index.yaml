@@ -1,0 +1,10 @@
+kind: navigation
+title: Gizmo Documentation
+entries:
+  - title: Agent configuration
+    path: agent-configuration.md
+    summary: role settings, host speed, launch evidence, context forks, and session reuse.
+  - title: Agent work ledger
+    path: agent-ledger.md
+    summary: repository-wide Turso storage, typed YAML commands, task progress, recovery,
+      and version compatibility.

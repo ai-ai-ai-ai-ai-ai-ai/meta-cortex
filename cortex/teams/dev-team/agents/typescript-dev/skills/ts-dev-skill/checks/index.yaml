@@ -1,0 +1,33 @@
+kind: navigation
+title: Cross-rule consistency checks
+entries:
+  - title: One parameter still needs a named argument
+    path: one-parameter-still-needs-a-named-argument/index.yaml
+    summary: Check the parameter declaration and the object supplied at each call site.
+  - title: Named containers still need domain types
+    path: named-containers-still-need-domain-types/index.yaml
+    summary: Inspect fields inside requests and state payloads, not just the outer type name.
+  - title: Decoding ends before application workflows begin
+    path: decoding-ends-before-application-workflows-begin/index.yaml
+    summary: Follow untrusted input from its decoder into the effectful workflow.
+  - title: Reactive state must have a meaningful initial state
+    path: reactive-state-must-have-a-meaningful-initial-state/index.yaml
+    summary: Check initialization and external absence handling together.
+  - title: Shared vocabulary is not shared mutable state
+    path: shared-vocabulary-is-not-shared-mutable-state/index.yaml
+    summary: Check what was moved from a component into an adjacent module.
+  - title: Integration guidance does not select a replacement UI stack
+    path: integration-guidance-does-not-select-a-replacement-ui-stack/index.yaml
+    summary: Distinguish guidance for an existing framework consumer from authority to
+      replace the implementation stack.
+  - title: Boolean exceptions stay with their language and boundary
+    path: boolean-exceptions-stay-with-their-language-and-boundary/index.yaml
+    summary: Check the owner of an unavoidable boolean contract and the precise exception in
+      the applicable language practice.
+  - title: Static findings must agree with browser reachability
+    path: static-findings-must-agree-with-browser-reachability/index.yaml
+    summary: Check markup, framework entrypoints, and runtime behavior before deleting a
+      reported unused symbol.
+  - title: Queue continuation must preserve completion and cleanup
+    path: queue-continuation-must-preserve-completion-and-cleanup/index.yaml
+    summary: Trace each admitted job through success, failure, recovery, and scope shutdown.

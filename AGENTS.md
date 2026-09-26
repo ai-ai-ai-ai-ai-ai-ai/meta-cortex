@@ -10,7 +10,9 @@ instructions generic and keep the root `LICENSE` in place.
 
 Keep each practice with its subject: programming, security, or repository automation.
 Put shared subject knowledge in the owning team’s `docs/`, with an
-`index.md` navigation catalog containing only links and brief topic summaries.
+`index.yaml` navigation catalog containing only paths and brief topic summaries.
+Split skill catalogs into directory-local YAML indexes by subject and namespace;
+keep their existing summary items and canonical Markdown rule sources.
 Keep rules, explanations, and examples in descriptively named documents.
 Teams live in `cortex/teams/`; each team groups its agents under `agents/`.
 Both Gizmo coordinators belong to `gizmo-team`.
