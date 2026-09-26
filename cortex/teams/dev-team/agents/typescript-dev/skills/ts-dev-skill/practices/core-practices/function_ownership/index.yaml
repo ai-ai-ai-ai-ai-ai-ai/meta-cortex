@@ -16,25 +16,19 @@ related:
 rules:
   - id: function_ownership:instances
     source: ../../typescript-function-ownership.md#use-instances-for-owned-behavior
-    items:
-      - Put execution on instances with meaningful ownership.
+    summary: Put execution on instances with meaningful ownership.
   - id: function_ownership:nesting
     source: ../../typescript-function-ownership.md#count-execution-scopes
-    items:
-      - Keep execution nesting within two scopes.
+    summary: Keep execution nesting within two scopes.
   - id: function_ownership:meaningful_state
     source: ../../typescript-function-ownership.md#use-instances-for-owned-behavior
-    items:
-      - Give instances real state, requests, or capabilities.
+    summary: Give instances real state, requests, or capabilities.
   - id: function_ownership:constants
     source: ../../typescript-function-ownership.md#own-constants-and-mutable-state
-    items:
-      - Keep constants and mutable state on owners.
+    summary: Keep constants and mutable state on owners.
   - id: function_ownership:component_scope
     source: ../../typescript-function-ownership.md#keep-component-ownership-local
-    items:
-      - Keep interaction-specific handlers and state within components.
+    summary: Keep interaction-specific handlers and state within components.
   - id: function_ownership:shared_behavior
     source: ../../typescript-function-ownership.md#keep-component-ownership-local
-    items:
-      - Move shared component behavior to its domain owner.
+    summary: Move shared component behavior to its domain owner.

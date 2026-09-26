@@ -18,29 +18,22 @@ related:
 rules:
   - id: named_args:named_contracts
     source: ../../typescript-named-args.md#name-the-parameter-contract
-    items:
-      - Give object-shaped parameters semantic named contracts.
+    summary: Give object-shaped parameters semantic named contracts.
   - id: named_args:typed_bindings
     source: ../../typescript-named-args.md#name-and-type-object-arguments
-    items:
-      - Pass object arguments through explicitly typed named bindings.
+    summary: Pass object arguments through explicitly typed named bindings.
   - id: named_args:literal_locations
     source: ../../typescript-named-args.md#name-and-type-object-arguments
-    items:
-      - Use literals for named construction and returned values.
+    summary: Use literals for named construction and returned values.
   - id: named_args:no_bypasses
     source: ../../typescript-named-args.md#name-and-type-object-arguments
-    items:
-      - Reject expression tricks that bypass named arguments.
+    summary: Reject expression tricks that bypass named arguments.
   - id: named_args:rune_exceptions
     source: ../../typescript-named-args.md#limit-rune-exceptions-to-the-compiler-forms
-    items:
-      - Limit direct-object exceptions to supported compiler runes.
+    summary: Limit direct-object exceptions to supported compiler runes.
   - id: named_args:no_object_defaults
     source: ../../typescript-named-args.md#keep-object-defaults-out-of-parameters
-    items:
-      - Keep object defaults out of parameter declarations.
+    summary: Keep object defaults out of parameter declarations.
   - id: named_args:validation
     source: ../../typescript-named-args.md#validation
-    items:
-      - Check named contracts through wrappers and imported types.
+    summary: Check named contracts through wrappers and imported types.

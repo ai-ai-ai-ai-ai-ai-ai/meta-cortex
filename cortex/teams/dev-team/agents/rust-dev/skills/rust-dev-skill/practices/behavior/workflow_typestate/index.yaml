@@ -18,37 +18,28 @@ related:
 rules:
   - id: workflow_typestate:typed_owner
     source: ../workflow-typestate.md#state-and-transitions
-    items:
-      - Model meaningful workflows with typed owner states.
+    summary: Model meaningful workflows with typed owner states.
   - id: workflow_typestate:consuming_transitions
     source: ../workflow-typestate.md#state-and-transitions
-    items:
-      - Consume owners when transitions replace capabilities.
+    summary: Consume owners when transitions replace capabilities.
   - id: workflow_typestate:independent_states
     source: ../workflow-typestate.md#state-and-transitions
-    items:
-      - Separate independent state dimensions.
+    summary: Separate independent state dimensions.
   - id: workflow_typestate:private_capabilities
     source: ../workflow-typestate.md#capability-construction
-    items:
-      - Restrict capability construction to validated entry paths.
+    summary: Restrict capability construction to validated entry paths.
   - id: workflow_typestate:no_forged_capabilities
     source: ../workflow-typestate.md#capability-construction
-    items:
-      - Prevent forged or duplicated workflow capabilities.
+    summary: Prevent forged or duplicated workflow capabilities.
   - id: workflow_typestate:runtime_authorization
     source: ../workflow-typestate.md#capability-construction
-    items:
-      - Recheck authorization and freshness at runtime effects.
+    summary: Recheck authorization and freshness at runtime effects.
   - id: workflow_typestate:no_artificial_phases
     source: ../workflow-typestate.md#prohibited-actions
-    items:
-      - Avoid artificial phases and generic workflow frameworks.
+    summary: Avoid artificial phases and generic workflow frameworks.
   - id: workflow_typestate:initial_conversion
     source: ../workflow-typestate.md#publication-pipeline
-    items:
-      - Limit direct owner conversion to initial states.
+    summary: Limit direct owner conversion to initial states.
   - id: workflow_typestate:validation
     source: ../workflow-typestate.md#validation
-    items:
-      - Test valid outcomes and reject illegal workflow transitions.
+    summary: Test valid outcomes and reject illegal workflow transitions.

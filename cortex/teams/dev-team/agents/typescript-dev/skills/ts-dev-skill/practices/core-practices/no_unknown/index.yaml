@@ -16,33 +16,25 @@ related:
 rules:
   - id: no_unknown:no_object
     source: ../../typescript-no-unknown.md#do-not-erase-application-contracts
-    items:
-      - Reject the broad object type in authored code.
+    summary: Reject the broad object type in authored code.
   - id: no_unknown:unknown_boundary
     source: ../../typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge
-    items:
-      - Limit unknown to unavoidable external decoders.
+    summary: Limit unknown to unavoidable external decoders.
   - id: no_unknown:concrete_inputs
     source: ../../typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge
-    items:
-      - Prefer concrete platform input types.
+    summary: Prefer concrete platform input types.
   - id: no_unknown:no_erased_substitutes
     source: ../../typescript-no-unknown.md#do-not-erase-application-contracts
-    items:
-      - Avoid erased bags and generic-value substitutes.
+    summary: Avoid erased bags and generic-value substitutes.
   - id: no_unknown:decoder_scope
     source: ../../typescript-no-unknown.md#decode-unknown-only-at-an-unavoidable-edge
-    items:
-      - Keep unknown values inside immediate decoding pipelines.
+    summary: Keep unknown values inside immediate decoding pipelines.
   - id: no_unknown:catch_bindings
     source: ../../typescript-no-unknown.md#keep-failures-concrete
-    items:
-      - Keep catch bindings unannotated or concrete.
+    summary: Keep catch bindings unannotated or concrete.
   - id: no_unknown:typed_errors
     source: ../../typescript-no-unknown.md#keep-failures-concrete
-    items:
-      - Preserve concrete decoding outcomes and Effect failures.
+    summary: Preserve concrete decoding outcomes and Effect failures.
   - id: no_unknown:enforcement
     source: ../../typescript-no-unknown.md#validation
-    items:
-      - Audit restricted types and decoder exceptions.
+    summary: Audit restricted types and decoder exceptions.

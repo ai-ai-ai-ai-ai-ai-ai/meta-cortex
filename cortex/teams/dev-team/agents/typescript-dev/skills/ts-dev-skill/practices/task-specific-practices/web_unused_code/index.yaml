@@ -16,25 +16,19 @@ related:
 rules:
   - id: web_unused_code:audit_scope
     source: ../../web-unused-code.md#check-what-the-installed-tool-cannot-see
-    items:
-      - Audit unused code and dependencies across authored web projects.
+    summary: Audit unused code and dependencies across authored web projects.
   - id: web_unused_code:tool_blind_spots
     source: ../../web-unused-code.md#check-what-the-installed-tool-cannot-see
-    items:
-      - Review callers that static tools cannot trace.
+    summary: Review callers that static tools cannot trace.
   - id: web_unused_code:fix_findings
     source: ../../web-unused-code.md#fix-findings-without-deleting-live-behavior
-    items:
-      - Remove or connect unused code without suppressing findings.
+    summary: Remove or connect unused code without suppressing findings.
   - id: web_unused_code:live_markup
     source: ../../web-unused-code.md#fix-findings-without-deleting-live-behavior
-    items:
-      - Verify live markup callers before narrowing controller APIs.
+    summary: Verify live markup callers before narrowing controller APIs.
   - id: web_unused_code:no_json_roundtrip
     source: ../../web-unused-code.md#do-not-hide-reactive-state-behind-json
-    items:
-      - Avoid JSON round trips for reactive unwrapping.
+    summary: Avoid JSON round trips for reactive unwrapping.
   - id: web_unused_code:validation
     source: ../../web-unused-code.md#validation
-    items:
-      - Resolve tool findings and separately review untraceable members.
+    summary: Resolve tool findings and separately review untraceable members.

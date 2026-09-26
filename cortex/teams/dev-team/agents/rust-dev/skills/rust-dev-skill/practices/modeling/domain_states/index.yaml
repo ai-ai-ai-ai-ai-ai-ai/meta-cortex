@@ -18,89 +18,67 @@ related:
 rules:
   - id: domain_states:no_option
     source: ../domain-states.md#replace-option-with-meaningful-states
-    items:
-      - Replace authored Option values with meaningful state enums.
+    summary: Replace authored Option values with meaningful state enums.
   - id: domain_states:named_absence
     source: ../domain-states.md#replace-option-with-meaningful-states
-    items:
-      - Give absence domain meaning instead of generic wrappers.
+    summary: Give absence domain meaning instead of generic wrappers.
   - id: domain_states:dependency_options
     source: ../domain-states.md#translate-dependency-results-immediately
-    items:
-      - Consume dependency Option results at the boundary.
+    summary: Consume dependency Option results at the boundary.
   - id: domain_states:option_review
     source: ../domain-states.md#review-the-option-prohibition
-    items:
-      - Review authored and inferred Option usage semantically.
+    summary: Review authored and inferred Option usage semantically.
   - id: domain_states:empty_text
     source: ../domain-states.md#represent-empty-prose-as-a-value
-    items:
-      - Model empty prose separately from invalid input.
+    summary: Model empty prose separately from invalid input.
   - id: domain_states:required_values
     source: ../domain-states.md#require-values-that-cannot-be-absent
-    items:
-      - Validate required values instead of inventing absence states.
+    summary: Validate required values instead of inventing absence states.
   - id: domain_states:drafts
     source: ../domain-states.md#require-values-that-cannot-be-absent
-    items:
-      - Model legitimate drafts without changing established wire contracts.
+    summary: Model legitimate drafts without changing established wire contracts.
   - id: domain_states:no_booleans
     source: ../domain-states.md#convert-external-records-into-owned-types
-    items:
-      - Use named enums for application alternatives.
+    summary: Use named enums for application alternatives.
   - id: domain_states:boolean_conversion
     source: ../domain-states.md#convert-external-records-into-owned-types
-    items:
-      - Confine boolean conversions to documented external boundaries.
+    summary: Confine boolean conversions to documented external boundaries.
   - id: domain_states:external_records
     source: ../domain-states.md#convert-external-records-into-owned-types
-    items:
-      - Convert external flag records into owned domain states.
+    summary: Convert external flag records into owned domain states.
   - id: domain_states:raw_records
     source: ../domain-states.md#convert-external-records-into-owned-types
-    items:
-      - Avoid retaining raw boolean records behind wrappers.
+    summary: Avoid retaining raw boolean records behind wrappers.
   - id: domain_states:mechanical_predicates
     source: ../domain-states.md#name-predicate-outcomes-before-choosing-behavior
-    items:
-      - Convert mechanical predicates into named outcomes before branching.
+    summary: Convert mechanical predicates into named outcomes before branching.
   - id: domain_states:no_derived_flags
     source: ../domain-states.md#name-predicate-outcomes-before-choosing-behavior
-    items:
-      - Avoid boolean mirrors of enum variants.
+    summary: Avoid boolean mirrors of enum variants.
   - id: domain_states:variant_payloads
     source: ../domain-states.md#put-payloads-on-their-owning-variants
-    items:
-      - Keep payloads on their owning variants.
+    summary: Keep payloads on their owning variants.
   - id: domain_states:independent_dimensions
     source: ../domain-states.md#separate-independent-dimensions-nest-refinements
-    items:
-      - Model independent state dimensions separately.
+    summary: Model independent state dimensions separately.
   - id: domain_states:capabilities
     source: ../domain-states.md#put-payloads-on-their-owning-variants
-    items:
-      - Restrict capability construction and encode legal sequencing.
+    summary: Restrict capability construction and encode legal sequencing.
   - id: branching:rust_match
     source: ../domain-states.md#match-domain-values-directly
-    items:
-      - Use native match for Rust domain decisions.
+    summary: Use native match for Rust domain decisions.
   - id: branching:rust_patterns
     source: ../domain-states.md#encourage-rust-conditional-patterns
-    items:
-      - Use conditional patterns for focused payload handling.
+    summary: Use conditional patterns for focused payload handling.
   - id: domain_states:exhaustive_matching
     source: ../domain-states.md#match-decisions-exhaustively
-    items:
-      - Keep evolving domain decisions exhaustive.
+    summary: Keep evolving domain decisions exhaustive.
   - id: domain_states:decision_locality
     source: ../domain-states.md#match-decisions-exhaustively
-    items:
-      - Keep decisions shallow and with their owners.
+    summary: Keep decisions shallow and with their owners.
   - id: domain_states:membership
     source: ../domain-states.md#consume-membership-results-as-control-flow
-    items:
-      - Use membership collections for uniqueness checks.
+    summary: Use membership collections for uniqueness checks.
   - id: domain_states:validation
     source: ../domain-states.md#validation
-    items:
-      - Test state behavior, invalid input, and exhaustiveness.
+    summary: Test state behavior, invalid input, and exhaustiveness.

@@ -16,9 +16,7 @@ related:
 rules:
   - id: dependency_selection:thresholds
     source: ../../dependency-selection.md#adoption-thresholds
-    items:
-      - Apply the ecosystem's required adoption thresholds.
+    summary: Apply the ecosystem's required adoption thresholds.
   - id: dependency_selection:verification
     source: ../../dependency-selection.md#adoption-thresholds
-    items:
-      - Verify dependency adoption and documented exclusions.
+    summary: Verify dependency adoption and documented exclusions.

@@ -18,13 +18,10 @@ related:
 rules:
   - id: module_layout:named_files
     source: ../module-layout.md#use-named-module-files
-    items:
-      - Use named module files instead of mod.rs.
+    summary: Use named module files instead of mod.rs.
   - id: module_layout:preserve_resolution
     source: ../module-layout.md#preserve-resolution-when-moving-modules
-    items:
-      - Preserve module identity and references when moving files.
+    summary: Preserve module identity and references when moving files.
   - id: module_layout:validation
     source: ../module-layout.md#validation
-    items:
-      - Validate module resolution, embedded assets, and public behavior.
+    summary: Validate module resolution, embedded assets, and public behavior.

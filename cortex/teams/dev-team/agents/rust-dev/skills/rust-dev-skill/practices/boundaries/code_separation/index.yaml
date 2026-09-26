@@ -16,37 +16,28 @@ related:
 rules:
   - id: code_separation:ownership
     source: ../rust-typescript-code-separation.md#application-structure
-    items:
-      - Separate Rust product policy from TypeScript presentation.
+    summary: Separate Rust product policy from TypeScript presentation.
   - id: code_separation:extensions
     source: ../rust-typescript-code-separation.md#application-structure
-    items:
-      - Apply the same ownership split to browser extensions.
+    summary: Apply the same ownership split to browser extensions.
   - id: code_separation:core_contracts
     source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
-    items:
-      - Define portable contracts in Rust; consume generated types.
+    summary: Define portable contracts in Rust; consume generated types.
   - id: code_separation:abandoned_state
     source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
-    items:
-      - Remove unused state instead of exporting it.
+    summary: Remove unused state instead of exporting it.
   - id: code_separation:core_annotations
     source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
-    items:
-      - Keep core annotations free of browser behavior.
+    summary: Keep core annotations free of browser behavior.
   - id: code_separation:observation_policy
     source: ../rust-typescript-code-separation.md#separate-observation-from-policy
-    items:
-      - Separate browser observations from portable product decisions.
+    summary: Separate browser observations from portable product decisions.
   - id: code_separation:browser_adapters
     source: ../rust-typescript-code-separation.md#separate-observation-from-policy
-    items:
-      - Keep browser I/O behind established bridge adapters.
+    summary: Keep browser I/O behind established bridge adapters.
   - id: code_separation:visual_state
     source: ../rust-typescript-code-separation.md#keep-visual-state-in-typescript
-    items:
-      - Keep visual state and DOM lifecycle in TypeScript.
+    summary: Keep visual state and DOM lifecycle in TypeScript.
   - id: code_separation:validation
     source: ../rust-typescript-code-separation.md#validation
-    items:
-      - Test domain decisions, generated transport, and affected consumers.
+    summary: Test domain decisions, generated transport, and affected consumers.

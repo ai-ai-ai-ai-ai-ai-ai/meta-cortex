@@ -18,77 +18,58 @@ related:
 rules:
   - id: domain_structure:named_values
     source: ../../typescript-domain-structure.md#preserve-value-identity
-    items:
-      - Give application values meaningful domain types.
+    summary: Give application values meaningful domain types.
   - id: domain_structure:vocabulary_ownership
     source: ../../typescript-domain-structure.md#preserve-value-identity
-    items:
-      - Keep vocabulary with its owning language and domain.
+    summary: Keep vocabulary with its owning language and domain.
   - id: domain_structure:nominal_identity
     source: ../../typescript-domain-structure.md#preserve-value-identity
-    items:
-      - Use nominal scalars and named aggregates.
+    summary: Use nominal scalars and named aggregates.
   - id: domain_structure:preserve_types
     source: ../../typescript-domain-structure.md#preserve-value-identity
-    items:
-      - Preserve domain types throughout contracts and containers.
+    summary: Preserve domain types throughout contracts and containers.
   - id: domain_structure:type_aliases
     source: ../../typescript-domain-structure.md#name-complex-type-expressions
-    items:
-      - Name complex type expressions by domain role.
+    summary: Name complex type expressions by domain role.
   - id: domain_structure:trusted_construction
     source: ../../typescript-domain-structure.md#construct-trusted-values-at-the-boundary
-    items:
-      - Construct opaque values through validating owners.
+    summary: Construct opaque values through validating owners.
   - id: domain_structure:external_conversion
     source: ../../typescript-domain-structure.md#construct-trusted-values-at-the-boundary
-    items:
-      - Normalize external data before application use.
+    summary: Normalize external data before application use.
   - id: domain_structure:typed_failures
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
-    items:
-      - Decode through Effect Schema and preserve typed failures.
+    summary: Decode through Effect Schema and preserve typed failures.
   - id: domain_structure:behavior_ownership
     source: ../../typescript-domain-structure.md#keep-capabilities-behind-their-transitions
-    items:
-      - Place behavior on meaningful owners.
+    summary: Place behavior on meaningful owners.
   - id: domain_structure:legal_transitions
     source: ../../typescript-domain-structure.md#keep-capabilities-behind-their-transitions
-    items:
-      - Expose operations appropriate to each named state.
+    summary: Expose operations appropriate to each named state.
   - id: domain_structure:typed_yaml
     source: ../../typescript-domain-structure.md#serialize-yaml-from-typed-values
-    items:
-      - Serialize typed records instead of assembling YAML strings.
+    summary: Serialize typed records instead of assembling YAML strings.
   - id: domain_structure:versioned_schemas
     source: ../../typescript-domain-structure.md#version-owned-persisted-formats
-    items:
-      - Define supported versions and explicit schema migrations.
+    summary: Define supported versions and explicit schema migrations.
   - id: domain_structure:secrets
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
-    items:
-      - Apply the shared secret lifecycle requirements.
+    summary: Apply the shared secret lifecycle requirements.
   - id: domain_structure:nested_vocabulary
     source: ../../typescript-domain-structure.md#nest-vocabulary-that-shares-an-owner
-    items:
-      - Nest related vocabulary under its domain owner.
+    summary: Nest related vocabulary under its domain owner.
   - id: domain_structure:field_vocabulary
     source: ../../typescript-domain-structure.md#nest-vocabulary-that-shares-an-owner
-    items:
-      - Use enums for closed field allow-lists.
+    summary: Use enums for closed field allow-lists.
   - id: domain_structure:failure_codes
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
-    items:
-      - Use enum failure codes with typed context.
+    summary: Use enum failure codes with typed context.
   - id: domain_structure:no_result_utilities
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
-    items:
-      - Use Effect instead of competing failure utilities.
+    summary: Use Effect instead of competing failure utilities.
   - id: domain_structure:codec_outcomes
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
-    items:
-      - Keep accumulated decoding issues local to codecs.
+    summary: Keep accumulated decoding issues local to codecs.
   - id: domain_structure:validation
     source: ../../typescript-domain-structure.md#validation
-    items:
-      - Review domain types, failures, versions, ownership, and secrets.
+    summary: Review domain types, failures, versions, ownership, and secrets.

@@ -18,25 +18,19 @@ related:
 rules:
   - id: docker:input_isolation
     source: ../docker-container-harness.md#isolate-build-inputs
-    items:
-      - Limit each build stage to its required inputs.
+    summary: Limit each build stage to its required inputs.
   - id: docker:late_revision_identity
     source: ../docker-container-harness.md#introduce-build-identity-at-its-consumer
-    items:
-      - Introduce revision metadata only where consumed.
+    summary: Introduce revision metadata only where consumed.
   - id: docker:buildkit_authority
     source: ../docker-container-harness.md#let-buildkit-own-cache-validity
-    items:
-      - Let BuildKit own cache validity and reuse.
+    summary: Let BuildKit own cache validity and reuse.
   - id: docker:real_cache_evidence
     source: ../docker-container-harness.md#prove-cold-warm-import-and-export-builds
-    items:
-      - Verify cold, warm, import, and export cache behavior.
+    summary: Verify cold, warm, import, and export cache behavior.
   - id: docker:secret_boundary
     source: ../docker-container-harness.md#keep-secrets-out-of-build-inputs
-    items:
-      - Supply build secrets through nonpersisted secret mounts.
+    summary: Supply build secrets through nonpersisted secret mounts.
   - id: docker:validation
     source: ../docker-container-harness.md#validation
-    items:
-      - Check stage boundaries, cache artifacts, and diagnostic output.
+    summary: Check stage boundaries, cache artifacts, and diagnostic output.

@@ -16,17 +16,13 @@ related:
 rules:
   - id: path_imports:two_segments
     source: ../path-imports.md#required-actions
-    items:
-      - Keep non-import paths within two segments.
+    summary: Keep non-import paths within two segments.
   - id: path_imports:all_roots
     source: ../path-imports.md#prohibited-actions
-    items:
-      - Apply path limits consistently across all roots.
+    summary: Apply path limits consistently across all roots.
   - id: path_imports:qualified_functions
     source: ../path-imports.md#examples
-    items:
-      - Retain meaningful module qualification at function calls.
+    summary: Retain meaningful module qualification at function calls.
   - id: path_imports:validation
     source: ../path-imports.md#validation
-    items:
-      - Check path lengths and semantic import context.
+    summary: Check path lengths and semantic import context.

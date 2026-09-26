@@ -18,17 +18,13 @@ related:
 rules:
   - id: code_checks:establish
     source: ../rust-code-checks.md#establish-repeatable-checks
-    items:
-      - Establish complete, repeatable project validation gates.
+    summary: Establish complete, repeatable project validation gates.
   - id: code_checks:lint_baseline
     source: ../rust-code-checks.md#enforce-the-lint-baseline
-    items:
-      - Apply the prescribed lints and review semantic gaps.
+    summary: Apply the prescribed lints and review semantic gaps.
   - id: code_checks:fix_diagnostics
     source: ../rust-code-checks.md#fix-diagnostics-before-completion
-    items:
-      - Fix diagnostics and rerun checks after final edits.
+    summary: Fix diagnostics and rerun checks after final edits.
   - id: code_checks:evidence
     source: ../rust-code-checks.md#report-verification-evidence
-    items:
-      - Report actual check results and unresolved verification gaps.
+    summary: Report actual check results and unresolved verification gaps.

@@ -16,21 +16,16 @@ related:
 rules:
   - id: kubernetes:no_nested_runtime
     source: ../kubernetes-runtime-boundary.md#keep-container-execution-inside-the-pod-contract
-    items:
-      - Keep container execution within the Pod contract.
+    summary: Keep container execution within the Pod contract.
   - id: kubernetes:direct_execution
     source: ../kubernetes-runtime-boundary.md#keep-container-execution-inside-the-pod-contract
-    items:
-      - Execute workloads directly in the selected Pod or Job.
+    summary: Execute workloads directly in the selected Pod or Job.
   - id: kubernetes:no_runtime_socket
     source: ../kubernetes-runtime-boundary.md#reject-runtime-sockets-host-paths-and-privilege
-    items:
-      - Reject runtime sockets and runtime-recreating host access.
+    summary: Reject runtime sockets and runtime-recreating host access.
   - id: kubernetes:build_execution_separation
     source: ../kubernetes-runtime-boundary.md#keep-build-services-as-build-services
-    items:
-      - Separate build-service access from workload execution.
+    summary: Separate build-service access from workload execution.
   - id: kubernetes:validation
     source: ../kubernetes-runtime-boundary.md#validate-the-execution-boundary
-    items:
-      - Review manifests and validate the execution boundary.
+    summary: Review manifests and validate the execution boundary.

@@ -18,49 +18,37 @@ related:
 rules:
   - id: function_ownership:meaningful_owners
     source: ../function-ownership.md#choose-the-owner
-    items:
-      - Place functions on meaningful domain owners.
+    summary: Place functions on meaningful domain owners.
   - id: function_ownership:method_kinds
     source: ../function-ownership.md#choose-the-owner
-    items:
-      - Choose receivers, associated functions, and traits by ownership.
+    summary: Choose receivers, associated functions, and traits by ownership.
   - id: function_ownership:nesting
     source: ../function-ownership.md#choose-the-owner
-    items:
-      - Keep execution nesting within two scopes.
+    summary: Keep execution nesting within two scopes.
   - id: function_ownership:no_utility_containers
     source: ../function-ownership.md#choose-the-owner
-    items:
-      - Avoid utility containers and artificial owners.
+    summary: Avoid utility containers and artificial owners.
   - id: function_ownership:constants_and_state
     source: ../function-ownership.md#own-constants-and-state
-    items:
-      - Keep constants and mutable state on their owners.
+    summary: Keep constants and mutable state on their owners.
   - id: function_ownership:dependency_direction
     source: ../function-ownership.md#respect-domain-dependencies
-    items:
-      - Place behavior according to knowledge and dependency direction.
+    summary: Place behavior according to knowledge and dependency direction.
   - id: function_ownership:operations
     source: ../function-ownership.md#respect-domain-dependencies
-    items:
-      - Keep policy and effects in named operations.
+    summary: Keep policy and effects in named operations.
   - id: function_ownership:boundary_functions
     source: ../function-ownership.md#keep-required-free-functions-at-the-boundary
-    items:
-      - Limit free functions to required external boundaries.
+    summary: Limit free functions to required external boundaries.
   - id: function_ownership:external_requirements
     source: ../function-ownership.md#keep-required-free-functions-at-the-boundary
-    items:
-      - Justify boundary exceptions with the actual external contract.
+    summary: Justify boundary exceptions with the actual external contract.
   - id: function_ownership:lint_exceptions
     source: ../function-ownership.md#check-ownership
-    items:
-      - Use narrow, documented ownership-lint exceptions.
+    summary: Use narrow, documented ownership-lint exceptions.
   - id: function_ownership:lint_evidence
     source: ../function-ownership.md#check-ownership
-    items:
-      - Test exception enforcement and review ownership semantics.
+    summary: Test exception enforcement and review ownership semantics.
   - id: function_ownership:migration
     source: ../function-ownership.md#check-ownership
-    items:
-      - Migrate cohesive flows while preserving required external contracts.
+    summary: Migrate cohesive flows while preserving required external contracts.

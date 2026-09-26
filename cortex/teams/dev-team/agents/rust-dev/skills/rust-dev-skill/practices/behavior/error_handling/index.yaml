@@ -18,33 +18,25 @@ related:
 rules:
   - id: error_handling:typed_failures
     source: ../error-handling.md#required-actions
-    items:
-      - Return concrete operation-specific errors through Result.
+    summary: Return concrete operation-specific errors through Result.
   - id: error_handling:source_conversion
     source: ../error-handling.md#add-context-only-when-it-changes-the-error
-    items:
-      - Preserve typed causes during error conversion.
+    summary: Preserve typed causes during error conversion.
   - id: error_handling:required_input
     source: ../error-handling.md#required-actions
-    items:
-      - Report missing required input as a typed failure.
+    summary: Report missing required input as a typed failure.
   - id: error_handling:no_panics
     source: ../error-handling.md#propagate-errors-instead-of-panicking
-    items:
-      - Avoid unwrap, expect, and expect_err throughout authored Rust.
+    summary: Avoid unwrap, expect, and expect_err throughout authored Rust.
   - id: error_handling:test_errors
     source: ../error-handling.md#keep-anyhow-in-tests
-    items:
-      - Propagate test failures; keep anyhow test-only.
+    summary: Propagate test failures; keep anyhow test-only.
   - id: error_handling:codec_errors
     source: ../error-handling.md#required-actions
-    items:
-      - Use serde_json::Result for JSON-only failures.
+    summary: Use serde_json::Result for JSON-only failures.
   - id: error_handling:error_tests
     source: ../error-handling.md#validation
-    items:
-      - Assert error variants and enforce panic-related lints.
+    summary: Assert error variants and enforce panic-related lints.
   - id: error_handling:enforcement
     source: ../error-handling.md#validation
-    items:
-      - Check error dependencies with existing tools.
+    summary: Check error dependencies with existing tools.

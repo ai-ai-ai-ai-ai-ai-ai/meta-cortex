@@ -20,49 +20,37 @@ related:
 rules:
   - id: serialization_boundaries:typed_decoding
     source: ../serialization-boundaries.md#decode-known-schemas-into-their-types
-    items:
-      - Decode known schemas into concrete types at I/O.
+    summary: Decode known schemas into concrete types at I/O.
   - id: serialization_boundaries:validated_deserialization
     source: ../serialization-boundaries.md#decode-known-schemas-into-their-types
-    items:
-      - Preserve domain validation during deserialization.
+    summary: Preserve domain validation during deserialization.
   - id: serialization_boundaries:typed_construction
     source: ../serialization-boundaries.md#construct-known-documents-from-typed-values
-    items:
-      - Construct known JSON/YAML from typed values.
+    summary: Construct known JSON/YAML from typed values.
   - id: serialization_boundaries:derive_first
     source: ../serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate
-    items:
-      - Prefer derives and established serialization adapters.
+    summary: Prefer derives and established serialization adapters.
   - id: serialization_boundaries:typed_storage
     source: ../serialization-boundaries.md#keep-encoding-out-of-application-state
-    items:
-      - Keep internal storage and APIs typed.
+    summary: Keep internal storage and APIs typed.
   - id: serialization_boundaries:no_erased_values
     source: ../serialization-boundaries.md#generate-typed-javascript-contracts
-    items:
-      - Reject erased JavaScript values in authored contracts.
+    summary: Reject erased JavaScript values in authored contracts.
   - id: serialization_boundaries:typed_abi
     source: ../serialization-boundaries.md#generate-typed-javascript-contracts
-    items:
-      - Generate structural ABI from canonical typed declarations.
+    summary: Generate structural ABI from canonical typed declarations.
   - id: serialization_boundaries:tsify_support
     source: ../serialization-boundaries.md#generate-typed-javascript-contracts
-    items:
-      - Use supported Tsify bindings without duplicate domain types.
+    summary: Use supported Tsify bindings without duplicate domain types.
   - id: serialization_boundaries:no_absence_overrides
     source: ../serialization-boundaries.md#generate-typed-javascript-contracts
-    items:
-      - Avoid ABI field overrides that introduce absence unions.
+    summary: Avoid ABI field overrides that introduce absence unions.
   - id: serialization_boundaries:dependency_decoding
     source: ../serialization-boundaries.md#convert-dependency-owned-values-immediately
-    items:
-      - Decode dependency-owned values immediately at the boundary.
+    summary: Decode dependency-owned values immediately at the boundary.
   - id: serialization_boundaries:typed_tests
     source: ../serialization-boundaries.md#test-the-typed-contract
-    items:
-      - Test typed round trips and invalid-input rejection.
+    summary: Test typed round trips and invalid-input rejection.
   - id: serialization_boundaries:validation
     source: ../serialization-boundaries.md#validation
-    items:
-      - Check conversions, serialization tests, and regenerated bindings.
+    summary: Check conversions, serialization tests, and regenerated bindings.

@@ -15,13 +15,10 @@ related:
 rules:
   - id: effect:upstream
     source: ../../../SKILL.md#effect-use-installed-documentation
-    items:
-      - Read the installed Effect guidance before implementation.
+    summary: Read the installed Effect guidance before implementation.
   - id: effect:version
     source: ../../../SKILL.md#manage-the-pinned-release
-    items:
-      - Pin one release and use its matching documentation.
+    summary: Pin one release and use its matching documentation.
   - id: effect:effectful_work
     source: ../../../SKILL.md#choose-effect-for-workflows
-    items:
-      - Use Effect for changed effectful workflows.
+    summary: Use Effect for changed effectful workflows.

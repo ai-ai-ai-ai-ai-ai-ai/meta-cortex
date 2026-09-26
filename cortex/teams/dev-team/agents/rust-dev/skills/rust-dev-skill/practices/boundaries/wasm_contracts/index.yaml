@@ -18,33 +18,25 @@ related:
 rules:
   - id: wasm_contracts:abi
     source: ../wasm-contracts.md#construct-what-the-abi-declares
-    items:
-      - Match generated class and structural ABI representations.
+    summary: Match generated class and structural ABI representations.
   - id: wasm_contracts:construction
     source: ../wasm-contracts.md#construct-what-the-abi-declares
-    items:
-      - Construct instances through generated APIs.
+    summary: Construct instances through generated APIs.
   - id: wasm_contracts:canonical_enums
     source: ../wasm-contracts.md#export-canonical-enums-without-mirrors
-    items:
-      - Export canonical enums without duplicating vocabulary.
+    summary: Export canonical enums without duplicating vocabulary.
   - id: wasm_contracts:nominal_identifiers
     source: ../wasm-contracts.md#verify-generated-identifier-types
-    items:
-      - Verify identifiers remain nominal across bindings.
+    summary: Verify identifiers remain nominal across bindings.
   - id: wasm_contracts:retained_values
     source: ../wasm-contracts.md#give-retained-objects-one-owner
-    items:
-      - Retain generated objects when UI state needs them.
+    summary: Retain generated objects when UI state needs them.
   - id: wasm_contracts:ownership
     source: ../wasm-contracts.md#give-retained-objects-one-owner
-    items:
-      - Track one owner per allocation and explicit transfers.
+    summary: Track one owner per allocation and explicit transfers.
   - id: wasm_contracts:replacement
     source: ../wasm-contracts.md#give-retained-objects-one-owner
-    items:
-      - Release replaced objects exactly once after final use.
+    summary: Release replaced objects exactly once after final use.
   - id: wasm_contracts:validation
     source: ../wasm-contracts.md#validation
-    items:
-      - Test generated shapes, ownership transfers, and lifecycle cleanup.
+    summary: Test generated shapes, ownership transfers, and lifecycle cleanup.

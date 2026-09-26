@@ -18,21 +18,16 @@ related:
 rules:
   - id: cloud_native:scope
     source: ../cloud-native-operations.md#identify-the-target-and-current-state
-    items:
-      - Identify the target before making changes.
+    summary: Identify the target before making changes.
   - id: cloud_native:current_state
     source: ../cloud-native-operations.md#identify-the-target-and-current-state
-    items:
-      - Inspect live state and the proposed change.
+    summary: Inspect live state and the proposed change.
   - id: cloud_native:secret_lifecycle
     source: ../cloud-native-operations.md#protect-operational-credentials
-    items:
-      - Apply shared credential storage, rotation, and revocation rules.
+    summary: Apply shared credential storage, rotation, and revocation rules.
   - id: cloud_native:recovery
     source: ../cloud-native-operations.md#preserve-a-recovery-path
-    items:
-      - Establish recovery ownership and rollback before impactful changes.
+    summary: Establish recovery ownership and rollback before impactful changes.
   - id: cloud_native:live_verification
     source: ../cloud-native-operations.md#verify-live-behavior
-    items:
-      - Verify live workload behavior after changes.
+    summary: Verify live workload behavior after changes.

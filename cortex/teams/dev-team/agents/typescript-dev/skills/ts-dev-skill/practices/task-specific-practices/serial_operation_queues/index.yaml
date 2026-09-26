@@ -16,25 +16,19 @@ related:
 rules:
   - id: serial_operation_queues:effect_queue
     source: ../../typescript-serial-operation-queues.md#keep-the-queue-and-results-typed
-    items:
-      - Use an Effect queue with one scoped FIFO consumer.
+    summary: Use an Effect queue with one scoped FIFO consumer.
   - id: serial_operation_queues:typed_completion
     source: ../../typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
-    items:
-      - Deliver each job's typed completion independently.
+    summary: Deliver each job's typed completion independently.
   - id: serial_operation_queues:idle_and_recovery
     source: ../../typescript-serial-operation-queues.md#define-idle-and-recovery-explicitly
-    items:
-      - Use ordered idle barriers and settle work during recovery.
+    summary: Use ordered idle barriers and settle work during recovery.
   - id: serial_operation_queues:scheduling
     source: ../../typescript-serial-operation-queues.md#keep-the-queue-and-results-typed
-    items:
-      - Separate scheduling from policy and preserve required capabilities.
+    summary: Separate scheduling from policy and preserve required capabilities.
   - id: serial_operation_queues:admission_and_shutdown
     source: ../../typescript-serial-operation-queues.md#report-failure-without-stopping-later-work
-    items:
-      - Handle admission failures and settle all work on shutdown.
+    summary: Handle admission failures and settle all work on shutdown.
   - id: serial_operation_queues:validation
     source: ../../typescript-serial-operation-queues.md#validation
-    items:
-      - Test ordering, completion, continuation, cancellation, and recovery.
+    summary: Test ordering, completion, continuation, cancellation, and recovery.

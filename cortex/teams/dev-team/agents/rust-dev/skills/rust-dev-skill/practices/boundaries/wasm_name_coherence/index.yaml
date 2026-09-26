@@ -16,37 +16,28 @@ related:
 rules:
   - id: wasm_name_coherence:same_names
     source: ../rust-wasm-name-coherence.md#preserve-imported-and-exported-names
-    items:
-      - Preserve names across project-owned language boundaries.
+    summary: Preserve names across project-owned language boundaries.
   - id: wasm_name_coherence:no_aliases
     source: ../rust-wasm-name-coherence.md#preserve-imported-and-exported-names
-    items:
-      - Avoid aliases that rename generated contracts.
+    summary: Avoid aliases that rename generated contracts.
   - id: wasm_name_coherence:export_names
     source: ../rust-wasm-name-coherence.md#preserve-method-and-property-names
-    items:
-      - Export Rust symbols under their canonical names.
+    summary: Export Rust symbols under their canonical names.
   - id: wasm_name_coherence:serialization_names
     source: ../rust-wasm-name-coherence.md#preserve-fields-and-enum-variants
-    items:
-      - Preserve project-owned schema names during serialization.
+    summary: Preserve project-owned schema names during serialization.
   - id: wasm_name_coherence:command_names
     source: ../rust-wasm-name-coherence.md#preserve-command-identities
-    items:
-      - Use Rust variants directly as command identities.
+    summary: Use Rust variants directly as command identities.
   - id: wasm_name_coherence:command_groups
     source: ../rust-wasm-name-coherence.md#group-operations-by-their-owning-domain
-    items:
-      - Preserve typed operation groups through dispatch and transport.
+    summary: Preserve typed operation groups through dispatch and transport.
   - id: wasm_name_coherence:external_names
     source: ../rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter
-    items:
-      - Isolate required external naming in boundary adapters.
+    summary: Isolate required external naming in boundary adapters.
   - id: wasm_name_coherence:migrations
     source: ../rust-wasm-name-coherence.md#map-fixed-external-names-only-at-the-adapter
-    items:
-      - Change established wire names only through authorized migrations.
+    summary: Change established wire names only through authorized migrations.
   - id: wasm_name_coherence:validation
     source: ../rust-wasm-name-coherence.md#validation
-    items:
-      - Check naming exceptions, generated bindings, and migrations.
+    summary: Check naming exceptions, generated bindings, and migrations.

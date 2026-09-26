@@ -16,13 +16,10 @@ related:
 rules:
   - id: default_values:valid_defaults
     source: ../default-values.md#choose-a-valid-default
-    items:
-      - Define defaults only for valid starting values.
+    summary: Define defaults only for valid starting values.
   - id: default_values:struct_defaults
     source: ../default-values.md#structs-derive-field-defaults
-    items:
-      - Derive defaults when field semantics agree.
+    summary: Derive defaults when field semantics agree.
   - id: default_values:enum_defaults
     source: ../default-values.md#enums-mark-the-default-variant
-    items:
-      - Choose an explicit default enum variant.
+    summary: Choose an explicit default enum variant.

@@ -16,17 +16,13 @@ related:
 rules:
   - id: macro_minimization:no_local_macros
     source: ../rust-macro-minimization.md#keep-routine-code-explicit
-    items:
-      - Avoid authored macros for routine application code.
+    summary: Avoid authored macros for routine application code.
   - id: macro_minimization:explicit_mappings
     source: ../rust-macro-minimization.md#keep-domain-mappings-in-their-destination-impl
-    items:
-      - Prefer explicit Rust over unnecessary macro indirection.
+    summary: Prefer explicit Rust over unnecessary macro indirection.
   - id: macro_minimization:ecosystem_macros
     source: ../rust-macro-minimization.md#keep-approved-ecosystem-macros
-    items:
-      - Retain supported compiler and ecosystem macros.
+    summary: Retain supported compiler and ecosystem macros.
   - id: macro_minimization:safe_replacement
     source: ../rust-macro-minimization.md#replace-a-macro-without-changing-its-contract
-    items:
-      - Replace redundant macros while preserving behavior.
+    summary: Replace redundant macros while preserving behavior.

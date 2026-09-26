@@ -16,17 +16,13 @@ related:
 rules:
   - id: branching:no_boolean_if
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions
-    items:
-      - Branch on named domain alternatives instead of boolean conditions.
+    summary: Branch on named domain alternatives instead of boolean conditions.
   - id: branching:no_ternary
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals
-    items:
-      - Replace ternaries with explicit pattern matching.
+    summary: Replace ternaries with explicit pattern matching.
   - id: branching:closed_matches
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match
-    items:
-      - Handle every named variant without catch-all fallbacks.
+    summary: Handle every named variant without catch-all fallbacks.
   - id: branching:validation
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#validation
-    items:
-      - Verify exhaustiveness and distinct variant behavior.
+    summary: Verify exhaustiveness and distinct variant behavior.

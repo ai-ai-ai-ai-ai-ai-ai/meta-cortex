@@ -15,5 +15,4 @@ related:
 rules:
   - id: typed_sql:construction
     source: ../../boundaries/typed-sql.md#typed-sql-construction
-    items:
-      - Build SQL through typed builders and bound values.
+    summary: Build SQL through typed builders and bound values.

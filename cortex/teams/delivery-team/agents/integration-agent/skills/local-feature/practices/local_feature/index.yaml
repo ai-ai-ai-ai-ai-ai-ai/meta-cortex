@@ -13,21 +13,16 @@ related: []
 rules:
   - id: local_feature:workspace
     source: ../local-feature-integration.md#set-up-workspaces
-    items:
-      - Use one feature workspace and isolated task worktrees.
+    summary: Use one feature workspace and isolated task worktrees.
   - id: local_feature:completion
     source: ../local-feature-integration.md#finish-task-work
-    items:
-      - Validate and commit assigned changes before reporting completion.
+    summary: Validate and commit assigned changes before reporting completion.
   - id: local_feature:integration
     source: ../local-feature-integration.md#integrate-finished-branches
-    items:
-      - Merge finished tasks in order; validate the combined feature.
+    summary: Merge finished tasks in order; validate the combined feature.
   - id: local_feature:repair
     source: ../local-feature-integration.md#resolve-integration-failures
-    items:
-      - Preserve failed work and repair through the task branch.
+    summary: Preserve failed work and repair through the task branch.
   - id: local_feature:cleanup
     source: ../local-feature-integration.md#complete-and-clean-up
-    items:
-      - Remove only finished, merged task workspaces after validation.
+    summary: Remove only finished, merged task workspaces after validation.

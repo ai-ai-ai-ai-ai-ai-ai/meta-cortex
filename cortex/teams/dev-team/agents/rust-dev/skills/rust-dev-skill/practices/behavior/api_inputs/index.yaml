@@ -16,25 +16,19 @@ related:
 rules:
   - id: api_inputs:one_input
     source: ../api-inputs.md#one-non-receiver-input
-    items:
-      - Accept at most one non-receiver input.
+    summary: Accept at most one non-receiver input.
   - id: api_inputs:semantic_requests
     source: ../api-inputs.md#required-actions
-    items:
-      - Group independent inputs into meaningful request types.
+    summary: Group independent inputs into meaningful request types.
   - id: api_inputs:command_decoding
     source: ../api-inputs.md#required-actions
-    items:
-      - Decode commands at the edge into typed requests.
+    summary: Decode commands at the edge into typed requests.
   - id: api_inputs:no_positional_bags
     source: ../api-inputs.md#prohibited-actions
-    items:
-      - Reject positional bags and meaningless request wrappers.
+    summary: Reject positional bags and meaningless request wrappers.
   - id: api_inputs:external_signatures
     source: ../api-inputs.md#fixed-signature-exceptions
-    items:
-      - Isolate externally required signatures in adapters.
+    summary: Isolate externally required signatures in adapters.
   - id: api_inputs:validation
     source: ../api-inputs.md#validation
-    items:
-      - Check input counts, request meaning, and boundary exceptions.
+    summary: Check input counts, request meaning, and boundary exceptions.

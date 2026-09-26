@@ -18,17 +18,13 @@ related:
 rules:
   - id: struct_construction:no_new
     source: ../struct-construction.md#no-constructor-indirection
-    items:
-      - Avoid constructors that merely hide field assignments.
+    summary: Avoid constructors that merely hide field assignments.
   - id: struct_construction:derive_from
     source: ../struct-construction.md#single-field-derive-from
-    items:
-      - Derive infallible wrapper conversions; preserve validating construction.
+    summary: Derive infallible wrapper conversions; preserve validating construction.
   - id: struct_construction:initial_state
     source: ../struct-construction.md#single-field-derive-from
-    items:
-      - Restrict workflow construction to allowed initial states.
+    summary: Restrict workflow construction to allowed initial states.
   - id: struct_construction:struct_literals
     source: ../struct-construction.md#multiple-fields-use-a-struct-literal
-    items:
-      - Use named literals without exposing restricted fields.
+    summary: Use named literals without exposing restricted fields.

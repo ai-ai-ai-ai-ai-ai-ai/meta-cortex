@@ -18,37 +18,28 @@ related:
 rules:
   - id: libraries:required_core
     source: ../libraries.md#required-core
-    items:
-      - Use the prescribed core crates with required features.
+    summary: Use the prescribed core crates with required features.
   - id: libraries:no_custom_commodity
     source: ../libraries.md#required-core
-    items:
-      - Reuse established serialization, error, conversion, and logging tools.
+    summary: Reuse established serialization, error, conversion, and logging tools.
   - id: libraries:concurrency
     source: ../libraries.md#concurrency
-    items:
-      - Use Tokio and Flume for native concurrency.
+    summary: Use Tokio and Flume for native concurrency.
   - id: libraries:networking
     source: ../libraries.md#web-and-networking
-    items:
-      - Use the prescribed client and server libraries.
+    summary: Use the prescribed client and server libraries.
   - id: libraries:wasm_contracts
     source: ../libraries.md#rustjavascript-contracts
-    items:
-      - Use established WASM contract and event-loop bindings.
+    summary: Use established WASM contract and event-loop bindings.
   - id: libraries:browser_storage
     source: ../libraries.md#browser-apis-and-storage
-    items:
-      - Use established typed browser storage and file adapters.
+    summary: Use established typed browser storage and file adapters.
   - id: libraries:direct_browser_bindings
     source: ../libraries.md#browser-apis-and-storage
-    items:
-      - Limit direct browser bindings to uncovered APIs.
+    summary: Limit direct browser bindings to uncovered APIs.
   - id: libraries:diagnostics
     source: ../libraries.md#diagnostics-and-tests
-    items:
-      - Use the prescribed browser diagnostics and WASM tests.
+    summary: Use the prescribed browser diagnostics and WASM tests.
   - id: libraries:typed_boundaries
     source: ../libraries.md#diagnostics-and-tests
-    items:
-      - Preserve typed contracts across browser boundaries.
+    summary: Preserve typed contracts across browser boundaries.

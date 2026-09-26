@@ -128,7 +128,7 @@ export class CatalogSchema {
   static readonly ruleFields = {
     id: CatalogSchema.ruleName,
     source: Schema.NonEmptyString,
-    items: Schema.NonEmptyArray(Schema.NonEmptyString),
+    summary: Schema.NonEmptyString,
   } satisfies Schema.Struct.Fields;
   static readonly rule = Schema.Struct(CatalogSchema.ruleFields);
   static readonly comparisonFields = {

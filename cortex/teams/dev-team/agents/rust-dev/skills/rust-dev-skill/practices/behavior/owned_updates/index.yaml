@@ -16,17 +16,13 @@ related:
 rules:
   - id: owned_updates:consume_replacement
     source: ../owned-updates.md#replace-an-owned-value
-    items:
-      - Consume value owners and use their returned replacements.
+    summary: Consume value owners and use their returned replacements.
   - id: owned_updates:external_mutation
     source: ../owned-updates.md#required-actions
-    items:
-      - Retain borrowed mutation only for required external contracts.
+    summary: Retain borrowed mutation only for required external contracts.
   - id: owned_updates:no_fake_actors
     source: ../owned-updates.md#required-actions
-    items:
-      - Avoid artificial actors or phases for value updates.
+    summary: Avoid artificial actors or phases for value updates.
   - id: owned_updates:validation
     source: ../owned-updates.md#validation
-    items:
-      - Verify consumption and preservation of unchanged fields.
+    summary: Verify consumption and preservation of unchanged fields.

@@ -220,9 +220,8 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
               {
                 id: DomainTypesRule.Reuse,
                 source: "../known.md#same-1",
-                items: [
+                summary:
                   'Preserve "quotes": and YAML-like values.\nKeep the exception too.',
-                ],
               },
             ],
           },
@@ -305,12 +304,12 @@ test("reports lost practice coverage, duplicate ownership and rules, and broken 
               {
                 id: DomainTypesRule.Reuse,
                 source: "../known.md",
-                items: ["A rule without an anchor."],
+                summary: "A rule without an anchor.",
               },
               {
                 id: DomainTypesRule.ConcreteModules,
                 source: "../known.md#absent",
-                items: ["A rule with the wrong anchor."],
+                summary: "A rule with the wrong anchor.",
               },
             ],
           },
@@ -351,6 +350,9 @@ test.each([
   "kind: navigation\ntitle: Empty entries\nentries: []\n",
   "kind: navigation\ntitle: Unknown property\nextra: true\nentries: [{title: Item, path: note.txt, summary: Text}]\n",
   "kind: practice\ntitle: Missing rule metadata\nrules: [{id: malformed}]\n",
+  "kind: practice\nowner: rust:domain_types\ntitle: Empty summary\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:reuse, source: 'known.md#known', summary: ''}]\n",
+  "kind: practice\nowner: rust:domain_types\ntitle: List summary\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:reuse, source: 'known.md#known', summary: [Known decision]}]\n",
+  "kind: practice\nowner: rust:domain_types\ntitle: Superseded items\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:reuse, source: 'known.md#known', summary: Known decision, items: [Known decision]}]\n",
 ])("rejects malformed or incomplete catalogs: %s", (value) =>
   Effect.runPromise(
     Effect.scoped(
@@ -506,7 +508,7 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
               {
                 id: DomainTypesRule.Reuse,
                 source: "../known.md#first",
-                items: ["Use the first rule."],
+                summary: "Use the first rule.",
               },
             ],
           },
@@ -579,8 +581,8 @@ test("validates a focused comparison leaf without requiring unrelated rule inven
   ));
 
 test.each([
-  "kind: practice\nowner: rust:domain_types\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:unregistered, source: 'known.md#known', items: [Known decision]}]\n",
-  "kind: practice\nowner: rust:unregistered\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:reuse, source: 'known.md#known', items: [Known decision]}]\n",
+  "kind: practice\nowner: rust:domain_types\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:unregistered, source: 'known.md#known', summary: Known decision}]\n",
+  "kind: practice\nowner: rust:unregistered\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:reuse, source: 'known.md#known', summary: Known decision}]\n",
   "kind: check\ntitle: Known\noverview: [Inspect decisions]\nprohibited: [Discard requirements]\npreferred: [Apply requirements]\ncompare: [{id: domain_types:unregistered, source: 'known.md#known'}]\n",
 ])(
   "rejects unregistered rule or owner vocabulary at the YAML boundary: %s",
@@ -644,7 +646,7 @@ test("rejects different registered owners claiming the same canonical source", (
               {
                 id: DomainTypesRule.Reuse,
                 source: "../known.md#known",
-                items: ["Reuse types."],
+                summary: "Reuse types.",
               },
             ],
           },
@@ -665,7 +667,7 @@ test("rejects different registered owners claiming the same canonical source", (
               {
                 id: DomainStatesRule.BooleanConversion,
                 source: "../known.md#known",
-                items: ["Convert flags."],
+                summary: "Convert flags.",
               },
             ],
           },

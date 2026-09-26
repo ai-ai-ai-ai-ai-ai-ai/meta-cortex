@@ -131,7 +131,7 @@ Apply the consuming project's context throughout the task:
   and architecture before planning.
 - Resolve Markdown links and YAML catalog paths relative to their containing file.
 - Follow [catalog loading](teams/ai-team/agents/tech-writer/skills/context-engineering/practices/knowledge-graphs.md#load-only-selected-branches)
-  to select focused index branches and process their items in order.
+  to select focused index branches and process their rule entries in order.
 - Resolve source paths, manifests, tests, and commands against the consuming
   project or assigned project worktree.
 - Pass the library location separately from each task worktree. An ignored

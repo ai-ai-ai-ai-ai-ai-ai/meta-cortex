@@ -16,25 +16,19 @@ related:
 rules:
   - id: testing:domain_and_boundary
     source: ../rust-testing.md#domain-and-boundary-tests
-    items:
-      - Prove domain behavior in Rust and boundaries in WASM.
+    summary: Prove domain behavior in Rust and boundaries in WASM.
   - id: testing:colocation
     source: ../rust-testing.md#test-placement
-    items:
-      - Keep unit tests inline with their production owner.
+    summary: Keep unit tests inline with their production owner.
   - id: testing:no_size_evasion
     source: ../rust-testing.md#split-production-ownership-before-tests
-    items:
-      - Split responsibilities without moving tests to evade size limits.
+    summary: Split responsibilities without moving tests to evade size limits.
   - id: testing:coverage
     source: ../rust-testing.md#90-rust-line-coverage-floor
-    items:
-      - Measure combined portable coverage against the required floor.
+    summary: Measure combined portable coverage against the required floor.
   - id: testing:regression_first
     source: ../rust-testing.md#regression-tests-precede-the-fix
-    items:
-      - Add focused regressions at the failing boundary.
+    summary: Add focused regressions at the failing boundary.
   - id: testing:evidence
     source: ../rust-testing.md#validation-evidence
-    items:
-      - Report test results, measured coverage, and missing checks.
+    summary: Report test results, measured coverage, and missing checks.

@@ -16,29 +16,22 @@ related:
 rules:
   - id: single_parameter:one_parameter
     source: ../../typescript-single-parameter.md#collect-independent-inputs-in-one-request
-    items:
-      - Accept at most one parameter in authored functions.
+    summary: Accept at most one parameter in authored functions.
   - id: single_parameter:semantic_request
     source: ../../typescript-single-parameter.md#collect-independent-inputs-in-one-request
-    items:
-      - Group inputs into one semantic request.
+    summary: Group inputs into one semantic request.
   - id: single_parameter:named_shapes
     source: ../../typescript-single-parameter.md#name-object-shaped-parameters
-    items:
-      - Name object-shaped input contracts.
+    summary: Name object-shaped input contracts.
   - id: single_parameter:explicit_omission
     source: ../../typescript-single-parameter.md#do-not-disguise-additional-inputs
-    items:
-      - Model omitted inputs explicitly.
+    summary: Model omitted inputs explicitly.
   - id: single_parameter:callback_returns
     source: ../../typescript-single-parameter.md#name-object-shaped-parameters
-    items:
-      - Separate callback return allowances from input requirements.
+    summary: Separate callback return allowances from input requirements.
   - id: single_parameter:host_signatures
     source: ../../typescript-single-parameter.md#keep-fixed-host-signatures-at-the-edge
-    items:
-      - Isolate required multi-input host signatures at the boundary.
+    summary: Isolate required multi-input host signatures at the boundary.
   - id: single_parameter:validation
     source: ../../typescript-single-parameter.md#validation
-    items:
-      - Enforce parameter counts and review host exceptions.
+    summary: Enforce parameter counts and review host exceptions.

@@ -18,21 +18,16 @@ related:
 rules:
   - id: svelte_state_modeling:initialization
     source: ../../svelte-state-modeling.md#initialize-every-modeled-rune
-    items:
-      - Initialize modeled rune state explicitly.
+    summary: Initialize modeled rune state explicitly.
   - id: svelte_state_modeling:state_payloads
     source: ../../svelte-state-modeling.md#move-related-values-together
-    items:
-      - Keep co-transitioning UI payloads in named variants.
+    summary: Keep co-transitioning UI payloads in named variants.
   - id: svelte_state_modeling:generated_types
     source: ../../svelte-state-modeling.md#preserve-generated-product-types
-    items:
-      - Preserve canonical domain types in UI state.
+    summary: Preserve canonical domain types in UI state.
   - id: svelte_state_modeling:external_absence
     source: ../../svelte-state-modeling.md#move-related-values-together
-    items:
-      - Convert external absence into semantic variants.
+    summary: Convert external absence into semantic variants.
   - id: svelte_state_modeling:validation
     source: ../../svelte-state-modeling.md#validation
-    items:
-      - Check rune transitions, typed identifiers, and browser behavior.
+    summary: Check rune transitions, typed identifiers, and browser behavior.

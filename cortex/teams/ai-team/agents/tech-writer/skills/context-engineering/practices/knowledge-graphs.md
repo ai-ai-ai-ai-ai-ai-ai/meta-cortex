@@ -13,17 +13,17 @@ For every rule, record:
 
 - **Rule name:** a readable `practice:decision` namespace, such as
   `wasm_contracts:abi`; do not use opaque numbered codes.
-- **Decision cue:** one short phrase or sentence identifying the decision.
+- **Summary:** one short phrase or sentence identifying the decision.
 - **Scope:** include a qualifier only when needed to select the right source.
 - **Source:** a mandatory `source: path.md#section-heading` reference to the exact
   Markdown section containing the rule and its examples; a document-only path
   is insufficient.
 
 Keep validation, migration, and boundary decisions discoverable by their own
-rule names. Prefer one short item per rule, usually five to twelve words.
+rule names. Give each rule one short `summary`, usually five to twelve words.
 Leave procedures, exceptions, thresholds, commands, and examples in the source.
-Add another brief cue only for a distinct selection need; do not reproduce the
-source's substeps or list every obligation.
+Use a scalar string, not a one-element sequence. Do not reproduce the source's
+substeps or list every obligation.
 
 **Prohibited:** “Domain states — enums, options, and booleans.”
 
@@ -33,8 +33,7 @@ source's substeps or list every obligation.
 rules:
   - id: domain_states:boolean_conversion
     source: ../domain-states.md#convert-external-records-into-owned-types
-    items:
-      - Confine boolean conversions to documented external boundaries.
+    summary: Confine boolean conversions to documented external boundaries.
 ```
 
 Keep file, ownership, exclusions, and related-practice metadata at the practice
@@ -43,7 +42,7 @@ when shortening a catalog. Keep each distinct rule separately addressable.
 If a requirement exists only in an index, move it to its owning Markdown source
 before removing that detail. Do not delete policy to reduce index size.
 
-**Prohibited:** copy a source procedure into several long YAML items or replace
+**Prohibited:** copy a source procedure into a long YAML summary or replace
 distinct rule entries with one generic “follow best practices” item.
 
 The cue selects a source; it is not sufficient to apply or compare policy.
@@ -161,8 +160,8 @@ practice. A real catalog must resolve its links from its own location.
 - A `kind: practice` leaf contains `owner`, `title`, `source_title`, `source`, `owns`,
   `excludes`, `relationships`, `related`, and `rules`. Ownership and relationship
   prose use item sequences. Related entries contain `title` and `path`; rules
-  contain `id`, `source`, and ordered `items`. Empty metadata sequences are valid
-  when no metadata applies; rule and item sequences are nonempty.
+  contain `id`, `source`, and a nonempty scalar `summary`. Empty metadata sequences
+  are valid when no metadata applies; the ordered `rules` sequence is nonempty.
 - Use the closed [rule-name enums](../scripts/src/ts/rule-name.ts) for rule and
   comparison IDs and the [practice-owner enums](../scripts/src/ts/practice-owner.ts)
   for each practice's `owner`. Group enums by namespace or subject; their union
@@ -195,7 +194,7 @@ and links to the existing Markdown practice.
 2. Read each entry of the current navigation catalog in sequence. Select branches
    covering the assignment using their summaries. Record the selected paths and
    scope; do not recursively load unrelated branches.
-3. For each selected practice leaf, visit every rule and its `items` in order.
+3. For each selected practice leaf, visit every rule and read its `summary` in order.
    Read its canonical Markdown practice in full, including exceptions and
    examples. For each rule, record applicability and the resulting check or
    action; give a reason when it does not apply. Reuse a source already loaded.
