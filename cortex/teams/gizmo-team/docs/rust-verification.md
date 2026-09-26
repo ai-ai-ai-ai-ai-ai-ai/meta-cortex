@@ -25,6 +25,9 @@ the existing [agent ledger](agent-ledger.md), without another coordination servi
    session choices, and normal [assignment context](../../AGENTS.md#assignment-context).
    Supply the explicit SHA of the single commit to verify. Without a resolvable
    SHA, the verifier must stop and ask Gizmo to provide it.
+   Use the [communication protocol](../../dev-team/agents/rust-verifier/skills/rust-verification/references/communication-protocol.md#gizmo-request)
+   for the exact `verification_request` fields, including required checks and
+   available evidence. Answer `need_commit` with its defined `commit_reply`.
    Supply its own verification skill and canonical Rust YAML catalog root.
    Do not inherit the developer's full conversation or preload its skill and
    Markdown practices. Use a fresh review context when the host supports it;
@@ -47,9 +50,11 @@ review, and require complete catalog coverage before considering integration.
 
 ### Route findings and require a complete new pass
 
-1. Inspect the report against its original file and rule inventories. Reject
-   missing outcomes, unexplained inapplicability, a mismatched SHA, or a pass with
-   violations or blockers. The verifier skill owns the report and verdict rules.
+1. Follow the protocol's [result handling](../../dev-team/agents/rust-verifier/skills/rust-verification/references/communication-protocol.md#result-notification-and-gizmo-response).
+   Read the full report from the verifier task's
+   `progress.extensions.rust_verification_report`; the host notification is
+   only a pointer. Inspect inventory and decision coverage separately, then
+   check the exact outcomes and evidence before acting on its verdict.
 2. Extract all implementation repair requirements into one bounded rust-dev
    assignment, with rule IDs, source links, committed paths/lines, evidence,
    required corrections, and expected validation. Require strict adherence to
@@ -64,6 +69,7 @@ review, and require complete catalog coverage before considering integration.
 4. Create a new read-only verifier task for a complete pass over that commit.
    Keep the previous report in its original task history;
    its ready state cannot approve the replacement commit.
+   Identify that report with the new request's `prior_review` field.
    Refresh the catalog snapshot if an authorized clarification changed it.
    Recheck every rule and changed file, including unresolved previous findings
    and newly introduced defects. Do not accept a fixes-only review.

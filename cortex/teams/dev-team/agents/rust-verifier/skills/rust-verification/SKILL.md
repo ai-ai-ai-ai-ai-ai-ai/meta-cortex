@@ -13,8 +13,11 @@ builds alone cannot establish compliance.
 
 ### Require the commit SHA
 
-1. Require an explicit commit SHA from Team Gizmo before starting verification.
-   If it is missing or cannot be resolved, stop and ask Gizmo to provide it.
+1. Load the [Gizmo/verifier communication protocol](references/communication-protocol.md).
+   It defines the exact request, report, notification, and repair-message formats.
+   Require an explicit commit SHA from Team Gizmo before starting verification.
+   If it is missing or cannot be resolved, follow the protocol's `need_commit`
+   and `commit_reply` exchange; do no review work until it is resolved.
 2. Review only that commit. Do not guess a revision, substitute `HEAD` or a
    branch tip, or construct a task-wide commit range.
 
@@ -52,9 +55,9 @@ decision. Report an unclear serialization exception as blocked for Gizmo.
 ### Establish the committed file inventory
 
 1. Use Git to list all files changed by the supplied commit, not only `.rs` files.
-2. Read each changed file in full at that commit and inspect its diff. For deleted
-   files, inspect the deleted content in the commit. Report unreadable content
-   as blocked instead of skipping it.
+2. Read each changed file in full at that commit and inspect its diff. Read
+   deleted content from the commit's parent and both sides of a rename.
+   Report unreadable content as blocked instead of skipping it.
 
 **Prohibited:** review only the files mentioned in the developer's summary.
 
@@ -116,24 +119,16 @@ with its own repair requirement. Continue through the last catalog entry.
 
 ### Complete and return the report
 
-1. Reconcile the report with the original inventories. Every changed path and
-   every rule must appear; the rule/file outcome count must equal the rule count
-   multiplied by the file count. Every cross-rule check needs an outcome.
-   Reject missing or duplicate pairs, unknown IDs, and unexplained outcomes.
-2. Set the verdict to `pass` only with complete coverage, no violations, no
-   blockers, and satisfied validation requirements. Use `changes_required` for
-   violations and `blocked` for incomplete or ambiguous verification; retain all
-   known violations even when the overall verdict is blocked.
-3. Return the reviewed SHA, catalog snapshot, file inventory, practice
-   inventory, rule/file outcomes, cross-rule outcomes, repair requirements,
-   blockers, validation evidence, and expected/completed counts to Gizmo.
-   The inventory and full outcomes are required, not just a summary of totals.
-4. Persist the report in the existing read-only task's progress/findings and
-   result before host notification. A finished review with `changes_required`
-   can be ready as a review task; readiness is not a compliance pass. Keep an
-   incomplete review blocked. Use continuation notes for the next unchecked
-   practice/rule/file when interrupted; never mark pending entries complete.
-5. On a repair assignment, require the new commit SHA, regenerate its file
+1. Build the full report using the protocol's
+   [durable report fields](references/communication-protocol.md#durable-report-fields).
+   Include the actual inventories and all outcomes, not only totals.
+2. Apply its [outcome and completion rules](references/communication-protocol.md#outcome-and-completion-rules)
+   to reconcile coverage and derive the verdict. Having every row recorded
+   does not mean every decision is resolved.
+3. Persist the report and send its
+   [result notification](references/communication-protocol.md#result-notification-and-gizmo-response).
+   Gizmo reads the saved report before routing repairs or integration.
+4. On a repair assignment, require the new commit SHA, regenerate its file
    inventory, and repeat the entire review. Track previous requirements as fixed,
    still violated, or blocked using fresh evidence. Inspect new violations too.
 
