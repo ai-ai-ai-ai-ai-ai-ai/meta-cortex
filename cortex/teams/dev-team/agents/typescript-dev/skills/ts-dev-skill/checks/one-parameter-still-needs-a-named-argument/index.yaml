@@ -1,13 +1,11 @@
 kind: check
 title: One parameter still needs a named argument
 overview:
-  - Check the parameter declaration and the object supplied at each call site.
+  - Check parameter declarations and object call arguments.
 prohibited:
-  - Replace positional inputs with an anonymous object parameter or pass an unbound
-    object literal to an ordinary method.
+  - Pass an anonymous object to an ordinary method.
 preferred:
-  - Declare a named request type, bind the object to an explicitly typed name, and pass
-    that binding. Keep rune exceptions limited to the listed compiler forms.
+  - Pass an explicitly typed binding to a named contract.
 compare:
   - id: single_parameter:semantic_request
     source: ../../practices/typescript-single-parameter.md#collect-independent-inputs-in-one-request

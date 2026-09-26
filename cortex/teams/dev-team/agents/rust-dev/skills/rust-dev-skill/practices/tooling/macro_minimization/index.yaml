@@ -4,9 +4,9 @@ title: Macro minimization
 source_title: Macro minimization
 source: ../rust-macro-minimization.md
 owns:
-  - Authored macro restrictions and permitted ecosystem/compiler cases.
+  - Authored macro limits and ecosystem exceptions.
 excludes:
-  - Crate choice belongs to Libraries; example semantics stay with the modeled subject.
+  - Crate selection and subject-specific examples.
 relationships: []
 related:
   - title: Libraries
@@ -17,24 +17,16 @@ rules:
   - id: macro_minimization:no_local_macros
     source: ../rust-macro-minimization.md#keep-routine-code-explicit
     items:
-      - Prohibit repository-defined declarative/exported/procedural macros for routine
-        types, impls, errors, conversions, and control flow across
-        product/tooling/test/build code.
+      - Avoid authored macros for routine application code.
   - id: macro_minimization:explicit_mappings
     source: ../rust-macro-minimization.md#keep-domain-mappings-in-their-destination-impl
     items:
-      - Prefer explicit Rust even with small repetition.
-      - Inspect external macros when ordinary code would be clearer.
+      - Prefer explicit Rust over unnecessary macro indirection.
   - id: macro_minimization:ecosystem_macros
     source: ../rust-macro-minimization.md#keep-approved-ecosystem-macros
     items:
-      - Allow required compiler/ecosystem derives/attributes, derive_more::From,
-        standard formatting/logging/assertion/collection macros, and genuine external
-        code-generation products.
-      - Generated/vendor source is excluded.
+      - Retain supported compiler and ecosystem macros.
   - id: macro_minimization:safe_replacement
     source: ../rust-macro-minimization.md#replace-a-macro-without-changing-its-contract
     items:
-      - Inventory definitions and call sites, expand redundant macros, preserve
-        wire/API/error behavior, and validate syntax/behavior.
-      - Any remaining authored definition needs a documented architecture exception.
+      - Replace redundant macros while preserving behavior.

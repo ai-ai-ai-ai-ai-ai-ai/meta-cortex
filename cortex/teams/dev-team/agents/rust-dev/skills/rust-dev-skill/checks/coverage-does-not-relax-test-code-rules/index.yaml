@@ -1,13 +1,11 @@
 kind: check
 title: Coverage does not relax test code rules
 overview:
-  - Review fixture setup and test placement when adding tests to meet the coverage floor.
+  - Check fixture setup and inline test placement.
 prohibited:
-  - Use `unwrap()` in fixture setup or extract unit tests to get the implementation file
-    below the size limit.
+  - Unwrap fixtures or extract tests to evade size limits.
 preferred:
-  - Propagate setup errors from fallible tests. Split production ownership and keep
-    tests inline with each owner before measuring combined coverage.
+  - Propagate setup errors; keep tests with focused owners.
 compare:
   - id: error_handling:no_panics
     source: ../../practices/behavior/error-handling.md#propagate-errors-instead-of-panicking

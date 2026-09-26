@@ -4,10 +4,9 @@ title: Domain structure
 source_title: Domain structure
 source: ../../typescript-domain-structure.md
 owns:
-  - Nominal values, named domain contracts, and application API structure.
+  - Nominal values and named application contracts.
 excludes:
-  - Detailed ownership belongs to Function ownership; absence representation belongs to
-    Explicit state.
+  - Detailed ownership and absence modeling.
 relationships: []
 related:
   - title: Function ownership
@@ -20,116 +19,76 @@ rules:
   - id: domain_structure:named_values
     source: ../../typescript-domain-structure.md#preserve-value-identity
     items:
-      - Give every
-        domain/application/workflow/lifecycle/policy/mode/command/configuration/persistence/owned-contract
-        value a meaningful named type.
+      - Give application values meaningful domain types.
   - id: domain_structure:vocabulary_ownership
     source: ../../typescript-domain-structure.md#preserve-value-identity
     items:
-      - In Rust/WASM projects, consume generated portable product/security vocabulary
-        and keep browser/lifecycle/presentation enums in TypeScript.
-      - TypeScript may own domain vocabulary in other projects; do not mirror Rust-owned
-        contracts.
+      - Keep vocabulary with its owning language and domain.
   - id: domain_structure:nominal_identity
     source: ../../typescript-domain-structure.md#preserve-value-identity
     items:
-      - Use nominal branded/opaque scalar types and named aggregates/unions.
-      - Primitive aliases, raw primitives, and inline nested unions do not preserve
-        identity.
+      - Use nominal scalars and named aggregates.
   - id: domain_structure:preserve_types
     source: ../../typescript-domain-structure.md#preserve-value-identity
     items:
-      - Preserve domain types recursively in public/private parameters, returns, fields,
-        locals, constants, containers, state, and tests.
-      - Do not unwrap just to pass between layers.
+      - Preserve domain types throughout contracts and containers.
   - id: domain_structure:type_aliases
     source: ../../typescript-domain-structure.md#name-complex-type-expressions
     items:
-      - Name complex type expressions for their domain role, even at one use.
-      - Keep aliases near their owner and derive schema types from the source.
-      - Preserve exact types; aliases do not add nominal identity or validation.
-      - Keep simple generics inline and avoid unnecessary alias chains.
+      - Name complex type expressions by domain role.
   - id: domain_structure:trusted_construction
     source: ../../typescript-domain-structure.md#construct-trusted-values-at-the-boundary
     items:
-      - Construct opaque values through validating owners with private brands/unchecked
-        construction.
-      - Prohibit application casts that fabricate brands or writable validation bypasses.
+      - Construct opaque values through validating owners.
   - id: domain_structure:external_conversion
     source: ../../typescript-domain-structure.md#construct-trusted-values-at-the-boundary
     items:
-      - Normalize external data immediately.
-      - Keep primitives only inside their value types or required edges, including typed
-        user content and locale keys.
+      - Normalize external data before application use.
   - id: domain_structure:typed_failures
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
     items:
-      - Use Effect Schema and typed error channels for effectful decoding.
-      - Tag actionable failures, preserve concrete sources, and catch only where
-        meaning/recovery/presentation is added.
+      - Decode through Effect Schema and preserve typed failures.
   - id: domain_structure:behavior_ownership
     source: ../../typescript-domain-structure.md#keep-capabilities-behind-their-transitions
     items:
-      - Apply meaningful function ownership and narrow static builders.
-      - Reject module/namespace/Utils ownership, empty containers, and renamed static
-        execution.
+      - Place behavior on meaningful owners.
   - id: domain_structure:legal_transitions
     source: ../../typescript-domain-structure.md#keep-capabilities-behind-their-transitions
     items:
-      - Model named state transitions with private advanced construction and
-        state-appropriate operations.
-      - Do not mutate parallel flags or invent lifecycles for pure behavior.
+      - Expose operations appropriate to each named state.
   - id: domain_structure:typed_yaml
     source: ../../typescript-domain-structure.md#serialize-yaml-from-typed-values
     items:
-      - Prohibit building YAML from literals, templates, concatenation, fragments,
-        indentation, or replacement, including catalogs, recovery, and valid fixtures.
-      - Construct canonical typed records and serialize at I/O; branding, assertions,
-        and subsequent parsing cannot repair string-based construction.
-      - Keep raw input only at external decoders and deliberate malformed/unsupported
-        test cases; handwritten YAML files and documentation are not builders.
-      - Review producers and test escaping/round trips separately from compiler checks.
+      - Serialize typed records instead of assembling YAML strings.
   - id: domain_structure:versioned_schemas
     source: ../../typescript-domain-structure.md#version-owned-persisted-formats
     items:
-      - Give TypeScript-owned persisted/wire schemas a named version, current writer,
-        supported-reader set, unsupported-version failure, and explicit migration.
+      - Define supported versions and explicit schema migrations.
   - id: domain_structure:secrets
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
     items:
-      - Follow supplied secret lifecycle rules.
-      - Do not persist/log plaintext or retain temporary secret state beyond its
-        interaction.
+      - Apply the shared secret lifecycle requirements.
   - id: domain_structure:nested_vocabulary
     source: ../../typescript-domain-structure.md#nest-vocabulary-that-shares-an-owner
     items:
-      - Nest same-prefix concepts under an owning object/operation vocabulary and keep
-        YAML nesting aligned with TypeScript shapes.
+      - Nest related vocabulary under its domain owner.
   - id: domain_structure:field_vocabulary
     source: ../../typescript-domain-structure.md#nest-vocabulary-that-shares-an-owner
     items:
-      - Closed field allow-lists use enum vocabulary through one named typed request.
-      - Reject string sets and Record<string, string> substitutes.
+      - Use enums for closed field allow-lists.
   - id: domain_structure:failure_codes
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
     items:
-      - Use enum failure codes.
-      - Freeform detail text is only boundary context, not the failure discriminant.
-      - Reject thrown strings or generic Error as actionable domain contracts.
+      - Use enum failure codes with typed context.
   - id: domain_structure:no_result_utilities
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
     items:
-      - Do not add Result/Maybe utilities, neverthrow, or handwritten Promise failure
-        workflows.
-      - Use Effect for effectful commands and concrete E with code/context.
+      - Use Effect instead of competing failure utilities.
   - id: domain_structure:codec_outcomes
     source: ../../typescript-domain-structure.md#keep-failures-and-secrets-with-their-owners
     items:
-      - Codec-local decode outcomes may accumulate field issues but cannot become
-        repository-wide Result utilities.
-      - Rust keeps standard Result and dependency/generated declarations are external.
+      - Keep accumulated decoding issues local to codecs.
   - id: domain_structure:validation
     source: ../../typescript-domain-structure.md#validation
     items:
-      - Review named values/unions, failure sources, versions/migrations, ownership, and
-        plaintext lifetime across changed scopes.
+      - Review domain types, failures, versions, ownership, and secrets.

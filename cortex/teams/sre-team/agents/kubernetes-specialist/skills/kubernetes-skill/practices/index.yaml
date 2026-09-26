@@ -3,4 +3,4 @@ title: Practices
 entries:
   - title: Kubernetes runtime boundary
     path: kubernetes/index.yaml
-    summary: workload execution, nested runtimes, runtime sockets, and build-service boundaries.
+    summary: Workload execution and runtime boundaries.

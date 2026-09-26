@@ -4,11 +4,9 @@ title: TypeScript code checks
 source_title: TypeScript code checks
 source: ../../typescript-code-checks.md
 owns:
-  - Mandatory formatting, type checking, linting, warning-free builds, and check
-    evidence.
+  - Formatting, types, linting, and build evidence.
 excludes:
-  - Behavioral coverage belongs to Browser testing; dead-code analysis belongs to Unused
-    code; pipeline implementation belongs to the CI/CD owner.
+  - Behavioral coverage, unused code, and pipeline implementation.
 relationships: []
 related:
   - title: Browser testing
@@ -21,38 +19,16 @@ rules:
   - id: code_checks:establish
     source: ../../typescript-code-checks.md#establish-repeatable-checks
     items:
-      - Establish all three gates in existing project tooling; preserve the stack,
-        package manager, compiler settings, and existing tests/verification steps.
-      - Cover applicable packages and authored source, tests, tooling, and
-        configuration; use reference-aware, component, or JS checkers where required.
-      - Builds do not replace type checks; run required builds without warnings and make
-        lint warnings fail, using the installed tool's supported options.
-      - Keep generated/vendor files with their owners and coordinate pipeline changes.
-      - Apply the branching checks; use upstream Effect guidance without an operator
-        allowlist.
+      - Establish complete, repeatable project validation gates.
   - id: code_checks:branching
     source: ../../typescript-code-checks.md#check-branching
     items:
-      - Reject IfStatement and ConditionalExpression across authored
-        TypeScript/JavaScript.
-      - Require switch-exhaustiveness-check with allowDefaultCaseForExhaustiveSwitch and
-        considerDefaultExhaustiveForUnions both false, plus fallthrough checking.
-      - Verify missing variants fail lint even with a default; preserve existing
-        restrictions.
+      - Enforce explicit, exhaustive TypeScript branching.
   - id: code_checks:fix_diagnostics
     source: ../../typescript-code-checks.md#fix-diagnostics-before-completion
     items:
-      - Fix all encountered formatting, type, lint, framework, and build diagnostics,
-        including pre-existing ones, and rerun gates after the final edit.
-      - Review autofixes; retain behavioral tests and unused-code enforcement.
-      - Do not weaken checks or suppress findings to pass; existing external-contract
-        exceptions remain bounded by their owning practices.
-      - Repair dependency/generator causes through their owners; report out-of-scope
-        repairs as blockers rather than accept unresolved warnings.
+      - Fix diagnostics and rerun checks after final edits.
   - id: code_checks:evidence
     source: ../../typescript-code-checks.md#report-verification-evidence
     items:
-      - Report actual commands, roots, configurations, and results; require all gates
-        and required builds to pass without warnings or errors before completion.
-      - Missing tools, unchecked required packages, and remaining diagnostics block
-        verification rather than count as success.
+      - Report actual check results and unresolved verification gaps.

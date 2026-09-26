@@ -61,7 +61,7 @@ needs an existing skill, link its instructions to the owning agent’s copy.
   summaries. Put shared rules, explanations, procedures, and examples in
   descriptively named documents.
 - Skill `index.yaml` roots navigate to focused namespace catalogs and separate
-  cross-rule checks, preserving the detailed inventories required by
+  cross-rule checks, using the concise decision cues required by
   [practice knowledge graphs](skills/context-engineering/practices/knowledge-graphs.md).
   Keep those summaries synchronized with their canonical source practices.
 - Add subject directories, architecture documents, or specifications only when

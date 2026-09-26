@@ -3,20 +3,19 @@ title: Programming
 entries:
   - title: Function ownership
     path: function-ownership.md
-    summary: ownership of functions, constants, and state; nesting and abstraction limits.
+    summary: Function placement, state ownership, and nesting limits.
   - title: Domain API integrity
     path: domain-api-integrity.md
-    summary: domain types, boundaries, and API contracts.
+    summary: Domain types, boundaries, and API contracts.
   - title: Branching and exhaustive matching
     path: branching-and-exhaustive-matching.md
-    summary: domain alternatives, native patterns, boolean-if and ternary prohibitions, and
-      exhaustive decisions.
+    summary: Named alternatives, native patterns, and exhaustiveness.
   - title: Source file size
     path: source-file-size.md
-    summary: size limits and architectural decomposition.
+    summary: Size limits and decomposition.
   - title: Testing and regression
     path: testing-pyramid-and-regression.md
-    summary: test boundaries and regression evidence.
+    summary: Test boundaries and regression evidence.
   - title: Library selection
     path: prefer-popular-libraries.md
-    summary: dependency and commodity-helper selection.
+    summary: Dependencies and established library capabilities.

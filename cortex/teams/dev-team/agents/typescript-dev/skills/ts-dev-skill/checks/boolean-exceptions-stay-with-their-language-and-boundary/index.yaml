@@ -1,14 +1,11 @@
 kind: check
 title: Boolean exceptions stay with their language and boundary
 overview:
-  - Check the owner of an unavoidable boolean contract and the precise exception in the
-    applicable language practice.
+  - Check language-specific boolean boundary exceptions.
 prohibited:
-  - Treat a host signature or dependency predicate as permission for authored boolean
-    decisions in either language.
+  - Extend host exceptions to application decisions.
 preferred:
-  - Normalize required external booleans into named domain outcomes before workflow
-    behavior. Keep conversions on their TypeScript or Rust owner.
+  - Normalize external booleans before workflow behavior.
 compare:
   - id: enums_over_booleans:boundary_exceptions
     source: ../../practices/typescript-enums-over-booleans.md#contain-required-boolean-contracts

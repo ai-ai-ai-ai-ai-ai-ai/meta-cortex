@@ -3,19 +3,16 @@ title: Task-specific practices
 entries:
   - title: Browser implementation
     path: browser_implementation/index.yaml
-    summary: Browser stack, component integration, translation integration, capabilities,
-      and UI delivery.
+    summary: UI integration, capabilities, and delivery.
   - title: Svelte state modeling
     path: svelte_state_modeling/index.yaml
-    summary: Explicit rune initialization, visual/lifecycle states, and co-transitioning UI
-      payloads.
+    summary: Rune initialization and UI state payloads.
   - title: Browser testing
     path: browser_testing/index.yaml
-    summary: Observable browser integration, regression coverage, and failure investigation.
+    summary: Browser regressions and failure investigation.
   - title: Unused code
     path: web_unused_code/index.yaml
-    summary: Dead files, exports, members, dependencies, and limits of unused-code tooling.
+    summary: Unused code, dependencies, and tooling limits.
   - title: Serial operation queues
     path: serial_operation_queues/index.yaml
-    summary: Ordered asynchronous work, per-operation failure, queue recovery, and idle
-      barriers.
+    summary: Ordered work, completion, and recovery.

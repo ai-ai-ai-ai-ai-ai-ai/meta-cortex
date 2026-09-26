@@ -1,14 +1,11 @@
 kind: check
 title: Integration guidance does not select a replacement UI stack
 overview:
-  - Distinguish guidance for an existing framework consumer from authority to replace
-    the implementation stack.
+  - Match integration guidance to the selected framework.
 prohibited:
-  - Replace an existing Svelte interface with React because the supplied WASM guidance
-    explains React integration.
+  - Replace Svelte because examples also demonstrate React.
 preferred:
-  - Preserve the project’s selected stack and commands. Apply Svelte, React, or Vue
-    guidance to its matching consumer within the assigned scope.
+  - Apply matching guidance within the existing stack.
 compare:
   - id: browser_implementation:stack
     source: ../../practices/browser-implementation.md#use-the-existing-ui-stack

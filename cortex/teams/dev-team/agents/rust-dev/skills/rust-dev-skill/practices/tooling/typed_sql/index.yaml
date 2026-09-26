@@ -4,7 +4,7 @@ title: Typed SQL construction
 source_title: Typed SQL construction
 source: ../../boundaries/typed-sql.md
 owns:
-  - Typed schema/query construction, identifiers, binding, and driver boundaries.
+  - Typed queries, identifiers, and driver boundaries.
 excludes: []
 relationships: []
 related:
@@ -16,9 +16,4 @@ rules:
   - id: typed_sql:construction
     source: ../../boundaries/typed-sql.md#typed-sql-construction
     items:
-      - Use established builders/ORMs and identifier enums for schemas, migrations,
-        queries, and fixtures; never assemble SQL as application text.
-      - Bind runtime values, use driver transaction/settings APIs, and isolate only
-        documented fixed dialect tokens unsupported by the builder.
-      - Verify actual database constraints and transactions; builder types alone do not
-        prove schema compatibility or application correctness.
+      - Build SQL through typed builders and bound values.

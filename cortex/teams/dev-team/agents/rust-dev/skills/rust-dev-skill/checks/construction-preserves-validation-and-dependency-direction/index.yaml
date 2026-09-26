@@ -1,15 +1,11 @@
 kind: check
 title: Construction preserves validation and dependency direction
 overview:
-  - Check whether construction is infallible, requires validation, or performs an
-    operation.
+  - Distinguish conversion, validation, and policy operations.
 prohibited:
-  - Derive `From` for a constrained value to avoid reporting validation errors, or put
-    consuming-domain policy on the source type.
+  - Bypass validation with an infallible conversion.
 preferred:
-  - The destination owns `From` for infallible conversion/classification and `TryFrom`
-    for fallible parsing and validation, including constrained wrappers;
-    context-dependent policy stays a named operation.
+  - Use destination-owned conversions and separate policy operations.
 compare:
   - id: domain_types:conversion_traits
     source: ../../practices/modeling/domain-types.md#standard-conversions

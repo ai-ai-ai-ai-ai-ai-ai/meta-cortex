@@ -3,15 +3,13 @@ title: Modeling
 entries:
   - title: Domain types
     path: domain_types/index.yaml
-    summary: Value identity, newtypes, validation, external raw-value conversions, and
-      domain-module placement.
+    summary: Nominal values, validation, and conversion.
   - title: Domain states
     path: domain_states/index.yaml
-    summary: Runtime alternatives, state-owned payloads, native matching and conditional
-      patterns, Option/boolean prohibitions, and external-record conversion.
+    summary: Runtime alternatives and state-owned payloads.
   - title: Struct construction
     path: struct_construction/index.yaml
-    summary: Struct literals, single-field conversions, and constructor restrictions.
+    summary: Literals and validated construction paths.
   - title: Default values
     path: default_values/index.yaml
-    summary: Meaningful struct defaults and enum default variants.
+    summary: Valid defaults for structs and enums.

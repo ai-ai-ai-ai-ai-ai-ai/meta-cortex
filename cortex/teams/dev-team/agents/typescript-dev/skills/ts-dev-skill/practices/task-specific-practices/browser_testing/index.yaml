@@ -4,10 +4,9 @@ title: Browser testing
 source_title: Browser testing
 source: ../../browser-testing.md
 owns:
-  - Observable browser integration, regression coverage, and failure investigation.
+  - Browser regressions and failure investigation.
 excludes:
-  - Browser implementation choices belong to Browser implementation; dead-code checks
-    belong to Unused code.
+  - UI implementation and unused-code checks.
 relationships: []
 related:
   - title: Browser implementation
@@ -18,42 +17,28 @@ rules:
   - id: browser_testing:browser_boundary
     source: ../../browser-testing.md#test-the-boundary-that-can-fail
     items:
-      - Use the project’s browser tooling for observable user/browser/extension
-        integration, persistence, visibility, clipboard/download/multitab/origin
-        behavior.
-      - Test portable algorithms in their Rust or TypeScript domain owner.
+      - Test observable browser integration with project tooling.
   - id: browser_testing:suite_gates
     source: ../../browser-testing.md#validation
     items:
-      - When specs are partitioned across projects, every non-demo behavior spec appears
-        exactly once in the executable gate manifest.
-      - Default discovery does not need a redundant manifest.
+      - Include each behavior spec in an executable gate.
   - id: browser_testing:diagnose_first
     source: ../../browser-testing.md#repair-from-evidence-with-a-regression-first
     items:
-      - Before fixing an E2E failure, inspect saved output/logs/context/trace, identify
-        the owning boundary, and choose the smallest existing regression framework.
+      - Inspect failure evidence before choosing a repair.
   - id: browser_testing:regression_first
     source: ../../browser-testing.md#repair-from-evidence-with-a-regression-first
     items:
-      - Follow common regression-before-fix procedure with actual transport contracts
-        and realistic mocks.
-      - Make the smallest owning correction and retain regressions.
+      - Add a focused regression before fixing the owner.
   - id: browser_testing:retain_acceptance
     source: ../../browser-testing.md#repair-from-evidence-with-a-regression-first
     items:
-      - Keep browser assertions for acceptance, including browser-only defects with
-        their closest deterministic unit contract.
-      - Diagnose new failure evidence before each subsequent repair.
+      - Retain browser acceptance coverage through repairs.
   - id: browser_testing:no_weakened_tests
     source: ../../browser-testing.md#do-not-weaken-the-failing-scenario
     items:
-      - Do not fix failures by weakening assertions, extending timeouts, skipping
-        scenarios, or inventing a new framework when an existing one covers the
-        behavior.
+      - Fix failures without weakening tests.
   - id: browser_testing:evidence
     source: ../../browser-testing.md#validation
     items:
-      - Measure meaningful contracts/branches rather than test count.
-      - Record changed-flow browser results and ensure every behavior spec has an
-        executable gate.
+      - Report changed-flow results and executable coverage gaps.

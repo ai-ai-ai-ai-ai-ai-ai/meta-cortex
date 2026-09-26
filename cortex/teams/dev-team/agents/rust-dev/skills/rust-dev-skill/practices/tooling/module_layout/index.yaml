@@ -4,9 +4,9 @@ title: Module layout
 source_title: Module layout
 source: ../module-layout.md
 owns:
-  - Module filenames, child-directory layout, and path updates during module moves.
+  - Module filenames, layout, and moves.
 excludes:
-  - Domain ownership belongs to Domain types; test placement belongs to Rust testing.
+  - Domain ownership and test placement.
 relationships: []
 related:
   - title: Domain types
@@ -19,18 +19,12 @@ rules:
   - id: module_layout:named_files
     source: ../module-layout.md#use-named-module-files
     items:
-      - Use `<module>.rs` with children under `<module>/`; prohibit authored `mod.rs`
-        files, including declaration-only modules and test support.
-      - Retain normal `mod`/`pub mod` declarations, crate/test entry points, and
-        externally owned layouts.
+      - Use named module files instead of mod.rs.
   - id: module_layout:preserve_resolution
     source: ../module-layout.md#preserve-resolution-when-moving-modules
     items:
-      - Move owners without changing module identity, visibility, re-exports, or tests.
-      - Update file-relative includes, explicit paths, and repository references; do not
-        leave forwarding files or hide old layouts behind path attributes.
+      - Preserve module identity and references when moving files.
   - id: module_layout:validation
     source: ../module-layout.md#validation
     items:
-      - Inventory all authored module files and run compiler, Clippy, formatting, and
-        affected tests to verify resolution, embedded assets, and public behavior.
+      - Validate module resolution, embedded assets, and public behavior.

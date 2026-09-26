@@ -3,5 +3,4 @@ title: Delivery Documentation
 entries:
   - title: Project Delivery Policy
     path: project-delivery-policy.md
-    summary: configured PR or local delivery, branch, review, merge, cleanup, and delivery
-      ownership.
+    summary: Delivery mode, publishing, review, and merge ownership.

@@ -1,13 +1,11 @@
 kind: check
 title: External inputs stop at the conversion boundary
 overview:
-  - Check the destination type and its stored fields after converting a dependency-owned
-    value.
+  - Check converted values for retained raw fields.
 prohibited:
-  - "`From<bool>` produces an application struct that still stores the raw flag."
+  - Wrap external flags without converting their meaning.
 preferred:
-  - "`From<bool>` produces a domain enum; converting an external record converts each
-    field into its owned domain type."
+  - Convert external records into owned domain types.
 compare:
   - id: domain_types:external_conversions
     source: ../../practices/modeling/domain-types.md#external-raw-values

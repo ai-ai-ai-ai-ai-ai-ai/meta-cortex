@@ -3,4 +3,4 @@ title: Practices
 entries:
   - title: Local feature integration
     path: local_feature/index.yaml
-    summary: local branches, worktrees, integration, validation, and cleanup.
+    summary: Local workspaces, integration, validation, and cleanup.

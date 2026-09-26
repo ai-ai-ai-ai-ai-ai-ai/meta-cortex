@@ -4,10 +4,9 @@ title: Libraries
 source_title: Libraries
 source: ../libraries.md
 owns:
-  - Required core crates and capability-specific library choices.
+  - Required crates and capability-specific choices.
 excludes:
-  - Dependency adoption thresholds belong to Dependency selection; library usage rules
-    stay with their subjects.
+  - Adoption thresholds and subject-specific usage.
 relationships: []
 related:
   - title: Dependency selection
@@ -20,48 +19,36 @@ rules:
   - id: libraries:required_core
     source: ../libraries.md#required-core
     items:
-      - Use serde, thiserror, derive_more, and tracing as required core libraries.
-      - Enable used features and declare each dependency only in crates that use it.
+      - Use the prescribed core crates with required features.
   - id: libraries:no_custom_commodity
     source: ../libraries.md#required-core
     items:
-      - Do not handwrite commodity serialization/error/conversion machinery or log with
-        println.
-      - Ordinary CLI output may use println.
+      - Reuse established serialization, error, conversion, and logging tools.
   - id: libraries:concurrency
     source: ../libraries.md#concurrency
     items:
-      - Use Tokio for native asynchronous execution and Flume for typed sync/async
-        channels.
-      - Avoid polling queues and blocking async workers on channel waits.
+      - Use Tokio and Flume for native concurrency.
   - id: libraries:networking
     source: ../libraries.md#web-and-networking
     items:
-      - Use Reqwest for clients and Axum for native servers.
-      - Browser WASM is a client, not an Axum server.
+      - Use the prescribed client and server libraries.
   - id: libraries:wasm_contracts
     source: ../libraries.md#rustjavascript-contracts
     items:
-      - Use wasm-bindgen and Tsify for generated contracts, serde-wasm-bindgen only for
-        necessary external conversion, and wasm-bindgen-futures for the browser event
-        loop.
+      - Use established WASM contract and event-loop bindings.
   - id: libraries:browser_storage
     source: ../libraries.md#browser-apis-and-storage
     items:
-      - Use gloo-file with futures for async file work, gloo-storage for typed storage,
-        gloo-utils for browser utilities, and Rexie for IndexedDB.
+      - Use established typed browser storage and file adapters.
   - id: libraries:direct_browser_bindings
     source: ../libraries.md#browser-apis-and-storage
     items:
-      - Use web-sys/js-sys only where higher-level adapters do not cover the API.
-      - Enable the version-appropriate browser getrandom backend for secure randomness.
+      - Limit direct browser bindings to uncovered APIs.
   - id: libraries:diagnostics
     source: ../libraries.md#diagnostics-and-tests
     items:
-      - Use tracing-web with tracing-subscriber for browser diagnostics and
-        wasm-bindgen-test as a dev dependency for WASM tests.
+      - Use the prescribed browser diagnostics and WASM tests.
   - id: libraries:typed_boundaries
     source: ../libraries.md#diagnostics-and-tests
     items:
-      - Do not hand-mirror contracts, serialize through JSON just to cross WASM, or
-        spread low-level browser binding calls through domain code.
+      - Preserve typed contracts across browser boundaries.

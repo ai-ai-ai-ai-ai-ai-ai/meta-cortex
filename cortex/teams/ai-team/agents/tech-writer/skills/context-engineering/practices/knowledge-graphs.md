@@ -2,9 +2,8 @@
 
 Use a skill's hierarchical `index.yaml` catalogs as a rule-level map before
 editing its Markdown practices. A file list is not enough: readers need the
-actual requirements,
-prohibitions, exceptions, and checks to detect contradictions across subjects.
-The source practice remains the authority for explanation and examples.
+distinct decisions and their source sections to find relevant guidance.
+The source practice owns the full requirements, exceptions, checks, and examples.
 
 ## Inventory decisions, not just files
 
@@ -14,42 +13,41 @@ For every rule, record:
 
 - **Rule name:** a readable `practice:decision` namespace, such as
   `wasm_contracts:abi`; do not use opaque numbered codes.
-- **Decision:** the required or prohibited behavior, not a topic label.
-- **Scope and exceptions:** when it applies and what narrowly permits deviation.
+- **Decision cue:** one short phrase or sentence identifying the decision.
+- **Scope:** include a qualifier only when needed to select the right source.
 - **Source:** a mandatory `source: path.md#section-heading` reference to the exact
   Markdown section containing the rule and its examples; a document-only path
   is insufficient.
 
-Include validation, migration, and boundary constraints. Merge repeated wording
-of the same decision; do not drop its exception or replace several decisions
-with “follow best practices.” Keep code and extended rationale in the source.
+Keep validation, migration, and boundary decisions discoverable by their own
+rule names. Prefer one short item per rule, usually five to twelve words.
+Leave procedures, exceptions, thresholds, commands, and examples in the source.
+Add another brief cue only for a distinct selection need; do not reproduce the
+source's substeps or list every obligation.
 
 **Prohibited:** “Domain states — enums, options, and booleans.”
 
-**Preferred:** keep each decision in a named YAML entry, with separate ordered
-items for its requirements and exceptions:
+**Preferred:** keep each decision in a named YAML entry with a brief cue:
 
 ```yaml
 rules:
   - id: domain_states:boolean_conversion
     source: ../domain-states.md#convert-external-records-into-owned-types
     items:
-      - Allow destination-owned From<bool> only to convert external flags.
-      - Use TryFrom when validation can fail.
-      - Boolean application fields and APIs remain prohibited.
+      - Confine boolean conversions to documented external boundaries.
 ```
 
 Keep file, ownership, exclusions, and related-practice metadata at the practice
-level. Preserve every existing summary item, exception, check, and relationship
-when migrating a catalog. Wrap long scalar text across YAML lines; do not combine
-separate decisions into one prose block. Rules, rationale, and examples remain
-in their canonical Markdown practices.
+level as short phrases. Preserve rule IDs, source links, and review relationships
+when shortening a catalog. Keep each distinct rule separately addressable.
+If a requirement exists only in an index, move it to its owning Markdown source
+before removing that detail. Do not delete policy to reduce index size.
 
-**Prohibited:** replace the rule's item sequence with a long scalar containing
-all its requirements, or move the authoritative practice into YAML.
+**Prohibited:** copy a source procedure into several long YAML items or replace
+distinct rule entries with one generic “follow best practices” item.
 
-The summary is precise enough to compare with another rule without guessing its
-policy. It does not create a second independently editable policy.
+The cue selects a source; it is not sufficient to apply or compare policy.
+Read the linked Markdown before acting on the rule.
 
 ## Find the owner and inspect overlaps
 
@@ -74,9 +72,9 @@ any affected examples rather than creating a competing requirement.
 
 ## Synchronize source and catalog
 
-Change a rule and its summary together. Update its scope, exceptions, sources,
-and affected relationships, not just its filename. When moving a rule, preserve
-its name and point it to the new owner. When splitting one decision into several,
+Change a rule and its cue together when its decision or scope changes. Keep
+exceptions in the source and update affected links and relationships. When moving
+a rule, preserve its name and point it to the new owner. When splitting one decision into several,
 retain the original name for the surviving decision and choose new names for the
 others. Remove deleted names and update every reference; do not retain meaningless aliases.
 
@@ -92,14 +90,15 @@ Leaf practices may link directly to shared prerequisites, including through
 - **Prohibited:** permit `From<bool>` in the practice while the graph still says
   “no boolean parameter under any circumstances.”
 
-- **Preferred:** preserve the rule name and update its boundary exception, the related
-  raw-conversion entry, and their examples together. The graph and source now state
-  the same allowed behavior.
+- **Preferred:** preserve the rule name, document the exception in its source,
+  and update the cue to identify boundary conversion. Read the linked practices
+  to compare their full requirements.
 
 ## Make conflicts visible
 
-Record overlaps using rule names and explain their relationship: prerequisite,
-specialization, application of another rule, or unresolved conflict. Different
+Record overlaps using rule names and a brief relationship cue: prerequisite,
+specialization, application, or unresolved conflict. Keep detailed comparisons
+and resolved exceptions in the owning Markdown practices. Different
 filenames or languages do not establish precedence. Do not silently weaken a
 policy or turn an implementation defect into an exception to make the graph neat.
 Resolve conflicts using the authorized task context; otherwise record the exact
@@ -119,8 +118,8 @@ both source facts and explicitly mark the conflict as unresolved.
   represented; file-count parity does not establish rule completeness.
 - Verify unique names, one owning entry per practice, valid source/related links and section anchors,
   no stale paths, and no circular prerequisite loading.
-- Compare changed summaries with their sources, including negative examples and
-  limits. Check related rule names for conflicting scopes or exceptions.
+- Check that each cue identifies its source decision without overstating it.
+  Compare scopes, exceptions, and examples in the linked Markdown sources.
 - Report mechanical results separately from the semantic coverage review and
   unresolved conflicts. Do not claim automated semantic completeness.
 
@@ -163,7 +162,7 @@ practice. A real catalog must resolve its links from its own location.
   `excludes`, `relationships`, `related`, and `rules`. Ownership and relationship
   prose use item sequences. Related entries contain `title` and `path`; rules
   contain `id`, `source`, and ordered `items`. Empty metadata sequences are valid
-  when the previous catalog supplied none; rule and item sequences are nonempty.
+  when no metadata applies; rule and item sequences are nonempty.
 - Use the closed [rule-name enum](../scripts/src/ts/rule-name.ts) for rule and
   comparison IDs and the [practice-owner enum](../scripts/src/ts/practice-owner.ts)
   for each practice's `owner`. Keep source locations separate from owner identity.
@@ -173,8 +172,8 @@ practice. A real catalog must resolve its links from its own location.
   stable; the namespace identifies a decision, while `source` identifies its
   canonical Markdown owner. A practice can own a related namespace's decision.
 - Put each cross-rule comparison in its own `kind: check` leaf, with `title`,
-  `overview`, `prohibited`, `preferred`, and `compare`. Preserve the prose as item
-  sequences and the compared rules as `id` and `source` references. Its parent
+  `overview`, `prohibited`, `preferred`, and `compare`. Use brief comparison cues
+  and retain the compared rules as `id` and `source` references. Its parent
   catalog supplies a short summary so readers can select the relevant check.
 - Resolve every path relative to the YAML file containing it. Update all callers
   when moving an index. Keep one catalog copy; remove superseded Markdown indexes.
@@ -207,8 +206,8 @@ and links to the existing Markdown practice.
    prerequisites, selected catalog paths, and relevant Markdown sources. Retain
    the selected paths and rule IDs in the assignment so coverage can be reviewed.
 6. When scope expands, select the newly relevant branches before further work.
-   For catalog maintenance, update affected rule summaries, exceptions, ownership,
-   section references, and comparisons in the same change as their source.
+   For catalog maintenance, update affected cues, ownership, section references,
+   and comparisons with source changes; keep detailed exceptions in Markdown.
 
 **Prohibited:** skim the first rule, assume the remaining entries were applied,
 or load every sibling namespace into a focused review.

@@ -4,11 +4,9 @@ title: Domain states
 source_title: Domain states
 source: ../domain-states.md
 owns:
-  - Runtime alternatives, state-owned payloads, native matching and conditional
-    patterns, Option/boolean prohibitions, and external-record conversion.
+  - Runtime alternatives and state-owned payloads.
 excludes:
-  - Legal transition sequences belong to Workflow typestate; value identity belongs to
-    Domain types.
+  - Workflow sequencing and value identity.
 relationships: []
 related:
   - title: Domain types
@@ -21,136 +19,88 @@ rules:
   - id: domain_states:no_option
     source: ../domain-states.md#replace-option-with-meaningful-states
     items:
-      - Prohibit authored Option fields, parameters, returns, aliases, and stored
-        locals, including tests, caches, filters, parsers, and adapters.
-      - Use meaningful state enums.
+      - Replace authored Option values with meaningful state enums.
   - id: domain_states:named_absence
     source: ../domain-states.md#replace-option-with-meaningful-states
     items:
-      - Do not replace Option with generic Maybe/Present-Absent wrappers, sentinels, or
-        decorative variants that still hide meaning.
+      - Give absence domain meaning instead of generic wrappers.
   - id: domain_states:dependency_options
     source: ../domain-states.md#translate-dependency-results-immediately
     items:
-      - Consume dependency Option results immediately into a named outcome or typed
-        error.
-      - Do not retain/forward them or author Option-returning trait implementations.
+      - Consume dependency Option results at the boundary.
   - id: domain_states:option_review
     source: ../domain-states.md#review-the-option-prohibition
     items:
-      - Review explicit and inferred authored Option uses and dependency-result handling.
-      - Exclude dependency-generated implementations from the authored-code requirement.
-      - Do not ban Option through Clippy or add wrapper modules and lint allowances for
-        derives.
+      - Review authored and inferred Option usage semantically.
   - id: domain_states:empty_text
     source: ../domain-states.md#represent-empty-prose-as-a-value
     items:
-      - Classify empty free-form prose with infallible From and meaningful domain states.
-      - Protect nonempty payload construction, preserve whitespace and established wire
-        shapes, and distinguish empty text from missing or malformed input.
+      - Model empty prose separately from invalid input.
   - id: domain_states:required_values
     source: ../domain-states.md#require-values-that-cannot-be-absent
     items:
-      - Required identities/signed values remain required; persistence does not make
-        empty prose invalid.
-      - Reject missing or invalid input before domain construction rather than inventing
-        Missing variants or empty strings.
+      - Validate required values instead of inventing absence states.
   - id: domain_states:drafts
     source: ../domain-states.md#require-values-that-cannot-be-absent
     items:
-      - Model legitimate drafts separately.
-      - Preserve established wire shapes through adapters and authorized migrations.
+      - Model legitimate drafts without changing established wire contracts.
   - id: domain_states:no_booleans
     source: ../domain-states.md#convert-external-records-into-owned-types
     items:
-      - Use enums instead of authored domain/application booleans, even for two cases.
-      - Reject boolean fields, ordinary parameters, returns, aliases, and stored locals.
+      - Use named enums for application alternatives.
   - id: domain_states:boolean_conversion
     source: ../domain-states.md#convert-external-records-into-owned-types
     items:
-      - Allow destination-owned `From<bool>` at external conversion boundaries, or
-        TryFrom when conversion can fail.
-      - Prohibit enum-to-bool conversions and serde(into = "bool") by default.
-      - Allow them only for a required external interface or established backward
-        compatibility.
-      - Document the concrete contract at the boundary; keep new owned contracts as
-        enums.
-      - This is not permission for boolean application APIs.
+      - Confine boolean conversions to documented external boundaries.
   - id: domain_states:external_records
     source: ../domain-states.md#convert-external-records-into-owned-types
     items:
-      - Convert complete dependency-owned flag records into owned types.
-      - Keep independent policies as distinct enums and reject invalid combinations with
-        a typed failure.
+      - Convert external flag records into owned domain states.
   - id: domain_states:raw_records
     source: ../domain-states.md#convert-external-records-into-owned-types
     items:
-      - Do not redeclare external boolean DTOs or retain their raw records behind
-        getters.
-      - Decode raw JSON into owned states.
+      - Avoid retaining raw boolean records behind wrappers.
   - id: domain_states:mechanical_predicates
     source: ../domain-states.md#name-predicate-outcomes-before-choosing-behavior
     items:
-      - Normalize library predicate/operator booleans into named domain outcomes at
-        their boundary before workflow behavior.
-      - Match the expression directly; do not store its boolean result or expose an
-        authored boolean predicate. Apply this to private helpers and mechanical
-        decisions.
+      - Convert mechanical predicates into named outcomes before branching.
   - id: domain_states:no_derived_flags
     source: ../domain-states.md#name-predicate-outcomes-before-choosing-behavior
     items:
-      - Do not add is_* methods that merely reveal a variant, decorative True/False
-        variants, or duplicate serialized boolean fields derivable from an enum.
+      - Avoid boolean mirrors of enum variants.
   - id: domain_states:variant_payloads
     source: ../domain-states.md#put-payloads-on-their-owning-variants
     items:
-      - Put each payload on its owning variant.
-      - Use a payload struct for multiple named fields, retain truthful
-        unit/single-value variants, and do not reshape persisted variants for
-        uniformity.
+      - Keep payloads on their owning variants.
   - id: domain_states:independent_dimensions
     source: ../domain-states.md#separate-independent-dimensions-nest-refinements
     items:
-      - Keep independent dimensions in separate types.
-      - Nest a category only when it refines its parent.
+      - Model independent state dimensions separately.
   - id: domain_states:capabilities
     source: ../domain-states.md#put-payloads-on-their-owning-variants
     items:
-      - Keep authorization capability construction private.
-      - Model legal action sequencing with typestate rather than runtime flag bags.
+      - Restrict capability construction and encode legal sequencing.
   - id: branching:rust_match
     source: ../domain-states.md#match-domain-values-directly
     items:
-      - Use native match for domain decisions; ordinary boolean if/else-if/if-else
-        expressions are prohibited, including guards, adapters, and tests.
+      - Use native match for Rust domain decisions.
   - id: branching:rust_patterns
     source: ../domain-states.md#encourage-rust-conditional-patterns
     items:
-      - Encourage if let, else if let, if-let-else, and let-else for focused pattern
-        handling when unmatched cases intentionally share behavior.
-      - Reject boolean disguises, boolean let-chain conditions, and ordinary else-if
-        conditions. Pattern guards may refine a match without hiding missing cases.
-      - Use exhaustive match when variants need distinct decisions as the enum grows.
+      - Use conditional patterns for focused payload handling.
   - id: domain_states:exhaustive_matching
     source: ../domain-states.md#match-decisions-exhaustively
     items:
-      - Match evolving decisions exhaustively.
-      - Wildcard/early-exit branches may not silently classify future variants.
-      - Encourage genuine if let, if let-else, and positive let-else when unmatched
-        variants intentionally share handling under the Rust conditional-pattern rule.
+      - Keep evolving domain decisions exhaustive.
   - id: domain_states:decision_locality
     source: ../domain-states.md#match-decisions-exhaustively
     items:
-      - Avoid negated compound conditions and deeply nested matches.
-      - Keep decisions with their owners.
+      - Keep decisions shallow and with their owners.
   - id: domain_states:membership
     source: ../domain-states.md#consume-membership-results-as-control-flow
     items:
-      - Use membership collections rather than repeated scans for uniqueness.
-      - Consume HashSet insertion results directly and return a typed duplicate failure.
+      - Use membership collections for uniqueness checks.
   - id: domain_states:validation
     source: ../domain-states.md#validation
     items:
-      - Test each state and invalid persisted input.
-      - Review boundary conversions, payload ownership, and exhaustiveness.
-      - Run affected tests and all-target Clippy with warnings denied.
+      - Test state behavior, invalid input, and exhaustiveness.

@@ -1,13 +1,11 @@
 kind: check
 title: Queue continuation must preserve completion and cleanup
 overview:
-  - Trace each admitted job through success, failure, recovery, and scope shutdown.
+  - Trace admitted jobs through completion and shutdown.
 prohibited:
-  - Catch and discard a job failure to keep the worker alive, leave its completion
-    unresolved, or assume queue shutdown settles every admitted job.
+  - Discard failures or leave admitted jobs unresolved.
 preferred:
-  - Complete each job with its typed outcome while allowing later work to run. Settle
-    admitted work during shutdown; keep host-required Promise conversion at the adapter.
+  - Deliver typed outcomes and settle work during shutdown.
 compare:
   - id: serial_operation_queues:typed_completion
     source: ../../practices/typescript-serial-operation-queues.md#report-failure-without-stopping-later-work

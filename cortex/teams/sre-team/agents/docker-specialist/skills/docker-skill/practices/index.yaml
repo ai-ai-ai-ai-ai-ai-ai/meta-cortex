@@ -3,5 +3,4 @@ title: Practices
 entries:
   - title: Docker container and BuildKit practice
     path: docker/index.yaml
-    summary: build inputs, revision metadata placement, BuildKit cache evidence, and
-      build-secret boundaries.
+    summary: Build inputs, caching, and secret boundaries.

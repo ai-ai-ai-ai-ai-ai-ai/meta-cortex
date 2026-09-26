@@ -3,32 +3,28 @@ title: Core practices
 entries:
   - title: Branching and exhaustive matching
     path: branching/index.yaml
-    summary: Language-independent branching policy and exhaustive domain decisions.
+    summary: Named alternatives and exhaustive decisions.
   - title: Function ownership
     path: function_ownership/index.yaml
-    summary: TypeScript declaration placement, static construction, component handlers, and
-      execution-scope counting.
+    summary: Declaration placement and owned execution.
   - title: Single parameter
     path: single_parameter/index.yaml
-    summary: Argument count, semantic request aggregation, and fixed-signature exceptions.
+    summary: Input counts and fixed-signature exceptions.
   - title: Named arguments
     path: named_args/index.yaml
-    summary: Named object parameter types and explicitly typed call arguments, including
-      compiler-rune exceptions.
+    summary: Named object contracts and typed arguments.
   - title: Domain structure
     path: domain_structure/index.yaml
-    summary: Nominal values, named domain contracts, and application API structure.
+    summary: Nominal values and named application contracts.
   - title: Explicit state
     path: explicit_state/index.yaml
-    summary: Enum-backed unions, absence normalization, forbidden sentinels, and unit versus
-      value-returning void.
+    summary: Named states and explicit absence.
   - title: Enums instead of booleans
     path: enums_over_booleans/index.yaml
-    summary: Semantic alternatives instead of boolean policy and state, with narrow boundary
-      exceptions.
+    summary: Semantic alternatives and boolean boundary exceptions.
   - title: Concrete values
     path: no_unknown/index.yaml
-    summary: Restrictions on object, unknown, any, and erased bags; immediate boundary decoding.
+    summary: Concrete values and immediate boundary decoding.
   - title: Effect workflows
     path: effect/index.yaml
-    summary: Effect's installed documentation owns API and implementation guidance.
+    summary: Installed Effect API and implementation guidance.

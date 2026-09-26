@@ -4,11 +4,9 @@ title: Browser implementation
 source_title: Browser implementation
 source: ../../browser-implementation.md
 owns:
-  - Browser stack, component integration, translation integration, capabilities, and UI
-    delivery.
+  - UI integration, capabilities, and delivery.
 excludes:
-  - Regression test design belongs to Browser testing; rune state belongs to Svelte
-    state modeling.
+  - Regression design and rune state.
 relationships: []
 related:
   - title: Browser testing
@@ -19,79 +17,56 @@ rules:
   - id: browser_implementation:stack
     source: ../../browser-implementation.md#use-the-existing-ui-stack
     items:
-      - Use the project’s UI framework, package manager, design tokens, primitives, and
-        documented build commands. Apply Svelte 5 runes only to Svelte 5 consumers.
+      - Follow the project's selected UI stack.
   - id: browser_implementation:ui_libraries
     source: ../../browser-implementation.md#use-the-existing-ui-stack
     items:
-      - Reuse the project’s component, icon, and motion libraries; do not prescribe
-        Tailwind, Vite, Bun, or Taskfile to projects that have not selected them.
+      - Reuse the project's component and motion libraries.
   - id: browser_implementation:no_parallel_stack
     source: ../../browser-implementation.md#use-the-existing-ui-stack
     items:
-      - Do not introduce a parallel UI system or replace the command runner incidentally.
-      - Inspect project instructions and package.json before selecting dependencies.
+      - Avoid introducing a parallel UI system.
   - id: browser_implementation:impeccable
     source: ../../browser-implementation.md#use-the-existing-ui-stack
     items:
-      - Impeccable is opt-in only when explicitly requested by name.
-      - Never automatically install/load/run it.
+      - Use Impeccable only when explicitly requested.
   - id: browser_implementation:component_contracts
     source: ../../browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions
     items:
-      - Keep markup readable and components thin.
-      - Use typed props/generated bindings, semantic keyed collections, semantic HTML
-        before ARIA patches, and package event conventions.
+      - Keep components thin, typed, and semantically accessible.
   - id: browser_implementation:explicit_state
     source: ../../browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions
     items:
-      - Follow explicit-state rules in UI components, with immediate external
-        normalization rather than authored null/undefined.
+      - Apply explicit-state rules in components.
   - id: browser_implementation:cleanup
     source: ../../browser-implementation.md#release-lifecycle-resources
     items:
-      - Use framework lifecycle cleanup for listeners/observers/timers/animation state;
-        return cleanup from $effect in Svelte.
-      - Keep continuous pointer/scroll values outside broad component state, using CSS,
-        observers, or narrow adapters.
+      - Release UI resources through framework lifecycle cleanup.
   - id: browser_implementation:controllers
     source: ../../browser-implementation.md#release-lifecycle-resources
     items:
-      - Reuse the project’s state ownership pattern, including existing .svelte.ts
-        controllers in Svelte projects; do not add a second store architecture.
+      - Reuse the project's existing state ownership pattern.
   - id: browser_implementation:rust_ownership
     source: ../../browser-implementation.md#let-the-ui-framework-own-rendering-and-interactions
     items:
-      - Preserve core → WASM → presentation ownership in Rust/WASM projects.
-      - Otherwise, keep domain decisions in their project-defined owner, which may be
-        TypeScript. Components consume those decisions.
+      - Keep domain decisions in their project-defined owner.
   - id: browser_implementation:secret_surfaces
     source: ../../browser-implementation.md#keep-secrets-out-of-incidental-surfaces
     items:
-      - Do not expose secrets through URLs/logs/attributes/test IDs/analytics/hidden
-        markup.
-      - Never persist plaintext in convenience state.
+      - Keep secrets out of exposed or persistent UI surfaces.
   - id: browser_implementation:disclosure_and_passkeys
     source: ../../browser-implementation.md#keep-secrets-out-of-incidental-surfaces
     items:
-      - Mask secrets until explicit reveal and clear temporary revealed/generated values
-        on hide/dismissal.
-      - Keep passkey creation explicit and do not infer missing credentials from
-        cancellation.
+      - Require explicit secret disclosure and passkey creation.
   - id: browser_implementation:capabilities
     source: ../../browser-implementation.md#detect-capabilities-not-screen-size
     items:
-      - Detect browser/extension capabilities and state rather than inferring them from
-        viewport size.
+      - Detect actual capabilities instead of inferring from viewport size.
   - id: browser_implementation:translations
     source: ../../browser-implementation.md#translate-visible-and-accessible-text
     items:
-      - Route visible/accessibility strings through the project’s translation catalogs,
-        preserve all supported locales, and forbid hidden inline-English fallbacks.
-      - Retain Rust-owned catalogs where supplied; do not require Rust for localization.
+      - Route UI and accessibility text through translation catalogs.
   - id: browser_implementation:validation
     source: ../../browser-implementation.md#validation
     items:
-      - Add focused browser coverage with the project’s tooling and run formatting/UI
-        checks.
-      - Inspect app logs before editing after a browser failure.
+      - Check affected UI behavior and inspect failure logs.

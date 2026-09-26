@@ -4,11 +4,9 @@ title: Explicit state
 source_title: Explicit state
 source: ../../typescript-explicit-state.md
 owns:
-  - Enum-backed unions, absence normalization, forbidden sentinels, and unit versus
-    value-returning void.
+  - Named states and explicit absence.
 excludes:
-  - Boolean policy belongs to Enums instead of booleans; rune initialization belongs to
-    Svelte state modeling.
+  - Boolean policy and rune initialization.
 relationships: []
 related:
   - title: Domain structure
@@ -23,121 +21,80 @@ rules:
   - id: explicit_state:named_unions
     source: ../../typescript-explicit-state.md#name-the-state-and-its-payload
     items:
-      - Use named enum-backed discriminated unions for
-        product/workflow/lifecycle/resource/UI alternatives.
-      - Fields and generics reference the named union rather than inline alternatives.
+      - Model alternatives as named discriminated unions.
   - id: explicit_state:vocabulary_ownership
     source: ../../typescript-explicit-state.md#use-enum-members-throughout-the-contract
     items:
-      - In Rust/WASM projects, put portable product states in Rust and consume original
-        generated enums. TypeScript-owned domains define their states in TypeScript.
-      - Keep browser protocol/lifecycle/presentation vocabularies in cohesive TypeScript
-        enums.
+      - Keep state vocabulary with its domain owner.
   - id: explicit_state:enum_members
     source: ../../typescript-explicit-state.md#use-enum-members-throughout-the-contract
     items:
-      - Use enum members for all closed discriminants, constructors, comparisons,
-        switches, and fixtures.
-      - Raw string-literal unions remain forbidden even for protocol field names other
-        than kind/type.
+      - Use enum members for closed discriminants.
   - id: explicit_state:coherent_vocabulary
     source: ../../typescript-explicit-state.md#use-enum-members-throughout-the-contract
     items:
-      - Preserve externally required serialized enum values.
-      - Do not centralize unrelated state vocabularies into generic repository-wide
-        enums.
+      - Keep vocabularies cohesive and preserve required wire values.
   - id: branching:typescript_switch
     source: ../../typescript-explicit-state.md#match-domain-values-directly
     items:
-      - Use native switch for domain decisions.
-      - Prohibit boolean if/else-if/if-else.
+      - Use native switch for TypeScript domain decisions.
   - id: branching:typescript_exhaustiveness
     source: ../../typescript-explicit-state.md#match-decisions-exhaustively
     items:
-      - Name every enum/union variant; group cases only for intentional shared output.
-      - Keep transport discriminators attached to their payloads for compiler narrowing.
-      - Reject default cases hiding future variants and ternary conditional operators.
-      - Require the branching lint checks; TypeScript alone is insufficient.
+      - Name every variant and enforce exhaustive switching.
   - id: explicit_state:component_enums
     source: ../../typescript-explicit-state.md#keep-component-enums-in-an-importable-module
     items:
-      - Place runtime enums consumed by Svelte components in adjacent cohesive .ts
-        modules and import them, not instance or module script blocks.
-      - Validate actual rendering, not just type checks.
+      - Define component enums in adjacent TypeScript modules.
   - id: explicit_state:state_payloads
     source: ../../typescript-explicit-state.md#name-the-state-and-its-payload
     items:
-      - Put payloads on owning variants and combine values that transition together.
-      - Expose transitions rather than mutable handles.
+      - Keep transitioning values with their owning state.
   - id: explicit_state:typed_failures
     source: ../../typescript-explicit-state.md#keep-failure-state-typed
     items:
-      - Store typed failure kinds/outcomes, not freeform messages or parallel error
-        slots.
-      - Localize text only at presentation.
+      - Store typed failures and localize presentation text.
   - id: explicit_state:no_implicit_absence
     source: ../../typescript-explicit-state.md#normalize-absence-at-entry
     items:
-      - Prohibit authored null/undefined values and types, zero-argument modeled state
-        runes, parameterless $bindable absence defaults, and optional state bags across
-        source/tests/fixtures/demos/config/tooling.
+      - Model absence explicitly in authored state.
   - id: explicit_state:external_absence
     source: ../../typescript-explicit-state.md#normalize-absence-at-entry
     items:
-      - Normalize external lookup/parser/cache/DOM/browser absence immediately into
-        semantic states using structural/capability checks.
-      - Do not translate one sentinel into another.
+      - Normalize external absence immediately into semantic states.
   - id: explicit_state:no_sentinel_wrappers
     source: ../../typescript-explicit-state.md#normalize-absence-at-entry
     items:
-      - Prohibit generic Option/Maybe/Present-Absent clones, fake defaults, sentinel
-        strings, non-null assertions, casts, and decorative wrappers used to hide
-        absence.
+      - Avoid sentinels, fake defaults, and generic absence wrappers.
   - id: explicit_state:unit_void
     source: ../../typescript-explicit-state.md#distinguish-effects-from-absent-values
     items:
-      - Allow void only for complete unit/effect returns, `Promise<void>`,
-        synchronous-or-asynchronous effects, and unary discard.
-      - Reject value-or-void contracts including nested generics and callback results.
+      - Reserve void for complete effect returns.
   - id: explicit_state:no_nullish
     source: ../../typescript-explicit-state.md#keep-defaults-inside-the-selected-branch
     items:
-      - Prohibit ?? and ??=.
-      - Do not replace them with truthiness or ||.
-      - Preserve valid false/zero/empty-string values and evaluate an alternate only in
-        its chosen branch.
+      - Use explicit state branches instead of nullish fallbacks.
   - id: explicit_state:defaults
     source: ../../typescript-explicit-state.md#keep-defaults-inside-the-selected-branch
     items:
-      - Destructuring defaults are allowed only when the boundary contract defines
-        omission as that concrete value.
-      - Otherwise require an explicit state.
+      - Use defaults only for contract-defined omission values.
   - id: explicit_state:exhaustive_transitions
     source: ../../typescript-explicit-state.md#keep-failure-state-typed
     items:
-      - Match states exhaustively.
-      - Do not collapse them into parallel booleans.
-      - Same-prefix categories nest and closed field allow-lists use enums.
+      - Match state transitions exhaustively.
   - id: explicit_state:effect_errors
     source: ../../typescript-explicit-state.md#keep-failure-state-typed
     items:
-      - Use Effect typed failures for effectful workflows and concrete codec-local
-        accumulated issues.
-      - Do not create a competing failure wrapper.
+      - Use typed Effect failures for effectful workflows.
   - id: explicit_state:semantic_assertions
     source: ../../typescript-explicit-state.md#assert-states-not-absence-sentinels
     items:
-      - Tests assert variants/required values/structural properties.
-      - Prohibit toBeUndefined/toBeNull/toBeDefined and quoted-sentinel comparisons such
-        as typeof checks.
+      - Assert semantic states instead of absence sentinels.
   - id: explicit_state:generated_exclusions
     source: ../../typescript-explicit-state.md#validation
     items:
-      - Exclude dependency/build/generated declarations from authored-token enforcement.
-      - Adapters still normalize their results.
+      - Exclude generated declarations; normalize their boundary results.
   - id: explicit_state:validation
     source: ../../typescript-explicit-state.md#validation
     items:
-      - Inventory tokens and add transition plus positive/negative preflight fixtures.
-      - Reject sentinel ABI type overrides and Rust Option exports.
-      - Run formatting, application-state checks, and applicable browser checks.
+      - Check state transitions, enforcement fixtures, and boundary types.

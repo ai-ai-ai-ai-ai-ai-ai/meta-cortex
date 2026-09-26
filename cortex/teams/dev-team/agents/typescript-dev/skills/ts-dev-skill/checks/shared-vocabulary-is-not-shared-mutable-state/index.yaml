@@ -1,12 +1,11 @@
 kind: check
 title: Shared vocabulary is not shared mutable state
 overview:
-  - Check what was moved from a component into an adjacent module.
+  - Check enum extraction against state ownership.
 prohibited:
-  - Move mutable component state into a module-global singleton when extracting its enum.
+  - Move component state into module-global singletons.
 preferred:
-  - Export the enum from an importable module; retain interaction state and lifecycle
-    cleanup with the owning component or controller.
+  - Export enums; retain state with its interaction owner.
 compare:
   - id: explicit_state:component_enums
     source: ../../practices/typescript-explicit-state.md#keep-component-enums-in-an-importable-module

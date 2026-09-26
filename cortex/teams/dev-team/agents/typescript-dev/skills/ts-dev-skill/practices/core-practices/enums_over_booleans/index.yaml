@@ -4,10 +4,9 @@ title: Enums instead of booleans
 source_title: Enums instead of booleans
 source: ../../typescript-enums-over-booleans.md
 owns:
-  - Semantic alternatives instead of boolean policy and state, with narrow boundary
-    exceptions.
+  - Semantic alternatives and boolean boundary exceptions.
 excludes:
-  - General union and absence rules belong to Explicit state.
+  - General unions and absence modeling.
 relationships: []
 related:
   - title: Explicit state
@@ -18,59 +17,40 @@ rules:
   - id: enums_over_booleans:semantic_enums
     source: ../../typescript-enums-over-booleans.md#name-the-decision-at-the-call-site
     items:
-      - Replace
-        domain/application/workflow/lifecycle/policy/mode/command/configuration/owned-contract
-        booleans with meaningful enums, even when there are only two cases.
+      - Model application alternatives with meaningful enums.
   - id: enums_over_booleans:distinct_decisions
     source: ../../typescript-enums-over-booleans.md#name-the-decision-at-the-call-site
     items:
-      - Use distinct enum types for distinct policies, enum-backed unions for payloads,
-        and generated Rust enums for Rust-owned portable/security vocabulary.
-      - Keep TypeScript-owned domain vocabulary in its TypeScript owner.
+      - Give distinct policies distinct enum types.
   - id: enums_over_booleans:no_decorative_enums
     source: ../../typescript-enums-over-booleans.md#name-the-decision-at-the-call-site
     items:
-      - Do not use decorative True/False or generic Yes/No/Enabled/Disabled enums
-        without naming the actual domain decision.
+      - Name domain decisions instead of disguising booleans.
   - id: enums_over_booleans:payloads
     source: ../../typescript-enums-over-booleans.md#model-related-flags-as-one-state
     items:
-      - Match alternatives exhaustively, keep variant data on its owner, and declare
-        unions separately instead of embedding value-or-false fields.
+      - Keep payloads with their owning alternatives.
   - id: enums_over_booleans:preserve_members
     source: ../../typescript-enums-over-booleans.md#model-related-flags-as-one-state
     items:
-      - Preserve enum members through calls, constructors, fixtures, comparisons, and
-        protocol handling.
-      - Do not serialize a redundant derived boolean.
+      - Preserve enum members through calls and protocols.
   - id: enums_over_booleans:boundary_exceptions
     source: ../../typescript-enums-over-booleans.md#contain-required-boolean-contracts
     items:
-      - Required platform/host signatures and fixed wire edges keep external booleans
-        only until immediate domain normalization.
+      - Normalize required external booleans at their boundary.
   - id: enums_over_booleans:predicate_outcomes
     source: ../../typescript-enums-over-booleans.md#name-predicate-outcomes-before-choosing-behavior
     items:
-      - Match dependency predicates directly into domain enums before workflow actions
-        or reporting.
-      - Private or mechanical authored predicates still return named domain outcomes.
-      - Inference, callbacks, and exhaustive boolean matchers do not satisfy this
-        requirement.
-      - Keep conversions on existing owners without extra wrappers or services.
+      - Convert predicate results into named domain outcomes.
   - id: enums_over_booleans:observations
     source: ../../typescript-enums-over-booleans.md#contain-required-boolean-contracts
     items:
-      - Raw observations do not exempt application policy.
-      - Normalize observations into named states and delegate portable decisions to the
-        project’s domain owner.
+      - Normalize observations before applying domain policy.
   - id: enums_over_booleans:exception_evidence
     source: ../../typescript-enums-over-booleans.md#contain-required-boolean-contracts
     items:
-      - Document each retained public parameter/field/lint exception.
-      - Tests, scripts, and internal DTOs have no blanket exemption.
+      - Document each retained boolean boundary exception.
   - id: enums_over_booleans:validation
     source: ../../typescript-enums-over-booleans.md#validation
     items:
-      - Inventory boolean contracts, replace coupled flags with legal unions, test new
-        variants/transitions, and run state/type/behavior/format checks.
-      - Old suppressions are migration debt.
+      - Review boolean contracts and test legal transitions.

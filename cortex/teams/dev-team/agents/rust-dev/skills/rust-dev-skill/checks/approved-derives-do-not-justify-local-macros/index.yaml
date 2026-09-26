@@ -1,14 +1,11 @@
 kind: check
 title: Approved derives do not justify local macros
 overview:
-  - Check whether the macro is an approved ecosystem tool or an authored abstraction
-    hiding routine code.
+  - Distinguish approved derives from authored macros.
 prohibited:
-  - Use the required `derive_more` dependency as justification for a local
-    domain-mapping macro.
+  - Justify local mapping macros with derive_more.
 preferred:
-  - Use approved derives for their supported jobs; write domain mappings explicitly in
-    the destination implementation.
+  - Use approved derives and explicit domain mappings.
 compare:
   - id: libraries:required_core
     source: ../../practices/tooling/libraries.md#required-core

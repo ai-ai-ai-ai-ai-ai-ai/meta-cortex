@@ -4,7 +4,7 @@ title: Effect workflows
 source_title: Installed Effect documentation
 source: ../../../SKILL.md#effect-use-installed-documentation
 owns:
-  - Effect's installed documentation owns API and implementation guidance.
+  - Installed Effect API and implementation guidance.
 excludes: []
 relationships: []
 related:
@@ -16,17 +16,12 @@ rules:
   - id: effect:upstream
     source: ../../../SKILL.md#effect-use-installed-documentation
     items:
-      - Before writing Effect code, read the installed `effect/AGENTS.md` completely.
+      - Read the installed Effect guidance before implementation.
   - id: effect:version
     source: ../../../SKILL.md#manage-the-pinned-release
     items:
-      - Select the latest release on the chosen release channel when adopting or
-        upgrading.
-      - Pin one exact release across workspace packages; routine work uses its installed
-        docs.
-      - Identify prereleases and follow official migration guidance with required checks.
+      - Pin one release and use its matching documentation.
   - id: effect:effectful_work
     source: ../../../SKILL.md#choose-effect-for-workflows
     items:
-      - Use Effect for materially changed effectful workflows, including scripts and
-        tests; keep pure calculations with their existing domain owners.
+      - Use Effect for changed effectful workflows.

@@ -4,14 +4,9 @@ title: Function ownership
 source_title: Function ownership
 source: ../../typescript-function-ownership.md
 owns:
-  - TypeScript declaration placement, static construction, component handlers, and
-    execution-scope counting.
+  - Declaration placement and owned execution.
 excludes:
-  - Shared ownership policy and depth limits belong to Function ownership in the team
-    docs.
-  - Effect implementation guidance belongs to its installed documentation.
-  - Parameter count belongs to Single parameter; nominal values belong to Domain
-    structure.
+  - Shared ownership policy; Effect APIs; parameters; nominal values.
 relationships: []
 related:
   - title: Single parameter
@@ -22,39 +17,24 @@ rules:
   - id: function_ownership:instances
     source: ../../typescript-function-ownership.md#use-instances-for-owned-behavior
     items:
-      - Put behavior on meaningful concrete owners or typed enum companions.
-      - Static methods are only narrow construction builders, while
-        execution/validation/formatting/dispatch belong to instances.
+      - Put execution on instances with meaningful ownership.
   - id: function_ownership:nesting
     source: ../../typescript-function-ownership.md#count-execution-scopes
     items:
-      - Limit combined callback and control-flow nesting to two execution scopes.
-      - Flatten first; reject helper chains and new abstractions added only to meet the
-        depth limit.
-      - Count switch cases as one level; exclude type and namespace bodies and data
-        literals.
+      - Keep execution nesting within two scopes.
   - id: function_ownership:meaningful_state
     source: ../../typescript-function-ownership.md#use-instances-for-owned-behavior
     items:
-      - Give instances the state/request/capability they own.
-      - Reject empty containers, renamed execution-builders, and primitive/enum
-        prototype mutation.
+      - Give instances real state, requests, or capabilities.
   - id: function_ownership:constants
     source: ../../typescript-function-ownership.md#own-constants-and-mutable-state
     items:
-      - Put constants on their owner as static readonly and mutable state on instances.
-      - Prohibit free functions, module const/let/var, function-valued global constants,
-        and mutable statics.
-      - Assigning a function to a binding does not establish ownership.
-      - Test-runner callbacks may contain scenario steps and assertions; put reusable
-        test helpers on fixture or scenario owners.
+      - Keep constants and mutable state on owners.
   - id: function_ownership:component_scope
     source: ../../typescript-function-ownership.md#keep-component-ownership-local
     items:
-      - Keep parameters and locals inside owned methods.
-      - Component handlers/lifecycle callbacks and local state belong to the component
-        only when tied to its interaction/state, not module-script globals.
+      - Keep interaction-specific handlers and state within components.
   - id: function_ownership:shared_behavior
     source: ../../typescript-function-ownership.md#keep-component-ownership-local
     items:
-      - Move shared component behavior to its meaningful domain/application owner.
+      - Move shared component behavior to its domain owner.

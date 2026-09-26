@@ -4,9 +4,9 @@ title: Dependency selection
 source_title: Dependency selection
 source: ../dependency-selection.md
 owns:
-  - Rust ecosystem adoption thresholds and dependency verification.
+  - Dependency adoption thresholds and verification.
 excludes:
-  - The prescribed crate catalog belongs to Libraries.
+  - Prescribed crate choices.
 relationships: []
 related:
   - title: Libraries
@@ -15,10 +15,8 @@ rules:
   - id: dependency_selection:thresholds
     source: ../dependency-selection.md#adoption-thresholds
     items:
-      - Require at least 50,000 total and 1,000 recent crates.io downloads, plus 100
-        GitHub stars when a repository exists.
+      - Apply the ecosystem's required adoption thresholds.
   - id: dependency_selection:verification
     source: ../dependency-selection.md#adoption-thresholds
     items:
-      - Inspect manifests and verify adoption counts when adding/reviewing dependencies.
-      - Retain common exclusions for generated bindings and toolchain-pinned packages.
+      - Verify dependency adoption and documented exclusions.

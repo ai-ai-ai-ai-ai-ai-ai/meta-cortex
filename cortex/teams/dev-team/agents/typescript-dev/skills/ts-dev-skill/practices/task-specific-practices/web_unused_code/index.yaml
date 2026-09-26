@@ -4,10 +4,9 @@ title: Unused code
 source_title: Unused code
 source: ../../web-unused-code.md
 owns:
-  - Dead files, exports, members, dependencies, and limits of unused-code tooling.
+  - Unused code, dependencies, and tooling limits.
 excludes:
-  - Behavioral regression coverage belongs to Browser testing; dependency adoption
-    belongs to Dependency selection.
+  - Browser regressions and dependency adoption.
 relationships: []
 related:
   - title: Browser testing
@@ -18,34 +17,24 @@ rules:
   - id: web_unused_code:audit_scope
     source: ../../web-unused-code.md#check-what-the-installed-tool-cannot-see
     items:
-      - Audit unused files, exports, types, enum/class members, and dependencies across
-        authored TS/Svelte, excluding generated/vendor declarations.
+      - Audit unused code and dependencies across authored web projects.
   - id: web_unused_code:tool_blind_spots
     source: ../../web-unused-code.md#check-what-the-installed-tool-cannot-see
     items:
-      - TS/ESLint/Knip coverage differs by version.
-      - When class members are not checked, explicitly inspect direct, optional-chained,
-        internal, framework, generated, and test callers.
+      - Review callers that static tools cannot trace.
   - id: web_unused_code:fix_findings
     source: ../../web-unused-code.md#fix-findings-without-deleting-live-behavior
     items:
-      - Delete or correctly connect valid findings.
-      - Do not add ignores, reduce issue coverage, or retain callerless compatibility
-        aliases.
+      - Remove or connect unused code without suppressing findings.
   - id: web_unused_code:live_markup
     source: ../../web-unused-code.md#fix-findings-without-deleting-live-behavior
     items:
-      - Search all consumers before removing state-controller members.
-      - For live markup-only calls hidden from Knip, narrow the API to a private
-        implementation behind an exported factory rather than suppressing or deleting
-        behavior.
+      - Verify live markup callers before narrowing controller APIs.
   - id: web_unused_code:no_json_roundtrip
     source: ../../web-unused-code.md#do-not-hide-reactive-state-behind-json
     items:
-      - Reject JSON round-trip unwrapping.
-      - Rune callers use snapshot at the boundary.
+      - Avoid JSON round trips for reactive unwrapping.
   - id: web_unused_code:validation
     source: ../../web-unused-code.md#validation
     items:
-      - Run checks for every affected web project with zero findings and separately
-        audit members the tool cannot trace.
+      - Resolve tool findings and separately review untraceable members.

@@ -4,10 +4,9 @@ title: Rust code checks
 source_title: Rust code checks
 source: ../rust-code-checks.md
 owns:
-  - Mandatory formatting, compilation, Clippy, warning correction, and check evidence.
+  - Formatting, compilation, linting, and evidence.
 excludes:
-  - Behavioral tests and coverage belong to Rust testing; pipeline implementation
-    belongs to the CI/CD owner.
+  - Behavioral coverage and pipeline implementation.
 relationships: []
 related:
   - title: Rust testing
@@ -20,36 +19,16 @@ rules:
   - id: code_checks:establish
     source: ../rust-code-checks.md#establish-repeatable-checks
     items:
-      - Establish repeatable fmt, check, and Clippy gates in existing project tooling.
-      - Cover workspace members, all applicable targets, and supported feature/target
-        configurations; preserve build flags and deny compiler and Clippy warnings.
-      - Coordinate pipeline changes with the CI/CD owner under the active mode.
-      - Complete the mandatory domain-type review as well as mechanical gates.
+      - Establish complete, repeatable project validation gates.
   - id: code_checks:lint_baseline
     source: ../rust-code-checks.md#enforce-the-lint-baseline
     items:
-      - Deny targeted boolean, ignored-result/future, replacement-value, unit-error,
-        wildcard-enum, argument-count, and nesting lints alongside existing checks.
-      - Apply the prescribed thresholds; review authored Option usage separately.
-      - Review semantic gaps; Clippy counts receivers and structural nesting.
-      - Review boolean if expressions separately from permitted Rust conditional
-        patterns under the Rust rules; reject boolean disguises and mixed let-chains.
-      - Review pattern guards and unmatched handling; the baseline does not ban if.
+      - Apply the prescribed lints and review semantic gaps.
   - id: code_checks:fix_diagnostics
     source: ../rust-code-checks.md#fix-diagnostics-before-completion
     items:
-      - Fix formatting and all encountered compilation/lint warnings, including
-        pre-existing ones, then rerun checks after the final edit alongside required
-        tests.
-      - Do not suppress diagnostics or ignore failures to pass checks; repair dependency
-        or generator causes through their owners and report out-of-scope repairs as
-        blockers.
-      - Inspect Cargo and build-script output even when compiler warnings are denied.
+      - Fix diagnostics and rerun checks after final edits.
   - id: code_checks:evidence
     source: ../rust-code-checks.md#report-verification-evidence
     items:
-      - Report actual commands, roots, configurations, and results; all three checks
-        must succeed without warnings before completion.
-      - Missing tooling, unverified required configurations, and unresolved diagnostics
-        block verification rather than count as success.
-      - Report semantic domain-review scope and unresolved findings separately.
+      - Report actual check results and unresolved verification gaps.

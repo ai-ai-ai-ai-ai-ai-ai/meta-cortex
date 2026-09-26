@@ -4,11 +4,9 @@ title: Svelte state modeling
 source_title: Svelte state modeling
 source: ../../svelte-state-modeling.md
 owns:
-  - Explicit rune initialization, visual/lifecycle states, and co-transitioning UI
-    payloads.
+  - Rune initialization and UI state payloads.
 excludes:
-  - General absence rules belong to Explicit state; portable domain decisions use the
-    supplied cross-language practices.
+  - General absence and portable domain policy.
 relationships: []
 related:
   - title: Explicit state
@@ -22,27 +20,19 @@ rules:
     source: ../../svelte-state-modeling.md#initialize-every-modeled-rune
     items:
       - Initialize modeled rune state explicitly.
-      - Prohibit zero-argument $state and implicit absent DOM references when authored
-        code uses the reference.
   - id: svelte_state_modeling:state_payloads
     source: ../../svelte-state-modeling.md#move-related-values-together
     items:
-      - Use named enum-backed visual/lifecycle unions, put payloads on variants, and
-        group co-transitioning values rather than parallel optionals/booleans.
+      - Keep co-transitioning UI payloads in named variants.
   - id: svelte_state_modeling:generated_types
     source: ../../svelte-state-modeling.md#preserve-generated-product-types
     items:
-      - "Keep portable workflows with the project’s domain owner: Rust in Rust/WASM
-        projects, or TypeScript otherwise."
-      - Preserve canonical enums/identifiers without widening them to string.
+      - Preserve canonical domain types in UI state.
   - id: svelte_state_modeling:external_absence
     source: ../../svelte-state-modeling.md#move-related-values-together
     items:
-      - Normalize external/browser/generated absence directly into semantic variants,
-        not another sentinel.
-      - Generated declarations are excluded but adapters are not.
+      - Convert external absence into semantic variants.
   - id: svelte_state_modeling:validation
     source: ../../svelte-state-modeling.md#validation
     items:
-      - Review rune declarations/clearing assignments, preserve typed identifiers, and
-        run state preflight, diff/format checks, and applicable browser tests.
+      - Check rune transitions, typed identifiers, and browser behavior.

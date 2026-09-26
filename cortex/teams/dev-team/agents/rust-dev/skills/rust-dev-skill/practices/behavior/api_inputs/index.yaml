@@ -4,10 +4,9 @@ title: API inputs
 source_title: API inputs
 source: ../api-inputs.md
 owns:
-  - One non-receiver argument, semantic request types, and externally fixed signatures.
+  - Input counts and semantic requests.
 excludes:
-  - Request construction belongs to Struct construction; method placement belongs to
-    Function ownership.
+  - Construction syntax and method placement.
 relationships: []
 related:
   - title: Struct construction
@@ -18,33 +17,24 @@ rules:
   - id: api_inputs:one_input
     source: ../api-inputs.md#one-non-receiver-input
     items:
-      - Limit authored functions/methods/command handlers to one non-receiver input.
-      - Self, &self, and &mut self do not count.
+      - Accept at most one non-receiver input.
   - id: api_inputs:semantic_requests
     source: ../api-inputs.md#required-actions
     items:
-      - Use a semantic domain/operation request for independent inputs.
-      - Pass an existing scalar newtype directly instead of wrapping one input without
-        meaning.
+      - Group independent inputs into meaningful request types.
   - id: api_inputs:command_decoding
     source: ../api-inputs.md#required-actions
     items:
-      - Destructure or match the request inside the owning operation.
-      - Parse CLI input at the edge into one typed command.
+      - Decode commands at the edge into typed requests.
   - id: api_inputs:no_positional_bags
     source: ../api-inputs.md#prohibited-actions
     items:
-      - Do not hide independent inputs in tuples/arrays/collections, generic
-        Args/Params/Input/Options names, booleans, sentinels, or cross-workflow
-        optionals.
+      - Reject positional bags and meaningless request wrappers.
   - id: api_inputs:external_signatures
     source: ../api-inputs.md#fixed-signature-exceptions
     items:
-      - Externally fixed trait/FFI/generated ABI/framework signatures may retain their
-        required inputs only on the adapter.
-      - Identify the contract and delegate with one named typed request.
+      - Isolate externally required signatures in adapters.
   - id: api_inputs:validation
     source: ../api-inputs.md#validation
     items:
-      - Review non-receiver counts, semantic request construction, and the exact
-        external justification for each retained multi-input signature.
+      - Check input counts, request meaning, and boundary exceptions.

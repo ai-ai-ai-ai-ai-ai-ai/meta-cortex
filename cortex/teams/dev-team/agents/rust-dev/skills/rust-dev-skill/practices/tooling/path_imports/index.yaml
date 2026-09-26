@@ -4,10 +4,9 @@ title: Paths and imports
 source_title: Paths and imports
 source: ../path-imports.md
 owns:
-  - Use-site path qualification and import conventions.
+  - Path qualification and import conventions.
 excludes:
-  - Cross-language renaming belongs to WASM name coherence; domain module placement
-    belongs to Domain types.
+  - Cross-language naming and module placement.
 relationships: []
 related:
   - title: WASM name coherence
@@ -18,21 +17,16 @@ rules:
   - id: path_imports:two_segments
     source: ../path-imports.md#required-actions
     items:
-      - Keep every non-use path to at most two segments.
-      - Import the owner when needed and retain meaningful module/type qualification.
+      - Keep non-import paths within two segments.
   - id: path_imports:all_roots
     source: ../path-imports.md#prohibited-actions
     items:
-      - Apply the limit to crate/self/super/std/core/alloc and relative paths too.
-      - Do not import a required boundary free function bare.
+      - Apply path limits consistently across all roots.
   - id: path_imports:qualified_functions
     source: ../path-imports.md#examples
     items:
-      - For UTF-8 use imported std::str with str::from_utf8, not a three-segment path or
-        unqualified function.
+      - Retain meaningful module qualification at function calls.
   - id: path_imports:validation
     source: ../path-imports.md#validation
     items:
-      - Deny clippy::absolute_paths with absolute-paths-max-segments = 2 at each
-        applicable configuration boundary.
-      - Review relative paths and semantic context separately.
+      - Check path lengths and semantic import context.

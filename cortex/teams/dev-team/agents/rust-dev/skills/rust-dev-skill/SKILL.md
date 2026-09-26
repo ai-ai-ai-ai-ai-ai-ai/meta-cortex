@@ -105,8 +105,8 @@ in full. Include related subjects when the change crosses their boundaries.
 Read the [rule index](index.yaml) to select practices and identify
 rule ownership and individual requirements. Follow the skill’s loading requirements and read the selected practices
 in full. Before changing a rule, inspect its owner and affected related practices;
-update the same namespaced rules, summaries, exceptions, and section links whenever the
-requirements or their placement change.
+update the namespaced decision cues and section links when requirements or their
+placement change. Keep full requirements and exceptions in the source practices.
 
 ## WASM boundary prerequisites
 

@@ -4,10 +4,9 @@ title: Cloud-native operations
 source_title: Cloud-native operations
 source: ../cloud-native-operations.md
 owns:
-  - mutation scope, current-state inspection, operational credentials, recovery
-    readiness, and live verification.
+  - Operational scope, credentials, recovery, and verification.
 excludes:
-  - provider selection, project release procedures, or Kubernetes runtime rules.
+  - Provider selection, releases, and Kubernetes runtime rules.
 relationships: []
 related:
   - title: Project execution policy
@@ -20,25 +19,20 @@ rules:
   - id: cloud_native:scope
     source: ../cloud-native-operations.md#identify-the-target-and-current-state
     items:
-      - Identify the intended project, account, region, and resource before mutation.
+      - Identify the target before making changes.
   - id: cloud_native:current_state
     source: ../cloud-native-operations.md#identify-the-target-and-current-state
     items:
-      - Read current state through supported provider tooling and review the proposed
-        plan or diff when available.
+      - Inspect live state and the proposed change.
   - id: cloud_native:secret_lifecycle
     source: ../cloud-native-operations.md#protect-operational-credentials
     items:
-      - Use scoped, short-lived identities where available, approved secret storage, and
-        redacted output under the shared lifecycle requirements.
-      - Follow project-owned rotation and revocation procedures.
+      - Apply shared credential storage, rotation, and revocation rules.
   - id: cloud_native:recovery
     source: ../cloud-native-operations.md#preserve-a-recovery-path
     items:
-      - Prefer scoped, reversible changes when practical; identify the recovery owner
-        and supported rollback path before impactful mutations.
+      - Establish recovery ownership and rollback before impactful changes.
   - id: cloud_native:live_verification
     source: ../cloud-native-operations.md#verify-live-behavior
     items:
-      - Verify required configuration and workload health after mutation.
-      - Control-plane readiness alone does not establish serving behavior.
+      - Verify live workload behavior after changes.

@@ -4,10 +4,9 @@ title: Default values
 source_title: Default values
 source: ../default-values.md
 owns:
-  - Meaningful struct defaults and enum default variants.
+  - Valid defaults for structs and enums.
 excludes:
-  - General construction syntax belongs to Struct construction; absence modeling belongs
-    to Domain states.
+  - Construction syntax and absence modeling.
 relationships: []
 related:
   - title: Struct construction
@@ -18,15 +17,12 @@ rules:
   - id: default_values:valid_defaults
     source: ../default-values.md#choose-a-valid-default
     items:
-      - Provide Default only for a meaningful valid starting value.
-      - Never invent defaults for required or validated input.
+      - Define defaults only for valid starting values.
   - id: default_values:struct_defaults
     source: ../default-values.md#structs-derive-field-defaults
     items:
-      - Derive Default when field defaults match the type semantics.
-      - Use a manual implementation only for genuinely different defaults.
+      - Derive defaults when field semantics agree.
   - id: default_values:enum_defaults
     source: ../default-values.md#enums-mark-the-default-variant
     items:
-      - Use `#[default]` on the intended unit enum variant.
-      - Implement Default manually when the default variant carries data.
+      - Choose an explicit default enum variant.

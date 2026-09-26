@@ -4,9 +4,9 @@ title: Branching and exhaustive matching
 source_title: Branching and exhaustive matching
 source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md
 owns:
-  - Language-independent branching policy and exhaustive domain decisions.
+  - Named alternatives and exhaustive decisions.
 excludes:
-  - Language syntax, examples, and enforcement belong to the language practices.
+  - Language-specific syntax and enforcement.
 relationships: []
 related:
   - title: Domain states
@@ -17,29 +17,16 @@ rules:
   - id: branching:no_boolean_if
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#use-patterns-instead-of-boolean-if-conditions
     items:
-      - Match named domain alternatives directly; prohibit ordinary boolean conditions
-        throughout authored code, including guards, validation, tests, and tooling.
-      - Convert required raw inputs and dependency predicates at their boundary; name
-        boolean outcomes before choosing workflow actions.
-      - Keep conversions on existing owners without decorative branching abstractions.
-      - Prefer native patterns; use library matchers only when native constructs cannot
-        clearly express the pattern. Preserve exhaustiveness during migration.
+      - Branch on named domain alternatives instead of boolean conditions.
   - id: branching:no_ternary
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#do-not-use-ternary-conditionals
     items:
-      - Prohibit ternary conditional operators where available; use explicit patterns.
+      - Replace ternaries with explicit pattern matching.
   - id: branching:closed_matches
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#close-every-domain-match
     items:
-      - Name every variant in closed domain decisions and reject fallbacks that silently
-        absorb future variants; check exhaustiveness statically.
-      - Group named alternatives only when they share behavior.
-      - Distinguish full decisions from focused payload extraction and open-input
-        matching.
+      - Handle every named variant without catch-all fallbacks.
   - id: branching:validation
     source: ../../../../../../../docs/programming/branching-and-exhaustive-matching.md#validation
     items:
-      - Verify that adding a variant fails incomplete decisions under required static
-        checks.
-      - Review focused patterns, unmatched handling, and boundary conversions.
-      - Test variants separately when outcomes or payloads differ.
+      - Verify exhaustiveness and distinct variant behavior.

@@ -4,11 +4,9 @@ title: Rust–TypeScript separation
 source_title: Rust–TypeScript separation
 source: ../rust-typescript-code-separation.md
 owns:
-  - Allocation of product policy, browser observation, presentation, and bridge
-    responsibilities.
+  - Rust policy, browser presentation, and bridges.
 excludes:
-  - ABI representation belongs to WASM contracts; framework state handling belongs to
-    WASM UI integration.
+  - ABI representation and reactive integration.
 relationships: []
 related:
   - title: WASM contracts
@@ -19,50 +17,36 @@ rules:
   - id: code_separation:ownership
     source: ../rust-typescript-code-separation.md#application-structure
     items:
-      - In Rust/WASM projects, Rust owns portable product data/decisions.
-      - This cross-language rule does not require Rust in TypeScript-only projects.
-      - TypeScript owns presentation and browser lifecycle.
-      - The bridge owns JS conversion and storage/provider adapters.
+      - Separate Rust product policy from TypeScript presentation.
   - id: code_separation:extensions
     source: ../rust-typescript-code-separation.md#application-structure
     items:
-      - Apply the same ownership split to extensions.
-      - Illustrative package names do not impose repository names.
+      - Apply the same ownership split to browser extensions.
   - id: code_separation:core_contracts
     source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
     items:
-      - Define workflow stages, commands, outcomes, persistence schemas, and validation
-        in Rust.
-      - Consumers construct/render generated types rather than redeclaring them.
+      - Define portable contracts in Rust; consume generated types.
   - id: code_separation:abandoned_state
     source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
     items:
-      - Remove abandoned write-only/constant state rather than exporting it.
+      - Remove unused state instead of exporting it.
   - id: code_separation:core_annotations
     source: ../rust-typescript-code-separation.md#define-product-contracts-in-rust
     items:
-      - Core types may carry serialization/binding annotations but not browser I/O,
-        session state, or WASM-specific behavior.
+      - Keep core annotations free of browser behavior.
   - id: code_separation:observation_policy
     source: ../rust-typescript-code-separation.md#separate-observation-from-policy
     items:
-      - TypeScript gathers observations and executes browser actions.
-      - Rust classifies portable decisions.
-      - Move policy out of TS conditions/validators/searches, not merely into another TS
-        file.
+      - Separate browser observations from portable product decisions.
   - id: code_separation:browser_adapters
     source: ../rust-typescript-code-separation.md#separate-observation-from-policy
     items:
-      - Keep durable I/O in bridge adapters where Rust has stable abstractions.
-      - Use established browser crates and isolate unavoidable direct Web API calls.
+      - Keep browser I/O behind established bridge adapters.
   - id: code_separation:visual_state
     source: ../rust-typescript-code-separation.md#keep-visual-state-in-typescript
     items:
-      - Keep visual panels/tabs/form drafts, labels, props, URL/viewport state, and DOM
-        lifecycle in TypeScript.
+      - Keep visual state and DOM lifecycle in TypeScript.
   - id: code_separation:validation
     source: ../rust-typescript-code-separation.md#validation
     items:
-      - Test portable decisions in Rust, generated transport at the bridge, and affected
-        consumers together.
-      - Browser E2E is not domain proof.
+      - Test domain decisions, generated transport, and affected consumers.

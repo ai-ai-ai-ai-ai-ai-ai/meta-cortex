@@ -4,10 +4,9 @@ title: Rust testing
 source_title: Rust testing
 source: ../rust-testing.md
 owns:
-  - Rust test placement, boundary coverage, and coverage requirements.
+  - Test placement, boundaries, and coverage.
 excludes:
-  - Test error propagation belongs to Error handling; serialization assertions belong to
-    Serialization boundaries.
+  - Error propagation and serialization assertions.
 relationships: []
 related:
   - title: Error handling
@@ -18,41 +17,24 @@ rules:
   - id: testing:domain_and_boundary
     source: ../rust-testing.md#domain-and-boundary-tests
     items:
-      - Place the overwhelming majority of functional domain proof in portable Rust
-        unit/property tests.
-      - WASM tests cover typed browser boundaries without duplicating algorithms.
+      - Prove domain behavior in Rust and boundaries in WASM.
   - id: testing:colocation
     source: ../rust-testing.md#test-placement
     items:
-      - "Critical: follow standard Rust inline unit-test organization, using Cortex's
-        `#[cfg(test)] pub mod tests` convention in the same file as the code; keep
-        helpers in that module. Prohibit separate unit-test files and path/include
-        workarounds."
-      - Keep normal production mod/pub mod declarations; banning mod.rs filenames does
-        not require extracting inline unit tests.
-      - Crate tests/ integration files exercise public boundaries, not relabeled unit
-        tests.
-      - Test-harness entrypoints may contain scenario steps and assertions; reusable
-        test helpers remain on fixtures and never duplicate production algorithms.
+      - Keep unit tests inline with their production owner.
   - id: testing:no_size_evasion
     source: ../rust-testing.md#split-production-ownership-before-tests
     items:
-      - Keep production ownership focused and unit tests inline with each owner.
-      - Include inline tests in the 1,000-line limit; split production responsibilities
-        rather than extracting tests to evade the limit.
+      - Split responsibilities without moving tests to evade size limits.
   - id: testing:coverage
     source: ../rust-testing.md#90-rust-line-coverage-floor
     items:
-      - Measure portable crates together against a committed 90% line-coverage floor.
-      - Add tests in the same task below it and prioritize behavior rather than marginal
-        coverage above it.
+      - Measure combined portable coverage against the required floor.
   - id: testing:regression_first
     source: ../rust-testing.md#regression-tests-precede-the-fix
     items:
-      - Write colocated domain regressions before fixes, test narrow WASM boundaries for
-        bridge defects, and cover both contract and user flow for cross-layer defects.
+      - Add focused regressions at the failing boundary.
   - id: testing:evidence
     source: ../rust-testing.md#validation-evidence
     items:
-      - Report Rust test results and combined portable coverage against the 90% floor.
-      - Identify checks not run and do not infer coverage from passing tests.
+      - Report test results, measured coverage, and missing checks.

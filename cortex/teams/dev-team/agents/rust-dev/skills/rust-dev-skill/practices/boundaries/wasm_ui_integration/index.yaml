@@ -4,11 +4,9 @@ title: WASM UI integration
 source_title: WASM UI integration
 source: ../wasm-ui-integration.md
 owns:
-  - Reactive DTOs, instance preservation, and Svelte/Vue/React integration at the UI
-    caller.
+  - Reactive DTOs and preserved WASM instances.
 excludes:
-  - Allocation ownership belongs to WASM contracts; portable policy placement belongs to
-    Rust–TypeScript separation.
+  - Allocation ownership and portable policy.
 relationships: []
 related:
   - title: WASM contracts
@@ -19,47 +17,32 @@ rules:
   - id: wasm_ui_integration:typed_values
     source: ../wasm-ui-integration.md#pass-the-declared-value-without-cloning-it
     items:
-      - Pass plain structural DTOs directly and unwrap reactive DTOs only when required
-        at the WASM boundary.
-      - Preserve generated class identity.
+      - Preserve DTO shapes and generated instance identity.
   - id: wasm_ui_integration:no_cloning
     source: ../wasm-ui-integration.md#pass-the-declared-value-without-cloning-it
     items:
-      - Do not JSON-round-trip, spread, deep-clone, or cast a generated object to remove
-        reactivity.
-      - JSON belongs only at real JSON edges.
+      - Avoid cloning or casting generated objects to remove reactivity.
   - id: wasm_ui_integration:svelte_state
     source: ../wasm-ui-integration.md#svelte
     items:
-      - In Svelte, snapshot reactive DTOs at the rune-owning caller and bind them to
-        explicitly typed locals before ordinary API calls. Use $state.raw for
-        replace-only DTOs, and restrict .svelte.ts to modules owning runes.
+      - Snapshot reactive DTOs at their Svelte caller.
   - id: wasm_ui_integration:svelte_boundaries
     source: ../wasm-ui-integration.md#svelte
     items:
-      - Do not make domain/action modules depend on the Svelte compiler just to snapshot
-        state.
-      - Snapshots do not replace WASM instances.
+      - Keep Svelte adaptation outside domain modules.
   - id: wasm_ui_integration:vue
     source: ../wasm-ui-integration.md#vue
     items:
-      - In Vue, retain WASM instances in shallowRef or markRaw inside reactive objects.
-      - Pass the instance and treat toRaw as nonrecursive for nested proxies.
+      - Preserve WASM instances across Vue reactivity.
   - id: wasm_ui_integration:react
     source: ../wasm-ui-integration.md#react
     items:
-      - In React, pass plain DTOs and original instances.
-      - Use state for render-driving replacement and ref for non-render handles.
-      - Acquire/release owned resources in lifecycle, not render.
+      - Manage React handles and ownership through lifecycle boundaries.
   - id: wasm_ui_integration:caller_adaptation
     source: ../wasm-ui-integration.md#keep-ui-adaptation-at-the-caller
     items:
-      - Do not add state/action forwarding wrappers with no responsibility.
-      - Retain methods only for real validation, lifecycle, or conversion.
-      - UI proxy removal belongs at the caller.
+      - Adapt UI proxies at callers without redundant wrappers.
   - id: wasm_ui_integration:validation
     source: ../wasm-ui-integration.md#validation
     items:
-      - Test reactive submission, instance identity, replacement/teardown, and framework
-        type checks.
-      - Borrowed samples do not grant cleanup ownership.
+      - Test reactive submission, instance identity, and cleanup.
