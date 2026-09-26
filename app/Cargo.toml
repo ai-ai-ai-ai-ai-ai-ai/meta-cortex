@@ -3,7 +3,7 @@ members = ["installer", "workbench"]
 resolver = "3"
 
 [workspace.package]
-version = "0.8.0"
+version = "0.9.1"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex"
@@ -48,6 +48,9 @@ result_unit_err = "deny"
 wildcard_enum_match_arm = "deny"
 too_many_arguments = "deny"
 excessive_nesting = "deny"
+
+[profile.dev]
+incremental = false
 
 [profile.dist]
 inherits = "release"

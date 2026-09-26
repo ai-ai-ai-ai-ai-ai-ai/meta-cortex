@@ -1,4 +1,4 @@
-//! Durable task coordination, Git checkpoints, and per-feature Turso storage.
+//! Durable task coordination, Git checkpoints, and repository-wide Turso storage.
 //!
 //! [`Workbench`] identifies a repository through Git and opens its user-owned ledgers.
 //! Command-line transport and framework installation belong to the application.
@@ -64,11 +64,7 @@ impl Workbench {
     }
 
     pub async fn features(&self) -> Result<Vec<LedgerInfo>, LedgerError> {
-        let mut ledgers = Vec::new();
-        for feature in self.repository.features()? {
-            ledgers.push(self.open(feature).await?.info());
-        }
-        Ok(ledgers)
+        Ledger::features(&self.repository).await
     }
 }
 

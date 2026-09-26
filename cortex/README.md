@@ -144,15 +144,16 @@ uses Bun and the shared workspace dependencies installed by Framework / Initiali
 - Answers stay in session context.
 
 [meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for
-each delegated role in multi-agent mode. Single-agent mode keeps the current
-host settings. The [configuration rules](teams/gizmo-team/docs/agent-configuration.md) define how
+each delegated role in multi-agent mode. Speed comes from the host session.
+Single-agent mode keeps the current host settings. The
+[configuration rules](teams/gizmo-team/docs/agent-configuration.md) define how
 the host applies those settings.
 
 1. Check that the configured models and reasoning efforts are supported by your host.
-2. Adjust the role settings to match your intended execution setup.
+2. Adjust the role settings and select the desired speed in the host.
 3. Start the task through a host capable of running the configured roles.
-   - Unsupported settings or missing execution capabilities are reported as blockers.
-   - Agents must not silently substitute another configuration.
+   - Unsupported models, reasoning efforts, or missing execution capabilities are reported as blockers.
+   - Agents must not silently substitute another model or reasoning effort.
 
 ## Agent skills
 

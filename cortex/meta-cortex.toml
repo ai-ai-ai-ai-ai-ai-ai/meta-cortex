@@ -1,5 +1,7 @@
 # Execution settings for Meta-Cortex agents.
 # Settings apply by role, regardless of agent directory.
+# Speed comes from the host session; select Fast in the host before launching agents.
+# Host launch and verification: teams/gizmo-team/docs/agent-configuration.md
 
 [gizmo-prime]
 model = "gpt-6-luna"

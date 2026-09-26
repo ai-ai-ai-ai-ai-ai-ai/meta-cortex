@@ -20,13 +20,16 @@ pub enum VersionError {
     },
 }
 
-// Installed metadata and report schema 3 retain Cargo's semantic-version text.
+// Installed metadata and report schema 5 retain Cargo's semantic-version text.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(into = "&'static str")]
 pub enum Version {
     V0_6_2,
     V0_7_0,
     V0_8_0,
+    V0_8_1,
+    V0_9_0,
+    V0_9_1,
 }
 
 #[derive(Debug, PartialEq, Eq, Error)]
@@ -60,6 +63,9 @@ impl Version {
             b"0.6.2" => Ok(Version::V0_6_2),
             b"0.7.0" => Ok(Version::V0_7_0),
             b"0.8.0" => Ok(Version::V0_8_0),
+            b"0.8.1" => Ok(Version::V0_8_1),
+            b"0.9.0" => Ok(Version::V0_9_0),
+            b"0.9.1" => Ok(Version::V0_9_1),
             _ => Err(VersionTextError::Unsupported),
         }
     }
@@ -85,6 +91,9 @@ impl Version {
             Self::V0_6_2 => "0.6.2",
             Self::V0_7_0 => "0.7.0",
             Self::V0_8_0 => "0.8.0",
+            Self::V0_8_1 => "0.8.1",
+            Self::V0_9_0 => "0.9.0",
+            Self::V0_9_1 => "0.9.1",
         }
     }
 
@@ -114,17 +123,17 @@ pub struct ProjectInfo {
 #[derive(Clone, Serialize)]
 #[serde(into = "u32")]
 enum InfoSchemaVersion {
-    V3,
+    V5,
 }
 
 impl InfoSchemaVersion {
-    const CURRENT: Self = Self::V3;
+    const CURRENT: Self = Self::V5;
 }
 
 impl From<InfoSchemaVersion> for u32 {
     fn from(version: InfoSchemaVersion) -> Self {
         match version {
-            InfoSchemaVersion::V3 => 3,
+            InfoSchemaVersion::V5 => 5,
         }
     }
 }
@@ -209,8 +218,15 @@ pub mod tests {
                 Err(VersionTextError::Unsupported)
             );
         }
-        assert_eq!(Version::CURRENT, Version::V0_8_0);
-        for version in [Version::V0_6_2, Version::V0_7_0, Version::V0_8_0] {
+        assert_eq!(Version::CURRENT, Version::V0_9_1);
+        for version in [
+            Version::V0_6_2,
+            Version::V0_7_0,
+            Version::V0_8_0,
+            Version::V0_8_1,
+            Version::V0_9_0,
+            Version::V0_9_1,
+        ] {
             let text = version.as_str().to_owned();
             assert_eq!(Version::try_from(text.clone()), Ok(version));
             assert_eq!(Version::try_from(format!("{text}\n")), Ok(version));

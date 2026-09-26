@@ -21,12 +21,19 @@ struct EventDetails {
 
 impl Ledger {
     pub async fn claim(&mut self, input: ClaimTask) -> Result<Task, LedgerError> {
+        match input.feature == self.state.feature.id {
+            true => {}
+            false => return Err(LedgerError::Invalid("feature mismatch")),
+        }
         let tx = self
             .state
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
-        let documents = Documents { connection: &tx };
+        let documents = Documents {
+            connection: &tx,
+            feature: &self.state.feature.id,
+        };
         let mut task = documents.task(&input.task).await?;
         task.require_revision(input.expected_revision)?;
         for dependency in &task.dependencies {
@@ -54,12 +61,19 @@ impl Ledger {
     }
 
     pub async fn update(&mut self, input: WorkerUpdate) -> Result<Task, LedgerError> {
+        match input.feature == self.state.feature.id {
+            true => {}
+            false => return Err(LedgerError::Invalid("feature mismatch")),
+        }
         let tx = self
             .state
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
-        let documents = Documents { connection: &tx };
+        let documents = Documents {
+            connection: &tx,
+            feature: &self.state.feature.id,
+        };
         let task = documents.task(&input.task).await?;
         task.require_revision(input.expected_revision)?;
         let change = TaskChange {
@@ -74,12 +88,19 @@ impl Ledger {
     }
 
     pub async fn coordinate(&mut self, input: CoordinatorUpdate) -> Result<Task, LedgerError> {
+        match input.feature == self.state.feature.id {
+            true => {}
+            false => return Err(LedgerError::Invalid("feature mismatch")),
+        }
         let tx = self
             .state
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
-        let documents = Documents { connection: &tx };
+        let documents = Documents {
+            connection: &tx,
+            feature: &self.state.feature.id,
+        };
         let task = documents.task(&input.task).await?;
         task.require_revision(input.expected_revision)?;
         let change = TaskChange {

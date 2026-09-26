@@ -196,6 +196,36 @@ pub mod tests {
     }
 
     #[test]
+    fn bundled_configuration_leaves_speed_to_host() -> Result<(), ConfigError> {
+        let bundled = Configuration::bundled()?;
+        let encoded = ConfigText::try_from(bundled)?;
+        assert_eq!(encoded.parse()?, bundled);
+        assert!(!encoded.to_string().contains("service_tier"));
+        assert!(!encoded.to_string().contains("mode ="));
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_framework_speed_overrides() -> Result<(), ConfigError> {
+        let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
+        for section in ["[gizmo-prime]", "[team.gizmo]", "[team.agent]"] {
+            for field in [
+                "service_tier = \"priority\"",
+                "service_tier = \"default\"",
+                "mode = \"fast\"",
+                "mode = \"standard\"",
+            ] {
+                let invalid = text.replace(section, &format!("{section}\n{field}"));
+                assert!(matches!(
+                    ConfigText::from(invalid).parse(),
+                    Err(ConfigError::Decode(_))
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
     fn rejects_invalid_or_incomplete_configuration() -> Result<(), ConfigError> {
         let text = ConfigText::try_from(Configuration {
             gizmo_prime: AgentSettings {

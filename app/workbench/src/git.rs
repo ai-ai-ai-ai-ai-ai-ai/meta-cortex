@@ -1,5 +1,5 @@
 use super::model::{Checkpoint, Feature, Workspace};
-use super::values::{BranchName, CommitId, FeatureId};
+use super::values::{BranchName, CommitId};
 use super::{DataDirectory, LedgerError};
 use crate::repository_id::RepositoryId;
 use derive_more::From;
@@ -77,49 +77,71 @@ impl Repository {
         self
     }
 
-    fn feature_directory(&self) -> Result<PathBuf, LedgerError> {
+    fn repository_directory(&self) -> Result<PathBuf, LedgerError> {
         let id = RepositoryId::read(&self.root)?;
-        Ok(self
-            .data
-            .path()
-            .join(self.root.file_name().ok_or(LedgerError::Invalid(
-                "repository checkout has no directory name",
-            ))?)
-            .join(id.to_string())
-            .join("features"))
-    }
-
-    pub fn initialize(&self) -> Result<(), LedgerError> {
-        RepositoryId::initialize(&self.root, &self.common_dir)?;
-        fs::create_dir_all(self.feature_directory()?)?;
-        Ok(())
-    }
-
-    pub fn features(&self) -> Result<Vec<FeatureId>, LedgerError> {
-        let directory = match self.feature_directory() {
-            Ok(directory) => directory,
-            Err(LedgerError::Uninitialized) => return Ok(Vec::new()),
-            Err(error) => return Err(error),
-        };
-        let mut ids = Vec::new();
-        match fs::read_dir(directory) {
+        let name = self
+            .root
+            .file_name()
+            .ok_or(LedgerError::Invalid("repository has no directory name"))?;
+        let expected = self.data.path().join(name).join(id.to_string());
+        match fs::metadata(&expected) {
+            Ok(metadata) if metadata.is_dir() => return Ok(expected),
+            Ok(_) => {
+                return Err(LedgerError::Invalid(
+                    "repository data path must be a directory",
+                ));
+            }
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+        // The name is a human-readable label; a checkout rename retains its UUID and data.
+        match fs::read_dir(self.data.path()) {
             Ok(entries) => {
                 for entry in entries {
-                    let path = entry?.path();
-                    if path.extension().is_some_and(|extension| extension == "db") {
-                        let id = path
-                            .file_stem()
-                            .and_then(|name| name.to_str())
-                            .ok_or(LedgerError::Invalid("invalid feature database filename"))?;
-                        ids.push(FeatureId::try_from(id.to_owned())?);
+                    let entry = entry?;
+                    match entry.file_type()? {
+                        kind if kind.is_dir() => {}
+                        _ => continue,
+                    }
+                    let candidate = entry.path().join(id.to_string());
+                    match fs::metadata(&candidate) {
+                        Ok(metadata) if metadata.is_dir() => return Ok(candidate),
+                        Ok(_) => {}
+                        Err(error) if error.kind() == ErrorKind::NotFound => {}
+                        Err(error) => return Err(error.into()),
                     }
                 }
             }
             Err(error) if error.kind() == ErrorKind::NotFound => {}
             Err(error) => return Err(error.into()),
         }
-        ids.sort_by_key(ToString::to_string);
-        Ok(ids)
+        Ok(expected)
+    }
+
+    pub fn initialize(&self) -> Result<(), LedgerError> {
+        RepositoryId::initialize(&self.root, &self.common_dir)?;
+        fs::create_dir_all(self.repository_directory()?)?;
+        Ok(())
+    }
+
+    pub(crate) fn legacy_ledgers(&self) -> Result<Vec<PathBuf>, LedgerError> {
+        let id = RepositoryId::read(&self.root)?;
+        let directory = self.data.path().join(id.to_string()).join("features");
+        let mut paths = Vec::new();
+        match fs::read_dir(directory) {
+            Ok(entries) => {
+                for entry in entries {
+                    let path = entry?.path();
+                    if let Some("db") = path.extension().and_then(|extension| extension.to_str()) {
+                        paths.push(path);
+                    }
+                }
+            }
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+        paths.sort();
+        Ok(paths)
     }
 
     pub fn discover(project: &Path) -> Result<Self, LedgerError> {
@@ -138,8 +160,8 @@ impl Repository {
         })
     }
 
-    pub fn ledger_path(&self, feature: &FeatureId) -> Result<PathBuf, LedgerError> {
-        Ok(self.feature_directory()?.join(format!("{feature}.db")))
+    pub fn ledger_path(&self) -> Result<PathBuf, LedgerError> {
+        Ok(self.repository_directory()?.join("workbench.db"))
     }
 
     pub fn require_workspace(&self, workspace: &Workspace) -> Result<(), LedgerError> {
@@ -251,27 +273,26 @@ pub mod tests {
     use std::path::Path;
 
     #[test]
-    fn repository_storage_groups_names_and_preserves_distinct_identities() -> anyhow::Result<()> {
+    fn repository_identity_is_local_stable_and_independent_of_its_name() -> anyhow::Result<()> {
         let directory = tempfile::tempdir()?;
         let original = directory.path().join("source/project");
         let cloned = directory.path().join("cloned/project");
         let data = DataDirectory::from(directory.path().join("data"));
+        fs::create_dir_all(data.path())?;
+        fs::write(data.path().join("notes.txt"), "shared application data")?;
         git2::Repository::init(&original)?;
         let repository = Repository::discover(&original)?.with_data_directory(data.clone());
-        assert!(repository.features()?.is_empty());
+        assert!(matches!(
+            repository.ledger_path(),
+            Err(LedgerError::Uninitialized)
+        ));
         assert!(!original.join(".meta-cortex").exists());
         repository.initialize()?;
-        let storage = repository.feature_directory()?;
+        let storage = repository.repository_directory()?;
         let id = RepositoryId::read(&original)?;
-        assert_eq!(
-            storage,
-            data.path()
-                .join("project")
-                .join(id.to_string())
-                .join("features")
-        );
+        assert_eq!(storage, data.path().join("project").join(id.to_string()));
         repository.initialize()?;
-        assert_eq!(storage, repository.feature_directory()?);
+        assert_eq!(storage, repository.repository_directory()?);
         GitWorktree::from(original.clone()).require_clean()?;
         assert!(!original.join(".git/meta-cortex").exists());
 
@@ -282,26 +303,20 @@ pub mod tests {
         assert!(!cloned.join(".meta-cortex/repository-id").exists());
         let clone = Repository::discover(&cloned)?.with_data_directory(data.clone());
         clone.initialize()?;
-        assert_ne!(storage, clone.feature_directory()?);
+        assert_ne!(storage, clone.repository_directory()?);
 
         let renamed = directory.path().join("renamed");
         fs::rename(&original, &renamed)?;
         let moved = Repository::discover(&renamed)?.with_data_directory(data.clone());
         moved.initialize()?;
         assert_eq!(id, RepositoryId::read(&renamed)?);
-        assert_eq!(
-            moved.feature_directory()?,
-            data.path()
-                .join("renamed")
-                .join(id.to_string())
-                .join("features")
-        );
+        assert_eq!(storage, moved.repository_directory()?);
 
         fs::remove_dir_all(&renamed)?;
         git2::Repository::init(&renamed)?;
         let recreated = Repository::discover(&renamed)?.with_data_directory(data);
         recreated.initialize()?;
-        assert_ne!(storage, recreated.feature_directory()?);
+        assert_ne!(storage, recreated.repository_directory()?);
         assert!(storage.is_dir());
         Ok(())
     }
@@ -323,13 +338,13 @@ pub mod tests {
             .path()
             .join("project with spaces 🦀")
             .join(id.to_string())
-            .join("features");
-        assert_eq!(main.feature_directory()?, expected);
+            .join("workbench.db");
+        assert_eq!(main.ledger_path()?, expected);
         let linked_path = directory.path().join("worker checkout");
         repository.worktree("worker", &linked_path, None)?;
         let linked = Repository::discover(&linked_path)?.with_data_directory(data);
         linked.initialize()?;
-        assert_eq!(linked.feature_directory()?, expected);
+        assert_eq!(linked.ledger_path()?, expected);
         assert!(!linked_path.join(".meta-cortex/repository-id").exists());
         Ok(())
     }

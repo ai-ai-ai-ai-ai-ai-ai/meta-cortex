@@ -1,5 +1,7 @@
+mod legacy;
 mod lifecycle;
 mod mutations;
+mod relational;
 mod schema;
 mod sql;
 
@@ -10,7 +12,7 @@ use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskState, TaskV
 use super::request::{CreateTask, InitFeature};
 use super::values::{Attempt, FeatureId, Revision, TaskId, Timestamp};
 use super::versions::{RecordVersion, StorageVersion};
-use schema::{EventTable, FeatureTable, TaskTable};
+use relational::{EventTable, FeatureTable, RecordWriter, TaskTable};
 use sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
 use serde::Serialize;
 use sql::SqlStatement;
@@ -68,6 +70,7 @@ pub struct LedgerInfo {
 }
 
 struct Documents<'a> {
+    feature: &'a FeatureId,
     connection: &'a Connection,
 }
 
@@ -102,7 +105,10 @@ impl Ledger {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
-        let documents = Documents { connection: &tx };
+        let documents = Documents {
+            connection: &tx,
+            feature: &self.state.feature.id,
+        };
         let mut seen = BTreeSet::new();
         for dependency in &input.dependencies {
             if dependency == &input.task || !seen.insert(dependency) {
@@ -131,13 +137,23 @@ impl Ledger {
         let changed = SqlStatement::build(
             Query::insert()
                 .into_table(TaskTable::Table)
-                .columns([TaskTable::Id, TaskTable::Revision, TaskTable::Document])
+                .columns([
+                    TaskTable::FeatureId,
+                    TaskTable::Id,
+                    TaskTable::Revision,
+                    TaskTable::Document,
+                ])
                 .values([
+                    task.feature.to_string().into(),
                     task.id.to_string().into(),
                     i64::from(task.revision).into(),
                     serde_json::to_string(&task)?.into(),
                 ])?
-                .on_conflict(OnConflict::column(TaskTable::Id).do_nothing().to_owned())
+                .on_conflict(
+                    OnConflict::columns([TaskTable::FeatureId, TaskTable::Id])
+                        .do_nothing()
+                        .to_owned(),
+                )
                 .to_owned(),
         )?
         .execute(&tx)
@@ -161,6 +177,7 @@ impl Ledger {
     pub async fn task(&self, id: &TaskId) -> Result<TaskView, LedgerError> {
         Ok(Documents {
             connection: &self.state.connection,
+            feature: &self.state.feature.id,
         }
         .task(id)
         .await?
@@ -172,6 +189,7 @@ impl Ledger {
             Query::select()
                 .column(TaskTable::Document)
                 .from(TaskTable::Table)
+                .and_where(Expr::col(TaskTable::FeatureId).eq(self.state.feature.id.to_string()))
                 .order_by(TaskTable::Id, Order::Asc)
                 .to_owned(),
         )?
@@ -189,6 +207,7 @@ impl Ledger {
     pub async fn history(&self, id: &TaskId) -> Result<Vec<Event>, LedgerError> {
         Documents {
             connection: &self.state.connection,
+            feature: &self.state.feature.id,
         }
         .task(id)
         .await?;
@@ -196,6 +215,7 @@ impl Ledger {
             Query::select()
                 .column(EventTable::Document)
                 .from(EventTable::Table)
+                .and_where(Expr::col(EventTable::FeatureId).eq(self.state.feature.id.to_string()))
                 .and_where(Expr::col(EventTable::TaskId).eq(id.to_string()))
                 .order_by(EventTable::Revision, Order::Asc)
                 .to_owned(),
@@ -216,7 +236,7 @@ impl Documents<'_> {
             Query::select()
                 .column(FeatureTable::Document)
                 .from(FeatureTable::Table)
-                .and_where(Expr::col(FeatureTable::Singleton).eq(1))
+                .and_where(Expr::col(FeatureTable::Id).eq(self.feature.to_string()))
                 .to_owned(),
         )?
         .query(self.connection)
@@ -230,6 +250,7 @@ impl Documents<'_> {
             Query::select()
                 .column(TaskTable::Document)
                 .from(TaskTable::Table)
+                .and_where(Expr::col(TaskTable::FeatureId).eq(self.feature.to_string()))
                 .and_where(Expr::col(TaskTable::Id).eq(id.to_string()))
                 .to_owned(),
         )?
@@ -240,24 +261,11 @@ impl Documents<'_> {
     }
 
     async fn event(&self, event: &Event) -> Result<(), LedgerError> {
-        SqlStatement::build(
-            Query::insert()
-                .into_table(EventTable::Table)
-                .columns([
-                    EventTable::TaskId,
-                    EventTable::Revision,
-                    EventTable::Document,
-                ])
-                .values([
-                    event.task.id.to_string().into(),
-                    i64::from(event.task.revision).into(),
-                    serde_json::to_string(event)?.into(),
-                ])?
-                .to_owned(),
-        )?
-        .execute(self.connection)
-        .await?;
-        Ok(())
+        RecordWriter {
+            connection: self.connection,
+        }
+        .event(event)
+        .await
     }
 
     async fn save(&self, mut event: Event) -> Result<Task, LedgerError> {
@@ -268,6 +276,7 @@ impl Documents<'_> {
                 .table(TaskTable::Table)
                 .value(TaskTable::Revision, i64::from(event.task.revision))
                 .value(TaskTable::Document, serde_json::to_string(&event.task)?)
+                .and_where(Expr::col(TaskTable::FeatureId).eq(self.feature.to_string()))
                 .and_where(Expr::col(TaskTable::Id).eq(event.task.id.to_string()))
                 .and_where(Expr::col(TaskTable::Revision).eq(i64::from(previous)))
                 .to_owned(),

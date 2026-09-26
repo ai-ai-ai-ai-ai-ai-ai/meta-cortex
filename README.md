@@ -60,7 +60,7 @@ meta-cortex run --request request.yaml
 Use `harness: none` and `instructions: skip` to install only the framework.
 Initialization installs `.meta-cortex/` with the bundled model and reasoning-effort
 settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
-host needs different settings. Repeating the request preserves valid project
+host needs different models or reasoning efforts. Repeating the request preserves valid project
 settings and does not replace a modified framework.
 
 Initialization requires a Git repository. It uses its own tools under
@@ -169,9 +169,9 @@ result:
   data:
     kind: framework_info
     value:
-      schema_version: 3
-      cli_version: 0.7.0
-      framework_version: 0.7.0
+      schema_version: 5
+      cli_version: 0.9.1
+      framework_version: 0.9.1
       paths:
         project: /path/to/project
         framework: /path/to/project/.meta-cortex
@@ -207,8 +207,16 @@ result:
 - `integrations` reports each harness's resolved instruction file and managed-block
   status: `Connected`, `Missing`, or `Conflict`. Multiple harnesses can share a file;
   this reports file contents, not which harness is running.
-- `models` preserves the configuration's role names and reads their project settings.
+- `models` preserves the configuration's role names and reports model and reasoning effort.
 - `model_availability: NotChecked` means the command has not queried your AI host.
+
+These are requested settings, not evidence of an agent's runtime configuration.
+The [agent configuration rules](cortex/teams/gizmo-team/docs/agent-configuration.md#use-the-host-speed-setting)
+leave speed to the host session. Select Fast in the host before launching agents;
+Meta-Cortex does not configure or override the service tier. Remove `mode` and
+`service_tier` from role sections; both fields are rejected. The CLI report uses
+schema version 5 and reports only model and reasoning effort for each role.
+Actual processing-tier verification requires host runtime metadata.
 
 Inspection does not modify project files. Failures produce a structured error
 response on stdout with exit status 2.
@@ -245,7 +253,7 @@ The [Rust workspace](app/Cargo.toml) contains two crates:
 - [installer](app/installer): the `meta-cortex` executable, framework installation,
   command discovery, and typed YAML transport.
 - [workbench](app/workbench): the `meta-cortex-workbench` library for durable agent
-  tasks, claims, progress, Git checkpoints, and per-feature Turso ledgers. It owns
+  tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
 
 ```sh
@@ -305,21 +313,16 @@ installation before retrying.
 ## Agent work ledger
 
 The `meta-cortex` binary includes an embedded Turso ledger at
-`~/.meta-cortex/<repo-name>/<repo_id>/features/<feature-id>.db`. Framework or feature
+`~/.meta-cortex/<repo-name>/<repo_id>/workbench.db`. All agents, features, and
+worktrees in a repository use this same database. Framework or feature
 initialization generates a UUID once in the main checkout's
 `.meta-cortex/repository-id`. Initialization from any linked worktree reuses that
 ID. The file is locally ignored by Git, so a fresh clone gets a new identity;
 repositories with the same name remain separate. Repeated initialization and
-moving the checkout without changing its directory name preserve the ID and data
-location. The repository name is the main checkout directory name; linked
-worktrees use that same name. Renaming the main checkout preserves the UUID but
-changes the name folder. Move its UUID directory under the new name to retain
-access to existing ledgers. Bun is shared across
-repositories at `~/.meta-cortex/bun`; Vale is shared at `~/.meta-cortex/vale`.
+renaming the checkout preserve the ID and the existing named data directory.
+Bun is shared across repositories at `~/.meta-cortex/bun`; Vale is shared at `~/.meta-cortex/vale`.
 `META_CORTEX_HOME` overrides the application directory. Keep the identity file when replacing an installed framework or
 restoring a repository whose ledgers you want to retain.
-For storage created before the name folder was introduced, move the existing
-`<repo_id>` directory under `<repo-name>` before using its ledgers again.
 Database files and their engine-managed sidecars are persistent state; keep them
 together when backing up or moving them. Application storage is outside `.git`.
 
