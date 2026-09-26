@@ -114,7 +114,8 @@ source was checked.
 - **Article plugin:** checks empty H2/H3 sections, more than three consecutive
   prose paragraphs, procedure headings without numbered actions, and tables.
 - **YAML catalog audit:** validates navigation, practice, and check shapes;
-  follows child indexes; checks owning entries for local `practices/` files;
+  decodes rule names and practice owners through closed enums; follows child
+  indexes; checks owning entries for local `practices/` files;
   rejects duplicate ownership, duplicate rule IDs, unknown comparison IDs,
   inconsistent comparison sources, catalog cycles, and unlinked catalogs.
   Reuses remark's link validator for file paths and exact Markdown section anchors.

@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:wasm_name_coherence
 title: WASM and command name coherence
 source_title: WASM name coherence
 source: ../rust-wasm-name-coherence.md

@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:explicit_state
 title: Explicit state
 source_title: Explicit state
 source: ../../typescript-explicit-state.md

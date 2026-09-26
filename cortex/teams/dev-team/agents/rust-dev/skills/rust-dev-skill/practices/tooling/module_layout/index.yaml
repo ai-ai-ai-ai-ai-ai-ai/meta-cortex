@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:module_layout
 title: Module layout
 source_title: Module layout
 source: ../module-layout.md

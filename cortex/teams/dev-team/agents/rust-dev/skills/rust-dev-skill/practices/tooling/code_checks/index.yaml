@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:code_checks
 title: Rust code checks
 source_title: Rust code checks
 source: ../rust-code-checks.md

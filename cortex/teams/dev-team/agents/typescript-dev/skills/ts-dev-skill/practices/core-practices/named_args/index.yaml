@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:named_args
 title: Named arguments
 source_title: Named arguments
 source: ../../typescript-named-args.md

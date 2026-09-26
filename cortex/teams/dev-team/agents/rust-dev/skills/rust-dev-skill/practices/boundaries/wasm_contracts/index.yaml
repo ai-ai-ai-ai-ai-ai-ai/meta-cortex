@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:wasm_contracts
 title: WASM contracts
 source_title: WASM contracts
 source: ../wasm-contracts.md

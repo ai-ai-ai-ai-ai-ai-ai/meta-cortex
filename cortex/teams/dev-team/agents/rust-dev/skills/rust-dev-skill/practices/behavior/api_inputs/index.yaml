@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:api_inputs
 title: API inputs
 source_title: API inputs
 source: ../api-inputs.md

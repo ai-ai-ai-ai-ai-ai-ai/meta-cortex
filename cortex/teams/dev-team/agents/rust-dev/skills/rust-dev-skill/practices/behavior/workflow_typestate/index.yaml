@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:workflow_typestate
 title: Workflow typestate
 source_title: Workflow typestate
 source: ../workflow-typestate.md

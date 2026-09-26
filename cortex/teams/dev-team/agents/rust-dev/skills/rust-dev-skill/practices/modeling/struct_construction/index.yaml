@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:struct_construction
 title: Struct construction
 source_title: Struct construction
 source: ../struct-construction.md

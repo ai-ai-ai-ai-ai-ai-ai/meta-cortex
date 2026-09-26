@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:svelte_state_modeling
 title: Svelte state modeling
 source_title: Svelte state modeling
 source: ../../svelte-state-modeling.md

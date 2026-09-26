@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:effect
 title: Effect workflows
 source_title: Installed Effect documentation
 source: ../../../SKILL.md#effect-use-installed-documentation

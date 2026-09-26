@@ -2,6 +2,9 @@ import { Effect, Schema } from "effect";
 import type { ParseOptions } from "effect/SchemaAST";
 import { parse, type ParseOptions as YamlParseOptions } from "yaml";
 
+import { RuleName } from "./rule-name.ts";
+import { PracticeOwner } from "./practice-owner.ts";
+
 export enum CatalogKind {
   Navigation = "navigation",
   Practice = "practice",
@@ -9,6 +12,18 @@ export enum CatalogKind {
 }
 
 export class CatalogSchema {
+  private static readonly ruleAnnotations = {
+    identifier: "registered RuleName",
+  } satisfies Schema.Annotations.Bottom<RuleName, readonly []>;
+  private static readonly ownerAnnotations = {
+    identifier: "registered PracticeOwner",
+  } satisfies Schema.Annotations.Bottom<PracticeOwner, readonly []>;
+  static readonly ruleName = Schema.Enum(RuleName).annotate(
+    CatalogSchema.ruleAnnotations,
+  );
+  static readonly practiceOwner = Schema.Enum(PracticeOwner).annotate(
+    CatalogSchema.ownerAnnotations,
+  );
   static readonly referenceFields = {
     title: Schema.NonEmptyString,
     path: Schema.NonEmptyString,
@@ -21,13 +36,13 @@ export class CatalogSchema {
   } satisfies Schema.Struct.Fields;
   static readonly entry = Schema.Struct(CatalogSchema.entryFields);
   static readonly ruleFields = {
-    id: Schema.NonEmptyString.check(Schema.isPattern(/^[a-z_]+:[a-z_]+$/)),
+    id: CatalogSchema.ruleName,
     source: Schema.NonEmptyString,
     items: Schema.NonEmptyArray(Schema.NonEmptyString),
   } satisfies Schema.Struct.Fields;
   static readonly rule = Schema.Struct(CatalogSchema.ruleFields);
   static readonly comparisonFields = {
-    id: Schema.NonEmptyString.check(Schema.isPattern(/^[a-z_]+:[a-z_]+$/)),
+    id: CatalogSchema.ruleName,
     source: Schema.NonEmptyString,
   } satisfies Schema.Struct.Fields;
   static readonly comparison = Schema.Struct(CatalogSchema.comparisonFields);
@@ -39,6 +54,7 @@ export class CatalogSchema {
   static readonly navigation = Schema.Struct(CatalogSchema.navigationFields);
   static readonly practiceFields = {
     kind: Schema.Literal(CatalogKind.Practice),
+    owner: CatalogSchema.practiceOwner,
     title: Schema.NonEmptyString,
     source_title: Schema.NonEmptyString,
     source: Schema.NonEmptyString,

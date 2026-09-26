@@ -12,6 +12,13 @@ import {
   type CatalogComparison,
 } from "./catalog.ts";
 
+import { PracticeOwner } from "./practice-owner.ts";
+
+export interface PracticeSource {
+  readonly owner: PracticeOwner;
+  readonly path: string;
+}
+
 interface CatalogContent {
   readonly file: VFile;
   readonly catalog: Catalog;
@@ -61,6 +68,17 @@ export class CatalogDocument {
           title: rule.id,
           path: rule.source,
         }));
+    }
+  }
+
+  sources(): readonly PracticeSource[] {
+    const catalog = this.content.catalog;
+    switch (catalog.kind) {
+      case CatalogKind.Practice:
+        return [{ owner: catalog.owner, path: this.target(catalog.source) }];
+      case CatalogKind.Navigation:
+      case CatalogKind.Check:
+        return [];
     }
   }
 

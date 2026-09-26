@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:enums_over_booleans
 title: Enums instead of booleans
 source_title: Enums instead of booleans
 source: ../../typescript-enums-over-booleans.md

@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:domain_types
 title: Domain types
 source_title: Domain types
 source: ../domain-types.md

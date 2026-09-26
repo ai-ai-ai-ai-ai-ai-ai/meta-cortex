@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:dependency_selection
 title: Dependency selection
 source_title: Dependency selection
 source: ../dependency-selection.md

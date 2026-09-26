@@ -9,6 +9,9 @@ import { VFile, type Options as FileOptions } from "vfile";
 import { stringify } from "yaml";
 import { CatalogKind, type Catalog } from "../ts/catalog.ts";
 
+import { RuleName } from "../ts/rule-name.ts";
+import { PracticeOwner } from "../ts/practice-owner.ts";
+
 interface CatalogFixture {
   readonly path: string;
   readonly catalog: Catalog;
@@ -205,6 +208,7 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
           path: "practices/known/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
+            owner: PracticeOwner.RustDomainTypes,
             title: "Known",
             source_title: "Known",
             source: "../known.md",
@@ -214,7 +218,7 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
             related: [],
             rules: [
               {
-                id: "known:rule",
+                id: RuleName.DomainTypesReuse,
                 source: "../known.md#same-1",
                 items: [
                   'Preserve "quotes": and YAML-like values.\nKeep the exception too.',
@@ -232,7 +236,10 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
             prohibited: ["Discard the exception."],
             preferred: ["Preserve the exception."],
             compare: [
-              { id: "known:rule", source: "../practices/known.md#same-1" },
+              {
+                id: RuleName.DomainTypesReuse,
+                source: "../practices/known.md#same-1",
+              },
             ],
           },
         };
@@ -286,6 +293,7 @@ test("reports lost practice coverage, duplicate ownership and rules, and broken 
           path: "practices/known/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
+            owner: PracticeOwner.RustDomainTypes,
             title: "Known",
             source_title: "Known",
             source: "../known.md",
@@ -295,12 +303,12 @@ test("reports lost practice coverage, duplicate ownership and rules, and broken 
             related: [{ title: "Missing", path: "../missing.md" }],
             rules: [
               {
-                id: "known:rule",
+                id: RuleName.DomainTypesReuse,
                 source: "../known.md",
                 items: ["A rule without an anchor."],
               },
               {
-                id: "known:other",
+                id: RuleName.DomainTypesConcreteModules,
                 source: "../known.md#absent",
                 items: ["A rule with the wrong anchor."],
               },
@@ -486,6 +494,7 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
           path: "practices/known/index.yaml",
           catalog: {
             kind: CatalogKind.Practice,
+            owner: PracticeOwner.RustDomainTypes,
             title: "Known",
             source_title: "Known",
             source: "../known.md",
@@ -495,7 +504,7 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
             related: [],
             rules: [
               {
-                id: "known:rule",
+                id: RuleName.DomainTypesReuse,
                 source: "../known.md#first",
                 items: ["Use the first rule."],
               },
@@ -511,8 +520,14 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
             prohibited: ["Wrong sources."],
             preferred: ["Canonical sources."],
             compare: [
-              { id: "known:rule", source: "../practices/known.md#second" },
-              { id: "known:absent", source: "../practices/known.md#first" },
+              {
+                id: RuleName.DomainTypesReuse,
+                source: "../practices/known.md#second",
+              },
+              {
+                id: RuleName.DomainTypesNominalValues,
+                source: "../practices/known.md#first",
+              },
             ],
           },
         };
@@ -547,7 +562,9 @@ test("validates a focused comparison leaf without requiring unrelated rule inven
             overview: ["Inspect conversion."],
             prohibited: ["Discard validation."],
             preferred: ["Preserve validation."],
-            compare: [{ id: "known:rule", source: "known.md#known" }],
+            compare: [
+              { id: RuleName.DomainTypesReuse, source: "known.md#known" },
+            ],
           },
         };
         const practice: FileOptions = {
@@ -559,6 +576,115 @@ test("validates a focused comparison leaf without requiring unrelated rule inven
           new VFile(practice),
         ]);
         expect(result.code).toBe(0);
+      }),
+    ),
+  ));
+
+test.each([
+  "kind: practice\nowner: rust:domain_types\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:unregistered, source: 'known.md#known', items: [Known decision]}]\n",
+  "kind: practice\nowner: rust:unregistered\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:reuse, source: 'known.md#known', items: [Known decision]}]\n",
+  "kind: check\ntitle: Known\noverview: [Inspect decisions]\nprohibited: [Discard requirements]\npreferred: [Apply requirements]\ncompare: [{id: domain_types:unregistered, source: 'known.md#known'}]\n",
+])(
+  "rejects unregistered rule or owner vocabulary at the YAML boundary: %s",
+  (value) =>
+    Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const fixture = yield* DocumentationFixture.create();
+          const file: FileOptions = { path: "index.yaml", value };
+          const source: FileOptions = {
+            path: "known.md",
+            value: "# Known\n\nKnown requirements.\n",
+          };
+          const result = yield* fixture.check([
+            new VFile(file),
+            new VFile(source),
+          ]);
+          expect(result.code).toBe(1);
+          expect(result.output).toContain("invalid-catalog");
+          expect(result.output).toMatch(
+            /Expected registered (RuleName|PracticeOwner)/,
+          );
+        }),
+      ),
+    ),
+);
+
+test("rejects different registered owners claiming the same canonical source", () =>
+  Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const fixture = yield* DocumentationFixture.create();
+        const root: CatalogFixture = {
+          path: "index.yaml",
+          catalog: {
+            kind: CatalogKind.Navigation,
+            title: "Root",
+            entries: [
+              { title: "Types", path: "types/index.yaml", summary: "Types." },
+              {
+                title: "States",
+                path: "states/index.yaml",
+                summary: "States.",
+              },
+            ],
+          },
+        };
+        const types: CatalogFixture = {
+          path: "types/index.yaml",
+          catalog: {
+            kind: CatalogKind.Practice,
+            owner: PracticeOwner.RustDomainTypes,
+            title: "Types",
+            source_title: "Known",
+            source: "../known.md",
+            owns: ["Types."],
+            excludes: [],
+            relationships: [],
+            related: [],
+            rules: [
+              {
+                id: RuleName.DomainTypesReuse,
+                source: "../known.md#known",
+                items: ["Reuse types."],
+              },
+            ],
+          },
+        };
+        const states: CatalogFixture = {
+          path: "states/index.yaml",
+          catalog: {
+            kind: CatalogKind.Practice,
+            owner: PracticeOwner.RustDomainStates,
+            title: "States",
+            source_title: "Known",
+            source: "../known.md",
+            owns: ["States."],
+            excludes: [],
+            relationships: [],
+            related: [],
+            rules: [
+              {
+                id: RuleName.DomainStatesBooleanConversion,
+                source: "../known.md#known",
+                items: ["Convert flags."],
+              },
+            ],
+          },
+        };
+        const source: FileOptions = {
+          path: "known.md",
+          value: "# Known\n\nKnown practice.\n",
+        };
+        const result = yield* fixture.check([
+          fixture.catalog(root),
+          fixture.catalog(types),
+          fixture.catalog(states),
+          new VFile(source),
+        ]);
+        expect(result.code).toBe(1);
+        expect(result.output).toContain("duplicate-owner-entry");
+        expect(result.output).toContain("Multiple owner identities");
       }),
     ),
   ));

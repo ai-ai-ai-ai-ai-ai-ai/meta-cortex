@@ -1,4 +1,5 @@
 kind: practice
+owner: sre:cloud_native
 title: Cloud-native operations
 source_title: Cloud-native operations
 source: ../cloud-native-operations.md

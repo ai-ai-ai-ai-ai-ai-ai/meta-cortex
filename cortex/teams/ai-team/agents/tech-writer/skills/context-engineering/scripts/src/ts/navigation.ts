@@ -6,6 +6,9 @@ import { CatalogLinkAudit } from "./catalog-links.ts";
 import { CatalogKind, type CatalogComparison } from "./catalog.ts";
 import { CatalogDocument, CatalogReader } from "./catalog-document.ts";
 
+import { RuleName } from "./rule-name.ts";
+import { PracticeOwner } from "./practice-owner.ts";
+
 type CatalogPaths = readonly string[];
 interface RuleLocation {
   readonly document: CatalogDocument;
@@ -18,18 +21,17 @@ interface RuleComparison {
 }
 
 class CatalogScope {
-  private readonly rules = new Map<string, RuleLocation>();
-  private readonly owners = new Map<string, CatalogDocument[]>();
+  private readonly rules = new Map<RuleName, RuleLocation>();
+  private readonly owners = new Map<PracticeOwner, CatalogDocument[]>();
   constructor(private readonly documents: readonly CatalogDocument[]) {}
 
   register(document: CatalogDocument): void {
     const { catalog, file } = document.content;
     switch (catalog.kind) {
       case CatalogKind.Practice: {
-        const source = document.target(catalog.source);
-        const owners = this.owners.get(source) || [];
+        const owners = this.owners.get(catalog.owner) || [];
         owners.push(document);
-        this.owners.set(source, owners);
+        this.owners.set(catalog.owner, owners);
         break;
       }
       case CatalogKind.Navigation:
@@ -117,13 +119,13 @@ class CatalogScope {
   ) {
     for (const document of this.documents) this.register(document);
     for (const document of this.documents) this.compare(document);
-    for (const [source, owners] of this.owners) {
+    for (const [owner, owners] of this.owners) {
       switch (owners.length) {
         case 1:
           break;
         default:
           root.content.file.message(
-            `Duplicate owning entry for ${source}.`,
+            `Duplicate owning entry for ${owner}.`,
             "cortex:duplicate-owner-entry",
           );
       }
@@ -137,7 +139,25 @@ class CatalogScope {
     const practices = yield* Effect.tryPromise(() =>
       globby("practices/**/*.md", options),
     );
-    const missing = practices.filter((path) => !this.owners.has(path));
+    const sources = this.documents.flatMap((document) => document.sources());
+    const paths = new Set(sources.map((source) => source.path));
+    for (const path of paths) {
+      const owners = new Set(
+        sources
+          .filter((source) => source.path === path)
+          .map((source) => source.owner),
+      );
+      switch (owners.size) {
+        case 1:
+          break;
+        default:
+          root.content.file.message(
+            `Multiple owner identities for ${path}: ${[...owners].join(", ")}.`,
+            "cortex:duplicate-owner-entry",
+          );
+      }
+    }
+    const missing = practices.filter((path) => !paths.has(path));
     for (const practice of missing) {
       root.content.file.message(
         `Missing owning entry for ${relative(directory, practice)}.`,

@@ -159,11 +159,16 @@ practice. A real catalog must resolve its links from its own location.
 - Group large catalogs by subject, then give each practice namespace a directory
   such as `practices/modeling/domain_types/index.yaml`. Do not inline every
   descendant rule in its parent. Do not create empty directories or indexes.
-- A `kind: practice` leaf contains `title`, `source_title`, `source`, `owns`,
+- A `kind: practice` leaf contains `owner`, `title`, `source_title`, `source`, `owns`,
   `excludes`, `relationships`, `related`, and `rules`. Ownership and relationship
   prose use item sequences. Related entries contain `title` and `path`; rules
   contain `id`, `source`, and ordered `items`. Empty metadata sequences are valid
   when the previous catalog supplied none; rule and item sequences are nonempty.
+- Use the closed [rule-name enum](../scripts/src/ts/rule-name.ts) for rule and
+  comparison IDs and the [practice-owner enum](../scripts/src/ts/practice-owner.ts)
+  for each practice's `owner`. Keep source locations separate from owner identity.
+  Add or remove enum members with the corresponding catalog entries; the vocabulary
+  parity test rejects missing or unused members. Decoding rejects unregistered names.
 - Preserve original subject groupings. Keep readable `practice:decision` IDs
   stable; the namespace identifies a decision, while `source` identifies its
   canonical Markdown owner. A practice can own a related namespace's decision.

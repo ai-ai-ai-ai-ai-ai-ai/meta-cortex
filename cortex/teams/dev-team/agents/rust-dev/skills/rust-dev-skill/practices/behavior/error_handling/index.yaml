@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:error_handling
 title: Error handling
 source_title: Error handling
 source: ../error-handling.md

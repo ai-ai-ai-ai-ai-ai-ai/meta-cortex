@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:macro_minimization
 title: Macro minimization
 source_title: Macro minimization
 source: ../rust-macro-minimization.md

@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:browser_implementation
 title: Browser implementation
 source_title: Browser implementation
 source: ../../browser-implementation.md

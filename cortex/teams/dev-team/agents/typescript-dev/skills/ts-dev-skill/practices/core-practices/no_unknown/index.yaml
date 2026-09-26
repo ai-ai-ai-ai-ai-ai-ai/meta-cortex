@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:no_unknown
 title: Concrete values
 source_title: Concrete values
 source: ../../typescript-no-unknown.md

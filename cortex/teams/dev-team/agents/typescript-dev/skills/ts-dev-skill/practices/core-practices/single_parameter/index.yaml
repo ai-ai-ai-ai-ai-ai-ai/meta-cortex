@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:single_parameter
 title: Single parameter
 source_title: Single parameter
 source: ../../typescript-single-parameter.md

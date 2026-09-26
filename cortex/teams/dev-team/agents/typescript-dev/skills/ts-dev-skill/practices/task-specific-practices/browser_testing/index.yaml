@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:browser_testing
 title: Browser testing
 source_title: Browser testing
 source: ../../browser-testing.md

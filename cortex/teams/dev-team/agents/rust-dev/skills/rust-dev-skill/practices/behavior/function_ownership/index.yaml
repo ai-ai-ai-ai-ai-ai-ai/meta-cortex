@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:function_ownership
 title: Function ownership
 source_title: Function ownership
 source: ../function-ownership.md

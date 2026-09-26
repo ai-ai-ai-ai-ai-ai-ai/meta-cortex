@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:domain_states
 title: Domain states
 source_title: Domain states
 source: ../domain-states.md

@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:function_ownership
 title: Function ownership
 source_title: Function ownership
 source: ../../typescript-function-ownership.md

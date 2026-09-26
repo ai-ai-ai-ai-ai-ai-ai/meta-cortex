@@ -1,4 +1,5 @@
 kind: practice
+owner: typescript:serial_operation_queues
 title: Serial operation queues
 source_title: Serial operation queues
 source: ../../typescript-serial-operation-queues.md

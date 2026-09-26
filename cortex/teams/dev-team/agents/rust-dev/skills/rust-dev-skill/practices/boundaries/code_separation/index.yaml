@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:code_separation
 title: Rust–TypeScript separation
 source_title: Rust–TypeScript separation
 source: ../rust-typescript-code-separation.md

@@ -1,4 +1,5 @@
 kind: practice
+owner: delivery:local_feature
 title: Local feature integration
 source_title: Local feature integration
 source: ../local-feature-integration.md

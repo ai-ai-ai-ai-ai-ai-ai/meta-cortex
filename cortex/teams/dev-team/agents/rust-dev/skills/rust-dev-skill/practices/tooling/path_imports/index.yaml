@@ -1,4 +1,5 @@
 kind: practice
+owner: rust:path_imports
 title: Paths and imports
 source_title: Paths and imports
 source: ../path-imports.md
