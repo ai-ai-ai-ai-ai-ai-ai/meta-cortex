@@ -16,18 +16,9 @@ pub enum ConfigError {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Display)]
 pub enum Model {
-    #[serde(rename = "gpt-5.6-luna")]
-    #[display("gpt-5.6-luna")]
-    Luna,
-    #[serde(rename = "gpt-5.6-terra")]
-    #[display("gpt-5.6-terra")]
-    Terra,
-    #[serde(rename = "gpt-5.6-sol")]
-    #[display("gpt-5.6-sol")]
-    Sol,
     #[serde(rename = "gpt-6-luna")]
     #[display("gpt-6-luna")]
-    Luna6,
+    Luna,
     #[serde(rename = "gpt-6-astra")]
     #[display("gpt-6-astra")]
     Astra,
@@ -36,8 +27,8 @@ pub enum Model {
 impl Model {
     pub fn efforts(self) -> &'static [Effort] {
         match self {
-            Self::Luna | Self::Luna6 => &Effort::ALL[..5],
-            Self::Terra | Self::Sol | Self::Astra => &Effort::ALL,
+            Self::Luna => &Effort::ALL[..5],
+            Self::Astra => &Effort::ALL,
         }
     }
 }
@@ -150,7 +141,20 @@ pub mod tests {
     };
 
     impl Model {
-        const ALL: [Self; 5] = [Self::Luna, Self::Terra, Self::Sol, Self::Luna6, Self::Astra];
+        const ALL: [Self; 2] = [Self::Luna, Self::Astra];
+    }
+
+    #[test]
+    fn bundled_roles_use_gpt_6_luna_with_max_effort() -> Result<(), ConfigError> {
+        let config = Configuration::bundled()?;
+        let expected = AgentSettings {
+            model: Model::Luna,
+            reasoning_effort: Effort::Max,
+        };
+        assert_eq!(config.gizmo_prime, expected);
+        assert_eq!(config.team.gizmo, expected);
+        assert_eq!(config.team.agent, expected);
+        Ok(())
     }
 
     #[test]
@@ -219,12 +223,12 @@ pub mod tests {
     fn rejects_invalid_or_incomplete_configuration() -> Result<(), ConfigError> {
         let text = ConfigText::try_from(Configuration {
             gizmo_prime: AgentSettings {
-                model: Model::Terra,
-                reasoning_effort: Effort::Low,
+                model: Model::Luna,
+                reasoning_effort: Effort::Max,
             },
             team: TeamSettings {
                 gizmo: AgentSettings {
-                    model: Model::Sol,
+                    model: Model::Astra,
                     reasoning_effort: Effort::Medium,
                 },
                 agent: AgentSettings {
@@ -235,10 +239,10 @@ pub mod tests {
         })?
         .to_string();
         for invalid in [
-            text.replace("gpt-5.6-terra", "unknown-model"),
-            text.replace("\"low\"", "\"extreme\""),
+            text.replace("gpt-6-luna", "unknown-model"),
+            text.replace("\"max\"", "\"extreme\""),
             text.replace("[team.agent]", "[team.other]"),
-            text.replace("reasoning_effort = \"low\"", ""),
+            text.replace("reasoning_effort = \"max\"", ""),
             format!("{text}\nextra = true\n"),
             String::from("not valid TOML"),
         ] {
@@ -258,7 +262,7 @@ pub mod tests {
     #[test]
     fn gpt_6_luna_rejects_ultra_effort() {
         let settings = AgentSettings {
-            model: Model::Luna6,
+            model: Model::Luna,
             reasoning_effort: Effort::Ultra,
         };
         let config = Configuration {
@@ -272,7 +276,7 @@ pub mod tests {
         assert!(matches!(
             ConfigText::try_from(config),
             Err(ConfigError::UnsupportedEffort {
-                model: Model::Luna6,
+                model: Model::Luna,
                 effort: Effort::Ultra
             })
         ));

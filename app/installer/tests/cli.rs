@@ -202,7 +202,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
         "# Keep settings\n{}",
         fs::read_to_string(&config)?.replace(
             "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"",
-            "[team.agent]\nmodel = \"gpt-5.6-sol\"\nreasoning_effort = \"high\""
+            "[team.agent]\nmodel = \"gpt-6-astra\"\nreasoning_effort = \"high\""
         )
     );
     fs::write(&config, &customized)?;
@@ -235,7 +235,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(codex.path, root.join("AGENTS.md"));
     assert_eq!(info.model_availability, ModelAvailability::NotChecked);
     assert_eq!(info.models.team.gizmo, info.models.gizmo_prime);
-    assert_eq!(info.models.team.agent.model, "gpt-5.6-sol");
+    assert_eq!(info.models.team.agent.model, "gpt-6-astra");
     assert_eq!(info.models.team.agent.reasoning_effort, "high");
     assert_eq!(fs::read_to_string(&config)?, customized);
     assert_eq!(fs::read(root.join("AGENTS.md"))?, guidance);
