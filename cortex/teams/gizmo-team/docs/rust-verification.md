@@ -9,10 +9,13 @@ the existing [agent ledger](agent-ledger.md), without another coordination servi
 
 ### Assign committed work for verification
 
-1. Include the task's starting base in the Rust developer assignment. The developer
-   follows [task completion](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#finish-task-work):
+1. Record the task's starting base when assigning implementation. Give rust-dev
+   ordinary implementation requirements and [task completion](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#finish-task-work):
    run required checks, commit the changes, verify clean status, and record the
    final checkpoint and readiness before notifying Gizmo.
+   Keep verifier context out of the developer assignment: do not supply this
+   handoff, the verifier role or skill, or review bookkeeping. Gizmo owns the
+   decision to start verification after receiving the developer's result.
 2. Receive the branch, workspace, base, final commit SHA, changed-file list,
    validation evidence, and unresolved issues. Inspect durable readiness even
    when the notification is missing. No-change work does not need an empty commit;
@@ -45,10 +48,13 @@ review, and require complete catalog coverage before considering integration.
 1. Inspect the report against its original file and rule inventories. Reject
    missing outcomes, unexplained inapplicability, a mismatched SHA, or a pass with
    violations or blockers. The verifier skill owns the report and verdict rules.
-2. Send all implementation repair requirements to rust-dev in one bounded
+2. Extract all implementation repair requirements into one bounded rust-dev
    assignment, with rule IDs, source links, committed paths/lines, evidence,
    required corrections, and expected validation. Require strict adherence to
-   its practices. Route catalog ambiguity to the subject owner and any resulting
+   its practices. Do not forward the full verifier report, verifier instructions,
+   or review bookkeeping to rust-dev. It receives an ordinary task to fix the
+   code and returns its committed result to Gizmo.
+   Route catalog ambiguity to the subject owner and any resulting
    instruction edits to the tech writer; do not ask rust-dev to guess policy.
 3. Requeue the developer task through the existing stopped-or-finished recovery
    procedure before resuming it. Preserve its branch, worktree, and original
