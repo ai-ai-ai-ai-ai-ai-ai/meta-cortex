@@ -8,6 +8,26 @@ Use the existing host channel, Git evidence, and [agent ledger](agent-ledger.md)
 
 ## Required actions
 
+### Preserve the parent task's scope
+
+1. Apply the [task boundary](../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary)
+   before assigning verification. Carry the parent's permitted changes and
+   stopping condition in the existing assignment context.
+2. For a review-only request, obtain the complete report and return every finding,
+   blocker, and validation limitation through the hierarchy. Do not start the
+   repair or integration steps below. A `changes_required` verdict describes
+   the code; it is not permission to change it.
+3. For authorized implementation or an explicitly requested repair exercise,
+   use the repair steps below for in-scope issues. Preserve unrelated findings
+   in the report without assigning their repair. Do not approve integration
+   while a required compliance decision remains violated or blocked.
+
+**Prohibited:** a request to check the verifier automatically becomes a Rust
+fixture repair task because the verifier returned useful repair instructions.
+
+**Preferred:** return the exhaustive review and bounded behavior-check evidence.
+Start a repair exercise only when the user's request includes that outcome.
+
 ### Apply the selected execution mode
 
 - **`multi_agent`**
@@ -98,15 +118,17 @@ coverage record, and route both repairs before considering integration.
 
 ### Route every repair and blocker
 
-1. Put all implementation repairs into one bounded rust-dev assignment.
+1. Within the [authorized parent scope](#preserve-the-parent-tasks-scope), put
+   all in-scope implementation repairs into one bounded rust-dev assignment.
    Preserve each issue's rule/source, committed location, context, evidence,
    required correction, and validation. Require strict adherence to the rules.
    Do not shorten issues to titles or forward only a selection.
 2. Keep the assignment an ordinary coding task. Include all repair context,
    but do not forward verifier instructions, review inventories, or ledger
    bookkeeping. Rust-dev returns its committed result to Gizmo.
-3. Route catalog ambiguity to the subject owner and resulting instruction edits
-   to the tech writer. Do not ask rust-dev to guess policy. Resolving a coding
+3. Route catalog ambiguity to the subject owner and authorized instruction edits
+   to the tech writer. Report any needed edit outside the parent scope for a
+   user decision. Do not ask rust-dev to guess policy. Resolving a coding
    issue does not clear an unrelated catalog or evidence blocker.
 4. Before resuming the developer, follow the ledger's
    [stopped-or-finished recovery procedure](agent-ledger.md#recovery-and-stale-work).

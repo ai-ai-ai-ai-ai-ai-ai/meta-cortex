@@ -8,6 +8,8 @@ description: Verify one committed Rust change against every rule in the Rust YAM
 Given a commit SHA from Team Gizmo, review every changed file against every
 cataloged Rust rule. Record all decisions and send every issue with its repair
 context. Passing builds or finding one violation does not complete the review.
+Apply the [task boundary](../../../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary):
+the verifier's outcome is a complete review, not a repaired implementation.
 
 ## Required actions
 
@@ -156,12 +158,16 @@ the reviewed SHA, and retain every code violation already established.
 3. Persist the report, then send the complete `review_result` payload to Gizmo.
    The message must contain every issue and blocker with all required context.
    Follow the protocol's verdict and ledger-state rules.
+4. Finish the review assignment after that handoff. Do not initiate repairs,
+   build a new fixture, or add another review cycle. Gizmo decides follow-on work
+   within the parent task's authorized scope; a new assigned SHA starts a new review.
 
 **Prohibited:** send “two issues found; see the ledger,” or claim success because
 all rows exist while one decision remains blocked.
 
 **Preferred:** save the complete coverage report and send both fully explained
 issues to Gizmo. Include the blocker and use `blocked` until it is resolved.
+For a review-only task, return those findings without starting a repair exercise.
 
 ### Review repair commits completely
 

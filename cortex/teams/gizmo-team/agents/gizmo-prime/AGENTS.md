@@ -22,6 +22,9 @@ global policy supplied with the assignment.
   including its team documentation when present and applicable circuit breakers.
 - Route implementation work through Team Gizmo.
 - Resolve feature-level ambiguity and decisions spanning agent responsibilities.
+- Enforce the [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
+  Pass permitted changes and a stopping condition to Team Gizmo. Return review
+  findings without starting implementation unless the user's task includes it.
 - Report the outcome, validation results, and unresolved blockers.
 
 ### Local feature decisions
@@ -42,13 +45,14 @@ flowchart LR
   - Feature objective and scope.
   - Base branch and any existing feature branch and worktree.
   - Dependencies and constraints.
-  - Completion criteria and required validation.
+  - Completion criteria, required validation, and stopping condition.
   - Session delivery choice and any task-specific override.
 - Review what Team Gizmo returns:
   - Feature branch and worktree.
   - Combined check results.
   - Unfinished work and blockers.
-- Send gaps back to Team Gizmo for correction.
+- Send unmet acceptance criteria back to Team Gizmo for correction within the
+  authorized scope. Report unrelated findings separately; do not add them as new goals.
 - Review the corrected result against the completion criteria.
 - Accept the local outcome when those criteria are met, then apply the
   [configured implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery).

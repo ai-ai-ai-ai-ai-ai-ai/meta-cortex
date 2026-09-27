@@ -171,16 +171,22 @@ review still produces a blocked verdict.
      exact input or decision Gizmo must obtain. A blocked verdict still carries
      every known issue with all its repair context.
 5. Gizmo checks the inventories, decisions, and evidence before acting:
+   - Apply the [task boundary](../../../../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
+     For review-only work, return the complete result through the hierarchy and
+     stop. Verdicts and `required_fix` fields do not authorize implementation.
+     The following integration and repair actions apply only within authorized
+     implementation or an explicitly requested workflow exercise. Preserve
+     unrelated findings in the result without assigning their repair.
    - For `pass`, verify the developer's ready checkpoint and branch head match
      the reviewed SHA, then follow normal integration and combined checks.
-   - For `changes_required`, send every implementation correction to rust-dev
+   - For `changes_required`, send every in-scope implementation correction to rust-dev
      as one ordinary repair assignment. Preserve every issue's rule/source,
      location, context, evidence, required fix, and validation instructions;
      do not reduce the payload to titles or a shorter selection. Require strict
      rule compliance. Keep verifier instructions and review bookkeeping out of
      developer context.
    - For `blocked`, keep integration stopped and supply missing evidence or route
-     the policy question to its subject owner. Known repairs may proceed, but
+     the policy question to its subject owner. Authorized repairs may proceed, but
      they do not clear unrelated blockers.
 6. A repair commit gets a new task and a complete review of all practices.
    Gizmo supplies the previous report to the verifier as assignment context.
@@ -190,8 +196,9 @@ review still produces a blocked verdict.
 violation, or forward only the most severe issue to rust-dev.
 
 **Preferred:** finish the catalog traversal and send every issue with its full
-repair context, as in the following YAML example. Gizmo gives rust-dev all of
-those repairs and obtains a complete review of the replacement commit.
+repair context, as in the following YAML example. For authorized implementation,
+Gizmo gives rust-dev all in-scope repairs and obtains a complete review of the
+replacement commit. For review-only work, Gizmo returns the complete findings.
 
 ## Complete issues example
 

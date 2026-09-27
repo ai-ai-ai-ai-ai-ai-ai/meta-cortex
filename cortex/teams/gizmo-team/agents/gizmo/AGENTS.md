@@ -60,6 +60,10 @@ for that assignment rather than preloading unrelated agents.
   Recover existing status before scheduling work. Record bounded tasks before
   launching workers and pass their feature/task IDs with every assignment.
 - Turn the feature assignment into bounded tasks for the appropriate agents.
+- Preserve the parent's permitted changes and stopping condition under the
+  [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
+  Apply the [stopping rules](../../../../CIRCUIT-BREAKER.md#stop-when-the-requested-evidence-is-complete)
+  before adding workers, fixtures, checks, or another repair cycle.
 - Launch those team agents through the host’s agent execution tools using the
   shared [agent configuration rules](../../docs/agent-configuration.md).
 - Launch the [tech writer](../../../ai-team/agents/tech-writer/AGENTS.md) for documentation assignments. Route policy
@@ -92,7 +96,9 @@ flowchart LR
 - Read durable readiness even when a final worker message is missing.
 - When rust-dev finishes, follow the [Rust verification handoff](../../docs/rust-verification.md)
   before integration. Launch rust-verifier with an explicit commit SHA;
-  route every repair requirement back to rust-dev and require a complete new pass.
+  within authorized implementation, route every in-scope repair requirement back
+  to rust-dev and require a complete new pass. For review-only assignments,
+  return the complete findings instead of starting repairs or integration.
 - Once required verification passes, tell the integration agent which task
   branch to integrate next. Supply the passing report and reviewed SHA for Rust
   developer work. Order tasks by dependency and wait for each integration result.
