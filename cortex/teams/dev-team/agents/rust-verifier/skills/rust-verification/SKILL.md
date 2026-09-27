@@ -16,8 +16,8 @@ builds alone cannot establish compliance.
 1. Load the [Gizmo/verifier communication protocol](spec/communication-protocol.md).
    It defines the exact request, report, notification, and repair-message formats.
    Require an explicit commit SHA from Team Gizmo before starting verification.
-   If it is missing or cannot be resolved, follow the protocol's `need_commit`
-   and `commit_reply` exchange; do no review work until it is resolved.
+   If it is missing or cannot be resolved, send `need_commit`; Gizmo resends
+   the complete request. Do no review work until the SHA is resolved.
 2. Review only that commit. Do not guess a revision, substitute `HEAD` or a
    branch tip, or construct a task-wide commit range.
 
@@ -38,8 +38,8 @@ only when Gizmo supplies a resolvable commit.
    general selective catalog-loading procedure and programming prerequisites.
    Keep the supplied project instructions, role, verification skill, team
    instructions, circuit breakers, and ledger protocol as operational context.
-3. Resolve paths relative to each containing YAML file. Record the library
-   revision when available and catalog paths used. Freeze that catalog snapshot
+3. Resolve paths relative to each containing YAML file. Record the catalog
+   paths and loaded cues used. Freeze that catalog snapshot
    for the review; report a catalog change instead of mixing rule versions.
 4. Retain `source` links as citations for Gizmo and the repair owner. Do not
    infer exceptions or full policy from a short cue. If a summary cannot decide
@@ -98,7 +98,7 @@ so the final coverage record can be checked against the original inventory.
 4. Evaluate every cross-rule check against the whole change. Record its outcome,
    compared IDs, affected paths, and evidence or applicability reason.
 5. Collect every observed violation, including multiple violations of one rule
-   in one file. Include severity, rule ID and source, committed path and lines
+   in one file. Include rule ID and source, committed path and lines
    (deleted lines for deletions), observed behavior, required correction, and the
    evidence needed to verify the fix. Distinguish code defects from catalog or
    evidence blockers. Do not invent unrelated requirements.
@@ -120,13 +120,13 @@ with its own repair requirement. Continue through the last catalog entry.
 ### Complete and return the report
 
 1. Build the full report using the protocol's
-   [durable report fields](spec/communication-protocol.md#durable-report-fields).
+   [five report sections](spec/communication-protocol.md#save-one-complete-report).
    Include the actual inventories and all outcomes, not only totals.
-2. Apply its [outcome and completion rules](spec/communication-protocol.md#outcome-and-completion-rules)
+2. Apply its [completion and result rules](spec/communication-protocol.md#return-the-result-and-route-it)
    to reconcile coverage and derive the verdict. Having every row recorded
    does not mean every decision is resolved.
 3. Persist the report and send its
-   [result notification](spec/communication-protocol.md#result-notification-and-gizmo-response).
+   [result notification](spec/communication-protocol.md#return-the-result-and-route-it).
    Gizmo reads the saved report before routing repairs or integration.
 4. On a repair assignment, require the new commit SHA, regenerate its file
    inventory, and repeat the entire review. Track previous requirements as fixed,
