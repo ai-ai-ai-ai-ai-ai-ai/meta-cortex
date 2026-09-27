@@ -125,9 +125,11 @@ with its own repair requirement. Continue through the last catalog entry.
 2. Apply its [completion and result rules](spec/communication-protocol.md#return-the-result-and-route-it)
    to reconcile coverage and derive the verdict. Having every row recorded
    does not mean every decision is resolved.
-3. Persist the report and send its
-   [result notification](spec/communication-protocol.md#return-the-result-and-route-it).
-   Gizmo reads the saved report before routing repairs or integration.
+3. Persist the report and send the
+   [complete issues payload](spec/communication-protocol.md#return-the-result-and-route-it).
+   Include every issue's context, evidence, required correction, and validation
+   in the message to Gizmo. A summary or ledger pointer is not a complete handoff.
+   Gizmo checks the saved coverage report before routing repairs or integration.
 4. On a repair assignment, require the new commit SHA, regenerate its file
    inventory, and repeat the entire review. Track previous requirements as fixed,
    still violated, or blocked using fresh evidence. Inspect new violations too.

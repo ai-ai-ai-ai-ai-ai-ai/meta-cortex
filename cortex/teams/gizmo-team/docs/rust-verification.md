@@ -52,13 +52,15 @@ review, and require complete catalog coverage before considering integration.
 ### Route findings and require a complete new pass
 
 1. Follow the protocol's [result handling](../../dev-team/agents/rust-verifier/skills/rust-verification/spec/communication-protocol.md#return-the-result-and-route-it).
-   Read the full report from the verifier task's
-   `progress.extensions.rust_verification_report`; the host notification is
-   only a summary. Check inventory completeness, every decision, and supporting
-   evidence before acting on its verdict.
+   Require every issue and blocker, with its full repair context, in the
+   verifier's message. Reconcile those findings with the report in
+   `progress.extensions.rust_verification_report`. Reject a summary-only handoff.
+   Check inventory completeness, every decision, and supporting evidence before
+   acting on the verdict.
 2. Extract all implementation repair requirements into one bounded rust-dev
-   assignment, with rule IDs, source links, committed paths/lines, evidence,
-   required corrections, and expected validation. Require strict adherence to
+   assignment, preserving every issue's rule/source, committed location, context,
+   evidence, required correction, and validation. Do not shorten issues to titles
+   or forward only a selection. Require strict adherence to
    its practices. Do not forward the full verifier report, verifier instructions,
    or review bookkeeping to rust-dev. It receives an ordinary task to fix the
    code and returns its committed result to Gizmo.

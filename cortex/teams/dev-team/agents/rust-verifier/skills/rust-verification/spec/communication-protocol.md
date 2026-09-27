@@ -1,7 +1,8 @@
 # Gizmo and Rust Verifier Protocol
 
 Gizmo sends a commit SHA. The verifier checks every cataloged practice against
-every changed file, saves one complete report, and tells Gizmo the result.
+every changed file, saves one complete report, and sends Gizmo every issue
+with the evidence and instructions needed to fix it.
 Gizmo owns repairs and integration.
 
 ## Required actions
@@ -64,8 +65,9 @@ reason: The assignment lacks project_root. Provide the absolute consuming-projec
 ### Save one complete report
 
 Use readable Markdown in `progress.extensions.rust_verification_report`.
-The report has the following five sections. This is the full review record;
-its short notification does not replace it.
+The report has the following five sections. Its inventories and decisions prove
+review coverage. Its complete repairs and blockers must also appear in the
+message to Gizmo; storing them only in the ledger is not a completed handoff.
 
 1. **Commit and inventory**
    - State the reviewed SHA and list every changed file with its change kind:
@@ -93,9 +95,10 @@ its short notification does not replace it.
      At each practice boundary, save progress and the next unchecked rule/file
      in native `next_steps`. Unreviewed entries remain unfinished work.
 3. **Repairs and blockers**
-   - Give each violation its own numbered repair item: rule/source, committed
-     path and lines, observed defect, required correction, and how to verify it.
-     Use parent lines for deleted content. List multiple violations separately.
+   - Give each violation a stable issue ID and the full repair context defined
+     in the result payload below. Use parent lines for deleted content. List
+     multiple violations separately, including multiple violations of one rule
+     in one file. Keep these issue IDs in the rule decisions and outgoing message.
    - List blockers separately, each with what is unresolved and exactly what
      Gizmo must supply or obtain from the subject owner.
    - Use the explicit states `no_violations` and `no_blockers` when those lists
@@ -143,96 +146,143 @@ review still produces a blocked verdict.
 2. Persist the report before notifying Gizmo. Use native `ready` for a complete
    `pass` or `changes_required` review. Use native blocked progress for `blocked`.
    Review-task readiness means the report is complete; it is not code approval.
-3. Send `review_result` with exactly `commit_sha`, `verdict`, and `summary`,
-   alongside its `type` tag. The SHA and verdict must match the saved report.
-   Gizmo reads the full report from the notifying verifier's existing ledger task.
-4. Gizmo checks the inventories, decisions, and evidence before acting:
+3. Send `review_result` with `commit_sha`, `verdict`, `issues`, and `blockers`,
+   alongside its `type` tag. Include every discovered issue in the message,
+   including proven validation failures and still-violated previous repairs.
+   No issue limit, representative sample, summary-only response, or ledger-only
+   pointer is allowed. The SHA, verdict, issue IDs, issue details, and blockers
+   must agree with the saved report. Finding one issue never ends the review.
+4. Use these result payloads; all listed fields are required:
+   - `issues` is `kind: violations` with a nonempty `items` list, or the unit
+     state `kind: no_violations` when no violations have been found.
+   - Every issue has `id`, `rule`, `source`, `location`, `context`, `evidence`,
+     `required_fix`, and `validation`. Each value is nonempty.
+     `rule` identifies the violated catalog rule or explicit validation
+     requirement; `source` cites its canonical source or project instruction.
+     `location` gives the committed path and lines, or the failing command and
+     workspace for a validation-only issue. `context` explains the requirement,
+     the observed violation, and relevant callers or effects. `evidence` quotes
+     the offending code or diagnostic at the reviewed SHA. `required_fix`
+     specifies the correction and affected code. `validation` states how to
+     verify the fix, including expected behavior and applicable commands.
+   - `blockers` is `kind: blocked` with a nonempty `items` list, or the unit
+     state `kind: no_blockers`. Each blocker has nonempty `id`, `context`, and
+     `needed`: the unresolved question, its affected rule/file/check, and the
+     exact input or decision Gizmo must obtain. A blocked verdict still carries
+     every known issue with all its repair context.
+5. Gizmo checks the inventories, decisions, and evidence before acting:
    - For `pass`, verify the developer's ready checkpoint and branch head match
      the reviewed SHA, then follow normal integration and combined checks.
    - For `changes_required`, send every implementation correction to rust-dev
-     as one ordinary repair assignment. Include rule/source, code location,
-     observed defect, correction, and validation; require strict rule compliance.
-     Keep verifier instructions and review bookkeeping out of developer context.
+     as one ordinary repair assignment. Preserve every issue's rule/source,
+     location, context, evidence, required fix, and validation instructions;
+     do not reduce the payload to titles or a shorter selection. Require strict
+     rule compliance. Keep verifier instructions and review bookkeeping out of
+     developer context.
    - For `blocked`, keep integration stopped and supply missing evidence or route
      the policy question to its subject owner. Known repairs may proceed, but
      they do not clear unrelated blockers.
-5. A repair commit gets a new task and a complete review of all practices.
+6. A repair commit gets a new task and a complete review of all practices.
    Gizmo supplies the previous report to the verifier as assignment context.
    Do not review only the fixes. A changed catalog also requires a fresh review.
 
-**Prohibited:** approve a new SHA using an earlier pass, or treat a ready review
-with violations as permission to integrate.
+**Prohibited:** send “one type issue; see the ledger,” stop after the first
+violation, or forward only the most severe issue to rust-dev.
 
-**Preferred:** use the explicit verdict and obtain a new complete report for
-every replacement commit. The following messages illustrate the three results:
+**Preferred:** finish the catalog traversal and send every issue with its full
+repair context, as in the following YAML example. Gizmo gives rust-dev all of
+those repairs and obtains a complete review of the replacement commit.
+
+## Complete issues example
+
+This fictional result demonstrates two separately explained issues in different
+files. The paths, code, and SHA are illustrative; it is not a review of the real
+Rust catalog. A real result must contain every issue found across all practices,
+with no truncation or fixed limit on the number of issues.
+
+**Prohibited:** send only `customer-id-type` because it was found first, or send
+both IDs without the code context and instructions needed to fix them.
+
+**Preferred:** send both complete issues in the message to Gizmo. Each issue is
+usable as an ordinary rust-dev repair requirement without opening the verifier's
+private conversation or reconstructing the problem from a title:
 
 ```yaml
 type: review_result
 commit_sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 verdict: changes_required
-summary: Complete review found one identity-type violation. Required tests passed. Read repair item 1.
+issues:
+  kind: violations
+  items:
+    - id: customer-id-type
+      rule: domain_types:nominal_values
+      source: teams/dev-team/agents/rust-dev/skills/rust-dev-skill/practices/modeling/domain-types.md#required-actions
+      location: app/src/invoice.rs:18-20 at the reviewed commit
+      context: >-
+        Domain identifiers require nominal types. Invoice.customer_id stores
+        a raw String even though CustomerId exists in app/src/customer.rs:8.
+        Invoice construction in app/src/orders.rs:64 therefore accepts arbitrary
+        strings instead of the validated customer identity used by the domain.
+      evidence: |
+        pub struct Invoice {
+            pub customer_id: String,
+        }
+      required_fix: >-
+        Change Invoice.customer_id to the existing CustomerId. Update invoice
+        construction in app/src/orders.rs to pass that domain value rather than
+        convert it back to String. Keep external string parsing at the input
+        boundary; do not add a duplicate identifier type or unchecked constructor.
+      validation: >-
+        Inspect the changed field and every construction site. Confirm that
+        arbitrary strings cannot be assigned to customer_id and that existing
+        validated customer IDs still construct invoices. Run the assignment's
+        required cargo check --locked --workspace --all-targets and
+        cargo test --locked --workspace from /work/invoice-types/app.
+    - id: export-mode-boolean
+      rule: domain_states:no_booleans
+      source: teams/dev-team/agents/rust-dev/skills/rust-dev-skill/practices/modeling/domain-states.md#convert-external-records-into-owned-types
+      location: app/src/export.rs:42-44 at the reviewed commit
+      context: >-
+        Application alternatives require named enums. ExportRequest.mode is a
+        domain boolean: true writes the export, while false only previews it.
+        The request is constructed in app/src/cli.rs:70 and consumed by the
+        export operation. The current type hides which behavior the caller chose.
+      evidence: |
+        pub struct ExportRequest {
+            pub mode: bool,
+        }
+      required_fix: >-
+        Replace the domain boolean with ExportMode variants Preview and Commit.
+        Update ExportRequest, its construction in app/src/cli.rs, and the export
+        operation to use those variants. Convert any external CLI boolean at
+        that boundary and match the domain variants when selecting behavior.
+        Do not preserve the boolean through a wrapper or boolean getter.
+      validation: >-
+        Verify Preview produces the preview without writing an export and Commit
+        performs the write. Check both CLI mappings and their existing behavior
+        tests. Confirm no domain boolean remains in this request or its consumers.
+        Run the assignment's required cargo check --locked --workspace --all-targets
+        and cargo test --locked --workspace from /work/invoice-types/app.
+blockers:
+  kind: no_blockers
 ```
+
+After all issues are fixed and the replacement commit passes the complete review,
+a result can state that there are no remaining violations or blockers:
 
 ```yaml
 type: review_result
 commit_sha: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 verdict: pass
-summary: Complete review passed. Repair item 1 is fixed and required tests passed for this SHA.
+issues:
+  kind: no_violations
+blockers:
+  kind: no_blockers
 ```
 
-```yaml
-type: review_result
-commit_sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-verdict: blocked
-summary: Identity repair remains required. The boundary cue needs a subject-owner decision; see the blocker.
-```
-
-## Report example
-
-This fictional miniature contains one practice, two rules, one changed file,
-and no cross-rule checks. It demonstrates the format, not the real Rust catalog.
-Production reports enumerate the entire actual catalog, including all checks.
-
-**Prohibited:** copy this miniature's counts into a real review or omit its
-second rule because the first already found a violation.
-
-**Preferred:** derive the actual inventory and record each decision. Save the
-complete report in the ledger; send only the result notification over the host:
-
-```markdown
-## Commit and inventory
-Commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-Files: modified src/invoice.rs.
-Indexes, in order: example/index.yaml; example/types/index.yaml.
-Practice: example:types; catalog example/types/index.yaml; source example/types.md.
-Rules, in order:
-- example:identity — example/types.md#identity — Use nominal invoice identities.
-- example:boundary — example/types.md#boundary — Convert external identities at the boundary.
-Cross-rule checks: no_checks; the complete miniature catalog contains no check leaves.
-
-## Rule decisions
-- example:identity × src/invoice.rs — violation. Invoice.customer_id is String at line 18; see repair 1.
-- example:boundary × src/invoice.rs — not_applicable. This domain-record module contains no external input conversion.
-
-## Repairs and blockers
-1. example:identity, example/types.md#identity, src/invoice.rs:18 at the reviewed commit.
-   Observed: Invoice.customer_id stores String although CustomerId already exists.
-   Correction: use CustomerId for this field and update its callers.
-   Verify: inspect the committed field and callers; rerun the required workspace tests.
-Blockers: no_blockers.
-
-## Validation
-Required by /work/invoice-types/AGENTS.md#validation: cargo test --locked --workspace.
-SHA: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; workspace: /work/invoice-types/app.
-Targets: all workspace test targets. Outcome: passed.
-Evidence: developer task rust-work revision 8 records exit 0 and test output for this SHA.
-
-## Coverage and verdict
-Files: 1; practices: 1; rules: 2; cross-rule checks: 0.
-Rule/file entries: expected 2 × 1 = 2; recorded 2. Exact keys match; no duplicate or missing entries.
-Cross-rule entries: expected 0; recorded 0.
-Verdict: changes_required. Both rules have decisions; one violation remains and there are no blockers.
-```
+For a blocked review with known violations, keep the entire `issues` payload
+and add the unresolved blockers. Do not replace the findings with a blocker
+summary. Gizmo must receive both the repair work and the decisions still needed.
 
 ## Prohibited actions
 
