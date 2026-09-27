@@ -25,7 +25,7 @@ the existing [agent ledger](agent-ledger.md), without another coordination servi
    session choices, and normal [assignment context](../../AGENTS.md#assignment-context).
    Supply the explicit SHA of the single commit to verify. Without a resolvable
    SHA, the verifier must stop and ask Gizmo to provide it.
-   Use the [communication protocol](../../dev-team/agents/rust-verifier/skills/rust-verification/references/communication-protocol.md#gizmo-request)
+   Use the [communication protocol](../../dev-team/agents/rust-verifier/skills/rust-verification/spec/communication-protocol.md#gizmo-request)
    for the exact `verification_request` fields, including required checks and
    available evidence. Answer `need_commit` with its defined `commit_reply`.
    Supply its own verification skill and canonical Rust YAML catalog root.
@@ -50,7 +50,7 @@ review, and require complete catalog coverage before considering integration.
 
 ### Route findings and require a complete new pass
 
-1. Follow the protocol's [result handling](../../dev-team/agents/rust-verifier/skills/rust-verification/references/communication-protocol.md#result-notification-and-gizmo-response).
+1. Follow the protocol's [result handling](../../dev-team/agents/rust-verifier/skills/rust-verification/spec/communication-protocol.md#result-notification-and-gizmo-response).
    Read the full report from the verifier task's
    `progress.extensions.rust_verification_report`; the host notification is
    only a pointer. Inspect inventory and decision coverage separately, then

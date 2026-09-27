@@ -13,7 +13,7 @@ builds alone cannot establish compliance.
 
 ### Require the commit SHA
 
-1. Load the [Gizmo/verifier communication protocol](references/communication-protocol.md).
+1. Load the [Gizmo/verifier communication protocol](spec/communication-protocol.md).
    It defines the exact request, report, notification, and repair-message formats.
    Require an explicit commit SHA from Team Gizmo before starting verification.
    If it is missing or cannot be resolved, follow the protocol's `need_commit`
@@ -120,13 +120,13 @@ with its own repair requirement. Continue through the last catalog entry.
 ### Complete and return the report
 
 1. Build the full report using the protocol's
-   [durable report fields](references/communication-protocol.md#durable-report-fields).
+   [durable report fields](spec/communication-protocol.md#durable-report-fields).
    Include the actual inventories and all outcomes, not only totals.
-2. Apply its [outcome and completion rules](references/communication-protocol.md#outcome-and-completion-rules)
+2. Apply its [outcome and completion rules](spec/communication-protocol.md#outcome-and-completion-rules)
    to reconcile coverage and derive the verdict. Having every row recorded
    does not mean every decision is resolved.
 3. Persist the report and send its
-   [result notification](references/communication-protocol.md#result-notification-and-gizmo-response).
+   [result notification](spec/communication-protocol.md#result-notification-and-gizmo-response).
    Gizmo reads the saved report before routing repairs or integration.
 4. On a repair assignment, require the new commit SHA, regenerate its file
    inventory, and repeat the entire review. Track previous requirements as fixed,
