@@ -73,13 +73,15 @@ branch and finish each integration before starting the next.
    ```
 
 6. Run the project's assigned combined validation commands from `feature_path`.
-   Report the merged task branch, destination feature branch, commands run, and
-   check results. Git merge success and separate task checks do not establish
-   that the combined feature passes. Report failed checks to Team Gizmo for a repair decision
-   before integrating dependent tasks. After successful combined validation,
-   record the integrated task through the [feature ledger skill](../../../agent-ledger/SKILL.md).
+   These checks validate the combined feature. A successful merge or passing
+   worker checks does not establish that result.
+   - If any check fails, follow [failure recovery](#resolve-integration-failures)
+     and report the failure to Team Gizmo.
+   - Keep the task unintegrated in the ledger and stop dependent integration
+     until the required checks pass.
 
-   Read the actual integrated revision and confirm that it contains the task:
+7. After all required checks pass, read the actual feature revision and confirm
+   that it contains the task:
 
    ```sh
    integration_sha=$(git -C "$feature_path" rev-parse --verify HEAD)
@@ -87,15 +89,22 @@ branch and finish each integration before starting the next.
    ```
 
    A fast-forward retains the task SHA; an ordinary merge may create a different
-   integration SHA. Record `Task / Coordinate` with `action.kind: integrate`
-   and that actual feature SHA after combined checks pass. Report both the task
-   SHA and integration SHA with the combined check results.
+   integration SHA. Follow the [feature ledger skill](../../../agent-ledger/SKILL.md)
+   to record `Task / Coordinate` with `action.kind: integrate` and the actual
+   `integration_sha`.
+
+8. Report the completed integration to Team Gizmo with:
+   - The task branch and destination feature branch.
+   - `task_sha` and `integration_sha`.
+   - The combined validation commands and their results.
 
 **Prohibited:** merge several worker branches concurrently or report a passing
 feature based only on a successful Git merge.
 
-**Preferred:** merge `task/parser`, verify its inclusion, run the combined checks,
-then integrate the next completed branch in dependency order.
+**Preferred:** merge `task/parser`, verify its inclusion, and run the combined
+checks. Record and report the passing integration before starting the next
+completed branch in dependency order. If a check fails, report it to Gizmo and
+leave dependent integration stopped.
 
 ### Resolve integration failures
 
