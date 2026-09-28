@@ -17,6 +17,8 @@ the verifier's outcome is a complete review, not a repaired implementation.
 
 1. Load the [communication protocol](spec/communication-protocol.md).
    It owns request fields, report sections, result payloads, and Gizmo's responses.
+   Load [committed Git reads](spec/git-review.md) for the exact SHA, parent,
+   inventory, patch, and file-reading commands. Run them in the assigned project repository.
 2. Require an explicit, resolvable commit SHA before starting review.
    - If it is missing, ambiguous, or unresolvable, send `need_commit` to Gizmo.
      Stop review work until Gizmo supplies a valid request.

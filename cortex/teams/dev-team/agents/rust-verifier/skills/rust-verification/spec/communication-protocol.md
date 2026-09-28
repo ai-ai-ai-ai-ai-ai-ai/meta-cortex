@@ -4,6 +4,8 @@ Gizmo sends a commit SHA. The verifier checks every cataloged practice against
 every changed file, saves one complete report, and sends Gizmo every issue
 with the evidence and instructions needed to fix it.
 Gizmo owns repairs and integration.
+Use [committed Git reads](git-review.md) for executable commands. This protocol
+defines messages and evidence; it does not authorize checkout changes.
 
 ## Required actions
 
@@ -31,6 +33,9 @@ and waits before starting review.
 2. The verifier reviews the change introduced by that commit relative to its
    first parent. A root commit adds its entire tree. Do not construct a task-wide
    base, follow a moving branch, or select only some practices.
+   For implementation handoffs, Gizmo ensures the developer supplied one
+   consolidated task commit before sending this request. The verifier derives
+   its parent from Git; no base field is added to the message.
 3. If the SHA is missing, ambiguous, or unresolvable, stop before reading the
    diff or making rule judgments. Save blocked ledger progress and send
    `need_commit` with a nonempty `reason`. Gizmo resends a complete

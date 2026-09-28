@@ -95,7 +95,10 @@ flowchart LR
   names and paths, their task scope, checks, and library location.
 - Read durable readiness even when a final worker message is missing.
 - When rust-dev finishes, follow the [Rust verification handoff](../../docs/rust-verification.md)
-  before integration. Launch rust-verifier with an explicit commit SHA;
+  before integration. Require its ordinary one-commit delivery, check the
+  [Git handoff](../../docs/rust-verification.md#check-the-git-handoff), and launch
+  rust-verifier with the explicit final SHA. Keep consolidation commands with
+  the developer's delivery procedure; Gizmo performs no Git mutations. Then,
   within authorized implementation, route every in-scope repair requirement back
   to rust-dev and require a complete new pass. For review-only assignments,
   return the complete findings instead of starting repairs or integration.

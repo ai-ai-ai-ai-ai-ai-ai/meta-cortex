@@ -16,10 +16,10 @@ rules:
     summary: Use one feature workspace and isolated task worktrees.
   - id: local_feature:completion
     source: ../local-feature-integration.md#finish-task-work
-    summary: Validate and commit assigned changes before reporting completion.
+    summary: Validate, consolidate requested task commits, and record final readiness.
   - id: local_feature:integration
     source: ../local-feature-integration.md#integrate-finished-branches
-    summary: Merge finished tasks in order; validate the combined feature.
+    summary: Match reviewed checkpoints, merge tasks, and validate combined revisions.
   - id: local_feature:repair
     source: ../local-feature-integration.md#resolve-integration-failures
     summary: Preserve failed work and repair through the task branch.
