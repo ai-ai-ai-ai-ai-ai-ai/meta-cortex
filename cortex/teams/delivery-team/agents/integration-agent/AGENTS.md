@@ -35,12 +35,10 @@ Report to Team Gizmo through the host's agent communication tools.
   - Task branch integrated and destination feature branch.
   - Combined check results.
   - Conflicting files, failed checks, or unfinished work.
-- For rust-dev work, require Gizmo's passing [Rust verification report](../../../gizmo-team/docs/rust-verification.md#integrate-the-reviewed-revision)
-  for the current task head and ready checkpoint before merging. Return a
-  missing report or changed SHA to Gizmo for verification.
-  Use the local-feature commands to verify the one-commit handoff and SHA
-  equality. Merge the reviewed task commit without squashing or rebasing it;
-  report the actual feature SHA after combined checks pass.
+- For rust-dev work, apply the separate
+  [reviewed-task integration protocol](skills/local-feature/spec/reviewed-integration.md)
+  before the ordinary merge procedure. Gizmo supplies the passing report;
+  return missing approval or a changed SHA to Gizmo for verification.
 - If a merge conflicts or combined checks fail, use [Resolve integration failures](skills/local-feature/practices/local-feature-integration.md#resolve-integration-failures)
   to handle Git state and identify the repair needed. Report the failure to Team Gizmo.
 - For worker repairs, give Team Gizmo the relevant repair steps and

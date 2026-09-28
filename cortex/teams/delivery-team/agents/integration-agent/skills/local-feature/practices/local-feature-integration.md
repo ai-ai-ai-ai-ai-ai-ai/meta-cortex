@@ -246,23 +246,6 @@ branch and finish each integration before starting the next.
    The three-dot comparison shows task changes since its shared history with the
    feature branch. Report out-of-scope changes to Team Gizmo for a decision before merging.
 
-   When Gizmo supplies a reviewed revision, set `reviewed_sha` from its passing
-   report and `checkpoint_sha` from the developer's current ready ledger record.
-   Check both the branch ref and its worktree immediately before merging:
-
-   ```sh
-   task_sha=$(git -C "$task_path" rev-parse --verify HEAD)
-   branch_sha=$(git -C "$feature_path" rev-parse --verify "refs/heads/$task_branch")
-   test "$task_sha" = "$branch_sha"
-   test "$task_sha" = "$checkpoint_sha"
-   test "$task_sha" = "$reviewed_sha"
-   ```
-
-   Require all comparisons to succeed and the task to remain ready and clean.
-   For a one-commit handoff, repeat the count and sole-parent checks from task
-   completion against the assigned `task_base_sha`. Return any mismatch to
-   Gizmo; do not merge a newer head using an older report.
-
 4. Merge the finished task branch into the feature branch:
 
    ```sh
@@ -300,8 +283,8 @@ branch and finish each integration before starting the next.
 
    A fast-forward retains the task SHA; an ordinary merge may create a different
    integration SHA. Record `Task / Coordinate` with `action.kind: integrate`
-   and that actual feature SHA after combined checks pass. Report both SHAs;
-   the developer review does not claim to have tested the combined feature.
+   and that actual feature SHA after combined checks pass. Report both the task
+   SHA and integration SHA with the combined check results.
 
 **Prohibited:** merge several worker branches concurrently or report a passing
 feature based only on a successful Git merge.
@@ -370,7 +353,7 @@ then integrate the next completed branch in dependency order.
    and validation, consolidate the complete task again with the task-completion
    procedure. Repairs before integration retain the original base unless the
    worker incorporates a newer feature revision. In both cases, record
-   the replacement checkpoint and readiness; never reuse the old review's SHA.
+   the replacement checkpoint and readiness.
 
 4. If Git merged successfully but combined checks fail, keep the branches and
    report the failing checks to Team Gizmo for a repair decision. The assigned
@@ -381,8 +364,7 @@ then integrate the next completed branch in dependency order.
    For a one-commit repair, use the current feature SHA incorporated by the
    worker as its new `task_base_sha`. Consolidate only the new repair changes
    above that SHA. Preserve the already-integrated task commit in feature
-   history; never reset the feature to recreate the original task. The repair
-   receives its own reviewed SHA before integration is retried.
+   history; never reset the feature to recreate the original task.
 
 **Prohibited:** discard a side of a domain conflict or remove branches while
 combined validation is failing.

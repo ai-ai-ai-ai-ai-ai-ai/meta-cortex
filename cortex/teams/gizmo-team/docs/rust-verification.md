@@ -236,9 +236,10 @@ fresh evidence for all earlier repairs and the entire new change.
    branch, worktree, and consolidation base. Require both the branch head and
    developer ready checkpoint to match
    that SHA. A later commit requires a new review before integration.
-2. Follow the existing
-   [integration procedure](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#integrate-finished-branches)
-   and run combined checks. A verifier pass does not replace those checks.
+2. Give the integration owner the
+   [reviewed-task integration protocol](../../delivery-team/agents/integration-agent/skills/local-feature/spec/reviewed-integration.md).
+   It applies the review gate before the ordinary Git merge procedure and
+   requires combined checks. A verifier pass does not replace those checks.
    The integration agent owns `git merge`; rust-dev owns implementation commits
    and conflict-resolution commits. The verifier never commits. The PR agent
    owns pushing the integrated feature under `create_pr`.

@@ -15,6 +15,10 @@ role instructions define assignments and communication.
   feature setup and integration records.
 - Read [local feature integration](practices/local-feature-integration.md)
   before creating task worktrees or integrating changes.
+- For an integration assignment that requires a passing review, also apply
+  [reviewed-task integration](spec/reviewed-integration.md). It owns the SHA
+  gate and renewed review after repairs; worker commit instructions remain in
+  the ordinary local-feature practice.
 - Use the [rule map](index.yaml) to locate individual decisions when
   reviewing or changing this practice.
 

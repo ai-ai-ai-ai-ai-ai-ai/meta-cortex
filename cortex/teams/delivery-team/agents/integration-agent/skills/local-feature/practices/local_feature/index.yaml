@@ -19,7 +19,7 @@ rules:
     summary: Validate, consolidate requested task commits, and record final readiness.
   - id: local_feature:integration
     source: ../local-feature-integration.md#integrate-finished-branches
-    summary: Match reviewed checkpoints, merge tasks, and validate combined revisions.
+    summary: Merge finished tasks and validate the combined feature revision.
   - id: local_feature:repair
     source: ../local-feature-integration.md#resolve-integration-failures
     summary: Preserve failed work and repair through the task branch.
