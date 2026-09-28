@@ -34,17 +34,16 @@ Report to Team Gizmo through the host's agent communication tools.
   to inspect and merge its branch and validate the combined feature. Report:
   - Task branch integrated and destination feature branch.
   - Combined check results.
-  - Conflicting files, failed checks, or unfinished work.
+  - The conflicting commit pair, failed checks, or unfinished work.
 - For rust-dev work, apply the separate
   [reviewed-task integration protocol](skills/local-feature/spec/reviewed-integration.md)
   before the ordinary merge procedure. Gizmo supplies the passing report;
   return missing approval or a changed SHA to Gizmo for verification.
 - If a merge conflicts or combined checks fail, use [Resolve integration failures](skills/local-feature/practices/local_feature/branch-integration.md#resolve-integration-failures)
-  to handle Git state and identify the repair needed. Report the failure to Team Gizmo.
-- For worker repairs, give Team Gizmo the relevant repair steps and
-  [Finish task work](skills/local-feature/practices/local_feature/task-commits.md#finish-task-work)
-  so the responsible worker saves and validates its changes. Resume integration
-  when Team Gizmo reports completion; do not implement the worker's fix yourself.
+  to restore Git state and report the failed operation and exact revisions to
+  Team Gizmo. Do not assemble copied diffs, file inventories, or a repair plan.
+- Resume integration when Gizmo supplies the developer's validated replacement
+  commit. The developer inspects and repairs the assigned revisions directly.
 - After all tasks are integrated and feature checks pass, use [Complete and clean up](skills/local-feature/practices/local_feature/cleanup.md#complete-and-clean-up)
   to remove finished worker workspaces while retaining the feature workspace.
   Return the feature branch and path,

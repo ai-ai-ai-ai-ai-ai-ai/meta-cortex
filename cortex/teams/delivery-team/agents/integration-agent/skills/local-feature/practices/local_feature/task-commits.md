@@ -118,3 +118,44 @@ and report completion so branch integration can begin.
 For a one-commit handoff, consolidate two private checkpoints into one task
 commit before recording the final checkpoint. Send that final SHA, not either
 superseded checkpoint.
+
+### Repair the assigned revision
+
+1. Receive the task SHA and target SHA from Gizmo in the existing assignment.
+   Work in the assigned clean task worktree, with HEAD matching `task_sha`.
+   Inspect the commits directly; do not require another agent's file inventory
+   or copied diff. A missing object or changed task head goes back to Gizmo.
+2. Incorporate the exact target revision:
+
+   ```sh
+   test "$(git -C "$task_path" rev-parse --verify HEAD)" = "$task_sha"
+   git -C "$task_path" merge --no-edit -- "$target_sha"
+   ```
+
+   If the merge conflicts, identify and resolve the conflicts in this worktree.
+   Stage each resolved `changed_path`, confirm no unmerged paths remain, inspect
+   the staged result, and finish the merge:
+
+   ```sh
+   git -C "$task_path" add -- "$changed_path"
+   git -C "$task_path" diff --name-only --diff-filter=U
+   git -C "$task_path" diff --cached
+   git -C "$task_path" commit --no-edit
+   ```
+
+   Repeat `git add` for each resolved path; do not commit until the unmerged
+   path list is empty. If the merge succeeds without conflicts, skip resolution
+   and its commit. Report an unresolved behavior decision or other Git error
+   to Gizmo instead of guessing.
+3. Fix the assigned failure and follow [task completion](#finish-task-work) to
+   validate, commit, and record readiness. For a one-commit repair, set
+   `task_base_sha` to the incorporated `target_sha`; consolidate only changes
+   above it. This preserves already-integrated history when the target is a
+   feature revision whose checks failed. Return the final SHA and check outcome
+   through the existing handoff; Gizmo decides the next assignment.
+
+**Prohibited:** wait for the integration owner to enumerate conflicts, or merge
+a moving feature branch whose head differs from the assigned target SHA.
+
+**Preferred:** reproduce the merge from Gizmo's two revisions, resolve and
+validate it in the task worktree, then return the replacement commit SHA.

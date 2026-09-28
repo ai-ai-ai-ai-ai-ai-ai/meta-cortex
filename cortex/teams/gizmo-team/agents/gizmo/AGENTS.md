@@ -105,8 +105,13 @@ flowchart LR
 - Once required verification passes, tell the integration agent which task
   branch to integrate next. Supply the passing report and reviewed SHA for Rust
   developer work. Order tasks by dependency and wait for each integration result.
-- Route reported conflicts or failed checks to the responsible worker with the
-  integration agent's repair context. Request integration again after the fix.
+- Route an integration conflict to the responsible worker with the task and
+  target commit SHAs and the [task-repair procedure](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#repair-the-assigned-revision).
+  The worker reads those revisions, resolves the conflict,
+  validates, and returns a commit through the ordinary task handoff. For failed
+  checks, also pass the failed command and diagnostic or existing log reference.
+  Do not require the integration agent to prepare a file inventory or repair plan.
+  Request integration again after the required review of the replacement SHA.
 - Once the combined feature passes its checks, ask the integration agent to
   finish cleanup. Return the feature branch, workspace, check results, and
   unfinished work to Prime. Continue through the

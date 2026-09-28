@@ -39,16 +39,18 @@ branch and finish each integration before starting the next.
 
    ```sh
    task_sha=$(git -C "$task_path" rev-parse --verify HEAD)
-   git -C "$feature_path" diff "$feature_branch...$task_branch"
+   target_sha=$(git -C "$feature_path" rev-parse --verify HEAD)
+   git -C "$feature_path" diff "$target_sha...$task_sha"
    ```
 
    The three-dot comparison shows task changes since its shared history with the
    feature branch. Report out-of-scope changes to Team Gizmo for a decision before merging.
 
-4. Merge the finished task branch into the feature branch:
+4. Merge the captured task commit into the unchanged target:
 
    ```sh
-   git -C "$feature_path" merge --no-edit -- "$task_branch"
+   test "$(git -C "$feature_path" rev-parse --verify HEAD)" = "$target_sha"
+   git -C "$feature_path" merge --no-edit -- "$task_sha"
    ```
 
    Git fast-forwards when possible or performs an ordinary merge. Preserve that
@@ -56,15 +58,19 @@ branch and finish each integration before starting the next.
    incompatible repository merge policy before running the command. If it fails,
    follow the integration-failure procedure below before continuing.
 
-5. Confirm the task branch is fully merged and the worktree is clean:
+5. Confirm the task commit is included and the worktree is clean:
 
    ```sh
-   git -C "$feature_path" branch --merged "$feature_branch" --list "$task_branch"
+   git -C "$feature_path" merge-base --is-ancestor "$task_sha" HEAD
    git -C "$feature_path" status --short
    ```
 
-   The branch listing must include `task_branch`; short status must be empty.
-   Investigate an unexpected result before treating integration as successful.
+   The ancestry command must succeed; short status must be empty. Capture
+   `integration_sha` now so a failed check identifies the actual merged revision:
+
+   ```sh
+   integration_sha=$(git -C "$feature_path" rev-parse --verify HEAD)
+   ```
 
 6. Run the project's assigned combined validation commands from `feature_path`.
    Report the merged task branch, destination feature branch, commands run, and
@@ -93,80 +99,33 @@ then integrate the next completed branch in dependency order.
 
 ### Resolve integration failures
 
-1. If the feature merge reports conflicts, list the affected files:
-
-   ```sh
-   git -C "$feature_path" diff --name-only --diff-filter=U
-   ```
-
-   Record these paths for the report to Team Gizmo, then abort this attempted merge:
+1. If the merge conflicts, abort that attempt and confirm the integration
+   worktree is clean:
 
    ```sh
    git -C "$feature_path" merge --abort
-   git -C "$feature_path" status
+   git -C "$feature_path" status --short
    ```
 
-   Expect a clean worktree with no merge in progress. If abort fails, retain the
-   workspaces and report Git's error and status; do not reset away work.
+   Report the outcome, `task_sha`, and `target_sha` to Gizmo. These identify both
+   sides of the failed merge. Do not prepare a file inventory, copied diff, or
+   repair plan; the assigned developer reads the commits and reproduces the conflict.
+   If abort fails, report that error and retain the workspace. For another Git
+   failure, report the same revisions and the actual error instead of calling it a conflict.
+2. Gizmo assigns the two SHAs to the responsible team agent, which follows
+   [task repair](task-commits.md#repair-the-assigned-revision), resolves the
+   conflict, validates, and returns its committed SHA and readiness. The integration
+   owner waits for Gizmo to supply that result before retrying integration.
+3. If a merge succeeded but combined checks failed, keep the merged history.
+   Report `task_sha`, `integration_sha`, the failed command, and its diagnostic
+   or existing log reference. Git contains the code, not the check outcome.
+   Gizmo supplies `integration_sha` as the worker's repair target; never abort
+   a completed merge or reset the feature to reconstruct the task.
 
-2. Report the conflicts and Git state to Team Gizmo, which decides the repair
-   assignment. Once assigned, the worker merges the feature branch into its branch:
+**Prohibited:** collect conflicting files and prescribe their edits before
+Gizmo assigns a developer, or silently repair the conflict in the feature worktree.
 
-   ```sh
-   git -C "$task_path" merge --no-edit -- "$feature_branch"
-   ```
-
-   If it merges successfully, continue with task checks. If it conflicts, the
-   owner identifies and edits the conflicting files in this worktree:
-
-   ```sh
-   git -C "$task_path" diff --name-only --diff-filter=U
-   ```
-
-   Report unresolved application behavior to Team Gizmo for a decision rather
-   than choosing one side automatically.
-
-3. For a conflicted worker merge, stage each resolved file using its
-   repository-relative `changed_path`, then inspect the resolution:
-
-   ```sh
-   git -C "$task_path" add -- "$changed_path"
-   git -C "$task_path" diff --name-only --diff-filter=U
-   git -C "$task_path" diff --cached
-   ```
-
-   Repeat staging for all resolved files. The unresolved-file list must be empty.
-   After reviewing the staged resolution, finish the merge:
-
-   ```sh
-   git -C "$task_path" commit --no-edit
-   git -C "$task_path" status --short
-   ```
-
-   Expect clean status. Rerun the worker's checks and report the repaired task
-   to Team Gizmo. When Gizmo supplies the repair result and directs continuation,
-   repeat feature integration and combined validation.
-
-   For a one-commit assignment, Gizmo supplies the exact feature SHA that the
-   worker just merged as the updated `task_base_sha`. After conflict resolution
-   and validation, consolidate the complete task again with the
-   [task-completion procedure](task-commits.md#finish-task-work). Repairs before integration retain the original base unless the
-   worker incorporates a newer feature revision. In both cases, record
-   the replacement checkpoint and readiness.
-
-4. If Git merged successfully but combined checks fail, keep the branches and
-   report the failing checks to Team Gizmo for a repair decision. The assigned
-   worker uses the repair steps above to incorporate current feature changes
-   if needed, fixes the failed behavior, and reports task completion to Gizmo. Do not run `merge --abort` for a completed merge.
-   Integrate the repair and rerun checks before dependent tasks or cleanup.
-
-   For a one-commit repair, use the current feature SHA incorporated by the
-   worker as its new `task_base_sha`. Consolidate only the new repair changes
-   above that SHA. Preserve the already-integrated task commit in feature
-   history; never reset the feature to recreate the original task.
-
-**Prohibited:** discard a side of a domain conflict or remove branches while
-combined validation is failing.
-
-**Preferred:** abort only the conflicted merge, report the affected paths to Gizmo
-for a repair decision, and validate the repaired branch after integrating it.
+**Preferred:** report “Merge conflict between task `<task_sha>` and target
+`<target_sha>`; the merge was aborted and the checkout is clean.” Gizmo routes
+those revisions to the developer, then returns the validated replacement SHA
+for integration. No copied code or conflict dossier is needed.

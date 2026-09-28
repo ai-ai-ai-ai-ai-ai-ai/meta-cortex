@@ -13,7 +13,4 @@ related: []
 rules:
 - id: local_feature:integration
   source: ../branch-integration.md#integrate-finished-branches
-  summary: Merge finished tasks and validate the combined feature revision.
-- id: local_feature:repair
-  source: ../branch-integration.md#resolve-integration-failures
-  summary: Preserve failed work and repair through the task branch.
+  summary: Merge assigned revisions; validate results and report failures by SHA.

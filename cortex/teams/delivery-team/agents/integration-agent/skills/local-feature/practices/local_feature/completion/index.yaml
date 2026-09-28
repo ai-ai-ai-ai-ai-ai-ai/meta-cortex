@@ -4,7 +4,7 @@ title: Task commits
 source_title: Task Commits and Readiness
 source: ../task-commits.md
 owns:
-- Worker validation, consolidation, commits, and readiness.
+- Worker repairs, validation, consolidation, commits, and readiness.
 excludes:
 - Routing, programming rules, and remote delivery.
 relationships:
@@ -14,3 +14,6 @@ rules:
 - id: local_feature:completion
   source: ../task-commits.md#finish-task-work
   summary: Validate, consolidate requested task commits, and record final readiness.
+- id: local_feature:repair
+  source: ../task-commits.md#repair-the-assigned-revision
+  summary: Repair assigned revisions directly; validate and return a commit.

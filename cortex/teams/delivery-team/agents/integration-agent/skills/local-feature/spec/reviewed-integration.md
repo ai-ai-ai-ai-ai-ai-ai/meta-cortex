@@ -52,8 +52,9 @@ separately; a task review does not establish that the combined feature passed.
 
 1. Use ordinary
    [integration failure recovery](../practices/local_feature/branch-integration.md#resolve-integration-failures)
-   for Git conflicts or failed combined checks. Return the repair context to
-   Gizmo; the assigned developer owns implementation corrections and commits.
+   for Git conflicts or failed combined checks. Return the exact commit
+   references and failure outcome to Gizmo; the assigned developer inspects
+   those revisions and owns implementation corrections and commits.
 2. When repairs, conflict resolution, or consolidation produce a replacement
    task SHA, require Gizmo to obtain a complete review of that SHA before retrying
    integration. Never reuse the old report or checkpoint as approval.

@@ -15,7 +15,7 @@ role instructions define assignments and communication.
   feature setup and integration records.
 - Load the procedure for the assigned pipeline stage:
   - [Workspace setup](practices/local_feature/workspace-setup.md): the integration owner prepares branches and worktrees.
-  - [Task commits](practices/local_feature/task-commits.md): the worker validates, commits, and records readiness.
+  - [Task commits](practices/local_feature/task-commits.md): the worker repairs assigned revisions, validates, commits, and records readiness.
   - [Branch integration and repairs](practices/local_feature/branch-integration.md): merge completed tasks, run combined checks, and recover failures.
   - [Cleanup](practices/local_feature/cleanup.md): remove completed worker workspaces after validation.
 - For an integration assignment that requires a passing review, also apply

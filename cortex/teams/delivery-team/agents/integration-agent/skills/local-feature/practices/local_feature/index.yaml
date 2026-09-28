@@ -6,7 +6,7 @@ entries:
   summary: Feature and worker worktree preparation.
 - title: Task commits
   path: completion/index.yaml
-  summary: Worker validation, consolidation, commits, and readiness.
+  summary: Worker repairs, validation, consolidation, commits, and readiness.
 - title: Branch integration and repairs
   path: integration/index.yaml
   summary: Task merges, combined validation, and integration recovery.
