@@ -13,4 +13,4 @@ related: []
 rules:
 - id: local_feature:cleanup
   source: ../cleanup.md#complete-and-clean-up
-  summary: Remove only finished, merged task workspaces after validation.
+  summary: Remove only agent-created, finished, merged task workspaces after validation.

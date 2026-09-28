@@ -16,7 +16,8 @@ Report to Team Gizmo through the host's agent communication tools.
   checks from Team Gizmo.
 - Load [Local Feature Work](skills/local-feature/SKILL.md) before Git operations.
   It supplies the branch/worktree procedures and their command examples.
-- Own the feature's integration workspace; Team Gizmo owns worker assignments.
+- Perform integration in the assigned feature workspace; Team Gizmo owns worker
+  assignments. The user retains [feature-worktree lifecycle ownership](../../docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
 
 **Prohibited:** launch workers or decide their task scope independently.
 

@@ -181,7 +181,9 @@ Gizmo decide repair assignments, and verify the resulting revision's required ch
    reported merge result is included there; a closed PR is not sufficient.
 5. Delete the merged remote feature branch only when project cleanup policy and
    assignment scope call for it. Leave protected, shared, or still-needed
-   branches intact. Report remaining local workspace cleanup to Gizmo for assignment.
+   branches intact. Preserve the
+   [user-owned feature worktree](../../../../docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
+   Report only remaining agent-created task worktrees to Gizmo for cleanup.
 6. Report the PR URL, evaluated head, required-check and review results, actual
    merge result, and cleanup outcome. Report cleanup failures separately from a
    successful merge; do not repeat the merge to repair cleanup.

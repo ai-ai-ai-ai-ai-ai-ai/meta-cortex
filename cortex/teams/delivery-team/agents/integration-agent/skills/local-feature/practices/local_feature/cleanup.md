@@ -1,16 +1,22 @@
 # Completed Task Cleanup
 
-The integration owner removes completed worker worktrees after combined checks
-pass. Use the assigned absolute paths `repo_path`, `feature_path`, and `task_path`,
-and branches `feature_branch` and `task_branch`. Retain the feature workspace
-for the configured delivery step.
+The integration owner removes completed, agent-created task worktrees after
+combined checks pass. Use the assigned absolute paths `repo_path`, `feature_path`,
+and `task_path`, and branches `feature_branch` and `task_branch`. Apply
+[feature-worktree ownership](../../../../../../docs/project-delivery-policy.md#preserve-the-users-feature-worktree):
+the feature workspace remains available to the user after delivery.
 
 ## Required actions
 
 ### Complete and clean up
 
-1. Complete the feature's assigned validation before cleanup. For each finished
-   task, check that Git lists its branch as fully merged:
+1. Confirm from the task assignment and workspace setup that `task_path` is an
+   agent-created task worktree. It must not be the feature worktree, original
+   checkout, or another user-provided workspace. If ownership is unclear, retain
+   it and report why cleanup was skipped.
+
+   Complete the feature's assigned validation. For each eligible finished task,
+   check that Git lists its branch as fully merged:
 
    ```sh
    git -C "$feature_path" branch --merged "$feature_branch" --list "$task_branch"
@@ -58,7 +64,8 @@ for the configured delivery step.
    branch/path, merged tasks, validation results, and retained task workspaces.
    Local completion excludes publishing, PR creation, and merging into the base.
 
-**Prohibited:** force-delete an unmerged task branch or dirty worktree.
+**Prohibited:** remove the feature worktree after a PR merge, or force-delete an
+unmerged task branch or dirty worktree.
 
 **Preferred:** confirm integration and clean status, remove the finished worker
 workspace and branch, and retain the validated feature for review.

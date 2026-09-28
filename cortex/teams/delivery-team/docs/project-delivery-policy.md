@@ -70,6 +70,29 @@ merge a PR whose target requires approval.
 **Preferred:** use the target repository's allowed merge method and satisfy its
 required checks and reviews before an authorized merge.
 
+### Preserve the user's feature worktree
+
+The user owns the feature worktree's lifecycle. Carry its path through Prime,
+Team Gizmo, and delivery assignments. Reuse a supplied feature worktree; its
+presence does not transfer lifecycle ownership to an agent.
+
+- Gizmo Prime must not delete or archive the feature worktree, or assign another
+  agent or host tool to do so.
+- Preserve it after task completion, PR publication, PR merge, and cancellation.
+  None of these events authorizes feature-worktree cleanup.
+- Automated local cleanup is limited to agent-created task worktrees and their
+  task branches under the [completed task cleanup procedure](../agents/integration-agent/skills/local-feature/practices/local_feature/cleanup.md).
+  A user-provided workspace never becomes disposable merely because its work
+  is finished.
+- Return the feature branch and worktree path to the user. The user manages its
+  removal outside the Gizmo delivery workflow.
+
+**Prohibited:** after a PR merges, Prime asks integration to remove the user's
+feature worktree or invokes a host archive action that removes its checkout.
+
+**Preferred:** remove eligible agent-created task worktrees, then report the
+completed feature with its original worktree still available to the user.
+
 ### Preserve work ownership
 
 Local integration, PR management, and CI execution have distinct owners. Pass

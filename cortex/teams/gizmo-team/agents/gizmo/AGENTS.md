@@ -113,7 +113,9 @@ flowchart LR
   Do not require the integration agent to prepare a file inventory or repair plan.
   Request integration again after the required review of the replacement SHA.
 - Once the combined feature passes its checks, ask the integration agent to
-  finish cleanup. Return the feature branch, workspace, check results, and
+  finish cleanup of eligible agent-created task worktrees. Preserve the
+  [user-owned feature worktree](../../../delivery-team/docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
+  Return the feature branch, workspace, check results, and
   unfinished work to Prime. Continue through the
   [configured implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
   before the final handoff: PR delivery under `create_pr`, or the validated local

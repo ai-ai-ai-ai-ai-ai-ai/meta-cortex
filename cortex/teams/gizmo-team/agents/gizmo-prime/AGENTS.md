@@ -37,6 +37,9 @@ flowchart LR
 
 - Use [feature setup](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/workspace-setup.md#set-up-workspaces)
   to establish the base and feature workspace for Team Gizmo.
+- Preserve the [user-owned feature worktree](../../../delivery-team/docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
+  Pass its path to Team Gizmo. Never delete or archive it, or delegate its removal,
+  including after delivery or cancellation.
 - Own a stable feature ID and its [durable ledger](../../docs/agent-ledger.md).
   Reuse both on follow-ups and recover existing progress after interruption.
 - Own one feature branch for the entire feature with Team Gizmo. Keep that

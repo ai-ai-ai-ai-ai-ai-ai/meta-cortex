@@ -27,13 +27,18 @@ checkout. Follow the project's branch naming convention.
    git -C "$repo_path" branch --show-current
    ```
 
-3. For a new feature, create its branch and integration worktree once:
+3. Reuse the feature branch and worktree supplied by the user, including for a
+   new feature. Keep its path in the assignment under
+   [feature-worktree ownership](../../../../../../docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
+   If no feature worktree was supplied and the assignment calls for creating one,
+   create its branch and integration worktree once:
 
    ```sh
    git -C "$repo_path" worktree add -b "$feature_branch" "$feature_path" "$base_branch"
    ```
 
-   For an existing feature, skip creation and use its assigned branch and path.
+   If neither a supplied workspace nor a creation assignment is available,
+   report the missing workspace decision to Team Gizmo before task setup.
    Check that the first command prints `feature_branch` and the second prints
    nothing. Resolve unexpected changes before starting task work.
 
@@ -83,6 +88,6 @@ checkout. Follow the project's branch naming convention.
 **Prohibited:** create another feature branch for every worker or reuse one
 worker checkout for several active task branches.
 
-**Preferred:** run feature creation once for `feature/editor`. Repeat task
-creation for `task/parser` and `task/ui`, each with its own path. Both task
-branches will merge into the same `feature/editor` branch.
+**Preferred:** reuse the user's supplied `feature/editor` worktree. Create
+`task/parser` and `task/ui`, each with its own path. Both task branches will
+merge into the same `feature/editor` branch.
