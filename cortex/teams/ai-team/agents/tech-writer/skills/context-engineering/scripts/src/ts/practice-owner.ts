@@ -1,6 +1,9 @@
 // Canonical practice identities; source paths remain separate catalog metadata.
 export enum DeliveryPracticeOwner {
-  LocalFeature = "delivery:local_feature",
+  WorkspaceSetup = "delivery:workspace_setup",
+  TaskCommits = "delivery:task_commits",
+  BranchIntegration = "delivery:branch_integration",
+  Cleanup = "delivery:cleanup",
 }
 
 export enum ProgrammingPracticeOwner {

@@ -13,14 +13,17 @@ role instructions define assignments and communication.
 
 - Apply [feature ledger integration](../agent-ledger/SKILL.md) for durable
   feature setup and integration records.
-- Read [local feature integration](practices/local-feature-integration.md)
-  before creating task worktrees or integrating changes.
+- Load the procedure for the assigned pipeline stage:
+  - [Workspace setup](practices/local_feature/workspace-setup.md): the integration owner prepares branches and worktrees.
+  - [Task commits](practices/local_feature/task-commits.md): the worker validates, commits, and records readiness.
+  - [Branch integration and repairs](practices/local_feature/branch-integration.md): merge completed tasks, run combined checks, and recover failures.
+  - [Cleanup](practices/local_feature/cleanup.md): remove completed worker workspaces after validation.
 - For an integration assignment that requires a passing review, also apply
   [reviewed-task integration](spec/reviewed-integration.md). It owns the SHA
   gate and renewed review after repairs; worker commit instructions remain in
-  the ordinary local-feature practice.
+  the ordinary task-commit procedure.
 - Use the [rule map](index.yaml) to locate individual decisions when
-  reviewing or changing this practice.
+  reviewing or changing these practices.
 
 **Prohibited:** have the integration role take over remote publishing, or publish
 despite an explicit local-only instruction.

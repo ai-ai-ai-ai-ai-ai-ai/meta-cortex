@@ -1,0 +1,16 @@
+kind: practice
+owner: delivery:task_commits
+title: Task commits
+source_title: Task Commits and Readiness
+source: ../task-commits.md
+owns:
+- Worker validation, consolidation, commits, and readiness.
+excludes:
+- Routing, programming rules, and remote delivery.
+relationships:
+- One stage of local feature delivery.
+related: []
+rules:
+- id: local_feature:completion
+  source: ../task-commits.md#finish-task-work
+  summary: Validate, consolidate requested task commits, and record final readiness.

@@ -1,0 +1,16 @@
+kind: practice
+owner: delivery:workspace_setup
+title: Workspace setup
+source_title: Local Feature Workspace Setup
+source: ../workspace-setup.md
+owns:
+- Feature and worker worktree preparation.
+excludes:
+- Routing, programming rules, and remote delivery.
+relationships:
+- One stage of local feature delivery.
+related: []
+rules:
+- id: local_feature:workspace
+  source: ../workspace-setup.md#set-up-workspaces
+  summary: Use one feature workspace and isolated task worktrees.

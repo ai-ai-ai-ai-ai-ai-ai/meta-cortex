@@ -1,28 +1,15 @@
-kind: practice
-owner: delivery:local_feature
-title: Local feature integration
-source_title: Local feature integration
-source: ../local-feature-integration.md
-owns:
-  - Local workspaces, integration, validation, and cleanup.
-excludes:
-  - Routing, programming rules, and remote delivery.
-relationships:
-  - Complete tasks before integration; validate before cleanup.
-related: []
-rules:
-  - id: local_feature:workspace
-    source: ../local-feature-integration.md#set-up-workspaces
-    summary: Use one feature workspace and isolated task worktrees.
-  - id: local_feature:completion
-    source: ../local-feature-integration.md#finish-task-work
-    summary: Validate, consolidate requested task commits, and record final readiness.
-  - id: local_feature:integration
-    source: ../local-feature-integration.md#integrate-finished-branches
-    summary: Merge finished tasks and validate the combined feature revision.
-  - id: local_feature:repair
-    source: ../local-feature-integration.md#resolve-integration-failures
-    summary: Preserve failed work and repair through the task branch.
-  - id: local_feature:cleanup
-    source: ../local-feature-integration.md#complete-and-clean-up
-    summary: Remove only finished, merged task workspaces after validation.
+kind: navigation
+title: Local Feature Stages
+entries:
+- title: Workspace setup
+  path: workspace/index.yaml
+  summary: Feature and worker worktree preparation.
+- title: Task commits
+  path: completion/index.yaml
+  summary: Worker validation, consolidation, commits, and readiness.
+- title: Branch integration and repairs
+  path: integration/index.yaml
+  summary: Task merges, combined validation, and integration recovery.
+- title: Cleanup
+  path: cleanup/index.yaml
+  summary: Removal of completed worker worktrees and branches.

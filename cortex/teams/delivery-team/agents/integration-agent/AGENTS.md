@@ -24,13 +24,13 @@ Report to Team Gizmo through the host's agent communication tools.
 
 ### Execute and report
 
-- Before workers start, use [Set up workspaces](skills/local-feature/practices/local-feature-integration.md#set-up-workspaces)
+- Before workers start, use [Set up workspaces](skills/local-feature/practices/local_feature/workspace-setup.md#set-up-workspaces)
   to create or reuse the feature worktree and create each worker's task worktree.
   Tell Team Gizmo:
   - Feature branch and integration worktree path.
   - Each worker task's branch and worktree path.
   - The exact starting SHA for assignments requiring one consolidated commit.
-- When Team Gizmo reports a worker finished, use [Integrate finished branches](skills/local-feature/practices/local-feature-integration.md#integrate-finished-branches)
+- When Team Gizmo reports a worker finished, use [Integrate finished branches](skills/local-feature/practices/local_feature/branch-integration.md#integrate-finished-branches)
   to inspect and merge its branch and validate the combined feature. Report:
   - Task branch integrated and destination feature branch.
   - Combined check results.
@@ -39,13 +39,13 @@ Report to Team Gizmo through the host's agent communication tools.
   [reviewed-task integration protocol](skills/local-feature/spec/reviewed-integration.md)
   before the ordinary merge procedure. Gizmo supplies the passing report;
   return missing approval or a changed SHA to Gizmo for verification.
-- If a merge conflicts or combined checks fail, use [Resolve integration failures](skills/local-feature/practices/local-feature-integration.md#resolve-integration-failures)
+- If a merge conflicts or combined checks fail, use [Resolve integration failures](skills/local-feature/practices/local_feature/branch-integration.md#resolve-integration-failures)
   to handle Git state and identify the repair needed. Report the failure to Team Gizmo.
 - For worker repairs, give Team Gizmo the relevant repair steps and
-  [Finish task work](skills/local-feature/practices/local-feature-integration.md#finish-task-work)
+  [Finish task work](skills/local-feature/practices/local_feature/task-commits.md#finish-task-work)
   so the responsible worker saves and validates its changes. Resume integration
   when Team Gizmo reports completion; do not implement the worker's fix yourself.
-- After all tasks are integrated and feature checks pass, use [Complete and clean up](skills/local-feature/practices/local-feature-integration.md#complete-and-clean-up)
+- After all tasks are integrated and feature checks pass, use [Complete and clean up](skills/local-feature/practices/local_feature/cleanup.md#complete-and-clean-up)
   to remove finished worker workspaces while retaining the feature workspace.
   Return the feature branch and path,
   final checks, and any retained task branches or worktrees to Team Gizmo.

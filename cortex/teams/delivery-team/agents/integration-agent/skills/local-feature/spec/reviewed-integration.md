@@ -2,9 +2,9 @@
 
 Use this protocol when Gizmo requires a passing review before integration.
 It owns the review gate and replacement-review requirements. The
-[local feature practice](../practices/local-feature-integration.md) owns task
-commits, workspaces, merges, conflict recovery, combined checks, and cleanup.
-Workers receive that ordinary Git procedure; they do not need this protocol.
+[local feature catalog](../practices/local_feature/index.yaml) links the task
+commit, workspace, integration, repair, and cleanup procedures.
+Workers receive the relevant ordinary Git procedure; they do not need this protocol.
 
 ## Required actions
 
@@ -18,7 +18,7 @@ Workers receive that ordinary Git procedure; they do not need this protocol.
    - `task_base_sha`: assigned consolidation base for a one-commit handoff.
    Do not obtain the review verdict by interpreting ledger readiness as approval.
 2. Perform the checkout, cleanliness, and scope checks in steps 1–3 of
-   [branch integration](../practices/local-feature-integration.md#integrate-finished-branches).
+   [branch integration](../practices/local_feature/branch-integration.md#integrate-finished-branches).
    Keep the worker branch stable. Immediately before its merge, run:
 
    ```sh
@@ -33,7 +33,7 @@ Workers receive that ordinary Git procedure; they do not need this protocol.
    A missing report or mismatched SHA stops integration. Return it to Gizmo;
    do not substitute the latest branch head for the reviewed SHA.
 3. For a one-commit handoff, repeat the count and sole-parent checks from
-   [task completion](../practices/local-feature-integration.md#finish-task-work)
+   [task completion](../practices/local_feature/task-commits.md#finish-task-work)
    against the assigned `task_base_sha`. Require exactly one task commit with
    that base as its sole parent. Return an unconsolidated handoff to Gizmo.
 4. Only after the gate passes, continue the ordinary branch-integration
@@ -51,7 +51,7 @@ separately; a task review does not establish that the combined feature passed.
 ### Require a new review after repairs
 
 1. Use ordinary
-   [integration failure recovery](../practices/local-feature-integration.md#resolve-integration-failures)
+   [integration failure recovery](../practices/local_feature/branch-integration.md#resolve-integration-failures)
    for Git conflicts or failed combined checks. Return the repair context to
    Gizmo; the assigned developer owns implementation corrections and commits.
 2. When repairs, conflict resolution, or consolidation produce a replacement

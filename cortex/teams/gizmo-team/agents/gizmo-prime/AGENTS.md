@@ -35,7 +35,7 @@ flowchart LR
     G -->|One feature branch and check results| P
 ```
 
-- Use [feature setup](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#set-up-workspaces)
+- Use [feature setup](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/workspace-setup.md#set-up-workspaces)
   to establish the base and feature workspace for Team Gizmo.
 - Own a stable feature ID and its [durable ledger](../../docs/agent-ledger.md).
   Reuse both on follow-ups and recover existing progress after interruption.

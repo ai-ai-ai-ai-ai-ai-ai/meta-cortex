@@ -72,7 +72,7 @@ that limitation. Use the assignments below when running in `multi_agent` mode.
 ### Receive the developer's committed result
 
 1. Give rust-dev ordinary implementation requirements and the existing
-   [task-completion procedure](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local-feature-integration.md#finish-task-work).
+   [task-completion procedure](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#finish-task-work).
    Require one consolidated task commit. The integration owner supplies the
    task branch, worktree, and fixed `task_base_sha`; rust-dev follows the ordinary
    delivery commands to consolidate private checkpoints before readiness.
