@@ -4,13 +4,13 @@
 # Host launch and verification: teams/gizmo-team/docs/agent-configuration.md
 
 [gizmo-prime]
-model = "gpt-6-luna"
-reasoning_effort = "max"
+model = "gpt-6.1-sol"
+reasoning_effort = "low"
 
 [team.gizmo]
-model = "gpt-6-luna"
-reasoning_effort = "max"
+model = "gpt-6.1-sol"
+reasoning_effort = "low"
 
 [team.agent]
-model = "gpt-6-luna"
-reasoning_effort = "max"
+model = "gpt-6.1-sol"
+reasoning_effort = "low"

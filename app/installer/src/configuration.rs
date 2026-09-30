@@ -22,13 +22,16 @@ pub enum Model {
     #[serde(rename = "gpt-6-astra")]
     #[display("gpt-6-astra")]
     Astra,
+    #[serde(rename = "gpt-6.1-sol")]
+    #[display("gpt-6.1-sol")]
+    Sol61,
 }
 
 impl Model {
     pub fn efforts(self) -> &'static [Effort] {
         match self {
             Self::Luna => &Effort::ALL[..5],
-            Self::Astra => &Effort::ALL,
+            Self::Astra | Self::Sol61 => &Effort::ALL,
         }
     }
 }
@@ -141,15 +144,15 @@ pub mod tests {
     };
 
     impl Model {
-        const ALL: [Self; 2] = [Self::Luna, Self::Astra];
+        const ALL: [Self; 3] = [Self::Luna, Self::Astra, Self::Sol61];
     }
 
     #[test]
-    fn bundled_roles_use_gpt_6_luna_with_max_effort() -> Result<(), ConfigError> {
+    fn bundled_roles_use_gpt_6_1_sol_with_low_effort() -> Result<(), ConfigError> {
         let config = Configuration::bundled()?;
         let expected = AgentSettings {
-            model: Model::Luna,
-            reasoning_effort: Effort::Max,
+            model: Model::Sol61,
+            reasoning_effort: Effort::Low,
         };
         assert_eq!(config.gizmo_prime, expected);
         assert_eq!(config.team.gizmo, expected);
