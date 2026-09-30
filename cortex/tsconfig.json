@@ -1,0 +1,11 @@
+{
+  "extends": "./scripts/tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["lace/*.js", "lace/src/**/*.ts", "**/*.lace.ts"],
+  "exclude": ["node_modules", "**/node_modules"]
+}

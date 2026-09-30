@@ -104,6 +104,13 @@ bun run docs:check
 The documentation check reads actual Markdown files and fails on findings. Its
 Vale styles ship with the framework, so checks require no style downloads.
 
+The [Neural Lace foundation](cortex/teams/dev-team/docs/lace-architecture.md)
+defines typed receipt files alongside the existing Markdown framework. From
+`cortex/`, run `bun run --filter @meta-cortex/lace check` to compile the receipt
+project, or `bun run --filter @meta-cortex/lace verify` for all Lace checks.
+The workspace verification above already includes Lace. Receipt authoring uses
+the [existing core](cortex/lace/AGENTS.md) without changing its types or checks.
+
 ## Publish a release
 
 ### Build caches
