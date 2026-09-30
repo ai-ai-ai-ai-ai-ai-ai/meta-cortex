@@ -19,8 +19,9 @@ Agents learn the vocabulary by reading the core's TypeScript definitions as text
 Every `*.lace.ts` receipt default-exports a `new Job(...)` instance. Pass tasks
 and imported jobs directly to its constructor. Use another `new Job(...)` for
 a nested group, such as `new Job(context, new Job(compile, verify))`.
-The constructor requires at least one entry and checks every entry's type.
-Its readonly `entries` preserve exact task types and their source order.
+The constructor checks that each entry is a task or another Job.
+Its readonly `entries` preserve their source order.
+The declaration grammar requires at least one entry in each receipt job.
 The constructor checks the contents directly; no assertion clause is needed.
 
 - **Prohibited:** export `[context, compile]` and treat that array as a job.
@@ -116,8 +117,9 @@ bun run --filter @meta-cortex/lace verify
 `check` compiles without emitting files. `verify` also checks formatting,
 declaration grammar, and compiler contract tests. The existing `bun run verify`
 includes Lace through the workspace, so the existing CI gate validates it.
-Compilation verifies declarations; it cannot establish that prose is correct or
-that a declared command succeeds in a consuming project.
+Compilation verifies declaration types and resolvable imports. It does not
+detect circular context imports, establish that prose is correct, or prove that
+a declared command succeeds in a consuming project.
 
 - **Prohibited:** use `text: Promise.name` because it compiles as a string.
   It reads a runtime value instead of declaring literal context.

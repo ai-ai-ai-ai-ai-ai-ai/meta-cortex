@@ -33,18 +33,15 @@ export interface ShellCommand {
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
 export type Task = Instruction | ShellCommand;
 
-/** A directory's ordered contents: tasks and other jobs, with at least one entry. */
-export type JobEntries = readonly [Job | Task, ...(Job | Task)[]];
-
 /** Construction checks context declarations; it never executes their commands. */
-export class Job<const Entries extends JobEntries = JobEntries> {
-  private readonly content: Entries;
+export class Job {
+  private readonly content: readonly (Job | Task)[];
 
-  constructor(...entries: Entries) {
+  constructor(...entries: (Job | Task)[]) {
     this.content = entries;
   }
 
-  get entries(): Entries {
+  get entries(): readonly (Job | Task)[] {
     return this.content;
   }
 }

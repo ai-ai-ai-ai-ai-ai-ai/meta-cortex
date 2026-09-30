@@ -21,11 +21,6 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
       diagnostic: "does not exist in type",
     },
     {
-      scenario: "an empty job",
-      source: `export default new Job();`,
-      diagnostic: "Expected at least 1 arguments",
-    },
-    {
       scenario: "an arbitrary name-keyed job",
       source: `export default new Job({ invented: { kind: TaskKind.Instruction, text: "Read context." } });`,
       diagnostic: "does not exist in type",
@@ -81,14 +76,9 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
       diagnostic: "Cannot find module",
     },
     {
-      scenario: "a nonexistent imported task",
+      scenario: "an unchecked imported task index",
       source: `import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts"; export default new Job(compile.entries[1]);`,
-      diagnostic: "has no element at index",
-    },
-    {
-      scenario: "a circular job import",
-      source: `import self from "./compiler-case.lace.ts"; export default new Job(self);`,
-      diagnostic: "referenced directly or indirectly in its own initializer",
+      diagnostic: "not assignable",
     },
   ];
 }
@@ -117,10 +107,25 @@ test.each(DeclarationCases.rejected.slice())("rejects $scenario", (example) => {
   );
 });
 
-test("an imported job's commands are readonly", () => {
+test("an imported job's entries are readonly", () => {
   const source = `
 import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts";
-compile.entries[0].script = "other command";
+compile.entries = [];
+`;
+  expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
+    "read-only property",
+  );
+});
+
+test("shell command declarations are readonly", () => {
+  const source = `
+import { type ShellCommand, TaskKind, WorkingDirectory } from "../ts/lace.ts";
+const command: ShellCommand = {
+  kind: TaskKind.ShellCommand,
+  cwd: WorkingDirectory.LibraryRoot,
+  script: "bun run --filter @meta-cortex/lace check",
+};
+command.script = "other command";
 `;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
     "read-only property",
