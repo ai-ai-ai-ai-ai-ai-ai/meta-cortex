@@ -11,86 +11,91 @@ type RejectedDeclarations = readonly RejectedDeclaration[];
 
 class DeclarationCases {
   static readonly imports = `
-import { type Job, NodeKind, WorkingDirectory } from "../ts/lace.ts";
+import { type Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
 `;
 
   static readonly rejected: RejectedDeclarations = [
     {
       scenario: "a task at the file root",
-      source: `export default { kind: NodeKind.Instruction, text: "Read context." } as const satisfies Job;`,
-      diagnostic: "NodeKind.Job",
+      source: `export default { kind: TaskKind.Instruction, text: "Read context." } as const satisfies Job;`,
+      diagnostic: "does not exist in type",
+    },
+    {
+      scenario: "an empty job",
+      source: `export default [] as const satisfies Job;`,
+      diagnostic: "requires 1",
+    },
+    {
+      scenario: "an arbitrary name-keyed job",
+      source: `export default { invented: { kind: TaskKind.Instruction, text: "Read context." } } as const satisfies Job;`,
+      diagnostic: "does not exist in type",
     },
     {
       scenario: "an unsupported task kind",
-      source: `export default { kind: NodeKind.Job, children: { task: { kind: "callback", text: "Read context." } } } as const satisfies Job;`,
+      source: `export default [{ kind: "callback", text: "Read context." }] as const satisfies Job;`,
       diagnostic: "not assignable",
     },
     {
       scenario: "an instruction without text",
-      source: `export default { kind: NodeKind.Job, children: { task: { kind: NodeKind.Instruction } } } as const satisfies Job;`,
+      source: `export default [{ kind: TaskKind.Instruction }] as const satisfies Job;`,
       diagnostic: "text",
     },
     {
       scenario: "a command without an explicit directory",
-      source: `export default { kind: NodeKind.Job, children: { task: { kind: NodeKind.ShellCommand, script: "bun run check" } } } as const satisfies Job;`,
+      source: `export default [{ kind: TaskKind.ShellCommand, script: "bun run check" }] as const satisfies Job;`,
       diagnostic: "cwd",
     },
     {
       scenario: "a command without script text",
-      source: `export default { kind: NodeKind.Job, children: { task: { kind: NodeKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot } } } as const satisfies Job;`,
+      source: `export default [{ kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot }] as const satisfies Job;`,
       diagnostic: "script",
     },
     {
       scenario: "an unsupported working directory",
-      source: `export default { kind: NodeKind.Job, children: { task: { kind: NodeKind.ShellCommand, cwd: "/tmp", script: "bun run check" } } } as const satisfies Job;`,
+      source: `export default [{ kind: TaskKind.ShellCommand, cwd: "/tmp", script: "bun run check" }] as const satisfies Job;`,
       diagnostic: "WorkingDirectory",
     },
     {
-      scenario: "non-node children",
-      source: `export default { kind: NodeKind.Job, children: { task: "Read context." } } as const satisfies Job;`,
+      scenario: "a string job name instead of a declared job",
+      source: `export default ["compile"] as const satisfies Job;`,
       diagnostic: "LaceNode",
     },
     {
       scenario: "fields belonging to the other task kind",
-      source: `export default { kind: NodeKind.Job, children: { task: { kind: NodeKind.Instruction, script: "bun run check" } } } as const satisfies Job;`,
+      source: `export default [{ kind: TaskKind.Instruction, script: "bun run check" }] as const satisfies Job;`,
       diagnostic: "script",
     },
     {
-      scenario: "an unresolvable receipt import",
-      source: `import missing from "./missing.lace.ts"; export default { kind: NodeKind.Job, children: { missing } } as const satisfies Job;`,
+      scenario: "an unresolvable job import",
+      source: `import missing from "./missing.lace.ts"; export default [missing] as const satisfies Job;`,
       diagnostic: "Cannot find module",
     },
     {
-      scenario: "a nonexistent imported child",
-      source: `import common from "../../../teams/dev-team/agents/typescript-dev/receipts/common.lace.ts"; export default { kind: NodeKind.Job, children: { task: common.children.missing } } as const satisfies Job;`,
-      diagnostic: "Property 'missing' does not exist",
+      scenario: "a nonexistent imported task",
+      source: `import compile from "../../../teams/dev-team/agents/typescript-dev/receipts/compile.lace.ts"; export default [compile[1]] as const satisfies Job;`,
+      diagnostic: "has no element at index",
     },
     {
       scenario: "a circular job import",
-      source: `import self from "./compiler-case.lace.ts"; export default { kind: NodeKind.Job, children: { self: self } } as const satisfies Job;`,
+      source: `import self from "./compiler-case.lace.ts"; export default [self] as const satisfies Job;`,
       diagnostic: "referenced directly or indirectly in its own initializer",
     },
   ];
 }
 
-test("nested jobs compose an imported job and command without executing them", () => {
+test("a Job directly groups static jobs and tasks without executing them", () => {
   const source = `${DeclarationCases.imports}
 import common from "../../../teams/dev-team/agents/typescript-dev/receipts/common.lace.ts";
-export default {
-  kind: NodeKind.Job,
-  children: {
-    common: common,
-    checks: {
-      kind: NodeKind.Job,
-      children: { compile: common.children.compile_receipts },
-    },
-    project_status: {
-      kind: NodeKind.ShellCommand,
-      cwd: WorkingDirectory.ProjectRoot,
-      script: "git status --short",
-    },
+import compile from "../../../teams/dev-team/agents/typescript-dev/receipts/compile.lace.ts";
+export default [
+  common,
+  [compile],
+  {
+    kind: TaskKind.ShellCommand,
+    cwd: WorkingDirectory.ProjectRoot,
+    script: "git status --short",
   },
-} as const satisfies Job;
+] as const satisfies Job;
 `;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
 });
@@ -102,10 +107,10 @@ test.each(DeclarationCases.rejected.slice())("rejects $scenario", (example) => {
   );
 });
 
-test("an imported receipt's commands are readonly", () => {
+test("an imported job's commands are readonly", () => {
   const source = `
-import common from "../../../teams/dev-team/agents/typescript-dev/receipts/common.lace.ts";
-common.children.compile_receipts.script = "other command";
+import compile from "../../../teams/dev-team/agents/typescript-dev/receipts/compile.lace.ts";
+compile[0].script = "other command";
 `;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
     "read-only property",

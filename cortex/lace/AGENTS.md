@@ -22,7 +22,7 @@ then run the existing compiler and grammar checks.
 
 Each `*.lace.ts` file imports the core types and exports one literal job using
 `as const satisfies Job`. It contains only imports, literal declarations, and
-references to imported receipt children. The core API and check implementation
+references to statically imported jobs. The core API and check implementation
 are ordinary TypeScript owned by this directory; receipt files are the limited
 DSL described by the [architecture](../teams/dev-team/docs/lace-architecture.md).
 

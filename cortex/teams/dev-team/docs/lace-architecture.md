@@ -12,17 +12,18 @@ The [core job](../../../lace/core.lace.ts) describes the vocabulary for agents.
 ## Jobs and tasks
 
 Every `*.lace.ts` receipt default-exports a literal job with `as const satisfies
-Job`. A job is a directory; each named child is another job or a task, like a
-directory or file. A job has at least one child. Property names identify its
-children, and source order is reading order.
+Job`. `Job` is the nonempty readonly group itself. Its entries are tasks or
+other jobs, like files or directories. Jobs are statically declared in receipt
+files and referenced through imports. There is no `children` wrapper or
+string-keyed job lookup. The compiler preserves the exact group and its order.
 
-An instruction has `kind: NodeKind.Instruction` and literal `text`. A shell
-command has `kind: NodeKind.ShellCommand`, literal `script`, and `cwd`. The
+An instruction has `kind: TaskKind.Instruction` and literal `text`. A shell
+command has `kind: TaskKind.ShellCommand`, literal `script`, and `cwd`. The
 working directory selects the consuming project root or the Cortex library
 root. The agent resolves both roots from the session before using commands.
 
 The agent reads the root job, follows its prose, and descends into the selected
-children. Conditions and context selection remain instructions for the agent.
+jobs. Conditions and context selection remain instructions for the agent.
 Lace supplies declarations; the host supplies execution tools. A command runs
 only when the agent invokes the host's shell tool under the current assignment.
 
@@ -33,12 +34,14 @@ only when the agent invokes the host's shell tool under the current assignment.
 
 ## Composition
 
-Import another receipt's default job to reuse the whole job or a named child.
-The [common receipt](../agents/typescript-dev/receipts/common.lace.ts) declares
-shared context and check commands. The
+Import another receipt's default job as a typed reference to its static
+declaration. The [common receipt](../agents/typescript-dev/receipts/common.lace.ts)
+groups the shared [context](../agents/typescript-dev/receipts/context.lace.ts),
+[compile](../agents/typescript-dev/receipts/compile.lace.ts), and
+[verify](../agents/typescript-dev/receipts/verify.lace.ts) jobs. The
 [development receipt](../agents/typescript-dev/receipts/development.lace.ts)
-imports its context and commands into a nested job. TypeScript retains the
-literal child names, rejecting missing imports and nonexistent child references.
+reuses those same declarations around its own instruction. TypeScript checks
+the imported jobs and rejects missing references and invalid task positions.
 
 Read imported sources before applying their instructions. Reuse their canonical
 declarations instead of copying command text. Relative imports resolve from the
@@ -46,7 +49,7 @@ receipt file. Paths in prose resolve from the stated root or source document.
 
 - **Prohibited:** copy a shared command into several receipts and update only one.
 
-- **Preferred:** import its named child from the owning receipt.
+- **Preferred:** import the job containing that command from its owning receipt.
 
 ## Core and receipt ownership
 
@@ -72,8 +75,8 @@ receipt in the library, the model, and its contract tests. It uses strict types,
 exact optional properties, checked indexed access, unused-code checks, and
 `noEmit`. The shared Bun workspace owns all dependencies and its lockfile.
 
-The grammar allows imports, literal job/task objects, enum members, and references
-to imported children. It requires a default job, nonempty children, and literal
+The grammar allows imports, literal job groups and task objects, enum members,
+and references to statically declared jobs. It requires a default nonempty job and literal
 prose and scripts. It rejects functions, calls, loops, conditionals, assignments,
 spreads, interpolation, type casts, and imports of arbitrary implementation code.
 TypeScript validates task fields, discriminants, working directories, and the

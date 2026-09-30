@@ -1,25 +1,6 @@
-import {
-  type Job,
-  NodeKind,
-  WorkingDirectory,
-} from "../../../../../lace/src/ts/lace.ts";
+import { type Job } from "../../../../../lace/src/ts/lace.ts";
+import context from "./context.lace.ts";
+import compile from "./compile.lace.ts";
+import verify from "./verify.lace.ts";
 
-export default {
-  kind: NodeKind.Job,
-  children: {
-    context: {
-      kind: NodeKind.Instruction,
-      text: "Identify the consuming project root and Cortex library root before using these example tasks. Reuse the existing tool installation and the library's shared dependencies.",
-    },
-    compile_receipts: {
-      kind: NodeKind.ShellCommand,
-      cwd: WorkingDirectory.LibraryRoot,
-      script: "bun run --filter @meta-cortex/lace check",
-    },
-    verify_receipts: {
-      kind: NodeKind.ShellCommand,
-      cwd: WorkingDirectory.LibraryRoot,
-      script: "bun run --filter @meta-cortex/lace verify",
-    },
-  },
-} as const satisfies Job;
+export default [context, compile, verify] as const satisfies Job;

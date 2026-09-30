@@ -2,11 +2,10 @@
  * Neural Lace is Cortex's agent-readable declaration language.
  * Read receipt files as text; do not import them to execute code.
  * Each receipt exports one Job. Jobs are directories; tasks are files.
- * A job's named children contain other jobs or either of the two task kinds.
- * Imported jobs and children compose the same tree without copying instructions.
+ * A Job is the group itself: a nonempty readonly sequence of tasks and jobs.
+ * Statically declared jobs compose through imports without name-keyed lookup.
  */
-export enum NodeKind {
-  Job = "job",
+export enum TaskKind {
   Instruction = "instruction",
   ShellCommand = "shell-command",
 }
@@ -19,13 +18,13 @@ export enum WorkingDirectory {
 
 /** Prose for the agent to interpret, including conditions and context selection. */
 export interface Instruction {
-  readonly kind: NodeKind.Instruction;
+  readonly kind: TaskKind.Instruction;
   readonly text: string;
 }
 
 /** Declared shell text. Compilation and importing never run this command. */
 export interface ShellCommand {
-  readonly kind: NodeKind.ShellCommand;
+  readonly kind: TaskKind.ShellCommand;
   readonly cwd: WorkingDirectory;
   readonly script: string;
 }
@@ -35,16 +34,5 @@ export type Task = Instruction | ShellCommand;
 
 export type LaceNode = Job | Task;
 
-/**
- * This is the receipt's declaration format, not an untyped application record.
- * Property names identify files/directories; every value is a concrete LaceNode.
- * Source order is reading order. The receipt grammar requires nonempty children.
- */
-export interface JobChildren {
-  readonly [name: string]: LaceNode;
-}
-
-export interface Job {
-  readonly kind: NodeKind.Job;
-  readonly children: JobChildren;
-}
+/** Jobs are statically declared groups; the compiler rejects an empty group. */
+export type Job = readonly [LaceNode, ...LaceNode[]];

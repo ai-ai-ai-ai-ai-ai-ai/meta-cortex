@@ -42,9 +42,9 @@ export class ReceiptGrammar {
           "error",
           {
             selector:
-              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, TSSatisfiesExpression, TSAsExpression, TSTypeReference, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression)",
+              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, TSSatisfiesExpression, TSAsExpression, TSTypeReference, ArrayExpression, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression)",
             message:
-              "Receipts contain only imports, literal jobs/tasks, and imported child references.",
+              "Receipts contain only imports, literal jobs/tasks, and static job references.",
           },
           {
             selector: "Program:not(:has(> ExportDefaultDeclaration))",
@@ -70,22 +70,20 @@ export class ReceiptGrammar {
             message: "Only 'as const' is permitted; do not cast a receipt.",
           },
           {
-            selector:
-              "TSAsExpression > :not(ObjectExpression, TSTypeReference)",
+            selector: "TSAsExpression > :not(ArrayExpression, TSTypeReference)",
             message: "Declare a literal root job instead of aliasing a file.",
           },
           {
-            selector: "ObjectExpression[properties.length=0]",
-            message: "Jobs must contain at least one named child.",
+            selector: "ArrayExpression[elements.length=0]",
+            message: "Jobs must contain at least one task or job.",
           },
           {
             selector: "Property[computed=true], Property[shorthand=true]",
-            message: "Give every child and field an explicit literal name.",
+            message: "Give every task field an explicit literal name.",
           },
           {
             selector: "Literal[value=/^\\s*$/]",
-            message:
-              "Instruction text, commands, and child names are nonblank.",
+            message: "Instruction text and commands are nonblank.",
           },
           {
             selector: "TemplateLiteral[expressions.length!=0]",
@@ -98,8 +96,7 @@ export class ReceiptGrammar {
           {
             selector:
               "ImportDeclaration[source.value=/\\.lace\\.ts$/] > ImportSpecifier",
-            message:
-              "Import a receipt's default job, then select its children.",
+            message: "Import a receipt's default job as a static reference.",
           },
         ],
       },
