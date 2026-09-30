@@ -28,7 +28,7 @@ export default Job.statement({
             "Jobs represent directories; tasks represent files.",
             "Entry is the union of Job and Task.",
             "Task is the union of Statement and ShellCommand.",
-            "Prompt is the union of Paragraph, BulletList, and EnclosedList.",
+            "Prompt is the union of PromptStatement, BulletList, and EnclosedList.",
           ],
         })
           .statement({
@@ -120,9 +120,9 @@ export default Job.statement({
                 ],
               },
               {
-                label: "Paragraph",
+                label: "Prompt statement",
                 items: [
-                  "Declare kind: PromptKind.Paragraph and literal content for one coherent paragraph.",
+                  "Declare kind: PromptKind.Statement and literal content for a prompt statement.",
                 ],
               },
               {

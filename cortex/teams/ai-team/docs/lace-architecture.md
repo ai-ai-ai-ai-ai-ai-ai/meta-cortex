@@ -125,7 +125,7 @@ ShellCommand. The builder supplies each task discriminator.
 
 ```typescript
 export default Job.statement({
-  kind: PromptKind.Paragraph,
+  kind: PromptKind.Statement,
   content: "A Job groups Cortex context in source order.",
 }).shellCommand({
   cwd: WorkingDirectory.LibraryRoot,
@@ -135,10 +135,10 @@ export default Job.statement({
 
 ### Prompt structure
 
-`Prompt = Paragraph | BulletList | EnclosedList` is a discriminated union.
+`Prompt = PromptStatement | BulletList | EnclosedList` is a discriminated union.
 Each shape declares its `PromptKind`:
 
-- **Paragraph:** one `content` string for connected prose.
+- **Prompt statement:** `PromptStatement` with one literal `content` string.
 - **Bullet list:** an `items` array of strings for parallel facts or actions.
 - **Enclosed list:** an `items` array of labelled groups. Each group has a
   `label` and its own string `items` array.
@@ -169,7 +169,7 @@ passes the grammar, but leaves their relationship inside an unstructured string.
 
 ```typescript
 export default Job.statement({
-  kind: PromptKind.Paragraph,
+  kind: PromptKind.Statement,
   content:
     "Prohibited: change Lace while authoring a receipt. Preferred: use existing Lace declarations.",
 });
@@ -329,7 +329,7 @@ This compiles because `Promise.name` is a string, but fails the grammar.
 
 ```typescript
 export default Job.statement({
-  kind: PromptKind.Paragraph,
+  kind: PromptKind.Statement,
   content: Promise.name,
 });
 ```
@@ -339,7 +339,7 @@ The compiler checks the prompt type; the grammar checks its declaration form.
 
 ```typescript
 export default Job.statement({
-  kind: PromptKind.Paragraph,
+  kind: PromptKind.Statement,
   content: "Read the assigned context.",
 });
 ```

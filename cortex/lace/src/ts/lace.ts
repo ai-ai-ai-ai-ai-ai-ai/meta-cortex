@@ -21,13 +21,13 @@ export enum WorkingDirectory {
 
 /** Standard prompt shapes keep prose and list structure explicit. */
 export enum PromptKind {
-  Paragraph = "paragraph",
+  Statement = "statement",
   BulletList = "bullet-list",
   EnclosedList = "enclosed-list",
 }
 
-export interface Paragraph {
-  readonly kind: PromptKind.Paragraph;
+export interface PromptStatement {
+  readonly kind: PromptKind.Statement;
   readonly content: string;
 }
 
@@ -46,7 +46,7 @@ export interface EnclosedList {
   readonly items: readonly EnclosedListItem[];
 }
 
-export type Prompt = Paragraph | BulletList | EnclosedList;
+export type Prompt = PromptStatement | BulletList | EnclosedList;
 
 /** Literal Cortex prose: explanations, specifications, rules, and instructions. */
 export interface Statement {
@@ -122,8 +122,8 @@ export class Job {
 
   private snapshotPrompt(prompt: Prompt): Prompt {
     switch (prompt.kind) {
-      case PromptKind.Paragraph: {
-        const snapshot: Paragraph = { ...prompt };
+      case PromptKind.Statement: {
+        const snapshot: PromptStatement = { ...prompt };
         return Object.freeze(snapshot);
       }
       case PromptKind.BulletList: {

@@ -12,7 +12,7 @@ class GrammarCases {
   static readonly imports = `
 import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
 `;
-  static readonly root = `export default Job.statement({ kind: PromptKind.Paragraph, content: "Read the assigned context." });
+  static readonly root = `export default Job.statement({ kind: PromptKind.Statement, content: "Read the assigned context." });
 `;
   static readonly rejected: RejectedSyntaxCases = [
     {
@@ -32,7 +32,7 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "a mutable child binding",
-      source: `let child = Job.statement({ kind: PromptKind.Paragraph, content: "Read context." }); export default Job.job(child);`,
+      source: `let child = Job.statement({ kind: PromptKind.Statement, content: "Read context." }); export default Job.job(child);`,
       diagnostic: "top-level const",
     },
     {
@@ -42,7 +42,7 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "a local prompt binding",
-      source: `const prompt = { kind: PromptKind.Paragraph, content: "Read context." }; export default Job.statement(prompt);`,
+      source: `const prompt = { kind: PromptKind.Statement, content: "Read context." }; export default Job.statement(prompt);`,
       diagnostic: "literal objects",
     },
     {
@@ -52,7 +52,7 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "a computed builder method",
-      source: `export default Job["statement"]({ kind: PromptKind.Paragraph, content: "Read context." });`,
+      source: `export default Job["statement"]({ kind: PromptKind.Statement, content: "Read context." });`,
       diagnostic: "Call only statement, shellCommand, or job builders",
     },
     {
@@ -67,12 +67,12 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "a size call in a receipt",
-      source: `const child = Job.statement({ kind: PromptKind.Paragraph, content: "Read context." }); export default child.size();`,
+      source: `const child = Job.statement({ kind: PromptKind.Statement, content: "Read context." }); export default child.size();`,
       diagnostic: "Call only statement, shellCommand, or job builders",
     },
     {
       scenario: "destructuring a local Job",
-      source: `const { child } = Job.statement({ kind: PromptKind.Paragraph, content: "Read context." }); export default Job.job(child);`,
+      source: `const { child } = Job.statement({ kind: PromptKind.Statement, content: "Read context." }); export default Job.job(child);`,
       diagnostic: "must name a Job builder chain",
     },
     {
@@ -82,7 +82,7 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "a task at the root",
-      source: `export default { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } };`,
+      source: `export default { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } };`,
       diagnostic: "default-export a Job builder chain",
     },
     {
@@ -93,12 +93,12 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "a plain object instead of a Job instance",
-      source: `export default { entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }] };`,
+      source: `export default { entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }] };`,
       diagnostic: "default-export a Job builder chain",
     },
     {
       scenario: "an array instead of a Job instance",
-      source: `export default [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }];`,
+      source: `export default [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }];`,
       diagnostic: "default-export a Job builder chain",
     },
     {
@@ -108,8 +108,8 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
       diagnostic: "only imports, Job builders",
     },
     {
-      scenario: "blank paragraph content",
-      source: `export default Job.statement({ kind: PromptKind.Paragraph, content: "   " });
+      scenario: "blank prompt statement content",
+      source: `export default Job.statement({ kind: PromptKind.Statement, content: "   " });
 `,
       diagnostic: "nonblank",
     },
@@ -222,12 +222,12 @@ export default Job.job(...common);
     {
       scenario: "template interpolation",
       source:
-        "export default Job.statement({ kind: PromptKind.Paragraph, content: `Read ${context}.` });\n",
+        "export default Job.statement({ kind: PromptKind.Statement, content: `Read ${context}.` });\n",
       diagnostic: "without interpolation",
     },
     {
       scenario: "ambient runtime values",
-      source: `export default Job.statement({ kind: PromptKind.Paragraph, content: Promise.name });
+      source: `export default Job.statement({ kind: PromptKind.Statement, content: Promise.name });
 `,
       diagnostic: "prompt content, labels, and commands as literals",
     },
@@ -247,13 +247,13 @@ export default Job.job(...common);
     },
     {
       scenario: "an ambient value in an enum field",
-      source: `export default Job.job({ kind: Function.prototype, prompt: { kind: PromptKind.Paragraph, content: "Read context." } });
+      source: `export default Job.job({ kind: Function.prototype, prompt: { kind: PromptKind.Statement, content: "Read context." } });
 `,
       diagnostic: "Use PromptKind for kind",
     },
     {
       scenario: "computed enum access",
-      source: `export default Job.job({ kind: TaskKind["Statement"], prompt: { kind: PromptKind.Paragraph, content: "Read context." } });
+      source: `export default Job.job({ kind: TaskKind["Statement"], prompt: { kind: PromptKind.Statement, content: "Read context." } });
 `,
       diagnostic: "Member access is limited",
     },
@@ -261,7 +261,7 @@ export default Job.job(...common);
 }
 test("literal statements, nested Jobs, and static imports pass the grammar", () => {
   const source = `${GrammarCases.imports}import common from "./common.lace.ts";
-export default Job.job(common).job(Job.job(common)).statement({ kind: PromptKind.Paragraph, content: \`Read the context.
+export default Job.job(common).job(Job.job(common)).statement({ kind: PromptKind.Statement, content: \`Read the context.
 Then apply its instructions.\` }).shellCommand({
     "cwd": WorkingDirectory.LibraryRoot,
     "script": "bun run --filter @meta-cortex/lace check"
@@ -298,7 +298,7 @@ export default Job.job(context);
 });
 test("the grammar rejects ambient strings that the compiler accepts", () => {
   const source = `import { Job, TaskKind, PromptKind } from "../../src/ts/lace.ts";
-export default Job.statement({ kind: PromptKind.Paragraph, content: Promise.name });
+export default Job.statement({ kind: PromptKind.Statement, content: Promise.name });
 `;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages().join("\n")).toContain(

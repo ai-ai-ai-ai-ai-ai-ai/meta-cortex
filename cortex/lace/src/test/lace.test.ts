@@ -26,18 +26,18 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.t
     },
     {
       scenario: "a task at the file root",
-      source: `const receipt: Job = { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }; export default receipt;`,
+      source: `const receipt: Job = { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }; export default receipt;`,
       diagnostic: "does not exist in type",
     },
     {
       scenario: "an arbitrary name-keyed job",
-      source: `export default Job.job({ invented: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } } });
+      source: `export default Job.job({ invented: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } } });
 `,
       diagnostic: "does not exist in type",
     },
     {
       scenario: "an array instead of a Job instance",
-      source: `export default Job.job([{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }]);
+      source: `export default Job.job([{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }]);
 `,
       diagnostic: "not assignable",
     },
@@ -48,13 +48,13 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.t
     },
     {
       scenario: "a task instead of a nested Job",
-      source: `export default Job.job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } });
+      source: `export default Job.job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } });
 `,
       diagnostic: "does not exist in type",
     },
     {
       scenario: "the replaced instruction kind",
-      source: `export default Job.job({ kind: TaskKind.Instruction, prompt: { kind: PromptKind.Paragraph, content: "Read context." } });
+      source: `export default Job.job({ kind: TaskKind.Instruction, prompt: { kind: PromptKind.Statement, content: "Read context." } });
 `,
       diagnostic: "Property 'Instruction' does not exist",
     },
@@ -78,14 +78,14 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.t
       diagnostic: "not assignable",
     },
     {
-      scenario: "a paragraph without content",
-      source: `export default Job.statement({ kind: PromptKind.Paragraph });
+      scenario: "a prompt statement without content",
+      source: `export default Job.statement({ kind: PromptKind.Statement });
 `,
       diagnostic: "content",
     },
     {
-      scenario: "bullet items on a paragraph",
-      source: `export default Job.statement({ kind: PromptKind.Paragraph, items: ["Read context."] });
+      scenario: "bullet items on a prompt statement",
+      source: `export default Job.statement({ kind: PromptKind.Statement, items: ["Read context."] });
 `,
       diagnostic: "items",
     },
@@ -190,10 +190,10 @@ export default Job.job(common).job(Job.job(compile)).shellCommand({
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
 });
-test("structured prompts support paragraphs, bullets, and labelled groups", () => {
+test("structured prompts support prompt statements, bullets, and labelled groups", () => {
   const source = `import { Job, TaskKind, PromptKind } from "../../src/ts/lace.ts";
 export default Job.statement({
-    kind: PromptKind.Paragraph,
+    kind: PromptKind.Statement,
     content: "Jobs group Cortex context in source order.",
 }).statement({
     kind: PromptKind.BulletList,
@@ -230,7 +230,7 @@ compile.content;
 });
 test("Job owns immutable state without changing supplied prompts", () => {
   const prompt: Prompt = {
-    kind: PromptKind.Paragraph,
+    kind: PromptKind.Statement,
     content: "Read the assigned context.",
   };
   const job = Job.statement(prompt);
@@ -242,7 +242,7 @@ test("Job owns immutable state without changing supplied prompts", () => {
 });
 test("nesting returns a new Job and preserves the original", () => {
   const prompt: Prompt = {
-    kind: PromptKind.Paragraph,
+    kind: PromptKind.Statement,
     content: "Read the assigned context.",
   };
   const original = Job.statement(prompt);
@@ -305,7 +305,7 @@ const childJob = Job.statement({
   items: ["Read the assigned context."],
 });
 export default Job.statement({
-  kind: PromptKind.Paragraph,
+  kind: PromptKind.Statement,
   content: "Receipt authoring uses the existing Lace vocabulary.",
 }).statement({
   kind: PromptKind.BulletList,
