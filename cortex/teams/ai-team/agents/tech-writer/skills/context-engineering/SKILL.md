@@ -79,7 +79,7 @@ When the assignment concerns Cortex's own typed context files, use the
 [Neural Lace architecture](../../../../docs/lace-architecture.md).
 Its [authoring example](examples/lace/authoring.lace.ts) demonstrates context
 composition with imported jobs and existing compilation checks. Follow the
-[core ownership rules](../../../../../../lace/AGENTS.md) during receipt authoring.
+[core ownership rules](../../../../../../lace/AGENTS.ts) during receipt authoring.
 
 **Prohibited:** use the context format as an application programming API or
 modify its core to make an assigned context receipt compile.

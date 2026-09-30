@@ -110,7 +110,9 @@ Context Engineering owns their authoring examples. From
 `cortex/`, run `bun run --filter @meta-cortex/lace check` to compile the receipt
 project, or `bun run --filter @meta-cortex/lace verify` for all Lace checks.
 The workspace verification above already includes Lace. Receipt authoring uses
-the [existing core](cortex/lace/AGENTS.md) without changing its types or checks.
+the [existing core](cortex/lace/AGENTS.ts) without changing its types or checks.
+Lace's own entry point uses the same Job declarations. Read it as text; the
+other Markdown context files retain their current roles.
 
 ## Publish a release
 

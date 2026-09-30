@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "check": "tsc --noEmit -p ../tsconfig.json",
-    "lint": "cd .. && eslint --config lace/eslint.config.js lace '**/*.lace.ts' --max-warnings 0",
-    "format": "cd .. && prettier --write lace '**/*.lace.ts' tsconfig.json",
-    "format:check": "cd .. && prettier --check lace '**/*.lace.ts' tsconfig.json",
+    "lint": "cd .. && eslint --config lace/eslint.config.js lace '**/*.lace.ts' '**/AGENTS.ts' --max-warnings 0",
+    "format": "cd .. && prettier --write lace '**/*.lace.ts' '**/AGENTS.ts' tsconfig.json",
+    "format:check": "cd .. && prettier --check lace '**/*.lace.ts' '**/AGENTS.ts' tsconfig.json",
     "test": "bun test src/test",
     "verify": "bun run format:check && bun run lint && bun run check && bun run test"
   },

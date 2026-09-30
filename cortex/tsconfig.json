@@ -6,6 +6,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["lace/*.js", "lace/src/**/*.ts", "**/*.lace.ts"],
+  "include": ["lace/*.js", "lace/src/**/*.ts", "**/*.lace.ts", "**/AGENTS.ts"],
   "exclude": ["node_modules", "**/node_modules"]
 }

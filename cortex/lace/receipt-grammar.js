@@ -5,7 +5,7 @@ export class ReceiptGrammar {
   /** @returns {import("eslint").Linter.Config} */
   static configuration() {
     return {
-      files: ["**/*.lace.ts"],
+      files: ["**/*.lace.ts", "**/AGENTS.ts"],
       linterOptions: { noInlineConfig: true },
       languageOptions: { parser: tseslint.parser },
       plugins: {
@@ -29,7 +29,7 @@ export class ReceiptGrammar {
             patterns: [
               {
                 regex:
-                  "^(?!(?:(?:\\.\\.?/)+(?:lace/)?src/ts/lace\\.ts|(?:\\.\\.?/)[^\\n]*\\.lace\\.ts)$)",
+                  "^(?!(?:(?:\\.\\.?/)+(?:lace/)?src/ts/lace\\.ts|(?:\\.\\.?/)(?:[^\\n]*\\.lace\\.ts|(?:[^\\n]*/)?AGENTS\\.ts))$)",
                 message: "Import only the Lace model or another receipt.",
               },
             ],
@@ -94,7 +94,7 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              "ImportDeclaration[source.value=/\\.lace\\.ts$/] > ImportSpecifier",
+              "ImportDeclaration[source.value=/(\\.lace\\.ts|\\/AGENTS\\.ts)$/] > ImportSpecifier",
             message: "Import a receipt's default job as a static reference.",
           },
         ],

@@ -8,16 +8,19 @@ checks their structure and imports without executing their commands.
 
 Lace belongs to context authoring through Context Engineering. It defines the
 format of Cortex context, not an API for coding agents or application workflows.
-This initial architecture adds a parallel foundation. Existing Markdown
-instructions, skills, practices, and YAML catalogs keep their current roles.
-Agents learn the vocabulary by reading the core's TypeScript definitions as text.
+This initial architecture adds a parallel foundation.
+Lace describes itself in [AGENTS.ts](../../../lace/AGENTS.ts), replacing its own
+Markdown entry point. Other Markdown instructions, skills, practices, and YAML
+catalogs keep their current roles. Agents learn the vocabulary by reading the
+core's TypeScript definitions as text, then read its entry point for instructions.
 
 ## Jobs and tasks
 
 ### Job construction
 
-Every `*.lace.ts` receipt default-exports a `new Job(...)` instance. Pass tasks
-and imported jobs directly to its constructor. Use another `new Job(...)` for
+Every context receipt, including `AGENTS.ts`, default-exports a `new Job(...)`
+instance. Pass tasks and imported jobs directly to its constructor.
+Use another `new Job(...)` for
 a nested group, such as `new Job(context, new Job(compile, verify))`.
 The constructor checks that each entry is a task or another Job.
 Its readonly `entries` preserve their source order.
@@ -69,7 +72,7 @@ receipt file. Paths in prose resolve from the stated root or source document.
 
 ## Core and receipt ownership
 
-The [core ownership rules](../../../lace/AGENTS.md) protect the vocabulary and
+The [core ownership rules](../../../lace/AGENTS.ts) protect the vocabulary and
 checks. An assignment to author receipts authorizes receipt changes and running
 existing verification. It does not authorize editing Lace, tests, package scripts,
 compiler settings, or lint rules. Core changes require explicit user authorization
@@ -78,13 +81,15 @@ the capability it cannot express.
 
 These are agent assignment rules. TypeScript enforces readonly declarations;
 it does not enforce filesystem write permissions. The core lives under `lace/`
-and contains the model and validation code. It contains no context
-receipts or instantiated context jobs and tasks. Context receipts belong in the same subject
-locations as their Markdown context, outside the core. The initial examples live
-with Context Engineering; this foundation does not migrate existing Markdown.
+and contains the model and validation code. Those implementation files contain
+no instantiated context jobs or tasks. Its `AGENTS.ts` entry point describes
+Lace with the same declaration language used by subject receipts. Subject
+receipts belong beside their Markdown context, outside the core. The initial
+examples live with Context Engineering. Only Lace's own Markdown entry point
+has migrated.
 
-- **Prohibited:** put an instruction job inside `lace/`, or weaken the
-  type model to make a context receipt pass.
+- **Prohibited:** put a subject instruction job in the core implementation,
+  or weaken the type model to make a context receipt pass.
 
 - **Preferred:** write the receipt beside its owning context and keep the core
   unchanged during authoring.
@@ -92,8 +97,9 @@ with Context Engineering; this foundation does not migrate existing Markdown.
 ## Validation project
 
 The [TypeScript project](../../../tsconfig.json) includes every `*.lace.ts`
-receipt in the library, the model, and its contract tests. It uses strict types,
-exact optional properties, checked indexed access, unused-code checks, and
+receipt and `AGENTS.ts` entry point in the library, the model, and its contract
+tests. Both context filenames use the same declaration grammar.
+The compiler uses strict types, exact optional properties, checked indexed access, unused-code checks, and
 `noEmit`. The shared Bun workspace owns all dependencies and its lockfile.
 
 The grammar allows imports, Job construction, literal task objects, enum members,

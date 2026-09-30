@@ -8,9 +8,9 @@ type GrammarMessages = readonly string[];
 export class ReceiptSyntax {
   constructor(private readonly source: string) {}
 
-  messages(): GrammarMessages {
+  messages(filename = "case.lace.ts"): GrammarMessages {
     const config: Linter.Config[] = [ReceiptGrammar.configuration()];
-    const options: Linter.LintOptions = { filename: "case.lace.ts" };
+    const options: Linter.LintOptions = { filename };
     return new Linter()
       .verify(this.source, config, options)
       .map((finding) => finding.message);

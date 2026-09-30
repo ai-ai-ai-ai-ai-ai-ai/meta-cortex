@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
@@ -130,6 +131,39 @@ Then apply its instructions.\` },
 );
 `;
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
+});
+
+test("Lace's own AGENTS.ts entry point passes the receipt grammar", () => {
+  const source = readFileSync(
+    new URL("../../AGENTS.ts", import.meta.url),
+    "utf8",
+  );
+  expect(new ReceiptSyntax(source).messages("lace/AGENTS.ts")).toEqual([]);
+});
+
+test("AGENTS.ts cannot bypass the receipt grammar", () => {
+  const source = `${GrammarCases.imports} export default [];`;
+  expect(
+    new ReceiptSyntax(source).messages("lace/AGENTS.ts").join("\n"),
+  ).toContain("default-export a Job instance");
+});
+
+test("a receipt can reuse an AGENTS.ts default job", () => {
+  const source = `${GrammarCases.imports}
+import lace from "../../lace/AGENTS.ts";
+export default new Job(lace);
+`;
+  expect(new ReceiptSyntax(source).messages()).toEqual([]);
+});
+
+test("AGENTS.ts imports must select the default job", () => {
+  const source = `${GrammarCases.imports}
+import { context } from "../../lace/AGENTS.ts";
+export default new Job(context);
+`;
+  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
+    "Import a receipt's default job",
+  );
 });
 
 test("the grammar rejects ambient strings that the compiler accepts", () => {
