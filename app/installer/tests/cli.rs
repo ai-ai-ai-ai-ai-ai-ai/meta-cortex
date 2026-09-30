@@ -201,7 +201,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     let customized = format!(
         "# Keep settings\n{}",
         fs::read_to_string(&config)?.replace(
-            "[team.agent]\nmodel = \"gpt-6-luna\"\nreasoning_effort = \"max\"",
+            "[team.agent]\nmodel = \"gpt-6.1-sol\"\nreasoning_effort = \"low\"",
             "[team.agent]\nmodel = \"gpt-6-astra\"\nreasoning_effort = \"high\""
         )
     );
