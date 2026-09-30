@@ -53,15 +53,15 @@ export class FormSchema {
     required: FormSchema.requirement.pipe(
       Schema.withDecodingDefaultType(Effect.succeed(Requirement.Required)),
     ),
-  } satisfies Schema.Struct.Fields;
+  };
   private static readonly textFields = {
     ...FormSchema.common,
     type: Schema.Literal(FieldType.Text),
-  } satisfies Schema.Struct.Fields;
+  };
   private static readonly integerFields = {
     ...FormSchema.common,
     type: Schema.Literal(FieldType.Integer),
-  } satisfies Schema.Struct.Fields;
+  };
   private static readonly choiceFields = {
     ...FormSchema.common,
     type: Schema.Literal(FieldType.Choice).pipe(
@@ -77,7 +77,7 @@ export class FormSchema {
         ),
       ),
     ),
-  } satisfies Schema.Struct.Fields;
+  };
   static readonly field = Schema.Union([
     Schema.Struct(FormSchema.textFields),
     Schema.Struct(FormSchema.integerFields),
@@ -93,7 +93,7 @@ export class FormSchema {
         ),
       ),
     ),
-  } satisfies Schema.Struct.Fields;
+  };
   static readonly value = Schema.Struct(FormSchema.formFields);
 }
 

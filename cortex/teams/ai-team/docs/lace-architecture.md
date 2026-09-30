@@ -21,7 +21,7 @@ and imported jobs directly to its constructor. Use another `new Job(...)` for
 a nested group, such as `new Job(context, new Job(compile, verify))`.
 The constructor requires at least one entry and checks every entry's type.
 Its readonly `entries` preserve exact task types and their source order.
-No array export, type assertion, or `satisfies` clause is required.
+The constructor checks the contents directly; no assertion clause is needed.
 
 - **Prohibited:** export `[context, compile]` and treat that array as a job.
 

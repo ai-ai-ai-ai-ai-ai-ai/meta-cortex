@@ -15,6 +15,10 @@ export default [
       "no-restricted-syntax": [
         "error",
         {
+          selector: "TSSatisfiesExpression",
+          message: "Use typed declarations or constructors to check contracts.",
+        },
+        {
           selector: "ConditionalExpression",
           message:
             "Use exhaustive native switch branches over domain outcomes.",
