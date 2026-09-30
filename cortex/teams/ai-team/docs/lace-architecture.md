@@ -43,7 +43,8 @@ does not move subject receipts into the implementation.
 - Include at least one entry in each Job. The declaration grammar enforces
   this requirement; the constructor alone permits an empty Job.
 
-The TypeScript fragments below assume `Job`, `TaskKind`, and `WorkingDirectory`
+The TypeScript fragments below assume `Job`, `TaskKind`, `PromptKind`, and
+`WorkingDirectory`
 are imported from the model. `context`, `compile`, and `verify` are default Jobs
 imported from the linked Context Engineering examples.
 Each fragment is a separate receipt body.
@@ -65,7 +66,8 @@ export default new Job(context, new Job(compile, verify));
 ### Immutable Job operations
 
 Job owns its contents in runtime-private storage. Construction copies and
-freezes task values without freezing the caller's objects. Nested Jobs are
+freezes task values, including prompt objects, lists, and labelled groups,
+without freezing the caller's objects. Nested Jobs are
 already immutable. No operation returns the entry collection or task references.
 
 - `size()` returns the number of immediate entries.
@@ -97,7 +99,7 @@ context.size();
 Jobs represent directories; tasks represent files.
 `Task = Statement | ShellCommand` is a discriminated union:
 
-- **Statement:** `kind: TaskKind.Statement` and literal `text`.
+- **Statement:** `kind: TaskKind.Statement` and a structured `prompt: Prompt`.
 - **Shell command:** `kind: TaskKind.ShellCommand`, literal `script`, and `cwd`.
   Choose `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
 
@@ -116,13 +118,90 @@ ShellCommand. Give each variant its own fields.
 
 ```typescript
 export default new Job(
-  { kind: TaskKind.Statement, text: "A Job groups Cortex context in source order." },
+  {
+    kind: TaskKind.Statement,
+    prompt: {
+      kind: PromptKind.Paragraph,
+      content: "A Job groups Cortex context in source order.",
+    },
+  },
   {
     kind: TaskKind.ShellCommand,
     cwd: WorkingDirectory.LibraryRoot,
     script: "bun run --filter @meta-cortex/lace check",
   },
 );
+```
+
+### Prompt structure
+
+`Prompt = Paragraph | BulletList | EnclosedList` is a discriminated union.
+Each shape declares its `PromptKind`:
+
+- **Paragraph:** one `content` string for connected prose.
+- **Bullet list:** an `items` array of strings for parallel facts or actions.
+- **Enclosed list:** an `items` array of labelled groups. Each group has a
+  `label` and its own string `items` array.
+
+Use one bullet per independent fact or action. Use labelled groups when their
+relationship matters, such as required/prohibited actions or prohibited/preferred
+examples. Each enclosed group contains bullets; this shape does not introduce
+arbitrary recursive document elements.
+
+**Prohibited:** assign a raw string to `prompt`. The compiler requires one of
+its declared shapes.
+
+```typescript
+export default new Job({
+  kind: TaskKind.Statement,
+  prompt: "Read context. Compile the receipt.",
+});
+```
+
+**Preferred:** declare independent actions as separate bullet items.
+
+```typescript
+export default new Job({
+  kind: TaskKind.Statement,
+  prompt: {
+    kind: PromptKind.BulletList,
+    items: ["Read the assigned context.", "Compile the receipt."],
+  },
+});
+```
+
+**Prohibited:** hide opposing examples in one paragraph. This compiles and
+passes the grammar, but leaves their relationship inside an unstructured string.
+
+```typescript
+export default new Job({
+  kind: TaskKind.Statement,
+  prompt: {
+    kind: PromptKind.Paragraph,
+    content: "Prohibited: change Lace while authoring a receipt. Preferred: use existing Lace declarations.",
+  },
+});
+```
+
+**Preferred:** declare the example labels and their bullets explicitly.
+
+```typescript
+export default new Job({
+  kind: TaskKind.Statement,
+  prompt: {
+    kind: PromptKind.EnclosedList,
+    items: [
+      {
+        label: "Prohibited",
+        items: ["Change Lace while authoring a receipt."],
+      },
+      {
+        label: "Preferred",
+        items: ["Use the existing Lace declarations."],
+      },
+    ],
+  },
+});
 ```
 
 ### Statement meaning
@@ -176,7 +255,7 @@ export default new Job(compile);
 ### Agent execution
 
 1. Read the root Job and the imported context sources it selects.
-2. Interpret conditions and context selection from statement text.
+2. Interpret conditions and context selection from statement prompts.
 3. Resolve the project and library roots from the session.
 4. Use the host's shell tool when the context instructs a command within the
    current assignment. Apply the declared working directory.
@@ -247,8 +326,11 @@ a failed receipt alone does not.
 
 The [declaration grammar](../../../lace/receipt-grammar.js) permits static imports,
 Job construction, literal task objects, and imported Job references.
-Enum access is limited to `TaskKind` for `kind` and `WorkingDirectory` for `cwd`.
-Statement text and scripts must be nonblank literals without interpolation.
+Enum access is limited to `TaskKind` and `PromptKind` for their respective `kind`
+fields and `WorkingDirectory` for `cwd`.
+Prompt content, labels, list items, and scripts must be nonblank literals without
+interpolation. Prompt lists must use nonempty literal arrays.
+TypeScript checks the union shapes; the grammar checks literals and nonempty lists.
 
 The grammar rejects arbitrary implementation imports, other constructors,
 function calls, loops, conditionals, assignments, spreads, type assertions,
@@ -260,7 +342,7 @@ This compiles because `Promise.name` is a string, but fails the grammar.
 ```typescript
 export default new Job({
   kind: TaskKind.Statement,
-  text: Promise.name,
+  prompt: { kind: PromptKind.Paragraph, content: Promise.name },
 });
 ```
 
@@ -270,6 +352,6 @@ The compiler checks its task type; the grammar checks its declaration form.
 ```typescript
 export default new Job({
   kind: TaskKind.Statement,
-  text: "Read the assigned context.",
+  prompt: { kind: PromptKind.Paragraph, content: "Read the assigned context." },
 });
 ```

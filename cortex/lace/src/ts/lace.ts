@@ -19,10 +19,39 @@ export enum WorkingDirectory {
   LibraryRoot = "library-root",
 }
 
+/** Standard prompt shapes keep prose and list structure explicit. */
+export enum PromptKind {
+  Paragraph = "paragraph",
+  BulletList = "bullet-list",
+  EnclosedList = "enclosed-list",
+}
+
+export interface Paragraph {
+  readonly kind: PromptKind.Paragraph;
+  readonly content: string;
+}
+
+export interface BulletList {
+  readonly kind: PromptKind.BulletList;
+  readonly items: readonly string[];
+}
+
+export interface EnclosedListItem {
+  readonly label: string;
+  readonly items: readonly string[];
+}
+
+export interface EnclosedList {
+  readonly kind: PromptKind.EnclosedList;
+  readonly items: readonly EnclosedListItem[];
+}
+
+export type Prompt = Paragraph | BulletList | EnclosedList;
+
 /** Literal Cortex prose: explanations, specifications, rules, and instructions. */
 export interface Statement {
   readonly kind: TaskKind.Statement;
-  readonly text: string;
+  readonly prompt: Prompt;
 }
 
 /** Declared shell text. Compilation and importing never run this command. */
@@ -52,8 +81,15 @@ export class Job {
     this.#content = Object.freeze(
       entries.map((entry) =>
         Match.value(entry).pipe(
-          Match.whenOr(statement, shellCommand, (task) => {
-            const snapshot: Task = { ...task };
+          Match.when(statement, (task) => {
+            const snapshot: Statement = {
+              ...task,
+              prompt: this.#snapshotPrompt(task.prompt),
+            };
+            return Object.freeze(snapshot);
+          }),
+          Match.when(shellCommand, (task) => {
+            const snapshot: ShellCommand = { ...task };
             return Object.freeze(snapshot);
           }),
           Match.orElse((job: Job) => job),
@@ -69,5 +105,35 @@ export class Job {
 
   append(entry: Entry): Job {
     return new Job(...this.#content, entry);
+  }
+
+  #snapshotPrompt(prompt: Prompt): Prompt {
+    switch (prompt.kind) {
+      case PromptKind.Paragraph: {
+        const snapshot: Paragraph = { ...prompt };
+        return Object.freeze(snapshot);
+      }
+      case PromptKind.BulletList: {
+        const snapshot: BulletList = {
+          ...prompt,
+          items: Object.freeze([...prompt.items]),
+        };
+        return Object.freeze(snapshot);
+      }
+      case PromptKind.EnclosedList: {
+        const items = prompt.items.map((item) => {
+          const snapshot: EnclosedListItem = {
+            ...item,
+            items: Object.freeze([...item.items]),
+          };
+          return Object.freeze(snapshot);
+        });
+        const snapshot: EnclosedList = {
+          ...prompt,
+          items: Object.freeze(items),
+        };
+        return Object.freeze(snapshot);
+      }
+    }
   }
 }

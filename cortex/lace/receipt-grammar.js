@@ -22,6 +22,7 @@ export class ReceiptGrammar {
           },
         ],
         "no-dupe-keys": "error",
+        "no-sparse-arrays": "error",
         "no-undef": "error",
         "no-restricted-imports": [
           "error",
@@ -39,7 +40,7 @@ export class ReceiptGrammar {
           "error",
           {
             selector:
-              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, NewExpression, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression)",
+              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, NewExpression, ObjectExpression, ArrayExpression, Property, TemplateLiteral, TemplateElement, MemberExpression)",
             message:
               "Receipts contain only imports, Job construction, literal tasks, and static job references.",
           },
@@ -67,8 +68,32 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              ":matches(Property[key.name=/^(text|script)$/], Property[key.value=/^(text|script)$/]):not([value.type='Literal'], [value.type='TemplateLiteral'])",
-            message: "Write statement text and commands as literals.",
+              ":matches(Property[key.name=/^(content|label|script)$/], Property[key.value=/^(content|label|script)$/]):not([value.type='Literal'], [value.type='TemplateLiteral'])",
+            message: "Write prompt content, labels, and commands as literals.",
+          },
+          {
+            selector:
+              ":matches(Property[key.name='prompt'], Property[key.value='prompt']):not([value.type='ObjectExpression'])",
+            message: "Declare a structured prompt object.",
+          },
+          {
+            selector:
+              ":matches(Property[key.name='items'], Property[key.value='items']):not([value.type='ArrayExpression'])",
+            message: "Declare list items as a literal array.",
+          },
+          {
+            selector:
+              "ArrayExpression:not(Property[key.name='items'] > ArrayExpression, Property[key.value='items'] > ArrayExpression)",
+            message: "Arrays belong only to prompt list items.",
+          },
+          {
+            selector: "ArrayExpression[elements.length=0]",
+            message: "Prompt lists contain at least one item.",
+          },
+          {
+            selector:
+              "ArrayExpression > :not(Literal, TemplateLiteral, ObjectExpression)",
+            message: "List items are literal prose or labelled groups.",
           },
           {
             selector:
@@ -77,12 +102,14 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              "Property[value.type='MemberExpression']:not([key.name='kind'][value.object.name='TaskKind'], [key.value='kind'][value.object.name='TaskKind'], [key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
-            message: "Use TaskKind for kind and WorkingDirectory for cwd.",
+              "Property[value.type='MemberExpression']:not([key.name='kind'][value.object.name='TaskKind'], [key.value='kind'][value.object.name='TaskKind'], [key.name='kind'][value.object.name='PromptKind'], [key.value='kind'][value.object.name='PromptKind'], [key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
+            message:
+              "Use TaskKind or PromptKind for kind and WorkingDirectory for cwd.",
           },
           {
             selector: "Literal[value=/^\\s*$/]",
-            message: "Statement text and commands are nonblank.",
+            message:
+              "Prompt content, labels, list items, and commands are nonblank.",
           },
           {
             selector: "TemplateLiteral[expressions.length!=0]",
@@ -90,7 +117,8 @@ export class ReceiptGrammar {
           },
           {
             selector: "TemplateElement[value.raw=/^\\s*$/]",
-            message: "Statement text and commands are nonblank.",
+            message:
+              "Prompt content, labels, list items, and commands are nonblank.",
           },
           {
             selector:

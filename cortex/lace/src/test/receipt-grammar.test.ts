@@ -13,11 +13,11 @@ type RejectedSyntaxCases = readonly RejectedSyntax[];
 
 class GrammarCases {
   static readonly imports = `
-import { Job, TaskKind, WorkingDirectory } from "./src/ts/lace.ts";
+import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
 `;
   static readonly root = `
 export default new Job(
-  { kind: TaskKind.Statement, text: "Read the assigned context." },
+  { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read the assigned context." } },
 );
 `;
   static readonly rejected: RejectedSyntaxCases = [
@@ -28,7 +28,7 @@ export default new Job(
     },
     {
       scenario: "a task at the root",
-      source: `export default { kind: TaskKind.Statement, text: "Read context." };`,
+      source: `export default { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } };`,
       diagnostic: "default-export a Job instance",
     },
     {
@@ -38,12 +38,12 @@ export default new Job(
     },
     {
       scenario: "a plain object instead of a Job instance",
-      source: `export default { entries: [{ kind: TaskKind.Statement, text: "Read context." }] };`,
+      source: `export default { entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }] };`,
       diagnostic: "default-export a Job instance",
     },
     {
       scenario: "an array instead of a Job instance",
-      source: `export default [{ kind: TaskKind.Statement, text: "Read context." }];`,
+      source: `export default [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }];`,
       diagnostic: "default-export a Job instance",
     },
     {
@@ -52,9 +52,74 @@ export default new Job(
       diagnostic: "Construct only Job instances",
     },
     {
-      scenario: "blank statement text",
-      source: `export default new Job({ kind: TaskKind.Statement, text: "   " });`,
+      scenario: "blank paragraph content",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "   " } });`,
       diagnostic: "nonblank",
+    },
+    {
+      scenario: "a raw prompt string",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: "Read context." });`,
+      diagnostic: "structured prompt object",
+    },
+    {
+      scenario: "empty bullets",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [] } });`,
+      diagnostic: "at least one item",
+    },
+    {
+      scenario: "an empty enclosed list",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [] } });`,
+      diagnostic: "at least one item",
+    },
+    {
+      scenario: "an empty enclosed group",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ label: "Required actions", items: [] }] } });`,
+      diagnostic: "at least one item",
+    },
+    {
+      scenario: "a blank bullet",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: ["   "] } });`,
+      diagnostic: "nonblank",
+    },
+    {
+      scenario: "a blank label",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ label: " ", items: ["Read context."] }] } });`,
+      diagnostic: "nonblank",
+    },
+    {
+      scenario: "a runtime label",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ label: Promise.name, items: ["Read context."] }] } });`,
+      diagnostic: "labels, and commands as literals",
+    },
+    {
+      scenario: "runtime list items",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, "items": Promise.name } });`,
+      diagnostic: "literal array",
+    },
+    {
+      scenario: "a runtime bullet",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [Promise.name] } });`,
+      diagnostic: "literal prose or labelled groups",
+    },
+    {
+      scenario: "an enum value as prose",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [TaskKind.Statement] } });`,
+      diagnostic: "literal prose or labelled groups",
+    },
+    {
+      scenario: "sparse bullet items",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [, "Read context."] } });`,
+      diagnostic: "Unexpected comma",
+    },
+    {
+      scenario: "spread bullet items",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [..."Read context."] } });`,
+      diagnostic: "literal prose or labelled groups",
+    },
+    {
+      scenario: "an array passed as a Job entry",
+      source: `export default new Job([new Job()]);`,
+      diagnostic: "Arrays belong only to prompt list items",
     },
     {
       scenario: "arbitrary function calls",
@@ -84,18 +149,18 @@ export default new Job(
     {
       scenario: "template interpolation",
       source:
-        "export default new Job({ kind: TaskKind.Statement, text: `Read ${context}.` });",
+        "export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: `Read ${context}.` } });",
       diagnostic: "without interpolation",
     },
     {
       scenario: "ambient runtime values",
-      source: `export default new Job({ kind: TaskKind.Statement, text: Promise.name });`,
-      diagnostic: "text and commands as literals",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: Promise.name } });`,
+      diagnostic: "prompt content, labels, and commands as literals",
     },
     {
       scenario: "an ambient value in a quoted command field",
       source: `export default new Job({ kind: TaskKind.ShellCommand, "cwd": WorkingDirectory.LibraryRoot, "script": String.name });`,
-      diagnostic: "text and commands as literals",
+      diagnostic: "prompt content, labels, and commands as literals",
     },
     {
       scenario: "an ambient prototype instead of a static job",
@@ -104,12 +169,12 @@ export default new Job(
     },
     {
       scenario: "an ambient value in an enum field",
-      source: `export default new Job({ kind: Function.prototype, text: "Read context." });`,
-      diagnostic: "Use TaskKind for kind",
+      source: `export default new Job({ kind: Function.prototype, prompt: { kind: PromptKind.Paragraph, content: "Read context." } });`,
+      diagnostic: "Use TaskKind or PromptKind for kind",
     },
     {
       scenario: "computed enum access",
-      source: `export default new Job({ kind: TaskKind["Statement"], text: "Read context." });`,
+      source: `export default new Job({ kind: TaskKind["Statement"], prompt: { kind: PromptKind.Paragraph, content: "Read context." } });`,
       diagnostic: "Member access is limited",
     },
   ];
@@ -121,8 +186,8 @@ import common from "./common.lace.ts";
 export default new Job(
   common,
   new Job(common),
-  { kind: TaskKind.Statement, text: \`Read the context.
-Then apply its instructions.\` },
+  { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: \`Read the context.
+Then apply its instructions.\` } },
   {
     "kind": TaskKind.ShellCommand,
     "cwd": WorkingDirectory.LibraryRoot,
@@ -168,14 +233,14 @@ export default new Job(context);
 
 test("the grammar rejects ambient strings that the compiler accepts", () => {
   const source = `
-import { Job, TaskKind } from "../../src/ts/lace.ts";
+import { Job, TaskKind, PromptKind } from "../../src/ts/lace.ts";
 export default new Job(
-  { kind: TaskKind.Statement, text: Promise.name },
+  { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: Promise.name } },
 );
 `;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    "text and commands as literals",
+    "prompt content, labels, and commands as literals",
   );
 });
 

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
-import { Job, TaskKind, type Statement } from "../ts/lace.ts";
+import { Job, TaskKind, PromptKind, type Statement } from "../ts/lace.ts";
 
 interface RejectedDeclaration {
   readonly scenario: string;
@@ -13,23 +13,23 @@ type RejectedDeclarations = readonly RejectedDeclaration[];
 
 class DeclarationCases {
   static readonly imports = `
-import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
+import { Job, TaskKind, PromptKind, WorkingDirectory } from "../ts/lace.ts";
 `;
 
   static readonly rejected: RejectedDeclarations = [
     {
       scenario: "a task at the file root",
-      source: `const receipt: Job = { kind: TaskKind.Statement, text: "Read context." }; export default receipt;`,
+      source: `const receipt: Job = { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }; export default receipt;`,
       diagnostic: "does not exist in type",
     },
     {
       scenario: "an arbitrary name-keyed job",
-      source: `export default new Job({ invented: { kind: TaskKind.Statement, text: "Read context." } });`,
+      source: `export default new Job({ invented: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } } });`,
       diagnostic: "does not exist in type",
     },
     {
       scenario: "an array instead of a Job instance",
-      source: `export default new Job([{ kind: TaskKind.Statement, text: "Read context." }]);`,
+      source: `export default new Job([{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, content: "Read context." } }]);`,
       diagnostic: "not assignable",
     },
     {
@@ -39,18 +39,68 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
     },
     {
       scenario: "an unsupported task kind",
-      source: `export default new Job({ kind: "callback", text: "Read context." });`,
+      source: `export default new Job({ kind: "callback", prompt: { kind: PromptKind.Paragraph, content: "Read context." } });`,
       diagnostic: "not assignable",
     },
     {
       scenario: "the replaced instruction kind",
-      source: `export default new Job({ kind: TaskKind.Instruction, text: "Read context." });`,
+      source: `export default new Job({ kind: TaskKind.Instruction, prompt: { kind: PromptKind.Paragraph, content: "Read context." } });`,
       diagnostic: "Property 'Instruction' does not exist",
     },
     {
-      scenario: "a statement without text",
+      scenario: "a statement without a prompt",
       source: `export default new Job({ kind: TaskKind.Statement });`,
+      diagnostic: "prompt",
+    },
+    {
+      scenario: "the obsolete statement text field",
+      source: `export default new Job({ kind: TaskKind.Statement, text: "Read context." });`,
       diagnostic: "text",
+    },
+    {
+      scenario: "a raw string prompt",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: "Read context." });`,
+      diagnostic: "not assignable",
+    },
+    {
+      scenario: "a paragraph without content",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph } });`,
+      diagnostic: "content",
+    },
+    {
+      scenario: "bullet items on a paragraph",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.Paragraph, items: ["Read context."] } });`,
+      diagnostic: "items",
+    },
+    {
+      scenario: "a string instead of bullet items",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: "Read context." } });`,
+      diagnostic: "not assignable",
+    },
+    {
+      scenario: "a numbered bullet item",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [42] } });`,
+      diagnostic: "not assignable",
+    },
+    {
+      scenario: "an enclosed group without a label",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ items: ["Read context."] }] } });`,
+      diagnostic: "label",
+    },
+    {
+      scenario: "an enclosed group without items",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ label: "Required actions" }] } });`,
+      diagnostic: "items",
+    },
+    {
+      scenario: "unlabelled prose in an enclosed list",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: ["Read context."] } });`,
+      diagnostic: "not assignable",
+    },
+    {
+      scenario: "a task kind used as a prompt kind",
+      source: `export default new Job({ kind: TaskKind.Statement, prompt: { kind: TaskKind.Statement, content: "Read context." } });`,
+      diagnostic: "not assignable",
     },
     {
       scenario: "a command without an explicit directory",
@@ -107,14 +157,38 @@ export default new Job(
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
 });
 
-test("statements support explanations, specifications, rules, and instructions", () => {
+test("structured prompts support paragraphs, bullets, and labelled groups", () => {
   const source = `
-import { Job, TaskKind } from "../../src/ts/lace.ts";
+import { Job, TaskKind, PromptKind } from "../../src/ts/lace.ts";
 export default new Job(
-  { kind: TaskKind.Statement, text: "Jobs group Cortex context in source order." },
-  { kind: TaskKind.Statement, text: "Every context receipt exports one Job." },
-  { kind: TaskKind.Statement, text: "Keep Lace unchanged during receipt authoring." },
-  { kind: TaskKind.Statement, text: "Read the assigned context before editing." },
+  {
+    kind: TaskKind.Statement,
+    prompt: {
+      kind: PromptKind.Paragraph,
+      content: "Jobs group Cortex context in source order.",
+    },
+  },
+  {
+    kind: TaskKind.Statement,
+    prompt: {
+      kind: PromptKind.BulletList,
+      items: [
+        "Every context receipt exports one Job.",
+        "Keep Lace unchanged during receipt authoring.",
+        "Read the assigned context before editing.",
+      ],
+    },
+  },
+  {
+    kind: TaskKind.Statement,
+    "prompt": {
+      kind: PromptKind.EnclosedList,
+      "items": [
+        { "label": "Prohibited", "items": ["Change the core while writing a receipt."] },
+        { label: "Preferred", items: ["Use existing Lace declarations."] },
+      ],
+    },
+  },
 );
 `;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
@@ -141,7 +215,10 @@ compile.content;
 test("Job owns immutable state without changing supplied task objects", () => {
   const statement: Statement = {
     kind: TaskKind.Statement,
-    text: "Read the assigned context.",
+    prompt: {
+      kind: PromptKind.Paragraph,
+      content: "Read the assigned context.",
+    },
   };
   const job = new Job(statement);
   expect(job.size()).toBe(1);
@@ -155,7 +232,10 @@ test("Job owns immutable state without changing supplied task objects", () => {
 test("appending returns a new Job and preserves the original", () => {
   const statement: Statement = {
     kind: TaskKind.Statement,
-    text: "Read the assigned context.",
+    prompt: {
+      kind: PromptKind.Paragraph,
+      content: "Read the assigned context.",
+    },
   };
   const original = new Job(statement);
   const appended = original.append(new Job(statement));
@@ -178,4 +258,39 @@ command.script = "other command";
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
     "read-only property",
   );
+});
+
+test("nested prompt snapshots leave caller-owned lists mutable", () => {
+  const bullets = ["Read the assigned context."];
+  const group = { label: "Required actions", items: bullets };
+  const groups = [group];
+  const statement: Statement = {
+    kind: TaskKind.Statement,
+    prompt: { kind: PromptKind.EnclosedList, items: groups },
+  };
+  const job = new Job(statement);
+  expect(Object.isFrozen(statement.prompt)).toBe(false);
+  expect(Object.isFrozen(groups)).toBe(false);
+  expect(Object.isFrozen(group)).toBe(false);
+  expect(Object.isFrozen(bullets)).toBe(false);
+  bullets.push("Compile the receipt.");
+  group.label = "Updated actions";
+  groups.pop();
+  expect(job.size()).toBe(1);
+  expect(Object.isFrozen(job)).toBe(true);
+});
+
+test("prompt fields and enclosed bullet lists are readonly", () => {
+  const source = `
+import { type EnclosedList, PromptKind } from "../ts/lace.ts";
+const prompt: EnclosedList = {
+  kind: PromptKind.EnclosedList,
+  items: [{ label: "Required actions", items: ["Read context."] }],
+};
+prompt.items[0]!.label = "Changed label";
+prompt.items[0]!.items.push("Changed rules.");
+`;
+  const messages = new ReceiptCompilation(source).messages().join("\n");
+  expect(messages).toContain("read-only property");
+  expect(messages).toContain("Property 'push' does not exist");
 });
