@@ -10,7 +10,7 @@ Lace belongs to context authoring through Context Engineering. It defines the
 format of Cortex context, not an API for coding agents or application workflows.
 This initial architecture adds a parallel foundation. Existing Markdown
 instructions, skills, practices, and YAML catalogs keep their current roles.
-The [core job](../../../lace/core.lace.ts) describes the vocabulary for agents.
+Agents learn the vocabulary by reading the core's TypeScript definitions as text.
 
 ## Jobs and tasks
 
@@ -64,12 +64,17 @@ for core work. Correct an invalid receipt using the existing vocabulary or repor
 the capability it cannot express.
 
 These are agent assignment rules. TypeScript enforces readonly declarations;
-it does not enforce filesystem write permissions. The core lives under `lace/`,
-and the example receipts live with Context Engineering outside that directory.
+it does not enforce filesystem write permissions. The core lives under `lace/`
+and contains only type definitions and validation code. It contains no context
+receipts or declared jobs and tasks. Context receipts belong in the same subject
+locations as their Markdown context, outside the core. The initial examples live
+with Context Engineering; this foundation does not migrate existing Markdown.
 
-- **Prohibited:** weaken the type model to make a receipt pass.
+- **Prohibited:** put an instruction job inside `lace/`, or weaken the
+  type model to make a context receipt pass.
 
-- **Preferred:** fix the receipt and keep the core unchanged during authoring.
+- **Preferred:** write the receipt beside its owning context and keep the core
+  unchanged during authoring.
 
 ## Validation project
 

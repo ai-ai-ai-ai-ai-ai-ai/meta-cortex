@@ -1,6 +1,7 @@
 # Lace Core
 
-Neural Lace defines the types and validation rules for Cortex context files.
+Neural Lace contains the types and validation code for Cortex context files.
+This directory contains no context receipts or declared jobs and tasks.
 Agents read these `*.lace.ts` receipts as text, just as they read Markdown.
 Context Engineering owns their authoring. Existing Cortex Markdown instructions
 remain authoritative.
@@ -9,9 +10,10 @@ remain authoritative.
 
 ### Core ownership
 
-- Read [the model](src/ts/lace.ts) and [the core job](core.lace.ts) before authoring receipts.
-- Keep receipt edits outside this directory, within the assigned context scope.
-- Use the core's existing jobs, instructions, and shell commands.
+- Read [the model](src/ts/lace.ts) before authoring receipts.
+- Keep context receipts beside the context they describe, outside this directory.
+- Keep receipt edits within the assigned context scope.
+- Use only the job and task types defined by the core.
 - Run the existing checks when validating receipts.
 - Change the core only under an explicit user assignment to change it.
   A receipt that fails validation does not grant that assignment.
@@ -21,8 +23,8 @@ remain authoritative.
 **Prohibited:** while assigned to write a context receipt, add a task kind to
 the model because the receipt fails compilation.
 
-**Preferred:** read the model and core job, then write the assigned receipt
-outside `lace/` using existing declarations. Run the unchanged checks. Report
+**Preferred:** read the model, then write the assigned receipt beside its owning
+context outside `lace/`, using existing declarations. Run the unchanged checks. Report
 an unsupported capability for a separate core assignment.
 
 ### Receipt contract
@@ -69,12 +71,13 @@ receipt against both the compiler and the declaration grammar.
 
 ## Prohibited actions
 
+- Do not put context receipts or declared jobs and tasks in `lace/`.
 - Do not use Lace as a coding-agent API or an application workflow.
 - Do not change core types, grammar, tests, package scripts, or compiler and lint
   configuration during receipt authoring.
 
-**Prohibited:** fix an application feature by changing Lace's types, or weaken
-a lint rule to make an assigned context receipt pass.
+**Prohibited:** put an instruction job inside `lace/`, add an application
+callback to the model, or weaken lint to make a context receipt pass.
 
 **Preferred:** keep receipt work within the assigned Cortex context files.
 Make core changes only when the user explicitly assigns core work.
