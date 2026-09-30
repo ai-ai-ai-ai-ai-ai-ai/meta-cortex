@@ -1,3 +1,5 @@
+import { Match } from "effect";
+
 /**
  * Neural Lace is the declaration language for Cortex context files.
  * Context authors use it for instructions, skills, and practices read by agents.
@@ -38,13 +40,34 @@ export type Entry = Job | Task;
 
 /** Construction checks context declarations; it never executes their commands. */
 export class Job {
-  private readonly content: readonly Entry[];
+  readonly #content: readonly Entry[];
 
   constructor(...entries: Entry[]) {
-    this.content = entries;
+    const instruction: Pick<Instruction, "kind"> = {
+      kind: TaskKind.Instruction,
+    };
+    const shellCommand: Pick<ShellCommand, "kind"> = {
+      kind: TaskKind.ShellCommand,
+    };
+    this.#content = Object.freeze(
+      entries.map((entry) =>
+        Match.value(entry).pipe(
+          Match.whenOr(instruction, shellCommand, (task) => {
+            const snapshot: Task = { ...task };
+            return Object.freeze(snapshot);
+          }),
+          Match.orElse((job: Job) => job),
+        ),
+      ),
+    );
+    Object.freeze(this);
   }
 
-  get entries(): readonly Entry[] {
-    return this.content;
+  size(): number {
+    return this.#content.length;
+  }
+
+  append(entry: Entry): Job {
+    return new Job(...this.#content, entry);
   }
 }

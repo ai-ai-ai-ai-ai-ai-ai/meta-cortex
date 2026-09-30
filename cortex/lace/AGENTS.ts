@@ -35,6 +35,10 @@ export default new Job(
       },
       {
         kind: TaskKind.Instruction,
+        text: "Job owns immutable contents in private storage. Construction snapshots task values without modifying their source objects. Core operations stay with Job: size() counts immediate entries, and append(entry) returns a new Job without changing the original. No method exposes the stored entries. Prohibited: read job.entries or mutate a Job. Preferred: use an owning operation for core work; compose context receipts with imports and new Job(...) because receipt grammar excludes method calls.",
+      },
+      {
+        kind: TaskKind.Instruction,
         text: "An instruction declares kind: TaskKind.Instruction and literal text. A shell command declares kind: TaskKind.ShellCommand, literal script, and cwd: WorkingDirectory.ProjectRoot or WorkingDirectory.LibraryRoot. Resolve both roots before running commands through the host's shell tool. Compilation never executes declared commands.",
       },
       {

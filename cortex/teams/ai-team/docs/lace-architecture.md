@@ -37,7 +37,7 @@ does not move subject receipts into the implementation.
 - Default-export one `new Job(...)` instance from each context receipt.
   Both `AGENTS.ts` and `*.lace.ts` use this contract.
 - Pass entries directly to the constructor. `Entry = Job | Task` accepts a
-  nested Job or a task. The readonly entry collection preserves source order.
+  nested Job or a task. Job keeps their source order in private storage.
 - Construct nested groups with another `new Job(...)`.
 - Include at least one entry in each Job. The declaration grammar enforces
   this requirement; the constructor alone permits an empty Job.
@@ -59,6 +59,36 @@ The constructor checks the entries without type assertions.
 
 ```typescript
 export default new Job(context, new Job(compile, verify));
+```
+
+### Immutable Job operations
+
+Job owns its contents in runtime-private storage. Construction copies and
+freezes task values without freezing the caller's objects. Nested Jobs are
+already immutable. No operation returns the entry collection or task references.
+
+- `size()` returns the number of immediate entries.
+- `append(entry)` returns a new Job. The original Job remains unchanged.
+
+These operations belong to ordinary core TypeScript. The fragments below belong
+inside a core operation and use the imported Jobs described above.
+Context receipts still compose Jobs through imports and `new Job(...)`;
+their grammar does not permit method calls.
+
+**Prohibited:** access storage and mutate an existing Job.
+The compiler rejects the nonexistent `entries` property.
+
+```typescript
+context.entries.push(compile);
+```
+
+**Preferred:** ask the owner to produce a new Job.
+The original context retains its size and contents.
+
+```typescript
+const extended = context.append(compile);
+extended.size();
+context.size();
 ```
 
 ### Task declarations

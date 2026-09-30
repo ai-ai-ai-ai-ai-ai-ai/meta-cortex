@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { ReceiptCompilation } from "./receipt.ts";
+import { Job, TaskKind, type Instruction } from "../ts/lace.ts";
 
 interface RejectedDeclaration {
   readonly scenario: string;
@@ -32,8 +33,8 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
     },
     {
       scenario: "a plain object imitating a Job instance",
-      source: `export default new Job({ entries: [{ kind: TaskKind.Instruction, text: "Read context." }] });`,
-      diagnostic: "content",
+      source: `export default new Job({ size: () => 1, append: () => new Job() });`,
+      diagnostic: "#content",
     },
     {
       scenario: "an unsupported task kind",
@@ -76,9 +77,9 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
       diagnostic: "Cannot find module",
     },
     {
-      scenario: "an unchecked imported task index",
+      scenario: "access to an imported job's internal entries",
       source: `import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts"; export default new Job(compile.entries[1]);`,
-      diagnostic: "not assignable",
+      diagnostic: "Property 'entries' does not exist",
     },
   ];
 }
@@ -107,14 +108,41 @@ test.each(DeclarationCases.rejected.slice())("rejects $scenario", (example) => {
   );
 });
 
-test("an imported job's entries are readonly", () => {
+test("an imported job does not expose its storage", () => {
   const source = `
 import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts";
-compile.entries = [];
+compile.content;
 `;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
-    "read-only property",
+    "Property 'content' does not exist",
   );
+});
+
+test("Job owns immutable state without changing supplied task objects", () => {
+  const instruction: Instruction = {
+    kind: TaskKind.Instruction,
+    text: "Read the assigned context.",
+  };
+  const job = new Job(instruction);
+  expect(job.size()).toBe(1);
+  expect(Object.isFrozen(job)).toBe(true);
+  expect(Object.isFrozen(instruction)).toBe(false);
+  expect(Object.getOwnPropertyNames(job)).toEqual([]);
+  expect(Reflect.set(job, "entries", [])).toBe(false);
+  expect(job.size()).toBe(1);
+});
+
+test("appending returns a new Job and preserves the original", () => {
+  const instruction: Instruction = {
+    kind: TaskKind.Instruction,
+    text: "Read the assigned context.",
+  };
+  const original = new Job(instruction);
+  const appended = original.append(new Job(instruction));
+  expect(appended).not.toBe(original);
+  expect(original.size()).toBe(1);
+  expect(appended.size()).toBe(2);
+  expect(Object.isFrozen(appended)).toBe(true);
 });
 
 test("shell command declarations are readonly", () => {
