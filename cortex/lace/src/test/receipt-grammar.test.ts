@@ -17,7 +17,7 @@ import { Job, TaskKind, WorkingDirectory } from "./src/ts/lace.ts";
 `;
   static readonly root = `
 export default new Job(
-  { kind: TaskKind.Instruction, text: "Read the assigned context." },
+  { kind: TaskKind.Statement, text: "Read the assigned context." },
 );
 `;
   static readonly rejected: RejectedSyntaxCases = [
@@ -28,7 +28,7 @@ export default new Job(
     },
     {
       scenario: "a task at the root",
-      source: `export default { kind: TaskKind.Instruction, text: "Read context." };`,
+      source: `export default { kind: TaskKind.Statement, text: "Read context." };`,
       diagnostic: "default-export a Job instance",
     },
     {
@@ -38,12 +38,12 @@ export default new Job(
     },
     {
       scenario: "a plain object instead of a Job instance",
-      source: `export default { entries: [{ kind: TaskKind.Instruction, text: "Read context." }] };`,
+      source: `export default { entries: [{ kind: TaskKind.Statement, text: "Read context." }] };`,
       diagnostic: "default-export a Job instance",
     },
     {
       scenario: "an array instead of a Job instance",
-      source: `export default [{ kind: TaskKind.Instruction, text: "Read context." }];`,
+      source: `export default [{ kind: TaskKind.Statement, text: "Read context." }];`,
       diagnostic: "default-export a Job instance",
     },
     {
@@ -52,8 +52,8 @@ export default new Job(
       diagnostic: "Construct only Job instances",
     },
     {
-      scenario: "blank instruction text",
-      source: `export default new Job({ kind: TaskKind.Instruction, text: "   " });`,
+      scenario: "blank statement text",
+      source: `export default new Job({ kind: TaskKind.Statement, text: "   " });`,
       diagnostic: "nonblank",
     },
     {
@@ -84,12 +84,12 @@ export default new Job(
     {
       scenario: "template interpolation",
       source:
-        "export default new Job({ kind: TaskKind.Instruction, text: `Read ${context}.` });",
+        "export default new Job({ kind: TaskKind.Statement, text: `Read ${context}.` });",
       diagnostic: "without interpolation",
     },
     {
       scenario: "ambient runtime values",
-      source: `export default new Job({ kind: TaskKind.Instruction, text: Promise.name });`,
+      source: `export default new Job({ kind: TaskKind.Statement, text: Promise.name });`,
       diagnostic: "text and commands as literals",
     },
     {
@@ -109,19 +109,19 @@ export default new Job(
     },
     {
       scenario: "computed enum access",
-      source: `export default new Job({ kind: TaskKind["Instruction"], text: "Read context." });`,
+      source: `export default new Job({ kind: TaskKind["Statement"], text: "Read context." });`,
       diagnostic: "Member access is limited",
     },
   ];
 }
 
-test("literal instructions, nested Jobs, and static imports pass the grammar", () => {
+test("literal statements, nested Jobs, and static imports pass the grammar", () => {
   const source = `${GrammarCases.imports}
 import common from "./common.lace.ts";
 export default new Job(
   common,
   new Job(common),
-  { kind: TaskKind.Instruction, text: \`Read the context.
+  { kind: TaskKind.Statement, text: \`Read the context.
 Then apply its instructions.\` },
   {
     "kind": TaskKind.ShellCommand,
@@ -170,7 +170,7 @@ test("the grammar rejects ambient strings that the compiler accepts", () => {
   const source = `
 import { Job, TaskKind } from "../../src/ts/lace.ts";
 export default new Job(
-  { kind: TaskKind.Instruction, text: Promise.name },
+  { kind: TaskKind.Statement, text: Promise.name },
 );
 `;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);

@@ -1,8 +1,9 @@
 # Neural Lace Architecture
 
-Neural Lace defines typed Cortex context: instructions, skills, and practices
-that agents read as text. Its [model](../../../lace/src/ts/lace.ts) supplies
-Jobs and two task kinds. TypeScript checks declarations and imports;
+Neural Lace defines typed Cortex context: architecture, specifications, rules,
+instructions, skills, and practices that agents read as text.
+Its [model](../../../lace/src/ts/lace.ts) supplies Jobs, literal statements, and
+shell commands. TypeScript checks declarations and imports;
 the agent interprets the context and runs instructed commands through host tools.
 Read [Lace's entry point](../../../lace/AGENTS.ts) for its ownership rules.
 
@@ -94,27 +95,28 @@ context.size();
 ### Task declarations
 
 Jobs represent directories; tasks represent files.
-`Task = Instruction | ShellCommand` is a discriminated union:
+`Task = Statement | ShellCommand` is a discriminated union:
 
-- **Instruction:** `kind: TaskKind.Instruction` and literal `text`.
+- **Statement:** `kind: TaskKind.Statement` and literal `text`.
 - **Shell command:** `kind: TaskKind.ShellCommand`, literal `script`, and `cwd`.
   Choose `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
 
-**Prohibited:** mix shell-command fields into an instruction.
-The compiler rejects `script` on this instruction.
+**Prohibited:** mix shell-command fields into a statement.
+The compiler rejects `script` on this statement.
 
 ```typescript
 export default new Job({
-  kind: TaskKind.Instruction,
+  kind: TaskKind.Statement,
   script: "bun run --filter @meta-cortex/lace check",
 });
 ```
 
-**Preferred:** give each task the fields required by its variant.
+**Preferred:** declare explanatory text as a Statement and command text as a
+ShellCommand. Give each variant its own fields.
 
 ```typescript
 export default new Job(
-  { kind: TaskKind.Instruction, text: "Read the assigned context." },
+  { kind: TaskKind.Statement, text: "A Job groups Cortex context in source order." },
   {
     kind: TaskKind.ShellCommand,
     cwd: WorkingDirectory.LibraryRoot,
@@ -123,10 +125,25 @@ export default new Job(
 );
 ```
 
+### Statement meaning
+
+A Statement can explain architecture, describe a specification, state a rule,
+or give an instruction. Its wording carries that purpose. A descriptive
+statement supplies context; an imperative statement tells the agent what to do.
+Architecture and specification documents can group these statements in Jobs.
+The kind identifies prose without requiring a separate document category.
+
+**Prohibited:** treat "A Job groups Cortex context in source order" as a command
+to create or execute Jobs because it appears as a task.
+
+**Preferred:** read that sentence as an architectural fact. Follow "Read the
+assigned context before editing" as an instruction because its wording requires
+an action. Both sentences use `TaskKind.Statement`.
+
 ### Composition
 
 Import another receipt's default Job to reuse its canonical declaration.
-Read the imported source before applying its instructions.
+Read the imported source before applying its context.
 Relative imports resolve from the receipt file.
 Paths in prose resolve from the stated root or source document.
 
@@ -135,7 +152,7 @@ groups the [context](../agents/tech-writer/skills/context-engineering/examples/l
 [compile](../agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts),
 and [verify](../agents/tech-writer/skills/context-engineering/examples/lace/verify.lace.ts)
 Jobs. The context Job imports `lace/AGENTS.ts`.
-The authoring example reuses these Jobs around its own instruction.
+The authoring example reuses these Jobs around its own authoring statement.
 TypeScript rejects missing imports and entries with incompatible types.
 
 **Prohibited:** copy the shared compile command into another receipt.
@@ -159,7 +176,7 @@ export default new Job(compile);
 ### Agent execution
 
 1. Read the root Job and the imported context sources it selects.
-2. Interpret conditions and context selection from instruction text.
+2. Interpret conditions and context selection from statement text.
 3. Resolve the project and library roots from the session.
 4. Use the host's shell tool when the context instructs a command within the
    current assignment. Apply the declared working directory.
@@ -231,28 +248,28 @@ a failed receipt alone does not.
 The [declaration grammar](../../../lace/receipt-grammar.js) permits static imports,
 Job construction, literal task objects, and imported Job references.
 Enum access is limited to `TaskKind` for `kind` and `WorkingDirectory` for `cwd`.
-Instruction text and scripts must be nonblank literals without interpolation.
+Statement text and scripts must be nonblank literals without interpolation.
 
 The grammar rejects arbitrary implementation imports, other constructors,
 function calls, loops, conditionals, assignments, spreads, type assertions,
-and check-suppression attempts. Express context decisions as instruction prose.
+and check-suppression attempts. Express context decisions as statement prose.
 
 **Prohibited:** read a runtime string instead of declaring literal context.
 This compiles because `Promise.name` is a string, but fails the grammar.
 
 ```typescript
 export default new Job({
-  kind: TaskKind.Instruction,
+  kind: TaskKind.Statement,
   text: Promise.name,
 });
 ```
 
-**Preferred:** declare the instruction literally.
+**Preferred:** declare the statement literally.
 The compiler checks its task type; the grammar checks its declaration form.
 
 ```typescript
 export default new Job({
-  kind: TaskKind.Instruction,
+  kind: TaskKind.Statement,
   text: "Read the assigned context.",
 });
 ```

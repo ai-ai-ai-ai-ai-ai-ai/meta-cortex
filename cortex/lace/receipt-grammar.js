@@ -68,7 +68,7 @@ export class ReceiptGrammar {
           {
             selector:
               ":matches(Property[key.name=/^(text|script)$/], Property[key.value=/^(text|script)$/]):not([value.type='Literal'], [value.type='TemplateLiteral'])",
-            message: "Write instruction text and commands as literals.",
+            message: "Write statement text and commands as literals.",
           },
           {
             selector:
@@ -82,7 +82,7 @@ export class ReceiptGrammar {
           },
           {
             selector: "Literal[value=/^\\s*$/]",
-            message: "Instruction text and commands are nonblank.",
+            message: "Statement text and commands are nonblank.",
           },
           {
             selector: "TemplateLiteral[expressions.length!=0]",
@@ -90,7 +90,7 @@ export class ReceiptGrammar {
           },
           {
             selector: "TemplateElement[value.raw=/^\\s*$/]",
-            message: "Instruction text and commands are nonblank.",
+            message: "Statement text and commands are nonblank.",
           },
           {
             selector:

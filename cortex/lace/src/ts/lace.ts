@@ -9,7 +9,7 @@ import { Match } from "effect";
  * Statically declared jobs compose through imports without name-keyed lookup.
  */
 export enum TaskKind {
-  Instruction = "instruction",
+  Statement = "statement",
   ShellCommand = "shell-command",
 }
 
@@ -19,9 +19,9 @@ export enum WorkingDirectory {
   LibraryRoot = "library-root",
 }
 
-/** Prose for the agent to interpret, including conditions and context selection. */
-export interface Instruction {
-  readonly kind: TaskKind.Instruction;
+/** Literal Cortex prose: explanations, specifications, rules, and instructions. */
+export interface Statement {
+  readonly kind: TaskKind.Statement;
   readonly text: string;
 }
 
@@ -33,7 +33,7 @@ export interface ShellCommand {
 }
 
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
-export type Task = Instruction | ShellCommand;
+export type Task = Statement | ShellCommand;
 
 /** Each entry is either a nested job or a task. */
 export type Entry = Job | Task;
@@ -43,8 +43,8 @@ export class Job {
   readonly #content: readonly Entry[];
 
   constructor(...entries: Entry[]) {
-    const instruction: Pick<Instruction, "kind"> = {
-      kind: TaskKind.Instruction,
+    const statement: Pick<Statement, "kind"> = {
+      kind: TaskKind.Statement,
     };
     const shellCommand: Pick<ShellCommand, "kind"> = {
       kind: TaskKind.ShellCommand,
@@ -52,7 +52,7 @@ export class Job {
     this.#content = Object.freeze(
       entries.map((entry) =>
         Match.value(entry).pipe(
-          Match.whenOr(instruction, shellCommand, (task) => {
+          Match.whenOr(statement, shellCommand, (task) => {
             const snapshot: Task = { ...task };
             return Object.freeze(snapshot);
           }),

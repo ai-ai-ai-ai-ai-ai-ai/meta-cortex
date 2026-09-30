@@ -6,8 +6,8 @@ import verify from "./verify.lace.ts";
 export default new Job(
   context,
   {
-    kind: TaskKind.Instruction,
-    text: "Write the assigned Cortex context receipt using the existing Lace types. Keep the Lace core and its verification configuration unchanged. Express context selection as instruction text and reuse canonical context jobs through static imports.",
+    kind: TaskKind.Statement,
+    text: "Write the assigned Cortex context receipt using the existing Lace types. Keep the Lace core and its verification configuration unchanged. Express context selection as literal statement text and reuse canonical context jobs through static imports.",
   },
   new Job(compile, verify),
 );

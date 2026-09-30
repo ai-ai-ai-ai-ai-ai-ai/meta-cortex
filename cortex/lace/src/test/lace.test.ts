@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 
 import { ReceiptCompilation } from "./receipt.ts";
-import { Job, TaskKind, type Instruction } from "../ts/lace.ts";
+import { ReceiptSyntax } from "./receipt-syntax.ts";
+import { Job, TaskKind, type Statement } from "../ts/lace.ts";
 
 interface RejectedDeclaration {
   readonly scenario: string;
@@ -18,17 +19,17 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
   static readonly rejected: RejectedDeclarations = [
     {
       scenario: "a task at the file root",
-      source: `const receipt: Job = { kind: TaskKind.Instruction, text: "Read context." }; export default receipt;`,
+      source: `const receipt: Job = { kind: TaskKind.Statement, text: "Read context." }; export default receipt;`,
       diagnostic: "does not exist in type",
     },
     {
       scenario: "an arbitrary name-keyed job",
-      source: `export default new Job({ invented: { kind: TaskKind.Instruction, text: "Read context." } });`,
+      source: `export default new Job({ invented: { kind: TaskKind.Statement, text: "Read context." } });`,
       diagnostic: "does not exist in type",
     },
     {
       scenario: "an array instead of a Job instance",
-      source: `export default new Job([{ kind: TaskKind.Instruction, text: "Read context." }]);`,
+      source: `export default new Job([{ kind: TaskKind.Statement, text: "Read context." }]);`,
       diagnostic: "not assignable",
     },
     {
@@ -42,8 +43,13 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
       diagnostic: "not assignable",
     },
     {
-      scenario: "an instruction without text",
-      source: `export default new Job({ kind: TaskKind.Instruction });`,
+      scenario: "the replaced instruction kind",
+      source: `export default new Job({ kind: TaskKind.Instruction, text: "Read context." });`,
+      diagnostic: "Property 'Instruction' does not exist",
+    },
+    {
+      scenario: "a statement without text",
+      source: `export default new Job({ kind: TaskKind.Statement });`,
       diagnostic: "text",
     },
     {
@@ -68,7 +74,7 @@ import { Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
     },
     {
       scenario: "fields belonging to the other task kind",
-      source: `export default new Job({ kind: TaskKind.Instruction, script: "bun run check" });`,
+      source: `export default new Job({ kind: TaskKind.Statement, script: "bun run check" });`,
       diagnostic: "script",
     },
     {
@@ -101,6 +107,20 @@ export default new Job(
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
 });
 
+test("statements support explanations, specifications, rules, and instructions", () => {
+  const source = `
+import { Job, TaskKind } from "../../src/ts/lace.ts";
+export default new Job(
+  { kind: TaskKind.Statement, text: "Jobs group Cortex context in source order." },
+  { kind: TaskKind.Statement, text: "Every context receipt exports one Job." },
+  { kind: TaskKind.Statement, text: "Keep Lace unchanged during receipt authoring." },
+  { kind: TaskKind.Statement, text: "Read the assigned context before editing." },
+);
+`;
+  expect(new ReceiptCompilation(source).messages()).toEqual([]);
+  expect(new ReceiptSyntax(source).messages()).toEqual([]);
+});
+
 test.each(DeclarationCases.rejected.slice())("rejects $scenario", (example) => {
   const source = DeclarationCases.imports + example.source;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
@@ -119,26 +139,26 @@ compile.content;
 });
 
 test("Job owns immutable state without changing supplied task objects", () => {
-  const instruction: Instruction = {
-    kind: TaskKind.Instruction,
+  const statement: Statement = {
+    kind: TaskKind.Statement,
     text: "Read the assigned context.",
   };
-  const job = new Job(instruction);
+  const job = new Job(statement);
   expect(job.size()).toBe(1);
   expect(Object.isFrozen(job)).toBe(true);
-  expect(Object.isFrozen(instruction)).toBe(false);
+  expect(Object.isFrozen(statement)).toBe(false);
   expect(Object.getOwnPropertyNames(job)).toEqual([]);
   expect(Reflect.set(job, "entries", [])).toBe(false);
   expect(job.size()).toBe(1);
 });
 
 test("appending returns a new Job and preserves the original", () => {
-  const instruction: Instruction = {
-    kind: TaskKind.Instruction,
+  const statement: Statement = {
+    kind: TaskKind.Statement,
     text: "Read the assigned context.",
   };
-  const original = new Job(instruction);
-  const appended = original.append(new Job(instruction));
+  const original = new Job(statement);
+  const appended = original.append(new Job(statement));
   expect(appended).not.toBe(original);
   expect(original.size()).toBe(1);
   expect(appended.size()).toBe(2);
