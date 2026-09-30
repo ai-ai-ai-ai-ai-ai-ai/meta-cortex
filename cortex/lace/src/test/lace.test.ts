@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
+import { Job } from "../ts/job.ts";
 import {
-  Job,
   PromptKind,
   WorkingDirectory,
   type Prompt,
@@ -17,7 +17,8 @@ interface RejectedDeclaration {
 type RejectedDeclarations = readonly RejectedDeclaration[];
 class DeclarationCases {
   static readonly imports = `
-import { Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";
+import { Job } from "../../src/ts/job.ts";
+import { TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";
 `;
   static readonly rejected: RejectedDeclarations = [
     {
@@ -202,7 +203,8 @@ export default Job.job(common).job(Job.job(compile)).shellCommand({
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
 });
 test("structured prompts support prompt statements, bullets, and labelled groups", () => {
-  const source = `import { Job, TaskKind, PromptKind } from "../../src/ts/lace.ts";
+  const source = `import { Job } from "../../src/ts/job.ts";
+import { TaskKind, PromptKind } from "../../src/ts/lace.ts";
 export default Job.statement({
     kind: PromptKind.Statement,
     content: "Jobs group Cortex context in source order.",
@@ -315,7 +317,8 @@ prompt.items[0]!.items.push("Changed rules.");
 
 test("local child Jobs compose with chained statements and commands", () => {
   const source = `
-import { Job, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";
+import { Job } from "../../src/ts/job.ts";
+import { PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";
 const childJob = Job.statement({
   kind: PromptKind.BulletList,
   label: "Required actions",
@@ -370,7 +373,8 @@ test("every builder starts a nonempty Job and preserves reusable branches", () =
 
 test("the same BulletList type is used alone and inside an EnclosedList", () => {
   const source = `
-import { Job, PromptKind, type BulletList, type EnclosedList } from "../../src/ts/lace.ts";
+import { Job } from "../../src/ts/job.ts";
+import { PromptKind, type BulletList, type EnclosedList } from "../../src/ts/lace.ts";
 const bullets: BulletList = {
   kind: PromptKind.BulletList,
   label: "Required actions",

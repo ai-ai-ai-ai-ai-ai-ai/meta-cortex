@@ -30,8 +30,9 @@ export class ReceiptGrammar {
             patterns: [
               {
                 regex:
-                  "^(?!(?:(?:\\.\\.?/)+(?:lace/)?src/ts/lace\\.ts|(?:\\.\\.?/)(?:[^\\n]*\\.lace\\.ts|(?:[^\\n]*/)?AGENTS\\.ts))$)",
-                message: "Import only the Lace model or another receipt.",
+                  "^(?!(?:(?:\\.\\.?/)+(?:lace/)?src/ts/(?:lace|job)\\.ts|(?:\\.\\.?/)(?:[^\\n]*\\.lace\\.ts|(?:[^\\n]*/)?AGENTS\\.ts))$)",
+                message:
+                  "Import only the Lace model, Job builder, or another receipt.",
               },
             ],
           },

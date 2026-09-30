@@ -10,7 +10,8 @@ interface RejectedSyntax {
 type RejectedSyntaxCases = readonly RejectedSyntax[];
 class GrammarCases {
   static readonly imports = `
-import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
+import { Job } from "./src/ts/job.ts";
+import { TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
 `;
   static readonly root = `export default Job.statement({ kind: PromptKind.Statement, content: "Read the assigned context." });
 `;
@@ -215,7 +216,12 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     {
       scenario: "an arbitrary implementation import",
       source: `import runner from "./runner.ts"; ${GrammarCases.root}`,
-      diagnostic: "Import only the Lace model or another receipt",
+      diagnostic: "Import only the Lace model, Job builder, or another receipt",
+    },
+    {
+      scenario: "an unrelated module beside the model and builder",
+      source: `import runner from "./src/ts/runner.ts"; ${GrammarCases.root}`,
+      diagnostic: "Import only the Lace model, Job builder, or another receipt",
     },
     {
       scenario: "a dynamic job spread",
@@ -302,7 +308,8 @@ export default Job.job(context);
   );
 });
 test("the grammar rejects ambient strings that the compiler accepts", () => {
-  const source = `import { Job, TaskKind, PromptKind } from "../../src/ts/lace.ts";
+  const source = `import { Job } from "../../src/ts/job.ts";
+import { TaskKind, PromptKind } from "../../src/ts/lace.ts";
 export default Job.statement({ kind: PromptKind.Statement, content: Promise.name });
 `;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);

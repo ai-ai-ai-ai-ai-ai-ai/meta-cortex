@@ -2,8 +2,10 @@
 
 Neural Lace defines typed Cortex context: architecture, specifications, rules,
 instructions, skills, and practices that agents read as text.
-Its [model](../../../lace/src/ts/lace.ts) supplies Jobs, literal statements, and
-shell commands. TypeScript checks declarations and imports;
+Its [model](../../../lace/src/ts/lace.ts) contains only enums, types, and
+interfaces for literal statements, shell commands, and their composition.
+The [Job builder](../../../lace/src/ts/job.ts) owns construction and immutable
+operations. TypeScript checks declarations and imports;
 the agent interprets the context and runs instructed commands through host tools.
 Read [Lace's entry point](../../../lace/AGENTS.ts) for its ownership rules.
 
@@ -17,7 +19,7 @@ Read [Lace's entry point](../../../lace/AGENTS.ts) for its ownership rules.
 - Use Context Engineering for authoring. Its
   [examples](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts)
   demonstrate the declaration language.
-- Keep the model and validation implementation in `lace/` free of context jobs
+- Keep the model, Job builder, and validation implementation in `lace/` free of context jobs
   and tasks. Those files implement the language.
 - Read `lace/AGENTS.ts` as context. It describes Lace using the same Job and
   task declarations available to receipt authors.
@@ -27,7 +29,7 @@ Other Markdown instructions, skills, and practices retain their current roles.
 YAML catalogs continue to provide navigation.
 
 **Prohibited:** put an application workflow or a subject instruction job into
-Lace's model while assigned to write Cortex context.
+Lace's model or builder while assigned to write Cortex context.
 
 **Preferred:** keep a subject receipt with its owning context. Lace's own
 `AGENTS.ts` belongs in `lace/` because it describes that core; this exception
@@ -47,8 +49,8 @@ The constructor is private. Each builder requires one input and adds one entry;
 a publicly constructed Job is always nonempty. `Entry = Job | Task` remains the
 internal content union. Methods preserve source order and supply the task kind.
 
-The TypeScript fragments below assume `Job`, `PromptKind`, and
-`WorkingDirectory` are imported from the model. `context`, `compile`, and `verify` are default Jobs
+The TypeScript fragments below assume `Job` is imported from the builder,
+and `PromptKind` and `WorkingDirectory` are imported from the model. `context`, `compile`, and `verify` are default Jobs
 imported from the linked Context Engineering examples.
 Each fragment is a separate receipt body.
 
@@ -267,7 +269,7 @@ Report command execution separately, using the result from the host's shell tool
 ### Validation project
 
 The [TypeScript project](../../../tsconfig.json) includes library receipts,
-`AGENTS.ts` entry points, the model, and contract tests.
+`AGENTS.ts` entry points, the model, Job builder, and contract tests.
 It enables strict types, exact optional properties, checked indexed access,
 unused-code checks, and `noEmit`.
 The shared Bun workspace owns dependencies and the lockfile.
@@ -304,7 +306,7 @@ use actual execution results for claims about declared commands.
 
 Follow the [core ownership rules](../../../lace/AGENTS.ts) during authoring.
 An assignment to write a receipt permits using the vocabulary and existing checks.
-Changes to the model, core entry point, grammar, tests, scripts, or configuration
+Changes to the model, Job builder, core entry point, grammar, tests, scripts, or configuration
 require an explicit user assignment for core work.
 These rules govern agent assignments. TypeScript's readonly declarations do
 not enforce filesystem write permissions.
@@ -327,7 +329,8 @@ Prompt content, labels, list items, and scripts must be nonblank literals withou
 interpolation. Prompt lists must use nonempty literal arrays.
 TypeScript checks the union shapes; the grammar checks literals and nonempty lists.
 
-The grammar rejects implementation imports, constructors, arbitrary calls,
+Imports may select the model, Job builder, or another receipt.
+The grammar rejects other implementation imports, constructors, arbitrary calls,
 mutable bindings, non-builder initializers, loops, conditionals, assignments,
 spreads, type assertions, and check-suppression attempts. Express context decisions as statement prose.
 

@@ -1,4 +1,5 @@
-import { Job, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
+import { Job } from "./src/ts/job.ts";
+import { PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
 
 export default Job.statement({
   kind: PromptKind.BulletList,
@@ -27,6 +28,8 @@ export default Job.statement({
           label: "Core ownership",
           items: [
             "Read lace/src/ts/lace.ts before authoring receipts.",
+            "The model contains only enums, types, and interfaces.",
+            "lace/src/ts/job.ts owns the immutable Job builder implementation.",
             "Job groups other Jobs and tasks.",
             "Jobs represent directories; tasks represent files.",
             "Entry is the union of Job and Task.",
@@ -41,7 +44,7 @@ export default Job.statement({
               "Keep receipt edits within the assigned Cortex context scope.",
               "Write subject receipts beside their owning context, outside lace/.",
               "This lace/AGENTS.ts entry point describes Lace using its own vocabulary.",
-              "The model and validation implementation remain ordinary code without operational context declarations.",
+              "The model, Job builder, and validation implementation remain ordinary code without operational context declarations.",
             ],
           })
           .statement({
@@ -82,7 +85,8 @@ export default Job.statement({
           kind: PromptKind.BulletList,
           label: "Receipt contract",
           items: [
-            "Import Job and the required enums from lace/src/ts/lace.ts.",
+            "Import Job from lace/src/ts/job.ts.",
+            "Import the required enums and types from lace/src/ts/lace.ts.",
             "Default-export a Job builder chain that starts with a statement, command, or child Job.",
             "Use statement(prompt), shellCommand(command), and job(child) to extend the tree.",
             "Nest imported Jobs, local const Jobs, or inline builder chains with job(child).",
@@ -268,9 +272,9 @@ export default Job.statement({
       label: "Prohibited actions",
       items: [
         "Do not use Lace as a coding-agent API or an application workflow.",
-        "Do not put subject context declarations in the model or validation implementation.",
+        "Do not put subject context declarations in the model, Job builder, or validation implementation.",
         "Lace's own context entry point is lace/AGENTS.ts; subject receipts belong with their owning context outside lace/.",
-        "Do not change core types, grammar, tests, scripts, configuration, or the core entry point during receipt authoring.",
+        "Do not change core types, Job builder, grammar, tests, scripts, configuration, or the core entry point during receipt authoring.",
         "Core changes require an explicit user assignment to change the core.",
       ],
     }).statement({

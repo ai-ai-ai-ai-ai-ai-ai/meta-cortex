@@ -1,7 +1,5 @@
-import {
-  Job,
-  WorkingDirectory,
-} from "../../../../../../../../lace/src/ts/lace.ts";
+import { Job } from "../../../../../../../../lace/src/ts/job.ts";
+import { WorkingDirectory } from "../../../../../../../../lace/src/ts/lace.ts";
 
 export default Job.shellCommand({
   cwd: WorkingDirectory.LibraryRoot,
