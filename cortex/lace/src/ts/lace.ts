@@ -3,7 +3,7 @@
  * Context authors use it for instructions, skills, and practices read by agents.
  * Read receipt files as text; do not import them to execute code.
  * Each receipt exports one Job. Jobs are directories; tasks are files.
- * A Job is the group itself: a nonempty readonly sequence of tasks and jobs.
+ * A Job instance groups tasks and other jobs through its constructor.
  * Statically declared jobs compose through imports without name-keyed lookup.
  */
 export enum TaskKind {
@@ -33,5 +33,18 @@ export interface ShellCommand {
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
 export type Task = Instruction | ShellCommand;
 
-/** Jobs are statically declared groups; the compiler rejects an empty group. */
-export type Job = readonly [Job | Task, ...(Job | Task)[]];
+/** A directory's ordered contents: tasks and other jobs, with at least one entry. */
+export type JobEntries = readonly [Job | Task, ...(Job | Task)[]];
+
+/** Construction checks context declarations; it never executes their commands. */
+export class Job<const Entries extends JobEntries = JobEntries> {
+  private readonly content: Entries;
+
+  constructor(...entries: Entries) {
+    this.content = entries;
+  }
+
+  get entries(): Entries {
+    return this.content;
+  }
+}

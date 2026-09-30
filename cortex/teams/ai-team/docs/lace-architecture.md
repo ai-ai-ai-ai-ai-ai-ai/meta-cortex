@@ -14,16 +14,28 @@ Agents learn the vocabulary by reading the core's TypeScript definitions as text
 
 ## Jobs and tasks
 
-Every `*.lace.ts` receipt default-exports a literal job with `as const satisfies
-Job`. `Job` is the nonempty readonly group itself. Its entries are tasks or
-other jobs, like files or directories. Jobs are statically declared in receipt
-files and referenced through imports. There is no `children` wrapper or
-string-keyed job lookup. The compiler preserves the exact group and its order.
+### Job construction
 
-An instruction has `kind: TaskKind.Instruction` and literal `text`. A shell
-command has `kind: TaskKind.ShellCommand`, literal `script`, and `cwd`. The
-working directory selects the consuming project root or the Cortex library
-root. The agent resolves both roots from the session before using commands.
+Every `*.lace.ts` receipt default-exports a `new Job(...)` instance. Pass tasks
+and imported jobs directly to its constructor. Use another `new Job(...)` for
+a nested group, such as `new Job(context, new Job(compile, verify))`.
+The constructor requires at least one entry and checks every entry's type.
+Its readonly `entries` preserve exact task types and their source order.
+No array export, type assertion, or `satisfies` clause is required.
+
+- **Prohibited:** export `[context, compile]` and treat that array as a job.
+
+- **Preferred:** export `new Job(context, compile)`. The constructor checks
+  the entries and creates the Job instance.
+
+### Tasks
+
+Jobs represent directories; tasks represent files. `Task` is the discriminated
+union of instructions and shell commands. An instruction has
+`kind: TaskKind.Instruction` and literal `text`. A shell command has
+`kind: TaskKind.ShellCommand`, literal `script`, and `cwd`. The working directory
+selects the consuming project root or Cortex library root. The agent resolves
+both roots from the session before using commands.
 
 The agent reads the root job, follows its prose, and descends into the selected
 jobs. Conditions and context selection remain instructions for the agent.
@@ -65,8 +77,8 @@ the capability it cannot express.
 
 These are agent assignment rules. TypeScript enforces readonly declarations;
 it does not enforce filesystem write permissions. The core lives under `lace/`
-and contains only type definitions and validation code. It contains no context
-receipts or declared jobs and tasks. Context receipts belong in the same subject
+and contains the model and validation code. It contains no context
+receipts or instantiated context jobs and tasks. Context receipts belong in the same subject
 locations as their Markdown context, outside the core. The initial examples live
 with Context Engineering; this foundation does not migrate existing Markdown.
 
@@ -83,10 +95,11 @@ receipt in the library, the model, and its contract tests. It uses strict types,
 exact optional properties, checked indexed access, unused-code checks, and
 `noEmit`. The shared Bun workspace owns all dependencies and its lockfile.
 
-The grammar allows imports, literal job groups and task objects, enum members,
-and references to statically declared jobs. It requires a default nonempty job and literal
-prose and scripts. It rejects functions, calls, loops, conditionals, assignments,
-spreads, interpolation, type casts, and imports of arbitrary implementation code.
+The grammar allows imports, Job construction, literal task objects, enum members,
+and references to imported jobs. It requires a default nonempty Job instance and
+literal prose and scripts. Only `new Job(...)` construction is permitted.
+It rejects other constructors, function calls, loops, conditionals, assignments,
+spreads, interpolation, type assertions, and arbitrary implementation imports.
 TypeScript validates task fields, discriminants, working directories, and the
 actual imported job and task types. ESLint's built-in declaration rules require
 literal prose and commands. Member access is limited to `TaskKind` in `kind`

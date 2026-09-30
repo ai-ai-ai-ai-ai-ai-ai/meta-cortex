@@ -154,7 +154,7 @@ its tests in its worktree, and pass both roots in assignments.
 ## Cortex context format
 
 [Neural Lace](lace/AGENTS.md) is the core for typed Cortex context files.
-The core contains type definitions and validation code, with no context jobs or tasks.
+The core contains model and validation code, with no instantiated context jobs or tasks.
 Read its [model](lace/src/ts/lace.ts) before reading or authoring `*.lace.ts`
 context receipts. These belong beside their owning context, outside `lace/`.
 Agents read these files as text; the TypeScript project checks their structure

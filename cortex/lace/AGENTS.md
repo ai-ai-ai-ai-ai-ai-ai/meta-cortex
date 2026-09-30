@@ -1,7 +1,7 @@
 # Lace Core
 
-Neural Lace contains the types and validation code for Cortex context files.
-This directory contains no context receipts or declared jobs and tasks.
+Neural Lace contains the model and validation code for Cortex context files.
+This directory contains no context receipts or instantiated context jobs and tasks.
 Agents read these `*.lace.ts` receipts as text, just as they read Markdown.
 Context Engineering owns their authoring. Existing Cortex Markdown instructions
 remain authoritative.
@@ -29,22 +29,25 @@ an unsupported capability for a separate core assignment.
 
 ### Receipt contract
 
-- Import the core types in each `*.lace.ts` file.
-- Default-export one literal, nonempty job using `as const satisfies Job`.
-- Limit receipt content to imports, literal declarations, and static references to imported jobs.
+- Import `Job` and the required task types and enums from the core.
+- Default-export a `new Job(...)` instance with at least one task or job.
+- Pass tasks and imported jobs directly to the constructor.
+- Construct nested groups with `new Job(...)`.
+- Limit receipts to imports, Job construction, literal tasks, and static job references.
 - Follow the limited declaration grammar in the
   [architecture](../teams/ai-team/docs/lace-architecture.md#validation-project).
 
 The model and check implementation are ordinary TypeScript owned by `lace/`.
 Receipt files use the limited context language they define.
 
-**Prohibited:** default-export an instruction task directly, or call an
-implementation helper to construct the receipt at runtime.
+**Prohibited:** default-export a raw array or a task, or call an arbitrary
+implementation helper to construct the receipt.
 
 **Preferred:** follow the
 [authoring receipt](../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts).
-It imports `Job` and the instruction kind, then exports a literal job containing
-an instruction and statically imported jobs.
+It imports `Job` and the instruction kind, then exports a `new Job(...)`
+instance containing an instruction, imported jobs, and a nested Job instance.
+The constructor checks their types without requiring assertions.
 
 ### Validation
 
@@ -71,7 +74,7 @@ receipt against both the compiler and the declaration grammar.
 
 ## Prohibited actions
 
-- Do not put context receipts or declared jobs and tasks in `lace/`.
+- Do not put context receipts or instantiated context jobs and tasks in `lace/`.
 - Do not use Lace as a coding-agent API or an application workflow.
 - Do not change core types, grammar, tests, package scripts, or compiler and lint
   configuration during receipt authoring.

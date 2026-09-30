@@ -1,13 +1,11 @@
 import {
-  type Job,
+  Job,
   TaskKind,
   WorkingDirectory,
 } from "../../../../../../../../lace/src/ts/lace.ts";
 
-export default [
-  {
-    kind: TaskKind.ShellCommand,
-    cwd: WorkingDirectory.LibraryRoot,
-    script: "bun run --filter @meta-cortex/lace verify",
-  },
-] as const satisfies Job;
+export default new Job({
+  kind: TaskKind.ShellCommand,
+  cwd: WorkingDirectory.LibraryRoot,
+  script: "bun run --filter @meta-cortex/lace verify",
+});

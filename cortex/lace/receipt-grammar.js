@@ -39,39 +39,26 @@ export class ReceiptGrammar {
           "error",
           {
             selector:
-              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, TSSatisfiesExpression, TSAsExpression, TSTypeReference, ArrayExpression, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression)",
+              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, NewExpression, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression)",
             message:
-              "Receipts contain only imports, literal jobs/tasks, and static job references.",
+              "Receipts contain only imports, Job construction, literal tasks, and static job references.",
           },
           {
             selector: "Program:not(:has(> ExportDefaultDeclaration))",
             message: "Every receipt must default-export a job.",
           },
           {
-            selector: "ExportDefaultDeclaration > :not(TSSatisfiesExpression)",
-            message: "Declare the root with 'as const satisfies Job'.",
+            selector:
+              "ExportDefaultDeclaration > :not(NewExpression[callee.type='Identifier'][callee.name='Job'])",
+            message: "Every receipt must default-export a Job instance.",
           },
           {
             selector:
-              "ExportDefaultDeclaration > TSSatisfiesExpression:not([typeAnnotation.type='TSTypeReference'][typeAnnotation.typeName.name='Job'])",
-            message: "The default export must satisfy Job.",
+              "NewExpression:not([callee.type='Identifier'][callee.name='Job'])",
+            message: "Construct only Job instances in context receipts.",
           },
           {
-            selector:
-              "ExportDefaultDeclaration > TSSatisfiesExpression > :not(TSAsExpression, TSTypeReference)",
-            message: "The root must be a literal job with 'as const'.",
-          },
-          {
-            selector:
-              "TSAsExpression:not([typeAnnotation.type='TSTypeReference'][typeAnnotation.typeName.name='const'])",
-            message: "Only 'as const' is permitted; do not cast a receipt.",
-          },
-          {
-            selector: "TSAsExpression > :not(ArrayExpression, TSTypeReference)",
-            message: "Declare a literal root job instead of aliasing a file.",
-          },
-          {
-            selector: "ArrayExpression[elements.length=0]",
+            selector: "NewExpression[arguments.length=0]",
             message: "Jobs must contain at least one task or job.",
           },
           {
