@@ -3,6 +3,7 @@
 Own agent-facing instructions, specifications, skills, practices, and their
 catalogs in the consuming project.
 
+- [Context knowledge](docs/index.yaml): Cortex context formats and their architecture.
 - [Tech writer](agents/tech-writer/AGENTS.md): documentation structure,
   context flow, rule clarity, and prohibited/preferred code examples.
 

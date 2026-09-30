@@ -3,7 +3,7 @@ import { type Job, TaskKind } from "./src/ts/lace.ts";
 export default [
   {
     kind: TaskKind.Instruction,
-    text: "Read lace/src/ts/lace.ts from the library root to learn the complete Lace vocabulary. Read receipt files as text, just as you read Markdown instructions.",
+    text: "Neural Lace defines the format of Cortex context files. Read lace/src/ts/lace.ts from the library root to learn its vocabulary. Read Cortex context receipts as text, just as you read Markdown instructions. Context Engineering owns their authoring; Lace is not a coding-agent API.",
   },
   [
     {
@@ -21,6 +21,6 @@ export default [
   },
   {
     kind: TaskKind.Instruction,
-    text: "This foundation supplies the declaration model and a checked receipt project. Existing AGENTS.md, SKILL.md, practices, catalogs, and circuit breakers remain authoritative. The example receipts demonstrate composition; they do not replace the current development workflow.",
+    text: "This foundation supplies the declaration model and a checked receipt project. Existing AGENTS.md, SKILL.md, practices, catalogs, and circuit breakers remain authoritative. The example receipts demonstrate composition; no existing Markdown context is migrated in this foundation.",
   },
 ] as const satisfies Job;

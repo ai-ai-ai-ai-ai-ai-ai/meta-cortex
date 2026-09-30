@@ -1,0 +1,6 @@
+kind: navigation
+title: AI Documentation
+entries:
+  - title: Neural Lace architecture
+    path: lace-architecture.md
+    summary: Typed Cortex context declarations, composition, and core ownership.

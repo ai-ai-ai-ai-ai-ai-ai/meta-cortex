@@ -73,6 +73,20 @@ locations and reports the specific semantic and mechanical checks performed.
 **Preferred report:** “Reviewed the changed section against the four practices.
 Its local links resolve; the code example was reviewed but not executed.”
 
+## Cortex context with Lace
+
+When the assignment concerns Cortex's own typed context files, use the
+[Neural Lace architecture](../../../../docs/lace-architecture.md).
+Its [authoring example](examples/lace/authoring.lace.ts) demonstrates context
+composition with imported jobs and existing compilation checks. Follow the
+[core ownership rules](../../../../../../lace/AGENTS.md) during receipt authoring.
+
+**Prohibited:** use the context format as an application programming API or
+modify its core to make an assigned context receipt compile.
+
+**Preferred:** write the assigned Cortex context with the existing declarations
+and check it using the provided compiler and grammar checks.
+
 ## Executable audits
 
 Run the bundled Vale and remark checks against actual Markdown files, and the

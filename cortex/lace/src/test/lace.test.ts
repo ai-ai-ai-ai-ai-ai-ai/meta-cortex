@@ -72,7 +72,7 @@ import { type Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
     },
     {
       scenario: "a nonexistent imported task",
-      source: `import compile from "../../../teams/dev-team/agents/typescript-dev/receipts/compile.lace.ts"; export default [compile[1]] as const satisfies Job;`,
+      source: `import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts"; export default [compile[1]] as const satisfies Job;`,
       diagnostic: "has no element at index",
     },
     {
@@ -85,15 +85,15 @@ import { type Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
 
 test("a Job directly groups static jobs and tasks without executing them", () => {
   const source = `${DeclarationCases.imports}
-import common from "../../../teams/dev-team/agents/typescript-dev/receipts/common.lace.ts";
-import compile from "../../../teams/dev-team/agents/typescript-dev/receipts/compile.lace.ts";
+import common from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/common.lace.ts";
+import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts";
 export default [
   common,
   [compile],
   {
     kind: TaskKind.ShellCommand,
-    cwd: WorkingDirectory.ProjectRoot,
-    script: "git status --short",
+    cwd: WorkingDirectory.LibraryRoot,
+    script: "bun run --filter @meta-cortex/lace check",
   },
 ] as const satisfies Job;
 `;
@@ -109,7 +109,7 @@ test.each(DeclarationCases.rejected.slice())("rejects $scenario", (example) => {
 
 test("an imported job's commands are readonly", () => {
   const source = `
-import compile from "../../../teams/dev-team/agents/typescript-dev/receipts/compile.lace.ts";
+import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts";
 compile[0].script = "other command";
 `;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(

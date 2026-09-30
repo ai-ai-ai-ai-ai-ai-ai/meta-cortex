@@ -1,5 +1,6 @@
 /**
- * Neural Lace is Cortex's agent-readable declaration language.
+ * Neural Lace is the declaration language for Cortex context files.
+ * Context authors use it for instructions, skills, and practices read by agents.
  * Read receipt files as text; do not import them to execute code.
  * Each receipt exports one Job. Jobs are directories; tasks are files.
  * A Job is the group itself: a nonempty readonly sequence of tasks and jobs.

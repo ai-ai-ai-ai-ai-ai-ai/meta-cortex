@@ -1,6 +1,8 @@
 # Lace Core
 
-Neural Lace defines the types and validation rules for Cortex receipt files.
+Neural Lace is the core of Cortex's context format. It defines the types and
+validation rules for Cortex context receipt files. Context Engineering owns
+context authoring; Lace is not a coding-agent API or application workflow.
 Read [the model](src/ts/lace.ts) and [the core job](core.lace.ts) before authoring
 receipts. The existing Cortex Markdown instructions still govern development.
 
@@ -24,7 +26,7 @@ Each `*.lace.ts` file imports the core types and exports one literal job using
 `as const satisfies Job`. It contains only imports, literal declarations, and
 references to statically imported jobs. The core API and check implementation
 are ordinary TypeScript owned by this directory; receipt files are the limited
-DSL described by the [architecture](../teams/dev-team/docs/lace-architecture.md).
+DSL described by the [architecture](../teams/ai-team/docs/lace-architecture.md).
 
 From the library root, `bun run --filter @meta-cortex/lace verify` checks the
 format, grammar, types, and contract tests. `bun run --filter @meta-cortex/lace

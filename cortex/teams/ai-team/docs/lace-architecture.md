@@ -1,10 +1,13 @@
 # Neural Lace Architecture
 
-Lace is the typed declaration language for future Cortex instructions. Its
+Neural Lace is the typed declaration language for Cortex context files: agent
+instructions, skills, and practices that agents read as text. Its
 [core model](../../../lace/src/ts/lace.ts) defines jobs and two task kinds:
 instructions and shell commands. Agents read receipt files as text. TypeScript
 checks their structure and imports without executing their commands.
 
+Lace belongs to context authoring through Context Engineering. It defines the
+format of Cortex context, not an API for coding agents or application workflows.
 This initial architecture adds a parallel foundation. Existing Markdown
 instructions, skills, practices, and YAML catalogs keep their current roles.
 The [core job](../../../lace/core.lace.ts) describes the vocabulary for agents.
@@ -35,11 +38,11 @@ only when the agent invokes the host's shell tool under the current assignment.
 ## Composition
 
 Import another receipt's default job as a typed reference to its static
-declaration. The [common receipt](../agents/typescript-dev/receipts/common.lace.ts)
-groups the shared [context](../agents/typescript-dev/receipts/context.lace.ts),
-[compile](../agents/typescript-dev/receipts/compile.lace.ts), and
-[verify](../agents/typescript-dev/receipts/verify.lace.ts) jobs. The
-[development receipt](../agents/typescript-dev/receipts/development.lace.ts)
+declaration. The [common receipt](../agents/tech-writer/skills/context-engineering/examples/lace/common.lace.ts)
+groups the shared [context](../agents/tech-writer/skills/context-engineering/examples/lace/context.lace.ts),
+[compile](../agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts), and
+[verify](../agents/tech-writer/skills/context-engineering/examples/lace/verify.lace.ts) jobs. The
+[authoring receipt](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts)
 reuses those same declarations around its own instruction. TypeScript checks
 the imported jobs and rejects missing references and invalid task positions.
 
@@ -62,7 +65,7 @@ the capability it cannot express.
 
 These are agent assignment rules. TypeScript enforces readonly declarations;
 it does not enforce filesystem write permissions. The core lives under `lace/`,
-and the example receipts live under their owning agent outside that directory.
+and the example receipts live with Context Engineering outside that directory.
 
 - **Prohibited:** weaken the type model to make a receipt pass.
 
@@ -80,7 +83,7 @@ and references to statically declared jobs. It requires a default nonempty job a
 prose and scripts. It rejects functions, calls, loops, conditionals, assignments,
 spreads, interpolation, type casts, and imports of arbitrary implementation code.
 TypeScript validates task fields, discriminants, working directories, and the
-actual imported child types. No interpreter or command runner is introduced.
+actual imported job and task types. No interpreter or command runner is introduced.
 
 From the library root:
 
