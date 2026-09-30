@@ -1,134 +1,228 @@
 # Neural Lace Architecture
 
-Neural Lace is the typed declaration language for Cortex context files: agent
-instructions, skills, and practices that agents read as text. Its
-[core model](../../../lace/src/ts/lace.ts) defines jobs and two task kinds:
-instructions and shell commands. Agents read receipt files as text. TypeScript
-checks their structure and imports without executing their commands.
+Neural Lace defines typed Cortex context: instructions, skills, and practices
+that agents read as text. Its [model](../../../lace/src/ts/lace.ts) supplies
+Jobs and two task kinds. TypeScript checks declarations and imports;
+the agent interprets the context and runs instructed commands through host tools.
+Read [Lace's entry point](../../../lace/AGENTS.ts) for its ownership rules.
 
-Lace belongs to context authoring through Context Engineering. It defines the
-format of Cortex context, not an API for coding agents or application workflows.
-This initial architecture adds a parallel foundation.
-Lace describes itself in [AGENTS.ts](../../../lace/AGENTS.ts), replacing its own
-Markdown entry point. Other Markdown instructions, skills, practices, and YAML
-catalogs keep their current roles. Agents learn the vocabulary by reading the
-core's TypeScript definitions as text, then read its entry point for instructions.
+## Required actions
 
-## Jobs and tasks
+### Context ownership
+
+- Use Lace only for Cortex context. Keep consuming application workflows with
+  their application code.
+- Keep subject receipts beside the context they describe, outside `lace/`.
+- Use Context Engineering for authoring. Its
+  [examples](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts)
+  demonstrate the declaration language.
+- Keep the model and validation implementation in `lace/` free of context jobs
+  and tasks. Those files implement the language.
+- Read `lace/AGENTS.ts` as context. It describes Lace using the same Job and
+  task declarations available to receipt authors.
+
+Only Lace's own Markdown entry point has migrated to TypeScript.
+Other Markdown instructions, skills, and practices retain their current roles.
+YAML catalogs continue to provide navigation.
+
+**Prohibited:** put an application workflow or a subject instruction job into
+Lace's model while assigned to write Cortex context.
+
+**Preferred:** keep a subject receipt with its owning context. Lace's own
+`AGENTS.ts` belongs in `lace/` because it describes that core; this exception
+does not move subject receipts into the implementation.
 
 ### Job construction
 
-Every context receipt, including `AGENTS.ts`, default-exports a `new Job(...)`
-instance. Pass tasks and imported jobs directly to its constructor.
-Use another `new Job(...)` for
-a nested group, such as `new Job(context, new Job(compile, verify))`.
-The constructor checks each entry against the `Entry = Job | Task` union.
-Its readonly `entries` preserve their source order.
-The declaration grammar requires at least one entry in each receipt job.
-The constructor checks the contents directly; no assertion clause is needed.
+- Default-export one `new Job(...)` instance from each context receipt.
+  Both `AGENTS.ts` and `*.lace.ts` use this contract.
+- Pass entries directly to the constructor. `Entry = Job | Task` accepts a
+  nested Job or a task. The readonly entry collection preserves source order.
+- Construct nested groups with another `new Job(...)`.
+- Include at least one entry in each Job. The declaration grammar enforces
+  this requirement; the constructor alone permits an empty Job.
 
-- **Prohibited:** export `[context, compile]` and treat that array as a job.
+The TypeScript fragments below assume `Job`, `TaskKind`, and `WorkingDirectory`
+are imported from the model. `context`, `compile`, and `verify` are default Jobs
+imported from the linked Context Engineering examples.
+Each fragment is a separate receipt body.
 
-- **Preferred:** export `new Job(context, compile)`. The constructor checks
-  the entries and creates the Job instance.
+**Prohibited:** export an array as the root. It compiles, but the declaration
+grammar rejects it because every receipt must start with a Job instance.
 
-### Tasks
-
-Jobs represent directories; tasks represent files. `Task` is the discriminated
-union of instructions and shell commands. An instruction has
-`kind: TaskKind.Instruction` and literal `text`. A shell command has
-`kind: TaskKind.ShellCommand`, literal `script`, and `cwd`. The working directory
-selects the consuming project root or Cortex library root. The agent resolves
-both roots from the session before using commands.
-
-The agent reads the root job, follows its prose, and descends into the selected
-jobs. Conditions and context selection remain instructions for the agent.
-Lace supplies declarations; the host supplies execution tools. A command runs
-only when the agent invokes the host's shell tool under the current assignment.
-
-- **Prohibited:** treat compiling a receipt as executing its shell commands.
-
-- **Preferred:** read the declaration, apply the session instructions, and use the
-  host tool for an instructed command.
-
-## Composition
-
-Import another receipt's default job as a typed reference to its static
-declaration. The [common receipt](../agents/tech-writer/skills/context-engineering/examples/lace/common.lace.ts)
-groups the shared [context](../agents/tech-writer/skills/context-engineering/examples/lace/context.lace.ts),
-[compile](../agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts), and
-[verify](../agents/tech-writer/skills/context-engineering/examples/lace/verify.lace.ts) jobs. The
-[authoring receipt](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts)
-reuses those same declarations around its own instruction. TypeScript checks
-the imported jobs and rejects missing references and invalid task positions.
-
-Read imported sources before applying their instructions. Reuse their canonical
-declarations instead of copying command text. Relative imports resolve from the
-receipt file. Paths in prose resolve from the stated root or source document.
-
-- **Prohibited:** copy a shared command into several receipts and update only one.
-
-- **Preferred:** import the job containing that command from its owning receipt.
-
-## Core and receipt ownership
-
-The [core ownership rules](../../../lace/AGENTS.ts) protect the vocabulary and
-checks. An assignment to author receipts authorizes receipt changes and running
-existing verification. It does not authorize editing Lace, tests, package scripts,
-compiler settings, or lint rules. Core changes require explicit user authorization
-for core work. Correct an invalid receipt using the existing vocabulary or report
-the capability it cannot express.
-
-These are agent assignment rules. TypeScript enforces readonly declarations;
-it does not enforce filesystem write permissions. The core lives under `lace/`
-and contains the model and validation code. Those implementation files contain
-no instantiated context jobs or tasks. Its `AGENTS.ts` entry point describes
-Lace with the same declaration language used by subject receipts. Subject
-receipts belong beside their Markdown context, outside the core. The initial
-examples live with Context Engineering. Only Lace's own Markdown entry point
-has migrated.
-
-- **Prohibited:** put a subject instruction job in the core implementation,
-  or weaken the type model to make a context receipt pass.
-
-- **Preferred:** write the receipt beside its owning context and keep the core
-  unchanged during authoring.
-
-## Validation project
-
-The [TypeScript project](../../../tsconfig.json) includes every `*.lace.ts`
-receipt and `AGENTS.ts` entry point in the library, the model, and its contract
-tests. Both context filenames use the same declaration grammar.
-The compiler uses strict types, exact optional properties, checked indexed access, unused-code checks, and
-`noEmit`. The shared Bun workspace owns all dependencies and its lockfile.
-
-The grammar allows imports, Job construction, literal task objects, enum members,
-and references to imported jobs. It requires a default nonempty Job instance and
-literal prose and scripts. Only `new Job(...)` construction is permitted.
-It rejects other constructors, function calls, loops, conditionals, assignments,
-spreads, interpolation, type assertions, and arbitrary implementation imports.
-TypeScript validates task fields, discriminants, working directories, and the
-actual imported job and task types. ESLint's built-in declaration rules require
-literal prose and commands. Member access is limited to `TaskKind` in `kind`
-and `WorkingDirectory` in `cwd`. No custom import-binding tracker is needed.
-No interpreter or command runner is introduced.
-
-From the library root:
-
-```sh
-bun run --filter @meta-cortex/lace check
-bun run --filter @meta-cortex/lace verify
+```typescript
+export default [context, compile, verify];
 ```
 
-`check` compiles without emitting files. `verify` also checks formatting,
-declaration grammar, and compiler contract tests. The existing `bun run verify`
-includes Lace through the workspace, so the existing CI gate validates it.
-Compilation verifies declaration types and resolvable imports. It does not
-detect circular context imports, establish that prose is correct, or prove that
-a declared command succeeds in a consuming project.
+**Preferred:** construct the root Job and its nested group directly.
+The constructor checks the entries without type assertions.
 
-- **Prohibited:** use `text: Promise.name` because it compiles as a string.
-  It reads a runtime value instead of declaring literal context.
+```typescript
+export default new Job(context, new Job(compile, verify));
+```
 
-- **Preferred:** declare `text: "Read the assigned context."`, then pass both
-  the compiler and declaration grammar checks before using the receipt.
+### Task declarations
+
+Jobs represent directories; tasks represent files.
+`Task = Instruction | ShellCommand` is a discriminated union:
+
+- **Instruction:** `kind: TaskKind.Instruction` and literal `text`.
+- **Shell command:** `kind: TaskKind.ShellCommand`, literal `script`, and `cwd`.
+  Choose `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
+
+**Prohibited:** mix shell-command fields into an instruction.
+The compiler rejects `script` on this instruction.
+
+```typescript
+export default new Job({
+  kind: TaskKind.Instruction,
+  script: "bun run --filter @meta-cortex/lace check",
+});
+```
+
+**Preferred:** give each task the fields required by its variant.
+
+```typescript
+export default new Job(
+  { kind: TaskKind.Instruction, text: "Read the assigned context." },
+  {
+    kind: TaskKind.ShellCommand,
+    cwd: WorkingDirectory.LibraryRoot,
+    script: "bun run --filter @meta-cortex/lace check",
+  },
+);
+```
+
+### Composition
+
+Import another receipt's default Job to reuse its canonical declaration.
+Read the imported source before applying its instructions.
+Relative imports resolve from the receipt file.
+Paths in prose resolve from the stated root or source document.
+
+The [common receipt](../agents/tech-writer/skills/context-engineering/examples/lace/common.lace.ts)
+groups the [context](../agents/tech-writer/skills/context-engineering/examples/lace/context.lace.ts),
+[compile](../agents/tech-writer/skills/context-engineering/examples/lace/compile.lace.ts),
+and [verify](../agents/tech-writer/skills/context-engineering/examples/lace/verify.lace.ts)
+Jobs. The context Job imports `lace/AGENTS.ts`.
+The authoring example reuses these Jobs around its own instruction.
+TypeScript rejects missing imports and entries with incompatible types.
+
+**Prohibited:** copy the shared compile command into another receipt.
+This compiles and passes the grammar, but creates a second declaration to maintain.
+
+```typescript
+export default new Job({
+  kind: TaskKind.ShellCommand,
+  cwd: WorkingDirectory.LibraryRoot,
+  script: "bun run --filter @meta-cortex/lace check",
+});
+```
+
+**Preferred:** use the imported default Job that owns the command.
+Changes to that canonical receipt then reach its callers.
+
+```typescript
+export default new Job(compile);
+```
+
+### Agent execution
+
+1. Read the root Job and the imported context sources it selects.
+2. Interpret conditions and context selection from instruction text.
+3. Resolve the project and library roots from the session.
+4. Use the host's shell tool when the context instructs a command within the
+   current assignment. Apply the declared working directory.
+
+Compilation never runs a declared shell command.
+The declaration format supplies context; the host supplies execution tools.
+
+**Prohibited:** after compiling a receipt containing a shell command, report
+that the command ran successfully.
+
+**Preferred:** report that compilation checked the declaration.
+Report command execution separately, using the result from the host's shell tool.
+
+### Validation project
+
+The [TypeScript project](../../../tsconfig.json) includes library receipts,
+`AGENTS.ts` entry points, the model, and contract tests.
+It enables strict types, exact optional properties, checked indexed access,
+unused-code checks, and `noEmit`.
+The shared Bun workspace owns dependencies and the lockfile.
+Both context filenames use the same declaration grammar.
+
+Run from the Cortex library root: `cortex/` in this repository or `.meta-cortex/`
+in an installed project.
+
+1. During editing, compile declarations and resolve imports without emitting files:
+
+   ```sh
+   bun run --filter @meta-cortex/lace check
+   ```
+
+2. Before reporting all Lace checks passed, check formatting, declaration grammar,
+   types, and contract tests:
+
+   ```sh
+   bun run --filter @meta-cortex/lace verify
+   ```
+
+Workspace `bun run verify` includes Lace, so the existing CI gate checks it.
+These checks do not detect circular context imports, establish that prose is
+correct, or prove that declared commands succeed in a consuming project.
+
+**Prohibited:** run only `check` and report that all Lace checks passed.
+
+**Preferred:** run `verify` and report its result. Review prose meaning separately;
+use actual execution results for claims about declared commands.
+
+## Prohibited actions
+
+### Core and receipt ownership
+
+Follow the [core ownership rules](../../../lace/AGENTS.ts) during authoring.
+An assignment to write a receipt permits using the vocabulary and existing checks.
+Changes to the model, core entry point, grammar, tests, scripts, or configuration
+require an explicit user assignment for core work.
+These rules govern agent assignments. TypeScript's readonly declarations do
+not enforce filesystem write permissions.
+
+**Prohibited:** add a task kind or weaken validation because an assigned context
+receipt fails its checks.
+
+**Preferred:** correct the receipt using the existing vocabulary.
+If the language cannot express the assigned context, report the missing capability.
+An explicit assignment to extend Lace permits the corresponding core change;
+a failed receipt alone does not.
+
+### Runtime logic in receipts
+
+The [declaration grammar](../../../lace/receipt-grammar.js) permits static imports,
+Job construction, literal task objects, and imported Job references.
+Enum access is limited to `TaskKind` for `kind` and `WorkingDirectory` for `cwd`.
+Instruction text and scripts must be nonblank literals without interpolation.
+
+The grammar rejects arbitrary implementation imports, other constructors,
+function calls, loops, conditionals, assignments, spreads, type assertions,
+and check-suppression attempts. Express context decisions as instruction prose.
+
+**Prohibited:** read a runtime string instead of declaring literal context.
+This compiles because `Promise.name` is a string, but fails the grammar.
+
+```typescript
+export default new Job({
+  kind: TaskKind.Instruction,
+  text: Promise.name,
+});
+```
+
+**Preferred:** declare the instruction literally.
+The compiler checks its task type; the grammar checks its declaration form.
+
+```typescript
+export default new Job({
+  kind: TaskKind.Instruction,
+  text: "Read the assigned context.",
+});
+```
