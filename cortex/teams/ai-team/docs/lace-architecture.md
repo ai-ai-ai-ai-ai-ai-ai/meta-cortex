@@ -88,7 +88,10 @@ and references to statically declared jobs. It requires a default nonempty job a
 prose and scripts. It rejects functions, calls, loops, conditionals, assignments,
 spreads, interpolation, type casts, and imports of arbitrary implementation code.
 TypeScript validates task fields, discriminants, working directories, and the
-actual imported job and task types. No interpreter or command runner is introduced.
+actual imported job and task types. ESLint's built-in declaration rules require
+literal prose and commands. Member access is limited to `TaskKind` in `kind`
+and `WorkingDirectory` in `cwd`. No custom import-binding tracker is needed.
+No interpreter or command runner is introduced.
 
 From the library root:
 
@@ -103,7 +106,8 @@ includes Lace through the workspace, so the existing CI gate validates it.
 Compilation verifies declarations; it cannot establish that prose is correct or
 that a declared command succeeds in a consuming project.
 
-- **Prohibited:** bypass grammar checks because arbitrary TypeScript compiles.
+- **Prohibited:** use `text: Promise.name` because it compiles as a string.
+  It reads a runtime value instead of declaring literal context.
 
-- **Preferred:** pass both the compiler and the declaration grammar before using
-  a receipt.
+- **Preferred:** declare `text: "Read the assigned context."`, then pass both
+  the compiler and declaration grammar checks before using the receipt.

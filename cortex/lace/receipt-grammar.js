@@ -1,5 +1,4 @@
 import tseslint from "typescript-eslint";
-import { ReceiptBindings } from "./receipt-bindings.js";
 
 /** The declaration grammar supplements TypeScript's node and import checks. */
 export class ReceiptGrammar {
@@ -10,11 +9,9 @@ export class ReceiptGrammar {
       linterOptions: { noInlineConfig: true },
       languageOptions: { parser: tseslint.parser },
       plugins: {
-        lace: { rules: { "imported-values": ReceiptBindings.rule() } },
         "@typescript-eslint": tseslint.plugin,
       },
       rules: {
-        "lace/imported-values": "error",
         "@typescript-eslint/ban-ts-comment": [
           "error",
           {
@@ -80,6 +77,21 @@ export class ReceiptGrammar {
           {
             selector: "Property[computed=true], Property[shorthand=true]",
             message: "Give every task field an explicit literal name.",
+          },
+          {
+            selector:
+              ":matches(Property[key.name=/^(text|script)$/], Property[key.value=/^(text|script)$/]):not([value.type='Literal'], [value.type='TemplateLiteral'])",
+            message: "Write instruction text and commands as literals.",
+          },
+          {
+            selector:
+              "MemberExpression:not(Property > MemberExpression), MemberExpression[computed=true]",
+            message: "Member access is limited to task enum fields.",
+          },
+          {
+            selector:
+              "Property[value.type='MemberExpression']:not([key.name='kind'][value.object.name='TaskKind'], [key.value='kind'][value.object.name='TaskKind'], [key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
+            message: "Use TaskKind for kind and WorkingDirectory for cwd.",
           },
           {
             selector: "Literal[value=/^\\s*$/]",

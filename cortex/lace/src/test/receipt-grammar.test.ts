@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
 interface RejectedSyntax {
@@ -11,7 +12,7 @@ type RejectedSyntaxCases = readonly RejectedSyntax[];
 
 class GrammarCases {
   static readonly imports = `
-import { type Job, TaskKind } from "./src/ts/lace.ts";
+import { type Job, TaskKind, WorkingDirectory } from "./src/ts/lace.ts";
 `;
   static readonly root = `
 export default [
@@ -78,7 +79,27 @@ export default [
     {
       scenario: "ambient runtime values",
       source: `export default [{ kind: TaskKind.Instruction, text: Promise.name }] as const satisfies Job;`,
-      diagnostic: "literals or Lace imports",
+      diagnostic: "text and commands as literals",
+    },
+    {
+      scenario: "an ambient value in a quoted command field",
+      source: `export default [{ kind: TaskKind.ShellCommand, "cwd": WorkingDirectory.LibraryRoot, "script": String.name }] as const satisfies Job;`,
+      diagnostic: "text and commands as literals",
+    },
+    {
+      scenario: "an ambient prototype instead of a static job",
+      source: `export default [Function.prototype] as const satisfies Job;`,
+      diagnostic: "Member access is limited",
+    },
+    {
+      scenario: "an ambient value in an enum field",
+      source: `export default [{ kind: Function.prototype, text: "Read context." }] as const satisfies Job;`,
+      diagnostic: "Use TaskKind for kind",
+    },
+    {
+      scenario: "computed enum access",
+      source: `export default [{ kind: TaskKind["Instruction"], text: "Read context." }] as const satisfies Job;`,
+      diagnostic: "Member access is limited",
     },
   ];
 }
@@ -91,9 +112,27 @@ export default [
   [common],
   { kind: TaskKind.Instruction, text: \`Read the context.
 Then apply its instructions.\` },
+  {
+    "kind": TaskKind.ShellCommand,
+    "cwd": WorkingDirectory.LibraryRoot,
+    "script": "bun run --filter @meta-cortex/lace check",
+  },
 ] as const satisfies Job;
 `;
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
+});
+
+test("the grammar rejects ambient strings that the compiler accepts", () => {
+  const source = `
+import { type Job, TaskKind } from "../../src/ts/lace.ts";
+export default [
+  { kind: TaskKind.Instruction, text: Promise.name },
+] as const satisfies Job;
+`;
+  expect(new ReceiptCompilation(source).messages()).toEqual([]);
+  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
+    "text and commands as literals",
+  );
 });
 
 test.each(GrammarCases.rejected.slice())("rejects $scenario", (example) => {
