@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { ReceiptCompilation } from "./receipt-compilation.ts";
+import { ReceiptCompilation } from "./receipt.ts";
 
 interface RejectedDeclaration {
   readonly scenario: string;
