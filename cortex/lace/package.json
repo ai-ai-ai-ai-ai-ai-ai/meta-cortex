@@ -11,9 +11,6 @@
     "test": "bun test src/test",
     "verify": "bun run format:check && bun run lint && bun run check && bun run test"
   },
-  "dependencies": {
-    "effect": "4.0.0-rc.117"
-  },
   "devDependencies": {
     "@types/bun": "catalog:",
     "typescript": "6.0.3",

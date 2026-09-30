@@ -1,11 +1,9 @@
-import { Match } from "effect";
-
 /**
  * Neural Lace is the declaration language for Cortex context files.
  * Context authors use it for instructions, skills, and practices read by agents.
  * Read receipt files as text; do not import them to execute code.
  * Each receipt exports one Job. Jobs are directories; tasks are files.
- * A Job instance groups tasks and other jobs through its constructor.
+ * The immutable Job builder groups tasks and other jobs.
  * Statically declared jobs compose through imports without name-keyed lookup.
  */
 export enum TaskKind {
@@ -55,10 +53,13 @@ export interface Statement {
 }
 
 /** Declared shell text. Compilation and importing never run this command. */
-export interface ShellCommand {
-  readonly kind: TaskKind.ShellCommand;
+export interface Command {
   readonly cwd: WorkingDirectory;
   readonly script: string;
+}
+
+export interface ShellCommand extends Command {
+  readonly kind: TaskKind.ShellCommand;
 }
 
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
@@ -71,40 +72,53 @@ export type Entry = Job | Task;
 export class Job {
   readonly #content: readonly Entry[];
 
-  constructor(...entries: Entry[]) {
-    const statement: Pick<Statement, "kind"> = {
-      kind: TaskKind.Statement,
-    };
-    const shellCommand: Pick<ShellCommand, "kind"> = {
-      kind: TaskKind.ShellCommand,
-    };
-    this.#content = Object.freeze(
-      entries.map((entry) =>
-        Match.value(entry).pipe(
-          Match.when(statement, (task) => {
-            const snapshot: Statement = {
-              ...task,
-              prompt: this.#snapshotPrompt(task.prompt),
-            };
-            return Object.freeze(snapshot);
-          }),
-          Match.when(shellCommand, (task) => {
-            const snapshot: ShellCommand = { ...task };
-            return Object.freeze(snapshot);
-          }),
-          Match.orElse((job: Job) => job),
-        ),
-      ),
-    );
+  private constructor(entries: readonly Entry[]) {
+    this.#content = Object.freeze([...entries]);
     Object.freeze(this);
+  }
+
+  static statement(prompt: Prompt): Job {
+    const job = new Job([]);
+    return job.statement(prompt);
+  }
+
+  static shellCommand(command: Command): Job {
+    const job = new Job([]);
+    return job.shellCommand(command);
+  }
+
+  static job(child: Job): Job {
+    const job = new Job([]);
+    return job.job(child);
+  }
+
+  statement(prompt: Prompt): Job {
+    const statement: Statement = {
+      kind: TaskKind.Statement,
+      prompt: this.#snapshotPrompt(prompt),
+    };
+    return this.#append(Object.freeze(statement));
+  }
+
+  shellCommand(command: Command): Job {
+    const shellCommand: ShellCommand = {
+      kind: TaskKind.ShellCommand,
+      cwd: command.cwd,
+      script: command.script,
+    };
+    return this.#append(Object.freeze(shellCommand));
+  }
+
+  job(child: Job): Job {
+    return this.#append(child);
   }
 
   size(): number {
     return this.#content.length;
   }
 
-  append(entry: Entry): Job {
-    return new Job(...this.#content, entry);
+  #append(entry: Entry): Job {
+    return new Job([...this.#content, entry]);
   }
 
   #snapshotPrompt(prompt: Prompt): Prompt {
