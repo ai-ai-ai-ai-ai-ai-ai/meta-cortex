@@ -69,11 +69,11 @@ export default Job.job(context).job(checks);
 
 ### Immutable Job operations
 
-Job owns an immutable Effect `Chunk` in a TypeScript `private readonly` field.
+Job owns a frozen `readonly Entry[]` in a TypeScript `private readonly` field.
 Builders copy and freeze prompts, commands, lists, and labelled groups without
 freezing the caller's objects. Nested Jobs are already immutable. No operation returns the entry
 collection or task references. TypeScript checks private access.
-`Chunk.append` creates the next collection without rebuilding existing task values.
+Each builder creates a new array for its Job and preserves the original.
 
 - `size()` returns the number of immediate entries.
 - `statement`, `shellCommand`, and `job` return new Jobs. The original remains

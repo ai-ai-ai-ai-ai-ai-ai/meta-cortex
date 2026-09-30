@@ -84,7 +84,7 @@ export default Job.statement({
           .statement({
             kind: PromptKind.BulletList,
             items: [
-              "Job owns an immutable Effect Chunk in a private readonly field.",
+              "Job owns a frozen readonly Entry array in a private readonly field.",
               "Builders snapshot prompts and commands without modifying source objects or arrays.",
               "size() counts immediate entries.",
               "Each statement, shellCommand, or job call returns a new Job without changing the original.",

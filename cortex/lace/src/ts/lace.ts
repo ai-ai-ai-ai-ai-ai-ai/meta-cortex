@@ -1,4 +1,4 @@
-import { Array as EffectArray, Chunk } from "effect";
+import { Array as EffectArray } from "effect";
 
 /**
  * Neural Lace is the declaration language for Cortex context files.
@@ -72,22 +72,23 @@ export type Entry = Job | Task;
 
 /** Construction checks context declarations; it never executes their commands. */
 export class Job {
-  private constructor(private readonly content: Chunk.Chunk<Entry>) {
+  private constructor(private readonly content: readonly Entry[]) {
+    Object.freeze(this.content);
     Object.freeze(this);
   }
 
   static statement(prompt: Prompt): Job {
-    const job = new Job(Chunk.empty());
+    const job = new Job([]);
     return job.statement(prompt);
   }
 
   static shellCommand(command: Command): Job {
-    const job = new Job(Chunk.empty());
+    const job = new Job([]);
     return job.shellCommand(command);
   }
 
   static job(child: Job): Job {
-    const job = new Job(Chunk.empty());
+    const job = new Job([]);
     return job.job(child);
   }
 
@@ -113,11 +114,11 @@ export class Job {
   }
 
   size(): number {
-    return Chunk.size(this.content);
+    return this.content.length;
   }
 
   private append(entry: Entry): Job {
-    return new Job(Chunk.append(this.content, entry));
+    return new Job([...this.content, entry]);
   }
 
   private snapshotPrompt(prompt: Prompt): Prompt {
