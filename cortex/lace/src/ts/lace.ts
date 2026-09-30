@@ -1,4 +1,5 @@
 import { Array as EffectArray } from "effect";
+import { type Chunk, append, empty, size } from "effect/Chunk";
 
 /**
  * Neural Lace is the declaration language for Cortex context files.
@@ -72,23 +73,22 @@ export type Entry = Job | Task;
 
 /** Construction checks context declarations; it never executes their commands. */
 export class Job {
-  private constructor(private readonly content: readonly Entry[]) {
-    Object.freeze(this.content);
+  private constructor(private readonly content: Chunk<Entry>) {
     Object.freeze(this);
   }
 
   static statement(prompt: Prompt): Job {
-    const job = new Job([]);
+    const job = new Job(empty());
     return job.statement(prompt);
   }
 
   static shellCommand(command: Command): Job {
-    const job = new Job([]);
+    const job = new Job(empty());
     return job.shellCommand(command);
   }
 
   static job(child: Job): Job {
-    const job = new Job([]);
+    const job = new Job(empty());
     return job.job(child);
   }
 
@@ -114,11 +114,11 @@ export class Job {
   }
 
   size(): number {
-    return this.content.length;
+    return size(this.content);
   }
 
   private append(entry: Entry): Job {
-    return new Job([...this.content, entry]);
+    return new Job(append(this.content, entry));
   }
 
   private snapshotPrompt(prompt: Prompt): Prompt {
@@ -130,7 +130,7 @@ export class Job {
       case PromptKind.BulletList: {
         const snapshot: BulletList = {
           ...prompt,
-          items: Object.freeze([...prompt.items]),
+          items: Object.freeze(EffectArray.copy(prompt.items)),
         };
         return Object.freeze(snapshot);
       }
@@ -138,7 +138,7 @@ export class Job {
         const items = EffectArray.map(prompt.items, (item) => {
           const snapshot: EnclosedListItem = {
             ...item,
-            items: Object.freeze([...item.items]),
+            items: Object.freeze(EffectArray.copy(item.items)),
           };
           return Object.freeze(snapshot);
         });
