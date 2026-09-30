@@ -44,7 +44,7 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.t
     {
       scenario: "a plain object imitating a Job instance",
       source: `export default Job.job({});`,
-      diagnostic: "#content",
+      diagnostic: "content",
     },
     {
       scenario: "a task instead of a nested Job",
@@ -225,7 +225,7 @@ import compile from "../../../teams/ai-team/agents/tech-writer/skills/context-en
 compile.content;
 `;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
-    "Property 'content' does not exist",
+    "Property 'content' is private",
   );
 });
 test("Job owns immutable state without changing supplied prompts", () => {
@@ -237,7 +237,6 @@ test("Job owns immutable state without changing supplied prompts", () => {
   expect(job.size()).toBe(1);
   expect(Object.isFrozen(job)).toBe(true);
   expect(Object.isFrozen(prompt)).toBe(false);
-  expect(Object.getOwnPropertyNames(job)).toEqual([]);
   expect(Reflect.set(job, "entries", [])).toBe(false);
   expect(job.size()).toBe(1);
 });

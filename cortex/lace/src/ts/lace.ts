@@ -1,3 +1,5 @@
+import { Array as EffectArray, Chunk } from "effect";
+
 /**
  * Neural Lace is the declaration language for Cortex context files.
  * Context authors use it for instructions, skills, and practices read by agents.
@@ -70,34 +72,31 @@ export type Entry = Job | Task;
 
 /** Construction checks context declarations; it never executes their commands. */
 export class Job {
-  readonly #content: readonly Entry[];
-
-  private constructor(entries: readonly Entry[]) {
-    this.#content = Object.freeze([...entries]);
+  private constructor(private readonly content: Chunk.Chunk<Entry>) {
     Object.freeze(this);
   }
 
   static statement(prompt: Prompt): Job {
-    const job = new Job([]);
+    const job = new Job(Chunk.empty());
     return job.statement(prompt);
   }
 
   static shellCommand(command: Command): Job {
-    const job = new Job([]);
+    const job = new Job(Chunk.empty());
     return job.shellCommand(command);
   }
 
   static job(child: Job): Job {
-    const job = new Job([]);
+    const job = new Job(Chunk.empty());
     return job.job(child);
   }
 
   statement(prompt: Prompt): Job {
     const statement: Statement = {
       kind: TaskKind.Statement,
-      prompt: this.#snapshotPrompt(prompt),
+      prompt: this.snapshotPrompt(prompt),
     };
-    return this.#append(Object.freeze(statement));
+    return this.append(Object.freeze(statement));
   }
 
   shellCommand(command: Command): Job {
@@ -106,22 +105,22 @@ export class Job {
       cwd: command.cwd,
       script: command.script,
     };
-    return this.#append(Object.freeze(shellCommand));
+    return this.append(Object.freeze(shellCommand));
   }
 
   job(child: Job): Job {
-    return this.#append(child);
+    return this.append(child);
   }
 
   size(): number {
-    return this.#content.length;
+    return Chunk.size(this.content);
   }
 
-  #append(entry: Entry): Job {
-    return new Job([...this.#content, entry]);
+  private append(entry: Entry): Job {
+    return new Job(Chunk.append(this.content, entry));
   }
 
-  #snapshotPrompt(prompt: Prompt): Prompt {
+  private snapshotPrompt(prompt: Prompt): Prompt {
     switch (prompt.kind) {
       case PromptKind.Paragraph: {
         const snapshot: Paragraph = { ...prompt };
@@ -135,7 +134,7 @@ export class Job {
         return Object.freeze(snapshot);
       }
       case PromptKind.EnclosedList: {
-        const items = prompt.items.map((item) => {
+        const items = EffectArray.map(prompt.items, (item) => {
           const snapshot: EnclosedListItem = {
             ...item,
             items: Object.freeze([...item.items]),

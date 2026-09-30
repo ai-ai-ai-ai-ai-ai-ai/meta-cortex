@@ -11,6 +11,9 @@
     "lace": {
       "name": "@meta-cortex/lace",
       "version": "0.1.0",
+      "dependencies": {
+        "effect": "4.0.0-rc.117",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "eslint": "10.8.1",

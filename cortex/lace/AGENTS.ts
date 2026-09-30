@@ -84,11 +84,11 @@ export default Job.statement({
           .statement({
             kind: PromptKind.BulletList,
             items: [
-              "Job owns immutable contents in runtime-private storage.",
+              "Job owns an immutable Effect Chunk in a private readonly field.",
               "Builders snapshot prompts and commands without modifying source objects or arrays.",
               "size() counts immediate entries.",
               "Each statement, shellCommand, or job call returns a new Job without changing the original.",
-              "No method exposes stored entries or prompt references.",
+              "TypeScript checks private access; no method exposes stored entries or prompt references.",
               "The constructor is private; receipts use only the three builder methods.",
             ],
           })
