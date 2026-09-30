@@ -34,17 +34,13 @@ export interface PromptStatement {
 
 export interface BulletList {
   readonly kind: PromptKind.BulletList;
-  readonly items: readonly string[];
-}
-
-export interface EnclosedListItem {
   readonly label: string;
   readonly items: readonly string[];
 }
 
 export interface EnclosedList {
   readonly kind: PromptKind.EnclosedList;
-  readonly items: readonly EnclosedListItem[];
+  readonly items: readonly BulletList[];
 }
 
 export type Prompt = PromptStatement | BulletList | EnclosedList;
@@ -127,21 +123,12 @@ export class Job {
         const snapshot: PromptStatement = { ...prompt };
         return Object.freeze(snapshot);
       }
-      case PromptKind.BulletList: {
-        const snapshot: BulletList = {
-          ...prompt,
-          items: Object.freeze(EffectArray.copy(prompt.items)),
-        };
-        return Object.freeze(snapshot);
-      }
+      case PromptKind.BulletList:
+        return this.snapshotBulletList(prompt);
       case PromptKind.EnclosedList: {
-        const items = EffectArray.map(prompt.items, (item) => {
-          const snapshot: EnclosedListItem = {
-            ...item,
-            items: Object.freeze(EffectArray.copy(item.items)),
-          };
-          return Object.freeze(snapshot);
-        });
+        const items = EffectArray.map(prompt.items, (item) =>
+          this.snapshotBulletList(item),
+        );
         const snapshot: EnclosedList = {
           ...prompt,
           items: Object.freeze(items),
@@ -149,5 +136,13 @@ export class Job {
         return Object.freeze(snapshot);
       }
     }
+  }
+
+  private snapshotBulletList(list: BulletList): BulletList {
+    const snapshot: BulletList = {
+      ...list,
+      items: Object.freeze(EffectArray.copy(list.items)),
+    };
+    return Object.freeze(snapshot);
   }
 }

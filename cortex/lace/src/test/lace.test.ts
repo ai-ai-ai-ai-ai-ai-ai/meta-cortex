@@ -7,6 +7,7 @@ import {
   WorkingDirectory,
   type Prompt,
   type Command,
+  type BulletList,
 } from "../ts/lace.ts";
 interface RejectedDeclaration {
   readonly scenario: string;
@@ -19,6 +20,16 @@ class DeclarationCases {
 import { Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";
 `;
   static readonly rejected: RejectedDeclarations = [
+    {
+      scenario: "a standalone bullet list without a label",
+      source: `export default Job.statement({ kind: PromptKind.BulletList, items: ["Read context."] });`,
+      diagnostic: "label",
+    },
+    {
+      scenario: "a non-bullet prompt inside an enclosed list",
+      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.Statement, content: "Read context." }] });`,
+      diagnostic: "not assignable",
+    },
     {
       scenario: "direct construction instead of the builder",
       source: `export default new Job([]);`,
@@ -91,25 +102,25 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.t
     },
     {
       scenario: "a string instead of bullet items",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: "Read context." });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: "Read context." });
 `,
       diagnostic: "not assignable",
     },
     {
       scenario: "a numbered bullet item",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: [42] });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: [42] });
 `,
       diagnostic: "not assignable",
     },
     {
       scenario: "an enclosed group without a label",
-      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ items: ["Read context."] }] });
+      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, items: ["Read context."] }] });
 `,
       diagnostic: "label",
     },
     {
       scenario: "an enclosed group without items",
-      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ label: "Required actions" }] });
+      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, label: "Required actions" }] });
 `,
       diagnostic: "items",
     },
@@ -197,6 +208,7 @@ export default Job.statement({
     content: "Jobs group Cortex context in source order.",
 }).statement({
     kind: PromptKind.BulletList,
+    label: "Required actions",
     items: [
         "Every context receipt exports one Job.",
         "Keep Lace unchanged during receipt authoring.",
@@ -205,8 +217,8 @@ export default Job.statement({
 }).statement({
     kind: PromptKind.EnclosedList,
     "items": [
-        { "label": "Prohibited", "items": ["Change the core while writing a receipt."] },
-        { label: "Preferred", items: ["Use existing Lace declarations."] },
+        { kind: PromptKind.BulletList, "label": "Prohibited", "items": ["Change the core while writing a receipt."] },
+        { kind: PromptKind.BulletList, label: "Preferred", items: ["Use existing Lace declarations."] },
     ],
 });
 `;
@@ -268,7 +280,11 @@ command.script = "other command";
 });
 test("nested prompt snapshots leave caller-owned lists mutable", () => {
   const bullets = ["Read the assigned context."];
-  const group = { label: "Required actions", items: bullets };
+  const group: BulletList = {
+    kind: PromptKind.BulletList,
+    label: "Required actions",
+    items: bullets,
+  };
   const groups = [group];
   const prompt: Prompt = { kind: PromptKind.EnclosedList, items: groups };
   const job = Job.statement(prompt);
@@ -277,7 +293,7 @@ test("nested prompt snapshots leave caller-owned lists mutable", () => {
   expect(Object.isFrozen(group)).toBe(false);
   expect(Object.isFrozen(bullets)).toBe(false);
   bullets.push("Compile the receipt.");
-  group.label = "Updated actions";
+  expect(Reflect.set(group, "label", "Updated actions")).toBe(true);
   groups.pop();
   expect(job.size()).toBe(1);
   expect(Object.isFrozen(job)).toBe(true);
@@ -287,7 +303,7 @@ test("prompt fields and enclosed bullet lists are readonly", () => {
 import { type EnclosedList, PromptKind } from "../ts/lace.ts";
 const prompt: EnclosedList = {
   kind: PromptKind.EnclosedList,
-  items: [{ label: "Required actions", items: ["Read context."] }],
+  items: [{ kind: PromptKind.BulletList, label: "Required actions", items: ["Read context."] }],
 };
 prompt.items[0]!.label = "Changed label";
 prompt.items[0]!.items.push("Changed rules.");
@@ -302,6 +318,7 @@ test("local child Jobs compose with chained statements and commands", () => {
 import { Job, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";
 const childJob = Job.statement({
   kind: PromptKind.BulletList,
+  label: "Required actions",
   items: ["Read the assigned context."],
 });
 export default Job.statement({
@@ -309,6 +326,7 @@ export default Job.statement({
   content: "Receipt authoring uses the existing Lace vocabulary.",
 }).statement({
   kind: PromptKind.BulletList,
+  label: "Required actions",
   items: ["Keep the core unchanged."],
 }).job(childJob).shellCommand({
   cwd: WorkingDirectory.LibraryRoot,
@@ -322,6 +340,7 @@ export default Job.statement({
 test("every builder starts a nonempty Job and preserves reusable branches", () => {
   const prompt: Prompt = {
     kind: PromptKind.BulletList,
+    label: "Required actions",
     items: ["Read the assigned context."],
   };
   const command: Command = {
@@ -347,4 +366,21 @@ test("every builder starts a nonempty Job and preserves reusable branches", () =
   expect(extendedChildren).not.toBe(child);
   expect(Object.isFrozen(chain)).toBe(true);
   expect(Object.isFrozen(command)).toBe(false);
+});
+
+test("the same BulletList type is used alone and inside an EnclosedList", () => {
+  const source = `
+import { Job, PromptKind, type BulletList, type EnclosedList } from "../../src/ts/lace.ts";
+const bullets: BulletList = {
+  kind: PromptKind.BulletList,
+  label: "Required actions",
+  items: ["Read the assigned context."],
+};
+const enclosed: EnclosedList = {
+  kind: PromptKind.EnclosedList,
+  items: [bullets],
+};
+export default Job.statement(bullets).statement(enclosed);
+`;
+  expect(new ReceiptCompilation(source).messages()).toEqual([]);
 });

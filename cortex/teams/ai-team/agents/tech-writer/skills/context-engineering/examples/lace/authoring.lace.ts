@@ -8,6 +8,7 @@ const checks = Job.job(compile).job(verify);
 export default Job.job(context)
   .statement({
     kind: PromptKind.BulletList,
+    label: "Receipt authoring",
     items: [
       "Write the assigned Cortex context receipt using the existing Lace types.",
       "Keep the Lace core and its verification configuration unchanged.",

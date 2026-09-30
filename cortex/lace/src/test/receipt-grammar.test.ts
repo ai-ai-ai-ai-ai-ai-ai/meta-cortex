@@ -16,6 +16,11 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
 `;
   static readonly rejected: RejectedSyntaxCases = [
     {
+      scenario: "a blank standalone bullet label",
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: " ", items: ["Read context."] });`,
+      diagnostic: "nonblank",
+    },
+    {
       scenario: "an unsupported builder method",
       source: `export default Job.append({});`,
       diagnostic: "Call only statement, shellCommand, or job builders",
@@ -121,7 +126,7 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "empty bullets",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: [] });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: [] });
 `,
       diagnostic: "at least one item",
     },
@@ -133,55 +138,55 @@ import { Job, TaskKind, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
     },
     {
       scenario: "an empty enclosed group",
-      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ label: "Required actions", items: [] }] });
+      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, label: "Required actions", items: [] }] });
 `,
       diagnostic: "at least one item",
     },
     {
       scenario: "a blank bullet",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: ["   "] });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: ["   "] });
 `,
       diagnostic: "nonblank",
     },
     {
       scenario: "a blank label",
-      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ label: " ", items: ["Read context."] }] });
+      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, label: " ", items: ["Read context."] }] });
 `,
       diagnostic: "nonblank",
     },
     {
       scenario: "a runtime label",
-      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ label: Promise.name, items: ["Read context."] }] });
+      source: `export default Job.statement({ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, label: Promise.name, items: ["Read context."] }] });
 `,
       diagnostic: "labels, and commands as literals",
     },
     {
       scenario: "runtime list items",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, "items": Promise.name });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", "items": Promise.name });
 `,
       diagnostic: "literal array",
     },
     {
       scenario: "a runtime bullet",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: [Promise.name] });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: [Promise.name] });
 `,
       diagnostic: "literal prose or labelled groups",
     },
     {
       scenario: "an enum value as prose",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: [TaskKind.Statement] });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: [TaskKind.Statement] });
 `,
       diagnostic: "literal prose or labelled groups",
     },
     {
       scenario: "sparse bullet items",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: [, "Read context."] });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: [, "Read context."] });
 `,
       diagnostic: "Unexpected comma",
     },
     {
       scenario: "spread bullet items",
-      source: `export default Job.statement({ kind: PromptKind.BulletList, items: [..."Read context."] });
+      source: `export default Job.statement({ kind: PromptKind.BulletList, label: "Required actions", items: [..."Read context."] });
 `,
       diagnostic: "literal prose or labelled groups",
     },

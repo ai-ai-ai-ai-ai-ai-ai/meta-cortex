@@ -2,6 +2,7 @@ import { Job, PromptKind, WorkingDirectory } from "./src/ts/lace.ts";
 
 export default Job.statement({
   kind: PromptKind.BulletList,
+  label: "Neural Lace",
   items: [
     "Neural Lace defines the typed declaration language for Cortex context.",
     "Context includes architecture, specifications, rules, agent instructions, skills, and practices.",
@@ -14,16 +15,18 @@ export default Job.statement({
   .job(
     Job.statement({
       kind: PromptKind.BulletList,
+      label: "Required actions",
       items: [
-        "Required actions: follow the core ownership, receipt contract, and validation context below.",
+        "Follow the core ownership, receipt contract, and validation context below.",
         "Resolve prose paths in this entry point from the Cortex library root: cortex/ in this repository or .meta-cortex/ in an installed project.",
       ],
     })
       .job(
         Job.statement({
           kind: PromptKind.BulletList,
+          label: "Core ownership",
           items: [
-            "Core ownership: read lace/src/ts/lace.ts before authoring receipts.",
+            "Read lace/src/ts/lace.ts before authoring receipts.",
             "Job groups other Jobs and tasks.",
             "Jobs represent directories; tasks represent files.",
             "Entry is the union of Job and Task.",
@@ -33,6 +36,7 @@ export default Job.statement({
         })
           .statement({
             kind: PromptKind.BulletList,
+            label: "Context placement",
             items: [
               "Keep receipt edits within the assigned Cortex context scope.",
               "Write subject receipts beside their owning context, outside lace/.",
@@ -42,6 +46,7 @@ export default Job.statement({
           })
           .statement({
             kind: PromptKind.BulletList,
+            label: "Core changes",
             items: [
               "Use the existing core vocabulary and run the existing checks.",
               "Change the core only under an explicit user assignment to change it.",
@@ -54,12 +59,14 @@ export default Job.statement({
             kind: PromptKind.EnclosedList,
             items: [
               {
+                kind: PromptKind.BulletList,
                 label: "Prohibited",
                 items: [
                   "While assigned to write a context receipt, add a task kind because the receipt fails compilation.",
                 ],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Preferred",
                 items: [
                   "Read the model, then write the assigned receipt beside its context using existing declarations.",
@@ -73,8 +80,9 @@ export default Job.statement({
       .job(
         Job.statement({
           kind: PromptKind.BulletList,
+          label: "Receipt contract",
           items: [
-            "Receipt contract: import Job and the required enums from lace/src/ts/lace.ts.",
+            "Import Job and the required enums from lace/src/ts/lace.ts.",
             "Default-export a Job builder chain that starts with a statement, command, or child Job.",
             "Use statement(prompt), shellCommand(command), and job(child) to extend the tree.",
             "Nest imported Jobs, local const Jobs, or inline builder chains with job(child).",
@@ -83,6 +91,7 @@ export default Job.statement({
         })
           .statement({
             kind: PromptKind.BulletList,
+            label: "Immutable Jobs",
             items: [
               "Job owns an immutable Effect Chunk<Entry> in a private readonly field.",
               "Builders snapshot prompts and commands without modifying source objects or arrays.",
@@ -96,10 +105,12 @@ export default Job.statement({
             kind: PromptKind.EnclosedList,
             items: [
               {
+                kind: PromptKind.BulletList,
                 label: "Prohibited",
                 items: ["Read job.entries or mutate a Job."],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Preferred",
                 items: [
                   "Keep immutable operations inside Job.",
@@ -112,6 +123,7 @@ export default Job.statement({
             kind: PromptKind.EnclosedList,
             items: [
               {
+                kind: PromptKind.BulletList,
                 label: "Statement",
                 items: [
                   "Pass a structured prompt to statement(prompt); the builder supplies TaskKind.Statement.",
@@ -120,23 +132,26 @@ export default Job.statement({
                 ],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Prompt statement",
                 items: [
                   "Declare kind: PromptKind.Statement and literal content for a prompt statement.",
                 ],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Bullet list",
                 items: [
-                  "Declare kind: PromptKind.BulletList and a nonempty items array of literal strings.",
+                  "Declare kind: PromptKind.BulletList, a literal label, and a nonempty items array of literal strings.",
                   "Keep one independent fact or rule in each item.",
                 ],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Enclosed list",
                 items: [
-                  "Declare kind: PromptKind.EnclosedList and a nonempty items array of labelled groups.",
-                  "Each group has a literal label and a nonempty items array of literal strings.",
+                  "Declare kind: PromptKind.EnclosedList and a nonempty items array of BulletLists.",
+                  "Use the same BulletList shape for standalone lists and enclosed groups.",
                   "Use groups when their bullets belong to a named subject or example.",
                 ],
               },
@@ -146,12 +161,14 @@ export default Job.statement({
             kind: PromptKind.EnclosedList,
             items: [
               {
+                kind: PromptKind.BulletList,
                 label: "Prohibited",
                 items: [
                   "Hide independent rules in one long paragraph or encode bullet structure inside a raw string.",
                 ],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Preferred",
                 items: [
                   "Use a BulletList for parallel rules.",
@@ -163,6 +180,7 @@ export default Job.statement({
           })
           .statement({
             kind: PromptKind.BulletList,
+            label: "Shell commands",
             items: [
               "Pass literal script and cwd to shellCommand(command); the builder supplies TaskKind.ShellCommand.",
               "Choose WorkingDirectory.ProjectRoot or WorkingDirectory.LibraryRoot.",
@@ -172,6 +190,7 @@ export default Job.statement({
           })
           .statement({
             kind: PromptKind.BulletList,
+            label: "Composition",
             items: [
               "Limit receipts to static imports, const Job bindings, builder chains, and literal prompts and commands.",
               "Import another receipt's default Job to reuse its context.",
@@ -184,12 +203,14 @@ export default Job.statement({
             kind: PromptKind.EnclosedList,
             items: [
               {
+                kind: PromptKind.BulletList,
                 label: "Prohibited",
                 items: [
                   "Default-export a raw array or task, use the private constructor, or call an implementation helper.",
                 ],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Preferred",
                 items: [
                   "Export Job.job(context).job(Job.job(compile).job(verify)) using statically imported Jobs.",
@@ -203,8 +224,9 @@ export default Job.statement({
       .job(
         Job.statement({
           kind: PromptKind.BulletList,
+          label: "Validation",
           items: [
-            "Validation: use the compiler check while editing receipts.",
+            "Use the compiler check while editing receipts.",
             "Run complete verification before reporting that a receipt passes all Lace checks.",
             "Run these commands from the Cortex library root.",
           ],
@@ -221,12 +243,14 @@ export default Job.statement({
             kind: PromptKind.EnclosedList,
             items: [
               {
+                kind: PromptKind.BulletList,
                 label: "Prohibited",
                 items: [
                   "Report that all Lace checks pass after running only check.",
                 ],
               },
               {
+                kind: PromptKind.BulletList,
                 label: "Preferred",
                 items: [
                   "Use check for compilation without emitting files.",
@@ -241,8 +265,9 @@ export default Job.statement({
   .job(
     Job.statement({
       kind: PromptKind.BulletList,
+      label: "Prohibited actions",
       items: [
-        "Prohibited actions: do not use Lace as a coding-agent API or an application workflow.",
+        "Do not use Lace as a coding-agent API or an application workflow.",
         "Do not put subject context declarations in the model or validation implementation.",
         "Lace's own context entry point is lace/AGENTS.ts; subject receipts belong with their owning context outside lace/.",
         "Do not change core types, grammar, tests, scripts, configuration, or the core entry point during receipt authoring.",
@@ -252,12 +277,14 @@ export default Job.statement({
       kind: PromptKind.EnclosedList,
       items: [
         {
+          kind: PromptKind.BulletList,
           label: "Prohibited",
           items: [
             "Add an application callback to the model or weaken lint to make a context receipt pass.",
           ],
         },
         {
+          kind: PromptKind.BulletList,
           label: "Preferred",
           items: [
             "Keep receipt work within the assigned Cortex context files.",

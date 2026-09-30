@@ -142,13 +142,14 @@ export default Job.statement({
 Each shape declares its `PromptKind`:
 
 - **Prompt statement:** `PromptStatement` with one literal `content` string.
-- **Bullet list:** an `items` array of strings for parallel facts or actions.
-- **Enclosed list:** an `items` array of labelled groups. Each group has a
-  `label` and its own string `items` array.
+- **Bullet list:** `BulletList` with `kind: PromptKind.BulletList`, a literal
+  `label`, and an `items` array of strings for parallel facts or actions.
+- **Enclosed list:** an `items` array of BulletLists. Each group uses the same
+  labelled BulletList shape as a standalone list.
 
 Use one bullet per independent fact or action. Use labelled groups when their
 relationship matters, such as required/prohibited actions or prohibited/preferred
-examples. Each enclosed group contains bullets; this shape does not introduce
+examples. Each enclosed group is a BulletList; this shape does not introduce
 arbitrary recursive document elements.
 
 **Prohibited:** pass a raw string to `statement`. The compiler requires one of
@@ -163,6 +164,7 @@ export default Job.statement("Read context. Compile the receipt.");
 ```typescript
 export default Job.statement({
   kind: PromptKind.BulletList,
+  label: "Required actions",
   items: ["Read the assigned context.", "Compile the receipt."],
 });
 ```
@@ -185,10 +187,12 @@ export default Job.statement({
   kind: PromptKind.EnclosedList,
   items: [
     {
+      kind: PromptKind.BulletList,
       label: "Prohibited",
       items: ["Change Lace while authoring a receipt."],
     },
     {
+      kind: PromptKind.BulletList,
       label: "Preferred",
       items: ["Use the existing Lace declarations."],
     },
