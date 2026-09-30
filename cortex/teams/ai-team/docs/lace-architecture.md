@@ -22,7 +22,7 @@ Every context receipt, including `AGENTS.ts`, default-exports a `new Job(...)`
 instance. Pass tasks and imported jobs directly to its constructor.
 Use another `new Job(...)` for
 a nested group, such as `new Job(context, new Job(compile, verify))`.
-The constructor checks that each entry is a task or another Job.
+The constructor checks each entry against the `Entry = Job | Task` union.
 Its readonly `entries` preserve their source order.
 The declaration grammar requires at least one entry in each receipt job.
 The constructor checks the contents directly; no assertion clause is needed.

@@ -13,7 +13,7 @@ export default new Job(
     new Job(
       {
         kind: TaskKind.Instruction,
-        text: "Core ownership: read lace/src/ts/lace.ts before authoring receipts. It defines Job, Instruction, ShellCommand, Task, TaskKind, and WorkingDirectory. Jobs group other jobs and tasks. Jobs represent directories; tasks represent files. Task is the union of instruction and shell-command declarations.",
+        text: "Core ownership: read lace/src/ts/lace.ts before authoring receipts. It defines Job, Entry, Instruction, ShellCommand, Task, TaskKind, and WorkingDirectory. Jobs group other jobs and tasks. Jobs represent directories; tasks represent files. Entry is the union of Job and Task. Task is the union of instruction and shell-command declarations.",
       },
       {
         kind: TaskKind.Instruction,

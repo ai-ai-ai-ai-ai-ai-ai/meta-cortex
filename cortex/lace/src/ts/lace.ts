@@ -33,15 +33,18 @@ export interface ShellCommand {
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
 export type Task = Instruction | ShellCommand;
 
+/** Each entry is either a nested job or a task. */
+export type Entry = Job | Task;
+
 /** Construction checks context declarations; it never executes their commands. */
 export class Job {
-  private readonly content: readonly (Job | Task)[];
+  private readonly content: readonly Entry[];
 
-  constructor(...entries: (Job | Task)[]) {
+  constructor(...entries: Entry[]) {
     this.content = entries;
   }
 
-  get entries(): readonly (Job | Task)[] {
+  get entries(): readonly Entry[] {
     return this.content;
   }
 }
