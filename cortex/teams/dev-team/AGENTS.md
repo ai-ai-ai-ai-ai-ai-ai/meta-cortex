@@ -11,6 +11,9 @@ the consuming project.
 - **[Rust refactoring agent](agents/rust-refactoring/AGENTS.md)**
   - Behavior-preserving Rust structural refactors, their tests, and mandatory checks.
   - Module decomposition and ownership-preserving moves under existing contracts.
+- **[Rust verifier](agents/rust-verifier/AGENTS.md)**
+  - Read-only, exhaustive Rust catalog compliance review of committed work.
+  - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
 - **[TypeScript developer](agents/typescript-dev/AGENTS.md)**
   - TypeScript and JavaScript implementation: browser components, application state, APIs, libraries, services, and tooling.
   - Functional tests, browser integration, and corrections for those implementations.

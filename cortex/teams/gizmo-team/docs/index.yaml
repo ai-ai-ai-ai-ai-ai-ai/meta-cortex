@@ -7,3 +7,6 @@ entries:
   - title: Agent work ledger
     path: agent-ledger.md
     summary: Durable task progress and recovery.
+  - title: Rust verification handoff
+    path: rust-verification.md
+    summary: Committed Rust review, exhaustive coverage, repair routing, and integration readiness.

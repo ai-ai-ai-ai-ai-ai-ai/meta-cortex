@@ -1,0 +1,16 @@
+kind: practice
+owner: delivery:branch_integration
+title: Branch integration and repairs
+source_title: Branch Integration and Repairs
+source: ../branch-integration.md
+owns:
+- Task merges, combined validation, and integration recovery.
+excludes:
+- Routing, programming rules, and remote delivery.
+relationships:
+- One stage of local feature delivery.
+related: []
+rules:
+- id: local_feature:integration
+  source: ../branch-integration.md#integrate-finished-branches
+  summary: Merge assigned revisions; validate results and report failures by SHA.

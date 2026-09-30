@@ -1,0 +1,16 @@
+kind: practice
+owner: delivery:cleanup
+title: Cleanup
+source_title: Completed Task Cleanup
+source: ../cleanup.md
+owns:
+- Removal of completed worker worktrees and branches.
+excludes:
+- Routing, programming rules, and remote delivery.
+relationships:
+- One stage of local feature delivery.
+related: []
+rules:
+- id: local_feature:cleanup
+  source: ../cleanup.md#complete-and-clean-up
+  summary: Remove only agent-created, finished, merged task workspaces after validation.

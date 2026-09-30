@@ -60,6 +60,10 @@ for that assignment rather than preloading unrelated agents.
   Recover existing status before scheduling work. Record bounded tasks before
   launching workers and pass their feature/task IDs with every assignment.
 - Turn the feature assignment into bounded tasks for the appropriate agents.
+- Preserve the parent's permitted changes and stopping condition under the
+  [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
+  Apply the [stopping rules](../../../../CIRCUIT-BREAKER.md#stop-when-the-requested-evidence-is-complete)
+  before adding workers, fixtures, checks, or another repair cycle.
 - Launch those team agents through the host’s agent execution tools using the
   shared [agent configuration rules](../../docs/agent-configuration.md).
 - Launch the [tech writer](../../../ai-team/agents/tech-writer/AGENTS.md) for documentation assignments. Route policy
@@ -78,6 +82,8 @@ for that assignment rather than preloading unrelated agents.
 flowchart LR
     G[Team Gizmo] -->|Task branches and fixes| W[Workers]
     W -->|Completion and checks| G
+    G -->|Rust commit SHA| V[Rust verifier]
+    V -->|Full coverage and repair requirements| G
     G -->|Merge into one feature branch| I[Integration agent]
     I -->|Results or conflicts| G
 ```
@@ -88,12 +94,28 @@ flowchart LR
 - Assign workspace preparation to that agent. Give workers the returned branch
   names and paths, their task scope, checks, and library location.
 - Read durable readiness even when a final worker message is missing.
-- When a worker finishes, tell the integration agent which task branch to
-  integrate next. Order tasks by dependency and wait for each integration result.
-- Route reported conflicts or failed checks to the responsible worker with the
-  integration agent's repair context. Request integration again after the fix.
+- When rust-dev finishes, follow the [Rust verification handoff](../../docs/rust-verification.md)
+  before integration. Require its ordinary one-commit delivery, check the
+  [Git handoff](../../docs/rust-verification.md#check-the-git-handoff), and launch
+  rust-verifier with the explicit final SHA. Keep consolidation commands with
+  the developer's delivery procedure; Gizmo performs no Git mutations. Then,
+  within authorized implementation, route every in-scope repair requirement back
+  to rust-dev and require a complete new pass. For review-only assignments,
+  return the complete findings instead of starting repairs or integration.
+- Once required verification passes, tell the integration agent which task
+  branch to integrate next. Supply the passing report and reviewed SHA for Rust
+  developer work. Order tasks by dependency and wait for each integration result.
+- Route an integration conflict to the responsible worker with the task and
+  target commit SHAs and the [task-repair procedure](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#repair-the-assigned-revision).
+  The worker reads those revisions, resolves the conflict,
+  validates, and returns a commit through the ordinary task handoff. For failed
+  checks, also pass the failed command and diagnostic or existing log reference.
+  Do not require the integration agent to prepare a file inventory or repair plan.
+  Request integration again after the required review of the replacement SHA.
 - Once the combined feature passes its checks, ask the integration agent to
-  finish cleanup. Return the feature branch, workspace, check results, and
+  finish cleanup of eligible agent-created task worktrees. Preserve the
+  [user-owned feature worktree](../../../delivery-team/docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
+  Return the feature branch, workspace, check results, and
   unfinished work to Prime. Continue through the
   [configured implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
   before the final handoff: PR delivery under `create_pr`, or the validated local

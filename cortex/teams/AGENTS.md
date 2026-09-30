@@ -88,14 +88,18 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
   [skill organization rules](ai-team/agents/tech-writer/AGENTS.md#skill-organization).
 - Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.
 - Team agents report only to Team Gizmo, which decides corrections and assignments and reports to Gizmo Prime.
-- Keep work within the user's request. Completion means the requested outcome is supported by evidence, with limitations stated clearly.
+- Apply the [task boundary](../CIRCUIT-BREAKER.md#keep-the-users-task-boundary)
+  and [stopping rules](../CIRCUIT-BREAKER.md#stop-when-the-requested-evidence-is-complete).
+  Completion means the requested outcome is supported by evidence, with limitations stated clearly.
 
 ## Assignment context
 
 Before launching an agent, the host agent or Gizmo coordinator resolves the
 following from the active library and supplies them in the launch instructions:
 
-- Objective, scope, dependencies, acceptance criteria, and expected evidence.
+- Objective, target scope, permitted changes, dependencies, acceptance criteria,
+  expected evidence, and stopping condition. State whether the task is review
+  or verification only, implementation, or an explicitly requested workflow exercise.
 - For task workers after feature initialization: stable feature ID, task ID,
   ledger location, and the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
   Record the assignment before launching its worker. Coordinator and workspace
@@ -131,8 +135,10 @@ The receiving agent must, before starting work:
 4. Report any required context it cannot access before doing dependent work.
 
 Coordinators carry the same requirements through their assignments. Agents
-report scope changes to their Gizmo for a decision and load newly relevant
-documents for the resulting assignment. The skill’s own `SKILL.md` still owns its technical
+report proposed scope changes to their Gizmo. Gizmo may adjust assignments within
+the user's scope; a broader goal requires user authorization through the hierarchy.
+Load newly relevant documents only for the authorized assignment.
+The skill’s own `SKILL.md` still owns its technical
 instructions; this handoff does not select or duplicate skill contents.
 
 **Prohibited:** launch a TypeScript agent with only “implement this component”
