@@ -58,7 +58,7 @@ import { type Job, TaskKind, WorkingDirectory } from "../ts/lace.ts";
     {
       scenario: "a string job name instead of a declared job",
       source: `export default ["compile"] as const satisfies Job;`,
-      diagnostic: "LaceNode",
+      diagnostic: "not assignable",
     },
     {
       scenario: "fields belonging to the other task kind",

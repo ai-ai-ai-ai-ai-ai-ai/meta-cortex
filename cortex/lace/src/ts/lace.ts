@@ -33,7 +33,5 @@ export interface ShellCommand {
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
 export type Task = Instruction | ShellCommand;
 
-export type LaceNode = Job | Task;
-
 /** Jobs are statically declared groups; the compiler rejects an empty group. */
-export type Job = readonly [LaceNode, ...LaceNode[]];
+export type Job = readonly [Job | Task, ...(Job | Task)[]];
