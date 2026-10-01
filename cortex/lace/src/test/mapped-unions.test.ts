@@ -3,7 +3,7 @@ import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
 class MappedCases {
-  static readonly imports = `import { type Job, type Task, type Prompt, type Statement, type ShellCommand, type BulletList, PromptStatement, WorkingDirectory } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, type Task, type Prompt, type Statement, type ShellCommand, type BulletList, PromptStatement, WorkingDirectory } from "@meta-cortex/lace";`;
   static readonly statement = `{ Statement: { prompt: PromptStatement.content("Read.") } }`;
   static readonly shell = `{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }`;
   static readonly text = `{ PromptStatement: { content: "Read." } }`;
@@ -96,7 +96,7 @@ for (const name of [
 for (const name of ["TaskKind", "PromptKind"]) {
   test(`removed ${name} enum has no alias`, () => {
     expect(
-      new ReceiptCompilation(`import { ${name} } from "../../src/ts/lace.ts";`)
+      new ReceiptCompilation(`import { ${name} } from "@meta-cortex/lace";`)
         .messages()
         .join("\n"),
     ).toContain(`has no exported member '${name}'`);

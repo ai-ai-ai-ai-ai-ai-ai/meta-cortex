@@ -9,7 +9,7 @@ interface RejectedDeclaration {
 }
 
 class DeclarationCases {
-  static readonly imports = `import { type Job, type BulletList, WorkingDirectory } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, type BulletList, WorkingDirectory } from "@meta-cortex/lace";`;
   static readonly rejected: readonly RejectedDeclaration[] = [
     {
       scenario: "a task at the root",
@@ -260,7 +260,7 @@ test.each([
   },
 ])("readonly declarations reject $scenario", (example) => {
   const source = `${DeclarationCases.imports}
-import { type ShellCommand, type PromptStatement } from "../../src/ts/lace.ts";
+import { type ShellCommand, type PromptStatement } from "@meta-cortex/lace";
 const child: Job = { stages: { read: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } };
 const command: ShellCommand = { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
 const prompt: PromptStatement = { content: "Read context." };
@@ -282,7 +282,7 @@ const receipt: Job = { stages: { stage1: { Statement: { prompt: { BulletList: bu
 });
 
 test("the removed EnclosedList type has no compatibility alias", () => {
-  const source = `import { type EnclosedList } from "../../src/ts/lace.ts";`;
+  const source = `import { type EnclosedList } from "@meta-cortex/lace";`;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
     "has no exported member 'EnclosedList'",
   );
@@ -297,7 +297,7 @@ const receipt: Job = { stages: { stage1: missing } }; export default receipt;`;
 });
 
 test("the removed Entry type has no compatibility alias", () => {
-  const source = `import { type Entry } from "../../src/ts/lace.ts";`;
+  const source = `import { type Entry } from "@meta-cortex/lace";`;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
     "has no exported member 'Entry'",
   );
@@ -305,7 +305,7 @@ test("the removed Entry type has no compatibility alias", () => {
 
 test("Stage admits both Jobs and Tasks through the canonical union", () => {
   const source = `${DeclarationCases.imports}
-import { type Stage } from "../../src/ts/lace.ts";
+import { type Stage } from "@meta-cortex/lace";
 const task: Stage = { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } };
 const child: Stage = { stages: { run: task } };
 const receipt: Job = { stages: { child: child, run: task } };`;

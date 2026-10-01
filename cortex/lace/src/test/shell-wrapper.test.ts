@@ -3,7 +3,7 @@ import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
 class ShellCases {
-  static readonly imports = `import { type Job, WorkingDirectory, PromptStatement } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, WorkingDirectory, PromptStatement } from "@meta-cortex/lace";`;
   static readonly shell = `{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }`;
   static receipt(task: string): string {
     return `${ShellCases.imports} const receipt: Job = { stages: { check: ${task} } }; export default receipt;`;
@@ -77,7 +77,7 @@ for (const mutation of [
   `command.ShellCommand.script = "changed";`,
 ]) {
   test(`shell wrapper and payload are readonly: ${mutation}`, () => {
-    const source = `${ShellCases.imports} import { type Task } from "../../src/ts/lace.ts"; const command: Task = ${ShellCases.shell}; ${mutation}`;
+    const source = `${ShellCases.imports} import { type Task } from "@meta-cortex/lace"; const command: Task = ${ShellCases.shell}; ${mutation}`;
     expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
       "read-only property",
     );

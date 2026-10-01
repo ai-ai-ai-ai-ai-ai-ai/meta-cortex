@@ -32,7 +32,7 @@ export class ReceiptGrammar {
             patterns: [
               {
                 regex:
-                  "^(?!(?:(?:\\.\\.?/)+(?:lace/)?src/ts/lace\\.ts|(?:\\.\\.?/)(?:[^\\n]*\\.lace\\.ts|(?:[^\\n]*/)?AGENTS\\.ts))$)",
+                  "^(?!(?:@meta-cortex/lace|(?:\\.\\.?/)(?:[^\\n]*\\.lace\\.ts|(?:[^\\n]*/)?AGENTS\\.ts))$)",
                 message: "Import only the Lace model or another receipt.",
               },
             ],

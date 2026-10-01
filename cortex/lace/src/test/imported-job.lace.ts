@@ -1,4 +1,4 @@
-import { type Job, WorkingDirectory } from "../../src/ts/lace.ts";
+import { type Job, WorkingDirectory } from "@meta-cortex/lace";
 
 const receipt: Job = {
   stages: {

@@ -10,7 +10,7 @@ interface RejectedSyntax {
 }
 
 class GrammarCases {
-  static readonly imports = `import { type Job, WorkingDirectory } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, WorkingDirectory } from "@meta-cortex/lace";`;
   static readonly object = `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } }`;
   static readonly rejected: readonly RejectedSyntax[] = [
     {
@@ -348,11 +348,7 @@ test("Lace's own typed entry point passes the grammar and compiler", () => {
     "utf8",
   );
   expect(new ReceiptSyntax(source).messages("lace/AGENTS.ts")).toEqual([]);
-  expect(
-    new ReceiptCompilation(
-      source.replaceAll('"./src/ts/lace.ts"', '"../../src/ts/lace.ts"'),
-    ).messages(),
-  ).toEqual([]);
+  expect(new ReceiptCompilation(source).messages()).toEqual([]);
 });
 
 test("a receipt can reuse an AGENTS.ts default Job", () => {

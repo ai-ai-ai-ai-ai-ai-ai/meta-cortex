@@ -3,7 +3,7 @@ import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
 class BulletCases {
-  static readonly imports = `import { type Job, type BulletList, PromptStatement, WorkingDirectory } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, type BulletList, PromptStatement, WorkingDirectory } from "@meta-cortex/lace";`;
   static receipt(items: string): string {
     return `${BulletCases.imports} const receipt: Job = { stages: { read: { Statement: { prompt: { BulletList: { items: ${items} } } } } } }; export default receipt;`;
   }

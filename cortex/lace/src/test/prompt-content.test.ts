@@ -4,7 +4,7 @@ import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
 class ContentCases {
-  static readonly imports = `import { type Job, PromptStatement } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, PromptStatement } from "@meta-cortex/lace";`;
   static receipt(prompt: string): string {
     return `${ContentCases.imports} const receipt: Job = { stages: { read: { Statement: { prompt: ${prompt} } } } }; export default receipt;`;
   }
@@ -86,7 +86,7 @@ test("helper uses existing model import and compiler binding constraints", () =>
   const receipt = ContentCases.receipt(`PromptStatement.content("Read.")`);
   expect(
     new ReceiptSyntax(
-      receipt.replace("../../src/ts/lace.ts", "./implementation.ts"),
+      receipt.replace("@meta-cortex/lace", "./implementation.ts"),
     )
       .messages()
       .join("\n"),
