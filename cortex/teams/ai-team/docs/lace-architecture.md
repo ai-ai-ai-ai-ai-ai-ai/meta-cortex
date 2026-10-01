@@ -137,14 +137,17 @@ export default receipt;
 
 ### Task declarations
 
-`Task = Statement | ShellCommand` is a discriminated union.
-Declare the variant explicitly in its object:
+`Task = Statement | ShellCommand` is a union of the unchanged Statement object
+and a shell payload wrapper. Declare the required shape explicitly:
 
 - **Statement:** `kind: TaskKind.Statement` and a structured `prompt`.
   Its wording can explain architecture, describe a specification, state a rule,
   or require an action.
-- **Shell command:** `kind: TaskKind.ShellCommand`, literal `script`, and `cwd`.
-  Choose `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
+- **Shell command:** `{ ShellCommand: { cwd, script } }` with a literal payload.
+  Nest `cwd` and literal `script` inside `ShellCommand`; choose
+  `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
+  The wrapper and both payload fields are readonly. `TaskKind.ShellCommand`
+  is removed without an alias; `TaskKind` retains only `Statement`.
 
 **Prohibited:** mix shell-command fields into a Statement.
 The compiler rejects the `script` field on that variant.
@@ -174,9 +177,10 @@ const receipt: Job = {
       ),
     },
     compileReceipt: {
-      kind: TaskKind.ShellCommand,
-      cwd: WorkingDirectory.LibraryRoot,
-      script: "bun run --filter @meta-cortex/lace check",
+      ShellCommand: {
+        cwd: WorkingDirectory.LibraryRoot,
+        script: "bun run --filter @meta-cortex/lace check",
+      },
     },
   },
 };
@@ -306,9 +310,10 @@ This type-checks but duplicates its maintenance owner.
 const receipt: Job = {
   stages: {
     compileReceipt: {
-      kind: TaskKind.ShellCommand,
-      cwd: WorkingDirectory.LibraryRoot,
-      script: "bun run --filter @meta-cortex/lace check",
+      ShellCommand: {
+        cwd: WorkingDirectory.LibraryRoot,
+        script: "bun run --filter @meta-cortex/lace check",
+      },
     },
   },
 };
@@ -375,7 +380,10 @@ typed const Job objects, literal tasks and prompts, and static Job references in
 named stages maps, plus the exact literal prompt helper described above.
 The root binding is named `receipt` and default-exported.
 Enum fields use `TaskKind` or `PromptKind` for `kind`, and `WorkingDirectory` for
-`cwd`. Text and labels must be nonblank literals; maps and lists must be nonempty.
+`cwd` inside the ShellCommand payload. The wrapper is valid only as a task stage
+and must contain a literal object; arbitrary stage keys named `ShellCommand`
+remain valid. Dynamic payloads, computed fields, spreads, methods, and helper
+calls used as commands are invalid. Text and labels must be nonblank literals; maps and lists must be nonempty.
 Stage maps require explicit unique identifier or string literal keys and literal
 objects or static Job references as values. Stage arrays, computed keys, spreads,
 methods, and nonliteral stage maps are invalid.

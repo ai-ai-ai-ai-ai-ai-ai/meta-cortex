@@ -189,7 +189,7 @@ const receipt: Job = {
                     "Nest child Jobs directly in named stages maps to show hierarchy; use source declaration order when reading context.",
                   ),
                   PromptStatement.content(
-                    "Use TaskKind.Statement with prompt, or TaskKind.ShellCommand with cwd and script.",
+                    "Use kind: TaskKind.Statement with prompt for a Statement, or a ShellCommand literal payload with nested cwd and script for a shell task.",
                   ),
                 ],
               },
@@ -348,7 +348,7 @@ const receipt: Job = {
                 label: "Shell commands",
                 items: [
                   PromptStatement.content(
-                    "Declare a ShellCommand with kind: TaskKind.ShellCommand, literal script, and cwd.",
+                    "Declare a shell task as { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: 'bun run check' } }; the wrapper and payload fields are readonly.",
                   ),
                   PromptStatement.content(
                     "Choose WorkingDirectory.ProjectRoot or WorkingDirectory.LibraryRoot.",
@@ -441,14 +441,16 @@ const receipt: Job = {
               },
             },
             compile: {
-              kind: TaskKind.ShellCommand,
-              cwd: WorkingDirectory.LibraryRoot,
-              script: "bun run --filter @meta-cortex/lace check",
+              ShellCommand: {
+                cwd: WorkingDirectory.LibraryRoot,
+                script: "bun run --filter @meta-cortex/lace check",
+              },
             },
             verify: {
-              kind: TaskKind.ShellCommand,
-              cwd: WorkingDirectory.LibraryRoot,
-              script: "bun run --filter @meta-cortex/lace verify",
+              ShellCommand: {
+                cwd: WorkingDirectory.LibraryRoot,
+                script: "bun run --filter @meta-cortex/lace verify",
+              },
             },
             validationExamples: {
               kind: TaskKind.Statement,
