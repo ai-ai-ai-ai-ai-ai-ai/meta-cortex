@@ -1,5 +1,4 @@
 import { type Job, type Stage } from "@meta-cortex/lace";
-import { overview } from "../../../../../../../../lace/AGENTS.ts";
 export const readContext: Stage = {
   spec: { contextRoots: "Resolve context paths from the Cortex library root." },
   Required: {
@@ -15,6 +14,17 @@ export const readContext: Stage = {
   },
 };
 const receipt: Job = {
-  stages: { laceOverview: overview, readContext: readContext },
+  stages: {
+    laceOverview: {
+      spec: {},
+      Required: {
+        statements: {
+          readOverview: "Read the overview stage in lace/AGENTS.ts as text.",
+        },
+      },
+      Prohibited: { statements: {} },
+    },
+    readContext: readContext,
+  },
 };
 export default receipt;

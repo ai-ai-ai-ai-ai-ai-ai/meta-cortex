@@ -87,6 +87,38 @@ const receipt: Job = {
 export default receipt;
 ```
 
+### Inline local stages
+
+Write local Stage contents directly in the receipt's stages map. Extract a typed
+Stage only when another receipt reuses its named export. Static references to
+imported reusable Stages remain valid.
+
+**Prohibited:** extract a Stage used only by this receipt. This compiles and
+passes grammar but adds an unnecessary lookup for readers.
+
+```typescript
+import { type Job, type Stage } from "@meta-cortex/lace";
+const context: Stage = {
+  spec: {}, Required: { statements: {} }, Prohibited: { statements: {} },
+};
+const receipt: Job = { stages: { context: context } };
+export default receipt;
+```
+
+**Required:** keep the same local section inline.
+
+```typescript
+import { type Job } from "@meta-cortex/lace";
+const receipt: Job = {
+  stages: {
+    context: {
+      spec: {}, Required: { statements: {} }, Prohibited: { statements: {} },
+    },
+  },
+};
+export default receipt;
+```
+
 ### Stage names
 
 Every key in Job.stages, Stage.spec, and Required or Prohibited statements must
