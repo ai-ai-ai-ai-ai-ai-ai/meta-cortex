@@ -42,7 +42,7 @@ export class ReceiptGrammar {
           "error",
           {
             selector:
-              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, ArrayExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, CallExpression, TSTypeAnnotation, TSTypeReference)",
+              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, CallExpression, TSTypeAnnotation, TSTypeReference)",
             message:
               "Receipts contain only imports, typed Job objects, literal context, and static job references.",
           },
@@ -168,15 +168,31 @@ class ReceiptFieldGrammar {
           };
           this.schema(issue);
         },
-      ":matches(Property[key.name='items'], Property[key.value='items']):not([value.type='ArrayExpression'])":
+      ":matches(Property[key.name='items'], Property[key.value='items']):not([value.type='ObjectExpression'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
           /** @type {FieldIssue} */
           const issue = {
             node,
-            message: "Declare list items as literal arrays.",
+            message: "Declare list items as literal named objects.",
           };
           this.schema(issue);
+        },
+      "ObjectExpression[properties.length=0]":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          switch (this.isItemMap(node)) {
+            case true: {
+              const issue = {
+                node,
+                message: "Bullet lists contain at least one named item.",
+              };
+              this.context.report(issue);
+              break;
+            }
+            case false:
+              break;
+          }
         },
       ObjectExpression: (node) => this.mapped(node),
       ":matches(Property[key.name=/^(Statement|ShellCommand|PromptStatement|BulletList)$/], Property[key.value=/^(Statement|ShellCommand|PromptStatement|BulletList)$/])":
@@ -203,17 +219,6 @@ class ReceiptFieldGrammar {
           this.schema(issue);
         },
       CallExpression: (node) => this.call(node),
-      ArrayExpression: (node) => this.array(node),
-      "ArrayExpression[elements.length=0]":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Prompt lists contain at least one entry or item.",
-          };
-          this.schema(issue);
-        },
       ":matches(Property[key.name='stages'], Property[key.value='stages']) > ObjectExpression > Property:not([value.type='ObjectExpression'], [value.type='Identifier'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
@@ -234,17 +239,29 @@ class ReceiptFieldGrammar {
           };
           this.stage(issue);
         },
-      ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(ObjectExpression, CallExpression)":
+      ":matches(Property[key.name='prompt'], Property[key.value='prompt']):not([value.type='ObjectExpression'], [value.type='CallExpression'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message:
-              "List items are literal prompt statement or bullet list objects.",
-          };
-          this.schema(issue);
+          switch (
+            node.type === "Property" &&
+            node.parent.type === "ObjectExpression" &&
+            this.isPayload(node.parent) &&
+            this.name(node.parent.parent) === "Statement"
+          ) {
+            case true: {
+              const issue = {
+                node,
+                message:
+                  "Standalone prompts are mapped objects or the literal content helper.",
+              };
+              this.context.report(issue);
+              break;
+            }
+            case false:
+              break;
+          }
         },
+      Property: (node) => this.item(node),
       ":matches(Property[key.name='entries'], Property[key.value='entries'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
@@ -300,6 +317,8 @@ class ReceiptFieldGrammar {
       node.properties[0].type === "Property" &&
       this.isPromptPosition(node) ===
         /^(PromptStatement|BulletList)$/.test(this.name(node.properties[0])) &&
+      (!this.isItemProperty(node.parent) ||
+        this.name(node.properties[0]) === "BulletList") &&
       /^(stages|Statement|ShellCommand|PromptStatement|BulletList)$/.test(
         this.name(node.properties[0]),
       )
@@ -319,7 +338,7 @@ class ReceiptFieldGrammar {
 
   /** @param {import("eslint").Rule.Node} node */
   wrapper(node) {
-    switch (this.isStageProperty(node)) {
+    switch (this.isStageProperty(node) || this.isItemProperty(node)) {
       case true:
         return;
       case false:
@@ -357,6 +376,7 @@ class ReceiptFieldGrammar {
           this.isStageProperty(node.parent.parent)
         );
       case "PromptStatement":
+        return node.type === "Property" && this.isStandalonePrompt(node.parent);
       case "BulletList":
         return node.type === "Property" && this.isPromptPosition(node.parent);
     }
@@ -365,7 +385,7 @@ class ReceiptFieldGrammar {
 
   /** @param {import("eslint").Rule.Node} node */
   call(node) {
-    switch (this.isContentCall(node) && this.isPromptPosition(node)) {
+    switch (this.isContentCall(node) && this.isStandalonePrompt(node)) {
       case true:
         return;
       case false:
@@ -424,16 +444,19 @@ class ReceiptFieldGrammar {
       case true:
         break;
     }
-    const parent = node.parent;
+    return this.isStandalonePrompt(node) || this.isItemProperty(node.parent);
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isStandalonePrompt(node) {
     return (
-      (parent.type === "Property" &&
-        parent.value === node &&
-        this.name(parent) === "prompt" &&
-        this.isPayload(parent.parent)) ||
-      (parent.type === "ArrayExpression" &&
-        parent.parent.type === "Property" &&
-        this.name(parent.parent) === "items" &&
-        this.isPayload(parent.parent.parent))
+      node.type !== "Program" &&
+      node.parent.type === "Property" &&
+      node.parent.value === node &&
+      this.name(node.parent) === "prompt" &&
+      node.parent.parent.type === "ObjectExpression" &&
+      this.isPayload(node.parent.parent) &&
+      this.name(node.parent.parent.parent) === "Statement"
     );
   }
 
@@ -447,25 +470,61 @@ class ReceiptFieldGrammar {
     );
   }
 
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isItemMap(node) {
+    return (
+      node.type === "ObjectExpression" &&
+      node.parent.type === "Property" &&
+      this.name(node.parent) === "items" &&
+      node.parent.parent.type === "ObjectExpression" &&
+      this.isPayload(node.parent.parent) &&
+      this.name(node.parent.parent.parent) === "BulletList"
+    );
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isItemProperty(node) {
+    return node.type === "Property" && this.isItemMap(node.parent);
+  }
+
   /** @param {import("eslint").Rule.Node} node */
-  array(node) {
-    const field = this.property(node);
-    switch (this.name(field)) {
-      case "items":
-        switch (this.isStageProperty(field)) {
-          case false:
-            return;
-          case true:
-            break;
-        }
+  item(node) {
+    switch (this.isItemProperty(node)) {
+      case false:
+        return;
+      case true:
+        break;
     }
-    const issue = { node, message: "Arrays belong only to prompt list items." };
+    switch (
+      node.type === "Property" &&
+      !node.computed &&
+      !node.method &&
+      !node.shorthand &&
+      (node.key.type === "Identifier" ||
+        (node.key.type === "Literal" &&
+          typeof node.key.value === "string" &&
+          node.key.value.trim().length > 0)) &&
+      (this.isTextLiteral(node.value) || node.value.type === "ObjectExpression")
+    ) {
+      case true:
+        return;
+      case false:
+        break;
+    }
+    const issue = {
+      node,
+      message:
+        "Named bullet items require explicit names and literal text or mapped BulletList groups.",
+    };
     this.context.report(issue);
   }
 
   /** @param {FieldIssue} issue */
   schema(issue) {
-    switch (this.isStageProperty(this.property(issue.node))) {
+    switch (
+      this.isStageProperty(this.property(issue.node)) ||
+      this.isItemProperty(this.property(issue.node))
+    ) {
       case false:
         this.context.report(issue);
         break;
@@ -476,7 +535,10 @@ class ReceiptFieldGrammar {
 
   /** @param {FieldIssue} issue */
   stage(issue) {
-    switch (this.isStageProperty(this.property(issue.node))) {
+    switch (
+      this.isStageProperty(this.property(issue.node)) ||
+      this.isItemProperty(this.property(issue.node))
+    ) {
       case true:
         this.context.report(issue);
         break;

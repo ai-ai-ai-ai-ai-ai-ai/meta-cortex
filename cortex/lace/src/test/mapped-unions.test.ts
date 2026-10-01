@@ -7,7 +7,7 @@ class MappedCases {
   static readonly statement = `{ Statement: { prompt: PromptStatement.content("Read.") } }`;
   static readonly shell = `{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }`;
   static readonly text = `{ PromptStatement: { content: "Read." } }`;
-  static readonly bullets = `{ BulletList: { items: [PromptStatement.content("Read.")] } }`;
+  static readonly bullets = `{ BulletList: { items: {bullet1: "Read."} } }`;
   static receipt(stage: string): string {
     return `${MappedCases.imports} const receipt: Job = { stages: { read: ${stage} } }; export default receipt;`;
   }
@@ -16,14 +16,14 @@ class MappedCases {
 test("concrete payloads remain plain readonly values outside mapped unions", () => {
   const source = `${MappedCases.imports}
 const text: PromptStatement = { content: "Read." };
-const bullets: BulletList = { items: [{ PromptStatement: text }] };
+const bullets: BulletList = { items: {bullet1: text.content} };
 const statement: Statement = { prompt: { BulletList: bullets } };
 const shell: ShellCommand = { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
 const tasks: readonly Task[] = [{ Statement: statement }, { ShellCommand: shell }];`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   for (const mutation of [
     `text.content = "Changed.";`,
-    `bullets.items = [];`,
+    `bullets.items = {};`,
     `statement.prompt = PromptStatement.content("Changed.");`,
     `shell.cwd = WorkingDirectory.ProjectRoot;`,
     `shell.script = "changed";`,
@@ -54,8 +54,8 @@ for (const example of [
 
 for (const stage of [
   `{ Statement: { prompt: ${MappedCases.text} }, ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }`,
-  `{ Statement: { prompt: { PromptStatement: { content: "Read." }, BulletList: { items: [${MappedCases.text}] } } } }`,
-  `{ Statement: { prompt: { BulletList: { items: [{ PromptStatement: { content: "Read." }, BulletList: { items: [${MappedCases.text}] } }] } } } }`,
+  `{ Statement: { prompt: { PromptStatement: { content: "Read." }, BulletList: { items: {read: "Read."} } } } }`,
+  `{ Statement: { prompt: { BulletList: { items: {bullet1: { PromptStatement: { content: "Read." }, BulletList: { items: {read: "Read."} } }} } } } }`,
   `{ Statement: { prompt: { PromptStatement: Promise.name } } }`,
   `{ Statement: { prompt: { BulletList: Promise.name } } }`,
   `{ Statement: { prompt: { kind: "statement", content: "Read." } } }`,

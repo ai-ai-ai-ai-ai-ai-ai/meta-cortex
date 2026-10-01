@@ -11,7 +11,7 @@ class ContentCases {
   static readonly allowed = [
     `PromptStatement.content("Read context.")`,
     "PromptStatement.content(`Read context.\nThen compile.`)",
-    `{ BulletList: { items: [PromptStatement.content("Read."), { BulletList: { items: [PromptStatement.content("Compile.")] } }] } }`,
+    `{ BulletList: { items: {bullet1: "Read.", bullet2: { BulletList: { items: {bullet1: "Compile."} } }} } }`,
     `{ PromptStatement: { content: "Plain objects remain supported." } }`,
   ];
   static readonly rejected = [

@@ -19,7 +19,7 @@ export interface PromptStatement {
 
 export interface BulletList {
   readonly label?: string;
-  readonly items: readonly Prompt[];
+  readonly items: Readonly<Record<string, string | BulletListVariant>>;
 }
 
 export type PromptStatementVariant = {

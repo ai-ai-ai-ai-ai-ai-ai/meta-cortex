@@ -59,7 +59,7 @@ const receipt: Job = { stages: { ShellCommand: { stages: { ShellCommand: shared,
 for (const source of [
   `const receipt: Job = ${ShellCases.shell};`,
   `const receipt: Job = { stages: { read: { Statement: { prompt: ${ShellCases.shell} } } } };`,
-  `const receipt: Job = { stages: { read: { Statement: { prompt: { BulletList: { items: [${ShellCases.shell}] } } } } } };`,
+  `const receipt: Job = { stages: { read: { Statement: { prompt: { BulletList: { items: {command: ${ShellCases.shell}} } } } } } };`,
 ]) {
   test(`grammar rejects wrapper outside task positions: ${source}`, () => {
     expect(

@@ -85,11 +85,11 @@ class DeclarationCases {
     },
     {
       scenario: "bullet items on a prompt statement",
-      source: `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { items: ["Read context."] } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { items: {bullet1: "Read context."} } } } } } }`,
       diagnostic: "items",
     },
     {
-      scenario: "a raw string bullet",
+      scenario: "an obsolete bullet array",
       source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: ["Read context."] } } } } } }`,
       diagnostic: "not assignable",
     },
@@ -105,37 +105,37 @@ class DeclarationCases {
     },
     {
       scenario: "a numbered bullet item",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required", items: [42] } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required", items: {bullet1: 42} } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a numeric bullet label",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: 42, items: [{ PromptStatement: { content: "Read context." } }] } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: 42, items: {bullet1: "Read context."} } } } } } }`,
       diagnostic: "not assignable",
     },
     {
-      scenario: "a nested raw string bullet",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: [{ BulletList: { items: ["Read context."] } }] } } } } } }`,
+      scenario: "a nested obsolete bullet array",
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: {bullet1: { BulletList: { items: ["Read context."] } }} } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a nested statement without content",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: [{ PromptStatement: {} }] } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: {bullet1: { PromptStatement: {} }} } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a shell command as a bullet",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: [{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }] } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: {bullet1: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }} } } } } } }`,
       diagnostic: "ShellCommand",
     },
     {
       scenario: "the removed enclosed-list enum member",
-      source: `{ stages: { stage1: { Statement: { prompt: { kind: PromptKind.EnclosedList, items: [{ PromptStatement: { content: "Read context." } }] } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { kind: PromptKind.EnclosedList, items: {bullet1: "Read context."} } } } } }`,
       diagnostic: "Cannot find name 'PromptKind'",
     },
     {
       scenario: "the removed enclosed-list discriminator",
-      source: `{ stages: { stage1: { Statement: { prompt: { kind: "enclosed-list", items: [{ PromptStatement: { content: "Read context." } }] } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { kind: "enclosed-list", items: ["Read context."] } } } } }`,
       diagnostic: "not assignable",
     },
     {
@@ -188,14 +188,9 @@ export default receipt;`;
 });
 
 test("structured bullets permit optional labels, mixed items, and recursive nesting", () => {
-  const source =
-    DeclarationCases.receipt(`{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { Statement: { prompt: { BulletList: { label: "Required", items: [{ PromptStatement: { content: "Read context." } }] } } } }, stage3: { Statement: { prompt: { BulletList: { "items": [
-      { PromptStatement: { content: "Use the existing model." } },
-      { BulletList: { "label": "Prohibited", "items": [{ PromptStatement: { content: "Change core during receipt authoring." } }] } },
-      { BulletList: { items: [
-        { BulletList: { label: "Preferred", items: [{ PromptStatement: { content: "Read the model first." } }] } },
-      ] } },
-    ] } } } } } }`);
+  const source = DeclarationCases.receipt(
+    `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { Statement: { prompt: { BulletList: { label: "Required", items: {bullet1: "Read context."} } } } }, stage3: { Statement: { prompt: { BulletList: { "items": {bullet1: "Use the existing model.", bullet2: { BulletList: { "label": "Prohibited", "items": {bullet1: "Change core during receipt authoring."} } }, bullet3: { BulletList: { items: {bullet1: { BulletList: { label: "Preferred", items: {bullet1: "Read the model first."} } }} } }} } } } } } }`,
+  );
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
 });
@@ -250,18 +245,18 @@ test.each([
   },
   {
     scenario: "appending bullet items",
-    mutation: `bullets.items.push(prompt);`,
-    diagnostic: "Property 'push' does not exist",
+    mutation: `bullets.items.extra = prompt.content;`,
+    diagnostic: "only permits reading",
   },
   {
     scenario: "replacing bullet items",
-    mutation: `bullets.items = [prompt];`,
+    mutation: `bullets.items = { read: prompt.content };`,
     diagnostic: "read-only property",
   },
   {
     scenario: "appending nested bullets",
-    mutation: `nested.items.push(bullets);`,
-    diagnostic: "Property 'push' does not exist",
+    mutation: `nested.items.extra = { BulletList: bullets };`,
+    diagnostic: "only permits reading",
   },
 ])("readonly declarations reject $scenario", (example) => {
   const source = `${DeclarationCases.imports}
@@ -269,9 +264,9 @@ import { type ShellCommand, type PromptStatement } from "../../src/ts/lace.ts";
 const child: Job = { stages: { read: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } };
 const command: ShellCommand = { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
 const prompt: PromptStatement = { content: "Read context." };
-const bullets: BulletList = { label: "Required", items: [{ PromptStatement: prompt }] };
-const nested: BulletList = { items: [{ BulletList: bullets }] };
-const receipt: Job = { stages: { stage1: child, stage2: command } };
+const bullets: BulletList = { label: "Required", items: {bullet1: prompt.content} };
+const nested: BulletList = { items: {bullet1: { BulletList: bullets }} };
+const receipt: Job = { stages: { stage1: child, stage2: { ShellCommand: command } } };
 ${example.mutation}`;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
     example.diagnostic,
@@ -280,8 +275,8 @@ ${example.mutation}`;
 
 test("the same BulletList type works standalone and recursively nested", () => {
   const source = `${DeclarationCases.imports}
-const bullets: BulletList = { label: "Required", items: [{ PromptStatement: { content: "Read context." } }] };
-const nested: BulletList = { items: [{ BulletList: bullets }] };
+const bullets: BulletList = { label: "Required", items: {bullet1: "Read context."} };
+const nested: BulletList = { items: {bullet1: { BulletList: bullets }} };
 const receipt: Job = { stages: { stage1: { Statement: { prompt: { BulletList: bullets } } }, stage2: { Statement: { prompt: { BulletList: nested } } } } };`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
 });
