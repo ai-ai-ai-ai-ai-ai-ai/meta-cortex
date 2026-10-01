@@ -45,10 +45,8 @@ TypeScript. Components consume its decisions instead of reimplementing them.
 
 ```ts
 // A component reimplements a portable policy:
-const action =
-  observation.kind === PageKind.Checkout
-    ? PageAction.OfferAssistance
-    : PageAction.Ignore;
+const action = observation.kind === PageKind.Checkout
+  ? PageAction.OfferAssistance : PageAction.Ignore;
 ```
 
 **Required:**
@@ -72,9 +70,7 @@ store architecture.
 
 ```ts
 // Inside the component:
-$effect(() => {
-  viewport.subscribe();
-});
+$effect(() => { viewport.subscribe(); });
 ```
 
 **Required:**
@@ -104,10 +100,8 @@ if (viewport.kind === ViewportKind.Narrow) {
 
 ```ts
 switch (clipboardSupport.kind) {
-  case ClipboardSupportKind.Available:
-    return panel.showClipboard();
-  case ClipboardSupportKind.Unavailable:
-    return panel.hideClipboard();
+  case ClipboardSupportKind.Available: return panel.showClipboard();
+  case ClipboardSupportKind.Unavailable: return panel.hideClipboard();
 }
 ```
 

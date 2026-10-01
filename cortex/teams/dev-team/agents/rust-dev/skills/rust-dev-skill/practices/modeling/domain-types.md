@@ -944,7 +944,7 @@ serialization, database, or FFI edge. Crate, module, type, and other blanket
 ### Type-safety checks
 
 - Raw identifier and count primitives are absent from domain and WASM
-  signatures unless an external protocol owns the representation.
+      signatures unless an external protocol owns the representation.
 - An explicit edge getter may unwrap a primitive for JavaScript.
 - Infallible single-field wrappers implement `From<Primitive>`.
 - Aggregate construction keeps independent field names visible.

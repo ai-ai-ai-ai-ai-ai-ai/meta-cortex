@@ -71,10 +71,9 @@ These handler fragments assume generated `PageObservation`, `PageKind`, and
 
 ```ts
 const observation = browser.observe();
-const action =
-  observation.page_kind === PageKind.Checkout
-    ? PageAction.OfferAssistance
-    : PageAction.Ignore;
+const action = observation.page_kind === PageKind.Checkout
+  ? PageAction.OfferAssistance
+  : PageAction.Ignore;
 browser.apply(action);
 ```
 

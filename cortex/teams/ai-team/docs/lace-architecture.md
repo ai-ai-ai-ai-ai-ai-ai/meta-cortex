@@ -59,8 +59,8 @@ A Statement is a string or a readonly object with both `content: string` and
 `ShellCommand: ShellCommand`. ShellCommand has readonly `cwd: WorkingDirectory`
 and `script: string`. Use literal strings or noninterpolated templates for text,
 content, and scripts. A structured statement always describes its command in
-content. Jobs do not contain child Jobs; Stage is a fixed section, without
-recursive groups, prompt wrappers, helpers, or builders.
+content. Jobs contain only Stage values; each Stage contains the fixed
+statement sections.
 
 **Prohibited:** omit a normative section even when it has no statements.
 The compiler and grammar reject the incomplete Stage.
@@ -150,7 +150,7 @@ use source order when reading its maps.
 Put explanatory facts in spec, mandatory actions in Required.statements, and
 forbidden actions in Prohibited.statements. Cortex instructions use the
 prohibited/required format; a Preferred category is not supported. These fields
-are fixed Stage sections, without category labels or recursive group wrappers.
+are fixed Stage sections, without category labels.
 
 **Prohibited:** place a mandatory validation command only in explanatory prose.
 

@@ -52,9 +52,7 @@ class ExportSession {
 
 ```ts
 let selectedFormat = ExportFormat.Archive;
-const changeFormat = (format: ExportFormat) => {
-  selectedFormat = format;
-};
+const changeFormat = (format: ExportFormat) => { selectedFormat = format; };
 ```
 
 **Required:**

@@ -156,7 +156,7 @@ its tests in its worktree, and pass both roots in assignments.
 [Neural Lace](lace/AGENTS.ts) is the core for typed Cortex context files.
 Read its [model](lace/src/ts/lace.ts) to learn the vocabulary, then read
 `lace/AGENTS.ts` as text for its context instructions. That entry point describes
-Lace through its own Job and task declarations. The model contains the WorkingDirectory enum and readonly Job, Stage, Statement,
+Lace through its own Job and Stage declarations. The model contains the WorkingDirectory enum and readonly Job, Stage, Statement,
 Required, Prohibited, and ShellCommand contracts. Import authoring vocabulary
 from the private workspace package root `@meta-cortex/lace`.
 Receipts declare plain readonly Jobs with named Stage maps. Every Stage contains

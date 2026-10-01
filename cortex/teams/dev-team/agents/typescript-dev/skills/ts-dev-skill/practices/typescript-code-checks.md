@@ -81,13 +81,10 @@ its `rules` fragment; it assumes type-aware typescript-eslint is already configu
 {
   "no-restricted-syntax": ["error", "IfStatement", "ConditionalExpression"],
   "no-fallthrough": "error",
-  "@typescript-eslint/switch-exhaustiveness-check": [
-    "error",
-    {
-      "allowDefaultCaseForExhaustiveSwitch": false,
-      "considerDefaultExhaustiveForUnions": false
-    }
-  ]
+  "@typescript-eslint/switch-exhaustiveness-check": ["error", {
+    "allowDefaultCaseForExhaustiveSwitch": false,
+    "considerDefaultExhaustiveForUnions": false
+  }]
 }
 ```
 

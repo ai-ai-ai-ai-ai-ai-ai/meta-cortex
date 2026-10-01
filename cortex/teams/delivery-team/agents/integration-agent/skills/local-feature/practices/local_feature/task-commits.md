@@ -147,7 +147,6 @@ superseded checkpoint.
    path list is empty. If the merge succeeds without conflicts, skip resolution
    and its commit. Report an unresolved behavior decision or other Git error
    to Gizmo instead of guessing.
-
 3. Fix the assigned failure and follow [task completion](#finish-task-work) to
    validate, commit, and record readiness. For a one-commit repair, set
    `task_base_sha` to the incorporated `target_sha`; consolidate only changes

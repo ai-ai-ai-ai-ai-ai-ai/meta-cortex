@@ -178,7 +178,7 @@ export const receiptAuthoringStatementShapes: Stage = {
   spec: {
     literalStatementShape:
       "Declare prose as a literal string in spec or a Required or Prohibited statements map.",
-    statementStatementMeaning:
+    statementMeaning:
       "A statement can explain architecture, describe a specification, state a rule, or give an instruction.",
     statementRequiredWording:
       "Its wording conveys whether it describes context or requires an action.",
@@ -210,7 +210,7 @@ export const receiptAuthoringStatementExamples: Stage = {
       requiredSubjectSections:
         "Use separate purpose-named Stages for different subjects.",
       requiredExplicitActions:
-        "State required actions explicitly in the prompt's wording.",
+        "State required actions explicitly in the statement's wording.",
     },
   },
   Prohibited: {
@@ -242,11 +242,11 @@ export const receiptAuthoringComposition: Stage = {
     declarationGrammar:
       "Limit receipts to static imports, typed const Job, Stage, and Statement declarations, literal text and commands, and a default Job receipt export. Maps may be empty; arrays, computed keys, spreads, methods, calls, and nonliteral map shapes are invalid.",
     importedContext:
-      "Import another receipt's default Job to reuse its context.",
+      "Import named typed Stage and Statement declarations from another receipt to reuse its context.",
     readImportedSource: "Read the imported source before applying its context.",
     relativeImports: "Relative imports resolve from the receipt file.",
     literalConditions:
-      "Express conditions and context selection in literal prompt content.",
+      "Express conditions and context selection in literal statement text.",
   },
   Required: {
     statements: {},
@@ -259,8 +259,8 @@ export const receiptAuthoringCompositionExamples: Stage = {
   spec: {},
   Required: {
     statements: {
-      requiredNestedReceipt:
-        "Declare const receipt: Job = { stages: { context: context, checks: { stages: { compile: compile, verify: verify } } } }; then export default receipt.",
+      requiredStaticStages:
+        "Declare const receipt: Job = { stages: { context: context, compileReceipt: compileReceipt, verifyReceipt: verifyReceipt } }; then export default receipt.",
       requiredAuthoringExample:
         "See teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts for an authoring example.",
       requiredArchitectureReference:

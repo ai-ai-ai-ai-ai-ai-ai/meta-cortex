@@ -117,7 +117,6 @@ readiness, and let Gizmo arrange the separate review.
    to the base and report no change; do not manufacture an empty commit.
    Finish a no-change implementation task through the existing ledger path;
    do not present a review of an unrelated base commit as a new code change.
-
 3. Return a mismatch to the Git or development owner before starting review.
    Do not treat the last commit of an unconsolidated branch as the complete task.
    Keep the base in delivery assignment context; the verifier still receives

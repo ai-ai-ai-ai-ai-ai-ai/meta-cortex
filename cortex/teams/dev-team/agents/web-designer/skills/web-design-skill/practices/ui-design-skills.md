@@ -4,7 +4,6 @@ Ship deliberate, calm, trustworthy interfaces without weakening product
 truth or security boundaries. This is the canonical UI design authority.
 
 Every user-visible UI task must load and apply this card when it:
-
 - designs, implements, redesigns, polishes, or reviews vault, website,
   browser-extension, landing, help, settings, onboarding, or authentication; or
 - changes responsive behavior, accessibility, motion, visual state, components, or styling.

@@ -170,7 +170,6 @@ counter and operations. Each operation keeps temporary values local.
 - Do not move a compound predicate into a generic helper and call it locality.
 - Do not combine independent responsibilities in a god object.
 - Do not add a wrapper whose only purpose is to conceal misplaced behavior.
-
 ### Operation placement
 
 - Do not introduce an unowned free function, constant, static, or module-level variable.

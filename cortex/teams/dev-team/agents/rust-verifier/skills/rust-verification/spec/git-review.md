@@ -26,7 +26,6 @@ the delivery team's local-feature practice owns commits and merges.
    commit identity. Do not substitute `HEAD`. If the object is unavailable,
    send `need_commit`; Gizmo arranges object availability with the Git owner.
    The verifier does not fetch or switch branches to repair its assignment.
-
 3. Read the commit headers before the blank line in `cat-file` output. If a
    `parent` header exists, set `parent_sha` to the first parent's full object ID
    and verify that object:
@@ -113,7 +112,6 @@ retain both names and inspect the explicit first-parent patch.
    a text file. Retain binary and submodule changes in the inventory, inspect
    their applicable metadata, and report any evidence needed for a decision.
    Do not claim that a failed blob read checked their content.
-
 4. Read relevant callers, owning types, and earlier repair locations with the
    same committed-object commands, even when those paths are unchanged. Cite
    lines from that revision; deleted content uses parent lines. Never replace

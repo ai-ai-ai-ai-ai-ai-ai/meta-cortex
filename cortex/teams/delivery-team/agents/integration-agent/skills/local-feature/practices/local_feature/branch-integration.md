@@ -121,7 +121,6 @@ leave dependent integration stopped.
    repair plan; the assigned developer reads the commits and reproduces the conflict.
    If abort fails, report that error and retain the workspace. For another Git
    failure, report the same revisions and the actual error instead of calling it a conflict.
-
 2. Gizmo assigns the two SHAs to the responsible team agent, which follows
    [task repair](task-commits.md#repair-the-assigned-revision), resolves the
    conflict, validates, and returns its committed SHA and readiness. The integration

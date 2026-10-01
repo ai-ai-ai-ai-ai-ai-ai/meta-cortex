@@ -46,11 +46,7 @@ interface UploadState {
 **Required:**
 
 ```ts
-enum UploadKind {
-  Idle = "idle",
-  Running = "running",
-  Complete = "complete",
-}
+enum UploadKind { Idle = "idle", Running = "running", Complete = "complete" }
 type UploadState =
   | { readonly kind: UploadKind.Idle }
   | { readonly kind: UploadKind.Running }

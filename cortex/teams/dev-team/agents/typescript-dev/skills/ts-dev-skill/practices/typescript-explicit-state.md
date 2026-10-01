@@ -25,11 +25,7 @@ interface DownloadState {
 **Required:**
 
 ```ts
-enum DownloadKind {
-  Idle = "idle",
-  Running = "running",
-  Complete = "complete",
-}
+enum DownloadKind { Idle = "idle", Running = "running", Complete = "complete" }
 type DownloadState =
   | { readonly kind: DownloadKind.Idle }
   | { readonly kind: DownloadKind.Running }
@@ -53,12 +49,10 @@ type PanelState = { readonly kind: "open" } | { readonly kind: "closed" };
 **Required:**
 
 ```ts
-enum PanelKind {
-  Open = "open",
-  Closed = "closed",
-}
+enum PanelKind { Open = "open", Closed = "closed" }
 type PanelState =
-  { readonly kind: PanelKind.Open } | { readonly kind: PanelKind.Closed };
+  | { readonly kind: PanelKind.Open }
+  | { readonly kind: PanelKind.Closed };
 ```
 
 ## Match domain values directly
@@ -115,10 +109,9 @@ Both compile; only the required form requires each field kind to be named.
 **Prohibited:** a new field type silently receives the text-field prompt.
 
 ```ts
-const question =
-  field.type === FieldType.Choice
-    ? { title: field.question, options: field.options }
-    : { title: field.question };
+const question = field.type === FieldType.Choice
+  ? { title: field.question, options: field.options }
+  : { title: field.question };
 ```
 
 **Required:** every field type is named, including cases that share output.
@@ -144,9 +137,7 @@ sentinel comparisons, non-null assertions, casts, and decorative wrappers.
 
 ```ts
 const selected = value ?? fallback;
-if (typeof value === "undefined") {
-  clear();
-}
+if (typeof value === "undefined") { clear(); }
 ```
 
 **Required:**
@@ -154,10 +145,8 @@ if (typeof value === "undefined") {
 ```ts
 // Inside a UI owner with an already normalized selection:
 switch (selection.kind) {
-  case SelectionKind.Empty:
-    return this.showEmpty();
-  case SelectionKind.Selected:
-    return this.show(selection.item);
+  case SelectionKind.Empty: return this.showEmpty();
+  case SelectionKind.Selected: return this.show(selection.item);
 }
 ```
 
@@ -179,10 +168,8 @@ const delay = rawDelay || defaultDelay; // Replaces a valid zero.
 ```ts
 // Inside the owner, after decoding the external setting:
 switch (setting.kind) {
-  case DelayKind.Specified:
-    return setting.delay;
-  case DelayKind.Default:
-    return defaults.delay;
+  case DelayKind.Specified: return setting.delay;
+  case DelayKind.Default: return defaults.delay;
 }
 ```
 
@@ -217,19 +204,13 @@ Effect owns expected failures; accumulated codec issues remain concrete and loca
 **Prohibited:**
 
 ```ts
-interface ImportView {
-  readonly failed: boolean;
-  readonly error: string;
-}
+interface ImportView { readonly failed: boolean; readonly error: string; }
 ```
 
 **Required:**
 
 ```ts
-enum ImportKind {
-  Idle = "idle",
-  Failed = "failed",
-}
+enum ImportKind { Idle = "idle", Failed = "failed" }
 type ImportView =
   | { readonly kind: ImportKind.Idle }
   | { readonly kind: ImportKind.Failed; readonly failure: ImportFailure };
@@ -246,10 +227,7 @@ evidence. Initialize runes and bindable state explicitly.
 
 ```ts
 // Defined inside the component's script instead of its state module:
-enum PanelKind {
-  Open = "open",
-  Closed = "closed",
-}
+enum PanelKind { Open = "open", Closed = "closed" }
 ```
 
 **Required:**

@@ -23,10 +23,7 @@ let selection = $state<SelectedFile>();
 
 ```ts
 // In file-selection.ts:
-export enum FileSelectionKind {
-  Empty = "empty",
-  Selected = "selected",
-}
+export enum FileSelectionKind { Empty = "empty", Selected = "selected" }
 export type FileSelection =
   | { readonly kind: FileSelectionKind.Empty }
   | { readonly kind: FileSelectionKind.Selected; readonly file: File };

@@ -40,9 +40,7 @@ owner factory. Do not suppress the finding or remove live behavior.
 ```ts
 export class PanelController {
   // Public class surface is untraceable to the configured checker.
-  open(): void {
-    /* implementation */
-  }
+  open(): void { /* implementation */ }
 }
 ```
 
@@ -50,14 +48,10 @@ export class PanelController {
 
 ```ts
 class PanelController {
-  open(): void {
-    /* implementation */
-  }
+  open(): void { /* implementation */ }
 }
 export class Panel {
-  static build(): PanelController {
-    return new PanelController();
-  }
+  static build(): PanelController { return new PanelController(); }
 }
 ```
 
