@@ -4,7 +4,8 @@ mod protocol;
 
 use crate::installation::InstallError;
 use catalog::Catalog;
-use derive_more::Display;
+use derive_more::{Display, From};
+use meta_cortex_visualization::DashboardError;
 use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::versions::ProtocolVersion;
 use protocol::{Reply, Request};
@@ -18,6 +19,8 @@ use tokio::runtime::Builder;
 
 #[derive(Debug, Error)]
 pub enum AgentError {
+    #[error(transparent)]
+    Dashboard(#[from] meta_cortex_visualization::DashboardError),
     #[error("invalid request YAML: {0}")]
     Request(#[from] serde_saphyr::DeserializeError),
     #[error("could not encode response: {0}")]
@@ -48,46 +51,62 @@ pub enum ErrorCode {
     Response,
 }
 
+#[derive(Serialize, From)]
+#[serde(transparent)]
+struct FailureMessage(String);
+
 #[derive(Serialize)]
 pub struct Failure {
     code: ErrorCode,
-    message: String,
+    message: FailureMessage,
 }
 
 impl From<&AgentError> for Failure {
     fn from(error: &AgentError) -> Self {
         let code = match error {
+            AgentError::Dashboard(DashboardError::Terminal(_)) => ErrorCode::Io,
+            AgentError::Dashboard(DashboardError::TerminalRequired) => ErrorCode::InvalidRequest,
             AgentError::Request(_) => ErrorCode::InvalidRequest,
             AgentError::Response(_) => ErrorCode::Response,
             AgentError::Io(_) => ErrorCode::Io,
             AgentError::Install(_) => ErrorCode::Installation,
-            AgentError::Ledger(error) => match error {
-                LedgerError::Conflict | LedgerError::AlreadyExists => ErrorCode::Conflict,
-                LedgerError::NotFound | LedgerError::Uninitialized => ErrorCode::NotFound,
-                LedgerError::Invalid(_)
-                | LedgerError::Identifier(_)
-                | LedgerError::BranchName(_)
-                | LedgerError::CommitId(_)
-                | LedgerError::Revision(_)
-                | LedgerError::Attempt(_)
-                | LedgerError::Timestamp(_)
-                | LedgerError::LeaseSeconds(_) => ErrorCode::InvalidRequest,
-                LedgerError::InvalidTransition => ErrorCode::InvalidState,
-                LedgerError::AssignmentChanged => ErrorCode::AssignmentChanged,
-                LedgerError::Expired => ErrorCode::Expired,
-                LedgerError::DependencyPending => ErrorCode::DependencyPending,
-                LedgerError::UnsupportedVersion(_) => ErrorCode::UnsupportedVersion,
-                LedgerError::Git(_) => ErrorCode::Git,
-                LedgerError::Io(_) | LedgerError::Clock(_) => ErrorCode::Io,
-                LedgerError::Database(_)
-                | LedgerError::Json(_)
-                | LedgerError::SqlBuild(_)
-                | LedgerError::UnsupportedSqlBinding => ErrorCode::Storage,
-            },
+            AgentError::Ledger(error) | AgentError::Dashboard(DashboardError::Ledger(error)) => {
+                ErrorCode::ledger(error)
+            }
         };
         Self {
             code,
-            message: error.to_string(),
+            message: FailureMessage::from(error.to_string()),
+        }
+    }
+}
+
+impl ErrorCode {
+    fn ledger(error: &LedgerError) -> Self {
+        match error {
+            LedgerError::Conflict | LedgerError::AlreadyExists => ErrorCode::Conflict,
+            LedgerError::NotFound | LedgerError::Uninitialized => ErrorCode::NotFound,
+            LedgerError::Invalid(_)
+            | LedgerError::Identifier(_)
+            | LedgerError::BranchName(_)
+            | LedgerError::CommitId(_)
+            | LedgerError::Revision(_)
+            | LedgerError::Attempt(_)
+            | LedgerError::Timestamp(_)
+            | LedgerError::LeaseSeconds(_) => ErrorCode::InvalidRequest,
+            LedgerError::InvalidTransition => ErrorCode::InvalidState,
+            LedgerError::AssignmentChanged => ErrorCode::AssignmentChanged,
+            LedgerError::Expired => ErrorCode::Expired,
+            LedgerError::DependencyPending => ErrorCode::DependencyPending,
+            LedgerError::ObservationMigrationRequired(_) | LedgerError::UnsupportedVersion(_) => {
+                ErrorCode::UnsupportedVersion
+            }
+            LedgerError::Git(_) => ErrorCode::Git,
+            LedgerError::Io(_) | LedgerError::Clock(_) => ErrorCode::Io,
+            LedgerError::Database(_)
+            | LedgerError::Json(_)
+            | LedgerError::SqlBuild(_)
+            | LedgerError::UnsupportedSqlBinding => ErrorCode::Storage,
         }
     }
 }

@@ -1,6 +1,7 @@
 mod legacy;
 mod lifecycle;
 mod mutations;
+pub(crate) mod observation;
 mod relational;
 mod schema;
 mod sql;

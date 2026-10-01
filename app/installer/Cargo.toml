@@ -10,6 +10,7 @@ publish.workspace = true
 
 [dependencies]
 meta-cortex-workbench.workspace = true
+meta-cortex-visualization.workspace = true
 clap.workspace = true
 include_dir.workspace = true
 thiserror.workspace = true
@@ -31,5 +32,6 @@ workspace = true
 dist = true
 
 [dev-dependencies]
+vt100.workspace = true
 anyhow.workspace = true
 serde_json.workspace = true
