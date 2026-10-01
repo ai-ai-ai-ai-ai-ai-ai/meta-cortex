@@ -2,7 +2,8 @@
 
 Neural Lace defines typed Cortex context: architecture, specifications, rules,
 instructions, skills, and practices that agents read as text.
-Its [model](../../../lace/src/ts/lace.ts) contains only enums, types, and interfaces.
+Its [model](../../../lace/src/ts/lace.ts) contains enums, types, interfaces, and the inert
+`PromptStatement.content` authoring helper.
 Receipts declare nested objects and arrays, so indentation shows the context
 hierarchy as it does in JSON or YAML. TypeScript checks the declarations and
 imports; agents apply their meaning through host tools.
@@ -34,7 +35,7 @@ Lace itself; that entry point does not move subject receipts into the core.
 
 ### Object hierarchy
 
-- Import `Job` as a type and the required enums from the model.
+- Import `Job` as a type, the required enums, and `PromptStatement` as a value from the model.
 - Declare `const receipt: Job = { stages: { context: context } }` and `export default receipt`.
 - Declare each child Job directly as `{ stages: { context: context } }` within its parent.
 - Give each task or child Job an explicit unique identifier or string literal key
@@ -49,10 +50,11 @@ Names such as `label`, `items`, `stages`, `entries`, `content`, and `script` are
 stage keys; they do not become schema fields at that position.
 `Stage = Job | Task` allows each stage to be another directory or a context task.
 Jobs represent directories; tasks represent files. Job maps and prompt lists must be
-nonempty under the declaration grammar. There are no builders, constructors,
-methods, or runtime collection operations in the model.
+nonempty under the declaration grammar. The only authoring helper is
+`PromptStatement.content`; receipts have no constructors, general builders,
+or runtime collection operations.
 
-The TypeScript fragments below assume `Job`, `TaskKind`, `PromptKind`, and
+The TypeScript fragments below assume `Job`, `TaskKind`, `PromptKind`, `PromptStatement`, and
 `WorkingDirectory` are imported from the model. `context`, `compile`, and
 `verify` are default Jobs imported from the linked Context Engineering examples.
 Each fragment is a separate receipt body.
@@ -89,7 +91,7 @@ Readonly types do not prevent an external mutable alias from changing an object.
 Read receipt source as context rather than importing it to run code.
 
 **Prohibited:** mutate a typed Job. The compiler rejects assigning stages,
-and the receipt grammar rejects method calls.
+and the receipt grammar rejects mutation and general method calls.
 
 ```typescript
 const receipt: Job = { stages: { context: context } };
@@ -125,7 +127,7 @@ const receipt: Job = {
   stages: {
     step1: {
       kind: TaskKind.Statement,
-      prompt: { kind: PromptKind.Statement, content: "Read context." },
+      prompt: PromptStatement.content("Read context."),
       script: "bun run check",
     },
   },
@@ -140,10 +142,9 @@ const receipt: Job = {
   stages: {
     step1: {
       kind: TaskKind.Statement,
-      prompt: {
-        kind: PromptKind.Statement,
-        content: "A Job groups Cortex context in source order.",
-      },
+      prompt: PromptStatement.content(
+        "A Job groups Cortex context in source order.",
+      ),
     },
     step2: {
       kind: TaskKind.ShellCommand,
@@ -166,7 +167,8 @@ export default receipt;
 - **Nested group:** a BulletList within another BulletList's `items`. Groups use
   the same recursive shape and may omit their label.
 
-Declare every text bullet as a PromptStatement object. Use one bullet per
+Declare every text bullet with `PromptStatement.content("literal text")`.
+Existing plain PromptStatement objects remain supported. Use one bullet per
 independent fact or action. Nest BulletLists when their relationship matters,
 such as prohibited/preferred examples. State requirements explicitly in the
 wording. Raw string items are invalid.
@@ -198,21 +200,55 @@ const receipt: Job = {
         kind: PromptKind.BulletList,
         label: "Required actions",
         items: [
-          {
-            kind: PromptKind.Statement,
-            content: "Read the assigned context.",
-          },
+          PromptStatement.content("Read the assigned context."),
           {
             kind: PromptKind.BulletList,
-            items: [
-              {
-                kind: PromptKind.Statement,
-                content: "Compile the receipt.",
-              },
-            ],
+            items: [PromptStatement.content("Compile the receipt.")],
           },
         ],
       },
+    },
+  },
+};
+export default receipt;
+```
+
+### Literal prompt helper
+
+`PromptStatement` retains its readonly interface and has an abstract static class
+with `content(content: string): PromptStatement`. The helper returns the same
+plain `{ kind: PromptKind.Statement, content }` object, without freezing or
+runtime validation. Direct construction is not part of the authoring API.
+
+The grammar permits only noncomputed `PromptStatement.content` calls with exactly
+one nonblank string or noninterpolated template literal. Calls belong only in a
+Statement's `prompt` or a BulletList's recursive `items`. Other calls and helper
+calls in Job, stage, or shell-command fields remain invalid. Existing model import
+restrictions and TypeScript binding checks apply; there is no import tracker.
+
+**Prohibited:** derive a helper argument from a runtime expression.
+The compiler accepts the string, but the grammar rejects this call.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    read: {
+      kind: TaskKind.Statement,
+      prompt: PromptStatement.content(Promise.name),
+    },
+  },
+};
+export default receipt;
+```
+
+**Preferred:** put the exact context in the literal helper argument.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    read: {
+      kind: TaskKind.Statement,
+      prompt: PromptStatement.content("Read the assigned context."),
     },
   },
 };
@@ -230,7 +266,9 @@ export default receipt;
 4. Interpret statement wording within the active assignment.
 5. Run an instructed command through the host's shell tool with its declared cwd.
 
-Compilation never runs a declared command. Express conditions and context
+Compilation never runs a declared command. Importing a receipt invokes its
+`PromptStatement.content` calls to construct plain objects; it does not run
+declared shell commands. Agents read the source rather than importing it. Express conditions and context
 selection in literal prompt content. Reuse canonical commands through imported
 Jobs; copying them creates another maintenance location.
 
@@ -307,7 +345,8 @@ capability when it needs a separate core assignment.
 
 The [grammar](../../../lace/receipt-grammar.js) permits model and receipt imports,
 typed const Job objects, literal tasks and prompts, and static Job references in
-named stages maps. The root binding is named `receipt` and default-exported.
+named stages maps, plus the exact literal prompt helper described above.
+The root binding is named `receipt` and default-exported.
 Enum fields use `TaskKind` or `PromptKind` for `kind`, and `WorkingDirectory` for
 `cwd`. Text and labels must be nonblank literals; maps and lists must be nonempty.
 Stage maps require explicit unique identifier or string literal keys and literal
@@ -317,10 +356,11 @@ methods, and nonliteral stage maps are invalid.
 The grammar combines standard ESLint restrictions and duplicate-key checks with
 the local `lace/declaration-fields` rule. That rule uses declaration position to
 distinguish arbitrary entry names from schema fields and applies structural
-selectors; it does not evaluate receipts or track imports. TypeScript checks
+selectors plus the narrow helper-call predicate; it does not evaluate receipts
+or track imports. TypeScript checks
 entry and prompt variants through the model.
 
-- The grammar rejects other implementation imports, calls, constructors, methods,
+- The grammar rejects other implementation imports, arbitrary calls, constructors, methods,
   mutable bindings, loops, conditionals, assignments, spreads, computed fields,
   type assertions, and suppression attempts.
 - Typed Job declarations check the whole object tree without casts or assertion
@@ -348,10 +388,9 @@ const receipt: Job = {
   stages: {
     step1: {
       kind: TaskKind.Statement,
-      prompt: {
-        kind: PromptKind.Statement,
-        content: "Read the assigned context before editing.",
-      },
+      prompt: PromptStatement.content(
+        "Read the assigned context before editing.",
+      ),
     },
   },
 };
