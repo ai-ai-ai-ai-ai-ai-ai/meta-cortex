@@ -4,7 +4,7 @@ Neural Lace defines typed Cortex context: architecture, specifications, rules,
 instructions, skills, and practices that agents read as text.
 Its [model](../../../lace/src/ts/lace.ts) contains the WorkingDirectory enum, types, interfaces, and the inert
 `PromptStatement.content` authoring helper.
-Receipts declare nested objects and arrays, so indentation shows the context
+Receipts declare nested literal named maps, so indentation shows the context
 hierarchy as it does in JSON or YAML. TypeScript checks the declarations and
 imports; agents apply their meaning through host tools.
 Read [Lace's entry point](../../../lace/AGENTS.ts) for core ownership rules.
@@ -49,7 +49,7 @@ Use explicit properties such as `compile: compile` for static Job references.
 Names such as `label`, `items`, `stages`, `entries`, `content`, and `script` are valid
 stage keys; they do not become schema fields at that position.
 `Stage = Job | Task` allows each stage to be another directory or a context task.
-Jobs represent directories; tasks represent files. Job maps and prompt lists must be
+Jobs represent directories; tasks represent files. Job stage maps and BulletList item maps must be
 nonempty under the declaration grammar. The only authoring helper is
 `PromptStatement.content`; receipts have no constructors, general builders,
 or runtime collection operations.
@@ -84,15 +84,16 @@ export default receipt;
 
 ### Stage names
 
-Every key in an authored `Job.stages` map must describe the stage's purpose.
-Name a task for its action or a child Job for the context it groups. Never use
+Every key in an authored `Job.stages` or `BulletList.items` map must describe its purpose.
+Name a task for its action or a child Job for the context it groups. Give each
+bullet a short name for its fact, action, or grouped subject. Never use
 positional or placeholder names such as `step3`, `stage1`, `entry2`, or `item1`.
-Keep source declaration order when naming stages; names do not encode ordering.
+Keep source declaration order when naming stages and items; names do not encode ordering.
 
 This is a semantic authoring requirement. The declaration grammar accepts
 arbitrary explicit identifier or string literal keys and does not judge their
-meaning. Compiler and lint success do not establish that stage names are useful.
-Review each name against its task or grouped context.
+meaning. Compiler and lint success do not establish that stage and bullet names are useful.
+Review each name against its task, text, or grouped context.
 
 **Prohibited:** use a position as the name of the compilation stage.
 This receipt compiles and passes grammar, but its name hides the action.
@@ -109,9 +110,40 @@ const receipt: Job = { stages: { compileReceipt: compile } };
 export default receipt;
 ```
 
+**Prohibited:** use a placeholder for a text bullet. This shape passes types and
+grammar, but the name does not describe its instruction.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    requiredActions: {
+      Statement: {
+        prompt: { BulletList: { items: { item1: "Read context." } } },
+      },
+    },
+  },
+};
+export default receipt;
+```
+
+**Preferred:** give the same bullet a short purpose-based name.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    requiredActions: {
+      Statement: {
+        prompt: { BulletList: { items: { readContext: "Read context." } } },
+      },
+    },
+  },
+};
+export default receipt;
+```
+
 ### Readonly declarations
 
-All model fields are readonly, including Job stages, prompt lists, and nested
+All model fields are readonly, including Job stages, bullet item maps, and nested
 BulletLists. TypeScript rejects mutation through these types. Receipts contain
 literal declarations; they neither copy nor freeze JavaScript objects at runtime.
 Readonly types do not prevent an external mutable alias from changing an object.
@@ -204,15 +236,18 @@ A Prompt has exactly one outer variant property; hybrid objects are invalid.
 
 - **Prompt statement:** `{ PromptStatement: { content } }` with one literal string.
 - **Bullet list:** `{ BulletList: { label?, items } }` with an optional literal
-  label and a nonempty literal array. The payload types `items` as `readonly Prompt[]`.
-- **Nested group:** a mapped BulletList Prompt within another payload's `items`.
+  label and a nonempty literal named map. The payload types `items` as
+  `Readonly<Record<string, string | BulletListVariant>>`.
+- **Nested group:** a mapped BulletList variant within another payload's `items`.
   Groups use the same recursive variant and may omit their label.
 
-Declare every text bullet with `PromptStatement.content("literal text")`.
-Existing plain mapped PromptStatement objects remain supported. Use one bullet per
+Give each text bullet an explicit descriptive key and a nonblank literal string
+or noninterpolated template value. Use one bullet per
 independent fact or action. Nest BulletLists when their relationship matters,
 such as prohibited/preferred examples. State requirements explicitly in the
-wording. Raw string items are invalid.
+wording. Arrays, raw group payloads, general Prompt values, PromptStatement
+wrappers, and helper calls are invalid item values. Plain mapped PromptStatement
+objects remain supported only as standalone prompts.
 
 **Prohibited:** hide independent actions in one raw prompt string.
 The compiler requires a structured Prompt.
@@ -241,16 +276,52 @@ const receipt: Job = {
         prompt: {
           BulletList: {
             label: "Required actions",
-            items: [
-              PromptStatement.content("Read the assigned context."),
-              {
+            items: {
+              readContext: "Read the assigned context.",
+              checks: {
                 BulletList: {
-                  items: [PromptStatement.content("Compile the receipt.")],
+                  items: { compileReceipt: "Compile the receipt." },
                 },
               },
-            ],
+            },
           },
         },
+      },
+    },
+  },
+};
+export default receipt;
+```
+
+**Prohibited:** put the standalone prompt helper inside an item map.
+The compiler rejects its PromptStatement variant as a bullet value; the grammar
+also rejects the call in that position.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    requiredActions: {
+      Statement: {
+        prompt: {
+          BulletList: {
+            items: { readContext: PromptStatement.content("Read context.") },
+          },
+        },
+      },
+    },
+  },
+};
+export default receipt;
+```
+
+**Preferred:** put literal text directly under the item's descriptive key.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    requiredActions: {
+      Statement: {
+        prompt: { BulletList: { items: { readContext: "Read context." } } },
       },
     },
   },
@@ -263,11 +334,11 @@ export default receipt;
 `PromptStatement` retains its readonly interface and has an abstract static class
 with `content(content: string): PromptStatementVariant`. The helper returns the
 precise plain `{ PromptStatement: { content } }` variant directly usable as a
-Prompt or list item, without freezing or runtime validation. Direct construction is not part of the authoring API.
+standalone Statement.prompt, without freezing or runtime validation. Direct construction is not part of the authoring API.
 
 The grammar permits only noncomputed `PromptStatement.content` calls with exactly
 one nonblank string or noninterpolated template literal. Calls belong only in a
-Statement's `prompt` or a BulletList's recursive `items`. Other calls and helper
+Statement's standalone `prompt`; BulletList item values cannot use the helper. Other calls and helper
 calls in Job, stage, or shell-command fields remain invalid. Existing model import
 restrictions and TypeScript binding checks apply; there is no import tracker.
 
@@ -397,16 +468,19 @@ named stages maps, plus the exact literal prompt helper described above.
 The root binding is named `receipt` and default-exported.
 Task and Prompt objects require exactly one outer variant property with a
 literal payload in their task or prompt position. `WorkingDirectory` supplies
-`cwd` inside the ShellCommand payload. Arbitrary stage keys such as `Statement`,
+`cwd` inside the ShellCommand payload. Arbitrary stage and item keys such as `Statement`,
 `ShellCommand`, `PromptStatement`, and `BulletList` remain valid at any depth. Dynamic payloads, computed fields, spreads, methods, and helper
-calls used as commands are invalid. Text and labels must be nonblank literals; maps and lists must be nonempty.
+calls used as commands are invalid. Text and labels must be nonblank literals; maps must be nonempty.
 Stage maps require explicit unique identifier or string literal keys and literal
 objects or static Job references as values. Stage arrays, computed keys, spreads,
-methods, and nonliteral stage maps are invalid.
+methods, and nonliteral stage maps are invalid. Bullet item maps require explicit
+unique identifier or string literal keys with nonblank names. Their values are
+nonblank literal text or a literal mapped BulletList group. Empty maps, arrays,
+dynamic values, computed keys, spreads, methods, and other Prompt variants are invalid.
 
 The grammar combines standard ESLint restrictions and duplicate-key checks with
 the local `lace/declaration-fields` rule. That rule uses declaration position to
-distinguish arbitrary entry names from schema fields and applies structural
+distinguish arbitrary stage and item names from schema fields and applies structural
 selectors plus the narrow helper-call predicate; it does not evaluate receipts
 or track imports. TypeScript checks
 entry and prompt variants through the model.

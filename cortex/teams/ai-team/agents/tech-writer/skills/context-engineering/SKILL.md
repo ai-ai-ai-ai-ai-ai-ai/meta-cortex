@@ -78,14 +78,14 @@ Its local links resolve; the code example was reviewed but not executed.”
 When the assignment concerns Cortex's own typed context files, use the
 [Neural Lace architecture](../../../../docs/lace-architecture.md).
 Its [authoring example](examples/lace/authoring.lace.ts) demonstrates context
-composition with imported jobs, `PromptStatement.content` text bullets, and
+composition with imported jobs, named literal text bullets and nested BulletList groups, and
 existing compilation checks. The exact helper accepts one nonblank string or
-noninterpolated template literal in prompt or BulletList item positions. Existing
+noninterpolated template literal only in standalone Statement.prompt. Existing
 plain mapped PromptStatement objects remain supported. The helper returns
 `{ PromptStatement: { content } }`; Task and Prompt wrap plain readonly concrete
 payloads with one outer variant property. Agents read receipts as text;
 importing a receipt invokes the helper to construct plain objects but never runs
-declared shell commands. Apply the [stage-name authoring rule](../../../../docs/lace-architecture.md#stage-names).
+declared shell commands. Apply the [stage and bullet naming rule](../../../../docs/lace-architecture.md#stage-names).
 Follow the
 [core ownership rules](../../../../../../lace/AGENTS.ts) during receipt authoring.
 
