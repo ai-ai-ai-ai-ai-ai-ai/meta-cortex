@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { PromptStatement, type PromptStatementVariant } from "../ts/lace.ts";
+import { PromptStatement, type Prompt } from "../ts/lace.ts";
 import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
@@ -37,7 +37,7 @@ class ContentCases {
 
 test("content helper returns the canonical plain unfrozen prompt object", () => {
   const prompt = PromptStatement.content("Read context.");
-  const expected: PromptStatementVariant = {
+  const expected: Prompt = {
     PromptStatement: { content: "Read context." },
   };
   expect(prompt).toEqual(expected);

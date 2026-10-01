@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import {
   type Job,
   type Task,
-  type PromptStatementVariant,
+  type Prompt,
   PromptStatement,
   WorkingDirectory,
 } from "@meta-cortex/lace";
@@ -18,8 +18,7 @@ class PublicImportCases {
 }
 
 test("public package root provides actual readonly types and inert helper values", () => {
-  const prompt: PromptStatementVariant =
-    PromptStatement.content("Read context.");
+  const prompt = PromptStatement.content("Read context.");
   const receipt: Job = {
     stages: {
       read: { Statement: { prompt: prompt } },
@@ -31,7 +30,7 @@ test("public package root provides actual readonly types and inert helper values
       },
     },
   };
-  const expectedPrompt: PromptStatementVariant = {
+  const expectedPrompt: Prompt = {
     PromptStatement: { content: "Read context." },
   };
   const expectedCommand: Task = {

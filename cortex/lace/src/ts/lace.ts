@@ -19,23 +19,24 @@ export interface PromptStatement {
 
 export interface BulletList {
   readonly label?: string;
-  readonly items: Readonly<Record<string, string | BulletListVariant>>;
+  readonly items: Readonly<
+    Record<
+      string,
+      | string
+      | { readonly BulletList: BulletList; readonly PromptStatement?: never }
+    >
+  >;
 }
 
-export type PromptStatementVariant = {
-  readonly PromptStatement: PromptStatement;
-  readonly BulletList?: never;
-};
-
-export type BulletListVariant = {
-  readonly BulletList: BulletList;
-  readonly PromptStatement?: never;
-};
-
-export type Prompt = PromptStatementVariant | BulletListVariant;
+export type Prompt =
+  | { readonly PromptStatement: PromptStatement; readonly BulletList?: never }
+  | { readonly BulletList: BulletList; readonly PromptStatement?: never };
 
 export abstract class PromptStatement {
-  static content(content: string): PromptStatementVariant {
+  static content(content: string): {
+    readonly PromptStatement: PromptStatement;
+    readonly BulletList?: never;
+  } {
     return { PromptStatement: { content } };
   }
 }
