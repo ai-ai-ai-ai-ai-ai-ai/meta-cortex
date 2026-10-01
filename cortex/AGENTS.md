@@ -160,7 +160,9 @@ Lace through its own Job and task declarations. The model contains enums, types,
 interfaces, and the inert `PromptStatement.content` authoring helper.
 Receipts declare plain, readonly Job objects with nonempty literal named stage maps.
 The model and validation code contain no instantiated context jobs or tasks.
-Subject context receipts belong beside their owning context, outside `lace/`.
+Apply the [stage-name authoring rule](teams/ai-team/docs/lace-architecture.md#stage-names)
+when naming receipt stages. Subject context receipts belong beside their owning
+context, outside `lace/`.
 Both `AGENTS.ts` entry points and `*.lace.ts` receipts use the same declaration
 language. Agents read them as text; the TypeScript project checks their
 structure and imports. Importing a receipt invokes its literal helper calls to

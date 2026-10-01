@@ -13,7 +13,7 @@ const checks: Job = { stages: { compile: compile, verify: verify } };
 const receipt: Job = {
   stages: {
     context: context,
-    step2: {
+    authorReceipt: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.BulletList,

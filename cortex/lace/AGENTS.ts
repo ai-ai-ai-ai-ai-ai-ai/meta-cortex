@@ -8,7 +8,7 @@ import {
 
 const receipt: Job = {
   stages: {
-    step1: {
+    overview: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.BulletList,
@@ -35,9 +35,9 @@ const receipt: Job = {
         ],
       },
     },
-    step2: {
+    requiredActions: {
       stages: {
-        step1: {
+        orientation: {
           kind: TaskKind.Statement,
           prompt: {
             kind: PromptKind.BulletList,
@@ -52,9 +52,9 @@ const receipt: Job = {
             ],
           },
         },
-        step2: {
+        coreOwnership: {
           stages: {
-            step1: {
+            vocabulary: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -85,7 +85,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step2: {
+            contextPlacement: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -106,7 +106,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step3: {
+            coreChanges: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -130,7 +130,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step4: {
+            ownershipExamples: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -162,9 +162,9 @@ const receipt: Job = {
             },
           },
         },
-        step3: {
+        receiptAuthoring: {
           stages: {
-            step1: {
+            receiptContract: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -172,6 +172,9 @@ const receipt: Job = {
                 items: [
                   PromptStatement.content(
                     "Import the Job type from lace/src/ts/lace.ts.",
+                  ),
+                  PromptStatement.content(
+                    "Follow teams/ai-team/docs/lace-architecture.md#stage-names when naming Job stages.",
                   ),
                   PromptStatement.content(
                     "Import the required enums and types plus the PromptStatement value helper from lace/src/ts/lace.ts.",
@@ -191,7 +194,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step2: {
+            readonlyDeclarations: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -218,7 +221,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step3: {
+            readonlyExamples: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -247,7 +250,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step4: {
+            taskAndPromptShapes: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -306,7 +309,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step5: {
+            promptExamples: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -338,7 +341,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step6: {
+            shellCommands: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -359,7 +362,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step7: {
+            composition: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -383,7 +386,7 @@ const receipt: Job = {
                 ],
               },
             },
-            step8: {
+            compositionExamples: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -417,9 +420,9 @@ const receipt: Job = {
             },
           },
         },
-        step4: {
+        validation: {
           stages: {
-            step1: {
+            validationGuidance: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -437,17 +440,17 @@ const receipt: Job = {
                 ],
               },
             },
-            step2: {
+            compile: {
               kind: TaskKind.ShellCommand,
               cwd: WorkingDirectory.LibraryRoot,
               script: "bun run --filter @meta-cortex/lace check",
             },
-            step3: {
+            verify: {
               kind: TaskKind.ShellCommand,
               cwd: WorkingDirectory.LibraryRoot,
               script: "bun run --filter @meta-cortex/lace verify",
             },
-            step4: {
+            validationExamples: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -483,9 +486,9 @@ const receipt: Job = {
         },
       },
     },
-    step3: {
+    prohibitedActions: {
       stages: {
-        step1: {
+        scopeRestrictions: {
           kind: TaskKind.Statement,
           prompt: {
             kind: PromptKind.BulletList,
@@ -509,7 +512,7 @@ const receipt: Job = {
             ],
           },
         },
-        step2: {
+        scopeExamples: {
           kind: TaskKind.Statement,
           prompt: {
             kind: PromptKind.BulletList,

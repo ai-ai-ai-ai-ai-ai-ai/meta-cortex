@@ -83,7 +83,8 @@ existing compilation checks. The exact helper accepts one nonblank string or
 noninterpolated template literal in prompt or BulletList item positions. Existing
 plain PromptStatement objects remain supported. Agents read receipts as text;
 importing a receipt invokes the helper to construct plain objects but never runs
-declared shell commands. Follow the
+declared shell commands. Apply the [stage-name authoring rule](../../../../docs/lace-architecture.md#stage-names).
+Follow the
 [core ownership rules](../../../../../../lace/AGENTS.ts) during receipt authoring.
 
 **Prohibited:** use the context format as an application programming API or

@@ -74,11 +74,38 @@ The compiler checks every nested stage through that annotation.
 const receipt: Job = {
   stages: {
     context: context,
-    step2: {
+    checks: {
       stages: { compile: compile, verify: verify },
     },
   },
 };
+export default receipt;
+```
+
+### Stage names
+
+Every key in an authored `Job.stages` map must describe the stage's purpose.
+Name a task for its action or a child Job for the context it groups. Never use
+positional or placeholder names such as `step3`, `stage1`, `entry2`, or `item1`.
+Keep source declaration order when naming stages; names do not encode ordering.
+
+This is a semantic authoring requirement. The declaration grammar accepts
+arbitrary explicit identifier or string literal keys and does not judge their
+meaning. Compiler and lint success do not establish that stage names are useful.
+Review each name against its task or grouped context.
+
+**Prohibited:** use a position as the name of the compilation stage.
+This receipt compiles and passes grammar, but its name hides the action.
+
+```typescript
+const receipt: Job = { stages: { step3: compile } };
+export default receipt;
+```
+
+**Preferred:** name the same stage for its compilation purpose.
+
+```typescript
+const receipt: Job = { stages: { compileReceipt: compile } };
 export default receipt;
 ```
 
@@ -125,7 +152,7 @@ The compiler rejects the `script` field on that variant.
 ```typescript
 const receipt: Job = {
   stages: {
-    step1: {
+    readContext: {
       kind: TaskKind.Statement,
       prompt: PromptStatement.content("Read context."),
       script: "bun run check",
@@ -140,13 +167,13 @@ export default receipt;
 ```typescript
 const receipt: Job = {
   stages: {
-    step1: {
+    explainHierarchy: {
       kind: TaskKind.Statement,
       prompt: PromptStatement.content(
         "A Job groups Cortex context in source order.",
       ),
     },
-    step2: {
+    compileReceipt: {
       kind: TaskKind.ShellCommand,
       cwd: WorkingDirectory.LibraryRoot,
       script: "bun run --filter @meta-cortex/lace check",
@@ -179,7 +206,7 @@ The compiler requires a structured Prompt.
 ```typescript
 const receipt: Job = {
   stages: {
-    step1: {
+    readAndCompile: {
       kind: TaskKind.Statement,
       prompt: "Read context. Compile the receipt.",
     },
@@ -194,7 +221,7 @@ The nested group below omits its optional label.
 ```typescript
 const receipt: Job = {
   stages: {
-    step1: {
+    requiredActions: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.BulletList,
@@ -278,7 +305,7 @@ This type-checks but duplicates its maintenance owner.
 ```typescript
 const receipt: Job = {
   stages: {
-    step1: {
+    compileReceipt: {
       kind: TaskKind.ShellCommand,
       cwd: WorkingDirectory.LibraryRoot,
       script: "bun run --filter @meta-cortex/lace check",
@@ -372,7 +399,7 @@ The compiler accepts a string expression; the grammar requires literal context.
 ```typescript
 const receipt: Job = {
   stages: {
-    step1: {
+    readContext: {
       kind: TaskKind.Statement,
       prompt: { kind: PromptKind.Statement, content: Promise.name },
     },
@@ -386,7 +413,7 @@ export default receipt;
 ```typescript
 const receipt: Job = {
   stages: {
-    step1: {
+    readContext: {
       kind: TaskKind.Statement,
       prompt: PromptStatement.content(
         "Read the assigned context before editing.",

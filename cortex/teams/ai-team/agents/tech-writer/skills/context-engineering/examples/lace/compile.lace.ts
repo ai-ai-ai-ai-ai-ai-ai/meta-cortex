@@ -6,7 +6,7 @@ import {
 
 const receipt: Job = {
   stages: {
-    step1: {
+    compileReceipt: {
       kind: TaskKind.ShellCommand,
       cwd: WorkingDirectory.LibraryRoot,
       script: "bun run --filter @meta-cortex/lace check",
