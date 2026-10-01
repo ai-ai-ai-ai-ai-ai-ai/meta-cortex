@@ -79,7 +79,8 @@ When the assignment concerns Cortex's own typed context files, use the
 [Neural Lace architecture](../../../../docs/lace-architecture.md).
 Its [authoring example](examples/lace/authoring.lace.ts) demonstrates context
 composition with imported jobs, named literal text bullets and nested BulletList groups, and
-existing compilation checks. The exact helper accepts one nonblank string or
+existing compilation checks. Import model vocabulary from `@meta-cortex/lace`
+and other receipts through static relative paths. The exact helper accepts one nonblank string or
 noninterpolated template literal only in standalone Statement.prompt. Existing
 plain mapped PromptStatement objects remain supported. The helper returns
 `{ PromptStatement: { content } }`; Task and Prompt wrap plain readonly concrete

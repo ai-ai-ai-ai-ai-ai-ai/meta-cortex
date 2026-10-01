@@ -33,9 +33,37 @@ write Cortex context.
 **Preferred:** keep the receipt with its subject. `lace/AGENTS.ts` describes
 Lace itself; that entry point does not move subject receipts into the core.
 
+### Public authoring imports
+
+Import the model vocabulary only from the private workspace package root
+`@meta-cortex/lace`. Its sole export is `.` pointing to `./src/ts/lace.ts`.
+Use static relative imports for another `*.lace.ts` receipt or `AGENTS.ts`.
+Other packages, private subpaths, implementation imports, and the old relative
+model route are rejected by the authoring grammar. Source-reading links still
+point to the model file; a link is not an import route. The package remains
+private and is not published.
+
+**Prohibited:** import through the model's private source path.
+The package export and authoring grammar reject this route.
+
+```typescript
+import { type Job } from "@meta-cortex/lace/src/ts/lace.ts";
+const receipt: Job = { stages: { context: context } };
+export default receipt;
+```
+
+**Preferred:** import the public vocabulary and another receipt's default Job.
+
+```typescript
+import { type Job } from "@meta-cortex/lace";
+import context from "./context.lace.ts";
+const receipt: Job = { stages: { context: context } };
+export default receipt;
+```
+
 ### Object hierarchy
 
-- Import `Job` as a type, `WorkingDirectory` when commands need it, and `PromptStatement` as a value from the model.
+- Import `Job` as a type, `WorkingDirectory` when commands need it, and `PromptStatement` as a value when needed from `@meta-cortex/lace`.
 - Declare `const receipt: Job = { stages: { context: context } }` and `export default receipt`.
 - Declare each child Job directly as `{ stages: { context: context } }` within its parent.
 - Give each task or child Job an explicit unique identifier or string literal key
@@ -55,7 +83,7 @@ nonempty under the declaration grammar. The only authoring helper is
 or runtime collection operations.
 
 The TypeScript fragments below assume `Job`, `PromptStatement`, and
-`WorkingDirectory` are imported from the model. `context`, `compile`, and
+`WorkingDirectory` are imported from `@meta-cortex/lace`. `context`, `compile`, and
 `verify` are default Jobs imported from the linked Context Engineering examples.
 Each fragment is a separate receipt body.
 
@@ -462,7 +490,7 @@ capability when it needs a separate core assignment.
 
 ### Runtime logic in receipts
 
-The [grammar](../../../lace/receipt-grammar.js) permits model and receipt imports,
+The [grammar](../../../lace/receipt-grammar.js) permits the exact `@meta-cortex/lace` root import and static relative receipt imports,
 typed const Job objects, literal tasks and prompts, and static Job references in
 named stages maps, plus the exact literal prompt helper described above.
 The root binding is named `receipt` and default-exported.

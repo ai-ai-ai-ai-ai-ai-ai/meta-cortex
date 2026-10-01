@@ -1,4 +1,4 @@
-import { type Job, WorkingDirectory } from "./src/ts/lace.ts";
+import { type Job, WorkingDirectory } from "@meta-cortex/lace";
 
 const receipt: Job = {
   stages: {
@@ -149,12 +149,11 @@ const receipt: Job = {
                   BulletList: {
                     label: "Receipt contract",
                     items: {
-                      importJob:
-                        "Import the Job type from lace/src/ts/lace.ts.",
+                      importJob: "Import the Job type from @meta-cortex/lace.",
                       descriptiveNames:
                         "Follow teams/ai-team/docs/lace-architecture.md#stage-names when naming Job stages and short descriptive bullet keys.",
                       modelImports:
-                        "Import the required types, WorkingDirectory for commands, and the PromptStatement value helper from lace/src/ts/lace.ts.",
+                        "Import the required types, WorkingDirectory for commands, and the PromptStatement value helper from @meta-cortex/lace when needed.",
                       rootDeclaration:
                         "Declare the root as const receipt: Job = { stages: { context: context } } and export default receipt.",
                       explicitStageKeys:
