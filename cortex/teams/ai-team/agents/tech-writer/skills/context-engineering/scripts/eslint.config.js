@@ -14,10 +14,6 @@ export default [
     rules: {
       "no-restricted-syntax": [
         "error",
-        {
-          selector: "TSSatisfiesExpression",
-          message: "Use typed declarations or constructors to check contracts.",
-        },
         { selector: "IfStatement", message: "Use native pattern matching." },
         {
           selector: "ConditionalExpression",

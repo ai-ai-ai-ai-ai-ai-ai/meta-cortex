@@ -60,18 +60,12 @@ export enum CatalogKind {
 }
 
 export class CatalogSchema {
-  private static readonly ruleAnnotations: Schema.Annotations.Bottom<
-    RuleName,
-    readonly []
-  > = {
+  private static readonly ruleAnnotations = {
     identifier: "registered RuleName",
-  };
-  private static readonly ownerAnnotations: Schema.Annotations.Bottom<
-    PracticeOwner,
-    readonly []
-  > = {
+  } satisfies Schema.Annotations.Bottom<RuleName, readonly []>;
+  private static readonly ownerAnnotations = {
     identifier: "registered PracticeOwner",
-  };
+  } satisfies Schema.Annotations.Bottom<PracticeOwner, readonly []>;
   static readonly ruleName = Schema.Literals([
     ...Object.values(ApiInputsRule),
     ...Object.values(BranchingRule),
@@ -123,30 +117,30 @@ export class CatalogSchema {
   static readonly referenceFields = {
     title: Schema.NonEmptyString,
     path: Schema.NonEmptyString,
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly reference = Schema.Struct(CatalogSchema.referenceFields);
   static readonly entryFields = {
     title: Schema.NonEmptyString,
     path: Schema.NonEmptyString,
     summary: Schema.NonEmptyString,
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly entry = Schema.Struct(CatalogSchema.entryFields);
   static readonly ruleFields = {
     id: CatalogSchema.ruleName,
     source: Schema.NonEmptyString,
     summary: Schema.NonEmptyString,
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly rule = Schema.Struct(CatalogSchema.ruleFields);
   static readonly comparisonFields = {
     id: CatalogSchema.ruleName,
     source: Schema.NonEmptyString,
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly comparison = Schema.Struct(CatalogSchema.comparisonFields);
   static readonly navigationFields = {
     kind: Schema.Literal(CatalogKind.Navigation),
     title: Schema.NonEmptyString,
     entries: Schema.NonEmptyArray(CatalogSchema.entry),
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly navigation = Schema.Struct(CatalogSchema.navigationFields);
   static readonly practiceFields = {
     kind: Schema.Literal(CatalogKind.Practice),
@@ -159,7 +153,7 @@ export class CatalogSchema {
     relationships: Schema.Array(Schema.NonEmptyString),
     related: Schema.Array(CatalogSchema.reference),
     rules: Schema.NonEmptyArray(CatalogSchema.rule),
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly practice = Schema.Struct(CatalogSchema.practiceFields);
   static readonly checkFields = {
     kind: Schema.Literal(CatalogKind.Check),
@@ -168,7 +162,7 @@ export class CatalogSchema {
     prohibited: Schema.NonEmptyArray(Schema.NonEmptyString),
     required: Schema.NonEmptyArray(Schema.NonEmptyString),
     compare: Schema.NonEmptyArray(CatalogSchema.comparison),
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly check = Schema.Struct(CatalogSchema.checkFields);
   static readonly value = Schema.Union([
     CatalogSchema.navigation,

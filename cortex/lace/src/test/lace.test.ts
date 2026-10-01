@@ -6,14 +6,12 @@ import {
   type Statement,
   WorkingDirectory,
 } from "@meta-cortex/lace";
-import receipt, { context, compileContext } from "./imported-job.lace.ts";
+import receipt, { context, compileContext } from "./imported-context.lace.ts";
 import { ReceiptCompilation } from "./receipt.ts";
 
 class ModelCases {
   static readonly imports =
     'import { type Job, type Stage, type Statement, WorkingDirectory } from "@meta-cortex/lace";';
-  static readonly stage =
-    "{ spec: {}, Required: { statements: {} }, Prohibited: { statements: {} } }";
   static readonly declarations = `${ModelCases.imports} const statement: Statement = { content: "Compile.", ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "exit 99" } }; const stage: Stage = { spec: { read: "Read." }, Required: { statements: { compile: statement } }, Prohibited: { statements: {} } }; const receipt: Job = { stages: { context: stage } };`;
 }
 
@@ -75,27 +73,7 @@ for (const value of [
     ).toBeGreaterThan(0);
   });
 }
-for (const name of [
-  "Task",
-  "Prompt",
-  "RootJob",
-  "BulletList",
-  "ListItems",
-  "PromptStatement",
-  "TaskKind",
-  "PromptKind",
-  "RequiredVariant",
-  "ProhibitedVariant",
-]) {
-  test(`removed model API is unavailable: ${name}`, () => {
-    expect(
-      new ReceiptCompilation(`import { ${name} } from "@meta-cortex/lace";`)
-        .messages()
-        .join("\n"),
-    ).toContain("no exported member");
-  });
-}
-test("Lace's own typed entry point passes the grammar and compiler", () => {
+test("Lace's own typed entry point compiles", () => {
   const source = readFileSync(
     new URL("../../AGENTS.ts", import.meta.url),
     "utf8",

@@ -29,26 +29,26 @@ export class InputProtocol {
   private static readonly stateFields = {
     answers: InputProtocol.answers,
     skipped: Schema.Array(FormSchema.name),
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly state = Schema.Struct(InputProtocol.stateFields);
   private static readonly startFields = {
     type: Schema.Literal(EventType.Start),
-  };
+  } satisfies Schema.Struct.Fields;
   private static readonly answerFields = {
     type: Schema.Literal(EventType.Answer),
     name: FormSchema.name,
     value: Schema.Union([FormSchema.text, InputProtocol.submittedNumber]),
-  };
+  } satisfies Schema.Struct.Fields;
   private static readonly skipFields = {
     type: Schema.Literal(EventType.Skip),
     name: FormSchema.name,
-  };
+  } satisfies Schema.Struct.Fields;
   private static readonly cancelFields = {
     type: Schema.Literal(EventType.Cancel),
-  };
+  } satisfies Schema.Struct.Fields;
   private static readonly unavailableFields = {
     type: Schema.Literal(EventType.Unavailable),
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly event = Schema.Union([
     Schema.Struct(InputProtocol.startFields),
     Schema.Struct(InputProtocol.answerFields),
@@ -60,7 +60,7 @@ export class InputProtocol {
     version: Schema.Literal(ProtocolVersion.V1),
     state: InputProtocol.state,
     event: InputProtocol.event,
-  };
+  } satisfies Schema.Struct.Fields;
   static readonly value = Schema.Struct(InputProtocol.requestFields);
 }
 export type Answers = typeof InputProtocol.answers.Type;

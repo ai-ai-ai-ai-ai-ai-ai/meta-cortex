@@ -28,7 +28,7 @@ for (const source of [
   GrammarCases.imports +
     `const read: Statement = "Read."; const context: Stage = { spec: { read: read }, Required: { statements: {} }, Prohibited: { statements: { skip: "Do not skip." } } }; const receipt: Job = { stages: { context: context } }; export default receipt;`,
   GrammarCases.imports +
-    'import { context, readContext } from "./imported-job.lace.ts"; const receipt: Job = { stages: { imported: context, local: { spec: { read: readContext }, Required: { statements: {} }, Prohibited: { statements: {} } } } }; export default receipt;',
+    'import { context, readContext } from "./imported-context.lace.ts"; const receipt: Job = { stages: { imported: context, local: { spec: { read: readContext }, Required: { statements: {} }, Prohibited: { statements: {} } } } }; export default receipt;',
 ]) {
   test(`fixed literal context and static composition passes: ${source}`, () => {
     expect(new ReceiptCompilation(source).messages()).toEqual([]);

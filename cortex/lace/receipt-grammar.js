@@ -44,7 +44,7 @@ export class ReceiptGrammar {
             selector:
               "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, ExportNamedDeclaration, TSTypeAnnotation, TSTypeReference)",
             message:
-              "Receipts contain only imports, typed Job objects, literal context, and static Stage or Statement references.",
+              "Receipts contain only imports, typed Job, Stage, or Statement declarations, literal context, and static references.",
           },
           {
             selector: "Program:not(:has(> ExportDefaultDeclaration))",
@@ -97,7 +97,6 @@ export class ReceiptGrammar {
   }
 }
 
-/** @typedef {{readonly node: import("estree").Node; readonly message: string}} FieldIssue */
 /** @typedef {{readonly node: import("estree").Node; readonly position: string}} ValueRequest */
 
 /** Fixed declaration positions distinguish schema fields from arbitrary map names. */
