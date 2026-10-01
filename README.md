@@ -248,13 +248,15 @@ coordination, model configuration, and agent skills.
 
 ## Develop the application
 
-The [Rust workspace](app/Cargo.toml) contains two crates:
+The [Rust workspace](app/Cargo.toml) contains three crates:
 
 - [installer](app/installer): the `meta-cortex` executable, framework installation,
   command discovery, and typed YAML transport.
 - [workbench](app/workbench): the `meta-cortex-workbench` library for durable agent
   tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
+- [visualization](app/visualization): the `meta-cortex-visualization` library for
+  the terminal dashboard, using Workbench’s read-only observation API.
 
 ```sh
 cd app
@@ -338,3 +340,34 @@ integration records, framework initialization, and project inspection.
 
 See the [agent ledger protocol](cortex/teams/gizmo-team/docs/agent-ledger.md) for
 ownership, recovery, version compatibility, and local storage boundaries.
+
+### Observe recorded work
+
+Save this request as `dashboard.yaml`, replacing `project` with your repository:
+
+```yaml
+version: 1
+project: /absolute/project
+operation:
+  group: Workbench
+  command:
+    name: Dashboard
+    arguments:
+      mode: Interactive
+      view: {kind: Features}
+      page: 0
+```
+
+```sh
+meta-cortex list
+meta-cortex run --request dashboard.yaml
+```
+
+Interactive mode requires terminal stdin and stdout, so use a request file.
+Select with arrow keys or `j`/`k`, open details with Enter, open task history with
+`h`, and exit with `q` or Ctrl-C. For redirected output, change `mode` to
+`Snapshot` and run `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
+The dashboard observes recorded ledger content; event actors identify who
+recorded evidence and do not establish Git authorship. See the canonical
+[dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
+for views, fields, paging, refresh, and storage requirements.
