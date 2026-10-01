@@ -46,10 +46,10 @@ for (const name of [
   "cwd",
   "script",
   "Statement",
-  "PromptStatement",
-  "BulletList",
-  "items",
-  "entries",
+  "Stage",
+  "Job",
+  "WorkingDirectory",
+  "receipt",
 ]) {
   test(`arbitrary schema-named keys work at every map position: ${name}`, () => {
     const source =
@@ -69,7 +69,7 @@ for (const statement of [
   "[]",
   "`Read ${WorkingDirectory.LibraryRoot}`",
   "Promise.name",
-  'PromptStatement.content("Read.")',
+  'Unsupported.make("Read.")',
   '{ content: "Read." }',
   '{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "exit 99" } }',
   '{ content: "Run.", ShellCommand: { cwd: "library-root", script: "exit 99" } }',
@@ -79,13 +79,13 @@ for (const statement of [
   '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory["LibraryRoot"], script: "exit 99" } }',
   '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory.Other, script: "exit 99" } }',
   '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "exit 99", extra: "x" } }',
-  '{ PromptStatement: { content: "Read." } }',
-  "{ BulletList: { items: {} } }",
+  '{ UnsupportedText: { content: "Read." } }',
+  "{ UnsupportedGroup: { statements: {} } }",
   '{ Statement: { prompt: "Read." } }',
   "{ stages: {} }",
   '{ content: "Run.", ShellCommand: Promise.name }',
 ]) {
-  test(`grammar rejects invalid current or removed statement syntax: ${statement}`, () => {
+  test(`grammar rejects invalid statement syntax: ${statement}`, () => {
     expect(
       new ReceiptSyntax(GrammarCases.statement(statement)).messages().length,
     ).toBeGreaterThan(0);
