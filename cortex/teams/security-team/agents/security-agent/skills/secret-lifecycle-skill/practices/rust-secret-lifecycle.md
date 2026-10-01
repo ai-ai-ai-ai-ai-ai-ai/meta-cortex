@@ -17,5 +17,5 @@ projects whose secret domain is implemented in another language.
 **Prohibited:** clone a plaintext secret into a display cache after the owning
 operation ends.
 
-**Preferred:** keep the secret with its Rust owner, expose only the required
+**Required:** keep the secret with its Rust owner, expose only the required
 projection, and verify cleanup at the operation and enclosing session boundaries.

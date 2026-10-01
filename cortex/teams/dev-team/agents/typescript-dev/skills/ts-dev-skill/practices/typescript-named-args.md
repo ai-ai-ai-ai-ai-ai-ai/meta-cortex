@@ -20,7 +20,7 @@ Args, CallbackArgs, PutArgs, and names derived from line numbers.
 run(request: { readonly destination: ExportPath }): ExportOutcome;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 interface ExportRequest {
@@ -42,7 +42,7 @@ rule with casts, conditional/assignment expressions, or spread arrays.
 exporter.run({ destination } as ExportRequest);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 const request: ExportRequest = { destination };
@@ -62,7 +62,7 @@ at the caller or inside the receiving owner.
 run(request: ExportRequest = defaults.build()): ExportOutcome;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // At the caller:
@@ -83,7 +83,7 @@ The exception does not cover $state.snapshot or ordinary calls.
 api.submit({ order_id });
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside a rune-owning component:

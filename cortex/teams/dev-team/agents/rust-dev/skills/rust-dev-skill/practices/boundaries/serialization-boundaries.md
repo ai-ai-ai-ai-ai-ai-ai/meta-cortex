@@ -23,7 +23,7 @@ let value: serde_json::Value = serde_json::from_str(input)?;
 let mode = value["delivery_mode"].as_str().unwrap();
 ```
 
-**Preferred:** Serde checks the record and its named alternatives directly.
+**Required:** Serde checks the record and its named alternatives directly.
 
 ```rust
 #[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -73,7 +73,7 @@ let settings: DeliverySettings = serde_saphyr::from_str(&yaml)?;
 let output = serde_saphyr::to_string(&settings)?;
 ```
 
-**Preferred:** the compiler checks fields and alternatives; Serde owns escaping.
+**Required:** the compiler checks fields and alternatives; Serde owns escaping.
 
 ```rust
 let settings = DeliverySettings {
@@ -123,7 +123,7 @@ impl serde::Serialize for ApplicationMode {
 }
 ```
 
-**Preferred:** preserve enum alternatives in contracts the project controls.
+**Required:** preserve enum alternatives in contracts the project controls.
 
 ```rust
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -154,7 +154,7 @@ Replace its `TaskId` declaration with one of these alternatives.
 pub struct TaskId(String);
 ```
 
-**Preferred:** decoding and ordinary callers share the same validation.
+**Required:** decoding and ordinary callers share the same validation.
 
 ```rust
 #[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -190,7 +190,7 @@ pub struct DeliverySession {
 }
 ```
 
-**Preferred:** the session owns the typed value; encoding happens at storage.
+**Required:** the session owns the typed value; encoding happens at storage.
 
 ```rust
 pub struct DeliverySession {
@@ -217,7 +217,7 @@ pub struct DeliverySettings {
 }
 ```
 
-**Preferred:** generate the ABI from the canonical typed record. These are the
+**Required:** generate the ABI from the canonical typed record. These are the
 WASM-enabled forms of the earlier declarations, not additional domain copies.
 This example uses Tsify 0.5.8 with its `js` feature.
 
@@ -274,7 +274,7 @@ let settings = storage.read()?;
 Ok(settings) // Exposes Result<JsValue, ...> to application callers.
 ```
 
-**Preferred:** return the expected record from the adapter.
+**Required:** return the expected record from the adapter.
 
 ```rust
 let settings: DeliverySettings =
@@ -302,7 +302,7 @@ fn preserves_delivery_mode() -> serde_json::Result<()> {
 }
 ```
 
-**Preferred:** assert the decoded domain value and reject invalid input.
+**Required:** assert the decoded domain value and reject invalid input.
 
 ```rust
 #[test]

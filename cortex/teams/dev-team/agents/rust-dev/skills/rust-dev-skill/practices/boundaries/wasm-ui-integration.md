@@ -20,7 +20,7 @@ api.inspect_order(JSON.parse(JSON.stringify(order)) as Order);
 api.inspect_order({ ...order } as Order);
 ```
 
-**Preferred:** pass the generated instance itself.
+**Required:** pass the generated instance itself.
 
 ```ts
 api.inspect_order(order);
@@ -49,7 +49,7 @@ These alternatives belong to a rune-owning component with a reactive structural
 api.submit(JSON.parse(JSON.stringify(request)) as OrderRequest);
 ```
 
-**Preferred:** snapshot at the UI caller, leaving the adapter independent of Svelte.
+**Required:** snapshot at the UI caller, leaving the adapter independent of Svelte.
 
 ```ts
 const snapshot: OrderRequest = $state.snapshot(request);
@@ -81,7 +81,7 @@ existing generated WASM instance.
 const selectedOrder = reactive(order);
 ```
 
-**Preferred:** retain its identity and track replacement.
+**Required:** retain its identity and track replacement.
 
 ```ts
 const selectedOrder = shallowRef(order);
@@ -108,7 +108,7 @@ WASM instance managed by its owner.
 const orderRef = useRef({ ...order });
 ```
 
-**Preferred:** keep the generated instance intact.
+**Required:** keep the generated instance intact.
 
 ```ts
 const orderRef = useRef(order);
@@ -138,7 +138,7 @@ class EditorState {
 editor.submit(request);
 ```
 
-**Preferred:** the component calls the operation directly.
+**Required:** the component calls the operation directly.
 
 ```ts
 api.submit(request);

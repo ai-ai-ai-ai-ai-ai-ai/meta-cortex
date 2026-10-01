@@ -4,7 +4,7 @@ overview:
   - Match integration guidance to the selected framework.
 prohibited:
   - Replace Svelte because examples also demonstrate React.
-preferred:
+required:
   - Apply matching guidance within the existing stack.
 compare:
   - id: browser_implementation:stack

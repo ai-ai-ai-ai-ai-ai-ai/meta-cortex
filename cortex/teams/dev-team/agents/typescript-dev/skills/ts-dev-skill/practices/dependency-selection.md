@@ -13,7 +13,7 @@ A prescribed library choice and a popularity check are separate decisions.
 
 **Prohibited:** “This package is popular; add it,” without checking the counts.
 
-**Preferred:** record the package, source URLs, check date, weekly downloads,
+**Required:** record the package, source URLs, check date, weekly downloads,
 repository stars, and the resulting decision. If an exclusion applies, name the
 exact generated or pinned dependency contract rather than waiving the threshold.
 

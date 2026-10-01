@@ -28,7 +28,7 @@ In single-agent mode, the current agent applies this role directly.
 **Prohibited:** rewrite an application assertion to make CI pass or merge a PR
 because its workflow finished successfully.
 
-**Preferred:** report failed assertions or successful validation evidence only
+**Required:** report failed assertions or successful validation evidence only
 to the assigning Team Gizmo. Gizmo decides repairs and whether to supply the
 evidence to the PR agent for a merge-readiness check.
 
@@ -43,5 +43,5 @@ evidence to the PR agent for a merge-readiness check.
 **Prohibited:** run an untrusted PR with production credentials after its normal
 validation workflow refuses those credentials.
 
-**Preferred:** retain the project's supported execution boundary and report
+**Required:** retain the project's supported execution boundary and report
 which operation cannot run with the available permissions.

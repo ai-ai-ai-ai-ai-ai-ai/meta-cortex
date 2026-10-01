@@ -28,7 +28,7 @@ the verifier's outcome is a complete review, not a repaired implementation.
 **Prohibited:** start reading the checkout's diff because Gizmo supplied a branch
 name without a SHA.
 
-**Preferred:** request the SHA through `need_commit`, then review the commit
+**Required:** request the SHA through `need_commit`, then review the commit
 identified by Gizmo's corrected request.
 
 ### Keep Rust practice context index-only
@@ -52,7 +52,7 @@ identified by Gizmo's corrected request.
 **Prohibited:** skip WASM indexes for a CLI change, or open practice Markdown
 because a serialization cue leaves an exception unclear.
 
-**Preferred:** include the WASM rules and justify their applicability decisions.
+**Required:** include the WASM rules and justify their applicability decisions.
 Record the unclear serialization exception as blocked and ask Gizmo to resolve it.
 
 ### Inventory and read every changed file
@@ -66,7 +66,7 @@ Record the unclear serialization exception as blocked and ask Gizmo to resolve i
 **Prohibited:** review only `src/lib.rs` when the commit also changes `Cargo.toml`
 and deletes a test file.
 
-**Preferred:** inventory all three files, read the manifest and library at the
+**Required:** inventory all three files, read the manifest and library at the
 reviewed SHA, and inspect the deleted test from the parent revision.
 
 ### Inventory every practice, rule, and comparison
@@ -87,7 +87,7 @@ reviewed SHA, and inspect the deleted test from the parent revision.
 **Prohibited:** record a practice filename while omitting half its rules, then
 count repeated comparison references as additional rules.
 
-**Preferred:** retain every owned rule once in its practice inventory and record
+**Required:** retain every owned rule once in its practice inventory and record
 cross-rule checks separately, with references to those same rule IDs.
 
 ### Evaluate every rule against every changed file
@@ -109,7 +109,7 @@ cross-rule checks separately, with references to those same rule IDs.
 **Prohibited:** mark a practice “OK,” skip remaining rules after finding a
 violation, or mark unfinished work `not_applicable` before an interruption.
 
-**Preferred:** finish every rule/file decision, save the completed work, and
+**Required:** finish every rule/file decision, save the completed work, and
 resume from the exact next unchecked entry. Continue through the last catalog entry.
 
 ### Record every issue and blocker
@@ -129,7 +129,7 @@ resume from the exact next unchecked entry. Continue through the last catalog en
 **Prohibited:** report only the first identity violation, or replace its repair
 instructions with “type safety needs work.”
 
-**Preferred:** report both the identity and export-mode violations from the
+**Required:** report both the identity and export-mode violations from the
 protocol's example, with each one's evidence, affected callers, correction,
 and validation steps. Include any unresolved blockers alongside them.
 
@@ -147,7 +147,7 @@ and validation steps. Include any unresolved blockers alongside them.
 **Prohibited:** accept a test log from the previous SHA as evidence that the
 reviewed commit passed its required checks.
 
-**Preferred:** record the revision mismatch as a blocker, request evidence for
+**Required:** record the revision mismatch as a blocker, request evidence for
 the reviewed SHA, and retain every code violation already established.
 
 ### Return the complete review
@@ -167,7 +167,7 @@ the reviewed SHA, and retain every code violation already established.
 **Prohibited:** send “two issues found; see the ledger,” or claim success because
 all rows exist while one decision remains blocked.
 
-**Preferred:** save the complete coverage report and send both fully explained
+**Required:** save the complete coverage report and send both fully explained
 issues to Gizmo. Include the blocker and use `blocked` until it is resolved.
 For a review-only task, return those findings without starting a repair exercise.
 
@@ -184,7 +184,7 @@ For a review-only task, return those findings without starting a repair exercise
 **Prohibited:** approve the new SHA after checking only the first issue that
 rust-dev says it fixed.
 
-**Preferred:** recheck all earlier issues, evaluate every cataloged rule against
+**Required:** recheck all earlier issues, evaluate every cataloged rule against
 the new change, and report any remaining or newly introduced violation.
 
 ## Prohibited actions
@@ -199,5 +199,5 @@ the new change, and report any remaining or newly introduced violation.
 **Prohibited:** guess a source practice's exception from memory and approve code
 that the loaded cue cannot classify.
 
-**Preferred:** cite the cue, explain the exact unresolved decision, and return it
+**Required:** cite the cue, explain the exact unresolved decision, and return it
 to Gizmo while preserving every other finding.

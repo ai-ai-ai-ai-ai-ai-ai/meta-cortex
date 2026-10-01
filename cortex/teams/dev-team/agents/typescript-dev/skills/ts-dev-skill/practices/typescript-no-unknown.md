@@ -22,7 +22,7 @@ interface EditorState {
 load(): Promise<unknown>;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 interface EditorState {
@@ -48,7 +48,7 @@ accept(value: unknown): void {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside a dedicated transport decoder; schema belongs to this TS-owned format.
@@ -73,7 +73,7 @@ try {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 interface HostReadAttempt {

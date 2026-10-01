@@ -26,7 +26,7 @@ This pair assumes an existing Svelte project whose button lives at
 import { Button } from "@some-react-ui/button";
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 import { Button } from "$lib/components/ui/button";
@@ -49,7 +49,7 @@ const action = observation.kind === PageKind.Checkout
   ? PageAction.OfferAssistance : PageAction.Ignore;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the component interaction handler:
@@ -73,7 +73,7 @@ store architecture.
 $effect(() => { viewport.subscribe(); });
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // subscribe returns a callable cleanup; the port owns the browser details.
@@ -96,7 +96,7 @@ if (viewport.kind === ViewportKind.Narrow) {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 switch (clipboardSupport.kind) {
@@ -119,7 +119,7 @@ logger.info(secret);
 location.hash = secret;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Log a typed event, never the secret value.
@@ -143,7 +143,7 @@ in fallback branches or ARIA labels.
 const label = "Save document";
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 const label = translations.label(TranslationKey.SaveDocument);

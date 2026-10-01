@@ -20,7 +20,7 @@ src/
     └── worker.rs
 ```
 
-**Preferred:** name the module file and keep its children in the matching directory.
+**Required:** name the module file and keep its children in the matching directory.
 
 ```text
 src/
@@ -62,7 +62,7 @@ update explicit path attributes and repository references affected by the move.
 **Prohibited:** leave a forwarding `mod.rs`, create both layouts for one module,
 or add `#[path]` merely to disguise the old layout.
 
-**Preferred:** move the owner file and use ordinary `mod child;` declarations.
+**Required:** move the owner file and use ordinary `mod child;` declarations.
 An include inside the moved file loses one parent traversal:
 
 ```rust

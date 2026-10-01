@@ -44,7 +44,7 @@ Workers receive the relevant ordinary Git procedure; they do not need this proto
 **Prohibited:** merge a replacement branch head because the previous commit's
 report passed, or treat a complete `changes_required` report as approval.
 
-**Preferred:** match the passing report, current task head, branch ref, and ready
+**Required:** match the passing report, current task head, branch ref, and ready
 checkpoint before merging. Report the actual integration SHA and combined checks
 separately; a task review does not establish that the combined feature passed.
 
@@ -65,5 +65,5 @@ separately; a task review does not establish that the combined feature passed.
 **Prohibited:** resolve a conflict, record a new commit, and merge it using the
 pre-conflict review because only a few lines changed.
 
-**Preferred:** return the replacement checkpoint to Gizmo for a new complete
+**Required:** return the replacement checkpoint to Gizmo for a new complete
 review, then repeat the matching-SHA gate before retrying integration.

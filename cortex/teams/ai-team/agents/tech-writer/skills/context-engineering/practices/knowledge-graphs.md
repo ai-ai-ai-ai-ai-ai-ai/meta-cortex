@@ -27,7 +27,7 @@ substeps or list every obligation.
 
 **Prohibited:** “Domain states — enums, options, and booleans.”
 
-**Preferred:** keep each decision in a named YAML entry with a brief cue:
+**Required:** keep each decision in a named YAML entry with a brief cue:
 
 ```yaml
 rules:
@@ -65,7 +65,7 @@ invent a location or create an unrelated catalog during a scoped edit.
 **Prohibited:** add a new API-input constructor policy because that file is open,
 without checking the existing construction rule or its exceptions.
 
-**Preferred:** locate the construction rule name, read its owner, and compare it
+**Required:** locate the construction rule name, read its owner, and compare it
 with API-input and typestate rules. Update the existing construction policy and
 any affected examples rather than creating a competing requirement.
 
@@ -89,7 +89,7 @@ Leaf practices may link directly to shared prerequisites, including through
 - **Prohibited:** permit `From<bool>` in the practice while the graph still says
   “no boolean parameter under any circumstances.”
 
-- **Preferred:** preserve the rule name, document the exception in its source,
+- **Required:** preserve the rule name, document the exception in its source,
   and update the cue to identify boundary conversion. Read the linked practices
   to compare their full requirements.
 
@@ -106,7 +106,7 @@ incompatible requirements and report the outstanding decision.
 **Prohibited:** copy both “never rename” and “rename every external field” into
 separate entries and report that every file is cataloged.
 
-**Preferred:** identify the two rule names and state the precise external-protocol
+**Required:** identify the two rule names and state the precise external-protocol
 exception authorized by the task. If no exception has been authorized, retain
 both source facts and explicitly mark the conflict as unresolved.
 
@@ -125,7 +125,7 @@ both source facts and explicitly mark the conflict as unresolved.
 **Prohibited report:** “All rules are covered” because every Markdown file has
 one link in the graph.
 
-**Preferred report:** “Every practice has an owning entry, rule names are unique, and
+**Required report:** “Every practice has an owning entry, rule names are unique, and
 links resolve. Reviewed its rule/exception sections against the summaries;
 the queue and Effect requirements still need a documented boundary decision.”
 
@@ -139,7 +139,7 @@ add HTML anchors, numeric codes, or circular links just to manufacture a target.
 
 **Prohibited:** a numbered code linked only to the document root.
 
-**Preferred:** use the readable rule name and its exact source section:
+**Required:** use the readable rule name and its exact source section:
 
 ```yaml
 id: wasm_contracts:abi
@@ -172,7 +172,7 @@ practice. A real catalog must resolve its links from its own location.
   stable; the namespace identifies a decision, while `source` identifies its
   canonical Markdown owner. A practice can own a related namespace's decision.
 - Put each cross-rule comparison in its own `kind: check` leaf, with `title`,
-  `overview`, `prohibited`, `preferred`, and `compare`. Use brief comparison cues
+  `overview`, `prohibited`, `required`, and `compare`. Use brief comparison cues
   and retain the compared rules as `id` and `source` references. Its parent
   catalog supplies a short summary so readers can select the relevant check.
 - Resolve every path relative to the YAML file containing it. Update all callers
@@ -183,7 +183,7 @@ practice. A real catalog must resolve its links from its own location.
 **Prohibited:** rename a 1,400-line Markdown index to YAML and make every worker
 load it, or copy its rules into each parent catalog.
 
-**Preferred:** a small root points to Modeling; Modeling points to
+**Required:** a small root points to Modeling; Modeling points to
 `domain_types/index.yaml`; that leaf contains the domain-type rule summaries
 and links to the existing Markdown practice.
 
@@ -212,7 +212,7 @@ and links to the existing Markdown practice.
 **Prohibited:** skim the first rule, assume the remaining entries were applied,
 or load every sibling namespace into a focused review.
 
-**Preferred:** for a domain-type review, traverse each item in the selected
+**Required:** for a domain-type review, traverse each item in the selected
 `domain_types/index.yaml`, check it against the changed code, and bring in
 construction or serialization guidance only when those boundaries are involved.
 

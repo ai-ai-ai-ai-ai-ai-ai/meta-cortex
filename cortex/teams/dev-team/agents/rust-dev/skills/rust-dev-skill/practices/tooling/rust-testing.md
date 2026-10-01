@@ -26,7 +26,7 @@ fn rejects_zero() {
 }
 ```
 
-**Preferred:** call the implementation and check its domain error.
+**Required:** call the implementation and check its domain error.
 
 ```rust
 #[test]
@@ -41,17 +41,17 @@ place checks at their owning layer:
 ### Portable Rust
 
 - **Prohibited:** rely only on clicking through a browser form.
-- **Preferred:** test zero, valid limits, and domain invariants directly in Rust.
+- **Required:** test zero, valid limits, and domain invariants directly in Rust.
 
 ### WASM
 
 - **Prohibited:** repeat every portable validation case at the WASM boundary.
-- **Preferred:** check that the typed export preserves the domain error.
+- **Required:** check that the typed export preserves the domain error.
 
 ### Browser E2E
 
 - **Prohibited:** treat a visible error message as proof of Rust validation.
-- **Preferred:** check that the user can correct the input and continue.
+- **Required:** check that the user can correct the input and continue.
 
 ## Test placement
 
@@ -76,7 +76,7 @@ may remain in API doc comments.
 mod tests; // Loads tests from a separate file.
 ```
 
-**Preferred — `src/retry_limit.rs`:**
+**Required — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
@@ -117,7 +117,7 @@ reach its internals.
 mod retry_limit;
 ```
 
-**Preferred — `tests/retry_limit.rs`:** exercise the exported contract.
+**Required — `tests/retry_limit.rs`:** exercise the exported contract.
 
 ```rust
 use retry_policy::{RetryLimitError, RetryLimit};
@@ -137,7 +137,7 @@ unit tests to lower the implementation file's line count.
 **Prohibited:** retain policy and limit logic in an oversized `retry_policy.rs`
 and move only its tests to a separate file to lower the count.
 
-**Preferred:** separate policy behavior into `retry_policy.rs` and limit
+**Required:** separate policy behavior into `retry_policy.rs` and limit
 validation into `retry_limit.rs`, with each owner's unit tests inline in its file.
 
 ## Regression tests precede the fix
@@ -155,7 +155,7 @@ fn zero_limit_regression() {
 }
 ```
 
-**Preferred:** assert the behavior the fix must restore.
+**Required:** assert the behavior the fix must restore.
 
 ```rust
 #[test]
@@ -172,7 +172,7 @@ behavior and invariants over marginal line coverage.
 
 **Prohibited:** “Combined coverage is 88%; one crate reaches 95%, so the gate passes.”
 
-**Preferred:** “Combined coverage is 88%; the gate fails. Add tests for the
+**Required:** “Combined coverage is 88%; the gate fails. Add tests for the
 uncovered validation and recovery behavior, then measure again.”
 
 ## Validation evidence
@@ -182,5 +182,5 @@ checks you did not run; passing tests alone do not establish coverage.
 
 **Prohibited:** “Tests passed, so coverage is sufficient.”
 
-**Preferred reporting example:** “Rust: 42 tests passed. Combined portable
+**Required reporting example:** “Rust: 42 tests passed. Combined portable
 line coverage: 92%, above the 90% floor. Browser tests were not run.”

@@ -28,7 +28,7 @@ Discover their locations from project instructions and actual files.
 **Prohibited:** rewrite a rule for convenience, copy it into two skills, and
 report that adding headings proves the documentation is correct.
 
-**Preferred:** preserve the requirement in its owning practice, add the focused
+**Required:** preserve the requirement in its owning practice, add the focused
 example there, and update its catalog link. Review meaning separately from link checks.
 
 ### Scope and ownership
@@ -42,7 +42,7 @@ example there, and update its catalog link. Review meaning separately from link 
 **Prohibited:** a task to clarify one Rust example creates a second generic
 writing skill and rewrites every team's instructions.
 
-**Preferred:** improve the assigned example using the existing writing practices.
+**Required:** improve the assigned example using the existing writing practices.
 Keep Rust-only example requirements in the programming extension and report
 unrelated findings without editing them.
 
@@ -57,7 +57,7 @@ unrelated findings without editing them.
 **Prohibited:** loading this skill spawns an unsolicited writer role, assumes
 an installer layout, and claims that reading the files completed an audit.
 
-**Preferred:** the already assigned owner uses the project's actual document
+**Required:** the already assigned owner uses the project's actual document
 locations and reports the specific semantic and mechanical checks performed.
 
 ## Validation
@@ -70,8 +70,31 @@ locations and reports the specific semantic and mechanical checks performed.
 
 **Prohibited report:** “All documentation validated.”
 
-**Preferred report:** “Reviewed the changed section against the four practices.
+**Required report:** “Reviewed the changed section against the four practices.
 Its local links resolve; the code example was reviewed but not executed.”
+
+## Cortex context with Lace
+
+When the assignment concerns Cortex's own typed context files, use the
+[Neural Lace architecture](../../../../docs/lace-architecture.md).
+Its [authoring example](examples/lace/authoring.lace.ts) demonstrates static
+Stage composition and existing compilation checks. A Job has named Stage sections;
+each Stage contains spec, Required, and Prohibited. All named maps may be empty.
+Place literal prose in spec or normative statements maps, following the
+[normative category contract](../../../../docs/lace-architecture.md#normative-categories).
+Command statements have both descriptive content and a ShellCommand payload.
+Import model vocabulary from `@meta-cortex/lace` and named typed Stage or Statement
+exports from static relative receipt paths. Jobs do not recursively contain Jobs;
+receipts contain no calls or builders. Agents read declarations as text. Compilation
+and importing never execute declared shell commands.
+Apply the [stage and statement naming rule](../../../../docs/lace-architecture.md#stage-names)
+and [core ownership rules](../../../../../../lace/AGENTS.ts).
+
+**Prohibited:** use the context format as an application programming API or
+modify its core to make an assigned context receipt compile.
+
+**Required:** write the assigned Cortex context with the existing declarations
+and check it using the provided compiler and grammar checks.
 
 ## Executable audits
 
@@ -101,7 +124,7 @@ or tool failure makes the command fail. Checks never rewrite documents.
 **Prohibited:** send an agent-authored description of a document and claim its
 source was checked.
 
-**Preferred:** pass its path, run the checks, and fix the findings in the file.
+**Required:** pass its path, run the checks, and fix the findings in the file.
 
 ### Check coverage
 
@@ -130,7 +153,7 @@ rule IDs and agreement with their cataloged sources.
 
 **Prohibited:** report complete semantic coverage because the command passed.
 
-**Preferred:** report which files passed and separately describe the ownership,
+**Required:** report which files passed and separately describe the ownership,
 policy, and example review performed.
 
 ### Maintain the checks
@@ -150,5 +173,5 @@ bun run docs:check
 
 **Prohibited:** add a custom request protocol or Markdown parser around the tools.
 
-**Preferred:** configure the maintained tools and add a small plugin only for a
+**Required:** configure the maintained tools and add a small plugin only for a
 Cortex rule they do not provide.

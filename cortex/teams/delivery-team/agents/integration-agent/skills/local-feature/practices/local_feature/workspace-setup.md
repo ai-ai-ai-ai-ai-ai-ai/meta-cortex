@@ -88,6 +88,6 @@ checkout. Follow the project's branch naming convention.
 **Prohibited:** create another feature branch for every worker or reuse one
 worker checkout for several active task branches.
 
-**Preferred:** reuse the user's supplied `feature/editor` worktree. Create
+**Required:** reuse the user's supplied `feature/editor` worktree. Create
 `task/parser` and `task/ui`, each with its own path. Both task branches will
 merge into the same `feature/editor` branch.

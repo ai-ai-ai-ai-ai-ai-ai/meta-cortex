@@ -20,7 +20,7 @@ Team Gizmo; development agents own implementation and fixes.
 **Prohibited:** take over a developer's task or use its implementation skill as
 the authority for an independent security verdict.
 
-**Preferred:** verify the feature against project security requirements and the
+**Required:** verify the feature against project security requirements and the
 security team's practices, then report findings to Team Gizmo for correction.
 
 ## Prohibited actions
@@ -30,5 +30,5 @@ security team's practices, then report findings to Team Gizmo for correction.
 
 **Prohibited:** rewrite an authentication module during its security review.
 
-**Preferred:** report the failing protection and evidence, then verify the fix
+**Required:** report the failing protection and evidence, then verify the fix
 once Team Gizmo returns it for review.

@@ -17,7 +17,7 @@ RUN make dependencies
 ```
 
 ```dockerfile
-# Preferred: stable dependency inputs are copied before source inputs.
+# Required: stable dependency inputs are copied before source inputs.
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY src/ ./src/
@@ -63,7 +63,7 @@ manual selectors, allowlists, or source-mutation simulations.
 # Prohibited: a script predicts a hit with a second cache-key algorithm.
 cache_ref="build-cache-${dependency_fingerprint}"
 
-# Preferred: provide cache sources and let BuildKit solve the graph.
+# Required: provide cache sources and let BuildKit solve the graph.
 docker buildx build --cache-from type=registry,ref=example/app:buildcache .
 ```
 
@@ -93,7 +93,7 @@ docker buildx build --progress=plain --file Dockerfile \
   --cache-to type=local,dest=.cache/reexport,mode=max .
 ```
 
-The preferred evidence still needs a clean import solve when the project claims
+The required evidence still needs a clean import solve when the project claims
 portability across builders. A successful command alone does not prove that
 the cache artifact was exported or reusable.
 
@@ -111,7 +111,7 @@ RUN curl -H "Authorization: Bearer $PACKAGE_TOKEN" https://packages.example.inva
 ```
 
 ```dockerfile
-# Preferred: the secret is mounted only for the command that needs it.
+# Required: the secret is mounted only for the command that needs it.
 RUN --mount=type=secret,id=package_token \
     sh -c 'curl -H "Authorization: Bearer $(cat /run/secrets/package_token)" https://packages.example.invalid'
 ```

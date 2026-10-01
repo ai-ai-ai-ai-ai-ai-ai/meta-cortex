@@ -37,7 +37,7 @@ Importing only `from_utf8` also removes useful module context.
 let text = std::str::from_utf8(data)?;
 ```
 
-**Preferred:** import the module and retain the operation's meaningful qualifier.
+**Required:** import the module and retain the operation's meaningful qualifier.
 The `use` path is not subject to the two-segment call-site limit.
 
 ```rust

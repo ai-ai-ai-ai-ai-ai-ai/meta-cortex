@@ -58,7 +58,7 @@ TypeScript, and ESLint.
 **Prohibited:** treat a successful bundler build as proof of type correctness,
 or run ESLint with its default warning threshold and accept remaining warnings.
 
-**Preferred:** run formatter checks, the appropriate type/component checker,
+**Required:** run formatter checks, the appropriate type/component checker,
 and lint with zero warnings, then run the required build and tests.
 
 ### Check branching
@@ -74,7 +74,7 @@ and lint with zero warnings, then run the required build and tests.
 
 **Prohibited:** accept a switch because its `default` hides a newly added variant.
 
-**Preferred:** apply these rules in the existing ESLint configuration. This is
+**Required:** apply these rules in the existing ESLint configuration. This is
 its `rules` fragment; it assumes type-aware typescript-eslint is already configured.
 
 ```json
@@ -120,14 +120,14 @@ eslint . --quiet || true
 ```
 
 ```sh
-# Preferred: after fixing the diagnosed code, preserve the zero-warning gate.
+# Required: after fixing the diagnosed code, preserve the zero-warning gate.
 eslint . --max-warnings 0
 ```
 
 **Prohibited:** add `@ts-ignore` for an incompatible argument or disable the
 unused-variable rule for an abandoned local value.
 
-**Preferred:** correct the argument's contract or remove the unused value,
+**Required:** correct the argument's contract or remove the unused value,
 then rerun formatting, type checking, lint, and the required build/tests.
 
 ### Report verification evidence
@@ -143,6 +143,6 @@ then rerun formatting, type checking, lint, and the required build/tests.
 **Prohibited:** “TypeScript verified” after checking only the application package
 while the required tooling package still has lint warnings.
 
-**Preferred:** “Formatting and type checks passed for both packages. Application
+**Required:** “Formatting and type checks passed for both packages. Application
 lint passed; tooling lint reported one warning. Verification remains incomplete
 until the warning is fixed and the checks pass.”

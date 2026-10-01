@@ -23,7 +23,7 @@ type PanelId = string;
 interface PanelSelection { readonly id: string; }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 class PanelId {
@@ -59,7 +59,7 @@ const formRequest: YamlDecodeRequest<
 > = { source, schema: FormSchema.value };
 ```
 
-**Preferred:** give that request a name and retain its exact schema types.
+**Required:** give that request a name and retain its exact schema types.
 
 ```ts
 type FormDecodeRequest = YamlDecodeRequest<
@@ -85,7 +85,7 @@ const panel_id = raw as PanelId;
 controller.select(panel_id);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the adapter; parser returns a typed decoding Effect.
@@ -106,7 +106,7 @@ interface PanelState {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 enum PanelSelectionKind { Empty = "empty", Selected = "selected" }
@@ -132,7 +132,7 @@ enum RequestKind {
 const allowed = new Set(["destination", "format"]);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 enum DocumentExportOperation { Assemble = "assemble", Publish = "publish" }
@@ -202,7 +202,7 @@ encode(): string {
 }
 ```
 
-**Preferred:** construct typed data and let the serializer own YAML syntax and
+**Required:** construct typed data and let the serializer own YAML syntax and
 escaping. These call-site statements belong inside the caller's owning method.
 
 ```ts
@@ -244,7 +244,7 @@ an unrecognized version.
 return decoder.current(raw); // Ignores the declared schema version.
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the importer; schema is a decoded, validated versioned record.
@@ -269,7 +269,7 @@ const approved = raw as ApprovedDraft;
 publisher.publish(approved);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the workflow owner:
@@ -293,7 +293,7 @@ logs/persistence and no retained secret after the interaction ends.
 throw "import failed";
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the same workflow; failure retains its concrete cause and code:

@@ -42,7 +42,7 @@ impl TryFrom<&str> for RetryCount {
 }
 ```
 
-**Preferred:** the failure names the operation and retains its typed source.
+**Required:** the failure names the operation and retains its typed source.
 `#[from]` supplies the conversion used by `?` and preserves the source.
 
 ```rust
@@ -87,7 +87,7 @@ pub fn read(&self) -> Result<DocumentText, String> {
 }
 ```
 
-**Preferred:** distinguish reading from writing while preserving the I/O source.
+**Required:** distinguish reading from writing while preserving the I/O source.
 
 ```rust
 use std::{fs, io};
@@ -134,7 +134,7 @@ fn rejects_invalid_count() {
 }
 ```
 
-**Preferred:** propagate unexpected failures and assert the expected variant.
+**Required:** propagate unexpected failures and assert the expected variant.
 
 ```rust
 #[test]

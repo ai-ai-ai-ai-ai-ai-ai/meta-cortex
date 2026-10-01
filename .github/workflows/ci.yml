@@ -73,7 +73,7 @@ jobs:
         run: |
           cd cortex
           bun install --frozen-lockfile --ignore-scripts
-          test -z "$(find scripts teams -name node_modules -print -quit)"
-          test -z "$(find scripts teams -name bun.lock -print -quit)"
+          test -z "$(find lace scripts teams -name node_modules -print -quit)"
+          test -z "$(find lace scripts teams -name bun.lock -print -quit)"
           bun run verify
           bun run docs:check

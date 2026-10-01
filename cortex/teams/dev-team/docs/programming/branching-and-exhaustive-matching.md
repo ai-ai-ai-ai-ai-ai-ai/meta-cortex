@@ -31,7 +31,7 @@ is_shipment ← delivery equals Shipment
 IF is_shipment THEN require_address ELSE skip_address
 ```
 
-**Preferred:** name both alternatives in the decision.
+**Required:** name both alternatives in the decision.
 
 ```text
 MATCH delivery
@@ -51,7 +51,7 @@ MATCH delivery
 address_requirement ← is_shipment ? Required : NotRequired
 ```
 
-**Preferred:** match the domain value directly.
+**Required:** match the domain value directly.
 
 ```text
 address_requirement ← MATCH delivery
@@ -76,7 +76,7 @@ MATCH delivery
   anything_else → NotRequired
 ```
 
-**Preferred:** name every variant, including those with the same result.
+**Required:** name every variant, including those with the same result.
 
 ```text
 MATCH delivery
@@ -97,5 +97,5 @@ Adding another delivery kind must fail the static check until its policy is name
 
 **Prohibited:** claim exhaustive handling because tests cover today's variants.
 
-**Preferred:** also verify that adding a variant makes an incomplete decision
+**Required:** also verify that adding a variant makes an incomplete decision
 fail the required static check.

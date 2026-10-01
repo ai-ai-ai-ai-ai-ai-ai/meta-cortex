@@ -1,7 +1,7 @@
 # Focused Rules and Examples
 
 Every substantive rule or explanatory section must teach one decision and
-show a prohibited/preferred pair. Use code for programming decisions, prose
+show a prohibited/required pair. Use code for programming decisions, prose
 for writing decisions, and concrete scenarios for behavior or procedures.
 
 ## Required actions
@@ -18,7 +18,7 @@ for writing decisions, and concrete scenarios for behavior or procedures.
 
 This combines two subjects without specifying an action for either.
 
-- **Preferred:** “When an example has not been executed, label it unverified.
+- **Required:** “When an example has not been executed, label it unverified.
   Do not describe it as passing.”
 
 The condition and required report are explicit. Documentation layout belongs
@@ -26,10 +26,10 @@ in a separate section with its own example.
 
 ### Demonstrate the difference
 
-- Label the alternatives **Prohibited** and **Preferred**.
+- Label the alternatives **Prohibited** and **Required**.
 - Keep the same situation and intended outcome in both alternatives.
 - Show the actual wording, code, or sequence affected by the decision.
-- Place the pair beside the rule and explain why the preferred version works.
+- Place the pair beside the rule and explain why the required version works.
 - Include enough context to distinguish a violation from an allowed case.
 - Demonstrate an exception with a concrete case showing its limit.
 
@@ -38,9 +38,9 @@ but did not run it.
 
 - **Prohibited:** “The example passes.”
 
-- **Preferred:** “Reviewed the example's parameter types; execution is unverified.”
+- **Required:** “Reviewed the example's parameter types; execution is unverified.”
 
-Both report on the same review. The preferred report separates the evidence
+Both report on the same review. The required report separates the evidence
 obtained from the evidence still missing. If execution later succeeds, a report
 may state “The example compiled with the documented supporting types.” That
 does not establish that its behavior was tested.
@@ -58,7 +58,7 @@ does not establish that its behavior was tested.
 **Prohibited catalog entry:** “Execution reports: never say an example passes
 unless it was run. Bad: ‘passes.’ Good: ‘execution unverified.’”
 
-**Preferred catalog entry:** “Execution reports: evidence labels and unverified
+**Required catalog entry:** “Execution reports: evidence labels and unverified
 examples,” linked to the owning practice containing the rule and pair.
 
 The team catalog identifies what to load. The practice supplies the explanation.
@@ -72,23 +72,23 @@ A skill graph can link related rules with short comparison cues.
 
 **Prohibited:** “Communicate clearly. Good: ‘All done.’ Bad: ‘Done stuff.’”
 
-**Preferred:** “When validation is incomplete, name the missing check.
-Prohibited: ‘All done.’ Preferred: ‘Implementation is complete; browser
+**Required:** “When validation is incomplete, name the missing check.
+Prohibited: ‘All done.’ Required: ‘Implementation is complete; browser
 validation has not run.’”
 
-The preferred pair demonstrates an observable reporting requirement rather
+The required pair demonstrates an observable reporting requirement rather
 than a stylistic preference between two vague phrases.
 
 ## Validation
 
 For each substantive section, identify its decision and its pair. Verify that
-the pair demonstrates every requirement in that section and that the preferred
+the pair demonstrates every requirement in that section and that the required
 example complies with them.
 
 - **Prohibited review:** “Every section has an example, so the document is clear.”
 
-- **Preferred review:** “The failure-reporting section requires naming missing
-  checks. Its preferred example names browser validation as unexecuted.”
+- **Required review:** “The failure-reporting section requires naming missing
+  checks. Its required example names browser validation as unexecuted.”
 
 The review must connect the example to the rule; counting code blocks or labels
 does not establish that connection.

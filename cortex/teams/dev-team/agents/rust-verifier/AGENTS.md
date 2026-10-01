@@ -23,5 +23,5 @@ Use the configured team-agent settings; this role does not implement repairs.
 **Prohibited:** report “Clippy passed” as complete verification or patch a
 violation before the developer receives it.
 
-**Preferred:** report the violated rule, committed file and lines, evidence,
+**Required:** report the violated rule, committed file and lines, evidence,
 and required correction to Gizmo while retaining every other rule's outcome.

@@ -44,7 +44,7 @@ the delivery team's local-feature practice owns commits and merges.
 **Prohibited:** review the current checkout after a SHA lookup fails, or treat
 an unavailable parent as permission to review the entire tree as newly added.
 
-**Preferred:** resolve Gizmo's exact SHA, read its actual parent header, and
+**Required:** resolve Gizmo's exact SHA, read its actual parent header, and
 report missing objects before claiming a complete inventory.
 
 ### Enumerate the complete change
@@ -76,7 +76,7 @@ report missing objects before claiming a complete inventory.
 **Prohibited:** parse `git diff --name-only` by spaces and lose `src/order item.rs`,
 or use a merge's combined diff and miss a first-parent change.
 
-**Preferred:** retain the NUL-delimited path as one inventory entry. For a rename,
+**Required:** retain the NUL-delimited path as one inventory entry. For a rename,
 retain both names and inspect the explicit first-parent patch.
 
 ### Read files from committed objects
@@ -120,7 +120,7 @@ retain both names and inspect the explicit first-parent patch.
 **Prohibited:** inspect the renamed file from disk and quote lines containing
 uncommitted edits as evidence about Gizmo's SHA.
 
-**Preferred:** read the old committed path from the parent and the new path from
+**Required:** read the old committed path from the parent and the new path from
 the reviewed commit. Keep an unreadable object as an explicit blocker.
 
 ### Finish without changing Git state
@@ -137,5 +137,5 @@ the reviewed commit. Keep an unreadable object as an explicit blocker.
 **Prohibited:** check out the reviewed SHA in the developer's worktree to run
 tests, then commit a report to make the read-only task ready.
 
-**Preferred:** inspect objects in place, record the report in the ledger, and
+**Required:** inspect objects in place, record the report in the ledger, and
 request missing exact-revision test evidence through Gizmo.

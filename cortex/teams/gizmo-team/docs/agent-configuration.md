@@ -33,7 +33,7 @@ session's `single_agent` or `multi_agent` choice remains independent of speed.
 **Prohibited:** send a nonexistent `mode` argument to `spawn_agent`, or tell a
 child to change its model through assignment text.
 
-**Preferred:** read `[team.agent]`, pass its model and effort explicitly, and
+**Required:** read `[team.agent]`, pass its model and effort explicitly, and
 leave the host's speed selection in place.
 
 ### Use the host speed setting
@@ -53,7 +53,7 @@ does not support the selected tier cannot be promised that speed.
 **Prohibited:** infer that an agent uses Fast because the tool advertises
 `priority`, or claim that omitting a tier argument proves inheritance.
 
-**Preferred:** select Fast in the host, launch through its native agent tool,
+**Required:** select Fast in the host, launch through its native agent tool,
 and use host metadata to check the child's selected tier when available.
 
 ### Verify the launch
@@ -70,7 +70,7 @@ and use host metadata to check the child's selected tier when available.
 **Prohibited:** report “Fast processing verified” after only reading the
 configuration or receiving a child's claim about its tier.
 
-**Preferred:** report “The parent has Fast selected and the live child launch
+**Required:** report “The parent has Fast selected and the live child launch
 completed. The host exposes no actual processing-tier metadata for the child.”
 
 ## Prohibited actions

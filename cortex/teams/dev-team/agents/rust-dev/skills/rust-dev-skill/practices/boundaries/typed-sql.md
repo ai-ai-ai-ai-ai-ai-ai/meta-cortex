@@ -9,8 +9,8 @@ wrapper, or a homegrown SQL builder.
 
 These alternative fragments assume SeaQuery 1.0.2 with `backend-sqlite` and
 `derive`. The prohibited statements assume an existing `task_id` implementing
-`Display` and belong inside an owning method; the preferred
-declarations are complete. Both compile; only the preferred form exposes schema
+`Display` and belong inside an owning method; the required
+declarations are complete. Both compile; only the required form exposes schema
 structure to Rust's type checker.
 
 **Prohibited:** table structure is hidden inside authored SQL text.
@@ -20,7 +20,7 @@ let ddl = "CREATE TABLE tasks (id TEXT PRIMARY KEY, revision INTEGER NOT NULL CH
 let query = format!("SELECT revision FROM tasks WHERE id = '{task_id}'");
 ```
 
-**Preferred:** identifiers, columns, and expressions belong to the builder.
+**Required:** identifiers, columns, and expressions belong to the builder.
 
 ```rust
 use sea_query::{ColumnDef, Expr, ExprTrait, Iden, Table, TableCreateStatement};

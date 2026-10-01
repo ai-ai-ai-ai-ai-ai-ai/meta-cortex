@@ -4,7 +4,7 @@ overview:
   - Check converted values for retained raw fields.
 prohibited:
   - Wrap external flags without converting their meaning.
-preferred:
+required:
   - Convert external records into owned domain types.
 compare:
   - id: domain_types:external_conversions

@@ -14,7 +14,7 @@ Keep one independent idea per sentence.
 
 **Prohibited:** “Read the schema, preserve its version, run the decoder tests, and update the release instructions.”
 
-**Preferred:**
+**Required:**
 
 - Read the schema before editing its decoder.
 - Preserve the schema version unless the task includes a migration.
@@ -38,7 +38,7 @@ stays attached to the decoder change.
 
 **Prohibited:** “Required actions, part 1: load input; save output. Part 2: if decoding fails, report it.”
 
-**Preferred:**
+**Required:**
 
 1. Decode the input.
    - If decoding fails, report the malformed field and stop.
@@ -59,7 +59,7 @@ prohibition such as deleting the input belongs under Prohibited actions.
 
 **Prohibited:** a rendered table of agents and paths, or an ASCII directory tree copied into the instructions.
 
-**Preferred:**
+**Required:**
 
 - **Reviewer**
   - Input: changed specification and its examples.
@@ -79,7 +79,7 @@ paths; use a Mermaid diagram when the relationship itself needs visualization.
 
 **Prohibited:** “Launch at most eight workers; the framework always has eight slots.”
 
-**Preferred:** “Read the host's current available capacity before dispatching
+**Required:** “Read the host's current available capacity before dispatching
 independent assignments. Queue remaining work until capacity becomes available.”
 
 A session allocation is a runtime observation, not an architectural limit.
@@ -102,7 +102,7 @@ A session allocation is a runtime observation, not an architectural limit.
 **Prohibited:** wrap an ASCII directory tree in a code fence and call it an example;
 then split the surrounding rules into “first ten” and “remaining ten.”
 
-**Preferred:** describe only the relevant subsystem names and inspect their
+**Required:** describe only the relevant subsystem names and inspect their
 actual paths. Group the rules by their decisions, keeping a homogeneous list intact.
 
 Literal source-code examples retain their syntax; fences do not make an authored
@@ -121,7 +121,7 @@ Do not use code fences to disguise prohibited document structure.
 
 - **Prohibited review:** “The prose is shorter, so it is clear.”
 
-- **Preferred review:** “Separated the author and reviewer actions, kept the
+- **Required review:** “Separated the author and reviewer actions, kept the
   failure branch beneath decoding, and found no tables or copied directory trees.”
 
 Report an out-of-scope grouping defect instead of rewriting that document.

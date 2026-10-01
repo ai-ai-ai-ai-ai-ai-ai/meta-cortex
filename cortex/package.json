@@ -2,6 +2,7 @@
   "name": "@meta-cortex/skill-workspace",
   "private": true,
   "workspaces": [
+    "lace",
     "scripts",
     "teams/*/agents/*/skills/*/scripts"
   ],

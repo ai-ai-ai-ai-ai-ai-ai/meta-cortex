@@ -22,7 +22,7 @@ api.inspect_order({ order_id } as Order);
 const request = { order_id } as Order;
 ```
 
-**Preferred:** pass the actual class and construct the structural request.
+**Required:** pass the actual class and construct the structural request.
 
 ```ts
 api.inspect_order(order);
@@ -58,7 +58,7 @@ pub enum WebDeliveryMode {
 }
 ```
 
-**Preferred:** export the core declaration itself.
+**Required:** export the core declaration itself.
 
 ```rust
 // domain-core
@@ -90,7 +90,7 @@ type CustomerId = string;
 const order_id: OrderId = customer_id; // Still compiles.
 ```
 
-**Preferred:** consume generated nominal types. Here they are WASM classes
+**Required:** consume generated nominal types. Here they are WASM classes
 with distinct private identity, so assigning CustomerId to OrderId fails.
 
 ```ts
@@ -122,7 +122,7 @@ replace(next: Order): void {
 }
 ```
 
-- **Preferred:** release the previous object before adopting the replacement.
+- **Required:** release the previous object before adopting the replacement.
 
 ```ts
 replace(next: Order): void {

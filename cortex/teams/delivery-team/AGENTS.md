@@ -33,5 +33,5 @@ merge strategy, and cleanup follow the consuming project; this team does not pre
 **Prohibited:** require every PR to launch integration and CI/CD agents even when
 an integrated branch and matching validation results are already available.
 
-**Preferred:** Team Gizmo assigns the missing delivery work and reuses existing branch and
+**Required:** Team Gizmo assigns the missing delivery work and reuses existing branch and
 run evidence after verifying that it applies to the current PR.

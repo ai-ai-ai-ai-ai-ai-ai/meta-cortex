@@ -37,7 +37,7 @@ impl RetryLimit {
 let limit = RetryLimit::new(3);
 ```
 
-**Preferred:**
+**Required:**
 
 ```rust
 #[derive(derive_more::From)]
@@ -69,7 +69,7 @@ impl Transfer {
 let transfer = Transfer::new(source, destination, amount);
 ```
 
-**Preferred:**
+**Required:**
 
 ```rust
 pub struct Transfer {

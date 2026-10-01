@@ -4,7 +4,7 @@ overview:
   - Check initialization and external absence together.
 prohibited:
   - Leave runes uninitialized or retain external absence sentinels.
-preferred:
+required:
   - Initialize semantic states and normalize incoming absence.
 compare:
   - id: explicit_state:external_absence

@@ -82,7 +82,7 @@ Catalog.printTitles(printer):
         printer.print(title)
 ```
 
-**Preferred:** use the catalog's existing traversal operation.
+**Required:** use the catalog's existing traversal operation.
 
 ```text
 Catalog.printTitles(printer):
@@ -117,7 +117,7 @@ Use the language’s conversion mechanism for direct value conversions.
 **Prohibited:** a delivery type imports an address-policy type to produce the
 consumer’s address requirement.
 
-**Preferred:** the address domain interprets the delivery kind. Delivery retains
+**Required:** the address domain interprets the delivery kind. Delivery retains
 only its own behavior and has no dependency on address policy.
 
 ### Operation placement
@@ -147,7 +147,7 @@ only its own behavior and has no dependency on address policy.
 **Prohibited:** a module exports a retry limit, a mutable attempt counter, and
 free retry helpers. Grouping them in one file does not give them an owner.
 
-**Preferred:** the retry-limit type owns its constant; a retry session owns its
+**Required:** the retry-limit type owns its constant; a retry session owns its
 counter and operations. Each operation keeps temporary values local.
 
 ## Prohibited actions
@@ -202,7 +202,7 @@ A conventional name alone does not establish an exception.
 - **Prohibited:** use an ordinary free `make_fixture` helper merely because a
   test calls it, or duplicate a production algorithm inside an assertion.
 
-- **Preferred:** let the harness entrypoint call the production operation and
+- **Required:** let the harness entrypoint call the production operation and
   assert its outcome. Put reused setup and behavior on a meaningful fixture owner.
 
 ### Presentation edges

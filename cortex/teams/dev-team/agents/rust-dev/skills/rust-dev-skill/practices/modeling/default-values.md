@@ -33,7 +33,7 @@ impl Default for SearchQuery {
 let query = SearchQuery::default();
 ```
 
-**Preferred:** an empty search query is a valid starting point.
+**Required:** an empty search query is a valid starting point.
 
 ```rust
 #[derive(Default)]
@@ -66,7 +66,7 @@ impl Default for SortOrder {
 let order = SortOrder::default();
 ```
 
-**Preferred:** declare the default beside the variant.
+**Required:** declare the default beside the variant.
 
 ```rust
 #[derive(Default)]

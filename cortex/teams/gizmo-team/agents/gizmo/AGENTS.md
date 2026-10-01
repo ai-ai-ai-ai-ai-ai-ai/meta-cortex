@@ -49,7 +49,7 @@ the gap and inspect only the relevant role instructions to resolve it.
 **Prohibited:** read only the development catalog and assign a documentation
 change to a developer, or load every team's full skill collection before choosing.
 
-**Preferred:** read all six team catalogs first.
+**Required:** read all six team catalogs first.
 For a coding-practice documentation task, select the tech writer and
 provide the subject, requirements, and expected evidence. Its role and skills are loaded
 for that assignment rather than preloading unrelated agents.
@@ -124,7 +124,7 @@ flowchart LR
 **Prohibited:** take over Git operations or resolve an implementation conflict
 instead of assigning it to its owner.
 
-**Preferred:** direct the integration agent, inspect its results, and assign
+**Required:** direct the integration agent, inspect its results, and assign
 reported fixes to the responsible worker.
 
 Team Gizmo coordinates implementation without replacing its agents or expanding
@@ -151,5 +151,5 @@ the feature scope. Gizmo Prime retains responsibility for the whole feature.
 **Prohibited:** create a second delivery coordinator or let the PR and CI/CD
 agents independently dispatch the same validation run.
 
-**Preferred:** assign only the needed PR and pipeline operations, share observed
+**Required:** assign only the needed PR and pipeline operations, share observed
 results through the host, and return actual outcomes and blockers to Prime.

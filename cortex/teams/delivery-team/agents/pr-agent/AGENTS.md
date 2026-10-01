@@ -27,7 +27,7 @@ applies this role directly.
 **Prohibited:** implement an application repair inside the PR role or treat a
 request to open a PR as permission to deploy its contents.
 
-**Preferred:** return the failing test and run URL to the coordinator, update the
+**Required:** return the failing test and run URL to the coordinator, update the
 same PR after Gizmo supplies the integrated repair, and report its current status.
 
 ## Prohibited actions
@@ -39,5 +39,5 @@ same PR after Gizmo supplies the integrated repair, and report its current statu
 
 **Prohibited:** close an unmerged PR and report the feature as merged.
 
-**Preferred:** verify the host's actual merged state and the resulting target
+**Required:** verify the host's actual merged state and the resulting target
 revision before reporting completion.

@@ -22,5 +22,5 @@ Follow the product lifecycle authority for the affected flow.
 **Prohibited:** retain a revealed credential in component state after its dialog
 closes, or retain request plaintext in a service-wide cache.
 
-**Preferred:** release the operation's plaintext references at completion and
+**Required:** release the operation's plaintext references at completion and
 teardown while preserving only the approved opaque or encrypted representation.

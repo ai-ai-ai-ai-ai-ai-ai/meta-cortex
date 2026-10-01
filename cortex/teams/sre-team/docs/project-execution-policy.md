@@ -28,7 +28,7 @@ registry, universal runner adapter, or mandatory configuration file.
 **Prohibited:** discover a Makefile and assume `make test` is the merge gate, or
 replace a project's Justfile with Taskfile to match another repository.
 
-**Preferred:** follow the project instructions to its documented validation
+**Required:** follow the project instructions to its documented validation
 entry point and inspect the existing workflow that executes it.
 
 ### Keep deployment policy project-owned
@@ -43,5 +43,5 @@ execution, not authorization to generate one during routine delivery.
 **Prohibited:** translate a request to merge a PR into a production deployment
 or create a generic release workflow inside the framework.
 
-**Preferred:** when asked to deploy, use the project's existing procedure and
+**Required:** when asked to deploy, use the project's existing procedure and
 report its run, deployed revision or artifact, and verification outcome.

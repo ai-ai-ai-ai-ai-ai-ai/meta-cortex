@@ -20,7 +20,7 @@ are illustrative; use the project's names.
 **Prohibited:** the web app validates bookings independently of Rust, so the
 same booking can be accepted in one host and rejected in another.
 
-**Preferred:** Rust validates the booking, the bridge exposes its typed result,
+**Required:** Rust validates the booking, the bridge exposes its typed result,
 and the web app renders that result. Test the decision in Rust and its transport
 through the bridge separately.
 
@@ -42,7 +42,7 @@ export enum BookingStage {
 }
 ```
 
-**Preferred:** define the fieldless enum once in Rust and consume its export.
+**Required:** define the fieldless enum once in Rust and consume its export.
 
 ```rust
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -77,7 +77,7 @@ const action = observation.page_kind === PageKind.Checkout
 browser.apply(action);
 ```
 
-**Preferred:** the handler delegates the decision to Rust.
+**Required:** the handler delegates the decision to Rust.
 
 ```ts
 const observation = browser.observe();
@@ -106,7 +106,7 @@ pub enum OpenPanel {
 }
 ```
 
-**Preferred:** the component's TypeScript module owns that choice.
+**Required:** the component's TypeScript module owns that choice.
 
 ```ts
 enum OpenPanel {

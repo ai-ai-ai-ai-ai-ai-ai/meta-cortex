@@ -4,7 +4,7 @@ overview:
   - Identify who owns each protocol name.
 prohibited:
   - Rename project-owned fields for JavaScript casing.
-preferred:
+required:
   - Preserve canonical names; adapt fixed external names locally.
 compare:
   - id: wasm_name_coherence:same_names

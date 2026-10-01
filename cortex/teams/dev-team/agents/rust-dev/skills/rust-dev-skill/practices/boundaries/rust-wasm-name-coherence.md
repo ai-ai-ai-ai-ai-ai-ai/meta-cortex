@@ -29,7 +29,7 @@ import type { OrderSummary } from "@project/wasm";
 type OrderView = OrderSummary;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 import type { OrderSummary } from "@project/wasm";
@@ -54,7 +54,7 @@ pub fn order_id(&self) -> OrderId {
 const order_id = order.orderId;
 ```
 
-**Preferred:**
+**Required:**
 
 ```rust
 #[wasm_bindgen(getter)]
@@ -89,7 +89,7 @@ pub enum DeliveryState {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```rust
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -113,7 +113,7 @@ const { order_id: orderId } = order;
 const view = { orderId: order.order_id };
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 const { order_id } = order;
@@ -143,7 +143,7 @@ pub enum FrameworkOperation {
 }
 ```
 
-**Preferred:** the enclosing group and leaf each own their serialized name.
+**Required:** the enclosing group and leaf each own their serialized name.
 
 ```rust
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -153,7 +153,7 @@ pub enum FrameworkOperation {
 }
 ```
 
-The preferred command uses `name: Initialize` inside `group: Framework`.
+The required command uses `name: Initialize` inside `group: Framework`.
 Generate discovery and examples from the enum rather than maintaining a second
 command-name registry. Update callers and documentation together. A fixed
 external contract may require an adapter; identify that contract explicitly.
@@ -185,7 +185,7 @@ pub enum Operation {
 }
 ```
 
-**Preferred:** each group carries only its domain's enum.
+**Required:** each group carries only its domain's enum.
 
 ```rust
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -238,7 +238,7 @@ pub struct ExternalOrder {
 }
 ```
 
-**Preferred:** isolate the unavoidable mapping in the external adapter.
+**Required:** isolate the unavoidable mapping in the external adapter.
 
 ```rust
 #[derive(serde::Serialize, serde::Deserialize)]

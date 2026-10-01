@@ -19,7 +19,7 @@ module and are imported into the component.
 let selection = $state<SelectedFile>();
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // In file-selection.ts:
@@ -43,7 +43,7 @@ let finished = $state(false);
 let result = $state<ImportResult>();
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // ImportKind and ImportState are declared in the adjacent state module.
@@ -65,7 +65,7 @@ variants; optionality does not justify widening them to string.
 type OrderSelection = { readonly order_id: string };
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // OrderId is imported from the generated contract.

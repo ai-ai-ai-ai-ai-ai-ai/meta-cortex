@@ -41,7 +41,7 @@ scope cancellation still interrupts it.
 
 - **Prohibited:** check that the pending queue is empty while a job is still running.
 
-- **Preferred:** process a barrier after preceding jobs through the same single
+- **Required:** process a barrier after preceding jobs through the same single
   consumer and complete its Deferred only when the barrier is reached.
 
 Do not reset by replacing a tail and abandoning callers. Recovery must settle or

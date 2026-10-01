@@ -19,7 +19,7 @@ internal this, Svelte, generated-boundary, and test callers explicitly.
 legacySave(request: SaveRequest) { return this.save(request); }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Only the operation with actual callers remains:
@@ -44,7 +44,7 @@ export class PanelController {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 class PanelController {
@@ -66,7 +66,7 @@ snapshot directly at the boundary, with named typed arguments for ordinary calls
 api.submit(JSON.parse(JSON.stringify(request)));
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 const snapshot: OrderRequest = $state.snapshot(request);

@@ -28,5 +28,5 @@ agent's use of the ledger alongside its existing Git workspace procedure.
 **Prohibited:** merge code on an expired heartbeat alone or delete a feature's
 ledger with a finished worker worktree.
 
-**Preferred:** verify readiness, merge the checkpoint, run the combined checks,
+**Required:** verify readiness, merge the checkpoint, run the combined checks,
 and record the integration before reporting completion.

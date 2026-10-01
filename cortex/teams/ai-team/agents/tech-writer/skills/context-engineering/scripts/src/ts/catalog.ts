@@ -160,7 +160,7 @@ export class CatalogSchema {
     title: Schema.NonEmptyString,
     overview: Schema.NonEmptyArray(Schema.NonEmptyString),
     prohibited: Schema.NonEmptyArray(Schema.NonEmptyString),
-    preferred: Schema.NonEmptyArray(Schema.NonEmptyString),
+    required: Schema.NonEmptyArray(Schema.NonEmptyString),
     compare: Schema.NonEmptyArray(CatalogSchema.comparison),
   } satisfies Schema.Struct.Fields;
   static readonly check = Schema.Struct(CatalogSchema.checkFields);

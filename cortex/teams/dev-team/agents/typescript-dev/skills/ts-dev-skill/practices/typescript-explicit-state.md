@@ -22,7 +22,7 @@ interface DownloadState {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 enum DownloadKind { Idle = "idle", Running = "running", Complete = "complete" }
@@ -46,7 +46,7 @@ domains define their vocabulary in TypeScript.
 type PanelState = { readonly kind: "open" } | { readonly kind: "closed" };
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 enum PanelKind { Open = "open", Closed = "closed" }
@@ -76,7 +76,7 @@ if (delivery === DeliveryKind.Shipment) {
 return AddressRequirement.NotRequired;
 ```
 
-**Preferred:** use the native switch.
+**Required:** use the native switch.
 
 ```ts
 switch (delivery) {
@@ -104,7 +104,7 @@ variants of `FieldType`. All variants carry `question`; only `Choice` carries
 `options`. Assume the host owns the `Question` output shape: a required `title`
 and, for choice prompts, `options`.
 The first body returns its local `question` after the shown declaration.
-Both compile; only the preferred form requires each field kind to be named.
+Both compile; only the required form requires each field kind to be named.
 
 **Prohibited:** a new field type silently receives the text-field prompt.
 
@@ -114,7 +114,7 @@ const question = field.type === FieldType.Choice
   : { title: field.question };
 ```
 
-**Preferred:** every field type is named, including cases that share output.
+**Required:** every field type is named, including cases that share output.
 
 ```ts
 switch (field.type) {
@@ -140,7 +140,7 @@ const selected = value ?? fallback;
 if (typeof value === "undefined") { clear(); }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside a UI owner with an already normalized selection:
@@ -163,7 +163,7 @@ omission as that exact value; evaluate alternatives only in their selected branc
 const delay = rawDelay || defaultDelay; // Replaces a valid zero.
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the owner, after decoding the external setting:
@@ -186,7 +186,7 @@ contracts. Model value absence explicitly instead.
 read(): Promise<Document | void>;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside a reader:
@@ -207,7 +207,7 @@ Effect owns expected failures; accumulated codec issues remain concrete and loca
 interface ImportView { readonly failed: boolean; readonly error: string; }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 enum ImportKind { Idle = "idle", Failed = "failed" }
@@ -230,7 +230,7 @@ evidence. Initialize runes and bindable state explicitly.
 enum PanelKind { Open = "open", Closed = "closed" }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // In the component script; the enum is defined in panel-state.ts:
@@ -249,7 +249,7 @@ Match transitions exhaustively and keep positive/negative preflight fixtures.
 expect(selection).toBeUndefined();
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 expect(selection.kind).toBe(SelectionKind.Empty);
