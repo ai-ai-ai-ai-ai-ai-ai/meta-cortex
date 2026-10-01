@@ -105,8 +105,9 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(Literal, TemplateLiteral, ObjectExpression)",
-            message: "List items are literal prose or labelled groups.",
+              ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(ObjectExpression)",
+            message:
+              "List items are literal prompt statement or bullet list objects.",
           },
           {
             selector: "Property[value.type='Identifier']",
@@ -123,6 +124,12 @@ export class ReceiptGrammar {
               "Property[value.type='MemberExpression']:not([key.name='kind'][value.object.name=/^(TaskKind|PromptKind)$/], [key.value='kind'][value.object.name=/^(TaskKind|PromptKind)$/], [key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
             message:
               "Use TaskKind or PromptKind for kind and WorkingDirectory for cwd.",
+          },
+          {
+            selector:
+              "MemberExpression[object.name='PromptKind']:not([property.name=/^(Statement|BulletList)$/])",
+            message:
+              "Use PromptKind.Statement or PromptKind.BulletList for prompts.",
           },
           {
             selector: "Literal[value=/^\\s*$/]",

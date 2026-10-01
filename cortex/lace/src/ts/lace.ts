@@ -21,7 +21,6 @@ export enum WorkingDirectory {
 export enum PromptKind {
   Statement = "statement",
   BulletList = "bullet-list",
-  EnclosedList = "enclosed-list",
 }
 
 export interface PromptStatement {
@@ -31,16 +30,11 @@ export interface PromptStatement {
 
 export interface BulletList {
   readonly kind: PromptKind.BulletList;
-  readonly label: string;
-  readonly items: readonly string[];
+  readonly label?: string;
+  readonly items: readonly Prompt[];
 }
 
-export interface EnclosedList {
-  readonly kind: PromptKind.EnclosedList;
-  readonly items: readonly BulletList[];
-}
-
-export type Prompt = PromptStatement | BulletList | EnclosedList;
+export type Prompt = PromptStatement | BulletList;
 
 /** Literal Cortex prose: explanations, specifications, rules, and instructions. */
 export interface Statement {

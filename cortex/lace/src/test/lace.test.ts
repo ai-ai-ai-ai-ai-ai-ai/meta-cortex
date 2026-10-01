@@ -9,7 +9,7 @@ interface RejectedDeclaration {
 }
 
 class DeclarationCases {
-  static readonly imports = `import { type Job, type BulletList, type EnclosedList, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, type BulletList, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";`;
   static readonly rejected: readonly RejectedDeclaration[] = [
     {
       scenario: "a task at the root",
@@ -79,9 +79,9 @@ class DeclarationCases {
       diagnostic: "items",
     },
     {
-      scenario: "a standalone bullet list without a label",
+      scenario: "a raw string bullet",
       source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: ["Read context."] } }] }`,
-      diagnostic: "label",
+      diagnostic: "not assignable",
     },
     {
       scenario: "a bullet list without items",
@@ -99,23 +99,33 @@ class DeclarationCases {
       diagnostic: "not assignable",
     },
     {
-      scenario: "an enclosed group without a label",
-      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, items: ["Read context."] }] } }] }`,
-      diagnostic: "label",
-    },
-    {
-      scenario: "an enclosed group without items",
-      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, label: "Required" }] } }] }`,
-      diagnostic: "items",
-    },
-    {
-      scenario: "unlabelled prose in an enclosed list",
-      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: ["Read context."] } }] }`,
+      scenario: "a numeric bullet label",
+      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: 42, items: [{ kind: PromptKind.Statement, content: "Read context." }] } }] }`,
       diagnostic: "not assignable",
     },
     {
-      scenario: "a prompt statement inside an enclosed list",
+      scenario: "a nested raw string bullet",
+      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, items: ["Read context."] }] } }] }`,
+      diagnostic: "not assignable",
+    },
+    {
+      scenario: "a nested statement without content",
+      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ kind: PromptKind.Statement }] } }] }`,
+      diagnostic: "content",
+    },
+    {
+      scenario: "a shell command as a bullet",
+      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: "bun run check" }] } }] }`,
+      diagnostic: "not assignable",
+    },
+    {
+      scenario: "the removed enclosed-list enum member",
       source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.Statement, content: "Read context." }] } }] }`,
+      diagnostic: "Property 'EnclosedList' does not exist",
+    },
+    {
+      scenario: "the removed enclosed-list discriminator",
+      source: `{ entries: [{ kind: TaskKind.Statement, prompt: { kind: "enclosed-list", items: [{ kind: PromptKind.Statement, content: "Read context." }] } }] }`,
       diagnostic: "not assignable",
     },
     {
@@ -170,13 +180,16 @@ export default receipt;`;
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
 });
 
-test("literal prompt statements, bullets, and enclosed BulletLists compile", () => {
+test("structured bullets permit optional labels, mixed items, and recursive nesting", () => {
   const source = DeclarationCases.receipt(`{ entries: [
     { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } },
-    { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: "Required", items: ["Read context."] } },
-    { kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, "items": [
-      { kind: PromptKind.BulletList, "label": "Prohibited", "items": ["Change core during receipt authoring."] },
-      { kind: PromptKind.BulletList, label: "Preferred", items: ["Use the existing model."] },
+    { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: "Required", items: [{ kind: PromptKind.Statement, content: "Read context." }] } },
+    { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, "items": [
+      { kind: PromptKind.Statement, content: "Use the existing model." },
+      { kind: PromptKind.BulletList, "label": "Prohibited", "items": [{ kind: PromptKind.Statement, content: "Change core during receipt authoring." }] },
+      { kind: PromptKind.BulletList, items: [
+        { kind: PromptKind.BulletList, label: "Preferred", items: [{ kind: PromptKind.Statement, content: "Read the model first." }] },
+      ] },
     ] } },
   ] }`);
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
@@ -223,17 +236,17 @@ test.each([
   },
   {
     scenario: "appending bullet items",
-    mutation: `bullets.items.push("changed");`,
+    mutation: `bullets.items.push(prompt);`,
     diagnostic: "Property 'push' does not exist",
   },
   {
-    scenario: "appending enclosed groups",
-    mutation: `enclosed.items.push(bullets);`,
-    diagnostic: "Property 'push' does not exist",
+    scenario: "replacing bullet items",
+    mutation: `bullets.items = [prompt];`,
+    diagnostic: "read-only property",
   },
   {
-    scenario: "changing enclosed bullet items",
-    mutation: `enclosed.items[0]!.items.push("changed");`,
+    scenario: "appending nested bullets",
+    mutation: `nested.items.push(bullets);`,
     diagnostic: "Property 'push' does not exist",
   },
 ])("readonly declarations reject $scenario", (example) => {
@@ -242,8 +255,8 @@ import { type ShellCommand, type PromptStatement } from "../../src/ts/lace.ts";
 const child: Job = { entries: [] };
 const command: ShellCommand = { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
 const prompt: PromptStatement = { kind: PromptKind.Statement, content: "Read context." };
-const bullets: BulletList = { kind: PromptKind.BulletList, label: "Required", items: ["Read context."] };
-const enclosed: EnclosedList = { kind: PromptKind.EnclosedList, items: [bullets] };
+const bullets: BulletList = { kind: PromptKind.BulletList, label: "Required", items: [prompt] };
+const nested: BulletList = { kind: PromptKind.BulletList, items: [bullets] };
 const receipt: Job = { entries: [child, command] };
 ${example.mutation}`;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
@@ -251,15 +264,22 @@ ${example.mutation}`;
   );
 });
 
-test("the same BulletList type works standalone and inside an EnclosedList", () => {
+test("the same BulletList type works standalone and recursively nested", () => {
   const source = `${DeclarationCases.imports}
-const bullets: BulletList = { kind: PromptKind.BulletList, label: "Required", items: ["Read context."] };
-const enclosed: EnclosedList = { kind: PromptKind.EnclosedList, items: [bullets] };
+const bullets: BulletList = { kind: PromptKind.BulletList, label: "Required", items: [{ kind: PromptKind.Statement, content: "Read context." }] };
+const nested: BulletList = { kind: PromptKind.BulletList, items: [bullets] };
 const receipt: Job = { entries: [
   { kind: TaskKind.Statement, prompt: bullets },
-  { kind: TaskKind.Statement, prompt: enclosed },
+  { kind: TaskKind.Statement, prompt: nested },
 ] };`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
+});
+
+test("the removed EnclosedList type has no compatibility alias", () => {
+  const source = `import { type EnclosedList } from "../../src/ts/lace.ts";`;
+  expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
+    "has no exported member 'EnclosedList'",
+  );
 });
 
 test("unresolvable context imports fail compilation", () => {

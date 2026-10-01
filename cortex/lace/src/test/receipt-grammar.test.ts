@@ -167,7 +167,7 @@ class GrammarCases {
     },
     {
       scenario: "a blank standalone label",
-      source: `{ kind: PromptKind.BulletList, label: " ", items: ["Read context."] }`,
+      source: `{ kind: PromptKind.BulletList, label: " ", items: [{ kind: PromptKind.Statement, content: "Read context." }] }`,
       diagnostic: "nonblank",
     },
     {
@@ -176,24 +176,54 @@ class GrammarCases {
       diagnostic: "at least one entry or item",
     },
     {
-      scenario: "an empty enclosed list",
-      source: `{ kind: PromptKind.EnclosedList, items: [] }`,
+      scenario: "an empty unlabelled list",
+      source: `{ kind: PromptKind.BulletList, items: [] }`,
       diagnostic: "at least one entry or item",
     },
     {
-      scenario: "empty enclosed bullets",
-      source: `{ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, label: "Required", items: [] }] }`,
+      scenario: "empty nested bullets",
+      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, label: "Required", items: [] }] }`,
       diagnostic: "at least one entry or item",
     },
     {
-      scenario: "a blank enclosed label",
-      source: `{ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.BulletList, label: " ", items: ["Read context."] }] }`,
+      scenario: "a blank nested label",
+      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, label: " ", items: [{ kind: PromptKind.Statement, content: "Read context." }] }] }`,
       diagnostic: "nonblank",
     },
     {
       scenario: "a blank bullet",
-      source: `{ kind: PromptKind.BulletList, label: "Required", items: [" "] }`,
+      source: `{ kind: PromptKind.BulletList, label: "Required", items: [{ kind: PromptKind.Statement, content: " " }] }`,
       diagnostic: "nonblank",
+    },
+    {
+      scenario: "a raw string bullet",
+      source: `{ kind: PromptKind.BulletList, items: ["Read context."] }`,
+      diagnostic: "literal prompt statement or bullet list objects",
+    },
+    {
+      scenario: "a raw template bullet",
+      source: "{ kind: PromptKind.BulletList, items: [`Read context.`] }",
+      diagnostic: "literal prompt statement or bullet list objects",
+    },
+    {
+      scenario: "a nested raw string bullet",
+      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, items: ["Read context."] }] }`,
+      diagnostic: "literal prompt statement or bullet list objects",
+    },
+    {
+      scenario: "the removed enclosed-list kind",
+      source: `{ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.Statement, content: "Read context." }] }`,
+      diagnostic: "Use PromptKind.Statement or PromptKind.BulletList",
+    },
+    {
+      scenario: "a dynamic label",
+      source: `{ kind: PromptKind.BulletList, label: Promise.name, items: [{ kind: PromptKind.Statement, content: "Read context." }] }`,
+      diagnostic: "prompt content, labels, and commands as literals",
+    },
+    {
+      scenario: "dynamic nested statement content",
+      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.Statement, content: Promise.name }] }`,
+      diagnostic: "prompt content, labels, and commands as literals",
     },
     {
       scenario: "template interpolation",
@@ -218,12 +248,12 @@ class GrammarCases {
     {
       scenario: "a runtime bullet",
       source: `{ kind: PromptKind.BulletList, label: "Required", items: [Promise.name] }`,
-      diagnostic: "literal prose or labelled groups",
+      diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "an enum as prose",
       source: `{ kind: PromptKind.BulletList, label: "Required", items: [TaskKind.Statement] }`,
-      diagnostic: "literal prose or labelled groups",
+      diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "sparse bullets",
@@ -233,7 +263,7 @@ class GrammarCases {
     {
       scenario: "spread bullets",
       source: `{ kind: PromptKind.BulletList, label: "Required", items: [..."Read context."] }`,
-      diagnostic: "literal prose or labelled groups",
+      diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "computed enum access",
