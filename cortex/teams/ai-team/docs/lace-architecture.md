@@ -320,10 +320,11 @@ distinguish arbitrary entry names from schema fields and applies structural
 selectors; it does not evaluate receipts or track imports. TypeScript checks
 entry and prompt variants through the model.
 
-The grammar rejects other implementation imports, calls, constructors, methods,
-mutable bindings, loops, conditionals, assignments, spreads, computed fields,
-type assertions, and suppression attempts. Typed Job declarations check the
-whole object tree without casts or assertion operators.
+- The grammar rejects other implementation imports, calls, constructors, methods,
+  mutable bindings, loops, conditionals, assignments, spreads, computed fields,
+  type assertions, and suppression attempts.
+- Typed Job declarations check the whole object tree without casts or assertion
+  operators.
 
 **Prohibited:** obtain prompt content from a runtime expression.
 The compiler accepts a string expression; the grammar requires literal context.
