@@ -77,7 +77,7 @@ export default receipt;
 
 ### Readonly declarations
 
-All model fields are readonly, including Job entries, prompt lists, and enclosed
+All model fields are readonly, including Job entries, prompt lists, and nested
 BulletLists. TypeScript rejects mutation through these types. Receipts contain
 literal declarations; they neither copy nor freeze JavaScript objects at runtime.
 Readonly types do not prevent an external mutable alias from changing an object.
@@ -152,18 +152,19 @@ export default receipt;
 
 ### Prompt structure
 
-`Prompt = PromptStatement | BulletList | EnclosedList` is a discriminated union:
+`Prompt = PromptStatement | BulletList` is a discriminated union:
 
 - **Prompt statement:** `PromptKind.Statement` and one literal `content` string.
-- **Bullet list:** `PromptKind.BulletList`, a literal `label`, and a nonempty
-  `items` array of literal strings.
-- **Enclosed list:** `PromptKind.EnclosedList` and a nonempty `items` array of
-  BulletLists. Each group has the same shape as a standalone bullet list.
+- **Bullet list:** `PromptKind.BulletList`, an optional literal `label`, and a
+  nonempty literal `items` array of structured Prompt objects. The model types
+  `items` as `readonly Prompt[]`.
+- **Nested group:** a BulletList within another BulletList's `items`. Groups use
+  the same recursive shape and may omit their label.
 
-Use one bullet per independent fact or action. Use enclosed groups when their
-relationship matters, such as prohibited/preferred examples. State requirements
-explicitly in the wording. These shapes do not introduce arbitrary recursive
-prompt elements.
+Declare every text bullet as a PromptStatement object. Use one bullet per
+independent fact or action. Nest BulletLists when their relationship matters,
+such as prohibited/preferred examples. State requirements explicitly in the
+wording. Raw string items are invalid.
 
 **Prohibited:** hide independent actions in one raw prompt string.
 The compiler requires a structured Prompt.
@@ -177,7 +178,8 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** put each action in its own bullet.
+**Preferred:** put each action in a structured bullet and nest related items.
+The nested group below omits its optional label.
 
 ```typescript
 const receipt: Job = {
@@ -187,7 +189,21 @@ const receipt: Job = {
       prompt: {
         kind: PromptKind.BulletList,
         label: "Required actions",
-        items: ["Read the assigned context.", "Compile the receipt."],
+        items: [
+          {
+            kind: PromptKind.Statement,
+            content: "Read the assigned context.",
+          },
+          {
+            kind: PromptKind.BulletList,
+            items: [
+              {
+                kind: PromptKind.Statement,
+                content: "Compile the receipt.",
+              },
+            ],
+          },
+        ],
       },
     },
   ],

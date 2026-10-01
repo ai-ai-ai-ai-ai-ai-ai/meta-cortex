@@ -18,10 +18,24 @@ const receipt: Job = {
         kind: PromptKind.BulletList,
         label: "Receipt authoring",
         items: [
-          "Write the assigned Cortex context receipt using the existing Lace types.",
-          "Keep the Lace core and its verification configuration unchanged.",
-          "Express context selection as literal prompt content.",
-          "Reuse canonical context jobs through static imports.",
+          {
+            kind: PromptKind.Statement,
+            content:
+              "Write the assigned Cortex context receipt using the existing Lace types.",
+          },
+          {
+            kind: PromptKind.Statement,
+            content:
+              "Keep the Lace core and its verification configuration unchanged.",
+          },
+          {
+            kind: PromptKind.Statement,
+            content: "Express context selection as literal prompt content.",
+          },
+          {
+            kind: PromptKind.Statement,
+            content: "Reuse canonical context jobs through static imports.",
+          },
         ],
       },
     },
