@@ -17,40 +17,22 @@ export interface PromptStatement {
   readonly content: string;
 }
 
+export interface ListItems {
+  readonly [name: string]:
+    string | Exclude<Prompt, { readonly PromptStatement: PromptStatement }>;
+}
+
 export interface BulletList {
   readonly label?: string;
-  readonly items: Readonly<
-    Record<
-      string,
-      | string
-      | {
-          readonly BulletList: BulletList;
-          readonly PromptStatement?: never;
-          readonly Required?: never;
-          readonly Prohibited?: never;
-        }
-      | {
-          readonly Required: Required;
-          readonly PromptStatement?: never;
-          readonly BulletList?: never;
-          readonly Prohibited?: never;
-        }
-      | {
-          readonly Prohibited: Prohibited;
-          readonly PromptStatement?: never;
-          readonly BulletList?: never;
-          readonly Required?: never;
-        }
-    >
-  >;
+  readonly items: ListItems;
 }
 
 export interface Required {
-  readonly items: BulletList["items"];
+  readonly items: ListItems;
 }
 
 export interface Prohibited {
-  readonly items: BulletList["items"];
+  readonly items: ListItems;
 }
 
 export type Prompt =
