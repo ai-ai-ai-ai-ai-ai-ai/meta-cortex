@@ -257,15 +257,16 @@ export default receipt;
 ### Prompt structure
 
 `PromptStatement` and `BulletList` are plain readonly payload interfaces.
-`Prompt` is the closed union of `PromptStatementVariant` and `BulletListVariant`:
-`{ readonly PromptStatement: PromptStatement } | { readonly BulletList: BulletList }`.
-Each variant excludes the opposite property with an optional `never` field.
+`Prompt` declares its closed branches inline:
+`{ readonly PromptStatement: PromptStatement; readonly BulletList?: never } |
+{ readonly BulletList: BulletList; readonly PromptStatement?: never }`.
+Each branch excludes the opposite property with its optional `never` field.
 A Prompt has exactly one outer variant property; hybrid objects are invalid.
 
 - **Prompt statement:** `{ PromptStatement: { content } }` with one literal string.
 - **Bullet list:** `{ BulletList: { label?, items } }` with an optional literal
   label and a nonempty literal named map. The payload types `items` as
-  `Readonly<Record<string, string | BulletListVariant>>`.
+  `Readonly<Record<string, string | { readonly BulletList: BulletList; readonly PromptStatement?: never }>>`.
 - **Nested group:** a mapped BulletList variant within another payload's `items`.
   Groups use the same recursive variant and may omit their label.
 
@@ -360,8 +361,9 @@ export default receipt;
 ### Literal prompt helper
 
 `PromptStatement` retains its readonly interface and has an abstract static class
-with `content(content: string): PromptStatementVariant`. The helper returns the
-precise plain `{ PromptStatement: { content } }` variant directly usable as a
+whose `content(content: string)` return type is declared inline as
+`{ readonly PromptStatement: PromptStatement; readonly BulletList?: never }`.
+The helper returns the precise plain `{ PromptStatement: { content } }` variant directly usable as a
 standalone Statement.prompt, without freezing or runtime validation. Direct construction is not part of the authoring API.
 
 The grammar permits only noncomputed `PromptStatement.content` calls with exactly
