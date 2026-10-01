@@ -233,7 +233,7 @@ test("follows YAML indexes and validates nested rules and duplicate-heading refe
             title: "Check",
             overview: ["Inspect the decision."],
             prohibited: ["Discard the exception."],
-            preferred: ["Preserve the exception."],
+            required: ["Preserve the exception."],
             compare: [
               {
                 id: DomainTypesRule.Reuse,
@@ -520,7 +520,7 @@ test("reports unknown comparison IDs and comparisons pointing at another rule se
             title: "Check",
             overview: ["Inspect decisions."],
             prohibited: ["Wrong sources."],
-            preferred: ["Canonical sources."],
+            required: ["Canonical sources."],
             compare: [
               {
                 id: DomainTypesRule.Reuse,
@@ -563,7 +563,7 @@ test("validates a focused comparison leaf without requiring unrelated rule inven
             title: "Focused check",
             overview: ["Inspect conversion."],
             prohibited: ["Discard validation."],
-            preferred: ["Preserve validation."],
+            required: ["Preserve validation."],
             compare: [{ id: DomainTypesRule.Reuse, source: "known.md#known" }],
           },
         };
@@ -583,7 +583,7 @@ test("validates a focused comparison leaf without requiring unrelated rule inven
 test.each([
   "kind: practice\nowner: rust:domain_types\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:unregistered, source: 'known.md#known', summary: Known decision}]\n",
   "kind: practice\nowner: rust:unregistered\ntitle: Known\nsource_title: Known\nsource: known.md\nowns: [Known decisions]\nexcludes: []\nrelationships: []\nrelated: []\nrules: [{id: domain_types:reuse, source: 'known.md#known', summary: Known decision}]\n",
-  "kind: check\ntitle: Known\noverview: [Inspect decisions]\nprohibited: [Discard requirements]\npreferred: [Apply requirements]\ncompare: [{id: domain_types:unregistered, source: 'known.md#known'}]\n",
+  "kind: check\ntitle: Known\noverview: [Inspect decisions]\nprohibited: [Discard requirements]\nrequired: [Apply requirements]\ncompare: [{id: domain_types:unregistered, source: 'known.md#known'}]\n",
 ])(
   "rejects unregistered rule or owner vocabulary at the YAML boundary: %s",
   (value) =>
@@ -609,6 +609,31 @@ test.each([
       ),
     ),
 );
+
+test("rejects the removed preferred check category", () =>
+  Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const fixture = yield* DocumentationFixture.create();
+        const file: FileOptions = {
+          path: "index.yaml",
+          value:
+            "kind: check\ntitle: Known\noverview: [Inspect decisions]\nprohibited: [Discard requirements]\npreferred: [Apply requirements]\ncompare: [{id: domain_types:reuse, source: 'known.md#known'}]\n",
+        };
+        const source: FileOptions = {
+          path: "known.md",
+          value: "# Known\n\nKnown requirements.\n",
+        };
+        const result = yield* fixture.check([
+          new VFile(file),
+          new VFile(source),
+        ]);
+        expect(result.code).toBe(1);
+        expect(result.output).toContain("invalid-catalog");
+        expect(result.output).toContain("preferred");
+      }),
+    ),
+  ));
 
 test("rejects different registered owners claiming the same canonical source", () =>
   Effect.runPromise(

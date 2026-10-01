@@ -10,7 +10,7 @@ class NormativeCases {
   static readonly valid = [
     `{ Required: { items: { read: "Read." } } }`,
     `{ Prohibited: { items: { skip: "Do not skip." } } }`,
-    `{ Required: { items: { prohibited: { Prohibited: { items: { skip: "Do not skip." } } }, preferred: { BulletList: { label: "Preferred", items: { read: "Read." } } } } } }`,
+    `{ Required: { items: { prohibited: { Prohibited: { items: { skip: "Do not skip." } } }, reading: { BulletList: { label: "Reading", items: { read: "Read." } } } } } }`,
     `{ BulletList: { items: { requirements: { Required: { items: { restrictions: { Prohibited: { items: { read: "Read." } } } } } } } } }`,
     `{ BulletList: { label: "Required context", items: { read: "Read." } } }`,
     `{ Required: { items: { Required: { Required: { items: { Prohibited: { Prohibited: { items: { items: "Read." } } } } } } } } }`,
@@ -47,6 +47,8 @@ for (const prompt of NormativeCases.malformed) {
   });
 }
 for (const label of [
+  "Preferred",
+  "Preferred actions",
   "Required",
   "Required actions",
   "Prohibited",

@@ -565,6 +565,8 @@ class ReceiptFieldGrammar {
       case node.type === "Property" &&
         node.value.type === "Literal" &&
         [
+          "Preferred",
+          "Preferred actions",
           "Required",
           "Required actions",
           "Prohibited",
@@ -575,6 +577,8 @@ class ReceiptFieldGrammar {
         node.value.expressions.length === 0 &&
         0 in node.value.quasis &&
         [
+          "Preferred",
+          "Preferred actions",
           "Required",
           "Required actions",
           "Prohibited",

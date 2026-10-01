@@ -189,7 +189,7 @@ export default receipt;`;
 
 test("structured bullets permit optional labels, mixed items, and recursive nesting", () => {
   const source = DeclarationCases.receipt(
-    `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { Statement: { prompt: { BulletList: { label: "Checks", items: {bullet1: "Read context."} } } } }, stage3: { Statement: { prompt: { BulletList: { "items": {bullet1: "Use the existing model.", bullet2: { BulletList: { "label": "Restrictions", "items": {bullet1: "Change core during receipt authoring."} } }, bullet3: { BulletList: { items: {bullet1: { BulletList: { label: "Preferred", items: {bullet1: "Read the model first."} } }} } }} } } } } } }`,
+    `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { Statement: { prompt: { BulletList: { label: "Checks", items: {bullet1: "Read context."} } } } }, stage3: { Statement: { prompt: { BulletList: { "items": {bullet1: "Use the existing model.", bullet2: { BulletList: { "label": "Restrictions", "items": {bullet1: "Change core during receipt authoring."} } }, bullet3: { BulletList: { items: {bullet1: { BulletList: { label: "Reading", items: {bullet1: "Read the model first."} } }} } }} } } } } } }`,
   );
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
