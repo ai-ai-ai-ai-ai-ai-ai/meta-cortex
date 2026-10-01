@@ -270,9 +270,11 @@ A Prompt has exactly one outer variant property; hybrid objects are invalid.
 - **Nested group:** a mapped BulletList, Required, or Prohibited within `items`.
   All three group payloads share the recursive named item contract.
 
-Required and Prohibited each declare `readonly items: BulletList["items"]`.
-Their payloads have no label or kind. BulletList items contain literal strings
-or inline closed mapped BulletList, Required, and Prohibited groups.
+BulletList, Required, and Prohibited each declare `readonly items: ListItems`.
+The exported ListItems interface has the readonly index signature
+`readonly [name: string]: string | Exclude<Prompt, { readonly PromptStatement: PromptStatement }>`.
+It reuses the closed Prompt union for recursive groups and excludes standalone
+PromptStatement values. Required and Prohibited payloads have no label or kind.
 PromptStatement wrappers and helper calls remain invalid item values.
 
 Give each text bullet an explicit descriptive key and a nonblank literal string
