@@ -125,8 +125,8 @@ class DeclarationCases {
     },
     {
       scenario: "a shell command as a bullet",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: "bun run check" }] } } } }`,
-      diagnostic: "not assignable",
+      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }] } } } }`,
+      diagnostic: "ShellCommand",
     },
     {
       scenario: "the removed enclosed-list enum member",
@@ -145,17 +145,17 @@ class DeclarationCases {
     },
     {
       scenario: "a command without an explicit directory",
-      source: `{ stages: { stage1: { kind: TaskKind.ShellCommand, script: "bun run check" } } }`,
+      source: `{ stages: { stage1: { ShellCommand: { script: "bun run check" } } } }`,
       diagnostic: "cwd",
     },
     {
       scenario: "a command without script text",
-      source: `{ stages: { stage1: { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot } } }`,
+      source: `{ stages: { stage1: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot } } } }`,
       diagnostic: "script",
     },
     {
       scenario: "an unsupported working directory",
-      source: `{ stages: { stage1: { kind: TaskKind.ShellCommand, cwd: "/tmp", script: "bun run check" } } }`,
+      source: `{ stages: { stage1: { ShellCommand: { cwd: "/tmp", script: "bun run check" } } } }`,
       diagnostic: "WorkingDirectory",
     },
     {
@@ -165,7 +165,7 @@ class DeclarationCases {
     },
     {
       scenario: "a prompt on a shell command",
-      source: `{ stages: { stage1: { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: "bun run check", prompt: { kind: PromptKind.Statement, content: "Read context." } } } }`,
+      source: `{ stages: { stage1: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check", prompt: { kind: PromptKind.Statement, content: "Read context." } } } } }`,
       diagnostic: "prompt",
     },
   ];
@@ -180,7 +180,7 @@ test("plain objects preserve nesting, static imports, task kinds, and source ord
 import compile from "./imported-job.lace.ts";
 const checks: Job = { stages: { compile: compile } };
 const receipt: Job = {
-  stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }, stage2: { stages: { stage1: checks, stage2: { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } } } },
+  stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }, stage2: { stages: { stage1: checks, stage2: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } } } } },
 };
 export default receipt;`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
@@ -235,7 +235,7 @@ test.each([
   },
   {
     scenario: "changing command text",
-    mutation: `command.script = "changed";`,
+    mutation: `command.ShellCommand.script = "changed";`,
     diagnostic: "read-only property",
   },
   {
@@ -267,7 +267,7 @@ test.each([
   const source = `${DeclarationCases.imports}
 import { type ShellCommand, type PromptStatement } from "../../src/ts/lace.ts";
 const child: Job = { stages: { read: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } } } };
-const command: ShellCommand = { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
+const command: ShellCommand = { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } };
 const prompt: PromptStatement = { kind: PromptKind.Statement, content: "Read context." };
 const bullets: BulletList = { kind: PromptKind.BulletList, label: "Required", items: [prompt] };
 const nested: BulletList = { kind: PromptKind.BulletList, items: [bullets] };
@@ -311,7 +311,7 @@ test("the removed Entry type has no compatibility alias", () => {
 test("Stage admits both Jobs and Tasks through the canonical union", () => {
   const source = `${DeclarationCases.imports}
 import { type Stage } from "../../src/ts/lace.ts";
-const task: Stage = { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
+const task: Stage = { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } };
 const child: Stage = { stages: { run: task } };
 const receipt: Job = { stages: { child: child, run: task } };`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);

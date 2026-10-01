@@ -185,6 +185,30 @@ class ReceiptFieldGrammar {
           };
           this.schema(issue);
         },
+      ":matches(Property[key.name='ShellCommand'], Property[key.value='ShellCommand'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => this.shell(node),
+      ":matches(Property[key.name='cwd'], Property[key.value='cwd']):not([value.type='MemberExpression'][value.object.name='WorkingDirectory'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Use WorkingDirectory for shell cwd.",
+          };
+          this.schema(issue);
+        },
+      "MemberExpression[object.name='TaskKind']:not([property.name='Statement'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message:
+              "TaskKind only declares Statement; use the ShellCommand wrapper.",
+          };
+          this.context.report(issue);
+        },
       CallExpression: (node) => this.call(node),
       ArrayExpression: (node) => this.array(node),
       "ArrayExpression[elements.length=0]":
@@ -250,6 +274,35 @@ class ReceiptFieldGrammar {
           this.schema(issue);
         },
     };
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  shell(node) {
+    switch (this.isStageProperty(node)) {
+      case true:
+        return;
+      case false:
+        break;
+    }
+    switch (
+      node.type === "Property" &&
+      node.value.type === "ObjectExpression" &&
+      node.parent.type === "ObjectExpression" &&
+      node.parent.properties.length === 1 &&
+      this.isStageProperty(node.parent.parent)
+    ) {
+      case true:
+        return;
+      case false:
+        break;
+    }
+    /** @type {FieldIssue} */
+    const issue = {
+      node,
+      message:
+        "Declare ShellCommand as a literal payload only in a task stage.",
+    };
+    this.context.report(issue);
   }
 
   /** @param {import("eslint").Rule.Node} node */

@@ -337,7 +337,7 @@ test("literal nested objects and imported Job references pass the grammar", () =
 import common from "./common.lace.ts";
 const checks: Job = { stages: { common: common } };
 const receipt: Job = { stages: { stage1: common, stage2: { "stages": { stage1: checks } }, stage3: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: \`Read the context.
-Then apply its instructions.\` } }, entry4: { kind: TaskKind.ShellCommand, "cwd": WorkingDirectory.LibraryRoot, "script": "bun run check" } } }; export default receipt;`;
+Then apply its instructions.\` } }, entry4: { ShellCommand: { "cwd": WorkingDirectory.LibraryRoot, "script": "bun run check" } } } }; export default receipt;`;
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
 });
 
@@ -493,7 +493,7 @@ test.each([
   },
   {
     scenario: "runtime command below a stage named script",
-    source: `{ stages: { script: { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: Promise.name } } }`,
+    source: `{ stages: { script: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: Promise.name } } } }`,
     diagnostic: "prompt content, labels, and commands as literals",
   },
 ])("rejects $scenario", (example) => {

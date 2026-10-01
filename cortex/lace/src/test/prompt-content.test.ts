@@ -63,7 +63,7 @@ for (const prompt of ContentCases.rejected) {
 for (const source of [
   `const receipt: Job = PromptStatement.content("Read.");`,
   `const receipt: Job = { stages: { read: PromptStatement.content("Read.") } };`,
-  `const receipt: Job = { stages: { read: { kind: TaskKind.ShellCommand, script: PromptStatement.content("Read.") } } };`,
+  `const receipt: Job = { stages: { read: { ShellCommand: { script: PromptStatement.content("Read.") } } } };`,
   `const receipt: Job = { stages: { prompt: PromptStatement.content("Read.") } };`,
   `const receipt: Job = { stages: { items: { stages: { read: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: PromptStatement.content("Read.") } } } } } };`,
 ]) {

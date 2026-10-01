@@ -1,11 +1,12 @@
-import { type Job, TaskKind, WorkingDirectory } from "../../src/ts/lace.ts";
+import { type Job, WorkingDirectory } from "../../src/ts/lace.ts";
 
 const receipt: Job = {
   stages: {
     compile: {
-      kind: TaskKind.ShellCommand,
-      cwd: WorkingDirectory.LibraryRoot,
-      script: "bun run check",
+      ShellCommand: {
+        cwd: WorkingDirectory.LibraryRoot,
+        script: "bun run check",
+      },
     },
   },
 };

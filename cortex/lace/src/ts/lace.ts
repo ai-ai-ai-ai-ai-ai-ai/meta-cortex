@@ -8,7 +8,6 @@
  */
 export enum TaskKind {
   Statement = "statement",
-  ShellCommand = "shell-command",
 }
 
 /** Command locations resolve from the consuming session's two explicit roots. */
@@ -50,9 +49,10 @@ export interface Statement {
 
 /** Declared shell text. Compilation and importing never run this command. */
 export interface ShellCommand {
-  readonly kind: TaskKind.ShellCommand;
-  readonly cwd: WorkingDirectory;
-  readonly script: string;
+  readonly ShellCommand: {
+    readonly cwd: WorkingDirectory;
+    readonly script: string;
+  };
 }
 
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
