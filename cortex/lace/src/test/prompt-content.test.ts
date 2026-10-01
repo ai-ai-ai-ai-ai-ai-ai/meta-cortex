@@ -1,18 +1,18 @@
 import { expect, test } from "bun:test";
-import { PromptKind, PromptStatement } from "../ts/lace.ts";
+import { PromptStatement, type PromptStatementVariant } from "../ts/lace.ts";
 import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
 class ContentCases {
-  static readonly imports = `import { type Job, TaskKind, PromptKind, PromptStatement } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, PromptStatement } from "../../src/ts/lace.ts";`;
   static receipt(prompt: string): string {
-    return `${ContentCases.imports} const receipt: Job = { stages: { read: { kind: TaskKind.Statement, prompt: ${prompt} } } }; export default receipt;`;
+    return `${ContentCases.imports} const receipt: Job = { stages: { read: { Statement: { prompt: ${prompt} } } } }; export default receipt;`;
   }
   static readonly allowed = [
     `PromptStatement.content("Read context.")`,
     "PromptStatement.content(`Read context.\nThen compile.`)",
-    `{ kind: PromptKind.BulletList, items: [PromptStatement.content("Read."), { kind: PromptKind.BulletList, items: [PromptStatement.content("Compile.")] }] }`,
-    `{ kind: PromptKind.Statement, content: "Plain objects remain supported." }`,
+    `{ BulletList: { items: [PromptStatement.content("Read."), { BulletList: { items: [PromptStatement.content("Compile.")] } }] } }`,
+    `{ PromptStatement: { content: "Plain objects remain supported." } }`,
   ];
   static readonly rejected = [
     `PromptStatement.content()`,
@@ -21,8 +21,8 @@ class ContentCases {
     `PromptStatement.content(" \\n ")`,
     "PromptStatement.content(`   `)",
     "PromptStatement.content(`\\n`)",
-    "PromptStatement.content(`Read ${PromptKind.Statement}`)",
-    `PromptStatement.content(PromptKind.Statement)`,
+    "PromptStatement.content(`Read ${Promise.name}`)",
+    `PromptStatement.content(Promise.name)`,
     `PromptStatement.content("Read." + "Compile.")`,
     `PromptStatement.content(...["Read."])`,
     `PromptStatement["content"]("Read.")`,
@@ -37,14 +37,13 @@ class ContentCases {
 
 test("content helper returns the canonical plain unfrozen prompt object", () => {
   const prompt = PromptStatement.content("Read context.");
-  const expected: PromptStatement = {
-    kind: PromptKind.Statement,
-    content: "Read context.",
+  const expected: PromptStatementVariant = {
+    PromptStatement: { content: "Read context." },
   };
   expect(prompt).toEqual(expected);
   expect(Object.getPrototypeOf(prompt)).toBe(Object.prototype);
   expect(Object.isFrozen(prompt)).toBe(false);
-  expect(PromptStatement.content(" ").content).toBe(" ");
+  expect(PromptStatement.content(" ").PromptStatement.content).toBe(" ");
 });
 for (const prompt of ContentCases.allowed) {
   test(`literal helper syntax compiles and passes grammar: ${prompt}`, () => {
@@ -65,7 +64,7 @@ for (const source of [
   `const receipt: Job = { stages: { read: PromptStatement.content("Read.") } };`,
   `const receipt: Job = { stages: { read: { ShellCommand: { script: PromptStatement.content("Read.") } } } };`,
   `const receipt: Job = { stages: { prompt: PromptStatement.content("Read.") } };`,
-  `const receipt: Job = { stages: { items: { stages: { read: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: PromptStatement.content("Read.") } } } } } };`,
+  `const receipt: Job = { stages: { items: { stages: { read: { Statement: { prompt: { PromptStatement: { content: PromptStatement.content("Read.") } } } } } } } };`,
 ]) {
   test(`helper rejects a nonprompt position: ${source}`, () => {
     expect(
@@ -76,7 +75,7 @@ for (const source of [
   });
 }
 test("helper result retains readonly fields", () => {
-  for (const field of ["content", "kind"]) {
+  for (const field of ["PromptStatement", "PromptStatement.content"]) {
     const source = `${ContentCases.imports} const prompt = PromptStatement.content("Read."); prompt.${field} = prompt.${field};`;
     expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
       "read-only property",

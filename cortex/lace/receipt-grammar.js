@@ -88,15 +88,8 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              "Property[value.type='MemberExpression']:not([key.name='kind'][value.object.name=/^(TaskKind|PromptKind)$/], [key.value='kind'][value.object.name=/^(TaskKind|PromptKind)$/], [key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
-            message:
-              "Use TaskKind or PromptKind for kind and WorkingDirectory for cwd.",
-          },
-          {
-            selector:
-              "MemberExpression[object.name='PromptKind']:not([property.name=/^(Statement|BulletList)$/])",
-            message:
-              "Use PromptKind.Statement or PromptKind.BulletList for prompts.",
+              "Property[value.type='MemberExpression']:not([key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
+            message: "Use WorkingDirectory only for cwd fields.",
           },
           {
             selector: "Literal[value=/^\\s*$/]",
@@ -185,9 +178,20 @@ class ReceiptFieldGrammar {
           };
           this.schema(issue);
         },
-      ":matches(Property[key.name='ShellCommand'], Property[key.value='ShellCommand'])":
+      ObjectExpression: (node) => this.mapped(node),
+      ":matches(Property[key.name=/^(Statement|ShellCommand|PromptStatement|BulletList)$/], Property[key.value=/^(Statement|ShellCommand|PromptStatement|BulletList)$/])":
         /** @param {import("eslint").Rule.Node} node */
-        (node) => this.shell(node),
+        (node) => this.wrapper(node),
+      ":matches(Property[key.name='kind'], Property[key.value='kind'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Use mapped variants; kind fields are not supported.",
+          };
+          this.schema(issue);
+        },
       ":matches(Property[key.name='cwd'], Property[key.value='cwd']):not([value.type='MemberExpression'][value.object.name='WorkingDirectory'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
@@ -197,17 +201,6 @@ class ReceiptFieldGrammar {
             message: "Use WorkingDirectory for shell cwd.",
           };
           this.schema(issue);
-        },
-      "MemberExpression[object.name='TaskKind']:not([property.name='Statement'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message:
-              "TaskKind only declares Statement; use the ShellCommand wrapper.",
-          };
-          this.context.report(issue);
         },
       CallExpression: (node) => this.call(node),
       ArrayExpression: (node) => this.array(node),
@@ -277,7 +270,55 @@ class ReceiptFieldGrammar {
   }
 
   /** @param {import("eslint").Rule.Node} node */
-  shell(node) {
+  mapped(node) {
+    switch (
+      node.type === "ObjectExpression" &&
+      node.parent.type === "Property" &&
+      this.isStageProperty(node.parent)
+    ) {
+      case true:
+        this.single(node);
+        return;
+      case false:
+        break;
+    }
+    switch (this.isPromptPosition(node)) {
+      case true:
+        this.single(node);
+        break;
+      case false:
+        break;
+    }
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  single(node) {
+    switch (
+      node.type === "ObjectExpression" &&
+      node.properties.length === 1 &&
+      0 in node.properties &&
+      node.properties[0].type === "Property" &&
+      this.isPromptPosition(node) ===
+        /^(PromptStatement|BulletList)$/.test(this.name(node.properties[0])) &&
+      /^(stages|Statement|ShellCommand|PromptStatement|BulletList)$/.test(
+        this.name(node.properties[0]),
+      )
+    ) {
+      case true:
+        return;
+      case false:
+        break;
+    }
+    /** @type {FieldIssue} */
+    const issue = {
+      node,
+      message: "Declare exactly one mapped variant or nested Job.",
+    };
+    this.context.report(issue);
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  wrapper(node) {
     switch (this.isStageProperty(node)) {
       case true:
         return;
@@ -289,7 +330,7 @@ class ReceiptFieldGrammar {
       node.value.type === "ObjectExpression" &&
       node.parent.type === "ObjectExpression" &&
       node.parent.properties.length === 1 &&
-      this.isStageProperty(node.parent.parent)
+      this.wrapperPosition(node)
     ) {
       case true:
         return;
@@ -300,9 +341,26 @@ class ReceiptFieldGrammar {
     const issue = {
       node,
       message:
-        "Declare ShellCommand as a literal payload only in a task stage.",
+        "Mapped variants have one literal payload in their task or prompt position.",
     };
     this.context.report(issue);
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  wrapperPosition(node) {
+    switch (this.name(node)) {
+      case "Statement":
+      case "ShellCommand":
+        return (
+          node.type === "Property" &&
+          node.parent.type === "ObjectExpression" &&
+          this.isStageProperty(node.parent.parent)
+        );
+      case "PromptStatement":
+      case "BulletList":
+        return node.type === "Property" && this.isPromptPosition(node.parent);
+    }
+    return false;
   }
 
   /** @param {import("eslint").Rule.Node} node */
@@ -371,12 +429,21 @@ class ReceiptFieldGrammar {
       (parent.type === "Property" &&
         parent.value === node &&
         this.name(parent) === "prompt" &&
-        parent.parent.type === "ObjectExpression" &&
-        this.isStageProperty(parent.parent.parent)) ||
+        this.isPayload(parent.parent)) ||
       (parent.type === "ArrayExpression" &&
         parent.parent.type === "Property" &&
         this.name(parent.parent) === "items" &&
-        this.isPromptPosition(parent.parent.parent))
+        this.isPayload(parent.parent.parent))
+    );
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isPayload(node) {
+    return (
+      node.type === "ObjectExpression" &&
+      node.parent.type === "Property" &&
+      /^(Statement|BulletList)$/.test(this.name(node.parent)) &&
+      this.wrapperPosition(node.parent)
     );
   }
 
@@ -452,7 +519,7 @@ class ReceiptFieldGrammar {
     );
   }
 
-  /** @param {import("eslint").Rule.Node} node */
+  /** @param {import("estree").Node} node */
   name(node) {
     switch (true) {
       case node.type === "Property":

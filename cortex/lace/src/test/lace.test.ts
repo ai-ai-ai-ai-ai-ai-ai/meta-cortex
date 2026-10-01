@@ -9,11 +9,11 @@ interface RejectedDeclaration {
 }
 
 class DeclarationCases {
-  static readonly imports = `import { type Job, type BulletList, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";`;
+  static readonly imports = `import { type Job, type BulletList, WorkingDirectory } from "../../src/ts/lace.ts";`;
   static readonly rejected: readonly RejectedDeclaration[] = [
     {
       scenario: "a task at the root",
-      source: `{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }`,
+      source: `{ Statement: { prompt: { PromptStatement: { content: "Read context." } } } }`,
       diagnostic: "does not exist in type 'Job'",
     },
     { scenario: "an array at the root", source: `[]`, diagnostic: "stages" },
@@ -25,7 +25,7 @@ class DeclarationCases {
     { scenario: "a Job without stages", source: `{}`, diagnostic: "stages" },
     {
       scenario: "the removed entries field",
-      source: `{ entries: { read: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } } } }`,
+      source: `{ entries: { read: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } }`,
       diagnostic: "entries",
     },
     {
@@ -35,7 +35,7 @@ class DeclarationCases {
     },
     {
       scenario: "the old stages array",
-      source: `{ stages: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }] }`,
+      source: `{ stages: [{ Statement: { prompt: { PromptStatement: { content: "Read context." } } } }] }`,
       diagnostic: "not assignable",
     },
     {
@@ -54,93 +54,93 @@ class DeclarationCases {
       diagnostic: "not assignable",
     },
     {
-      scenario: "a task without its kind",
-      source: `{ stages: { stage1: { prompt: { kind: PromptKind.Statement, content: "Read context." } } } }`,
-      diagnostic: "kind",
-    },
-    {
-      scenario: "the replaced instruction kind",
-      source: `{ stages: { stage1: { kind: TaskKind.Instruction, prompt: { kind: PromptKind.Statement, content: "Read context." } } } }`,
-      diagnostic: "Property 'Instruction' does not exist",
-    },
-    {
-      scenario: "a statement without a prompt",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement } } }`,
+      scenario: "a task without its wrapper",
+      source: `{ stages: { stage1: { prompt: { PromptStatement: { content: "Read context." } } } } }`,
       diagnostic: "prompt",
     },
     {
+      scenario: "the replaced instruction kind",
+      source: `{ stages: { stage1: { kind: TaskKind.Instruction, prompt: { PromptStatement: { content: "Read context." } } } } }`,
+      diagnostic: "Cannot find name 'TaskKind'",
+    },
+    {
+      scenario: "a statement without a prompt",
+      source: `{ stages: { stage1: { Statement: {} } } }`,
+      diagnostic: "not assignable",
+    },
+    {
       scenario: "the obsolete statement text field",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, text: "Read context." } } }`,
+      source: `{ stages: { stage1: { Statement: { text: "Read context." } } } }`,
       diagnostic: "text",
     },
     {
       scenario: "a raw string prompt",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: "Read context." } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: "Read context." } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a prompt statement without content",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement } } } }`,
-      diagnostic: "content",
+      source: `{ stages: { stage1: { Statement: { prompt: { PromptStatement: {} } } } } }`,
+      diagnostic: "not assignable",
     },
     {
       scenario: "bullet items on a prompt statement",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, items: ["Read context."] } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { items: ["Read context."] } } } } } }`,
       diagnostic: "items",
     },
     {
       scenario: "a raw string bullet",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: ["Read context."] } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: ["Read context."] } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a bullet list without items",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: "Required" } } } }`,
-      diagnostic: "items",
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required" } } } } } }`,
+      diagnostic: "not assignable",
     },
     {
       scenario: "a string instead of bullet items",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: "Required", items: "Read context." } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required", items: "Read context." } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a numbered bullet item",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: "Required", items: [42] } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required", items: [42] } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a numeric bullet label",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: 42, items: [{ kind: PromptKind.Statement, content: "Read context." }] } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: 42, items: [{ PromptStatement: { content: "Read context." } }] } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a nested raw string bullet",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, items: ["Read context."] }] } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: [{ BulletList: { items: ["Read context."] } }] } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a nested statement without content",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ kind: PromptKind.Statement }] } } } }`,
-      diagnostic: "content",
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: [{ PromptStatement: {} }] } } } } } }`,
+      diagnostic: "not assignable",
     },
     {
       scenario: "a shell command as a bullet",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: [{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }] } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { items: [{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } }] } } } } } }`,
       diagnostic: "ShellCommand",
     },
     {
       scenario: "the removed enclosed-list enum member",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.Statement, content: "Read context." }] } } } }`,
-      diagnostic: "Property 'EnclosedList' does not exist",
+      source: `{ stages: { stage1: { Statement: { prompt: { kind: PromptKind.EnclosedList, items: [{ PromptStatement: { content: "Read context." } }] } } } } }`,
+      diagnostic: "Cannot find name 'PromptKind'",
     },
     {
       scenario: "the removed enclosed-list discriminator",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: "enclosed-list", items: [{ kind: PromptKind.Statement, content: "Read context." }] } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { kind: "enclosed-list", items: [{ PromptStatement: { content: "Read context." } }] } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a task kind used as a prompt kind",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: TaskKind.Statement, content: "Read context." } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { Statement: { content: "Read context." } } } } } }`,
       diagnostic: "not assignable",
     },
     {
@@ -160,12 +160,12 @@ class DeclarationCases {
     },
     {
       scenario: "command fields on a statement",
-      source: `{ stages: { stage1: { kind: TaskKind.Statement, script: "bun run check", prompt: { kind: PromptKind.Statement, content: "Read context." } } } }`,
+      source: `{ stages: { stage1: { Statement: { script: "bun run check", prompt: { PromptStatement: { content: "Read context." } } } } } }`,
       diagnostic: "script",
     },
     {
       scenario: "a prompt on a shell command",
-      source: `{ stages: { stage1: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check", prompt: { kind: PromptKind.Statement, content: "Read context." } } } } }`,
+      source: `{ stages: { stage1: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check", prompt: { PromptStatement: { content: "Read context." } } } } } }`,
       diagnostic: "prompt",
     },
   ];
@@ -180,7 +180,7 @@ test("plain objects preserve nesting, static imports, task kinds, and source ord
 import compile from "./imported-job.lace.ts";
 const checks: Job = { stages: { compile: compile } };
 const receipt: Job = {
-  stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }, stage2: { stages: { stage1: checks, stage2: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } } } } },
+  stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { stages: { stage1: checks, stage2: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } } } } },
 };
 export default receipt;`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
@@ -189,13 +189,13 @@ export default receipt;`;
 
 test("structured bullets permit optional labels, mixed items, and recursive nesting", () => {
   const source =
-    DeclarationCases.receipt(`{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }, stage2: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: "Required", items: [{ kind: PromptKind.Statement, content: "Read context." }] } }, stage3: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, "items": [
-      { kind: PromptKind.Statement, content: "Use the existing model." },
-      { kind: PromptKind.BulletList, "label": "Prohibited", "items": [{ kind: PromptKind.Statement, content: "Change core during receipt authoring." }] },
-      { kind: PromptKind.BulletList, items: [
-        { kind: PromptKind.BulletList, label: "Preferred", items: [{ kind: PromptKind.Statement, content: "Read the model first." }] },
-      ] },
-    ] } } } }`);
+    DeclarationCases.receipt(`{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { Statement: { prompt: { BulletList: { label: "Required", items: [{ PromptStatement: { content: "Read context." } }] } } } }, stage3: { Statement: { prompt: { BulletList: { "items": [
+      { PromptStatement: { content: "Use the existing model." } },
+      { BulletList: { "label": "Prohibited", "items": [{ PromptStatement: { content: "Change core during receipt authoring." } }] } },
+      { BulletList: { items: [
+        { BulletList: { label: "Preferred", items: [{ PromptStatement: { content: "Read the model first." } }] } },
+      ] } },
+    ] } } } } } }`);
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
 });
@@ -235,7 +235,7 @@ test.each([
   },
   {
     scenario: "changing command text",
-    mutation: `command.ShellCommand.script = "changed";`,
+    mutation: `command.script = "changed";`,
     diagnostic: "read-only property",
   },
   {
@@ -266,11 +266,11 @@ test.each([
 ])("readonly declarations reject $scenario", (example) => {
   const source = `${DeclarationCases.imports}
 import { type ShellCommand, type PromptStatement } from "../../src/ts/lace.ts";
-const child: Job = { stages: { read: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } } } };
-const command: ShellCommand = { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" } };
-const prompt: PromptStatement = { kind: PromptKind.Statement, content: "Read context." };
-const bullets: BulletList = { kind: PromptKind.BulletList, label: "Required", items: [prompt] };
-const nested: BulletList = { kind: PromptKind.BulletList, items: [bullets] };
+const child: Job = { stages: { read: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } };
+const command: ShellCommand = { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
+const prompt: PromptStatement = { content: "Read context." };
+const bullets: BulletList = { label: "Required", items: [{ PromptStatement: prompt }] };
+const nested: BulletList = { items: [{ BulletList: bullets }] };
 const receipt: Job = { stages: { stage1: child, stage2: command } };
 ${example.mutation}`;
   expect(new ReceiptCompilation(source).messages().join("\n")).toContain(
@@ -280,9 +280,9 @@ ${example.mutation}`;
 
 test("the same BulletList type works standalone and recursively nested", () => {
   const source = `${DeclarationCases.imports}
-const bullets: BulletList = { kind: PromptKind.BulletList, label: "Required", items: [{ kind: PromptKind.Statement, content: "Read context." }] };
-const nested: BulletList = { kind: PromptKind.BulletList, items: [bullets] };
-const receipt: Job = { stages: { stage1: { kind: TaskKind.Statement, prompt: bullets }, stage2: { kind: TaskKind.Statement, prompt: nested } } };`;
+const bullets: BulletList = { label: "Required", items: [{ PromptStatement: { content: "Read context." } }] };
+const nested: BulletList = { items: [{ BulletList: bullets }] };
+const receipt: Job = { stages: { stage1: { Statement: { prompt: { BulletList: bullets } } }, stage2: { Statement: { prompt: { BulletList: nested } } } } };`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
 });
 

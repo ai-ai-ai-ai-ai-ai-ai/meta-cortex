@@ -10,8 +10,8 @@ interface RejectedSyntax {
 }
 
 class GrammarCases {
-  static readonly imports = `import { type Job, TaskKind, PromptKind, WorkingDirectory } from "../../src/ts/lace.ts";`;
-  static readonly object = `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } } } }`;
+  static readonly imports = `import { type Job, WorkingDirectory } from "../../src/ts/lace.ts";`;
+  static readonly object = `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } }`;
   static readonly rejected: readonly RejectedSyntax[] = [
     {
       scenario: "a root array",
@@ -135,7 +135,7 @@ class GrammarCases {
     },
     {
       scenario: "the old stages array",
-      source: `const receipt: Job = { stages: [{ kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: "Read context." } }] }; export default receipt;`,
+      source: `const receipt: Job = { stages: [{ Statement: { prompt: { PromptStatement: { content: "Read context." } } } }] }; export default receipt;`,
       diagnostic: "literal named object",
     },
     {
@@ -207,107 +207,107 @@ class GrammarCases {
   static readonly rejectedPrompts: readonly RejectedSyntax[] = [
     {
       scenario: "blank statement content",
-      source: `{ kind: PromptKind.Statement, content: "   " }`,
+      source: `{ PromptStatement: { content: "   " } }`,
       diagnostic: "nonblank",
     },
     {
       scenario: "a blank standalone label",
-      source: `{ kind: PromptKind.BulletList, label: " ", items: [{ kind: PromptKind.Statement, content: "Read context." }] }`,
+      source: `{ BulletList: { label: " ", items: [{ PromptStatement: { content: "Read context." } }] } }`,
       diagnostic: "nonblank",
     },
     {
       scenario: "empty bullets",
-      source: `{ kind: PromptKind.BulletList, label: "Required", items: [] }`,
+      source: `{ BulletList: { label: "Required", items: [] } }`,
       diagnostic: "at least one entry or item",
     },
     {
       scenario: "an empty unlabelled list",
-      source: `{ kind: PromptKind.BulletList, items: [] }`,
+      source: `{ BulletList: { items: [] } }`,
       diagnostic: "at least one entry or item",
     },
     {
       scenario: "empty nested bullets",
-      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, label: "Required", items: [] }] }`,
+      source: `{ BulletList: { items: [{ BulletList: { label: "Required", items: [] } }] } }`,
       diagnostic: "at least one entry or item",
     },
     {
       scenario: "a blank nested label",
-      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, label: " ", items: [{ kind: PromptKind.Statement, content: "Read context." }] }] }`,
+      source: `{ BulletList: { items: [{ BulletList: { label: " ", items: [{ PromptStatement: { content: "Read context." } }] } }] } }`,
       diagnostic: "nonblank",
     },
     {
       scenario: "a blank bullet",
-      source: `{ kind: PromptKind.BulletList, label: "Required", items: [{ kind: PromptKind.Statement, content: " " }] }`,
+      source: `{ BulletList: { label: "Required", items: [{ PromptStatement: { content: " " } }] } }`,
       diagnostic: "nonblank",
     },
     {
       scenario: "a raw string bullet",
-      source: `{ kind: PromptKind.BulletList, items: ["Read context."] }`,
+      source: `{ BulletList: { items: ["Read context."] } }`,
       diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "a raw template bullet",
-      source: "{ kind: PromptKind.BulletList, items: [`Read context.`] }",
+      source: "{ BulletList: { items: [`Read context.`] } }",
       diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "a nested raw string bullet",
-      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.BulletList, items: ["Read context."] }] }`,
+      source: `{ BulletList: { items: [{ BulletList: { items: ["Read context."] } }] } }`,
       diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "the removed enclosed-list kind",
-      source: `{ kind: PromptKind.EnclosedList, items: [{ kind: PromptKind.Statement, content: "Read context." }] }`,
-      diagnostic: "Use PromptKind.Statement or PromptKind.BulletList",
+      source: `{ kind: PromptKind.EnclosedList, items: [{ PromptStatement: { content: "Read context." } }] }`,
+      diagnostic: "kind fields are not supported",
     },
     {
       scenario: "a dynamic label",
-      source: `{ kind: PromptKind.BulletList, label: Promise.name, items: [{ kind: PromptKind.Statement, content: "Read context." }] }`,
+      source: `{ BulletList: { label: Promise.name, items: [{ PromptStatement: { content: "Read context." } }] } }`,
       diagnostic: "prompt content, labels, and commands as literals",
     },
     {
       scenario: "dynamic nested statement content",
-      source: `{ kind: PromptKind.BulletList, items: [{ kind: PromptKind.Statement, content: Promise.name }] }`,
+      source: `{ BulletList: { items: [{ PromptStatement: { content: Promise.name } }] } }`,
       diagnostic: "prompt content, labels, and commands as literals",
     },
     {
       scenario: "template interpolation",
-      source: "{ kind: PromptKind.Statement, content: `Read ${context}.` }",
+      source: "{ PromptStatement: { content: `Read ${context}.` } }",
       diagnostic: "without interpolation",
     },
     {
       scenario: "a blank template",
-      source: "{ kind: PromptKind.Statement, content: ` ` }",
+      source: "{ PromptStatement: { content: ` ` } }",
       diagnostic: "nonblank",
     },
     {
       scenario: "ambient statement content",
-      source: `{ kind: PromptKind.Statement, content: Promise.name }`,
+      source: `{ PromptStatement: { content: Promise.name } }`,
       diagnostic: "prompt content, labels, and commands as literals",
     },
     {
       scenario: "dynamic quoted items",
-      source: `{ kind: PromptKind.BulletList, label: "Required", "items": Promise.name }`,
+      source: `{ BulletList: { label: "Required", "items": Promise.name } }`,
       diagnostic: "literal arrays",
     },
     {
       scenario: "a runtime bullet",
-      source: `{ kind: PromptKind.BulletList, label: "Required", items: [Promise.name] }`,
+      source: `{ BulletList: { label: "Required", items: [Promise.name] } }`,
       diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "an enum as prose",
-      source: `{ kind: PromptKind.BulletList, label: "Required", items: [TaskKind.Statement] }`,
+      source: `{ BulletList: { label: "Required", items: [TaskKind.Statement] } }`,
       diagnostic: "literal prompt statement or bullet list objects",
     },
     {
       scenario: "sparse bullets",
-      source: `{ kind: PromptKind.BulletList, label: "Required", items: [, "Read context."] }`,
+      source: `{ BulletList: { label: "Required", items: [, "Read context."] } }`,
       diagnostic: "Unexpected comma",
     },
     {
       scenario: "spread bullets",
-      source: `{ kind: PromptKind.BulletList, label: "Required", items: [..."Read context."] }`,
+      source: `{ BulletList: { label: "Required", items: [..."Read context."] } }`,
       diagnostic: "literal prompt statement or bullet list objects",
     },
     {
@@ -318,11 +318,11 @@ class GrammarCases {
     {
       scenario: "an ambient enum field",
       source: `{ kind: Function.prototype, content: "Read context." }`,
-      diagnostic: "Use TaskKind or PromptKind for kind",
+      diagnostic: "kind fields are not supported",
     },
     {
       scenario: "duplicate content fields",
-      source: `{ kind: PromptKind.Statement, content: "Read.", content: "Write." }`,
+      source: `{ PromptStatement: { content: "Read.", content: "Write." } }`,
       diagnostic: "Duplicate key",
     },
   ];
@@ -336,8 +336,8 @@ test("literal nested objects and imported Job references pass the grammar", () =
   const source = `${GrammarCases.imports}
 import common from "./common.lace.ts";
 const checks: Job = { stages: { common: common } };
-const receipt: Job = { stages: { stage1: common, stage2: { "stages": { stage1: checks } }, stage3: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: \`Read the context.
-Then apply its instructions.\` } }, entry4: { ShellCommand: { "cwd": WorkingDirectory.LibraryRoot, "script": "bun run check" } } } }; export default receipt;`;
+const receipt: Job = { stages: { stage1: common, stage2: { "stages": { stage1: checks } }, stage3: { Statement: { prompt: { PromptStatement: { content: \`Read the context.
+Then apply its instructions.\` } } } }, entry4: { ShellCommand: { "cwd": WorkingDirectory.LibraryRoot, "script": "bun run check" } } } }; export default receipt;`;
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
 });
 
@@ -377,7 +377,7 @@ test.each(GrammarCases.rejected.slice())("rejects $scenario", (example) => {
 test.each(GrammarCases.rejectedPrompts.slice())(
   "rejects $scenario",
   (example) => {
-    const object = `{ stages: { stage1: { kind: TaskKind.Statement, prompt: ${example.source} } } }`;
+    const object = `{ stages: { stage1: { Statement: { prompt: ${example.source} } } } }`;
     const source = GrammarCases.imports + GrammarCases.root(object);
     expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
       example.diagnostic,
@@ -386,7 +386,7 @@ test.each(GrammarCases.rejectedPrompts.slice())(
 );
 
 test("the grammar rejects ambient strings that the compiler accepts", () => {
-  const object = `{ stages: { stage1: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: Promise.name } } } }`;
+  const object = `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: Promise.name } } } } } }`;
   const source = GrammarCases.imports + GrammarCases.root(object);
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
@@ -410,7 +410,7 @@ test.each([
 });
 
 test("prompt objects cannot be hidden behind identifiers", () => {
-  const source = `${GrammarCases.imports}${GrammarCases.root("{ stages: { stage1: { kind: TaskKind.Statement, prompt: context } } }")}`;
+  const source = `${GrammarCases.imports}${GrammarCases.root("{ stages: { stage1: { Statement: { prompt: context } } } }")}`;
   expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
     "Nest literal context objects",
   );
@@ -473,22 +473,22 @@ test.each([
   },
   {
     scenario: "runtime prompt below a stage named stages",
-    source: `{ stages: { stages: { kind: TaskKind.Statement, prompt: context } } }`,
+    source: `{ stages: { stages: { Statement: { prompt: context } } } }`,
     diagnostic: "Nest literal context objects",
   },
   {
     scenario: "runtime content below a stage named content",
-    source: `{ stages: { content: { kind: TaskKind.Statement, prompt: { kind: PromptKind.Statement, content: Promise.name } } } }`,
+    source: `{ stages: { content: { Statement: { prompt: { PromptStatement: { content: Promise.name } } } } } }`,
     diagnostic: "prompt content, labels, and commands as literals",
   },
   {
     scenario: "runtime label below a stage named label",
-    source: `{ stages: { label: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, label: Promise.name, items: [{ kind: PromptKind.Statement, content: "Read." }] } } } }`,
+    source: `{ stages: { label: { Statement: { prompt: { BulletList: { label: Promise.name, items: [{ PromptStatement: { content: "Read." } }] } } } } } }`,
     diagnostic: "prompt content, labels, and commands as literals",
   },
   {
     scenario: "runtime items below a stage named items",
-    source: `{ stages: { items: { kind: TaskKind.Statement, prompt: { kind: PromptKind.BulletList, items: context } } } }`,
+    source: `{ stages: { items: { Statement: { prompt: { BulletList: { items: context } } } } } }`,
     diagnostic: "literal arrays",
   },
   {

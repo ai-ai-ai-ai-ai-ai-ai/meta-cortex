@@ -6,57 +6,55 @@
  * Readonly Job objects group tasks and other jobs.
  * Statically declared jobs compose through imports without name-keyed lookup.
  */
-export enum TaskKind {
-  Statement = "statement",
-}
-
 /** Command locations resolve from the consuming session's two explicit roots. */
 export enum WorkingDirectory {
   ProjectRoot = "project-root",
   LibraryRoot = "library-root",
 }
 
-/** Standard prompt shapes keep prose and list structure explicit. */
-export enum PromptKind {
-  Statement = "statement",
-  BulletList = "bullet-list",
-}
-
+/** Plain prompt payloads are wrapped only when used as Prompt variants. */
 export interface PromptStatement {
-  readonly kind: PromptKind.Statement;
   readonly content: string;
 }
 
-export abstract class PromptStatement {
-  static content(content: string): PromptStatement {
-    return { kind: PromptKind.Statement, content };
-  }
-}
-
 export interface BulletList {
-  readonly kind: PromptKind.BulletList;
   readonly label?: string;
   readonly items: readonly Prompt[];
 }
 
-export type Prompt = PromptStatement | BulletList;
+export type PromptStatementVariant = {
+  readonly PromptStatement: PromptStatement;
+  readonly BulletList?: never;
+};
 
-/** Literal Cortex prose: explanations, specifications, rules, and instructions. */
+export type BulletListVariant = {
+  readonly BulletList: BulletList;
+  readonly PromptStatement?: never;
+};
+
+export type Prompt = PromptStatementVariant | BulletListVariant;
+
+export abstract class PromptStatement {
+  static content(content: string): PromptStatementVariant {
+    return { PromptStatement: { content } };
+  }
+}
+
+/** Literal Cortex prose payload. */
 export interface Statement {
-  readonly kind: TaskKind.Statement;
   readonly prompt: Prompt;
 }
 
-/** Declared shell text. Compilation and importing never run this command. */
+/** Inert shell text payload; compilation and importing never run its command. */
 export interface ShellCommand {
-  readonly ShellCommand: {
-    readonly cwd: WorkingDirectory;
-    readonly script: string;
-  };
+  readonly cwd: WorkingDirectory;
+  readonly script: string;
 }
 
-/** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
-export type Task = Statement | ShellCommand;
+/** Closed task variants wrap their concrete payloads. */
+export type Task =
+  | { readonly Statement: Statement; readonly ShellCommand?: never }
+  | { readonly ShellCommand: ShellCommand; readonly Statement?: never };
 
 /** Each stage is either a nested job or a task. */
 export type Stage = Job | Task;
