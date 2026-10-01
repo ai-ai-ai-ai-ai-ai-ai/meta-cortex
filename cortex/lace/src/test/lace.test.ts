@@ -30,7 +30,8 @@ test("public model and receipt imports construct inert plain data", () => {
   };
   const expectedEmpty: Job = { stages: {} };
   expect(empty).toEqual(expectedEmpty);
-  expect(stage.spec).toEqual(expectedEmpty.stages);
+  const expectedSpec: Stage["spec"] = {};
+  expect(stage.spec).toEqual(expectedSpec);
   expect(compileContext).toEqual(statement);
   expect(receipt.stages.context).toEqual(context);
   expect(Object.isFrozen(receipt)).toBe(false);
