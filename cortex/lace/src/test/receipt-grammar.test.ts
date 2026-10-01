@@ -402,7 +402,7 @@ test.each([
     diagnostic: "prompt content, labels, and commands as literals",
   },
 ])("rejects $scenario", (example) => {
-  const object = `{ stages: { stage1: { kind: TaskKind.ShellCommand, cwd: WorkingDirectory.LibraryRoot, script: ${example.script} } } }`;
+  const object = `{ stages: { stage1: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: ${example.script} } } } }`;
   const source = GrammarCases.imports + GrammarCases.root(object);
   expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
     example.diagnostic,
