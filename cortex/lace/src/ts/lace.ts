@@ -52,10 +52,10 @@ export interface ShellCommand {
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
 export type Task = Statement | ShellCommand;
 
-/** Each entry is either a nested job or a task. */
-export type Entry = Job | Task;
+/** Each stage is either a nested job or a task. */
+export type Stage = Job | Task;
 
-/** A directory of ordered context entries, declared as a plain object. */
+/** A directory of ordered context stages, declared as a plain object. */
 export interface Job {
-  readonly entries: Readonly<Record<string, Entry>>;
+  readonly stages: Readonly<Record<string, Stage>>;
 }

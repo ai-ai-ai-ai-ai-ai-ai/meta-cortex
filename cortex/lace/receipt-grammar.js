@@ -69,7 +69,7 @@ export class ReceiptGrammar {
             selector:
               "VariableDeclarator:not([id.type='Identifier'][id.typeAnnotation.typeAnnotation.type='TSTypeReference'][id.typeAnnotation.typeAnnotation.typeName.name='Job'][init.type='ObjectExpression'])",
             message:
-              "Declare each local Job as const name: Job = { entries: { name: entry } }.",
+              "Declare each local Job as const name: Job = { stages: { name: stage } }.",
           },
           {
             selector:
@@ -125,7 +125,7 @@ export class ReceiptGrammar {
 
 /** @typedef {{readonly node: import("eslint").Rule.Node; readonly message: string}} FieldIssue */
 
-/** Position checks keep entry names separate from schema field selectors. */
+/** Position checks keep stage names separate from schema field selectors. */
 class ReceiptFieldGrammar {
   /** @returns {import("eslint").Rule.RuleModule} */
   static rule() {
@@ -155,23 +155,23 @@ class ReceiptFieldGrammar {
           };
           this.schema(issue);
         },
-      ":matches(Property[key.name='entries'], Property[key.value='entries']):not([value.type='ObjectExpression'])":
+      ":matches(Property[key.name='stages'], Property[key.value='stages']):not([value.type='ObjectExpression'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
           /** @type {FieldIssue} */
           const issue = {
             node,
-            message: "Declare Job entries as a literal named object.",
+            message: "Declare Job stages as a literal named object.",
           };
           this.schema(issue);
         },
-      ":matches(Property[key.name='entries'], Property[key.value='entries']) > ObjectExpression[properties.length=0]":
+      ":matches(Property[key.name='stages'], Property[key.value='stages']) > ObjectExpression[properties.length=0]":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
           /** @type {FieldIssue} */
           const issue = {
             node,
-            message: "Jobs contain at least one named entry.",
+            message: "Jobs contain at least one named stage.",
           };
           this.schema(issue);
         },
@@ -196,26 +196,25 @@ class ReceiptFieldGrammar {
           };
           this.schema(issue);
         },
-      ":matches(Property[key.name='entries'], Property[key.value='entries']) > ObjectExpression > Property:not([value.type='ObjectExpression'], [value.type='Identifier'])":
+      ":matches(Property[key.name='stages'], Property[key.value='stages']) > ObjectExpression > Property:not([value.type='ObjectExpression'], [value.type='Identifier'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
           /** @type {FieldIssue} */
           const issue = {
             node,
-            message:
-              "Job entries are literal objects or static Job references.",
+            message: "Job stages are literal objects or static Job references.",
           };
-          this.entry(issue);
+          this.stage(issue);
         },
-      ":matches(Property[key.name='entries'], Property[key.value='entries']) > ObjectExpression > Property:not([key.type='Identifier'], [key.type='Literal'][key.raw=/^[\"']/])":
+      ":matches(Property[key.name='stages'], Property[key.value='stages']) > ObjectExpression > Property:not([key.type='Identifier'], [key.type='Literal'][key.raw=/^[\"']/])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
           /** @type {FieldIssue} */
           const issue = {
             node,
-            message: "Name Job entries with identifiers or string literals.",
+            message: "Name Job stages with identifiers or string literals.",
           };
-          this.entry(issue);
+          this.stage(issue);
         },
       ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(ObjectExpression)":
         /** @param {import("eslint").Rule.Node} node */
@@ -228,6 +227,16 @@ class ReceiptFieldGrammar {
           };
           this.schema(issue);
         },
+      ":matches(Property[key.name='entries'], Property[key.value='entries'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Declare Job stages; the entries field is not supported.",
+          };
+          this.schema(issue);
+        },
       "Property[value.type='Identifier']":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
@@ -235,7 +244,7 @@ class ReceiptFieldGrammar {
           const issue = {
             node,
             message:
-              "Nest literal context objects; Job references belong as named entry values.",
+              "Nest literal context objects; Job references belong as named stage values.",
           };
           this.schema(issue);
         },
@@ -247,7 +256,7 @@ class ReceiptFieldGrammar {
     const field = this.property(node);
     switch (this.name(field)) {
       case "items":
-        switch (this.isEntryProperty(field)) {
+        switch (this.isStageProperty(field)) {
           case false:
             return;
           case true:
@@ -260,7 +269,7 @@ class ReceiptFieldGrammar {
 
   /** @param {FieldIssue} issue */
   schema(issue) {
-    switch (this.isEntryProperty(this.property(issue.node))) {
+    switch (this.isStageProperty(this.property(issue.node))) {
       case false:
         this.context.report(issue);
         break;
@@ -270,8 +279,8 @@ class ReceiptFieldGrammar {
   }
 
   /** @param {FieldIssue} issue */
-  entry(issue) {
-    switch (this.isEntryProperty(this.property(issue.node))) {
+  stage(issue) {
+    switch (this.isStageProperty(this.property(issue.node))) {
       case true:
         this.context.report(issue);
         break;
@@ -295,21 +304,21 @@ class ReceiptFieldGrammar {
     return (
       node.type !== "Program" &&
       (node.parent.type === "VariableDeclarator" ||
-        (node.parent.type === "Property" && this.isEntryProperty(node.parent)))
+        (node.parent.type === "Property" && this.isStageProperty(node.parent)))
     );
   }
 
   /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isEntryProperty(node) {
-    return node.type === "Property" && this.isEntryMap(node.parent);
+  isStageProperty(node) {
+    return node.type === "Property" && this.isStageMap(node.parent);
   }
 
   /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isEntryMap(node) {
+  isStageMap(node) {
     return (
       node.type === "ObjectExpression" &&
       node.parent.type === "Property" &&
-      this.name(node.parent) === "entries" &&
+      this.name(node.parent) === "stages" &&
       this.isJobObject(node.parent.parent)
     );
   }
