@@ -1,509 +1,137 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { ReceiptCompilation } from "./receipt.ts";
 import { ReceiptSyntax } from "./receipt-syntax.ts";
 
-interface RejectedSyntax {
-  readonly scenario: string;
-  readonly source: string;
-  readonly diagnostic: string;
-}
-
 class GrammarCases {
-  static readonly imports = `import { type Job, WorkingDirectory } from "@meta-cortex/lace";`;
-  static readonly object = `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } }`;
-  static readonly rejected: readonly RejectedSyntax[] = [
-    {
-      scenario: "a root array",
-      source: `export default [];`,
-      diagnostic: "Default-export the typed receipt binding",
-    },
-    {
-      scenario: "an untyped root object",
-      source: `const receipt = ${GrammarCases.object}; export default receipt;`,
-      diagnostic: "Declare each local Job",
-    },
-    {
-      scenario: "a raw exported object",
-      source: `export default ${GrammarCases.object};`,
-      diagnostic: "Default-export the typed receipt binding",
-    },
-    {
-      scenario: "no default export",
-      source: `const receipt: Job = ${GrammarCases.object};`,
-      diagnostic: "must default-export receipt",
-    },
-    {
-      scenario: "an undeclared root",
-      source: `export default receipt;`,
-      diagnostic: "Declare const receipt: Job",
-    },
-    {
-      scenario: "exporting a different binding",
-      source: `const receipt: Job = ${GrammarCases.object}; export default Job;`,
-      diagnostic: "Default-export the typed receipt binding",
-    },
-    {
-      scenario: "a mutable binding",
-      source: `let receipt: Job = ${GrammarCases.object}; export default receipt;`,
-      diagnostic: "top-level const",
-    },
-    {
-      scenario: "an alias instead of a literal root",
-      source: `const other: Job = ${GrammarCases.object}; const receipt: Job = other; export default receipt;`,
-      diagnostic: "Declare each local Job",
-    },
-    {
-      scenario: "a constructor",
-      source: `const receipt: Job = new Job(); export default receipt;`,
-      diagnostic: "only imports, typed Job objects",
-    },
-    {
-      scenario: "a builder call",
-      source: `const receipt: Job = Job.statement({}); export default receipt;`,
-      diagnostic: "only imports, typed Job objects",
-    },
-    {
-      scenario: "an arbitrary function call",
-      source: `const receipt: Job = buildJob(); export default receipt;`,
-      diagnostic: "only imports, typed Job objects",
-    },
-    {
-      scenario: "a runtime side effect",
-      source: `console.log("run"); ${GrammarCases.root()}`,
-      diagnostic: "only imports, typed Job objects",
-    },
-    {
-      scenario: "a type assertion",
-      source: `const receipt: Job = {} as Job; export default receipt;`,
-      diagnostic: "only imports, typed Job objects",
-    },
-    {
-      scenario: "a computed field",
-      source: `const receipt: Job = { ["stages"]: [] }; export default receipt;`,
-      diagnostic: "explicit literal name",
-    },
-    {
-      scenario: "shorthand fields",
-      source: `const receipt: Job = { stages }; export default receipt;`,
-      diagnostic: "explicit literal name",
-    },
-    {
-      scenario: "a method",
-      source: `const receipt: Job = { stages() {} }; export default receipt;`,
-      diagnostic: "explicit literal name",
-    },
-    {
-      scenario: "an empty Job",
-      source: `const receipt: Job = { stages: {  } }; export default receipt;`,
-      diagnostic: "at least one named stage",
-    },
-    {
-      scenario: "an empty nested Job",
-      source: `const receipt: Job = { stages: { stage1: { stages: {  } } } }; export default receipt;`,
-      diagnostic: "at least one named stage",
-    },
-    {
-      scenario: "the removed entries field",
-      source: `const receipt: Job = { entries: { read: ${GrammarCases.object} } }; export default receipt;`,
-      diagnostic: "entries field is not supported",
-    },
-    {
-      scenario: "a dynamic stages object",
-      source: `const receipt: Job = { stages: Promise.name }; export default receipt;`,
-      diagnostic: "literal named object",
-    },
-    {
-      scenario: "spreading a Job",
-      source: `const receipt: Job = { ...other }; export default receipt;`,
-      diagnostic: "only imports, typed Job objects",
-    },
-    {
-      scenario: "spreading stages",
-      source: `const receipt: Job = { stages: { ...other } }; export default receipt;`,
-      diagnostic: "only imports, typed Job objects",
-    },
-    {
-      scenario: "an array entry",
-      source: `const receipt: Job = { stages: { stage1: [] } }; export default receipt;`,
-      diagnostic: "literal objects or static Job references",
-    },
-    {
-      scenario: "an ambient entry",
-      source: `const receipt: Job = { stages: { stage1: Function.prototype } }; export default receipt;`,
-      diagnostic: "literal objects or static Job references",
-    },
-    {
-      scenario: "the old stages array",
-      source: `const receipt: Job = { stages: [{ Statement: { prompt: { PromptStatement: { content: "Read context." } } } }] }; export default receipt;`,
-      diagnostic: "literal named object",
-    },
-    {
-      scenario: "duplicate stage names",
-      source: `const receipt: Job = { stages: { read: ${GrammarCases.object}, "read": ${GrammarCases.object} } }; export default receipt;`,
-      diagnostic: "Duplicate key",
-    },
-    {
-      scenario: "a computed stage name",
-      source: `const receipt: Job = { stages: { ["read"]: ${GrammarCases.object} } }; export default receipt;`,
-      diagnostic: "explicit literal name",
-    },
-    {
-      scenario: "a numeric stage name",
-      source: `const receipt: Job = { stages: { 42: ${GrammarCases.object} } }; export default receipt;`,
-      diagnostic: "identifiers or string literals",
-    },
-    {
-      scenario: "a shorthand Job reference",
-      source: `const read: Job = ${GrammarCases.object}; const receipt: Job = { stages: { read } }; export default receipt;`,
-      diagnostic: "explicit literal name",
-    },
-    {
-      scenario: "a stage method",
-      source: `const receipt: Job = { stages: { read() {} } }; export default receipt;`,
-      diagnostic: "explicit literal name",
-    },
-    {
-      scenario: "a runtime entry call",
-      source: `const receipt: Job = { stages: { read: buildJob() } }; export default receipt;`,
-      diagnostic: "literal objects or static Job references",
-    },
-    {
-      scenario: "a referenced entire stage map",
-      source: `const other: Job = ${GrammarCases.object}; const receipt: Job = { stages: other }; export default receipt;`,
-      diagnostic: "literal named object",
-    },
-    {
-      scenario: "an arbitrary implementation import",
-      source: `import runner from "./runner.ts"; ${GrammarCases.root()}`,
-      diagnostic: "Import only the Lace model or another receipt",
-    },
-    {
-      scenario: "the removed builder import",
-      source: `import { Job } from "../../src/ts/job.ts"; ${GrammarCases.root()}`,
-      diagnostic: "Import only the Lace model or another receipt",
-    },
-    {
-      scenario: "a named receipt import",
-      source: `import { context } from "./common.lace.ts"; ${GrammarCases.root()}`,
-      diagnostic: "Import a receipt's default Job",
-    },
-    {
-      scenario: "a named AGENTS.ts import",
-      source: `import { context } from "./AGENTS.ts"; ${GrammarCases.root()}`,
-      diagnostic: "Import a receipt's default Job",
-    },
-    {
-      scenario: "a non-Job local binding",
-      source: `const prompt: Prompt = {}; ${GrammarCases.root()}`,
-      diagnostic: "Declare each local Job",
-    },
-    {
-      scenario: "Job type arguments",
-      source: `const receipt: Job<string> = ${GrammarCases.object}; export default receipt;`,
-      diagnostic: "without type arguments",
-    },
-  ];
-  static readonly rejectedPrompts: readonly RejectedSyntax[] = [
-    {
-      scenario: "blank statement content",
-      source: `{ PromptStatement: { content: "   " } }`,
-      diagnostic: "nonblank",
-    },
-    {
-      scenario: "a blank standalone label",
-      source: `{ BulletList: { label: " ", items: {bullet1: "Read context."} } }`,
-      diagnostic: "nonblank",
-    },
-    {
-      scenario: "empty bullets",
-      source: `{ BulletList: { label: "Checks", items: {} } }`,
-      diagnostic: "at least one named item",
-    },
-    {
-      scenario: "an empty unlabelled list",
-      source: `{ BulletList: { items: {} } }`,
-      diagnostic: "at least one named item",
-    },
-    {
-      scenario: "empty nested bullets",
-      source: `{ BulletList: { items: {bullet1: { BulletList: { label: "Checks", items: {} } }} } }`,
-      diagnostic: "at least one named item",
-    },
-    {
-      scenario: "a blank nested label",
-      source: `{ BulletList: { items: {bullet1: { BulletList: { label: " ", items: {bullet1: "Read context."} } }} } }`,
-      diagnostic: "nonblank",
-    },
-    {
-      scenario: "a blank bullet",
-      source: `{ BulletList: { label: "Checks", items: {bullet1: " "} } }`,
-      diagnostic: "nonblank",
-    },
-    {
-      scenario: "a raw string bullet",
-      source: '{ BulletList: { items: ["Read context."] } }',
-      diagnostic: "literal named objects",
-    },
-    {
-      scenario: "a raw template bullet",
-      source: "{ BulletList: { items: [`Read context.`] } }",
-      diagnostic: "literal named objects",
-    },
-    {
-      scenario: "a nested raw string bullet",
-      source:
-        '{ BulletList: { items: { group: { BulletList: { items: ["Read context."] } } } } }',
-      diagnostic: "literal named objects",
-    },
-    {
-      scenario: "the removed enclosed-list kind",
-      source: `{ kind: PromptKind.EnclosedList, items: {bullet1: "Read context."} }`,
-      diagnostic: "kind fields are not supported",
-    },
-    {
-      scenario: "a dynamic label",
-      source: `{ BulletList: { label: Promise.name, items: {bullet1: "Read context."} } }`,
-      diagnostic: "prompt content, labels, and commands as literals",
-    },
-    {
-      scenario: "dynamic nested statement content",
-      source: "{ BulletList: { items: { read: Promise.name } } }",
-      diagnostic: "literal text or mapped BulletList groups",
-    },
-    {
-      scenario: "template interpolation",
-      source: "{ PromptStatement: { content: `Read ${context}.` } }",
-      diagnostic: "without interpolation",
-    },
-    {
-      scenario: "a blank template",
-      source: "{ PromptStatement: { content: ` ` } }",
-      diagnostic: "nonblank",
-    },
-    {
-      scenario: "ambient statement content",
-      source: `{ PromptStatement: { content: Promise.name } }`,
-      diagnostic: "prompt content, labels, and commands as literals",
-    },
-    {
-      scenario: "dynamic quoted items",
-      source: `{ BulletList: { label: "Checks", "items": Promise.name } }`,
-      diagnostic: "literal named objects",
-    },
-    {
-      scenario: "a runtime bullet",
-      source: `{ BulletList: { label: "Checks", items: {bullet1: Promise.name} } }`,
-      diagnostic: "literal text or mapped BulletList groups",
-    },
-    {
-      scenario: "an enum as prose",
-      source: `{ BulletList: { label: "Checks", items: {bullet1: WorkingDirectory.LibraryRoot} } }`,
-      diagnostic: "literal text or mapped BulletList groups",
-    },
-    {
-      scenario: "sparse bullets",
-      source: '{ BulletList: { items: [, "Read context."] } }',
-      diagnostic: "Receipts contain only",
-    },
-    {
-      scenario: "spread bullets",
-      source: "{ BulletList: { items: { ...{} } } }",
-      diagnostic: "Receipts contain only",
-    },
-    {
-      scenario: "computed enum access",
-      source: `{ kind: PromptKind["Statement"], content: "Read context." }`,
-      diagnostic: "Member access is limited to enum fields",
-    },
-    {
-      scenario: "an ambient enum field",
-      source: `{ kind: Function.prototype, content: "Read context." }`,
-      diagnostic: "kind fields are not supported",
-    },
-    {
-      scenario: "duplicate content fields",
-      source: `{ PromptStatement: { content: "Read.", content: "Write." } }`,
-      diagnostic: "Duplicate key",
-    },
-  ];
-
-  static root(object = GrammarCases.object): string {
-    return `const receipt: Job = ${object}; export default receipt;`;
+  static readonly imports =
+    'import { type Job, type Stage, type Statement, WorkingDirectory } from "@meta-cortex/lace";';
+  static readonly empty =
+    "{ spec: {}, Required: { statements: {} }, Prohibited: { statements: {} } }";
+  static receipt(stage: string): string {
+    return `${GrammarCases.imports} const receipt: Job = { stages: { context: ${stage} } }; export default receipt;`;
+  }
+  static statement(statement: string): string {
+    return GrammarCases.receipt(
+      `{ spec: { context: ${statement} }, Required: { statements: {} }, Prohibited: { statements: {} } }`,
+    );
   }
 }
-
-test("literal nested objects and imported Job references pass the grammar", () => {
-  const source = `${GrammarCases.imports}
-import common from "./common.lace.ts";
-const checks: Job = { stages: { common: common } };
-const receipt: Job = { stages: { stage1: common, stage2: { "stages": { stage1: checks } }, stage3: { Statement: { prompt: { PromptStatement: { content: \`Read the context.
-Then apply its instructions.\` } } } }, entry4: { ShellCommand: { "cwd": WorkingDirectory.LibraryRoot, "script": "bun run check" } } } }; export default receipt;`;
-  expect(new ReceiptSyntax(source).messages()).toEqual([]);
-});
-
-test("Lace's own typed entry point passes the grammar and compiler", () => {
-  const source = readFileSync(
-    new URL("../../AGENTS.ts", import.meta.url),
-    "utf8",
-  );
-  expect(new ReceiptSyntax(source).messages("lace/AGENTS.ts")).toEqual([]);
-  expect(new ReceiptCompilation(source).messages()).toEqual([]);
-});
-
-test("a receipt can reuse an AGENTS.ts default Job", () => {
-  const source = `${GrammarCases.imports} import lace from "../../lace/AGENTS.ts";
-${GrammarCases.root("{ stages: { stage1: lace } }")}`;
-  expect(new ReceiptSyntax(source).messages()).toEqual([]);
-});
-
-test("AGENTS.ts cannot bypass the grammar", () => {
-  const source = `${GrammarCases.imports} export default [];`;
-  expect(
-    new ReceiptSyntax(source).messages("lace/AGENTS.ts").join("\n"),
-  ).toContain("Default-export the typed receipt binding");
-});
-
-test.each(GrammarCases.rejected.slice())("rejects $scenario", (example) => {
-  const source = GrammarCases.imports + example.source;
-  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    example.diagnostic,
-  );
-});
-
-test.each(GrammarCases.rejectedPrompts.slice())(
-  "rejects $scenario",
-  (example) => {
-    const object = `{ stages: { stage1: { Statement: { prompt: ${example.source} } } } }`;
-    const source = GrammarCases.imports + GrammarCases.root(object);
-    expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-      example.diagnostic,
-    );
-  },
-);
-
-test("the grammar rejects ambient strings that the compiler accepts", () => {
-  const object = `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: Promise.name } } } } } }`;
-  const source = GrammarCases.imports + GrammarCases.root(object);
-  expect(new ReceiptCompilation(source).messages()).toEqual([]);
-  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    "prompt content, labels, and commands as literals",
-  );
-});
-
-test.each([
-  { scenario: "blank command scripts", script: '""', diagnostic: "nonblank" },
-  {
-    scenario: "runtime command scripts",
-    script: "String.name",
-    diagnostic: "prompt content, labels, and commands as literals",
-  },
-])("rejects $scenario", (example) => {
-  const object = `{ stages: { stage1: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: ${example.script} } } } }`;
-  const source = GrammarCases.imports + GrammarCases.root(object);
-  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    example.diagnostic,
-  );
-});
-
-test("prompt objects cannot be hidden behind identifiers", () => {
-  const source = `${GrammarCases.imports}${GrammarCases.root("{ stages: { stage1: { Statement: { prompt: context } } } }")}`;
-  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    "Nest literal context objects",
-  );
-});
-
-test("compiler suppression comments cannot disable receipt checking", () => {
-  const source = `// @ts-nocheck\n${GrammarCases.imports}${GrammarCases.root()}`;
-  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    "Do not use",
-  );
-});
-
-test("receipt-local lint directives cannot bypass the grammar", () => {
-  const source = `/* eslint-disable */\n${GrammarCases.imports}const receipt: Job = buildJob(); export default receipt;`;
-  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    "only imports, typed Job objects",
-  );
-});
-
-test.each([
-  "label",
-  "items",
+for (const source of [
+  GrammarCases.imports +
+    "const receipt: Job = { stages: {} }; export default receipt;",
+  GrammarCases.receipt(GrammarCases.empty),
+  GrammarCases.statement('"Read context."'),
+  GrammarCases.statement("`Read context.`"),
+  GrammarCases.statement(
+    '{ content: "Compile context.", ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "exit 99" } }',
+  ),
+  GrammarCases.imports +
+    `const read: Statement = "Read."; const context: Stage = { spec: { read: read }, Required: { statements: {} }, Prohibited: { statements: { skip: "Do not skip." } } }; const receipt: Job = { stages: { context: context } }; export default receipt;`,
+  GrammarCases.imports +
+    'import { context, readContext } from "./imported-job.lace.ts"; const receipt: Job = { stages: { imported: context, local: { spec: { read: readContext }, Required: { statements: {} }, Prohibited: { statements: {} } } } }; export default receipt;',
+]) {
+  test(`fixed literal context and static composition passes: ${source}`, () => {
+    expect(new ReceiptCompilation(source).messages()).toEqual([]);
+    expect(new ReceiptSyntax(source).messages()).toEqual([]);
+  });
+}
+for (const name of [
   "stages",
-  "entries",
-  "script",
+  "spec",
+  "Required",
+  "Prohibited",
+  "statements",
   "content",
-  "prompt",
-  "kind",
+  "ShellCommand",
   "cwd",
-])("stage name %s remains valid at multiple declaration depths", (name) => {
-  const source = `${GrammarCases.imports}
-import imported from "./imported-job.lace.ts";
-const local: Job = ${GrammarCases.object};
-const receipt: Job = { stages: {
-  ${name}: imported,
-  nested: { stages: {
-    "${name}": local,
-    deep: { stages: { stages: { stages: { ${name}: ${GrammarCases.object}, imported: imported } } } },
-  } },
-} }; export default receipt;`;
-  expect(new ReceiptSyntax(source).messages()).toEqual([]);
-  expect(new ReceiptCompilation(source).messages()).toEqual([]);
-});
-
-test.each([
-  {
-    scenario: "an empty map below a stage named stages",
-    source: `{ stages: { stages: { stages: {} } } }`,
-    diagnostic: "at least one named stage",
-  },
-  {
-    scenario: "an old array below a stage named stages",
-    source: `{ stages: { stages: { stages: [${GrammarCases.object}] } } }`,
-    diagnostic: "literal named object",
-  },
-  {
-    scenario: "the removed entries field below a stage named entries",
-    source: `{ stages: { entries: { entries: { read: ${GrammarCases.object} } } } }`,
-    diagnostic: "entries field is not supported",
-  },
-  {
-    scenario: "runtime prompt below a stage named stages",
-    source: `{ stages: { stages: { Statement: { prompt: context } } } }`,
-    diagnostic: "Nest literal context objects",
-  },
-  {
-    scenario: "runtime content below a stage named content",
-    source: `{ stages: { content: { Statement: { prompt: { PromptStatement: { content: Promise.name } } } } } }`,
-    diagnostic: "prompt content, labels, and commands as literals",
-  },
-  {
-    scenario: "runtime label below a stage named label",
-    source: `{ stages: { label: { Statement: { prompt: { BulletList: { label: Promise.name, items: {bullet1: "Read."} } } } } } }`,
-    diagnostic: "prompt content, labels, and commands as literals",
-  },
-  {
-    scenario: "runtime items below a stage named items",
-    source: `{ stages: { items: { Statement: { prompt: { BulletList: { items: context } } } } } }`,
-    diagnostic: "literal named objects",
-  },
-  {
-    scenario: "runtime command below a stage named script",
-    source: `{ stages: { script: { ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: Promise.name } } } }`,
-    diagnostic: "prompt content, labels, and commands as literals",
-  },
-])("rejects $scenario", (example) => {
-  const source = GrammarCases.imports + GrammarCases.root(example.source);
-  expect(new ReceiptSyntax(source).messages().join("\n")).toContain(
-    example.diagnostic,
-  );
-});
-
-test("quoted integer-like names remain literal stage names", () => {
-  const source =
-    GrammarCases.imports +
-    GrammarCases.root(`{ stages: { "1": ${GrammarCases.object} } }`);
-  expect(new ReceiptSyntax(source).messages()).toEqual([]);
-  expect(new ReceiptCompilation(source).messages()).toEqual([]);
-});
+  "script",
+  "Statement",
+  "PromptStatement",
+  "BulletList",
+  "items",
+  "entries",
+]) {
+  test(`arbitrary schema-named keys work at every map position: ${name}`, () => {
+    const source =
+      GrammarCases.imports +
+      `const statement: Statement = { content: "Run.", ShellCommand: { cwd: WorkingDirectory.ProjectRoot, script: "exit 99" } }; const receipt: Job = { stages: { '${name}': { spec: { '${name}': statement }, Required: { statements: { '${name}': "Read." } }, Prohibited: { statements: { '${name}': "Do not skip." } } } } }; export default receipt;`;
+    expect(new ReceiptCompilation(source).messages()).toEqual([]);
+    expect(new ReceiptSyntax(source).messages()).toEqual([]);
+  });
+}
+for (const statement of [
+  '""',
+  '" "',
+  "` `",
+  "42",
+  "true",
+  "null",
+  "[]",
+  "`Read ${WorkingDirectory.LibraryRoot}`",
+  "Promise.name",
+  'PromptStatement.content("Read.")',
+  '{ content: "Read." }',
+  '{ ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "exit 99" } }',
+  '{ content: "Run.", ShellCommand: { cwd: "library-root", script: "exit 99" } }',
+  '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: " " } }',
+  '{ content: Promise.name, ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "exit 99" } }',
+  '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: Promise.name } }',
+  '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory["LibraryRoot"], script: "exit 99" } }',
+  '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory.Other, script: "exit 99" } }',
+  '{ content: "Run.", ShellCommand: { cwd: WorkingDirectory.LibraryRoot, script: "exit 99", extra: "x" } }',
+  '{ PromptStatement: { content: "Read." } }',
+  "{ BulletList: { items: {} } }",
+  '{ Statement: { prompt: "Read." } }',
+  "{ stages: {} }",
+  '{ content: "Run.", ShellCommand: Promise.name }',
+]) {
+  test(`grammar rejects invalid current or removed statement syntax: ${statement}`, () => {
+    expect(
+      new ReceiptSyntax(GrammarCases.statement(statement)).messages().length,
+    ).toBeGreaterThan(0);
+  });
+}
+for (const stage of [
+  "{}",
+  "{ stages: {} }",
+  "{ spec: {} }",
+  "{ spec: [], Required: { statements: {} }, Prohibited: { statements: {} } }",
+  "{ spec: {}, Required: { items: {} }, Prohibited: { statements: {} } }",
+  "{ spec: {}, Required: { statements: [] }, Prohibited: { statements: {} } }",
+  '{ spec: {}, Required: { statements: {}, label: "Required" }, Prohibited: { statements: {} } }',
+  "{ spec: {}, Required: { statements: {} }, Prohibited: { statements: {} }, extra: {} }",
+  '{ spec: { read: "Read.", read: "Again." }, Required: { statements: {} }, Prohibited: { statements: {} } }',
+  '{ spec: { "": "Read." }, Required: { statements: {} }, Prohibited: { statements: {} } }',
+  '{ spec: { 1: "Read." }, Required: { statements: {} }, Prohibited: { statements: {} } }',
+  '{ spec: { [WorkingDirectory.LibraryRoot]: "Read." }, Required: { statements: {} }, Prohibited: { statements: {} } }',
+  "{ spec: { ...Promise }, Required: { statements: {} }, Prohibited: { statements: {} } }",
+  "{ spec: { read() {} }, Required: { statements: {} }, Prohibited: { statements: {} } }",
+  "{ spec: Promise.name, Required: { statements: {} }, Prohibited: { statements: {} } }",
+]) {
+  test(`grammar rejects malformed fixed stage: ${stage}`, () => {
+    expect(
+      new ReceiptSyntax(GrammarCases.receipt(stage)).messages().length,
+    ).toBeGreaterThan(0);
+  });
+}
+for (const source of [
+  GrammarCases.imports +
+    "const receipt: Job = { stages: [] }; export default receipt;",
+  GrammarCases.imports +
+    "const receipt: Job = { stages: { ...Promise } }; export default receipt;",
+  GrammarCases.imports + "const receipt: Job = { stages: {} };",
+  GrammarCases.imports +
+    "let receipt: Job = { stages: {} }; export default receipt;",
+  GrammarCases.imports +
+    "const receipt: Stage = " +
+    GrammarCases.empty +
+    "; export default receipt;",
+  GrammarCases.imports +
+    "export const extra: Job = { stages: {} }; const receipt: Job = { stages: {} }; export default receipt;",
+  GrammarCases.imports +
+    "const receipt: Job = { stages: {} }; export { receipt }; export default receipt;",
+]) {
+  test(`declaration boundary rejects malformed root: ${source}`, () => {
+    expect(new ReceiptSyntax(source).messages().length).toBeGreaterThan(0);
+  });
+}

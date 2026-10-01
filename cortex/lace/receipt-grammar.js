@@ -42,9 +42,9 @@ export class ReceiptGrammar {
           "error",
           {
             selector:
-              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, CallExpression, TSTypeAnnotation, TSTypeReference)",
+              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, ExportNamedDeclaration, TSTypeAnnotation, TSTypeReference)",
             message:
-              "Receipts contain only imports, typed Job objects, literal context, and static job references.",
+              "Receipts contain only imports, typed Job objects, literal context, and static Stage or Statement references.",
           },
           {
             selector: "Program:not(:has(> ExportDefaultDeclaration))",
@@ -62,39 +62,26 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              "VariableDeclaration:not([kind='const']), VariableDeclaration:not(Program > VariableDeclaration)",
-            message: "Declare local Jobs with top-level const bindings.",
+              "VariableDeclaration:not([kind='const']), VariableDeclaration:not(Program > VariableDeclaration, Program > ExportNamedDeclaration > VariableDeclaration)",
+            message: "Declare local context with top-level const bindings.",
           },
           {
             selector:
-              "VariableDeclarator:not([id.type='Identifier'][id.typeAnnotation.typeAnnotation.type='TSTypeReference'][id.typeAnnotation.typeAnnotation.typeName.name='Job'][init.type='ObjectExpression'])",
-            message:
-              "Declare each local Job as const name: Job = { stages: { name: stage } }.",
+              "VariableDeclarator:not([id.type='Identifier'][id.typeAnnotation.typeAnnotation.type='TSTypeReference'][id.typeAnnotation.typeAnnotation.typeName.name=/^(Job|Stage|Statement)$/])",
+            message: "Use explicit Job, Stage, or Statement type annotations.",
           },
           {
             selector:
-              "TSTypeReference:not([typeName.type='Identifier'][typeName.name='Job']), TSTypeReference[typeArguments]",
-            message: "Use the Job type annotation without type arguments.",
+              "TSTypeReference:not([typeName.type='Identifier'][typeName.name=/^(Job|Stage|Statement)$/]), TSTypeReference[typeArguments]",
+            message: "Use Job, Stage, or Statement without type arguments.",
           },
           {
-            selector:
-              "Property[computed=true], Property[shorthand=true], Property[method=true]",
+            selector: "Property[computed=true], Property[method=true]",
             message: "Give every context field an explicit literal name.",
           },
           {
-            selector:
-              "MemberExpression:not(Property > MemberExpression, CallExpression > MemberExpression), MemberExpression[computed=true]",
-            message: "Member access is limited to enum fields.",
-          },
-          {
-            selector:
-              "Property[value.type='MemberExpression']:not([key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
-            message: "Use WorkingDirectory only for cwd fields.",
-          },
-          {
             selector: "Literal[value=/^\\s*$/]",
-            message:
-              "Prompt content, labels, list items, and commands are nonblank.",
+            message: "Statement text, names, and commands are nonblank.",
           },
           {
             selector: "TemplateLiteral[expressions.length!=0]",
@@ -102,13 +89,7 @@ export class ReceiptGrammar {
           },
           {
             selector: "TemplateElement[value.raw=/^\\s*$/]",
-            message:
-              "Prompt content, labels, list items, and commands are nonblank.",
-          },
-          {
-            selector:
-              "ImportDeclaration[source.value=/(\\.lace\\.ts|\\/AGENTS\\.ts)$/] > ImportSpecifier",
-            message: "Import a receipt's default Job as a static reference.",
+            message: "Statement text, names, and commands are nonblank.",
           },
         ],
       },
@@ -116,571 +97,367 @@ export class ReceiptGrammar {
   }
 }
 
-/** @typedef {{readonly node: import("eslint").Rule.Node; readonly message: string}} FieldIssue */
+/** @typedef {{readonly node: import("estree").Node; readonly message: string}} FieldIssue */
+/** @typedef {{readonly node: import("estree").Node; readonly position: string}} ValueRequest */
 
-/** Position checks keep stage names separate from schema field selectors. */
+/** Fixed declaration positions distinguish schema fields from arbitrary map names. */
 class ReceiptFieldGrammar {
   /** @returns {import("eslint").Rule.RuleModule} */
   static rule() {
     return {
       create(context) {
-        const grammar = new ReceiptFieldGrammar(context);
-        return grammar.listeners();
+        return new ReceiptFieldGrammar(context).listeners();
       },
     };
   }
-
   /** @param {import("eslint").Rule.RuleContext} context */
   constructor(context) {
     this.context = context;
   }
-
   /** @returns {import("eslint").Rule.RuleListener} */
   listeners() {
     return {
-      ":matches(Property[key.name=/^(content|label|script)$/], Property[key.value=/^(content|label|script)$/]):not([value.type='Literal'], [value.type='TemplateLiteral'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Write prompt content, labels, and commands as literals.",
-          };
-          this.schema(issue);
-        },
-      ":matches(Property[key.name='stages'], Property[key.value='stages']):not([value.type='ObjectExpression'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Declare Job stages as a literal named object.",
-          };
-          this.schema(issue);
-        },
-      ":matches(Property[key.name='stages'], Property[key.value='stages']) > ObjectExpression[properties.length=0]":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Jobs contain at least one named stage.",
-          };
-          this.schema(issue);
-        },
-      ":matches(Property[key.name='items'], Property[key.value='items']):not([value.type='ObjectExpression'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Declare list items as literal named objects.",
-          };
-          this.schema(issue);
-        },
-      "ObjectExpression[properties.length=0]":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          switch (this.isItemMap(node)) {
-            case true: {
-              const issue = {
-                node,
-                message: "Bullet lists contain at least one named item.",
-              };
-              this.context.report(issue);
-              break;
-            }
-            case false:
-              break;
-          }
-        },
-      ObjectExpression: (node) => this.mapped(node),
-      ":matches(Property[key.name=/^(Statement|ShellCommand|PromptStatement|BulletList|Required|Prohibited)$/], Property[key.value=/^(Statement|ShellCommand|PromptStatement|BulletList|Required|Prohibited)$/])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => this.wrapper(node),
-      ":matches(Property[key.name='kind'], Property[key.value='kind'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Use mapped variants; kind fields are not supported.",
-          };
-          this.schema(issue);
-        },
-      ":matches(Property[key.name='cwd'], Property[key.value='cwd']):not([value.type='MemberExpression'][value.object.name='WorkingDirectory'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Use WorkingDirectory for shell cwd.",
-          };
-          this.schema(issue);
-        },
-      CallExpression: (node) => this.call(node),
-      ":matches(Property[key.name='stages'], Property[key.value='stages']) > ObjectExpression > Property:not([value.type='ObjectExpression'], [value.type='Identifier'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Job stages are literal objects or static Job references.",
-          };
-          this.stage(issue);
-        },
-      ":matches(Property[key.name='stages'], Property[key.value='stages']) > ObjectExpression > Property:not([key.type='Identifier'], [key.type='Literal'][key.raw=/^[\"']/])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Name Job stages with identifiers or string literals.",
-          };
-          this.stage(issue);
-        },
-      ":matches(Property[key.name='prompt'], Property[key.value='prompt']):not([value.type='ObjectExpression'], [value.type='CallExpression'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          switch (
-            node.type === "Property" &&
-            node.parent.type === "ObjectExpression" &&
-            this.isPayload(node.parent) &&
-            this.name(node.parent.parent) === "Statement"
-          ) {
-            case true: {
-              const issue = {
-                node,
-                message:
-                  "Standalone prompts are mapped objects or the literal content helper.",
-              };
-              this.context.report(issue);
-              break;
-            }
-            case false:
-              break;
-          }
-        },
-      Property: (node) => {
-        this.item(node);
-        this.normative(node);
-      },
-      ":matches(Property[key.name='entries'], Property[key.value='entries'])":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message: "Declare Job stages; the entries field is not supported.",
-          };
-          this.schema(issue);
-        },
-      "Property[value.type='Identifier']":
-        /** @param {import("eslint").Rule.Node} node */
-        (node) => {
-          /** @type {FieldIssue} */
-          const issue = {
-            node,
-            message:
-              "Nest literal context objects; Job references belong as named stage values.",
-          };
-          this.schema(issue);
-        },
+      VariableDeclarator: (node) => this.declaration(node),
+      ObjectExpression: (node) => this.object(node),
+      Property: (node) => this.field(node),
+      ExportNamedDeclaration: (node) => this.export(node),
     };
   }
-
-  /** @param {import("eslint").Rule.Node} node */
-  mapped(node) {
-    switch (
-      node.type === "ObjectExpression" &&
-      node.parent.type === "Property" &&
-      this.isStageProperty(node.parent)
-    ) {
-      case true:
-        this.single(node);
-        return;
-      case false:
-        break;
-    }
-    switch (this.isPromptPosition(node)) {
-      case true:
-        this.single(node);
-        break;
-      case false:
-        break;
-    }
-  }
-
-  /** @param {import("eslint").Rule.Node} node */
-  single(node) {
-    switch (
-      node.type === "ObjectExpression" &&
-      node.properties.length === 1 &&
-      0 in node.properties &&
-      node.properties[0].type === "Property" &&
-      this.isPromptPosition(node) ===
-        /^(PromptStatement|BulletList|Required|Prohibited)$/.test(
-          this.name(node.properties[0]),
-        ) &&
-      (!this.isItemProperty(node.parent) ||
-        /^(BulletList|Required|Prohibited)$/.test(
-          this.name(node.properties[0]),
-        )) &&
-      /^(stages|Statement|ShellCommand|PromptStatement|BulletList|Required|Prohibited)$/.test(
-        this.name(node.properties[0]),
-      )
-    ) {
-      case true:
-        return;
-      case false:
-        break;
-    }
-    /** @type {FieldIssue} */
-    const issue = {
-      node,
-      message: "Declare exactly one mapped variant or nested Job.",
-    };
-    this.context.report(issue);
-  }
-
-  /** @param {import("eslint").Rule.Node} node */
-  wrapper(node) {
-    switch (this.isStageProperty(node) || this.isItemProperty(node)) {
-      case true:
-        return;
-      case false:
-        break;
-    }
-    switch (
-      node.type === "Property" &&
-      node.value.type === "ObjectExpression" &&
-      node.parent.type === "ObjectExpression" &&
-      node.parent.properties.length === 1 &&
-      this.wrapperPosition(node)
-    ) {
-      case true:
-        return;
-      case false:
-        break;
-    }
-    /** @type {FieldIssue} */
-    const issue = {
-      node,
-      message:
-        "Mapped variants have one literal payload in their task or prompt position.",
-    };
-    this.context.report(issue);
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  wrapperPosition(node) {
-    switch (this.name(node)) {
-      case "Statement":
-      case "ShellCommand":
-        return (
-          node.type === "Property" &&
-          node.parent.type === "ObjectExpression" &&
-          this.isStageProperty(node.parent.parent)
-        );
-      case "PromptStatement":
-        return node.type === "Property" && this.isStandalonePrompt(node.parent);
-      case "BulletList":
-      case "Required":
-      case "Prohibited":
-        return node.type === "Property" && this.isPromptPosition(node.parent);
-    }
-    return false;
-  }
-
-  /** @param {import("eslint").Rule.Node} node */
-  call(node) {
-    switch (this.isContentCall(node) && this.isStandalonePrompt(node)) {
-      case true:
-        return;
-      case false:
-        /** @type {FieldIssue} */
-        const issue = {
-          node,
-          message:
-            "Receipts contain only imports, typed Job objects, literal context, static job references, and PromptStatement.content with one nonblank literal in a prompt position.",
-        };
-        this.context.report(issue);
-        break;
-    }
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isContentCall(node) {
-    return (
-      node.type === "CallExpression" &&
-      node.callee.type === "MemberExpression" &&
-      !node.callee.computed &&
-      !node.optional &&
-      !node.callee.optional &&
-      node.callee.object.type === "Identifier" &&
-      node.callee.object.name === "PromptStatement" &&
-      node.callee.property.type === "Identifier" &&
-      node.callee.property.name === "content" &&
-      node.arguments.length === 1 &&
-      0 in node.arguments &&
-      this.isTextLiteral(node.arguments[0])
-    );
-  }
-
-  /** @param {import("estree").Node} node @returns {boolean} */
-  isTextLiteral(node) {
-    switch (true) {
-      case node.type === "Literal":
-        return typeof node.value === "string" && node.value.trim().length > 0;
-      case node.type === "TemplateLiteral":
-        return (
-          node.expressions.length === 0 &&
-          0 in node.quasis &&
-          typeof node.quasis[0].value.cooked === "string" &&
-          node.quasis[0].value.cooked.trim().length > 0
-        );
-      case true:
-        break;
-    }
-    return false;
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isPromptPosition(node) {
-    switch (true) {
-      case node.type === "Program":
-        return false;
-      case true:
-        break;
-    }
-    return this.isStandalonePrompt(node) || this.isItemProperty(node.parent);
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isStandalonePrompt(node) {
-    return (
-      node.type !== "Program" &&
-      node.parent.type === "Property" &&
-      node.parent.value === node &&
-      this.name(node.parent) === "prompt" &&
-      node.parent.parent.type === "ObjectExpression" &&
-      this.isPayload(node.parent.parent) &&
-      this.name(node.parent.parent.parent) === "Statement"
-    );
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isPayload(node) {
-    return (
-      node.type === "ObjectExpression" &&
-      node.parent.type === "Property" &&
-      /^(Statement|BulletList|Required|Prohibited)$/.test(
-        this.name(node.parent),
-      ) &&
-      this.wrapperPosition(node.parent)
-    );
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isItemMap(node) {
-    return (
-      node.type === "ObjectExpression" &&
-      node.parent.type === "Property" &&
-      this.name(node.parent) === "items" &&
-      node.parent.parent.type === "ObjectExpression" &&
-      this.isPayload(node.parent.parent) &&
-      /^(BulletList|Required|Prohibited)$/.test(
-        this.name(node.parent.parent.parent),
-      )
-    );
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isItemProperty(node) {
-    return node.type === "Property" && this.isItemMap(node.parent);
-  }
-
-  /** @param {import("eslint").Rule.Node} node */
-  item(node) {
-    switch (this.isItemProperty(node)) {
-      case false:
-        return;
-      case true:
-        break;
-    }
-    switch (
-      node.type === "Property" &&
-      !node.computed &&
-      !node.method &&
-      !node.shorthand &&
-      (node.key.type === "Identifier" ||
-        (node.key.type === "Literal" &&
-          typeof node.key.value === "string" &&
-          node.key.value.trim().length > 0)) &&
-      (this.isTextLiteral(node.value) || node.value.type === "ObjectExpression")
-    ) {
-      case true:
-        return;
-      case false:
-        break;
-    }
-    const issue = {
-      node,
-      message:
-        "Named bullet items require explicit names and literal text or mapped BulletList groups.",
-    };
-    this.context.report(issue);
-  }
-
-  /** @param {import("eslint").Rule.Node} node */
-  normative(node) {
-    switch (true) {
-      case node.type === "Property" && this.isPayload(node.parent):
-        break;
-      case true:
-        return;
-    }
-    switch (true) {
-      case node.type === "Property" &&
-        node.parent.type === "ObjectExpression" &&
-        /^(Required|Prohibited)$/.test(this.name(node.parent.parent)) &&
-        this.name(node) !== "items": {
-        /** @type {FieldIssue} */
-        const issue = {
-          node,
-          message: "Typed normative payloads contain only items.",
-        };
-        this.context.report(issue);
-        return;
-      }
-      case node.type === "Property" &&
-        node.parent.type === "ObjectExpression" &&
-        this.name(node.parent.parent) === "BulletList" &&
-        this.name(node) === "label":
-        break;
-      case true:
-        return;
-    }
-    switch (true) {
-      case node.type === "Property" &&
-        node.value.type === "Literal" &&
-        [
-          "Preferred",
-          "Preferred actions",
-          "Required",
-          "Required actions",
-          "Prohibited",
-          "Prohibited actions",
-        ].includes(String(node.value.value)):
-      case node.type === "Property" &&
-        node.value.type === "TemplateLiteral" &&
-        node.value.expressions.length === 0 &&
-        0 in node.value.quasis &&
-        [
-          "Preferred",
-          "Preferred actions",
-          "Required",
-          "Required actions",
-          "Prohibited",
-          "Prohibited actions",
-        ].includes(String(node.value.quasis[0].value.cooked)): {
-        /** @type {FieldIssue} */
-        const issue = {
-          node,
-          message:
-            "Use Required or Prohibited typed prompts for normative categories.",
-        };
-        this.context.report(issue);
-        break;
-      }
-      case true:
-        break;
-    }
-  }
-
-  /** @param {FieldIssue} issue */
-  schema(issue) {
-    switch (
-      this.isStageProperty(this.property(issue.node)) ||
-      this.isItemProperty(this.property(issue.node))
-    ) {
-      case false:
-        this.context.report(issue);
-        break;
-      case true:
-        break;
-    }
-  }
-
-  /** @param {FieldIssue} issue */
-  stage(issue) {
-    switch (
-      this.isStageProperty(this.property(issue.node)) ||
-      this.isItemProperty(this.property(issue.node))
-    ) {
-      case true:
-        this.context.report(issue);
-        break;
-      case false:
-        break;
-    }
-  }
-
-  /** @param {import("eslint").Rule.Node} node */
-  property(node) {
-    let current = node;
-    while (current.type !== "Property" && current.type !== "Program") {
-      current = current.parent;
-    }
-    return current;
-  }
-
-  // Boolean predicates adapt ESLint's raw AST position at the lint boundary.
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isJobObject(node) {
-    return (
-      node.type !== "Program" &&
-      (node.parent.type === "VariableDeclarator" ||
-        (node.parent.type === "Property" && this.isStageProperty(node.parent)))
-    );
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isStageProperty(node) {
-    return node.type === "Property" && this.isStageMap(node.parent);
-  }
-
-  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
-  isStageMap(node) {
-    return (
-      node.type === "ObjectExpression" &&
-      node.parent.type === "Property" &&
-      this.name(node.parent) === "stages" &&
-      this.isJobObject(node.parent.parent)
-    );
-  }
-
-  /** @param {import("estree").Node} node */
+  /** @param {import("estree").Node} node @returns {string} */
   name(node) {
-    switch (true) {
-      case node.type === "Property":
-        return this.key(node.key);
-      case true:
-        break;
-    }
-    return "";
-  }
-
-  /** @param {import("estree").Node} node */
-  key(node) {
     switch (true) {
       case node.type === "Identifier":
         return node.name;
       case node.type === "Literal":
         return String(node.value);
       case true:
-        break;
+        return "";
     }
     return "";
+  }
+  /** @param {import("eslint").Rule.Node} node @returns {string} */
+  position(node) {
+    switch (true) {
+      case node.parent !== null && node.parent.type === "VariableDeclarator":
+        return this.annotation(node.parent.id);
+      case node.parent !== null && node.parent.type === "Property":
+        return this.valuePosition(node.parent);
+      case true:
+        return "";
+    }
+    return "";
+  }
+  /** Read the parser's TypeScript annotation at the raw AST boundary.
+   * @param {import("estree").Node} node @returns {string}
+   */
+  annotation(node) {
+    switch (true) {
+      case "typeAnnotation" in node &&
+        typeof node.typeAnnotation === "object" &&
+        node.typeAnnotation !== null &&
+        "typeAnnotation" in node.typeAnnotation:
+        return this.typeName(node.typeAnnotation.typeAnnotation);
+      case true:
+        return "";
+    }
+    return "";
+  }
+  /** @param {unknown} annotation @returns {string} */
+  typeName(annotation) {
+    switch (true) {
+      case typeof annotation === "object" &&
+        annotation !== null &&
+        "typeName" in annotation &&
+        typeof annotation.typeName === "object" &&
+        annotation.typeName !== null &&
+        "name" in annotation.typeName &&
+        typeof annotation.typeName.name === "string":
+        return annotation.typeName.name;
+      case true:
+        return "";
+    }
+    return "";
+  }
+  /** @param {import("eslint").Rule.Node & import("estree").Property} node @returns {string} */
+  valuePosition(node) {
+    const owner = this.position(node.parent);
+    const name = this.name(node.key);
+    switch (owner) {
+      case "Job":
+        switch (name) {
+          case "stages":
+            return "stage-map";
+          default:
+            return "";
+        }
+      case "Stage":
+        switch (name) {
+          case "spec":
+            return "statement-map";
+          case "Required":
+            return "Required";
+          case "Prohibited":
+            return "Prohibited";
+          default:
+            return "";
+        }
+      case "Required":
+      case "Prohibited":
+        switch (name) {
+          case "statements":
+            return "statement-map";
+          default:
+            return "";
+        }
+      case "stage-map":
+        return "Stage";
+      case "statement-map":
+        return "Statement";
+      case "Statement":
+        switch (name) {
+          case "content":
+            return "text";
+          case "ShellCommand":
+            return "ShellCommand";
+          default:
+            return "";
+        }
+      case "ShellCommand":
+        switch (name) {
+          case "cwd":
+            return "cwd";
+          case "script":
+            return "text";
+          default:
+            return "";
+        }
+      default:
+        return "";
+    }
+  }
+  /** @param {import("estree").VariableDeclarator} node */
+  declaration(node) {
+    switch (
+      node.id.type === "Identifier" &&
+      node.id.name === "receipt" &&
+      this.annotation(node.id) !== "Job"
+    ) {
+      case true: {
+        const issue = { node, message: "The receipt root must be a Job." };
+        this.context.report(issue);
+        break;
+      }
+      case false:
+        break;
+    }
+    switch (node.init) {
+      case null:
+      case undefined: {
+        const issue = { node, message: "Initialize each context binding." };
+        this.context.report(issue);
+        break;
+      }
+      default: {
+        const request = { node: node.init, position: this.annotation(node.id) };
+        this.value(request);
+      }
+    }
+  }
+  /** @param {import("estree").ExportNamedDeclaration} node */
+  export(node) {
+    switch (true) {
+      case node.declaration?.type === "VariableDeclaration":
+        node.declaration.declarations.forEach((declaration) =>
+          this.exportedBinding(declaration),
+        );
+        break;
+      case true: {
+        const issue = {
+          node,
+          message: "Export typed Stage or Statement declarations only.",
+        };
+        this.context.report(issue);
+        break;
+      }
+    }
+  }
+  /** @param {import("estree").VariableDeclarator} node */
+  exportedBinding(node) {
+    switch (this.annotation(node.id)) {
+      case "Stage":
+      case "Statement":
+        break;
+      default: {
+        const issue = {
+          node,
+          message: "Named exports are typed Stage or Statement bindings.",
+        };
+        this.context.report(issue);
+      }
+    }
+  }
+  /** @param {import("eslint").Rule.Node & import("estree").ObjectExpression} node */
+  object(node) {
+    const position = this.position(node);
+    /** @type {string[]} */
+    let fields = [];
+    switch (position) {
+      case "Job":
+        fields = ["stages"];
+        break;
+      case "Stage":
+        fields = ["spec", "Required", "Prohibited"];
+        break;
+      case "Required":
+      case "Prohibited":
+        fields = ["statements"];
+        break;
+      case "Statement":
+        fields = ["content", "ShellCommand"];
+        break;
+      case "ShellCommand":
+        fields = ["cwd", "script"];
+        break;
+      case "stage-map":
+      case "statement-map":
+        return;
+      default: {
+        const issue = {
+          node,
+          message: "Use an object only in its fixed declaration position.",
+        };
+        this.context.report(issue);
+        return;
+      }
+    }
+    const names = node.properties.map((property) =>
+      this.propertyName(property),
+    );
+    switch (
+      names.length === fields.length &&
+      fields.every((field) => names.includes(field))
+    ) {
+      case true:
+        break;
+      case false: {
+        const issue = {
+          node,
+          message: `Expected exactly ${fields.join(", ")} fields.`,
+        };
+        this.context.report(issue);
+      }
+    }
+  }
+  /** @param {import("estree").Node} node @returns {string} */
+  propertyName(node) {
+    switch (true) {
+      case node.type === "Property":
+        return this.name(node.key);
+      case true:
+        return "";
+    }
+    return "";
+  }
+  /** @param {import("eslint").Rule.Node & import("estree").Property} node */
+  field(node) {
+    switch (
+      node.key.type === "Identifier" ||
+      (node.key.type === "Literal" && typeof node.key.value === "string")
+    ) {
+      case true:
+        break;
+      case false: {
+        const issue = {
+          node,
+          message: "Use explicit identifier or string literal names.",
+        };
+        this.context.report(issue);
+      }
+    }
+    const request = { node: node.value, position: this.valuePosition(node) };
+    this.value(request);
+  }
+  /** @param {ValueRequest} request */
+  value(request) {
+    const { node, position } = request;
+    switch (position) {
+      case "Stage":
+        switch (node.type === "Identifier") {
+          case true:
+            return;
+          case false:
+            break;
+        }
+        break;
+      case "Statement":
+        switch (true) {
+          case node.type === "Identifier":
+            return;
+          case node.type === "Literal":
+          case node.type === "TemplateLiteral":
+            this.text(node);
+            return;
+          case true:
+            break;
+        }
+        break;
+      case "text":
+        this.text(node);
+        return;
+      case "cwd":
+        switch (
+          node.type === "MemberExpression" &&
+          !node.computed &&
+          node.object.type === "Identifier" &&
+          node.object.name === "WorkingDirectory" &&
+          node.property.type === "Identifier" &&
+          ["ProjectRoot", "LibraryRoot"].includes(node.property.name)
+        ) {
+          case true:
+            return;
+          case false: {
+            const issue = {
+              node,
+              message: "Use a WorkingDirectory enum literal for cwd.",
+            };
+            this.context.report(issue);
+            return;
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    switch (node.type === "ObjectExpression" && position !== "") {
+      case true:
+        break;
+      case false: {
+        const issue = {
+          node,
+          message: "Use literal context in its fixed declaration position.",
+        };
+        this.context.report(issue);
+      }
+    }
+  }
+  /** @param {import("estree").Node} node */
+  text(node) {
+    switch (true) {
+      case node.type === "Literal" &&
+        typeof node.value === "string" &&
+        node.value.trim().length > 0:
+      case node.type === "TemplateLiteral" &&
+        node.expressions.length === 0 &&
+        node.quasis.length === 1 &&
+        (node.quasis[0]?.value.cooked || "").trim().length > 0:
+        break;
+      case true: {
+        const issue = {
+          node,
+          message: "Write nonblank literal statement content or script.",
+        };
+        this.context.report(issue);
+      }
+    }
   }
 }
