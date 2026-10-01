@@ -42,7 +42,7 @@ export class ReceiptGrammar {
           "error",
           {
             selector:
-              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, ArrayExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, TSTypeAnnotation, TSTypeReference)",
+              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, ArrayExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, CallExpression, TSTypeAnnotation, TSTypeReference)",
             message:
               "Receipts contain only imports, typed Job objects, literal context, and static job references.",
           },
@@ -83,7 +83,7 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              "MemberExpression:not(Property > MemberExpression), MemberExpression[computed=true]",
+              "MemberExpression:not(Property > MemberExpression, CallExpression > MemberExpression), MemberExpression[computed=true]",
             message: "Member access is limited to enum fields.",
           },
           {
@@ -185,6 +185,7 @@ class ReceiptFieldGrammar {
           };
           this.schema(issue);
         },
+      CallExpression: (node) => this.call(node),
       ArrayExpression: (node) => this.array(node),
       "ArrayExpression[elements.length=0]":
         /** @param {import("eslint").Rule.Node} node */
@@ -216,7 +217,7 @@ class ReceiptFieldGrammar {
           };
           this.stage(issue);
         },
-      ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(ObjectExpression)":
+      ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(ObjectExpression, CallExpression)":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
           /** @type {FieldIssue} */
@@ -249,6 +250,81 @@ class ReceiptFieldGrammar {
           this.schema(issue);
         },
     };
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  call(node) {
+    switch (this.isContentCall(node) && this.isPromptPosition(node)) {
+      case true:
+        return;
+      case false:
+        /** @type {FieldIssue} */
+        const issue = {
+          node,
+          message:
+            "Receipts contain only imports, typed Job objects, literal context, static job references, and PromptStatement.content with one nonblank literal in a prompt position.",
+        };
+        this.context.report(issue);
+        break;
+    }
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isContentCall(node) {
+    return (
+      node.type === "CallExpression" &&
+      node.callee.type === "MemberExpression" &&
+      !node.callee.computed &&
+      !node.optional &&
+      !node.callee.optional &&
+      node.callee.object.type === "Identifier" &&
+      node.callee.object.name === "PromptStatement" &&
+      node.callee.property.type === "Identifier" &&
+      node.callee.property.name === "content" &&
+      node.arguments.length === 1 &&
+      0 in node.arguments &&
+      this.isTextLiteral(node.arguments[0])
+    );
+  }
+
+  /** @param {import("estree").Node} node @returns {boolean} */
+  isTextLiteral(node) {
+    switch (true) {
+      case node.type === "Literal":
+        return typeof node.value === "string" && node.value.trim().length > 0;
+      case node.type === "TemplateLiteral":
+        return (
+          node.expressions.length === 0 &&
+          0 in node.quasis &&
+          typeof node.quasis[0].value.cooked === "string" &&
+          node.quasis[0].value.cooked.trim().length > 0
+        );
+      case true:
+        break;
+    }
+    return false;
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isPromptPosition(node) {
+    switch (true) {
+      case node.type === "Program":
+        return false;
+      case true:
+        break;
+    }
+    const parent = node.parent;
+    return (
+      (parent.type === "Property" &&
+        parent.value === node &&
+        this.name(parent) === "prompt" &&
+        parent.parent.type === "ObjectExpression" &&
+        this.isStageProperty(parent.parent.parent)) ||
+      (parent.type === "ArrayExpression" &&
+        parent.parent.type === "Property" &&
+        this.name(parent.parent) === "items" &&
+        this.isPromptPosition(parent.parent.parent))
+    );
   }
 
   /** @param {import("eslint").Rule.Node} node */

@@ -28,6 +28,12 @@ export interface PromptStatement {
   readonly content: string;
 }
 
+export abstract class PromptStatement {
+  static content(content: string): PromptStatement {
+    return { kind: PromptKind.Statement, content };
+  }
+}
+
 export interface BulletList {
   readonly kind: PromptKind.BulletList;
   readonly label?: string;
