@@ -95,17 +95,17 @@ class DeclarationCases {
     },
     {
       scenario: "a bullet list without items",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required" } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Checks" } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a string instead of bullet items",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required", items: "Read context." } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Checks", items: "Read context." } } } } } }`,
       diagnostic: "not assignable",
     },
     {
       scenario: "a numbered bullet item",
-      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Required", items: {bullet1: 42} } } } } } }`,
+      source: `{ stages: { stage1: { Statement: { prompt: { BulletList: { label: "Checks", items: {bullet1: 42} } } } } } }`,
       diagnostic: "not assignable",
     },
     {
@@ -189,7 +189,7 @@ export default receipt;`;
 
 test("structured bullets permit optional labels, mixed items, and recursive nesting", () => {
   const source = DeclarationCases.receipt(
-    `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { Statement: { prompt: { BulletList: { label: "Required", items: {bullet1: "Read context."} } } } }, stage3: { Statement: { prompt: { BulletList: { "items": {bullet1: "Use the existing model.", bullet2: { BulletList: { "label": "Prohibited", "items": {bullet1: "Change core during receipt authoring."} } }, bullet3: { BulletList: { items: {bullet1: { BulletList: { label: "Preferred", items: {bullet1: "Read the model first."} } }} } }} } } } } } }`,
+    `{ stages: { stage1: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } }, stage2: { Statement: { prompt: { BulletList: { label: "Checks", items: {bullet1: "Read context."} } } } }, stage3: { Statement: { prompt: { BulletList: { "items": {bullet1: "Use the existing model.", bullet2: { BulletList: { "label": "Restrictions", "items": {bullet1: "Change core during receipt authoring."} } }, bullet3: { BulletList: { items: {bullet1: { BulletList: { label: "Preferred", items: {bullet1: "Read the model first."} } }} } }} } } } } } }`,
   );
   expect(new ReceiptCompilation(source).messages()).toEqual([]);
   expect(new ReceiptSyntax(source).messages()).toEqual([]);
@@ -264,7 +264,7 @@ import { type ShellCommand, type PromptStatement } from "@meta-cortex/lace";
 const child: Job = { stages: { read: { Statement: { prompt: { PromptStatement: { content: "Read context." } } } } } };
 const command: ShellCommand = { cwd: WorkingDirectory.LibraryRoot, script: "bun run check" };
 const prompt: PromptStatement = { content: "Read context." };
-const bullets: BulletList = { label: "Required", items: {bullet1: prompt.content} };
+const bullets: BulletList = { label: "Checks", items: {bullet1: prompt.content} };
 const nested: BulletList = { items: {bullet1: { BulletList: bullets }} };
 const receipt: Job = { stages: { stage1: child, stage2: { ShellCommand: command } } };
 ${example.mutation}`;
@@ -275,7 +275,7 @@ ${example.mutation}`;
 
 test("the same BulletList type works standalone and recursively nested", () => {
   const source = `${DeclarationCases.imports}
-const bullets: BulletList = { label: "Required", items: {bullet1: "Read context."} };
+const bullets: BulletList = { label: "Checks", items: {bullet1: "Read context."} };
 const nested: BulletList = { items: {bullet1: { BulletList: bullets }} };
 const receipt: Job = { stages: { stage1: { Statement: { prompt: { BulletList: bullets } } }, stage2: { Statement: { prompt: { BulletList: nested } } } } };`;
   expect(new ReceiptCompilation(source).messages()).toEqual([]);

@@ -10,7 +10,7 @@ class BulletCases {
 }
 for (const items of [
   `{ read: "Read context.", 'compile receipt': \`Compile the receipt.\` }`,
-  `{ required: { BulletList: { label: "Required", items: { read: "Read.", checks: { BulletList: { items: { compile: "Compile." } } } } } } }`,
+  `{ required: { BulletList: { label: "Checks", items: { read: "Read.", checks: { BulletList: { items: { compile: "Compile." } } } } } } }`,
 ]) {
   test(`named literal bullet maps compile and pass grammar: ${items}`, () => {
     const source = BulletCases.receipt(items);

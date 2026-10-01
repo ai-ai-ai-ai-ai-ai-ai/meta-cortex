@@ -217,7 +217,7 @@ class GrammarCases {
     },
     {
       scenario: "empty bullets",
-      source: `{ BulletList: { label: "Required", items: {} } }`,
+      source: `{ BulletList: { label: "Checks", items: {} } }`,
       diagnostic: "at least one named item",
     },
     {
@@ -227,7 +227,7 @@ class GrammarCases {
     },
     {
       scenario: "empty nested bullets",
-      source: `{ BulletList: { items: {bullet1: { BulletList: { label: "Required", items: {} } }} } }`,
+      source: `{ BulletList: { items: {bullet1: { BulletList: { label: "Checks", items: {} } }} } }`,
       diagnostic: "at least one named item",
     },
     {
@@ -237,7 +237,7 @@ class GrammarCases {
     },
     {
       scenario: "a blank bullet",
-      source: `{ BulletList: { label: "Required", items: {bullet1: " "} } }`,
+      source: `{ BulletList: { label: "Checks", items: {bullet1: " "} } }`,
       diagnostic: "nonblank",
     },
     {
@@ -288,17 +288,17 @@ class GrammarCases {
     },
     {
       scenario: "dynamic quoted items",
-      source: `{ BulletList: { label: "Required", "items": Promise.name } }`,
+      source: `{ BulletList: { label: "Checks", "items": Promise.name } }`,
       diagnostic: "literal named objects",
     },
     {
       scenario: "a runtime bullet",
-      source: `{ BulletList: { label: "Required", items: {bullet1: Promise.name} } }`,
+      source: `{ BulletList: { label: "Checks", items: {bullet1: Promise.name} } }`,
       diagnostic: "literal text or mapped BulletList groups",
     },
     {
       scenario: "an enum as prose",
-      source: `{ BulletList: { label: "Required", items: {bullet1: WorkingDirectory.LibraryRoot} } }`,
+      source: `{ BulletList: { label: "Checks", items: {bullet1: WorkingDirectory.LibraryRoot} } }`,
       diagnostic: "literal text or mapped BulletList groups",
     },
     {

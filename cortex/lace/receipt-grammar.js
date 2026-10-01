@@ -195,7 +195,7 @@ class ReceiptFieldGrammar {
           }
         },
       ObjectExpression: (node) => this.mapped(node),
-      ":matches(Property[key.name=/^(Statement|ShellCommand|PromptStatement|BulletList)$/], Property[key.value=/^(Statement|ShellCommand|PromptStatement|BulletList)$/])":
+      ":matches(Property[key.name=/^(Statement|ShellCommand|PromptStatement|BulletList|Required|Prohibited)$/], Property[key.value=/^(Statement|ShellCommand|PromptStatement|BulletList|Required|Prohibited)$/])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => this.wrapper(node),
       ":matches(Property[key.name='kind'], Property[key.value='kind'])":
@@ -261,7 +261,10 @@ class ReceiptFieldGrammar {
               break;
           }
         },
-      Property: (node) => this.item(node),
+      Property: (node) => {
+        this.item(node);
+        this.normative(node);
+      },
       ":matches(Property[key.name='entries'], Property[key.value='entries'])":
         /** @param {import("eslint").Rule.Node} node */
         (node) => {
@@ -316,10 +319,14 @@ class ReceiptFieldGrammar {
       0 in node.properties &&
       node.properties[0].type === "Property" &&
       this.isPromptPosition(node) ===
-        /^(PromptStatement|BulletList)$/.test(this.name(node.properties[0])) &&
+        /^(PromptStatement|BulletList|Required|Prohibited)$/.test(
+          this.name(node.properties[0]),
+        ) &&
       (!this.isItemProperty(node.parent) ||
-        this.name(node.properties[0]) === "BulletList") &&
-      /^(stages|Statement|ShellCommand|PromptStatement|BulletList)$/.test(
+        /^(BulletList|Required|Prohibited)$/.test(
+          this.name(node.properties[0]),
+        )) &&
+      /^(stages|Statement|ShellCommand|PromptStatement|BulletList|Required|Prohibited)$/.test(
         this.name(node.properties[0]),
       )
     ) {
@@ -378,6 +385,8 @@ class ReceiptFieldGrammar {
       case "PromptStatement":
         return node.type === "Property" && this.isStandalonePrompt(node.parent);
       case "BulletList":
+      case "Required":
+      case "Prohibited":
         return node.type === "Property" && this.isPromptPosition(node.parent);
     }
     return false;
@@ -465,7 +474,9 @@ class ReceiptFieldGrammar {
     return (
       node.type === "ObjectExpression" &&
       node.parent.type === "Property" &&
-      /^(Statement|BulletList)$/.test(this.name(node.parent)) &&
+      /^(Statement|BulletList|Required|Prohibited)$/.test(
+        this.name(node.parent),
+      ) &&
       this.wrapperPosition(node.parent)
     );
   }
@@ -478,7 +489,9 @@ class ReceiptFieldGrammar {
       this.name(node.parent) === "items" &&
       node.parent.parent.type === "ObjectExpression" &&
       this.isPayload(node.parent.parent) &&
-      this.name(node.parent.parent.parent) === "BulletList"
+      /^(BulletList|Required|Prohibited)$/.test(
+        this.name(node.parent.parent.parent),
+      )
     );
   }
 
@@ -517,6 +530,68 @@ class ReceiptFieldGrammar {
         "Named bullet items require explicit names and literal text or mapped BulletList groups.",
     };
     this.context.report(issue);
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  normative(node) {
+    switch (true) {
+      case node.type === "Property" && this.isPayload(node.parent):
+        break;
+      case true:
+        return;
+    }
+    switch (true) {
+      case node.type === "Property" &&
+        node.parent.type === "ObjectExpression" &&
+        /^(Required|Prohibited)$/.test(this.name(node.parent.parent)) &&
+        this.name(node) !== "items": {
+        /** @type {FieldIssue} */
+        const issue = {
+          node,
+          message: "Typed normative payloads contain only items.",
+        };
+        this.context.report(issue);
+        return;
+      }
+      case node.type === "Property" &&
+        node.parent.type === "ObjectExpression" &&
+        this.name(node.parent.parent) === "BulletList" &&
+        this.name(node) === "label":
+        break;
+      case true:
+        return;
+    }
+    switch (true) {
+      case node.type === "Property" &&
+        node.value.type === "Literal" &&
+        [
+          "Required",
+          "Required actions",
+          "Prohibited",
+          "Prohibited actions",
+        ].includes(String(node.value.value)):
+      case node.type === "Property" &&
+        node.value.type === "TemplateLiteral" &&
+        node.value.expressions.length === 0 &&
+        0 in node.value.quasis &&
+        [
+          "Required",
+          "Required actions",
+          "Prohibited",
+          "Prohibited actions",
+        ].includes(String(node.value.quasis[0].value.cooked)): {
+        /** @type {FieldIssue} */
+        const issue = {
+          node,
+          message:
+            "Use Required or Prohibited typed prompts for normative categories.",
+        };
+        this.context.report(issue);
+        break;
+      }
+      case true:
+        break;
+    }
   }
 
   /** @param {FieldIssue} issue */

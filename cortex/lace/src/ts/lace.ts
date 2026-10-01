@@ -23,19 +23,68 @@ export interface BulletList {
     Record<
       string,
       | string
-      | { readonly BulletList: BulletList; readonly PromptStatement?: never }
+      | {
+          readonly BulletList: BulletList;
+          readonly PromptStatement?: never;
+          readonly Required?: never;
+          readonly Prohibited?: never;
+        }
+      | {
+          readonly Required: Required;
+          readonly PromptStatement?: never;
+          readonly BulletList?: never;
+          readonly Prohibited?: never;
+        }
+      | {
+          readonly Prohibited: Prohibited;
+          readonly PromptStatement?: never;
+          readonly BulletList?: never;
+          readonly Required?: never;
+        }
     >
   >;
 }
 
+export interface Required {
+  readonly items: BulletList["items"];
+}
+
+export interface Prohibited {
+  readonly items: BulletList["items"];
+}
+
 export type Prompt =
-  | { readonly PromptStatement: PromptStatement; readonly BulletList?: never }
-  | { readonly BulletList: BulletList; readonly PromptStatement?: never };
+  | {
+      readonly PromptStatement: PromptStatement;
+      readonly BulletList?: never;
+      readonly Required?: never;
+      readonly Prohibited?: never;
+    }
+  | {
+      readonly BulletList: BulletList;
+      readonly PromptStatement?: never;
+      readonly Required?: never;
+      readonly Prohibited?: never;
+    }
+  | {
+      readonly Required: Required;
+      readonly PromptStatement?: never;
+      readonly BulletList?: never;
+      readonly Prohibited?: never;
+    }
+  | {
+      readonly Prohibited: Prohibited;
+      readonly PromptStatement?: never;
+      readonly BulletList?: never;
+      readonly Required?: never;
+    };
 
 export abstract class PromptStatement {
   static content(content: string): {
     readonly PromptStatement: PromptStatement;
     readonly BulletList?: never;
+    readonly Required?: never;
+    readonly Prohibited?: never;
   } {
     return { PromptStatement: { content } };
   }
