@@ -7,10 +7,10 @@ import context from "./context.lace.ts";
 import compile from "./compile.lace.ts";
 import verify from "./verify.lace.ts";
 
-const checks: Job = { entries: { compile: compile, verify: verify } };
+const checks: Job = { stages: { compile: compile, verify: verify } };
 
 const receipt: Job = {
-  entries: {
+  stages: {
     context: context,
     step2: {
       kind: TaskKind.Statement,

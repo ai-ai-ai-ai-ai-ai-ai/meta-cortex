@@ -4,7 +4,7 @@ import compile from "./compile.lace.ts";
 import verify from "./verify.lace.ts";
 
 const receipt: Job = {
-  entries: { context: context, compile: compile, verify: verify },
+  stages: { context: context, compile: compile, verify: verify },
 };
 
 export default receipt;

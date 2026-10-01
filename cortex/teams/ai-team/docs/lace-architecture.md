@@ -35,19 +35,19 @@ Lace itself; that entry point does not move subject receipts into the core.
 ### Object hierarchy
 
 - Import `Job` as a type and the required enums from the model.
-- Declare `const receipt: Job = { entries: { context: context } }` and `export default receipt`.
-- Declare each child Job directly as `{ entries: { context: context } }` within its parent.
+- Declare `const receipt: Job = { stages: { context: context } }` and `export default receipt`.
+- Declare each child Job directly as `{ stages: { context: context } }` within its parent.
 - Give each task or child Job an explicit unique identifier or string literal key
-  within `entries`, in source declaration order.
+  within `stages`, in source declaration order.
 - Use top-level `const name: Job` objects for reusable local Jobs.
 - Import another receipt's default Job to reuse canonical context.
 
-`Job` is a readonly interface whose `entries` field is
-`Readonly<Record<string, Entry>>`. Declare it as a nonempty plain literal map.
+`Job` is a readonly interface whose `stages` field is
+`Readonly<Record<string, Stage>>`. Declare it as a nonempty plain literal map.
 Use explicit properties such as `compile: compile` for static Job references.
-Names such as `label`, `items`, `entries`, `content`, and `script` are valid entry
-keys; they do not become schema fields at that position.
-`Entry = Job | Task` allows each entry to be another directory or a context task.
+Names such as `label`, `items`, `stages`, `entries`, `content`, and `script` are valid
+stage keys; they do not become schema fields at that position.
+`Stage = Job | Task` allows each stage to be another directory or a context task.
 Jobs represent directories; tasks represent files. Job maps and prompt lists must be
 nonempty under the declaration grammar. There are no builders, constructors,
 methods, or runtime collection operations in the model.
@@ -61,19 +61,19 @@ Each fragment is a separate receipt body.
 The grammar requires an explicitly typed `receipt` binding.
 
 ```typescript
-const receipt = { entries: { context: context } };
+const receipt = { stages: { context: context } };
 export default receipt;
 ```
 
 **Preferred:** type the root and enclose child Jobs in place.
-The compiler checks every nested entry through that annotation.
+The compiler checks every nested stage through that annotation.
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     context: context,
     step2: {
-      entries: { compile: compile, verify: verify },
+      stages: { compile: compile, verify: verify },
     },
   },
 };
@@ -82,18 +82,18 @@ export default receipt;
 
 ### Readonly declarations
 
-All model fields are readonly, including Job entries, prompt lists, and nested
+All model fields are readonly, including Job stages, prompt lists, and nested
 BulletLists. TypeScript rejects mutation through these types. Receipts contain
 literal declarations; they neither copy nor freeze JavaScript objects at runtime.
 Readonly types do not prevent an external mutable alias from changing an object.
 Read receipt source as context rather than importing it to run code.
 
-**Prohibited:** mutate a typed Job. The compiler rejects assigning entries,
+**Prohibited:** mutate a typed Job. The compiler rejects assigning stages,
 and the receipt grammar rejects method calls.
 
 ```typescript
-const receipt: Job = { entries: { context: context } };
-receipt.entries.compile = compile;
+const receipt: Job = { stages: { context: context } };
+receipt.stages.compile = compile;
 export default receipt;
 ```
 
@@ -101,8 +101,8 @@ export default receipt;
 The existing context remains a reference in the declared tree.
 
 ```typescript
-const checks: Job = { entries: { compile: compile, verify: verify } };
-const receipt: Job = { entries: { context: context, checks: checks } };
+const checks: Job = { stages: { compile: compile, verify: verify } };
+const receipt: Job = { stages: { context: context, checks: checks } };
 export default receipt;
 ```
 
@@ -122,7 +122,7 @@ The compiler rejects the `script` field on that variant.
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.Statement,
       prompt: { kind: PromptKind.Statement, content: "Read context." },
@@ -137,7 +137,7 @@ export default receipt;
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.Statement,
       prompt: {
@@ -176,7 +176,7 @@ The compiler requires a structured Prompt.
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.Statement,
       prompt: "Read context. Compile the receipt.",
@@ -191,7 +191,7 @@ The nested group below omits its optional label.
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.Statement,
       prompt: {
@@ -239,7 +239,7 @@ This type-checks but duplicates its maintenance owner.
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.ShellCommand,
       cwd: WorkingDirectory.LibraryRoot,
@@ -253,7 +253,7 @@ export default receipt;
 **Preferred:** reference the imported compilation Job.
 
 ```typescript
-const receipt: Job = { entries: { context: context, compile: compile } };
+const receipt: Job = { stages: { context: context, compile: compile } };
 export default receipt;
 ```
 
@@ -307,12 +307,12 @@ capability when it needs a separate core assignment.
 
 The [grammar](../../../lace/receipt-grammar.js) permits model and receipt imports,
 typed const Job objects, literal tasks and prompts, and static Job references in
-named entries maps. The root binding is named `receipt` and default-exported.
+named stages maps. The root binding is named `receipt` and default-exported.
 Enum fields use `TaskKind` or `PromptKind` for `kind`, and `WorkingDirectory` for
 `cwd`. Text and labels must be nonblank literals; maps and lists must be nonempty.
-Entry maps require explicit unique identifier or string literal keys and literal
-objects or static Job references as values. Entry arrays, computed keys, spreads,
-methods, and nonliteral entry maps are invalid.
+Stage maps require explicit unique identifier or string literal keys and literal
+objects or static Job references as values. Stage arrays, computed keys, spreads,
+methods, and nonliteral stage maps are invalid.
 
 The grammar combines standard ESLint restrictions and duplicate-key checks with
 the local `lace/declaration-fields` rule. That rule uses declaration position to
@@ -331,7 +331,7 @@ The compiler accepts a string expression; the grammar requires literal context.
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.Statement,
       prompt: { kind: PromptKind.Statement, content: Promise.name },
@@ -345,7 +345,7 @@ export default receipt;
 
 ```typescript
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.Statement,
       prompt: {

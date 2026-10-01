@@ -6,7 +6,7 @@ import {
 } from "./src/ts/lace.ts";
 
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.Statement,
       prompt: {
@@ -46,7 +46,7 @@ const receipt: Job = {
       },
     },
     step2: {
-      entries: {
+      stages: {
         step1: {
           kind: TaskKind.Statement,
           prompt: {
@@ -67,7 +67,7 @@ const receipt: Job = {
           },
         },
         step2: {
-          entries: {
+          stages: {
             step1: {
               kind: TaskKind.Statement,
               prompt: {
@@ -87,7 +87,7 @@ const receipt: Job = {
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Job is a readonly interface; receipts use plain objects with nested entries.",
+                      "Job is a readonly interface; receipts use plain objects with nested stages.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -100,7 +100,7 @@ const receipt: Job = {
                   },
                   {
                     kind: PromptKind.Statement,
-                    content: "Entry is the union of Job and Task.",
+                    content: "Stage is the union of Job and Task.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -219,7 +219,7 @@ const receipt: Job = {
           },
         },
         step3: {
-          entries: {
+          stages: {
             step1: {
               kind: TaskKind.Statement,
               prompt: {
@@ -238,7 +238,7 @@ const receipt: Job = {
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Declare the root as const receipt: Job = { entries: { context: context } } and export default receipt.",
+                      "Declare the root as const receipt: Job = { stages: { context: context } } and export default receipt.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -248,7 +248,7 @@ const receipt: Job = {
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Nest child Jobs directly in named entries maps to show hierarchy; use source declaration order when reading context.",
+                      "Nest child Jobs directly in named stages maps to show hierarchy; use source declaration order when reading context.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -267,7 +267,7 @@ const receipt: Job = {
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Job.entries is a readonly Readonly<Record<string, Entry>> map; prefer nonnumeric names because JavaScript enumerates integer-like object keys in ascending order before other string keys.",
+                      "Job.stages is a readonly Readonly<Record<string, Stage>> map; prefer nonnumeric names because JavaScript enumerates integer-like object keys in ascending order before other string keys.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -309,7 +309,7 @@ const receipt: Job = {
                       {
                         kind: PromptKind.Statement,
                         content:
-                          "Mutate receipt entries or hide their hierarchy behind calls.",
+                          "Mutate receipt stages or hide their hierarchy behind calls.",
                       },
                     ],
                   },
@@ -532,7 +532,7 @@ const receipt: Job = {
                       {
                         kind: PromptKind.Statement,
                         content:
-                          "Declare const receipt: Job = { entries: { context: context, checks: { entries: { compile: compile, verify: verify } } } }; then export default receipt.",
+                          "Declare const receipt: Job = { stages: { context: context, checks: { stages: { compile: compile, verify: verify } } } }; then export default receipt.",
                       },
                       {
                         kind: PromptKind.Statement,
@@ -552,7 +552,7 @@ const receipt: Job = {
           },
         },
         step4: {
-          entries: {
+          stages: {
             step1: {
               kind: TaskKind.Statement,
               prompt: {
@@ -630,7 +630,7 @@ const receipt: Job = {
       },
     },
     step3: {
-      entries: {
+      stages: {
         step1: {
           kind: TaskKind.Statement,
           prompt: {

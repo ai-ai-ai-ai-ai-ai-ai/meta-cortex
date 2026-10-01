@@ -5,7 +5,7 @@ import {
 } from "../../../../../../../../lace/src/ts/lace.ts";
 
 const receipt: Job = {
-  entries: {
+  stages: {
     step1: {
       kind: TaskKind.ShellCommand,
       cwd: WorkingDirectory.LibraryRoot,
