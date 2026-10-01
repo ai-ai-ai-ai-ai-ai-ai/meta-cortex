@@ -1,109 +1,86 @@
 # Neural Lace Architecture
 
-Neural Lace defines typed Cortex context: architecture, specifications, rules,
-instructions, skills, and practices that agents read as text.
-Its [model](../../../lace/src/ts/lace.ts) contains the WorkingDirectory enum, types, interfaces, and the inert
-`PromptStatement.content` authoring helper.
-Receipts declare nested literal named maps, so indentation shows the context
-hierarchy as it does in JSON or YAML. TypeScript checks the declarations and
-imports; agents apply their meaning through host tools.
-Read [Lace's entry point](../../../lace/AGENTS.ts) for core ownership rules.
+Neural Lace declares Cortex context as plain readonly data. Agents read receipts
+as text, like Markdown. The model contains one WorkingDirectory enum and the
+Job, Stage, Statement, Required, Prohibited, and ShellCommand contracts.
+Compilation checks their shape and imports without executing declared commands.
 
 ## Required actions
 
 ### Context ownership
 
-- Use Lace for Cortex context. Keep consuming application workflows with their
-  application code.
-- Keep subject receipts beside the context they describe, outside `lace/`.
-- Use Context Engineering for authoring. Its
-  [example](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts)
-  demonstrates typed objects and imported Jobs.
-- Keep the model and validation implementation free of context jobs and tasks.
-- Read `lace/AGENTS.ts` as context. It describes Lace with the same declarations
-  available to subject receipt authors.
+Keep the [model](../../../lace/src/ts/lace.ts),
+[declaration grammar](../../../lace/receipt-grammar.js), and their tests in
+`lace/`. Its [entry point](../../../lace/AGENTS.ts) describes Lace through the
+same declarations used by other receipts. Subject receipts belong beside their
+owning context, outside `lace/`. Context Engineering owns receipt authoring;
+other existing Markdown instructions remain authoritative.
 
-Only Lace's own Markdown entry point has migrated to TypeScript.
-Other Markdown instructions, skills, and practices remain authoritative.
-YAML catalogs continue to provide navigation.
+**Prohibited:** modify the model while assigned only to author a context receipt.
 
-**Prohibited:** put a subject instruction Job into the model while assigned to
-write Cortex context.
-
-**Required:** keep the receipt with its subject. `lace/AGENTS.ts` describes
-Lace itself; that entry point does not move subject receipts into the core.
+**Required:** use the existing declarations and checks. Report a missing
+capability for a separate core assignment.
 
 ### Public authoring imports
 
-Import the model vocabulary only from the private workspace package root
-`@meta-cortex/lace`. Its sole export is `.` pointing to `./src/ts/lace.ts`.
-Use static relative imports for another `*.lace.ts` receipt or `AGENTS.ts`.
-Other packages, private subpaths, implementation imports, and the old relative
-model route are rejected by the authoring grammar. Source-reading links still
-point to the model file; a link is not an import route. The package remains
-private and is not published.
+Import model vocabulary from the private workspace package root
+`@meta-cortex/lace`. Its package exports only `.` to `./src/ts/lace.ts`;
+workspace resolution supplies the actual types and enum without a custom resolver.
+Import other receipts through static relative `*.lace.ts` or `AGENTS.ts` paths.
+Source-reading links continue to name the model file.
 
-**Prohibited:** import through the model's private source path.
-The package export and authoring grammar reject this route.
+**Prohibited:** import an implementation file or a private package subpath.
+The grammar rejects this import source.
 
 ```typescript
 import { type Job } from "@meta-cortex/lace/src/ts/lace.ts";
-const receipt: Job = { stages: { context: context } };
+const receipt: Job = { stages: {} };
 export default receipt;
 ```
 
-**Required:** import the public vocabulary and another receipt's default Job.
+**Required:** import the public root.
 
 ```typescript
 import { type Job } from "@meta-cortex/lace";
-import context from "./context.lace.ts";
-const receipt: Job = { stages: { context: context } };
+const receipt: Job = { stages: {} };
 export default receipt;
 ```
 
-### Object hierarchy
+### Fixed Stage sections
 
-- Import `Job` as a type, `WorkingDirectory` when commands need it, and `PromptStatement` as a value when needed from `@meta-cortex/lace`.
-- Declare `const receipt: Job = { stages: { context: context } }` and `export default receipt`.
-- Declare each child Job directly as `{ stages: { context: context } }` within its parent.
-- Give each task or child Job an explicit unique identifier or string literal key
-  within `stages`, in source declaration order.
-- Use top-level `const name: Job` objects for reusable local Jobs.
-- Import another receipt's default Job to reuse canonical context.
+Declare `const receipt: Job` and default-export `receipt`. Job has
+`readonly stages: Readonly<Record<string, Stage>>`. Each Stage has three mandatory
+fields: `spec: Readonly<Record<string, Statement>>`, `Required: Required`, and
+`Prohibited: Prohibited`. Required and Prohibited each have
+`readonly statements: Readonly<Record<string, Statement>>`.
+All fields are readonly; all three kinds of named map may be empty.
 
-`Job` is a readonly interface whose `stages` field is
-`Readonly<Record<string, Stage>>`. Declare it as a nonempty plain literal map.
-Use explicit properties such as `compile: compile` for static Job references.
-Names such as `label`, `items`, `stages`, `entries`, `content`, and `script` are valid
-stage keys; they do not become schema fields at that position.
-`Stage = Job | Task` allows each stage to be another directory or a context task.
-Jobs represent directories; tasks represent files. Job stage maps and BulletList item maps must be
-nonempty under the declaration grammar. The only authoring helper is
-`PromptStatement.content`; receipts have no constructors, general builders,
-or runtime collection operations.
+A Statement is a string or a readonly object with both `content: string` and
+`ShellCommand: ShellCommand`. ShellCommand has readonly `cwd: WorkingDirectory`
+and `script: string`. Use literal strings or noninterpolated templates for text,
+content, and scripts. A structured statement always describes its command in
+content. Jobs do not contain child Jobs; Stage is a fixed section, without
+recursive groups, prompt wrappers, helpers, or builders.
 
-The TypeScript fragments below assume `Job`, `PromptStatement`, and
-`WorkingDirectory` are imported from `@meta-cortex/lace`. `context`, `compile`, and
-`verify` are default Jobs imported from the linked Context Engineering examples.
-Each fragment is a separate receipt body.
-
-**Prohibited:** export an untyped object. Its source lacks the Job contract.
-The grammar requires an explicitly typed `receipt` binding.
+**Prohibited:** omit a normative section even when it has no statements.
+The compiler and grammar reject the incomplete Stage.
 
 ```typescript
-const receipt = { stages: { context: context } };
+import { type Job } from "@meta-cortex/lace";
+const receipt: Job = { stages: { context: { spec: {} } } };
 export default receipt;
 ```
 
-**Required:** type the root and enclose child Jobs in place.
-The compiler checks every nested stage through that annotation.
+**Required:** declare every fixed section and use empty maps where appropriate.
 
 ```typescript
+import { type Job } from "@meta-cortex/lace";
 const receipt: Job = {
   stages: {
-    context: context,
-    checks: {
-      stages: { compile: compile, verify: verify },
+    context: {
+      spec: { contextLanguage: "Cortex context is read as text." },
+      Required: { statements: { readContext: "Read the assigned context." } },
+      Prohibited: { statements: {} },
     },
   },
 };
@@ -112,57 +89,46 @@ export default receipt;
 
 ### Stage names
 
-Every key in an authored `Job.stages` or `BulletList.items` map must describe its purpose.
-Name a task for its action or a child Job for the context it groups. Give each
-bullet a short name for its fact, action, or grouped subject. Never use
+Every key in Job.stages, Stage.spec, and Required or Prohibited statements must
+describe its purpose. Give each Stage a name for its context section; give each
+statement a short name for its fact, action, or restriction. Never use generic
 positional or placeholder names such as `step3`, `stage1`, `entry2`, or `item1`.
-Keep source declaration order when naming stages and items; names do not encode ordering.
+Preserve source declaration order; names do not encode ordering. Prefer
+nonnumeric names because JavaScript enumerates integer-like object keys in
+numeric order before other strings.
 
-This is a semantic authoring requirement. The declaration grammar accepts
-arbitrary explicit identifier or string literal keys and does not judge their
-meaning. Compiler and lint success do not establish that stage and bullet names are useful.
-Review each name against its task, text, or grouped context.
+This is a semantic authoring rule. Grammar accepts arbitrary explicit unique
+identifier or quoted string names, including schema names such as `spec`,
+`Required`, `statements`, `ShellCommand`, and `stages`. It does not infer purpose.
+Independent YAML catalog entries retain their own vocabulary.
 
-**Prohibited:** use a position as the name of the compilation stage.
-This receipt compiles and passes grammar, but its name hides the action.
-
-```typescript
-const receipt: Job = { stages: { step3: compile } };
-export default receipt;
-```
-
-**Required:** name the same stage for its compilation purpose.
+**Prohibited:** use a placeholder name. This compiles and passes grammar but
+violates the naming rule.
 
 ```typescript
-const receipt: Job = { stages: { compileReceipt: compile } };
-export default receipt;
-```
-
-**Prohibited:** use a placeholder for a text bullet. This shape passes types and
-grammar, but the name does not describe its instruction.
-
-```typescript
+import { type Job } from "@meta-cortex/lace";
 const receipt: Job = {
   stages: {
-    requiredActions: {
-      Statement: {
-        prompt: { BulletList: { items: { item1: "Read context." } } },
-      },
+    stage1: {
+      spec: {},
+      Required: { statements: {} },
+      Prohibited: { statements: {} },
     },
   },
 };
 export default receipt;
 ```
 
-**Required:** give the same bullet a short purpose-based name.
+**Required:** name the same section for its purpose.
 
 ```typescript
+import { type Job } from "@meta-cortex/lace";
 const receipt: Job = {
   stages: {
-    requiredActions: {
-      Statement: {
-        prompt: { BulletList: { items: { readContext: "Read context." } } },
-      },
+    receiptOrientation: {
+      spec: {},
+      Required: { statements: {} },
+      Prohibited: { statements: {} },
     },
   },
 };
@@ -171,294 +137,79 @@ export default receipt;
 
 ### Readonly declarations
 
-All model fields are readonly, including Job stages, bullet item maps, and nested
-BulletLists. TypeScript rejects mutation through these types. Receipts contain
-literal declarations; they neither copy nor freeze JavaScript objects at runtime.
-Readonly types do not prevent an external mutable alias from changing an object.
-Read receipt source as context rather than importing it to run code.
+Readonly declarations reject mutation through model types. They do not freeze
+objects at runtime or establish prose correctness. Keep context as literal data;
+use source order when reading its maps.
 
-**Prohibited:** mutate a typed Job. The compiler rejects assigning stages,
-and the receipt grammar rejects mutation and general method calls.
+**Prohibited:** mutate receipt sections or hide context behind runtime calls.
 
-```typescript
-const receipt: Job = { stages: { context: context } };
-receipt.stages.compile = compile;
-export default receipt;
-```
-
-**Required:** declare the required grouping as a new object.
-The existing context remains a reference in the declared tree.
-
-```typescript
-const checks: Job = { stages: { compile: compile, verify: verify } };
-const receipt: Job = { stages: { context: context, checks: checks } };
-export default receipt;
-```
-
-### Task declarations
-
-`Statement` and `ShellCommand` are plain readonly payload interfaces.
-`Statement` contains `prompt: Prompt`; `ShellCommand` contains `cwd` and `script`.
-The closed `Task` union wraps those payloads as
-`{ readonly Statement: Statement } | { readonly ShellCommand: ShellCommand }`.
-Each variant excludes the opposite property with an optional `never` field.
-Concrete payloads alone are not Task variants. `TaskKind` and `PromptKind` are
-removed without aliases; no declaration uses a `kind` field.
-
-- **Statement:** `{ Statement: { prompt } }` with a structured Prompt.
-  Its wording can explain architecture, describe a specification, state a rule,
-  or require an action.
-- **Shell command:** `{ ShellCommand: { cwd, script } }` with a literal payload.
-  Choose `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
-  The outer property and both payload fields are readonly.
-
-**Prohibited:** put both Task variants in one stage.
-The compiler rejects the hybrid through the opposite optional `never` properties;
-the grammar requires one outer variant property.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    readContext: {
-      Statement: { prompt: PromptStatement.content("Read context.") },
-      ShellCommand: {
-        cwd: WorkingDirectory.LibraryRoot,
-        script: "bun run check",
-      },
-    },
-  },
-};
-export default receipt;
-```
-
-**Required:** declare explanatory prose and command text as separate tasks.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    explainHierarchy: {
-      Statement: {
-        prompt: PromptStatement.content(
-          "A Job groups Cortex context in source order.",
-        ),
-      },
-    },
-    compileReceipt: {
-      ShellCommand: {
-        cwd: WorkingDirectory.LibraryRoot,
-        script: "bun run --filter @meta-cortex/lace check",
-      },
-    },
-  },
-};
-export default receipt;
-```
-
-### Prompt structure
-
-`PromptStatement`, `BulletList`, `Required`, and `Prohibited` are plain readonly payload interfaces.
-`Prompt` declares four closed branches inline: mapped PromptStatement, BulletList,
-Required, or Prohibited. Each branch has its readonly payload property and
-excludes all three opposite properties with optional `never` fields.
-A Prompt has exactly one outer variant property; hybrid objects are invalid.
-
-- **Prompt statement:** `{ PromptStatement: { content } }` with one literal string.
-- **Bullet list:** `{ BulletList: { label?, items } }` with an optional literal
-  label and a nonempty literal named map.
-- **Required:** `{ Required: { items } }` for mandatory actions or rules.
-- **Prohibited:** `{ Prohibited: { items } }` for forbidden actions or rules.
-- **Nested group:** a mapped BulletList, Required, or Prohibited within `items`.
-  All three group payloads share the recursive named item contract.
-
-BulletList, Required, and Prohibited each declare `readonly items: ListItems`.
-The exported ListItems interface has the readonly index signature
-`readonly [name: string]: string | Exclude<Prompt, { readonly PromptStatement: PromptStatement }>`.
-It reuses the closed Prompt union for recursive groups and excludes standalone
-PromptStatement values. Required and Prohibited payloads have no label or kind.
-PromptStatement wrappers and helper calls remain invalid item values.
-
-Give each text bullet an explicit descriptive key and a nonblank literal string
-or noninterpolated template value. Use one bullet per
-independent fact or action. Nest generic or typed groups when their relationship matters,
-such as prohibited/required examples. State requirements explicitly in the
-wording. Arrays, raw group payloads, general Prompt values, PromptStatement
-wrappers, and helper calls are invalid item values. Plain mapped PromptStatement
-objects remain supported only as standalone prompts.
-
-**Prohibited:** hide independent actions in one raw prompt string.
-The compiler requires a structured Prompt.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    readAndCompile: {
-      Statement: {
-        prompt: "Read context. Compile the receipt.",
-      },
-    },
-  },
-};
-export default receipt;
-```
-
-**Required:** put each action in a structured bullet and nest related items.
-The root uses the typed Required category; its nested generic group omits its optional label.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    requiredActions: {
-      Statement: {
-        prompt: {
-          Required: {
-            items: {
-              readContext: "Read the assigned context.",
-              checks: {
-                BulletList: {
-                  items: { compileReceipt: "Compile the receipt." },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-};
-export default receipt;
-```
-
-**Prohibited:** put the standalone prompt helper inside an item map.
-The compiler rejects its PromptStatement variant as a bullet value; the grammar
-also rejects the call in that position.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    requiredActions: {
-      Statement: {
-        prompt: {
-          BulletList: {
-            items: { readContext: PromptStatement.content("Read context.") },
-          },
-        },
-      },
-    },
-  },
-};
-export default receipt;
-```
-
-**Required:** put literal text directly under the item's descriptive key.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    requiredActions: {
-      Statement: {
-        prompt: { BulletList: { items: { readContext: "Read context." } } },
-      },
-    },
-  },
-};
-export default receipt;
-```
+**Required:** compose literal declarations and static Stage or Statement references.
 
 ### Normative categories
 
-Use typed Required and Prohibited prompts for mandatory and forbidden rules.
-These categories work as standalone prompts and nested item groups.
-Normative instructions use Required for the action to take and Prohibited for
-the action to avoid. Do not present a normative instruction as a Preferred category.
+Put explanatory facts in spec, mandatory actions in Required.statements, and
+forbidden actions in Prohibited.statements. Cortex instructions use the
+prohibited/required format; a Preferred category is not supported. These fields
+are fixed Stage sections, without category labels or recursive group wrappers.
 
-The grammar rejects exactly six generic BulletList labels: `Preferred`,
-`Preferred actions`, `Required`, `Required actions`, `Prohibited`, and
-`Prohibited actions`.
-Use their typed category instead. This is a bounded syntax rule; checking does
-not classify prose or infer whether an instruction is mandatory.
-Other nonblank literal labels remain valid.
+**Prohibited:** place a mandatory validation command only in explanatory prose.
 
-**Prohibited:** encode the category in a generic label.
-The compiler accepts this shape, but the grammar rejects the reserved label.
+**Required:** give the action a named statement in Required.statements and describe
+its command in content.
 
-```typescript
-const receipt: Job = {
-  stages: {
-    readContext: {
-      Statement: {
-        prompt: {
-          BulletList: { label: "Required", items: { read: "Read context." } },
-        },
-      },
-    },
-  },
-};
-export default receipt;
-```
+### Statement declarations
 
-**Required:** declare the typed category with its named items.
+A prose statement is a literal string. A command statement has both descriptive
+content and a literal ShellCommand payload. `WorkingDirectory.ProjectRoot` and
+`WorkingDirectory.LibraryRoot` resolve against the consuming session's two roots.
+No declared shell command runs during compilation or receipt import.
+
+**Prohibited:** declare a command without its descriptive content.
+The compiler and grammar reject the missing field.
 
 ```typescript
+import { type Job, WorkingDirectory } from "@meta-cortex/lace";
 const receipt: Job = {
   stages: {
-    readContext: {
-      Statement: {
-        prompt: {
-          Required: {
-            items: {
-              read: "Read context.",
-              restrictions: {
-                Prohibited: { items: { skip: "Do not skip context." } },
-              },
+    compilation: {
+      spec: {},
+      Required: {
+        statements: {
+          compile: {
+            ShellCommand: {
+              cwd: WorkingDirectory.LibraryRoot,
+              script: "bun run check",
             },
           },
         },
       },
+      Prohibited: { statements: {} },
     },
   },
 };
 export default receipt;
 ```
 
-### Literal prompt helper
-
-`PromptStatement` retains its readonly interface and has an abstract static class
-whose `content(content: string)` return type is declared inline as
-`{ readonly PromptStatement: PromptStatement; readonly BulletList?: never; readonly Required?: never; readonly Prohibited?: never }`.
-The helper returns the precise plain `{ PromptStatement: { content } }` variant directly usable as a
-standalone Statement.prompt, without freezing or runtime validation. Direct construction is not part of the authoring API.
-
-The grammar permits only noncomputed `PromptStatement.content` calls with exactly
-one nonblank string or noninterpolated template literal. Calls belong only in a
-Statement's standalone `prompt`; generic and typed item values cannot use the helper. Other calls and helper
-calls in Job, stage, or shell-command fields remain invalid. Existing model import
-restrictions and TypeScript binding checks apply; there is no import tracker.
-
-**Prohibited:** derive a helper argument from a runtime expression.
-The compiler accepts the string, but the grammar rejects this call.
+**Required:** pair the command with a concise description.
 
 ```typescript
+import { type Job, WorkingDirectory } from "@meta-cortex/lace";
 const receipt: Job = {
   stages: {
-    read: {
-      Statement: {
-        prompt: PromptStatement.content(Promise.name),
+    compilation: {
+      spec: {},
+      Required: {
+        statements: {
+          compile: {
+            content: "Compile the receipt declarations.",
+            ShellCommand: {
+              cwd: WorkingDirectory.LibraryRoot,
+              script: "bun run check",
+            },
+          },
+        },
       },
-    },
-  },
-};
-export default receipt;
-```
-
-**Required:** put the exact context in the literal helper argument.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    read: {
-      Statement: {
-        prompt: PromptStatement.content("Read the assigned context."),
-      },
+      Prohibited: { statements: {} },
     },
   },
 };
@@ -467,151 +218,72 @@ export default receipt;
 
 ### Composition and execution
 
-1. Read the receipt and its imported context as text in source declaration order.
-   - Prefer nonnumeric entry names. JavaScript enumerates integer-like object keys
-     in ascending order before other string keys, so runtime enumeration can
-     differ from source order. Receipts are read as context, without execution.
-2. Resolve relative imports from the containing receipt file.
+1. Read the receipt and its imported declarations as text in source order.
+2. Resolve relative receipt imports from the containing file.
 3. Establish the consuming project's root and the Cortex library root.
 4. Interpret statement wording within the active assignment.
 5. Run an instructed command through the host's shell tool with its declared cwd.
 
-Compilation never runs a declared command. Importing a receipt invokes its
-`PromptStatement.content` calls to construct plain objects; it does not run
-declared shell commands. Agents read the source rather than importing it. Express conditions and context
-selection in literal prompt content. Reuse canonical commands through imported
-Jobs; copying them creates another maintenance location.
+Reuse typed const Stage and Statement declarations through named receipt exports.
+A receipt still default-exports its Job; only Stage and Statement bindings may be
+named exports. Static references belong in stages or statement maps respectively.
+The compiler checks their types. Grammar checks declaration positions without
+tracking imports or evaluating bindings. Commands remain inert data.
 
-**Prohibited:** copy a shared compilation command into every receipt.
-This type-checks but duplicates its maintenance owner.
+**Prohibited:** copy canonical commands into several maintenance locations.
 
-```typescript
-const receipt: Job = {
-  stages: {
-    compileReceipt: {
-      ShellCommand: {
-        cwd: WorkingDirectory.LibraryRoot,
-        script: "bun run --filter @meta-cortex/lace check",
-      },
-    },
-  },
-};
-export default receipt;
-```
-
-**Required:** reference the imported compilation Job.
+**Required:** reuse the owning Stage export, as in the
+[authoring receipt](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts).
 
 ```typescript
-const receipt: Job = { stages: { context: context, compile: compile } };
+import { type Job } from "@meta-cortex/lace";
+import { compileReceipt } from "./compile.lace.ts";
+const receipt: Job = { stages: { compileReceipt: compileReceipt } };
 export default receipt;
 ```
 
 ### Validation project
 
-The [TypeScript project](../../../tsconfig.json) includes receipts, `AGENTS.ts`
-entry points, the model, and contract tests. It enables strict types, exact
-optional properties, checked indexed access, unused-code checks, and `noEmit`.
-The shared Bun workspace owns dependencies and the lockfile.
+The [TypeScript project](../../../tsconfig.json) includes receipts, entry points,
+the model, and contract tests. It enables strict types, checked indexed access,
+unused-code checks, and noEmit. The existing Bun workspace owns dependencies.
 
-Run from the Cortex library root: `cortex/` here or `.meta-cortex/` when installed.
+1. From the Cortex library root, run `bun run --filter @meta-cortex/lace check`
+   to compile declarations and resolve imports.
+2. Before claiming full Lace verification, run
+   `bun run --filter @meta-cortex/lace verify` for formatting, grammar, types,
+   and contract tests.
+3. Review prose meaning separately and report executed commands only from actual
+   host-tool results. Workspace `bun run verify` includes Lace in the CI gate.
 
-1. During editing, compile declarations and resolve imports:
+**Prohibited:** report full verification after running only check.
 
-   ```sh
-   bun run --filter @meta-cortex/lace check
-   ```
-
-2. Before reporting that all Lace checks pass, run formatting, grammar, types,
-   and contract tests:
-
-   ```sh
-   bun run --filter @meta-cortex/lace verify
-   ```
-
-Workspace `bun run verify` includes Lace in the existing CI gate.
-Checks do not detect circular context imports, prove prose correctness, or
-establish command success in a consuming project.
-
-**Prohibited:** report full verification after running only `check`.
-
-**Required:** run `verify` and report the result. Review prose meaning separately;
-report command execution only from its actual host-tool result.
+**Required:** report the verify result and its practical limits. Checks do not
+prove prose correctness, detect circular context imports, or establish command success.
 
 ## Prohibited actions
 
 ### Core and receipt ownership
 
-Follow the [core ownership rules](../../../lace/AGENTS.ts).
-Receipt authoring permits using existing declarations and checks. Changing the
-model, core entry point, grammar, tests, scripts, or configuration requires an
-explicit user assignment for core work. This governs agent assignments;
-TypeScript readonly declarations do not enforce filesystem permissions.
+Follow the [core ownership rules](../../../lace/AGENTS.ts). Receipt authoring
+uses existing declarations and checks. Core model, grammar, tests, and
+configuration changes require a separate explicit assignment.
 
-**Prohibited:** add a task kind or weaken checking because a receipt fails.
+**Prohibited:** weaken checking because a receipt fails.
 
-**Required:** correct the receipt with the existing vocabulary. Report a missing
-capability when it needs a separate core assignment.
+**Required:** correct the receipt and report an unsupported capability to its owner.
 
 ### Runtime logic in receipts
 
-The [grammar](../../../lace/receipt-grammar.js) permits the exact `@meta-cortex/lace` root import and static relative receipt imports,
-typed const Job objects, literal tasks and prompts, and static Job references in
-named stages maps, plus the exact literal prompt helper described above.
-The root binding is named `receipt` and default-exported.
-Task and Prompt objects require exactly one outer variant property with a
-literal payload in their task or prompt position. `WorkingDirectory` supplies
-`cwd` inside the ShellCommand payload. Arbitrary stage and item keys such as `Statement`,
-`ShellCommand`, `PromptStatement`, `BulletList`, `Required`, and `Prohibited` remain valid at any depth. Dynamic payloads, computed fields, spreads, methods, and helper
-calls used as commands are invalid. Text and labels must be nonblank literals; maps must be nonempty.
-Stage maps require explicit unique identifier or string literal keys and literal
-objects or static Job references as values. Stage arrays, computed keys, spreads,
-methods, and nonliteral stage maps are invalid. Bullet item maps require explicit
-unique identifier or string literal keys with nonblank names. Their values are
-nonblank literal text or a literal mapped BulletList, Required, or Prohibited group. Empty maps, arrays,
-dynamic values, computed keys, spreads, methods, and other Prompt variants are invalid.
+The grammar permits public-root and static relative receipt imports, top-level
+typed const Job, Stage, and Statement bindings, literal fixed fields and named
+maps, and static Stage or Statement references in their positions. Every receipt
+has a typed Job root named receipt and its default export. Names are explicit
+unique identifiers or string literals; blank names and text are invalid.
+Arrays, computed fields, spreads, methods, interpolated text, arbitrary imports,
+calls, constructors, casts, mutable declarations, and nested Jobs are invalid.
+Empty maps are valid. WorkingDirectory enum members occur only as command cwd.
 
-The grammar combines standard ESLint restrictions and duplicate-key checks with
-the local `lace/declaration-fields` rule. That rule uses declaration position to
-distinguish arbitrary stage and item names from schema fields and applies structural
-selectors plus the narrow helper-call predicate; it does not evaluate receipts
-or track imports. TypeScript checks
-entry and prompt variants through the model.
+**Prohibited:** derive a statement with a function or implementation import.
 
-- The grammar rejects other implementation imports, arbitrary calls, constructors, methods,
-  mutable bindings, loops, conditionals, assignments, spreads, computed fields,
-  type assertions, and suppression attempts.
-- Typed Job declarations check the whole object tree without casts or assertion
-  operators.
-
-**Prohibited:** obtain prompt content from a runtime expression.
-The compiler accepts a string expression; the grammar requires literal context.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    readContext: {
-      Statement: {
-        prompt: { PromptStatement: { content: Promise.name } },
-      },
-    },
-  },
-};
-export default receipt;
-```
-
-**Required:** write the actual context as literal content.
-
-```typescript
-const receipt: Job = {
-  stages: {
-    readContext: {
-      Statement: {
-        prompt: PromptStatement.content(
-          "Read the assigned context before editing.",
-        ),
-      },
-    },
-  },
-};
-export default receipt;
-```
+**Required:** express context selection in literal prose and compose static data.

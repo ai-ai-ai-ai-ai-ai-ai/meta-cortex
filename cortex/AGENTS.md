@@ -156,20 +156,19 @@ its tests in its worktree, and pass both roots in assignments.
 [Neural Lace](lace/AGENTS.ts) is the core for typed Cortex context files.
 Read its [model](lace/src/ts/lace.ts) to learn the vocabulary, then read
 `lace/AGENTS.ts` as text for its context instructions. That entry point describes
-Lace through its own Job and task declarations. The model contains the WorkingDirectory enum, types,
-interfaces, and the inert `PromptStatement.content` authoring helper.
-Import authoring vocabulary from the private workspace package root `@meta-cortex/lace`.
-Receipts declare plain, readonly Job objects with nonempty literal named stage maps.
-The model and validation code contain no instantiated context jobs or tasks.
-Apply the [stage and bullet naming rule](teams/ai-team/docs/lace-architecture.md#stage-names)
-when naming receipt stages and bullet items. Use typed Required and Prohibited
-prompts for mandatory and forbidden rules, following the
-[normative categories](teams/ai-team/docs/lace-architecture.md#normative-categories). Subject context receipts belong beside their owning
-context, outside `lace/`.
-Both `AGENTS.ts` entry points and `*.lace.ts` receipts use the same declaration
-language. Agents read them as text; the TypeScript project checks their
-structure and imports. Importing a receipt invokes its literal helper calls to
-construct plain objects; compilation and importing never run declared shell commands.
+Lace through its own Job and task declarations. The model contains the WorkingDirectory enum and readonly Job, Stage, Statement,
+Required, Prohibited, and ShellCommand contracts. Import authoring vocabulary
+from the private workspace package root `@meta-cortex/lace`.
+Receipts declare plain readonly Jobs with named Stage maps. Every Stage contains
+spec, Required, and Prohibited sections; their statement maps may be empty.
+Use literal strings for prose and mandatory content plus ShellCommand for commands.
+Apply the [stage and statement naming rule](teams/ai-team/docs/lace-architecture.md#stage-names)
+and [normative categories](teams/ai-team/docs/lace-architecture.md#normative-categories).
+Subject receipts belong beside their owning context, outside `lace/`.
+Agents read entry points and receipts as text; TypeScript checks their structure
+and imports. Importing a receipt constructs plain data and never runs declared
+shell commands. Compose typed Stage and Statement declarations through static
+imports; do not nest Jobs or use runtime calls.
 [Context Engineering](teams/ai-team/agents/tech-writer/skills/context-engineering/SKILL.md#cortex-context-with-lace)
 owns this context authoring. Other existing Markdown context remains authoritative.
 

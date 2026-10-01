@@ -77,20 +77,18 @@ Its local links resolve; the code example was reviewed but not executed.”
 
 When the assignment concerns Cortex's own typed context files, use the
 [Neural Lace architecture](../../../../docs/lace-architecture.md).
-Its [authoring example](examples/lace/authoring.lace.ts) demonstrates context
-composition with imported jobs, named literal text bullets and nested BulletList groups, and
-existing compilation checks. Use typed Required and Prohibited prompts for
-mandatory and forbidden rules; follow the
-[normative category contract](../../../../docs/lace-architecture.md#normative-categories). Import model vocabulary from `@meta-cortex/lace`
-and other receipts through static relative paths. The exact helper accepts one nonblank string or
-noninterpolated template literal only in standalone Statement.prompt. Existing
-plain mapped PromptStatement objects remain supported. The helper returns
-`{ PromptStatement: { content } }`; Task and Prompt wrap plain readonly concrete
-payloads with one outer variant property. Agents read receipts as text;
-importing a receipt invokes the helper to construct plain objects but never runs
-declared shell commands. Apply the [stage and bullet naming rule](../../../../docs/lace-architecture.md#stage-names).
-Follow the
-[core ownership rules](../../../../../../lace/AGENTS.ts) during receipt authoring.
+Its [authoring example](examples/lace/authoring.lace.ts) demonstrates static
+Stage composition and existing compilation checks. A Job has named Stage sections;
+each Stage contains spec, Required, and Prohibited. All named maps may be empty.
+Place literal prose in spec or normative statements maps, following the
+[normative category contract](../../../../docs/lace-architecture.md#normative-categories).
+Command statements have both descriptive content and a ShellCommand payload.
+Import model vocabulary from `@meta-cortex/lace` and named typed Stage or Statement
+exports from static relative receipt paths. Jobs do not recursively contain Jobs;
+receipts contain no calls or builders. Agents read declarations as text. Compilation
+and importing never execute declared shell commands.
+Apply the [stage and statement naming rule](../../../../docs/lace-architecture.md#stage-names)
+and [core ownership rules](../../../../../../lace/AGENTS.ts).
 
 **Prohibited:** use the context format as an application programming API or
 modify its core to make an assigned context receipt compile.

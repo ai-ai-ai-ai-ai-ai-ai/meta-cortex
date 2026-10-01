@@ -1,34 +1,28 @@
 import { type Job } from "@meta-cortex/lace";
-import context from "./context.lace.ts";
-import compile from "./compile.lace.ts";
-import verify from "./verify.lace.ts";
-
-const checks: Job = { stages: { compile: compile, verify: verify } };
-
+import { readContext } from "./context.lace.ts";
+import { compileReceipt } from "./compile.lace.ts";
+import { verifyReceipt } from "./verify.lace.ts";
 const receipt: Job = {
   stages: {
-    context: context,
+    readContext: readContext,
     authorReceipt: {
-      Statement: {
-        prompt: {
-          BulletList: {
-            label: "Receipt authoring",
-            items: {
-              writeReceipt:
-                "Write the assigned Cortex context receipt using the existing Lace types.",
-              preserveCore:
-                "Keep the Lace core and its verification configuration unchanged.",
-              literalSelection:
-                "Express context selection as literal prompt content.",
-              reuseContext:
-                "Reuse canonical context jobs through static imports.",
-            },
-          },
+      spec: {},
+      Required: {
+        statements: {
+          writeReceipt:
+            "Write the assigned Cortex context receipt using the existing Lace types.",
+          preserveCore:
+            "Keep the Lace core and its verification configuration unchanged.",
+          literalSelection:
+            "Express context selection as literal statement content.",
+          reuseContext:
+            "Reuse canonical Stage and Statement declarations through static imports.",
         },
       },
+      Prohibited: { statements: {} },
     },
-    checks: checks,
+    compileReceipt: compileReceipt,
+    verifyReceipt: verifyReceipt,
   },
 };
-
 export default receipt;
