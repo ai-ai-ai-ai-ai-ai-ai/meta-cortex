@@ -157,8 +157,8 @@ its tests in its worktree, and pass both roots in assignments.
 Read its [model](lace/src/ts/lace.ts) to learn the vocabulary, then read
 `lace/AGENTS.ts` as text for its context instructions. That entry point describes
 Lace through its own Job and task declarations. The model contains only enums,
-types, and interfaces. Receipts declare plain, readonly Job objects with nested
-entries. The model and validation code contain no instantiated context jobs or tasks.
+types, and interfaces. Receipts declare plain, readonly Job objects with
+nonempty literal named entry maps. The model and validation code contain no instantiated context jobs or tasks.
 Subject context receipts belong beside their owning context, outside `lace/`.
 Both `AGENTS.ts` entry points and `*.lace.ts` receipts use the same declaration
 language. Agents read them as text; the TypeScript project checks their

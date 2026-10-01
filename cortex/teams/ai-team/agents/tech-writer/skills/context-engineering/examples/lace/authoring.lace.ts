@@ -7,12 +7,12 @@ import context from "./context.lace.ts";
 import compile from "./compile.lace.ts";
 import verify from "./verify.lace.ts";
 
-const checks: Job = { entries: [compile, verify] };
+const checks: Job = { entries: { compile: compile, verify: verify } };
 
 const receipt: Job = {
-  entries: [
-    context,
-    {
+  entries: {
+    context: context,
+    step2: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.BulletList,
@@ -39,8 +39,8 @@ const receipt: Job = {
         ],
       },
     },
-    checks,
-  ],
+    checks: checks,
+  },
 };
 
 export default receipt;

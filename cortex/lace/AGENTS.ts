@@ -6,8 +6,8 @@ import {
 } from "./src/ts/lace.ts";
 
 const receipt: Job = {
-  entries: [
-    {
+  entries: {
+    step1: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.BulletList,
@@ -45,9 +45,9 @@ const receipt: Job = {
         ],
       },
     },
-    {
-      entries: [
-        {
+    step2: {
+      entries: {
+        step1: {
           kind: TaskKind.Statement,
           prompt: {
             kind: PromptKind.BulletList,
@@ -66,9 +66,9 @@ const receipt: Job = {
             ],
           },
         },
-        {
-          entries: [
-            {
+        step2: {
+          entries: {
+            step1: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -114,7 +114,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step2: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -143,7 +143,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step3: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -177,7 +177,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step4: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -216,11 +216,11 @@ const receipt: Job = {
                 ],
               },
             },
-          ],
+          },
         },
-        {
-          entries: [
-            {
+        step3: {
+          entries: {
+            step1: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -238,17 +238,17 @@ const receipt: Job = {
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Declare the root as const receipt: Job = { entries: [...] } and export default receipt.",
+                      "Declare the root as const receipt: Job = { entries: { context: context } } and export default receipt.",
                   },
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Declare each entry as a nested Job object, Statement object, ShellCommand object, or imported Job.",
+                      "Give each entry an explicit unique identifier or string literal key and a nested Job, Statement, ShellCommand, or static Job reference value.",
                   },
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Nest child Jobs directly in entries arrays to show the hierarchy through indentation.",
+                      "Nest child Jobs directly in named entries maps to show hierarchy; use source declaration order when reading context.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -258,7 +258,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step2: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -266,7 +266,8 @@ const receipt: Job = {
                 items: [
                   {
                     kind: PromptKind.Statement,
-                    content: "Job.entries is a readonly array of Entry values.",
+                    content:
+                      "Job.entries is a readonly Readonly<Record<string, Entry>> map; prefer nonnumeric names because JavaScript enumerates integer-like object keys in ascending order before other string keys.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -276,7 +277,7 @@ const receipt: Job = {
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Jobs and prompt lists contain at least one entry or item under the declaration grammar.",
+                      "Jobs contain nonempty plain literal named entry maps; prompt lists contain nonempty literal item arrays.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -296,7 +297,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step3: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -331,7 +332,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step4: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -408,7 +409,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step5: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -447,7 +448,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step6: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -475,7 +476,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step7: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -484,7 +485,7 @@ const receipt: Job = {
                   {
                     kind: PromptKind.Statement,
                     content:
-                      "Limit receipts to static imports, typed const Job objects, literal prompts and commands, and the default receipt export.",
+                      "Limit receipts to static imports, typed const Job objects, literal prompts and commands, and the default receipt export; do not use empty maps, entry arrays, computed keys, spreads, methods, or nonliteral entry maps.",
                   },
                   {
                     kind: PromptKind.Statement,
@@ -508,7 +509,7 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step8: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -531,7 +532,7 @@ const receipt: Job = {
                       {
                         kind: PromptKind.Statement,
                         content:
-                          "Declare const receipt: Job = { entries: [context, { entries: [compile, verify] }] }; then export default receipt.",
+                          "Declare const receipt: Job = { entries: { context: context, checks: { entries: { compile: compile, verify: verify } } } }; then export default receipt.",
                       },
                       {
                         kind: PromptKind.Statement,
@@ -548,11 +549,11 @@ const receipt: Job = {
                 ],
               },
             },
-          ],
+          },
         },
-        {
-          entries: [
-            {
+        step4: {
+          entries: {
+            step1: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -574,17 +575,17 @@ const receipt: Job = {
                 ],
               },
             },
-            {
+            step2: {
               kind: TaskKind.ShellCommand,
               cwd: WorkingDirectory.LibraryRoot,
               script: "bun run --filter @meta-cortex/lace check",
             },
-            {
+            step3: {
               kind: TaskKind.ShellCommand,
               cwd: WorkingDirectory.LibraryRoot,
               script: "bun run --filter @meta-cortex/lace verify",
             },
-            {
+            step4: {
               kind: TaskKind.Statement,
               prompt: {
                 kind: PromptKind.BulletList,
@@ -624,13 +625,13 @@ const receipt: Job = {
                 ],
               },
             },
-          ],
+          },
         },
-      ],
+      },
     },
-    {
-      entries: [
-        {
+    step3: {
+      entries: {
+        step1: {
           kind: TaskKind.Statement,
           prompt: {
             kind: PromptKind.BulletList,
@@ -664,7 +665,7 @@ const receipt: Job = {
             ],
           },
         },
-        {
+        step2: {
           kind: TaskKind.Statement,
           prompt: {
             kind: PromptKind.BulletList,
@@ -699,9 +700,9 @@ const receipt: Job = {
             ],
           },
         },
-      ],
+      },
     },
-  ],
+  },
 };
 
 export default receipt;

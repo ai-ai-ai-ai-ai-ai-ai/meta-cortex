@@ -35,15 +35,20 @@ Lace itself; that entry point does not move subject receipts into the core.
 ### Object hierarchy
 
 - Import `Job` as a type and the required enums from the model.
-- Declare `const receipt: Job = { entries: [...] }` and `export default receipt`.
-- Declare each child Job directly as `{ entries: [...] }` within its parent.
-- Declare task objects directly within `entries`, in reading order.
+- Declare `const receipt: Job = { entries: { context: context } }` and `export default receipt`.
+- Declare each child Job directly as `{ entries: { context: context } }` within its parent.
+- Give each task or child Job an explicit unique identifier or string literal key
+  within `entries`, in source declaration order.
 - Use top-level `const name: Job` objects for reusable local Jobs.
 - Import another receipt's default Job to reuse canonical context.
 
-`Job` is a readonly interface with an `entries` array.
+`Job` is a readonly interface whose `entries` field is
+`Readonly<Record<string, Entry>>`. Declare it as a nonempty plain literal map.
+Use explicit properties such as `compile: compile` for static Job references.
+Names such as `label`, `items`, `entries`, `content`, and `script` are valid entry
+keys; they do not become schema fields at that position.
 `Entry = Job | Task` allows each entry to be another directory or a context task.
-Jobs represent directories; tasks represent files. Jobs and prompt lists must be
+Jobs represent directories; tasks represent files. Job maps and prompt lists must be
 nonempty under the declaration grammar. There are no builders, constructors,
 methods, or runtime collection operations in the model.
 
@@ -56,7 +61,7 @@ Each fragment is a separate receipt body.
 The grammar requires an explicitly typed `receipt` binding.
 
 ```typescript
-const receipt = { entries: [context] };
+const receipt = { entries: { context: context } };
 export default receipt;
 ```
 
@@ -65,12 +70,12 @@ The compiler checks every nested entry through that annotation.
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    context,
-    {
-      entries: [compile, verify],
+  entries: {
+    context: context,
+    step2: {
+      entries: { compile: compile, verify: verify },
     },
-  ],
+  },
 };
 export default receipt;
 ```
@@ -83,12 +88,12 @@ literal declarations; they neither copy nor freeze JavaScript objects at runtime
 Readonly types do not prevent an external mutable alias from changing an object.
 Read receipt source as context rather than importing it to run code.
 
-**Prohibited:** mutate a typed Job. The compiler rejects appending entries,
+**Prohibited:** mutate a typed Job. The compiler rejects assigning entries,
 and the receipt grammar rejects method calls.
 
 ```typescript
-const receipt: Job = { entries: [context] };
-receipt.entries.push(compile);
+const receipt: Job = { entries: { context: context } };
+receipt.entries.compile = compile;
 export default receipt;
 ```
 
@@ -96,8 +101,8 @@ export default receipt;
 The existing context remains a reference in the declared tree.
 
 ```typescript
-const checks: Job = { entries: [compile, verify] };
-const receipt: Job = { entries: [context, checks] };
+const checks: Job = { entries: { compile: compile, verify: verify } };
+const receipt: Job = { entries: { context: context, checks: checks } };
 export default receipt;
 ```
 
@@ -117,13 +122,13 @@ The compiler rejects the `script` field on that variant.
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    {
+  entries: {
+    step1: {
       kind: TaskKind.Statement,
       prompt: { kind: PromptKind.Statement, content: "Read context." },
       script: "bun run check",
     },
-  ],
+  },
 };
 export default receipt;
 ```
@@ -132,20 +137,20 @@ export default receipt;
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    {
+  entries: {
+    step1: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.Statement,
         content: "A Job groups Cortex context in source order.",
       },
     },
-    {
+    step2: {
       kind: TaskKind.ShellCommand,
       cwd: WorkingDirectory.LibraryRoot,
       script: "bun run --filter @meta-cortex/lace check",
     },
-  ],
+  },
 };
 export default receipt;
 ```
@@ -171,9 +176,12 @@ The compiler requires a structured Prompt.
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    { kind: TaskKind.Statement, prompt: "Read context. Compile the receipt." },
-  ],
+  entries: {
+    step1: {
+      kind: TaskKind.Statement,
+      prompt: "Read context. Compile the receipt.",
+    },
+  },
 };
 export default receipt;
 ```
@@ -183,8 +191,8 @@ The nested group below omits its optional label.
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    {
+  entries: {
+    step1: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.BulletList,
@@ -206,14 +214,17 @@ const receipt: Job = {
         ],
       },
     },
-  ],
+  },
 };
 export default receipt;
 ```
 
 ### Composition and execution
 
-1. Read the receipt and its imported context as text.
+1. Read the receipt and its imported context as text in source declaration order.
+   - Prefer nonnumeric entry names. JavaScript enumerates integer-like object keys
+     in ascending order before other string keys, so runtime enumeration can
+     differ from source order. Receipts are read as context, without execution.
 2. Resolve relative imports from the containing receipt file.
 3. Establish the consuming project's root and the Cortex library root.
 4. Interpret statement wording within the active assignment.
@@ -228,13 +239,13 @@ This type-checks but duplicates its maintenance owner.
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    {
+  entries: {
+    step1: {
       kind: TaskKind.ShellCommand,
       cwd: WorkingDirectory.LibraryRoot,
       script: "bun run --filter @meta-cortex/lace check",
     },
-  ],
+  },
 };
 export default receipt;
 ```
@@ -242,7 +253,7 @@ export default receipt;
 **Preferred:** reference the imported compilation Job.
 
 ```typescript
-const receipt: Job = { entries: [context, compile] };
+const receipt: Job = { entries: { context: context, compile: compile } };
 export default receipt;
 ```
 
@@ -296,9 +307,18 @@ capability when it needs a separate core assignment.
 
 The [grammar](../../../lace/receipt-grammar.js) permits model and receipt imports,
 typed const Job objects, literal tasks and prompts, and static Job references in
-entries arrays. The root binding is named `receipt` and default-exported.
+named entries maps. The root binding is named `receipt` and default-exported.
 Enum fields use `TaskKind` or `PromptKind` for `kind`, and `WorkingDirectory` for
-`cwd`. Text and labels must be nonblank literals; lists must be nonempty.
+`cwd`. Text and labels must be nonblank literals; maps and lists must be nonempty.
+Entry maps require explicit unique identifier or string literal keys and literal
+objects or static Job references as values. Entry arrays, computed keys, spreads,
+methods, and nonliteral entry maps are invalid.
+
+The grammar combines standard ESLint restrictions and duplicate-key checks with
+the local `lace/declaration-fields` rule. That rule uses declaration position to
+distinguish arbitrary entry names from schema fields and applies structural
+selectors; it does not evaluate receipts or track imports. TypeScript checks
+entry and prompt variants through the model.
 
 The grammar rejects other implementation imports, calls, constructors, methods,
 mutable bindings, loops, conditionals, assignments, spreads, computed fields,
@@ -310,12 +330,12 @@ The compiler accepts a string expression; the grammar requires literal context.
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    {
+  entries: {
+    step1: {
       kind: TaskKind.Statement,
       prompt: { kind: PromptKind.Statement, content: Promise.name },
     },
-  ],
+  },
 };
 export default receipt;
 ```
@@ -324,15 +344,15 @@ export default receipt;
 
 ```typescript
 const receipt: Job = {
-  entries: [
-    {
+  entries: {
+    step1: {
       kind: TaskKind.Statement,
       prompt: {
         kind: PromptKind.Statement,
         content: "Read the assigned context before editing.",
       },
     },
-  ],
+  },
 };
 export default receipt;
 ```
