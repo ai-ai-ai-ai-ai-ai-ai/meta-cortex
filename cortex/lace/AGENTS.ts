@@ -29,8 +29,7 @@ const receipt: Job = {
         orientation: {
           Statement: {
             prompt: {
-              BulletList: {
-                label: "Required actions",
+              Required: {
                 items: {
                   followContract:
                     "Follow the core ownership, receipt contract, and validation context below.",
@@ -62,7 +61,7 @@ const receipt: Job = {
                       taskVariants:
                         "Task is the closed union of mapped Statement and ShellCommand variants around plain payloads.",
                       promptVariants:
-                        "Prompt is the closed union of mapped PromptStatement and BulletList variants around plain payloads.",
+                        "Prompt is the closed union of mapped PromptStatement, BulletList, Required, and Prohibited variants around plain payloads.",
                     },
                   },
                 },
@@ -114,8 +113,7 @@ const receipt: Job = {
                   BulletList: {
                     items: {
                       prohibited: {
-                        BulletList: {
-                          label: "Prohibited",
+                        Prohibited: {
                           items: {
                             unauthorizedCoreEdit:
                               "While assigned to write a context receipt, add a task kind because the receipt fails compilation.",
@@ -196,8 +194,7 @@ const receipt: Job = {
                   BulletList: {
                     items: {
                       prohibited: {
-                        BulletList: {
-                          label: "Prohibited",
+                        Prohibited: {
                           items: {
                             stageMutation:
                               "Mutate receipt stages or hide their hierarchy behind calls.",
@@ -252,7 +249,7 @@ const receipt: Job = {
                           label: "Bullet list",
                           items: {
                             namedItems:
-                              "Declare { BulletList: { label, items } } with an optional literal label and a nonempty literal items map of text or mapped BulletList groups.",
+                              "Declare { BulletList: { label, items } } with an optional literal label and a nonempty literal items map of text or mapped BulletList, Required, and Prohibited groups.",
                             literalText:
                               "Give each text bullet a short descriptive key and nonblank literal string or noninterpolated template value; keep one independent fact or rule in each item.",
                           },
@@ -263,11 +260,11 @@ const receipt: Job = {
                           label: "Nested bullet list",
                           items: {
                             recursiveGroups:
-                              "Nest mapped BulletList groups within named items recursively; arrays, raw payloads, PromptStatement wrappers, and helper calls are invalid item values.",
+                              "Nest mapped BulletList, Required, and Prohibited groups within named items recursively; arrays, raw payloads, PromptStatement wrappers, and helper calls are invalid item values.",
                             optionalLabels:
                               "Use the same plain BulletList payload inside mapped Prompt variants for standalone lists and nested groups; labels are optional.",
                             meaningfulGroups:
-                              "Use groups when their bullets belong to a named subject or example.",
+                              "Use groups when their bullets belong to a named subject or example; use Required and Prohibited payloads containing only items for mandatory and forbidden rules, following teams/ai-team/docs/lace-architecture.md#normative-categories.",
                           },
                         },
                       },
@@ -282,8 +279,7 @@ const receipt: Job = {
                   BulletList: {
                     items: {
                       prohibited: {
-                        BulletList: {
-                          label: "Prohibited",
+                        Prohibited: {
                           items: {
                             hiddenStructure:
                               "Hide independent rules in one long paragraph or encode bullet structure inside a raw string.",
@@ -354,8 +350,7 @@ const receipt: Job = {
                   BulletList: {
                     items: {
                       prohibited: {
-                        BulletList: {
-                          label: "Prohibited",
+                        Prohibited: {
                           items: {
                             invalidRoot:
                               "Default-export a raw array or task, use a constructor, or call an implementation helper.",
@@ -419,8 +414,7 @@ const receipt: Job = {
                   BulletList: {
                     items: {
                       prohibited: {
-                        BulletList: {
-                          label: "Prohibited",
+                        Prohibited: {
                           items: {
                             incompleteClaim:
                               "Report that all Lace checks pass after running only check.",
@@ -454,8 +448,7 @@ const receipt: Job = {
         scopeRestrictions: {
           Statement: {
             prompt: {
-              BulletList: {
-                label: "Prohibited actions",
+              Prohibited: {
                 items: {
                   contextOnly:
                     "Do not use Lace as a coding-agent API or an application workflow.",
@@ -478,8 +471,7 @@ const receipt: Job = {
               BulletList: {
                 items: {
                   prohibited: {
-                    BulletList: {
-                      label: "Prohibited",
+                    Prohibited: {
                       items: {
                         weakenCore:
                           "Add an application callback to the model or weaken lint to make a context receipt pass.",

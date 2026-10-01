@@ -79,7 +79,9 @@ When the assignment concerns Cortex's own typed context files, use the
 [Neural Lace architecture](../../../../docs/lace-architecture.md).
 Its [authoring example](examples/lace/authoring.lace.ts) demonstrates context
 composition with imported jobs, named literal text bullets and nested BulletList groups, and
-existing compilation checks. Import model vocabulary from `@meta-cortex/lace`
+existing compilation checks. Use typed Required and Prohibited prompts for
+mandatory and forbidden rules; follow the
+[normative category contract](../../../../docs/lace-architecture.md#normative-categories). Import model vocabulary from `@meta-cortex/lace`
 and other receipts through static relative paths. The exact helper accepts one nonblank string or
 noninterpolated template literal only in standalone Statement.prompt. Existing
 plain mapped PromptStatement objects remain supported. The helper returns

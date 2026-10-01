@@ -162,7 +162,9 @@ Import authoring vocabulary from the private workspace package root `@meta-corte
 Receipts declare plain, readonly Job objects with nonempty literal named stage maps.
 The model and validation code contain no instantiated context jobs or tasks.
 Apply the [stage and bullet naming rule](teams/ai-team/docs/lace-architecture.md#stage-names)
-when naming receipt stages and bullet items. Subject context receipts belong beside their owning
+when naming receipt stages and bullet items. Use typed Required and Prohibited
+prompts for mandatory and forbidden rules, following the
+[normative categories](teams/ai-team/docs/lace-architecture.md#normative-categories). Subject context receipts belong beside their owning
 context, outside `lace/`.
 Both `AGENTS.ts` entry points and `*.lace.ts` receipts use the same declaration
 language. Agents read them as text; the TypeScript project checks their

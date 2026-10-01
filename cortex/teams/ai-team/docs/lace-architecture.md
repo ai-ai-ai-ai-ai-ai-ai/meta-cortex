@@ -256,23 +256,28 @@ export default receipt;
 
 ### Prompt structure
 
-`PromptStatement` and `BulletList` are plain readonly payload interfaces.
-`Prompt` declares its closed branches inline:
-`{ readonly PromptStatement: PromptStatement; readonly BulletList?: never } |
-{ readonly BulletList: BulletList; readonly PromptStatement?: never }`.
-Each branch excludes the opposite property with its optional `never` field.
+`PromptStatement`, `BulletList`, `Required`, and `Prohibited` are plain readonly payload interfaces.
+`Prompt` declares four closed branches inline: mapped PromptStatement, BulletList,
+Required, or Prohibited. Each branch has its readonly payload property and
+excludes all three opposite properties with optional `never` fields.
 A Prompt has exactly one outer variant property; hybrid objects are invalid.
 
 - **Prompt statement:** `{ PromptStatement: { content } }` with one literal string.
 - **Bullet list:** `{ BulletList: { label?, items } }` with an optional literal
-  label and a nonempty literal named map. The payload types `items` as
-  `Readonly<Record<string, string | { readonly BulletList: BulletList; readonly PromptStatement?: never }>>`.
-- **Nested group:** a mapped BulletList variant within another payload's `items`.
-  Groups use the same recursive variant and may omit their label.
+  label and a nonempty literal named map.
+- **Required:** `{ Required: { items } }` for mandatory actions or rules.
+- **Prohibited:** `{ Prohibited: { items } }` for forbidden actions or rules.
+- **Nested group:** a mapped BulletList, Required, or Prohibited within `items`.
+  All three group payloads share the recursive named item contract.
+
+Required and Prohibited each declare `readonly items: BulletList["items"]`.
+Their payloads have no label or kind. BulletList items contain literal strings
+or inline closed mapped BulletList, Required, and Prohibited groups.
+PromptStatement wrappers and helper calls remain invalid item values.
 
 Give each text bullet an explicit descriptive key and a nonblank literal string
 or noninterpolated template value. Use one bullet per
-independent fact or action. Nest BulletLists when their relationship matters,
+independent fact or action. Nest generic or typed groups when their relationship matters,
 such as prohibited/preferred examples. State requirements explicitly in the
 wording. Arrays, raw group payloads, general Prompt values, PromptStatement
 wrappers, and helper calls are invalid item values. Plain mapped PromptStatement
@@ -295,7 +300,7 @@ export default receipt;
 ```
 
 **Preferred:** put each action in a structured bullet and nest related items.
-The nested group below omits its optional label.
+The root uses the typed Required category; its nested generic group omits its optional label.
 
 ```typescript
 const receipt: Job = {
@@ -303,8 +308,7 @@ const receipt: Job = {
     requiredActions: {
       Statement: {
         prompt: {
-          BulletList: {
-            label: "Required actions",
+          Required: {
             items: {
               readContext: "Read the assigned context.",
               checks: {
@@ -358,17 +362,72 @@ const receipt: Job = {
 export default receipt;
 ```
 
+### Normative categories
+
+Use typed Required and Prohibited prompts for mandatory and forbidden rules.
+These categories work as standalone prompts and nested item groups.
+Keep recommendations in a generic BulletList, such as one labelled `Preferred`;
+a recommendation is not mandatory merely because it is grouped.
+
+The grammar reserves exactly four generic BulletList labels: `Required`,
+`Required actions`, `Prohibited`, and `Prohibited actions`.
+Use their typed category instead. This is a bounded syntax rule; checking does
+not classify prose or infer whether an instruction is mandatory.
+Other nonblank literal labels remain valid.
+
+**Prohibited:** encode the category in a generic label.
+The compiler accepts this shape, but the grammar rejects the reserved label.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    readContext: {
+      Statement: {
+        prompt: {
+          BulletList: { label: "Required", items: { read: "Read context." } },
+        },
+      },
+    },
+  },
+};
+export default receipt;
+```
+
+**Preferred:** declare the typed category with its named items.
+
+```typescript
+const receipt: Job = {
+  stages: {
+    readContext: {
+      Statement: {
+        prompt: {
+          Required: {
+            items: {
+              read: "Read context.",
+              restrictions: {
+                Prohibited: { items: { skip: "Do not skip context." } },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+export default receipt;
+```
+
 ### Literal prompt helper
 
 `PromptStatement` retains its readonly interface and has an abstract static class
 whose `content(content: string)` return type is declared inline as
-`{ readonly PromptStatement: PromptStatement; readonly BulletList?: never }`.
+`{ readonly PromptStatement: PromptStatement; readonly BulletList?: never; readonly Required?: never; readonly Prohibited?: never }`.
 The helper returns the precise plain `{ PromptStatement: { content } }` variant directly usable as a
 standalone Statement.prompt, without freezing or runtime validation. Direct construction is not part of the authoring API.
 
 The grammar permits only noncomputed `PromptStatement.content` calls with exactly
 one nonblank string or noninterpolated template literal. Calls belong only in a
-Statement's standalone `prompt`; BulletList item values cannot use the helper. Other calls and helper
+Statement's standalone `prompt`; generic and typed item values cannot use the helper. Other calls and helper
 calls in Job, stage, or shell-command fields remain invalid. Existing model import
 restrictions and TypeScript binding checks apply; there is no import tracker.
 
@@ -499,13 +558,13 @@ The root binding is named `receipt` and default-exported.
 Task and Prompt objects require exactly one outer variant property with a
 literal payload in their task or prompt position. `WorkingDirectory` supplies
 `cwd` inside the ShellCommand payload. Arbitrary stage and item keys such as `Statement`,
-`ShellCommand`, `PromptStatement`, and `BulletList` remain valid at any depth. Dynamic payloads, computed fields, spreads, methods, and helper
+`ShellCommand`, `PromptStatement`, `BulletList`, `Required`, and `Prohibited` remain valid at any depth. Dynamic payloads, computed fields, spreads, methods, and helper
 calls used as commands are invalid. Text and labels must be nonblank literals; maps must be nonempty.
 Stage maps require explicit unique identifier or string literal keys and literal
 objects or static Job references as values. Stage arrays, computed keys, spreads,
 methods, and nonliteral stage maps are invalid. Bullet item maps require explicit
 unique identifier or string literal keys with nonblank names. Their values are
-nonblank literal text or a literal mapped BulletList group. Empty maps, arrays,
+nonblank literal text or a literal mapped BulletList, Required, or Prohibited group. Empty maps, arrays,
 dynamic values, computed keys, spreads, methods, and other Prompt variants are invalid.
 
 The grammar combines standard ESLint restrictions and duplicate-key checks with
