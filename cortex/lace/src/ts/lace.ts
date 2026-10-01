@@ -57,5 +57,5 @@ export type Entry = Job | Task;
 
 /** A directory of ordered context entries, declared as a plain object. */
 export interface Job {
-  readonly entries: readonly Entry[];
+  readonly entries: Readonly<Record<string, Entry>>;
 }

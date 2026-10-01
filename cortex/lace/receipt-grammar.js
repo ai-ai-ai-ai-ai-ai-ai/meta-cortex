@@ -8,7 +8,10 @@ export class ReceiptGrammar {
       files: ["**/*.lace.ts", "**/AGENTS.ts"],
       linterOptions: { noInlineConfig: true },
       languageOptions: { parser: tseslint.parser },
-      plugins: { "@typescript-eslint": tseslint.plugin },
+      plugins: {
+        "@typescript-eslint": tseslint.plugin,
+        lace: { rules: { "declaration-fields": ReceiptFieldGrammar.rule() } },
+      },
       rules: {
         "@typescript-eslint/ban-ts-comment": [
           "error",
@@ -19,6 +22,7 @@ export class ReceiptGrammar {
             "ts-check": false,
           },
         ],
+        "lace/declaration-fields": "error",
         "no-dupe-keys": "error",
         "no-sparse-arrays": "error",
         "no-undef": "error",
@@ -65,7 +69,7 @@ export class ReceiptGrammar {
             selector:
               "VariableDeclarator:not([id.type='Identifier'][id.typeAnnotation.typeAnnotation.type='TSTypeReference'][id.typeAnnotation.typeAnnotation.typeName.name='Job'][init.type='ObjectExpression'])",
             message:
-              "Declare each local Job as const name: Job = { entries: [...] }.",
+              "Declare each local Job as const name: Job = { entries: { name: entry } }.",
           },
           {
             selector:
@@ -76,43 +80,6 @@ export class ReceiptGrammar {
             selector:
               "Property[computed=true], Property[shorthand=true], Property[method=true]",
             message: "Give every context field an explicit literal name.",
-          },
-          {
-            selector:
-              ":matches(Property[key.name=/^(content|label|script)$/], Property[key.value=/^(content|label|script)$/]):not([value.type='Literal'], [value.type='TemplateLiteral'])",
-            message: "Write prompt content, labels, and commands as literals.",
-          },
-          {
-            selector:
-              ":matches(Property[key.name=/^(entries|items)$/], Property[key.value=/^(entries|items)$/]):not([value.type='ArrayExpression'])",
-            message: "Declare entries and list items as literal arrays.",
-          },
-          {
-            selector:
-              "ArrayExpression:not(Property[key.name=/^(entries|items)$/] > ArrayExpression, Property[key.value=/^(entries|items)$/] > ArrayExpression)",
-            message: "Arrays belong only to Job entries and prompt list items.",
-          },
-          {
-            selector: "ArrayExpression[elements.length=0]",
-            message:
-              "Jobs and prompt lists contain at least one entry or item.",
-          },
-          {
-            selector:
-              ":matches(Property[key.name='entries'], Property[key.value='entries']) > ArrayExpression > :not(ObjectExpression, Identifier)",
-            message:
-              "Job entries are literal objects or static Job references.",
-          },
-          {
-            selector:
-              ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(ObjectExpression)",
-            message:
-              "List items are literal prompt statement or bullet list objects.",
-          },
-          {
-            selector: "Property[value.type='Identifier']",
-            message:
-              "Nest literal context objects; Job references belong in entries arrays.",
           },
           {
             selector:
@@ -153,5 +120,221 @@ export class ReceiptGrammar {
         ],
       },
     };
+  }
+}
+
+/** @typedef {{readonly node: import("eslint").Rule.Node; readonly message: string}} FieldIssue */
+
+/** Position checks keep entry names separate from schema field selectors. */
+class ReceiptFieldGrammar {
+  /** @returns {import("eslint").Rule.RuleModule} */
+  static rule() {
+    return {
+      create(context) {
+        const grammar = new ReceiptFieldGrammar(context);
+        return grammar.listeners();
+      },
+    };
+  }
+
+  /** @param {import("eslint").Rule.RuleContext} context */
+  constructor(context) {
+    this.context = context;
+  }
+
+  /** @returns {import("eslint").Rule.RuleListener} */
+  listeners() {
+    return {
+      ":matches(Property[key.name=/^(content|label|script)$/], Property[key.value=/^(content|label|script)$/]):not([value.type='Literal'], [value.type='TemplateLiteral'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Write prompt content, labels, and commands as literals.",
+          };
+          this.schema(issue);
+        },
+      ":matches(Property[key.name='entries'], Property[key.value='entries']):not([value.type='ObjectExpression'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Declare Job entries as a literal named object.",
+          };
+          this.schema(issue);
+        },
+      ":matches(Property[key.name='entries'], Property[key.value='entries']) > ObjectExpression[properties.length=0]":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Jobs contain at least one named entry.",
+          };
+          this.schema(issue);
+        },
+      ":matches(Property[key.name='items'], Property[key.value='items']):not([value.type='ArrayExpression'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Declare list items as literal arrays.",
+          };
+          this.schema(issue);
+        },
+      ArrayExpression: (node) => this.array(node),
+      "ArrayExpression[elements.length=0]":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Prompt lists contain at least one entry or item.",
+          };
+          this.schema(issue);
+        },
+      ":matches(Property[key.name='entries'], Property[key.value='entries']) > ObjectExpression > Property:not([value.type='ObjectExpression'], [value.type='Identifier'])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message:
+              "Job entries are literal objects or static Job references.",
+          };
+          this.entry(issue);
+        },
+      ":matches(Property[key.name='entries'], Property[key.value='entries']) > ObjectExpression > Property:not([key.type='Identifier'], [key.type='Literal'][key.raw=/^[\"']/])":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message: "Name Job entries with identifiers or string literals.",
+          };
+          this.entry(issue);
+        },
+      ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(ObjectExpression)":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message:
+              "List items are literal prompt statement or bullet list objects.",
+          };
+          this.schema(issue);
+        },
+      "Property[value.type='Identifier']":
+        /** @param {import("eslint").Rule.Node} node */
+        (node) => {
+          /** @type {FieldIssue} */
+          const issue = {
+            node,
+            message:
+              "Nest literal context objects; Job references belong as named entry values.",
+          };
+          this.schema(issue);
+        },
+    };
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  array(node) {
+    const field = this.property(node);
+    switch (this.name(field)) {
+      case "items":
+        switch (this.isEntryProperty(field)) {
+          case false:
+            return;
+          case true:
+            break;
+        }
+    }
+    const issue = { node, message: "Arrays belong only to prompt list items." };
+    this.context.report(issue);
+  }
+
+  /** @param {FieldIssue} issue */
+  schema(issue) {
+    switch (this.isEntryProperty(this.property(issue.node))) {
+      case false:
+        this.context.report(issue);
+        break;
+      case true:
+        break;
+    }
+  }
+
+  /** @param {FieldIssue} issue */
+  entry(issue) {
+    switch (this.isEntryProperty(this.property(issue.node))) {
+      case true:
+        this.context.report(issue);
+        break;
+      case false:
+        break;
+    }
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  property(node) {
+    let current = node;
+    while (current.type !== "Property" && current.type !== "Program") {
+      current = current.parent;
+    }
+    return current;
+  }
+
+  // Boolean predicates adapt ESLint's raw AST position at the lint boundary.
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isJobObject(node) {
+    return (
+      node.type !== "Program" &&
+      (node.parent.type === "VariableDeclarator" ||
+        (node.parent.type === "Property" && this.isEntryProperty(node.parent)))
+    );
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isEntryProperty(node) {
+    return node.type === "Property" && this.isEntryMap(node.parent);
+  }
+
+  /** @param {import("eslint").Rule.Node} node @returns {boolean} */
+  isEntryMap(node) {
+    return (
+      node.type === "ObjectExpression" &&
+      node.parent.type === "Property" &&
+      this.name(node.parent) === "entries" &&
+      this.isJobObject(node.parent.parent)
+    );
+  }
+
+  /** @param {import("eslint").Rule.Node} node */
+  name(node) {
+    switch (true) {
+      case node.type === "Property":
+        return this.key(node.key);
+      case true:
+        break;
+    }
+    return "";
+  }
+
+  /** @param {import("estree").Node} node */
+  key(node) {
+    switch (true) {
+      case node.type === "Identifier":
+        return node.name;
+      case node.type === "Literal":
+        return String(node.value);
+      case true:
+        break;
+    }
+    return "";
   }
 }
