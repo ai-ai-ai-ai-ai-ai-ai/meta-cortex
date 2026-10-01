@@ -2,7 +2,7 @@
 
 Neural Lace defines typed Cortex context: architecture, specifications, rules,
 instructions, skills, and practices that agents read as text.
-Its [model](../../../lace/src/ts/lace.ts) contains enums, types, interfaces, and the inert
+Its [model](../../../lace/src/ts/lace.ts) contains the WorkingDirectory enum, types, interfaces, and the inert
 `PromptStatement.content` authoring helper.
 Receipts declare nested objects and arrays, so indentation shows the context
 hierarchy as it does in JSON or YAML. TypeScript checks the declarations and
@@ -35,7 +35,7 @@ Lace itself; that entry point does not move subject receipts into the core.
 
 ### Object hierarchy
 
-- Import `Job` as a type, the required enums, and `PromptStatement` as a value from the model.
+- Import `Job` as a type, `WorkingDirectory` when commands need it, and `PromptStatement` as a value from the model.
 - Declare `const receipt: Job = { stages: { context: context } }` and `export default receipt`.
 - Declare each child Job directly as `{ stages: { context: context } }` within its parent.
 - Give each task or child Job an explicit unique identifier or string literal key
@@ -54,7 +54,7 @@ nonempty under the declaration grammar. The only authoring helper is
 `PromptStatement.content`; receipts have no constructors, general builders,
 or runtime collection operations.
 
-The TypeScript fragments below assume `Job`, `TaskKind`, `PromptKind`, `PromptStatement`, and
+The TypeScript fragments below assume `Job`, `PromptStatement`, and
 `WorkingDirectory` are imported from the model. `context`, `compile`, and
 `verify` are default Jobs imported from the linked Context Engineering examples.
 Each fragment is a separate receipt body.
@@ -137,28 +137,34 @@ export default receipt;
 
 ### Task declarations
 
-`Task = Statement | ShellCommand` is a union of the unchanged Statement object
-and a shell payload wrapper. Declare the required shape explicitly:
+`Statement` and `ShellCommand` are plain readonly payload interfaces.
+`Statement` contains `prompt: Prompt`; `ShellCommand` contains `cwd` and `script`.
+The closed `Task` union wraps those payloads as
+`{ readonly Statement: Statement } | { readonly ShellCommand: ShellCommand }`.
+Each variant excludes the opposite property with an optional `never` field.
+Concrete payloads alone are not Task variants. `TaskKind` and `PromptKind` are
+removed without aliases; no declaration uses a `kind` field.
 
-- **Statement:** `kind: TaskKind.Statement` and a structured `prompt`.
+- **Statement:** `{ Statement: { prompt } }` with a structured Prompt.
   Its wording can explain architecture, describe a specification, state a rule,
   or require an action.
 - **Shell command:** `{ ShellCommand: { cwd, script } }` with a literal payload.
-  Nest `cwd` and literal `script` inside `ShellCommand`; choose
-  `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
-  The wrapper and both payload fields are readonly. `TaskKind.ShellCommand`
-  is removed without an alias; `TaskKind` retains only `Statement`.
+  Choose `WorkingDirectory.ProjectRoot` or `WorkingDirectory.LibraryRoot`.
+  The outer property and both payload fields are readonly.
 
-**Prohibited:** mix shell-command fields into a Statement.
-The compiler rejects the `script` field on that variant.
+**Prohibited:** put both Task variants in one stage.
+The compiler rejects the hybrid through the opposite optional `never` properties;
+the grammar requires one outer variant property.
 
 ```typescript
 const receipt: Job = {
   stages: {
     readContext: {
-      kind: TaskKind.Statement,
-      prompt: PromptStatement.content("Read context."),
-      script: "bun run check",
+      Statement: { prompt: PromptStatement.content("Read context.") },
+      ShellCommand: {
+        cwd: WorkingDirectory.LibraryRoot,
+        script: "bun run check",
+      },
     },
   },
 };
@@ -171,10 +177,11 @@ export default receipt;
 const receipt: Job = {
   stages: {
     explainHierarchy: {
-      kind: TaskKind.Statement,
-      prompt: PromptStatement.content(
-        "A Job groups Cortex context in source order.",
-      ),
+      Statement: {
+        prompt: PromptStatement.content(
+          "A Job groups Cortex context in source order.",
+        ),
+      },
     },
     compileReceipt: {
       ShellCommand: {
@@ -189,17 +196,20 @@ export default receipt;
 
 ### Prompt structure
 
-`Prompt = PromptStatement | BulletList` is a discriminated union:
+`PromptStatement` and `BulletList` are plain readonly payload interfaces.
+`Prompt` is the closed union of `PromptStatementVariant` and `BulletListVariant`:
+`{ readonly PromptStatement: PromptStatement } | { readonly BulletList: BulletList }`.
+Each variant excludes the opposite property with an optional `never` field.
+A Prompt has exactly one outer variant property; hybrid objects are invalid.
 
-- **Prompt statement:** `PromptKind.Statement` and one literal `content` string.
-- **Bullet list:** `PromptKind.BulletList`, an optional literal `label`, and a
-  nonempty literal `items` array of structured Prompt objects. The model types
-  `items` as `readonly Prompt[]`.
-- **Nested group:** a BulletList within another BulletList's `items`. Groups use
-  the same recursive shape and may omit their label.
+- **Prompt statement:** `{ PromptStatement: { content } }` with one literal string.
+- **Bullet list:** `{ BulletList: { label?, items } }` with an optional literal
+  label and a nonempty literal array. The payload types `items` as `readonly Prompt[]`.
+- **Nested group:** a mapped BulletList Prompt within another payload's `items`.
+  Groups use the same recursive variant and may omit their label.
 
 Declare every text bullet with `PromptStatement.content("literal text")`.
-Existing plain PromptStatement objects remain supported. Use one bullet per
+Existing plain mapped PromptStatement objects remain supported. Use one bullet per
 independent fact or action. Nest BulletLists when their relationship matters,
 such as prohibited/preferred examples. State requirements explicitly in the
 wording. Raw string items are invalid.
@@ -211,8 +221,9 @@ The compiler requires a structured Prompt.
 const receipt: Job = {
   stages: {
     readAndCompile: {
-      kind: TaskKind.Statement,
-      prompt: "Read context. Compile the receipt.",
+      Statement: {
+        prompt: "Read context. Compile the receipt.",
+      },
     },
   },
 };
@@ -226,17 +237,20 @@ The nested group below omits its optional label.
 const receipt: Job = {
   stages: {
     requiredActions: {
-      kind: TaskKind.Statement,
-      prompt: {
-        kind: PromptKind.BulletList,
-        label: "Required actions",
-        items: [
-          PromptStatement.content("Read the assigned context."),
-          {
-            kind: PromptKind.BulletList,
-            items: [PromptStatement.content("Compile the receipt.")],
+      Statement: {
+        prompt: {
+          BulletList: {
+            label: "Required actions",
+            items: [
+              PromptStatement.content("Read the assigned context."),
+              {
+                BulletList: {
+                  items: [PromptStatement.content("Compile the receipt.")],
+                },
+              },
+            ],
           },
-        ],
+        },
       },
     },
   },
@@ -247,9 +261,9 @@ export default receipt;
 ### Literal prompt helper
 
 `PromptStatement` retains its readonly interface and has an abstract static class
-with `content(content: string): PromptStatement`. The helper returns the same
-plain `{ kind: PromptKind.Statement, content }` object, without freezing or
-runtime validation. Direct construction is not part of the authoring API.
+with `content(content: string): PromptStatementVariant`. The helper returns the
+precise plain `{ PromptStatement: { content } }` variant directly usable as a
+Prompt or list item, without freezing or runtime validation. Direct construction is not part of the authoring API.
 
 The grammar permits only noncomputed `PromptStatement.content` calls with exactly
 one nonblank string or noninterpolated template literal. Calls belong only in a
@@ -264,8 +278,9 @@ The compiler accepts the string, but the grammar rejects this call.
 const receipt: Job = {
   stages: {
     read: {
-      kind: TaskKind.Statement,
-      prompt: PromptStatement.content(Promise.name),
+      Statement: {
+        prompt: PromptStatement.content(Promise.name),
+      },
     },
   },
 };
@@ -278,8 +293,9 @@ export default receipt;
 const receipt: Job = {
   stages: {
     read: {
-      kind: TaskKind.Statement,
-      prompt: PromptStatement.content("Read the assigned context."),
+      Statement: {
+        prompt: PromptStatement.content("Read the assigned context."),
+      },
     },
   },
 };
@@ -379,10 +395,10 @@ The [grammar](../../../lace/receipt-grammar.js) permits model and receipt import
 typed const Job objects, literal tasks and prompts, and static Job references in
 named stages maps, plus the exact literal prompt helper described above.
 The root binding is named `receipt` and default-exported.
-Enum fields use `TaskKind` or `PromptKind` for `kind`, and `WorkingDirectory` for
-`cwd` inside the ShellCommand payload. The wrapper is valid only as a task stage
-and must contain a literal object; arbitrary stage keys named `ShellCommand`
-remain valid. Dynamic payloads, computed fields, spreads, methods, and helper
+Task and Prompt objects require exactly one outer variant property with a
+literal payload in their task or prompt position. `WorkingDirectory` supplies
+`cwd` inside the ShellCommand payload. Arbitrary stage keys such as `Statement`,
+`ShellCommand`, `PromptStatement`, and `BulletList` remain valid at any depth. Dynamic payloads, computed fields, spreads, methods, and helper
 calls used as commands are invalid. Text and labels must be nonblank literals; maps and lists must be nonempty.
 Stage maps require explicit unique identifier or string literal keys and literal
 objects or static Job references as values. Stage arrays, computed keys, spreads,
@@ -408,8 +424,9 @@ The compiler accepts a string expression; the grammar requires literal context.
 const receipt: Job = {
   stages: {
     readContext: {
-      kind: TaskKind.Statement,
-      prompt: { kind: PromptKind.Statement, content: Promise.name },
+      Statement: {
+        prompt: { PromptStatement: { content: Promise.name } },
+      },
     },
   },
 };
@@ -422,10 +439,11 @@ export default receipt;
 const receipt: Job = {
   stages: {
     readContext: {
-      kind: TaskKind.Statement,
-      prompt: PromptStatement.content(
-        "Read the assigned context before editing.",
-      ),
+      Statement: {
+        prompt: PromptStatement.content(
+          "Read the assigned context before editing.",
+        ),
+      },
     },
   },
 };

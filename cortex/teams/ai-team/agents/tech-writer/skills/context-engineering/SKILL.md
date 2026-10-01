@@ -81,7 +81,9 @@ Its [authoring example](examples/lace/authoring.lace.ts) demonstrates context
 composition with imported jobs, `PromptStatement.content` text bullets, and
 existing compilation checks. The exact helper accepts one nonblank string or
 noninterpolated template literal in prompt or BulletList item positions. Existing
-plain PromptStatement objects remain supported. Agents read receipts as text;
+plain mapped PromptStatement objects remain supported. The helper returns
+`{ PromptStatement: { content } }`; Task and Prompt wrap plain readonly concrete
+payloads with one outer variant property. Agents read receipts as text;
 importing a receipt invokes the helper to construct plain objects but never runs
 declared shell commands. Apply the [stage-name authoring rule](../../../../docs/lace-architecture.md#stage-names).
 Follow the
