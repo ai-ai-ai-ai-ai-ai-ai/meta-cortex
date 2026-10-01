@@ -83,7 +83,7 @@ impl Publication {
 }
 ```
 
-**Preferred:** transitions belong to specialized `Publication<State>`
+**Required:** transitions belong to specialized `Publication<State>`
 implementations. Callers can construct only the draft publication.
 
 ```rust
@@ -221,7 +221,7 @@ impl PublicationCommand {
 **Prohibited:** publish a draft, inspect a published result before publishing,
 or reuse a publication after a consuming transition. These fail to compile.
 
-**Preferred:** move through the pipeline above. Each returned type exposes only
+**Required:** move through the pipeline above. Each returned type exposes only
 the next valid operations. Validation and I/O failures return typed errors.
 
 This example writes a file; it does not guarantee atomic writes or durable

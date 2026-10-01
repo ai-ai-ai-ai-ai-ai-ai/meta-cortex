@@ -16,7 +16,7 @@ that use them; a workspace member does not need unused dependencies.
 **Prohibited:** build custom serialization helpers, handwrite mechanical error
 and conversion implementations, or use `println!` as application logging.
 
-**Preferred:** declare the libraries and use their derives and structured events.
+**Required:** declare the libraries and use their derives and structured events.
 Normal CLI output may still use `println!`.
 Apply the [derive-first serialization requirements](../boundaries/serialization-boundaries.md#derive-serialization-instead-of-writing-boilerplate) when selecting Serde attributes and conversions.
 
@@ -53,7 +53,7 @@ tracing::info!(job_id = id, "job started");
 **Prohibited:** build a polling queue for task communication or block an async
 worker while waiting for a channel message.
 
-**Preferred:** use Tokio for native async execution and Flume's async channel
+**Required:** use Tokio for native async execution and Flume's async channel
 operations inside async tasks. Browser WASM uses its host event loop through
 `wasm-bindgen-futures`.
 
@@ -64,7 +64,7 @@ operations inside async tasks. Browser WASM uses its host event loop through
 
 **Prohibited:** handwrite an HTTP client or routing framework for ordinary API work.
 
-**Preferred:** use Reqwest for outgoing requests and Axum for server endpoints.
+**Required:** use Reqwest for outgoing requests and Axum for server endpoints.
 Browser WASM is a client target, not an Axum server target.
 
 ## WASM
@@ -95,6 +95,6 @@ Browser WASM is a client target, not an Axum server target.
 JSON merely to cross the JS boundary, or spread low-level browser bindings into
 domain code.
 
-**Preferred:** generate contracts with wasm-bindgen/Tsify, use serde-wasm-bindgen
+**Required:** generate contracts with wasm-bindgen/Tsify, use serde-wasm-bindgen
 only for unavoidable external value conversion, and keep browser I/O in adapters using Gloo or
 Rexie. Use direct bindings only at the remaining unsupported edges.

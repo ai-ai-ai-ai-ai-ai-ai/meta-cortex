@@ -14,5 +14,5 @@ Vale supplies the repetition check; Cortex owns only its product-name spellings.
 
 **Prohibited:** modify Google's copied rule to hide a finding.
 
-**Preferred:** fix the prose; adopt upstream changes with the pinned source
+**Required:** fix the prose; adopt upstream changes with the pinned source
 reference and regression fixtures updated together.

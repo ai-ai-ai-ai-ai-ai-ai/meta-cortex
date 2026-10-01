@@ -37,7 +37,7 @@ global policy supplied with the assignment.
 **Prohibited:** implement a dialog's submit behavior and replace the approved
 layout, typography, and navigation without a design assignment.
 
-**Preferred:** implement and test submission, cancellation, and error handling
+**Required:** implement and test submission, cancellation, and error handling
 against the supplied dialog design. Report any missing visual state to Team
 Gizmo for the web designer; sequence shared component edits through Team Gizmo.
 

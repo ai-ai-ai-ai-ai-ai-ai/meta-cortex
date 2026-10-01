@@ -30,7 +30,7 @@ identifier!(OrderId);
 identifier!(CustomerId);
 ```
 
-**Preferred:** both types are explicit; only the mechanical trait is derived.
+**Required:** both types are explicit; only the mechanical trait is derived.
 
 ```rust
 #[derive(derive_more::From)]
@@ -68,7 +68,7 @@ macro_rules! address_mapping {
 address_mapping!();
 ```
 
-**Preferred:** the destination owns a directly visible conversion.
+**Required:** the destination owns a directly visible conversion.
 
 ```rust
 impl From<DeliveryKind> for AddressRequirement {
@@ -117,7 +117,7 @@ impl TryFrom<u16> for RetryLimit {
 }
 ```
 
-**Preferred:** the branch and exit are visible inside the validating owner.
+**Required:** the branch and exit are visible inside the validating owner.
 
 ```rust
 pub struct RetryLimit(u16);
@@ -153,7 +153,7 @@ macro_rules! assert_same {
 assert_same!(actual, expected);
 ```
 
-**Preferred:** use the standard macro directly.
+**Required:** use the standard macro directly.
 
 ```rust
 // Inside the same test:
@@ -174,7 +174,7 @@ as permission to change a protocol or type invariant.
 **Prohibited:** expand a generated identifier but accidentally remove its
 transparent Serde representation, changing a scalar into an object.
 
-**Preferred:** preserve its Serde attributes and verify the same wire value,
+**Required:** preserve its Serde attributes and verify the same wire value,
 then check every former macro call site against the explicit declarations.
 
 ## Validation

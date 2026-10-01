@@ -34,7 +34,7 @@ global policy supplied with the assignment.
 **Prohibited:** redesign a sign-in dialog and change its authentication state
 machine while adjusting the component's styles.
 
-**Preferred:** define the dialog's layout, focus treatment, and pending/error
+**Required:** define the dialog's layout, focus treatment, and pending/error
 presentation. Apply the assigned markup and styles; Team Gizmo assigns behavior
 and functional tests to the TypeScript developer. If both edit the same component,
 Team Gizmo sequences their changes and passes the updated file between them.

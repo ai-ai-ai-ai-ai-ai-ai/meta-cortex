@@ -73,7 +73,7 @@ pub struct OrderLine {
 }
 ```
 
-**Preferred:** both the number and text retain their domain meaning.
+**Required:** both the number and text retain their domain meaning.
 
 ```rust
 #[derive(derive_more::From)]
@@ -113,7 +113,7 @@ pub struct CommandHelp {
 }
 ```
 
-**Preferred:** distinct newtypes preserve the roles of atomic prose. These
+**Required:** distinct newtypes preserve the roles of atomic prose. These
 alternative declarations assume Serde derive and `derive_more`'s `from` feature.
 
 ```rust
@@ -164,7 +164,7 @@ impl TryFrom<String> for AgentId {
 let coordinator = AgentId::try_from("gizmo".to_owned())?;
 ```
 
-**Preferred:** internal construction is infallible and names the exact role.
+**Required:** internal construction is infallible and names the exact role.
 
 ```rust
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
@@ -199,7 +199,7 @@ by name. Runtime input may require validation.
 
 These call-site alternatives assume the owning `LeaseSeconds` type validates
 external durations through `TryFrom<i64>` and declares
-`pub const TEN_MINUTES: Self = Self(600)` inside its implementation. The preferred
+`pub const TEN_MINUTES: Self = Self(600)` inside its implementation. The required
 call avoids revalidating a known, reusable domain quantity.
 
 **Prohibited:** reconstruct a known quantity through runtime validation.
@@ -208,7 +208,7 @@ call avoids revalidating a known, reusable domain quantity.
 let ttl = LeaseSeconds::try_from(600)?;
 ```
 
-**Preferred:** use the typed value declared by its owner.
+**Required:** use the typed value declared by its owner.
 
 ```rust
 let ttl = LeaseSeconds::TEN_MINUTES;
@@ -232,7 +232,7 @@ pub struct Assignment { pub team: Team, pub agent: Agent }
 let assignment = Assignment { team: Team::Sre, agent: Agent::RustDev };
 ```
 
-**Preferred:** an enclosing variant restricts which leaf enum can be supplied.
+**Required:** an enclosing variant restricts which leaf enum can be supplied.
 This is an expanded alternative to the earlier `AgentId` example, using Serde derive.
 
 ```rust
@@ -295,7 +295,7 @@ let invocation = InvocationGuide::from(
 );
 ```
 
-**Preferred:** model the invocation and its alternatives before rendering.
+**Required:** model the invocation and its alternatives before rendering.
 `RunInvocation` itself names the operation; there is no need to store the fixed
 `run` keyword in another string field.
 
@@ -340,7 +340,7 @@ pub struct RetryNotice {
 }
 ```
 
-**Preferred:** render a typed message at the presentation boundary. This fragment
+**Required:** render a typed message at the presentation boundary. This fragment
 assumes existing validated `Attempt`, `RetryLimit`, and `TaskId` types implementing
 `Display`, plus `derive_more`'s `display` feature.
 
@@ -422,7 +422,7 @@ pub enum TaskIdParse {
 }
 ```
 
-**Preferred:** direct validation returns the domain value or a concrete error.
+**Required:** direct validation returns the domain value or a concrete error.
 This complete type definition uses `thiserror`.
 
 ```rust
@@ -466,7 +466,7 @@ Do not create separate validation paths for application code and deserialization
 pub struct Address(String);
 ```
 
-**Preferred:** retain components and meaningful address alternatives.
+**Required:** retain components and meaningful address alternatives.
 These illustrative types assume `derive_more` with its `from` feature. They show
 ownership, not a universal address grammar; a parser for the supported input format
 returns `Result<Address, AddressParseError>` and validates its components.
@@ -513,13 +513,13 @@ accessible. All alternatives compile; positional access violates this practice.
 let id = value.0;
 ```
 
-**Preferred:** name the inner domain value through a pattern.
+**Required:** name the inner domain value through a pattern.
 
 ```rust
 let TaskReference(id) = value;
 ```
 
-**Preferred:** callers use a domain method that preserves the inner type.
+**Required:** callers use a domain method that preserves the inner type.
 
 ```rust
 impl TaskReference {
@@ -590,7 +590,7 @@ let details: (EventKind, EventNote) = (kind, note);
 let (kind, note) = details;
 ```
 
-**Preferred:** give the aggregate and its fields domain meaning.
+**Required:** give the aggregate and its fields domain meaning.
 
 ```rust
 struct EventDetails {
@@ -648,7 +648,7 @@ impl TryFrom<u32> for EventSchemaVersion {
 let version = EventSchemaVersion::try_from(2)?;
 ```
 
-**Preferred:** enumerate the supported identities and isolate the wire mapping.
+**Required:** enumerate the supported identities and isolate the wire mapping.
 
 ```rust
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -682,7 +682,7 @@ let version = EventSchemaVersion::V2;
 Apply the same version contract to independent consumers, tests, and fixtures.
 A typed producer does not justify primitive version fields in its reader. These
 alternative consumer records use the `EventSchemaVersion` above; both compile,
-but only the preferred decoder rejects unsupported numeric versions at entry.
+but only the required decoder rejects unsupported numeric versions at entry.
 
 **Prohibited:** a consumer accepts any number as a known schema revision.
 
@@ -693,7 +693,7 @@ pub struct EventHeader {
 }
 ```
 
-**Preferred:** the consumer retains the closed version type after decoding.
+**Required:** the consumer retains the closed version type after decoding.
 
 ```rust
 #[derive(serde::Deserialize)]
@@ -726,7 +726,7 @@ pub struct VersionedEvent {
 }
 ```
 
-**Preferred:** each version owns its shape; consumers match exhaustively.
+**Required:** each version owns its shape; consumers match exhaustively.
 These are internal types. Preserve an established numeric wire format in its
 adapter rather than changing it to Serde's default enum representation.
 
@@ -784,7 +784,7 @@ impl TryFrom<String> for AppRelease {
 }
 ```
 
-**Preferred:** parsing selects a unit variant; no input string survives as the
+**Required:** parsing selects a unit variant; no input string survives as the
 successful release identity. The const initializer rejects a package-version
 bump until its identity is declared. The wire renderer matches exhaustively.
 
@@ -850,7 +850,7 @@ assume the existing Workbench `Revision` type and a decoded `task` record.
 let expected_revision = Revision::try_from(3)?;
 ```
 
-**Preferred:** retain the observed token; derive illustrative transitions by name.
+**Required:** retain the observed token; derive illustrative transitions by name.
 
 ```rust
 let expected_revision = task.revision;
@@ -887,7 +887,7 @@ an application-owned `inbox`. This example accepts arbitrary message text.
 inbox.receive(external.read_message()); // receive accepts String.
 ```
 
-- **Preferred:** convert once, at entry; the application accepts `MessageBody`.
+- **Required:** convert once, at entry; the application accepts `MessageBody`.
 
 ```rust
 #[derive(derive_more::From)]
@@ -944,13 +944,13 @@ serialization, database, or FFI edge. Crate, module, type, and other blanket
 ### Type-safety checks
 
 - Raw identifier and count primitives are absent from domain and WASM
-      signatures unless an external protocol owns the representation.
+  signatures unless an external protocol owns the representation.
 - An explicit edge getter may unwrap a primitive for JavaScript.
 - Infallible single-field wrappers implement `From<Primitive>`.
 - Aggregate construction keeps independent field names visible.
 - Associated constants cover only common values with stable meaning.
 
-## Prohibited and preferred domain identifiers
+## Prohibited and required domain identifiers
 
 Both snippets are valid Rust. They differ in what mistakes the compiler can detect.
 
@@ -964,7 +964,7 @@ pub struct Invoice {
 }
 ```
 
-**Preferred:** separate wrappers preserve meaning even though both use `u64`.
+**Required:** separate wrappers preserve meaning even though both use `u64`.
 Passing an `AccountId` as `Invoice.id` is a type error.
 
 ```rust
@@ -1028,7 +1028,7 @@ Text searches can locate candidates but cannot establish semantic compliance.
 **Prohibited:** report a discovery catalog as type-safe because Clippy passes,
 while reviewing identifiers but skipping its help fields and example tuples.
 
-**Preferred:** report that the catalog's fields and example construction were
+**Required:** report that the catalog's fields and example construction were
 reviewed, structured help is normalized into typed components, atomic prose uses
 distinct newtypes, and rendering preserves the required wire contract. Report
 consumer test results separately.

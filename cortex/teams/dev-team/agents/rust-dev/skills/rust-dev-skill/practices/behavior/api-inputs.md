@@ -60,7 +60,7 @@ impl RetryPolicy {
 }
 ```
 
-**Preferred:** accept the existing domain value. The receiver does not count
+**Required:** accept the existing domain value. The receiver does not count
 against the one-parameter limit.
 
 ```rust
@@ -92,7 +92,7 @@ impl TransferService {
 }
 ```
 
-**Preferred:** accept a named request and destructure it inside the operation.
+**Required:** accept a named request and destructure it inside the operation.
 The request describes operation inputs; it does not wrap a trivial constructor.
 
 ```rust
@@ -138,7 +138,7 @@ impl Layout {
 }
 ```
 
-**Preferred:** keep the fixed signature on the adapter. Convert the two boundary
+**Required:** keep the fixed signature on the adapter. Convert the two boundary
 values into a named aggregate and pass that single value to the internal API.
 Here `Width` and `Height` are infallible pixel-count newtypes, including zero;
 a constrained dimension would require validation at this boundary.

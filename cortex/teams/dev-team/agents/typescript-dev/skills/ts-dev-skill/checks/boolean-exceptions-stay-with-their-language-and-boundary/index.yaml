@@ -4,7 +4,7 @@ overview:
   - Check language-specific boolean boundary exceptions.
 prohibited:
   - Extend host exceptions to application decisions.
-preferred:
+required:
   - Normalize external booleans before workflow behavior.
 compare:
   - id: enums_over_booleans:boundary_exceptions

@@ -4,7 +4,7 @@ overview:
   - Compare caller values with the generated ABI.
 prohibited:
   - Substitute erased values or pretend records are classes.
-preferred:
+required:
   - Pass the declared record or actual generated instance.
 compare:
   - id: serialization_boundaries:typed_abi

@@ -4,7 +4,7 @@ overview:
   - Check enum extraction against state ownership.
 prohibited:
   - Move component state into module-global singletons.
-preferred:
+required:
   - Export enums; retain state with its interaction owner.
 compare:
   - id: explicit_state:component_enums

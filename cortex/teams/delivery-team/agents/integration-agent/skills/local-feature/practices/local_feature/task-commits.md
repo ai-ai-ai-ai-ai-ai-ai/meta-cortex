@@ -113,7 +113,7 @@ The steps below establish final readiness.
 **Prohibited:** report completion while final edits remain pending or required
 checks have failed.
 
-**Preferred:** inspect and save only the task's changes, verify clean status,
+**Required:** inspect and save only the task's changes, verify clean status,
 and report completion so branch integration can begin.
 For a one-commit handoff, consolidate two private checkpoints into one task
 commit before recording the final checkpoint. Send that final SHA, not either
@@ -147,6 +147,7 @@ superseded checkpoint.
    path list is empty. If the merge succeeds without conflicts, skip resolution
    and its commit. Report an unresolved behavior decision or other Git error
    to Gizmo instead of guessing.
+
 3. Fix the assigned failure and follow [task completion](#finish-task-work) to
    validate, commit, and record readiness. For a one-commit repair, set
    `task_base_sha` to the incorporated `target_sha`; consolidate only changes
@@ -157,5 +158,5 @@ superseded checkpoint.
 **Prohibited:** wait for the integration owner to enumerate conflicts, or merge
 a moving feature branch whose head differs from the assigned target SHA.
 
-**Preferred:** reproduce the merge from Gizmo's two revisions, resolve and
+**Required:** reproduce the merge from Gizmo's two revisions, resolve and
 validate it in the task worktree, then return the replacement commit SHA.

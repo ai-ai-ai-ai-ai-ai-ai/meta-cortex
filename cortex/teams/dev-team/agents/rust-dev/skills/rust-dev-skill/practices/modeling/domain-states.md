@@ -20,7 +20,7 @@ pub struct OrderCache {
 }
 ```
 
-**Preferred:** the cache names its actual alternatives.
+**Required:** the cache names its actual alternatives.
 
 ```rust
 pub enum OrderCache {
@@ -43,7 +43,7 @@ pub fn find(&self, id: &OrderId) -> Option<&Order> {
 }
 ```
 
-**Preferred:** return the lookup's named outcome.
+**Required:** return the lookup's named outcome.
 
 ```rust
 pub enum OrderLookup<'a> {
@@ -71,7 +71,7 @@ pub fn find(&self, id: &OrderId) -> OrderLookup<'_> {
 
 **Prohibited:** restructure Serde or thiserror declarations solely to suppress this lint.
 
-**Preferred:** retain ordinary derives and review authored code against the no-`Option` rule.
+**Required:** retain ordinary derives and review authored code against the no-`Option` rule.
 
 ## Represent empty prose as a value
 
@@ -101,7 +101,7 @@ impl TryFrom<String> for Note {
 let note = Note::try_from(input)?;
 ```
 
-**Preferred:** distinguish empty text explicitly and protect the text variant's
+**Required:** distinguish empty text explicitly and protect the text variant's
 construction. Preserve the established string wire contract through Serde's
 conversion attributes; new wire contracts follow their own versioning policy.
 
@@ -169,7 +169,7 @@ pub struct Invoice {
 }
 ```
 
-**Preferred:** an invoice cannot exist without its validated identity.
+**Required:** an invoice cannot exist without its validated identity.
 
 ```rust
 pub struct Invoice {
@@ -194,7 +194,7 @@ These calls belong inside an operation; `sync` is the existing operation owner.
 sync.run(true);
 ```
 
-**Preferred:** the parameter names the policy.
+**Required:** the parameter names the policy.
 
 ```rust
 pub enum SyncMode {
@@ -236,7 +236,7 @@ pub struct SyncRequest {
 }
 ```
 
-- **Preferred:** the owned record names both independent policies.
+- **Required:** the owned record names both independent policies.
 
 ```rust
 pub enum UploadMode {
@@ -317,7 +317,7 @@ match queue.is_empty() {
 }
 ```
 
-**Preferred:** the helper names the state before the caller chooses an action.
+**Required:** the helper names the state before the caller chooses an action.
 
 ```rust
 pub enum QueueState {
@@ -362,7 +362,7 @@ pub struct ServiceConfiguration {
 }
 ```
 
-**Preferred:** only the enabled variant carries its complete configuration.
+**Required:** only the enabled variant carries its complete configuration.
 
 ```rust
 pub enum ServiceConfiguration {
@@ -401,7 +401,7 @@ pub enum DeliveryMode {
 }
 ```
 
-**Preferred:** independent choices compose, while related choices stay nested.
+**Required:** independent choices compose, while related choices stay nested.
 
 ```rust
 pub enum AccountRole { Reader, Editor }
@@ -441,7 +441,7 @@ if matches!(delivery, DeliveryKind::Shipment) {
 }
 ```
 
-**Preferred:** match the delivery kind directly.
+**Required:** match the delivery kind directly.
 
 ```rust
 match delivery {
@@ -466,7 +466,7 @@ match delivery {
 **Prohibited:** use `if let true = matches!(event, Event::Progress(_))` to
 reintroduce a boolean guard and discard its payload.
 
-**Preferred:** match the progress variant and use its payload. These alternative
+**Required:** match the progress variant and use its payload. These alternative
 fragments assume existing event and reporting owners; each intentionally treats
 all non-progress events alike.
 
@@ -508,7 +508,7 @@ impl From<DeliveryKind> for AddressRequirement {
 }
 ```
 
-**Preferred:** adding a delivery kind requires a new decision.
+**Required:** adding a delivery kind requires a new decision.
 
 ```rust
 impl From<DeliveryKind> for AddressRequirement {
@@ -539,7 +539,7 @@ pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {
 }
 ```
 
-**Preferred:** `seen` is a `HashSet<OrderId>` and insertion detects duplicates.
+**Required:** `seen` is a `HashSet<OrderId>` and insertion detects duplicates.
 
 ```rust
 pub fn register(mut self, id: OrderId) -> Result<Self, RegistrationError> {

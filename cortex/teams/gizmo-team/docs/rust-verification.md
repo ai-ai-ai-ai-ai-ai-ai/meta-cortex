@@ -50,7 +50,7 @@ tasks stop after reporting the verifier result, as required by the task boundary
 **Prohibited:** a request to check the verifier automatically becomes a Rust
 fixture repair task because the verifier returned useful repair instructions.
 
-**Preferred:** return the exhaustive review and bounded behavior-check evidence.
+**Required:** return the exhaustive review and bounded behavior-check evidence.
 Start a repair exercise only when the user's request includes that outcome.
 
 ### Apply the selected execution mode
@@ -66,7 +66,7 @@ Start a repair exercise only when the user's request includes that outcome.
 **Prohibited:** select `single_agent`, launch a verifier anyway, or describe
 self-review as an independent subagent review.
 
-**Preferred:** perform the full review locally in `single_agent` mode and report
+**Required:** perform the full review locally in `single_agent` mode and report
 that limitation. Use the assignments below when running in `multi_agent` mode.
 
 ### Receive the developer's committed result
@@ -90,7 +90,7 @@ that limitation. Use the assignments below when running in `multi_agent` mode.
 **Prohibited:** give rust-dev the verifier skill and ask it to manage its own
 verification handoff, then treat its “done” message as integration approval.
 
-**Preferred:** receive rust-dev's ordinary committed result, confirm its recorded
+**Required:** receive rust-dev's ordinary committed result, confirm its recorded
 readiness, and let Gizmo arrange the separate review.
 
 ### Check the Git handoff
@@ -117,6 +117,7 @@ readiness, and let Gizmo arrange the separate review.
    to the base and report no change; do not manufacture an empty commit.
    Finish a no-change implementation task through the existing ledger path;
    do not present a review of an unrelated base commit as a new code change.
+
 3. Return a mismatch to the Git or development owner before starting review.
    Do not treat the last commit of an unconsolidated branch as the complete task.
    Keep the base in delivery assignment context; the verifier still receives
@@ -128,7 +129,7 @@ readiness, and let Gizmo arrange the separate review.
 **Prohibited:** the branch has two task commits, but Gizmo sends only the last
 SHA and treats its first-parent diff as all of the developer's work.
 
-**Preferred:** rust-dev consolidates its private task commits, validates the
+**Required:** rust-dev consolidates its private task commits, validates the
 final SHA, and records a matching checkpoint. Gizmo checks the one-commit handoff
 before sending that SHA to the verifier.
 
@@ -160,7 +161,7 @@ before sending that SHA to the verifier.
 **Prohibited:** inherit rust-dev's full context or make the review depend on
 integrating the very developer task it must check first.
 
-**Preferred:** create an independently claimable read-only task with its own
+**Required:** create an independently claimable read-only task with its own
 verifier context, the developer's ready SHA, and the complete catalog scope.
 
 ### Check the complete result
@@ -180,7 +181,7 @@ verifier context, the developer's ready SHA, and the complete catalog scope.
 **Prohibited:** accept “two issues; see the ledger” or integrate because a review
 with verdict `changes_required` reached `ready`.
 
-**Preferred:** require both fully explained issues in the message, verify their
+**Required:** require both fully explained issues in the message, verify their
 coverage record, and route both repairs before considering integration.
 
 ### Route every repair and blocker
@@ -208,7 +209,7 @@ coverage record, and route both repairs before considering integration.
 **Prohibited:** send only the identity issue when the verifier also found an
 export-mode violation, or ask rust-dev to decide an unclear catalog exception.
 
-**Preferred:** assign both complete coding repairs to rust-dev and send the
+**Required:** assign both complete coding repairs to rust-dev and send the
 policy question to its owner. Preserve the unresolved blocker until it is answered.
 
 ### Require a complete review of each repair
@@ -227,7 +228,7 @@ policy question to its owner. Preserve the unresolved blocker until it is answer
 **Prohibited:** accept the developer's “all fixed” message as approval of its
 replacement commit without another complete verifier pass.
 
-**Preferred:** give the new verifier the new SHA and previous report, then require
+**Required:** give the new verifier the new SHA and previous report, then require
 fresh evidence for all earlier repairs and the entire new change.
 
 ### Integrate the reviewed revision
@@ -252,5 +253,5 @@ fresh evidence for all earlier repairs and the entire new change.
 **Prohibited:** integrate a newer branch head using its predecessor's passing
 report, or treat successful Git integration as proof that combined checks passed.
 
-**Preferred:** integrate the matching reviewed revision, run the combined checks,
+**Required:** integrate the matching reviewed revision, run the combined checks,
 and return any required Rust repair through development and verification.

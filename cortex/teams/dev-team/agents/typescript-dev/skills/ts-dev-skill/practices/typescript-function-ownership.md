@@ -25,7 +25,7 @@ class ExportUtils {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 class ExportSession {
@@ -52,10 +52,12 @@ class ExportSession {
 
 ```ts
 let selectedFormat = ExportFormat.Archive;
-const changeFormat = (format: ExportFormat) => { selectedFormat = format; };
+const changeFormat = (format: ExportFormat) => {
+  selectedFormat = format;
+};
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 class ExportSelection {
@@ -84,7 +86,7 @@ function classifyOrder(order: Order): OrderOutcome {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // In the component's interaction handler:
@@ -118,7 +120,7 @@ for (const group of batch.pageGroups) {
 }
 ```
 
-**Preferred:** flatten the existing array before traversing it.
+**Required:** flatten the existing array before traversing it.
 
 ```ts
 const pages = batch.pageGroups.flat();

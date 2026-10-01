@@ -9,7 +9,7 @@ tool supports one.
 
 **Prohibited:** mutate whichever account happens to be active in the CLI.
 
-**Preferred:** resolve the assigned account and resource, inspect their current
+**Required:** resolve the assigned account and resource, inspect their current
 configuration, and verify the proposed change targets them.
 
 ## Protect operational credentials
@@ -21,7 +21,7 @@ Use the consuming project's policy for rotation and revocation procedures.
 
 **Prohibited:** place an administrator token in a committed manifest or command log.
 
-**Preferred:** use the project's scoped identity and secret store, and verify
+**Required:** use the project's scoped identity and secret store, and verify
 diagnostics do not expose credentials.
 
 ## Preserve a recovery path
@@ -32,7 +32,7 @@ an impactful change.
 
 **Prohibited:** replace unrelated resources to change one workload setting.
 
-**Preferred:** limit the mutation to the assigned resource and identify its
+**Required:** limit the mutation to the assigned resource and identify its
 supported recovery procedure before making the change.
 
 ## Verify live behavior
@@ -44,5 +44,5 @@ prove that its workload is serving correctly.
 
 **Prohibited:** report a deployment healthy solely because the control plane marks it ready.
 
-**Preferred:** inspect both the resulting configuration and the project's
+**Required:** inspect both the resulting configuration and the project's
 required workload health checks, then report the observed result.

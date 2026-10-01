@@ -4,7 +4,7 @@ overview:
   - Check construction against legal workflow transitions.
 prohibited:
   - Construct advanced states through blanket conversions.
-preferred:
+required:
   - Restrict construction to initial states and legal transitions.
 compare:
   - id: struct_construction:initial_state

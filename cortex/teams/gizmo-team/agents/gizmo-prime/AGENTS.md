@@ -67,7 +67,7 @@ flowchart LR
 
 **Prohibited:** treat individual worker success reports as feature completion.
 
-**Preferred:** review the combined feature and checks returned by Team Gizmo.
+**Required:** review the combined feature and checks returned by Team Gizmo.
 
 ## Prohibited actions
 
@@ -75,4 +75,4 @@ flowchart LR
 
 **Prohibited:** assign a failing feature check directly to a worker.
 
-**Preferred:** send the failure to Team Gizmo to arrange the fix.
+**Required:** send the failure to Team Gizmo to arrange the fix.

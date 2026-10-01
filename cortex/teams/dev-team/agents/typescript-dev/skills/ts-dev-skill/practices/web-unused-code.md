@@ -19,7 +19,7 @@ internal this, Svelte, generated-boundary, and test callers explicitly.
 legacySave(request: SaveRequest) { return this.save(request); }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Only the operation with actual callers remains:
@@ -40,18 +40,24 @@ owner factory. Do not suppress the finding or remove live behavior.
 ```ts
 export class PanelController {
   // Public class surface is untraceable to the configured checker.
-  open(): void { /* implementation */ }
+  open(): void {
+    /* implementation */
+  }
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 class PanelController {
-  open(): void { /* implementation */ }
+  open(): void {
+    /* implementation */
+  }
 }
 export class Panel {
-  static build(): PanelController { return new PanelController(); }
+  static build(): PanelController {
+    return new PanelController();
+  }
 }
 ```
 
@@ -66,7 +72,7 @@ snapshot directly at the boundary, with named typed arguments for ordinary calls
 api.submit(JSON.parse(JSON.stringify(request)));
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 const snapshot: OrderRequest = $state.snapshot(request);

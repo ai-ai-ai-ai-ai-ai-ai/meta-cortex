@@ -34,7 +34,7 @@ placing domain decisions on these types.
 Invoice { id: String, customer: String, total: Number }
 ```
 
-**Preferred:** preserve a distinct type for each meaning.
+**Required:** preserve a distinct type for each meaning.
 
 ```text
 Invoice { id: InvoiceId, customer: CustomerId, total: InvoiceTotal }
@@ -68,7 +68,7 @@ Invoice { id: InvoiceId, customer: CustomerId, total: InvoiceTotal }
 Draft.publish() → PublishedDocument
 ```
 
-**Preferred:** let approval produce the capability required for publication.
+**Required:** let approval produce the capability required for publication.
 
 ```text
 Draft.approve(review: Review) → ApprovedDocument or ApprovalFailure
@@ -95,7 +95,7 @@ ApprovedDocument.publish() → PublishedDocument or PublicationFailure
 TransferService.send(source: String, destination: String, amount: Number) → Boolean
 ```
 
-**Preferred:** name the request fields and the possible result.
+**Required:** name the request fields and the possible result.
 
 ```text
 TransferRequest { source: AccountId, destination: AccountId, amount: TransferAmount }
@@ -129,7 +129,7 @@ OrderStore.load(id: OrderId) → JsonText
 ShippingService.dispatch(order_json: JsonText)
 ```
 
-**Preferred:** decode once and preserve the typed record inside the application.
+**Required:** decode once and preserve the typed record inside the application.
 
 ```text
 OrderStore.load(id: OrderId) → Order or OrderReadFailure
@@ -158,7 +158,7 @@ ShippingService.dispatch(order: Order) → DispatchReceipt or DispatchFailure
 invoice ← CAST raw_json AS Invoice
 ```
 
-**Preferred:** validate at the boundary and return a typed outcome.
+**Required:** validate at the boundary and return a typed outcome.
 
 ```text
 invoice_result ← InvoiceDecoder.decode(raw_json)
@@ -181,7 +181,7 @@ MATCH invoice_result
 SUPPRESS domain_type_rule FOR adapter_package
 ```
 
-**Preferred:** keep the exception on the exact externally owned signature.
+**Required:** keep the exception on the exact externally owned signature.
 
 ```text
 HostCallback.resize(width: HostNumber, height: HostNumber)
@@ -208,7 +208,7 @@ MATCH payment_result
   Failed(error) → fabricated_receipt
 ```
 
-**Preferred:** preserve the failure for the owner that can handle it.
+**Required:** preserve the failure for the owner that can handle it.
 
 ```text
 MATCH payment_result
@@ -230,7 +230,7 @@ MATCH wire_version
   anything_else → decode_v1(document)
 ```
 
-**Preferred:** reject unsupported input at the decoding boundary.
+**Required:** reject unsupported input at the decoding boundary.
 
 ```text
 MATCH wire_version
@@ -257,7 +257,7 @@ MATCH wire_version
 Queue.is_empty() → Boolean
 ```
 
-**Preferred:** name the meaning before the caller chooses an action.
+**Required:** name the meaning before the caller chooses an action.
 
 ```text
 Queue.state() → QueueState
@@ -279,7 +279,7 @@ QueueState = Empty | Ready
 HostCallback.message(text: HostString) → Conversation.append(text: String)
 ```
 
-**Preferred:** normalize the host value before calling the domain owner.
+**Required:** normalize the host value before calling the domain owner.
 
 ```text
 HostCallback.message(text: HostString) → Conversation.append(body: MessageBody)
@@ -300,7 +300,7 @@ InvoiceStore.find_for_customer(customer: String) → Invoices
 InvoiceStore.find_for_customer(invoice_id.text)
 ```
 
-**Preferred:** keep the customer type at the helper's boundary.
+**Required:** keep the customer type at the helper's boundary.
 
 ```text
 InvoiceStore.find_for_customer(customer: CustomerId) → Invoices
@@ -320,5 +320,5 @@ InvoiceStore.find_for_customer(customer_id)
 
 **Prohibited:** “The compiler passed, so the schema migration is safe.”
 
-**Preferred:** “Types compile. Supported-version fixtures pass. Unknown versions
+**Required:** “Types compile. Supported-version fixtures pass. Unknown versions
 are rejected. The migration and rollback paths were reviewed separately.”

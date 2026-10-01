@@ -43,7 +43,7 @@ fn remaining(budget: &RetryBudget) -> &AttemptCount {
 }
 ```
 
-**Preferred:** the value type owns the constant; the budget owns the state and accessor.
+**Required:** the value type owns the constant; the budget owns the state and accessor.
 
 ```rust
 #[derive(derive_more::From)]
@@ -105,7 +105,7 @@ pub mod address {
 }
 ```
 
-**Preferred:** the destination owns the conversion. The source stays independent.
+**Required:** the destination owns the conversion. The source stays independent.
 
 ```rust
 pub mod delivery {
@@ -164,7 +164,7 @@ fn run_application() {
 }
 ```
 
-**Preferred:** the required entrypoint delegates to the application type.
+**Required:** the required entrypoint delegates to the application type.
 
 ```rust
 fn main() {
@@ -214,7 +214,7 @@ Never suppress ownership across a crate, module, or type.
 - **Prohibited:** add a blanket `allow` or exempt helpers because a framework
   calls one function in the module.
 
-- **Preferred:** exempt only the required callback, document its external contract,
+- **Required:** exempt only the required callback, document its external contract,
   and keep the delegated behavior on its owning type. Check that lint fixtures
   reject lookalike helpers, missing reasons, and blanket suppressions; retain
   separate behavior tests.

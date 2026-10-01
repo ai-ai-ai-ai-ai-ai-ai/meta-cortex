@@ -30,7 +30,7 @@ YAML catalogs continue to provide navigation.
 **Prohibited:** put a subject instruction Job into the model while assigned to
 write Cortex context.
 
-**Preferred:** keep the receipt with its subject. `lace/AGENTS.ts` describes
+**Required:** keep the receipt with its subject. `lace/AGENTS.ts` describes
 Lace itself; that entry point does not move subject receipts into the core.
 
 ### Public authoring imports
@@ -52,7 +52,7 @@ const receipt: Job = { stages: { context: context } };
 export default receipt;
 ```
 
-**Preferred:** import the public vocabulary and another receipt's default Job.
+**Required:** import the public vocabulary and another receipt's default Job.
 
 ```typescript
 import { type Job } from "@meta-cortex/lace";
@@ -95,7 +95,7 @@ const receipt = { stages: { context: context } };
 export default receipt;
 ```
 
-**Preferred:** type the root and enclose child Jobs in place.
+**Required:** type the root and enclose child Jobs in place.
 The compiler checks every nested stage through that annotation.
 
 ```typescript
@@ -131,7 +131,7 @@ const receipt: Job = { stages: { step3: compile } };
 export default receipt;
 ```
 
-**Preferred:** name the same stage for its compilation purpose.
+**Required:** name the same stage for its compilation purpose.
 
 ```typescript
 const receipt: Job = { stages: { compileReceipt: compile } };
@@ -154,7 +154,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** give the same bullet a short purpose-based name.
+**Required:** give the same bullet a short purpose-based name.
 
 ```typescript
 const receipt: Job = {
@@ -186,7 +186,7 @@ receipt.stages.compile = compile;
 export default receipt;
 ```
 
-**Preferred:** declare the required grouping as a new object.
+**Required:** declare the required grouping as a new object.
 The existing context remains a reference in the declared tree.
 
 ```typescript
@@ -231,7 +231,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** declare explanatory prose and command text as separate tasks.
+**Required:** declare explanatory prose and command text as separate tasks.
 
 ```typescript
 const receipt: Job = {
@@ -280,7 +280,7 @@ PromptStatement wrappers and helper calls remain invalid item values.
 Give each text bullet an explicit descriptive key and a nonblank literal string
 or noninterpolated template value. Use one bullet per
 independent fact or action. Nest generic or typed groups when their relationship matters,
-such as prohibited/preferred examples. State requirements explicitly in the
+such as prohibited/required examples. State requirements explicitly in the
 wording. Arrays, raw group payloads, general Prompt values, PromptStatement
 wrappers, and helper calls are invalid item values. Plain mapped PromptStatement
 objects remain supported only as standalone prompts.
@@ -301,7 +301,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** put each action in a structured bullet and nest related items.
+**Required:** put each action in a structured bullet and nest related items.
 The root uses the typed Required category; its nested generic group omits its optional label.
 
 ```typescript
@@ -349,7 +349,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** put literal text directly under the item's descriptive key.
+**Required:** put literal text directly under the item's descriptive key.
 
 ```typescript
 const receipt: Job = {
@@ -368,11 +368,12 @@ export default receipt;
 
 Use typed Required and Prohibited prompts for mandatory and forbidden rules.
 These categories work as standalone prompts and nested item groups.
-Keep recommendations in a generic BulletList, such as one labelled `Preferred`;
-a recommendation is not mandatory merely because it is grouped.
+Normative instructions use Required for the action to take and Prohibited for
+the action to avoid. Do not present a normative instruction as a Preferred category.
 
-The grammar reserves exactly four generic BulletList labels: `Required`,
-`Required actions`, `Prohibited`, and `Prohibited actions`.
+The grammar rejects exactly six generic BulletList labels: `Preferred`,
+`Preferred actions`, `Required`, `Required actions`, `Prohibited`, and
+`Prohibited actions`.
 Use their typed category instead. This is a bounded syntax rule; checking does
 not classify prose or infer whether an instruction is mandatory.
 Other nonblank literal labels remain valid.
@@ -395,7 +396,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** declare the typed category with its named items.
+**Required:** declare the typed category with its named items.
 
 ```typescript
 const receipt: Job = {
@@ -449,7 +450,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** put the exact context in the literal helper argument.
+**Required:** put the exact context in the literal helper argument.
 
 ```typescript
 const receipt: Job = {
@@ -498,7 +499,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** reference the imported compilation Job.
+**Required:** reference the imported compilation Job.
 
 ```typescript
 const receipt: Job = { stages: { context: context, compile: compile } };
@@ -533,7 +534,7 @@ establish command success in a consuming project.
 
 **Prohibited:** report full verification after running only `check`.
 
-**Preferred:** run `verify` and report the result. Review prose meaning separately;
+**Required:** run `verify` and report the result. Review prose meaning separately;
 report command execution only from its actual host-tool result.
 
 ## Prohibited actions
@@ -548,7 +549,7 @@ TypeScript readonly declarations do not enforce filesystem permissions.
 
 **Prohibited:** add a task kind or weaken checking because a receipt fails.
 
-**Preferred:** correct the receipt with the existing vocabulary. Report a missing
+**Required:** correct the receipt with the existing vocabulary. Report a missing
 capability when it needs a separate core assignment.
 
 ### Runtime logic in receipts
@@ -598,7 +599,7 @@ const receipt: Job = {
 export default receipt;
 ```
 
-**Preferred:** write the actual context as literal content.
+**Required:** write the actual context as literal content.
 
 ```typescript
 const receipt: Job = {

@@ -18,7 +18,7 @@ Do not hide positional inputs in arrays or generic Args/Params names.
 transfer(source: AccountId, destination: AccountId): TransferOutcome;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 interface TransferRequest {
@@ -46,7 +46,7 @@ may return an inline object shape; that does not exempt its inputs.
 replace(items: readonly ItemId[]): void;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 type SelectedItems = readonly ItemId[];
@@ -69,7 +69,7 @@ resized(width: number, height: number): void {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Assume a host requires resized(width, height); only this callback is exempt.
@@ -98,7 +98,7 @@ the body after receiving the named request.
 run(query: SearchQuery, options = defaultOptions): SearchResults;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 interface SearchRequest {

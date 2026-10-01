@@ -4,7 +4,7 @@ overview:
   - Distinguish approved derives from authored macros.
 prohibited:
   - Justify local mapping macros with derive_more.
-preferred:
+required:
   - Use approved derives and explicit domain mappings.
 compare:
   - id: libraries:required_core

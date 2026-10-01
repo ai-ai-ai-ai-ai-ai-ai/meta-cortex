@@ -60,7 +60,7 @@ before deciding that a scalar newtype is sufficient.
 **Prohibited:** select only code checks for a CLI metadata change and leave its
 application fields as raw strings because compilation passes.
 
-**Preferred:** load the modeling rules, classify the metadata fields, preserve
+**Required:** load the modeling rules, classify the metadata fields, preserve
 their wire format with domain types, and run the required checks.
 
 - Before adding primitive conversions, inspect the [owning vocabulary](practices/modeling/domain-types.md#model-a-known-vocabulary-as-a-closed-enum):

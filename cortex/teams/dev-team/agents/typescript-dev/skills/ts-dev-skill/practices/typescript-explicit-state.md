@@ -22,10 +22,14 @@ interface DownloadState {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
-enum DownloadKind { Idle = "idle", Running = "running", Complete = "complete" }
+enum DownloadKind {
+  Idle = "idle",
+  Running = "running",
+  Complete = "complete",
+}
 type DownloadState =
   | { readonly kind: DownloadKind.Idle }
   | { readonly kind: DownloadKind.Running }
@@ -46,13 +50,15 @@ domains define their vocabulary in TypeScript.
 type PanelState = { readonly kind: "open" } | { readonly kind: "closed" };
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
-enum PanelKind { Open = "open", Closed = "closed" }
+enum PanelKind {
+  Open = "open",
+  Closed = "closed",
+}
 type PanelState =
-  | { readonly kind: PanelKind.Open }
-  | { readonly kind: PanelKind.Closed };
+  { readonly kind: PanelKind.Open } | { readonly kind: PanelKind.Closed };
 ```
 
 ## Match domain values directly
@@ -76,7 +82,7 @@ if (delivery === DeliveryKind.Shipment) {
 return AddressRequirement.NotRequired;
 ```
 
-**Preferred:** use the native switch.
+**Required:** use the native switch.
 
 ```ts
 switch (delivery) {
@@ -104,17 +110,18 @@ variants of `FieldType`. All variants carry `question`; only `Choice` carries
 `options`. Assume the host owns the `Question` output shape: a required `title`
 and, for choice prompts, `options`.
 The first body returns its local `question` after the shown declaration.
-Both compile; only the preferred form requires each field kind to be named.
+Both compile; only the required form requires each field kind to be named.
 
 **Prohibited:** a new field type silently receives the text-field prompt.
 
 ```ts
-const question = field.type === FieldType.Choice
-  ? { title: field.question, options: field.options }
-  : { title: field.question };
+const question =
+  field.type === FieldType.Choice
+    ? { title: field.question, options: field.options }
+    : { title: field.question };
 ```
 
-**Preferred:** every field type is named, including cases that share output.
+**Required:** every field type is named, including cases that share output.
 
 ```ts
 switch (field.type) {
@@ -137,16 +144,20 @@ sentinel comparisons, non-null assertions, casts, and decorative wrappers.
 
 ```ts
 const selected = value ?? fallback;
-if (typeof value === "undefined") { clear(); }
+if (typeof value === "undefined") {
+  clear();
+}
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside a UI owner with an already normalized selection:
 switch (selection.kind) {
-  case SelectionKind.Empty: return this.showEmpty();
-  case SelectionKind.Selected: return this.show(selection.item);
+  case SelectionKind.Empty:
+    return this.showEmpty();
+  case SelectionKind.Selected:
+    return this.show(selection.item);
 }
 ```
 
@@ -163,13 +174,15 @@ omission as that exact value; evaluate alternatives only in their selected branc
 const delay = rawDelay || defaultDelay; // Replaces a valid zero.
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the owner, after decoding the external setting:
 switch (setting.kind) {
-  case DelayKind.Specified: return setting.delay;
-  case DelayKind.Default: return defaults.delay;
+  case DelayKind.Specified:
+    return setting.delay;
+  case DelayKind.Default:
+    return defaults.delay;
 }
 ```
 
@@ -186,7 +199,7 @@ contracts. Model value absence explicitly instead.
 read(): Promise<Document | void>;
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside a reader:
@@ -204,13 +217,19 @@ Effect owns expected failures; accumulated codec issues remain concrete and loca
 **Prohibited:**
 
 ```ts
-interface ImportView { readonly failed: boolean; readonly error: string; }
+interface ImportView {
+  readonly failed: boolean;
+  readonly error: string;
+}
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
-enum ImportKind { Idle = "idle", Failed = "failed" }
+enum ImportKind {
+  Idle = "idle",
+  Failed = "failed",
+}
 type ImportView =
   | { readonly kind: ImportKind.Idle }
   | { readonly kind: ImportKind.Failed; readonly failure: ImportFailure };
@@ -227,10 +246,13 @@ evidence. Initialize runes and bindable state explicitly.
 
 ```ts
 // Defined inside the component's script instead of its state module:
-enum PanelKind { Open = "open", Closed = "closed" }
+enum PanelKind {
+  Open = "open",
+  Closed = "closed",
+}
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // In the component script; the enum is defined in panel-state.ts:
@@ -249,7 +271,7 @@ Match transitions exhaustively and keep positive/negative preflight fixtures.
 expect(selection).toBeUndefined();
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 expect(selection.kind).toBe(SelectionKind.Empty);

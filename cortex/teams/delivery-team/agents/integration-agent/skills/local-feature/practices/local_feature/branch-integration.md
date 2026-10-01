@@ -101,7 +101,7 @@ branch and finish each integration before starting the next.
 **Prohibited:** merge several worker branches concurrently or report a passing
 feature based only on a successful Git merge.
 
-**Preferred:** merge `task/parser`, verify its inclusion, and run the combined
+**Required:** merge `task/parser`, verify its inclusion, and run the combined
 checks. Record and report the passing integration before starting the next
 completed branch in dependency order. If a check fails, report it to Gizmo and
 leave dependent integration stopped.
@@ -121,6 +121,7 @@ leave dependent integration stopped.
    repair plan; the assigned developer reads the commits and reproduces the conflict.
    If abort fails, report that error and retain the workspace. For another Git
    failure, report the same revisions and the actual error instead of calling it a conflict.
+
 2. Gizmo assigns the two SHAs to the responsible team agent, which follows
    [task repair](task-commits.md#repair-the-assigned-revision), resolves the
    conflict, validates, and returns its committed SHA and readiness. The integration
@@ -134,7 +135,7 @@ leave dependent integration stopped.
 **Prohibited:** collect conflicting files and prescribe their edits before
 Gizmo assigns a developer, or silently repair the conflict in the feature worktree.
 
-**Preferred:** report “Merge conflict between task `<task_sha>` and target
+**Required:** report “Merge conflict between task `<task_sha>` and target
 `<target_sha>`; the merge was aborted and the checkout is clean.” Gizmo routes
 those revisions to the developer, then returns the validated replacement SHA
 for integration. No copied code or conflict dossier is needed.

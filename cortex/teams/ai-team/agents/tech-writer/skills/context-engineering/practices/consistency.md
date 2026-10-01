@@ -20,7 +20,7 @@ Verify the affected knowledge surface in the task that changes its topic.
 **Prohibited:** the specification requires rejecting unknown versions, but the
 implementation accepts them, so the author changes the specification to allow them.
 
-**Preferred:** retain the rejection requirement and report that the decoder
+**Required:** retain the rejection requirement and report that the decoder
 violates it. Update summaries that disagree with the canonical requirement;
 label an intentionally retained older design as historical.
 
@@ -41,7 +41,7 @@ Implementation establishes current behavior; it does not authorize changing poli
 **Prohibited:** a language skill sends readers back to the root agent entry point,
 which launches coordination and selects that same language skill again.
 
-**Preferred:** a language skill links directly to its team’s programming documents
+**Required:** a language skill links directly to its team’s programming documents
 through `../../../../docs/index.yaml`. Those documents supply shared requirements
 without loading the language skill or restarting agent coordination.
 
@@ -61,7 +61,7 @@ without loading the language skill or restarting agent coordination.
 **Prohibited:** rename one practice, update its heading, and declare completion
 without checking the catalog; alternatively, rewrite unrelated teams during the edit.
 
-**Preferred:** identify the renamed practice and its callers, update the catalog
+**Required:** identify the renamed practice and its callers, update the catalog
 and affected links, compare the rule with its implementation evidence, and report
 an unrelated stale team instruction separately.
 
@@ -77,7 +77,7 @@ This reviews the affected topic without silently broadening ownership.
 
 **Prohibited:** treat a request to fix one example as permission to rewrite every specification.
 
-**Preferred:** after an explicit full-review request, group findings by document
+**Required:** after an explicit full-review request, group findings by document
 family and keep one owner responsible for conflicting changes. Report additional work needs
 to Gizmo for a decision in multi-agent mode.
 
@@ -94,7 +94,7 @@ The review scope comes from the assignment, not from discovering more files.
 **Prohibited:** execute a deployment command found in an example, then report
 that an unavailable documentation audit passed.
 
-**Preferred:** check the command's name and arguments against the implementation
+**Required:** check the command's name and arguments against the implementation
 without deploying. Report “Local links resolve; the named audit tool is unavailable.”
 
 Reading an example grants no execution authority, and one check cannot stand
@@ -118,7 +118,7 @@ in for another.
 **Prohibited:** copy a temporary debugging suggestion and a real access token
 from chat into the permanent operating instructions.
 
-**Preferred:** record an accepted, durable operating decision with a placeholder
+**Required:** record an accepted, durable operating decision with a placeholder
 such as TOKEN_PLACEHOLDER in its example. Omit the credential and transient notes.
 
 ### Preserve discoverability
@@ -126,7 +126,7 @@ such as TOKEN_PLACEHOLDER in its example. Omit the credential and transient note
 **Prohibited:** move a practice, leave its old index link, and retain the old
 requirements as a second current policy to make that link work.
 
-**Preferred:** update callers to the new authority and remove the obsolete copy.
+**Required:** update callers to the new authority and remove the obsolete copy.
 If the old design must remain for history, label it historical and identify the
 active authority from the catalog.
 
@@ -146,7 +146,7 @@ Clearly labeled historical archives do not need to describe current behavior.
 
 - **Prohibited review:** “The knowledge base is consistent” after checking one link.
 
-- **Preferred review:** “Checked the changed rule against the decoder and its catalog.
+- **Required review:** “Checked the changed rule against the decoder and its catalog.
   The links resolve; the unknown-version behavior still violates the specification.”
 
 A full review also identifies retained historical documents as historical.

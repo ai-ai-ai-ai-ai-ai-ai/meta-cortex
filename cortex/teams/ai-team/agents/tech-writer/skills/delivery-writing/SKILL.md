@@ -24,7 +24,7 @@ role. The assigned delivery requirements remain the technical authority.
 **Prohibited:** write "manage delivery and report status" without identifying
 the work or recipient.
 
-**Preferred:** write "after Team Gizmo reports that a worker finished, merge its
+**Required:** write "after Team Gizmo reports that a worker finished, merge its
 task branch and report the combined checks or conflicting files to Team Gizmo."
 
 ### Supply command context
@@ -39,7 +39,7 @@ task branch and report the combined checks or conflicting files to Team Gizmo."
 **Prohibited:** show only `git merge task/parser`, leaving the current checkout
 and destination branch implicit.
 
-**Preferred:** state that `feature_path` is the absolute path of the worktree
+**Required:** state that `feature_path` is the absolute path of the worktree
 checked out on the feature branch and `task_branch` is the completed worker's
 assigned branch name, then show:
 
@@ -61,7 +61,7 @@ The surrounding procedure supplies the readiness checks and subsequent validatio
 **Prohibited:** place merge, abort, and branch deletion in one unconditional
 command block and label it "integration."
 
-**Preferred:** show the merge in the normal path, abort under the conflict path,
+**Required:** show the merge in the normal path, abort under the conflict path,
 and cleanup after the documented completion checks. Report test results separately.
 
 ## Validation
@@ -78,5 +78,5 @@ and cleanup after the documented completion checks. Report test results separate
 **Prohibited:** claim the cleanup example protects pending work after checking
 only that its command parses.
 
-**Preferred:** attempt ordinary worktree removal in a disposable dirty workspace,
+**Required:** attempt ordinary worktree removal in a disposable dirty workspace,
 confirm Git refuses for that reason, and check the pending files remain.

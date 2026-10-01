@@ -45,7 +45,7 @@ For PR delivery:
 **Prohibited:** finish locally under `create_pr` because the user did not repeat
 “open a PR,” publish under `local_only`, or infer `create_pr` from a pending prompt.
 
-**Preferred:** under `create_pr`, validate, commit, push, update the matching PR,
+**Required:** under `create_pr`, validate, commit, push, update the matching PR,
 and return its link with the actual check status. Under `local_only`, return the
 validated local outcome without a PR handoff.
 
@@ -67,7 +67,7 @@ publishing. Keep project-specific decisions in that project's documentation.
 **Prohibited:** copy another project's squash-only, optional-review policy and
 merge a PR whose target requires approval.
 
-**Preferred:** use the target repository's allowed merge method and satisfy its
+**Required:** use the target repository's allowed merge method and satisfy its
 required checks and reviews before an authorized merge.
 
 ### Preserve the user's feature worktree
@@ -90,7 +90,7 @@ presence does not transfer lifecycle ownership to an agent.
 **Prohibited:** after a PR merges, Prime asks integration to remove the user's
 feature worktree or invokes a host archive action that removes its checkout.
 
-**Preferred:** remove eligible agent-created task worktrees, then report the
+**Required:** remove eligible agent-created task worktrees, then report the
 completed feature with its original worktree still available to the user.
 
 ### Preserve work ownership
@@ -110,7 +110,7 @@ work evidence, not credentials or an authorization protocol.
 **Prohibited:** create a staging branch, custom handoff registry, and another
 manager loop merely to move an integrated feature into a PR.
 
-**Preferred:** the integration agent reports the feature branch and check results
+**Required:** the integration agent reports the feature branch and check results
 to Team Gizmo. Under `create_pr`, Gizmo supplies that evidence to the PR agent,
 which reports the outcome and remaining work back to Gizmo. Under `local_only`,
 Gizmo returns the local outcome to Prime.

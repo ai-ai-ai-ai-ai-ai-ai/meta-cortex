@@ -15,7 +15,7 @@ Keep permission, typed-input, and write-scope checks at their owning boundary.
 **Prohibited:** reject `deploy-preview` because it is absent from an invented
 local catalog, then mock the runner's environment and retry behavior.
 
-**Preferred:** dispatch `deploy-preview` and report the runner's result, including
+**Required:** dispatch `deploy-preview` and report the runner's result, including
 an unknown-selector error. If assigned to change the runner's actual contract,
 change and test that contract directly.
 
@@ -28,7 +28,7 @@ selection, or build-record pin/unpin lifecycles outside those tools.
 **Prohibited:** write a controller that decides which Docker layers remain valid
 and pins their build records.
 
-**Preferred:** import BuildKit cache, run the real build, and export the updated
+**Required:** import BuildKit cache, run the real build, and export the updated
 cache. For cache work, test cold, warm, import, and export builds; inspect their
 artifacts and statistics against the project's cache-health requirements.
 
@@ -41,6 +41,6 @@ Do not hide it behind convergence retries, cache-busting counters, or timeouts.
 **Prohibited:** repeatedly query deployment metadata until it happens to match
 the commit expected by a job that started too early.
 
-**Preferred:** make verification depend on deployment and pass its revision
+**Required:** make verification depend on deployment and pass its revision
 output directly. Waiting through a tool's supported completion API is allowed;
 use its bounded retries only for documented transient failures.

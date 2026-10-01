@@ -4,7 +4,7 @@ overview:
   - Trace admitted jobs through completion and shutdown.
 prohibited:
   - Discard failures or leave admitted jobs unresolved.
-preferred:
+required:
   - Deliver typed outcomes and settle work during shutdown.
 compare:
   - id: serial_operation_queues:typed_completion

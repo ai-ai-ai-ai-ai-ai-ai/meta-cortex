@@ -26,7 +26,7 @@ For each new user task, follow this order:
 **Prohibited:** launch Gizmo Prime as soon as a task arrives, before reading the
 circuit breaker or resolving the session choices.
 
-**Preferred:** read the circuit breaker, identify both roots, collect the session
+**Required:** read the circuit breaker, identify both roots, collect the session
 choices, then follow the selected execution path.
 
 ### Development mode
@@ -51,7 +51,7 @@ with [development.yaml](development.yaml). The two validated answers are
 **Prohibited:** treat the preselected `create_pr` option as a submitted answer
 and begin implementation while delivery is still pending.
 
-**Preferred:** validate the user's mode answer, collect and validate delivery,
+**Required:** validate the user's mode answer, collect and validate delivery,
 then begin work under both selected choices.
 
 #### Apply the selected paths
@@ -77,7 +77,7 @@ then begin work under both selected choices.
 **Prohibited:** select `single_agent`, then continue assigning work to Gizmo
 workers or stop after implementation when the validated delivery is `create_pr`.
 
-**Preferred:** with `single_agent` and `create_pr`, load the required context
+**Required:** with `single_agent` and `create_pr`, load the required context
 locally, implement and verify the change, and publish its PR in this thread.
 
 #### Retain and change session choices
@@ -100,7 +100,7 @@ A session is the current user-facing conversation or thread.
 **Prohibited:** ask for both choices again on a follow-up, or keep delegated
 agents running after the user switches to `single_agent`.
 
-**Preferred:** reuse both validated choices on follow-ups. If the user changes
+**Required:** reuse both validated choices on follow-ups. If the user changes
 the mode to `single_agent`, stop delegated work, retain delivery, and continue
 in this thread.
 
@@ -147,7 +147,7 @@ Apply the consuming project's context throughout the task:
 **Prohibited:** treat an installed `.meta-cortex/` directory as the project root
 and run the consuming project's tests against library paths.
 
-**Preferred:** identify the consuming repository as the project root and the
+**Required:** identify the consuming repository as the project root and the
 installed framework as the library root. Read the project's instructions, run
 its tests in its worktree, and pass both roots in assignments.
 
@@ -176,7 +176,7 @@ owns this context authoring. Other existing Markdown context remains authoritati
 **Prohibited:** change Lace's core while writing a context receipt, or use Lace
 as a coding-agent API for the consuming application.
 
-**Preferred:** compose the assigned Cortex context with the existing vocabulary
+**Required:** compose the assigned Cortex context with the existing vocabulary
 and run the existing checks; request a separate core assignment for a missing capability.
 
 ## Prohibited actions
@@ -188,6 +188,6 @@ and run the existing checks; request a separate core assignment for a missing ca
 **Prohibited:** edit the installed framework to fix an unrelated application
 endpoint in the consuming project.
 
-**Preferred:** change the application's owning code in its project worktree.
+**Required:** change the application's owning code in its project worktree.
 Change the framework only when the task concerns its own rules, skills, roles,
 or configuration.

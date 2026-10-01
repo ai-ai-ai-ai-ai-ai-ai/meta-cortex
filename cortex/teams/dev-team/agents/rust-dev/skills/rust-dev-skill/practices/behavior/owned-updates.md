@@ -55,7 +55,7 @@ impl RetryPolicy {
 }
 ```
 
-**Preferred:** consume the old policy and return its replacement.
+**Required:** consume the old policy and return its replacement.
 
 ```rust
 use std::time;

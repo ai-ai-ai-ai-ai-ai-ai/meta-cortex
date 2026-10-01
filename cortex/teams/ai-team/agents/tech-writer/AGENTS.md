@@ -51,7 +51,7 @@ team-agent model and reasoning effort with the host session's speed.
 **Prohibited:** put a Docker skill in `teams/sre-team/skills/` or
 create a library-root `skills/` directory for shared rules.
 
-**Preferred:** keep the Docker skill under the Docker agent. When another agent
+**Required:** keep the Docker skill under the Docker agent. When another agent
 needs an existing skill, link its instructions to the owning agent’s copy.
 
 ### Knowledge organization
@@ -74,7 +74,7 @@ needs an existing skill, link its instructions to the owning agent’s copy.
 create a global standards directory to hold team-owned knowledge, or write
 operating procedures directly in `docs/index.yaml`.
 
-**Preferred:** put programming rules in the development team’s knowledge base,
+**Required:** put programming rules in the development team’s knowledge base,
 link them through a navigation-only index and from relevant agents. Keep
 Rust-specific instructions in the Rust skill. Use the security team’s knowledge base for secret-handling policy.
 
@@ -83,7 +83,7 @@ Rust-specific instructions in the Rust skill. Use the security team’s knowledg
 **Prohibited:** an assignment to explain error handling changes the application's
 error policy and reports only “documentation improved.”
 
-**Preferred:** revise the assigned practice using Context Engineering and Code Practice
+**Required:** revise the assigned practice using Context Engineering and Code Practice
 Writing, check the examples against the supplied language rules, and return the
 changed paths with link and compilation results. Send an unresolved policy
 conflict to Team Gizmo rather than deciding it through a prose edit.
@@ -96,5 +96,5 @@ conflict to Team Gizmo rather than deciding it through a prose edit.
 **Prohibited:** the tech writer rewrites a decoder to make its example
 pass and starts directing the implementation agents.
 
-**Preferred:** report the decoder/example mismatch to Team Gizmo and retain
+**Required:** report the decoder/example mismatch to Team Gizmo and retain
 ownership of the documentation correction after the subject owner resolves it.

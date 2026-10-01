@@ -92,7 +92,7 @@ gh pr edit "$pr_number" --repo "$pr_repo" \
 
 **Prohibited:** create another PR for the same feature after each repair push.
 
-**Preferred:** publish the coherent repair to the existing PR and update its
+**Required:** publish the coherent repair to the existing PR and update its
 summary and validation evidence for the new revision.
 
 ### Observe checks and report repair needs
@@ -164,7 +164,7 @@ dispatch, rerun, and log commands belong to the CI/CD Operations skill.
 **Prohibited:** report a PR ready because one test suite passed while another
 required check is missing, or retry a failing product test until it happens to pass.
 
-**Preferred:** return all observed failures with run URLs and diagnostics, let
+**Required:** return all observed failures with run URLs and diagnostics, let
 Gizmo decide repair assignments, and verify the resulting revision's required checks.
 
 ### Merge and verify the outcome
@@ -236,5 +236,5 @@ and report a blocker if it has advanced or is still needed.
 **Prohibited:** promise success when a merge is only queued, or change the
 repository's merge strategy because another project uses squash merges.
 
-**Preferred:** follow the configured strategy, observe the actual merge result,
+**Required:** follow the configured strategy, observe the actual merge result,
 and state precisely which cleanup succeeded or remains outstanding.

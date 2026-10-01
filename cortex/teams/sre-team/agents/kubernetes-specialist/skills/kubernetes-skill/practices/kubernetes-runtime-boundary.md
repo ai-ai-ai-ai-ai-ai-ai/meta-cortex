@@ -18,7 +18,7 @@ containers:
 ```
 
 ```yaml
-# Preferred: the image directly runs the workload.
+# Required: the image directly runs the workload.
 containers:
   - name: tests
     image: example/test-runner:stable
@@ -49,7 +49,7 @@ volumes:
 ```
 
 ```yaml
-# Preferred: the workload has no host runtime dependency.
+# Required: the workload has no host runtime dependency.
 containers:
   - name: worker
     image: example/worker:stable
@@ -57,7 +57,7 @@ containers:
       allowPrivilegeEscalation: false
 ```
 
-The preferred control is an example of a compatible posture, not a universal
+The required control is an example of a compatible posture, not a universal
 replacement for the project's complete security policy.
 
 ## Keep build services as build services

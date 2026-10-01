@@ -4,7 +4,7 @@ overview:
   - Check decoder output and workflow error types.
 prohibited:
   - Forward unknown values or add competing failure wrappers.
-preferred:
+required:
   - Decode concrete values and preserve typed Effect failures.
 compare:
   - id: no_unknown:decoder_scope

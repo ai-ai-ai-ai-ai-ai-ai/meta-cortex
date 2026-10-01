@@ -12,7 +12,7 @@ lifetime in memory.
 - **Prohibited:** apply secret redaction only to one language while another logs
   the same credential.
 
-- **Preferred:** apply the same secret-lifecycle requirements at both boundaries,
+- **Required:** apply the same secret-lifecycle requirements at both boundaries,
   using the relevant implementation skills for language-specific handling.
 
 ## Required actions

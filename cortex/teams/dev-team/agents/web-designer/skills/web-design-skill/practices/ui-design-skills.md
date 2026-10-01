@@ -4,6 +4,7 @@ Ship deliberate, calm, trustworthy interfaces without weakening product
 truth or security boundaries. This is the canonical UI design authority.
 
 Every user-visible UI task must load and apply this card when it:
+
 - designs, implements, redesigns, polishes, or reviews vault, website,
   browser-extension, landing, help, settings, onboarding, or authentication; or
 - changes responsive behavior, accessibility, motion, visual state, components, or styling.
@@ -43,7 +44,7 @@ only when two materially different directions remain plausible.
 **Prohibited:** replace an established React component system because an example
 uses Svelte paths.
 
-**Preferred:** inspect the project's existing components and tokens, then state
+**Required:** inspect the project's existing components and tokens, then state
 how the assigned interaction fits that system.
 
 ## Components, Tokens, And Themes
@@ -63,7 +64,7 @@ how the assigned interaction fits that system.
 
 **Prohibited:** hard-code a new radius and color palette for one dialog.
 
-**Preferred:** use the existing dialog primitive and semantic tokens across
+**Required:** use the existing dialog primitive and semantic tokens across
 the project's supported themes.
 
 ## Hierarchy, Forms, And States
@@ -90,7 +91,7 @@ the project's supported themes.
 
 **Prohibited:** remove a field's label and show validation errors only in a toast.
 
-**Preferred:** keep the label, place the error beside the field, and preserve
+**Required:** keep the label, place the error beside the field, and preserve
 focus so the user can correct the value.
 
 ## Responsive Behavior And Motion
@@ -113,7 +114,7 @@ focus so the user can correct the value.
 
 **Prohibited:** clip a form's overflowing actions on a narrow viewport.
 
-**Preferred:** reflow the actions, preserve usable targets, and verify the form
+**Required:** reflow the actions, preserve usable targets, and verify the form
 with zoom and long translated labels.
 
 ## Anti-Slop Rules
@@ -135,7 +136,7 @@ with zoom and long translated labels.
 
 **Prohibited:** invent testimonials or security certifications to fill a landing page.
 
-**Preferred:** use verified product behavior, approved assets, and the correct
+**Required:** use verified product behavior, approved assets, and the correct
 distribution link for the target browser.
 
 ## Copy And Accessibility
@@ -151,7 +152,7 @@ distribution link for the target browser.
 
 **Prohibited:** communicate a failed operation only by changing an icon to red.
 
-**Preferred:** pair the visual state with an accessible, actionable message and
+**Required:** pair the visual state with an accessible, actionable message and
 verify keyboard focus and contrast.
 
 ## Validation
@@ -168,5 +169,5 @@ Any applicable failed directive means the UI is not ready.
 **Prohibited:** declare the interaction ready after inspecting only its initial
 desktop screenshot.
 
-**Preferred:** inspect the changed success and failure states at representative
+**Required:** inspect the changed success and failure states at representative
 widths and report the visual and accessibility checks actually performed.

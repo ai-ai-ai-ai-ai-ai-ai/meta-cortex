@@ -65,7 +65,7 @@ active conversation, including compaction handoffs; do not commit answers.
 **Prohibited:** accept `age: "18.2"` as 18, or discard the previously accepted
 name when asking for age again.
 
-**Preferred:** retain the name in returned state, explain the integer error, and
+**Required:** retain the name in returned state, explain the integer error, and
 submit only the new age answer under its bound field name.
 
 ### Interrupted or unavailable collection
@@ -88,5 +88,5 @@ configuration is blocked unless the user has already supplied a valid choice.
 - **Prohibited:** end the turn while waiting for the mode answer, or treat a
   50-second timeout as choosing `single_agent`.
 
-- **Preferred:** keep the pending request active through interruptible waits; on
+- **Required:** keep the pending request active through interruptible waits; on
   explicit cancellation, stop collection and leave the original task paused.

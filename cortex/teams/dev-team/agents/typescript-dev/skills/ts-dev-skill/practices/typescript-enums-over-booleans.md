@@ -19,7 +19,7 @@ TypeScript-owned domain vocabulary in its TypeScript owner.
 const request: SyncRequest = { force: true, failFast: false };
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 const request: SyncRequest = {
@@ -43,10 +43,14 @@ interface UploadState {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
-enum UploadKind { Idle = "idle", Running = "running", Complete = "complete" }
+enum UploadKind {
+  Idle = "idle",
+  Running = "running",
+  Complete = "complete",
+}
 type UploadState =
   | { readonly kind: UploadKind.Idle }
   | { readonly kind: UploadKind.Running }
@@ -71,7 +75,7 @@ The existing decoder converts it into the application's sync-mode enum.
 workflow.run(raw.force);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the adapter; decoder owns the external flag interpretation:
@@ -113,7 +117,7 @@ switch (this.files.contains(path)) {
 }
 ```
 
-**Preferred:** the owner names the outcome and the caller reports it.
+**Required:** the owner names the outcome and the caller reports it.
 
 ```ts
 enum ConfigurationPresence {

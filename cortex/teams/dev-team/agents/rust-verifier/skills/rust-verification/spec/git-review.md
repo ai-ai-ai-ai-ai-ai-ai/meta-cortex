@@ -26,6 +26,7 @@ the delivery team's local-feature practice owns commits and merges.
    commit identity. Do not substitute `HEAD`. If the object is unavailable,
    send `need_commit`; Gizmo arranges object availability with the Git owner.
    The verifier does not fetch or switch branches to repair its assignment.
+
 3. Read the commit headers before the blank line in `cat-file` output. If a
    `parent` header exists, set `parent_sha` to the first parent's full object ID
    and verify that object:
@@ -44,7 +45,7 @@ the delivery team's local-feature practice owns commits and merges.
 **Prohibited:** review the current checkout after a SHA lookup fails, or treat
 an unavailable parent as permission to review the entire tree as newly added.
 
-**Preferred:** resolve Gizmo's exact SHA, read its actual parent header, and
+**Required:** resolve Gizmo's exact SHA, read its actual parent header, and
 report missing objects before claiming a complete inventory.
 
 ### Enumerate the complete change
@@ -76,7 +77,7 @@ report missing objects before claiming a complete inventory.
 **Prohibited:** parse `git diff --name-only` by spaces and lose `src/order item.rs`,
 or use a merge's combined diff and miss a first-parent change.
 
-**Preferred:** retain the NUL-delimited path as one inventory entry. For a rename,
+**Required:** retain the NUL-delimited path as one inventory entry. For a rename,
 retain both names and inspect the explicit first-parent patch.
 
 ### Read files from committed objects
@@ -112,6 +113,7 @@ retain both names and inspect the explicit first-parent patch.
    a text file. Retain binary and submodule changes in the inventory, inspect
    their applicable metadata, and report any evidence needed for a decision.
    Do not claim that a failed blob read checked their content.
+
 4. Read relevant callers, owning types, and earlier repair locations with the
    same committed-object commands, even when those paths are unchanged. Cite
    lines from that revision; deleted content uses parent lines. Never replace
@@ -120,7 +122,7 @@ retain both names and inspect the explicit first-parent patch.
 **Prohibited:** inspect the renamed file from disk and quote lines containing
 uncommitted edits as evidence about Gizmo's SHA.
 
-**Preferred:** read the old committed path from the parent and the new path from
+**Required:** read the old committed path from the parent and the new path from
 the reviewed commit. Keep an unreadable object as an explicit blocker.
 
 ### Finish without changing Git state
@@ -137,5 +139,5 @@ the reviewed commit. Keep an unreadable object as an explicit blocker.
 **Prohibited:** check out the reviewed SHA in the developer's worktree to run
 tests, then commit a report to make the read-only task ready.
 
-**Preferred:** inspect objects in place, record the report in the ledger, and
+**Required:** inspect objects in place, record the report in the ledger, and
 request missing exact-revision test evidence through Gizmo.

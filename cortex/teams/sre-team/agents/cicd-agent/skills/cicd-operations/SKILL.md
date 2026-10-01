@@ -44,7 +44,7 @@ In single-agent mode, perform the applicable responsibilities locally.
 **Prohibited:** report validation passed when a workflow was merely dispatched,
 when it tested an older head, or when only a build completed without tests.
 
-**Preferred:** identify the actual tested revision and every requested check's
+**Required:** identify the actual tested revision and every requested check's
 result, with a link to the run and any checks still unresolved.
 
 ### Diagnose and repair failures
@@ -67,7 +67,7 @@ result, with a link to the run and any checks still unresolved.
 **Prohibited:** delete a required check or expose secrets to a fork to repair a
 permission failure.
 
-**Preferred:** correct the assigned workflow boundary, preserve the required
+**Required:** correct the assigned workflow boundary, preserve the required
 checks, and verify the repaired execution through the existing provider.
 
 ### Execute an existing deployment or release procedure
@@ -90,5 +90,5 @@ checks, and verify the repaired execution through the existing provider.
 **Prohibited:** merge a PR and automatically publish a release using a guessed
 version, environment, and workflow.
 
-**Preferred:** execute the separately requested project release procedure and
+**Required:** execute the separately requested project release procedure and
 verify its documented outcome without changing the project's release design.

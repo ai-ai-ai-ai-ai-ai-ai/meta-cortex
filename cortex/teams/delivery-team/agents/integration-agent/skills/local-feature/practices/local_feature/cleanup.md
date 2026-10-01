@@ -67,5 +67,5 @@ the feature workspace remains available to the user after delivery.
 **Prohibited:** remove the feature worktree after a PR merge, or force-delete an
 unmerged task branch or dirty worktree.
 
-**Preferred:** confirm integration and clean status, remove the finished worker
+**Required:** confirm integration and clean status, remove the finished worker
 workspace and branch, and retain the validated feature for review.

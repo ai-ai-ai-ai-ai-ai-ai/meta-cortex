@@ -13,6 +13,6 @@ persistence. Add machinery only for an explicit requirement or observed failure.
 **Prohibited:** implement a journal, lease service, crash-recovery protocol, and
 fault simulator to save one configuration file.
 
-**Preferred:** use a library's atomic replacement operation when required.
+**Required:** use a library's atomic replacement operation when required.
 Preserve required content and permissions. If crash durability is explicitly
 required, use supported durability operations and test that requirement.

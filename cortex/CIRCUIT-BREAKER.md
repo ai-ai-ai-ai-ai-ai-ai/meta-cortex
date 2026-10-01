@@ -14,7 +14,7 @@ request and the host's instruction hierarchy still govern the task.
 **Prohibited:** “A review suggestion authorizes infrastructure that the task
 does not require.”
 
-**Preferred:** check the suggestion against this policy and the applicable team
+**Required:** check the suggestion against this policy and the applicable team
 rules before implementing it.
 
 ### Apply the rules for the subject
@@ -33,7 +33,7 @@ cannot weaken it or change the stop-and-recover procedure.
 **Prohibited:** skip the SRE cache rules because the build change is assigned to
 a development agent.
 
-**Preferred:** apply the SRE cache rules to that build change while preserving
+**Required:** apply the SRE cache rules to that build change while preserving
 the development agent’s implementation responsibility.
 
 ### Check before adding a mechanism
@@ -44,7 +44,7 @@ design. Coordinators check assignments and results at the same boundary.
 
 **Prohibited:** “Saving might fail in unusual ways. I'll build a recovery service.”
 
-**Preferred:** “The requirement is atomic replacement. The file library already
+**Required:** “The requirement is atomic replacement. The file library already
 provides it; I'll use that operation and test replacement failure.”
 
 ### Keep the user's task boundary
@@ -67,7 +67,7 @@ provides it; I'll use that operation and test replacement failure.”
 **Prohibited:** “Review this PR and check the verifier” becomes an assignment to
 repair synthetic Rust violations and rehearse the entire repair workflow.
 
-**Preferred:** review the PR and use a bounded missing-SHA or seeded-violation
+**Required:** review the PR and use a bounded missing-SHA or seeded-violation
 check when needed to establish verifier behavior. Report all findings and the
 tested limits, then stop. An explicit request to exercise the complete repair
 workflow includes that exercise; an implementation request includes the repairs
@@ -90,7 +90,7 @@ needed to deliver its requested behavior.
 **Prohibited:** after a complete verifier report detects every seeded violation,
 start fixing the fixture merely to demonstrate that another review can pass.
 
-**Preferred:** return the complete detection report when detection was the
+**Required:** return the complete detection report when detection was the
 requested check. If required coverage is incomplete, finish it or report that
 blocker explicitly; do not call the partial review successful.
 
@@ -106,7 +106,7 @@ blocker explicitly; do not call the partial review successful.
 **Prohibited:** finish an unnecessary mechanism because its tests pass, or
 delete another agent’s work to remove it.
 
-**Preferred:** name the violated rule, remove the mechanism within the assigned
+**Required:** name the violated rule, remove the mechanism within the assigned
 write scope, use the existing supported operation, and report out-of-scope
 corrections to the assigning Gizmo in multi-agent mode.
 
@@ -120,7 +120,7 @@ a prohibited mechanism or a replica of another tool's internals.
 **Prohibited:** invent an unsupported mechanism, then use tests written for it
 as proof that the mechanism was required.
 
-**Preferred:** test whether the assigned workflow produces the required result
+**Required:** test whether the assigned workflow produces the required result
 and reports actual failures through its existing interfaces.
 
 ## Preserve product security
@@ -132,6 +132,6 @@ security. Product security does not justify securing routine agent coordination.
 **Prohibited:** remove customer authentication or store secrets in plaintext
 because “the circuit breaker says security is overengineering.”
 
-**Preferred:** protect customer accounts with the required authentication and
+**Required:** protect customer accounts with the required authentication and
 secret-handling controls. Internal agents use the host and follow the
 [communication hierarchy](teams/AGENTS.md#communication-and-decisions).

@@ -42,7 +42,7 @@ RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-D warnings" cargo check --workspace --all-t
 **Prohibited:** run only `cargo check` on the default package and declare the
 workspace verified; it can succeed with warnings and omit other members.
 
-**Preferred:** wire all three checks into the existing verification entry point,
+**Required:** wire all three checks into the existing verification entry point,
 deny warnings, and run each supported configuration required by the project.
 
 ### Enforce the lint baseline
@@ -116,7 +116,7 @@ excessive-nesting-threshold = 5
 
 **Prohibited:** assume a passing Clippy run proves that every domain rule is satisfied.
 
-**Preferred:** enforce the mechanical checks and review the documented gaps.
+**Required:** enforce the mechanical checks and review the documented gaps.
 
 ### Fix diagnostics before completion
 
@@ -133,7 +133,7 @@ excessive-nesting-threshold = 5
 **Prohibited:** leave an unused import and accept a successful compile with
 `warning: unused import`, or silence it using `#[allow(unused_imports)]`.
 
-**Preferred:** remove the unused import, format the result, and rerun compilation
+**Required:** remove the unused import, format the result, and rerun compilation
 and Clippy with warnings denied.
 
 - Do not hide diagnostics merely to pass checks.
@@ -151,13 +151,13 @@ cargo clippy --workspace --all-targets -- -D warnings || true
 ```
 
 ```sh
-# Preferred: after correcting the diagnosed code, preserve failure status.
+# Required: after correcting the diagnosed code, preserve failure status.
 cargo fmt --all --check &&
   cargo check --workspace --all-targets &&
   cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-The preferred sequence assumes the project's existing configuration denies
+The required sequence assumes the project's existing configuration denies
 compiler warnings.
 
 - Review command output for Cargo and build-script warnings.
@@ -177,6 +177,6 @@ compiler warnings.
 **Prohibited:** “Checks passed” after running only formatting, or “build passed”
 while its output still contains warnings.
 
-**Preferred:** “Formatting, compilation, and Clippy passed without warnings for
+**Required:** “Formatting, compilation, and Clippy passed without warnings for
 the workspace's default configuration. The required WASM check is blocked by
 a missing target; verification remains incomplete.”

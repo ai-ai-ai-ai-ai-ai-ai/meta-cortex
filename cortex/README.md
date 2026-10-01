@@ -108,7 +108,7 @@ one when requested, but the framework does not define its release process.
 - **Prohibited:** copy a project's Taskfile commands, squash-only policy, or release
   workflow into the generic framework and apply it to every consumer.
 
-- **Preferred:** discover this project's supported operations, execute the requested
+- **Required:** discover this project's supported operations, execute the requested
   scope, and report observed PR, run, merge, or deployment outcomes.
 
 ## Circuit breaker
@@ -123,7 +123,7 @@ documents, linked from the global policy and each affected agent.
 **Prohibited:** an ordinary handoff grows into encrypted agent channels and
 persistent authority receipts.
 
-**Preferred:** use the host's handoff tools and review the result against the
+**Required:** use the host's handoff tools and review the result against the
 assignment. Use a focused second review for a concrete dispute, without a
 permanent observer agent.
 

@@ -19,11 +19,14 @@ module and are imported into the component.
 let selection = $state<SelectedFile>();
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // In file-selection.ts:
-export enum FileSelectionKind { Empty = "empty", Selected = "selected" }
+export enum FileSelectionKind {
+  Empty = "empty",
+  Selected = "selected",
+}
 export type FileSelection =
   | { readonly kind: FileSelectionKind.Empty }
   | { readonly kind: FileSelectionKind.Selected; readonly file: File };
@@ -43,7 +46,7 @@ let finished = $state(false);
 let result = $state<ImportResult>();
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // ImportKind and ImportState are declared in the adjacent state module.
@@ -65,7 +68,7 @@ variants; optionality does not justify widening them to string.
 type OrderSelection = { readonly order_id: string };
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // OrderId is imported from the generated contract.

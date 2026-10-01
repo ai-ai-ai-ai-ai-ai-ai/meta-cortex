@@ -32,7 +32,7 @@ selected language practices. Reuse it if already loaded for this assignment.
 
 **Prohibited:** select only browser practices and omit type checking and linting.
 
-**Preferred:** establish and run the required checks alongside browser validation.
+**Required:** establish and run the required checks alongside browser validation.
 
 ## Practice selection
 
@@ -64,7 +64,7 @@ Before writing Effect code, read the installed `effect/AGENTS.md` completely.
 
 **Prohibited:** a script introduces a separate Promise-based queue for its workflow.
 
-**Preferred:** the script uses Effect for scheduling; pure calculations remain
+**Required:** the script uses Effect for scheduling; pure calculations remain
 methods on their domain owners.
 
 ### Manage the pinned release
@@ -80,7 +80,7 @@ methods on their domain owners.
 **Prohibited:** use a floating `latest` dependency or silently upgrade Effect
 while implementing an unrelated change.
 
-**Preferred:** select a release during an upgrade, pin it consistently, and
+**Required:** select a release during an upgrade, pin it consistently, and
 validate the migration before using its APIs.
 
 ## TypeScript security practices

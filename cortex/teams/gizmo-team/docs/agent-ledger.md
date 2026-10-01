@@ -53,7 +53,7 @@ The CLI does not launch, stop, or monitor host agents.
 **Prohibited:** create a database inside each worker checkout or wait until a
 worker's final message to record its assignment.
 
-**Preferred:** initialize one ledger for the feature and supply its ID to every
+**Required:** initialize one ledger for the feature and supply its ID to every
 worker before launch.
 
 ## Discover and invoke commands
@@ -101,7 +101,7 @@ YAML/JSON are wire formats; the application operates on concrete Rust types.
 
 **Prohibited:** invent a command flag or put coordination state into extensions.
 
-**Preferred:** discover the schema and send `action.kind: heartbeat` with the
+**Required:** discover the schema and send `action.kind: heartbeat` with the
 current revision and attempt from the previous response.
 
 ## Assignment and worker lifecycle
@@ -179,7 +179,7 @@ from ancestry; retain the existing merge-based local integration workflow.
 **Prohibited:** merge unfinished code into the feature merely to publish a
 heartbeat, or treat a successful database write as proof of passing tests.
 
-**Preferred:** commit a worker milestone, record its SHA and next steps, then
+**Required:** commit a worker milestone, record its SHA and next steps, then
 continue on the worker branch until ready for integration.
 
 ## Recovery and stale work
@@ -224,7 +224,7 @@ need that worktree; the ledger is not a copy of their contents.
 **Prohibited:** start a replacement solely because the TTL elapsed, or require
 a lost final message before inspecting an existing branch.
 
-**Preferred:** inspect the execution, preserve its workspace, then resume from
+**Required:** inspect the execution, preserve its workspace, then resume from
 the recorded task plus any newer Git changes.
 
 ## Versions and durable contracts
@@ -268,5 +268,5 @@ its meaning. Adding extension keys does not change a known schema version.
 **Prohibited:** accept version `99` using the version `1` decoder or discard
 history to make an upgrade work.
 
-**Preferred:** reject the unsupported version with an upgrade message, leaving
+**Required:** reject the unsupported version with an upgrade message, leaving
 its committed data intact.

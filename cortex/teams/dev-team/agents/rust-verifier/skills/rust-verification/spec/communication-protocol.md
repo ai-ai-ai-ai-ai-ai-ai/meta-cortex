@@ -23,7 +23,7 @@ defines messages and evidence; it does not authorize checkout changes.
 
 **Prohibited:** send a nullable commit field and let the verifier guess `HEAD`.
 
-**Preferred:** send one explicit SHA. If it is missing, the verifier requests it
+**Required:** send one explicit SHA. If it is missing, the verifier requests it
 and waits before starting review.
 
 ### Request a review
@@ -48,7 +48,7 @@ and waits before starting review.
 
 **Prohibited:** replace the missing SHA with the developer branch tip.
 
-**Preferred:** exchange these messages; the SHA below is fictional:
+**Required:** exchange these messages; the SHA below is fictional:
 
 ```yaml
 type: need_commit
@@ -135,7 +135,7 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
 **Prohibited:** save only “178 rules checked,” mark an entire practice passed,
 or use an empty repairs section to imply there are no violations.
 
-**Preferred:** retain every rule/file decision and every cross-rule decision.
+**Required:** retain every rule/file decision and every cross-rule decision.
 Explicitly state `no_violations` only when no violations were found; unfinished
 review still produces a blocked verdict.
 
@@ -200,7 +200,7 @@ review still produces a blocked verdict.
 **Prohibited:** send “one type issue; see the ledger,” stop after the first
 violation, or forward only the most severe issue to rust-dev.
 
-**Preferred:** finish the catalog traversal and send every issue with its full
+**Required:** finish the catalog traversal and send every issue with its full
 repair context, as in the following YAML example. For authorized implementation,
 Gizmo gives rust-dev all in-scope repairs and obtains a complete review of the
 replacement commit. For review-only work, Gizmo returns the complete findings.
@@ -215,7 +215,7 @@ with no truncation or fixed limit on the number of issues.
 **Prohibited:** send only `customer-id-type` because it was found first, or send
 both IDs without the code context and instructions needed to fix them.
 
-**Preferred:** send both complete issues in the message to Gizmo. Each issue is
+**Required:** send both complete issues in the message to Gizmo. Each issue is
 usable as an ordinary rust-dev repair requirement without opening the verifier's
 private conversation or reconstructing the problem from a title:
 
@@ -307,5 +307,5 @@ summary. Gizmo must receive both the repair work and the decisions still needed.
 
 **Prohibited:** report that a successful ledger write proves rule compliance.
 
-**Preferred:** check every expected decision and its evidence, then save and
+**Required:** check every expected decision and its evidence, then save and
 report the actual verdict.

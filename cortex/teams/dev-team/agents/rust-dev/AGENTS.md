@@ -33,5 +33,5 @@ global policy supplied with the assignment.
 **Prohibited:** change a generated Rust/WASM contract and silently take over
 the browser UI migration.
 
-**Preferred:** implement and test the Rust contract, then provide its changed
+**Required:** implement and test the Rust contract, then provide its changed
 shape and compatibility requirements to Team Gizmo for a typescript-dev assignment.

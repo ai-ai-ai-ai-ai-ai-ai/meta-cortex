@@ -4,7 +4,7 @@ overview:
   - Distinguish conversion, validation, and policy operations.
 prohibited:
   - Bypass validation with an infallible conversion.
-preferred:
+required:
   - Use destination-owned conversions and separate policy operations.
 compare:
   - id: domain_types:conversion_traits

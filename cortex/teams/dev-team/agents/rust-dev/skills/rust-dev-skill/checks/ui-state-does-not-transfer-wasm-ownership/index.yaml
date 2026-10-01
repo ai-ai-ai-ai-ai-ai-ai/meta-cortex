@@ -4,7 +4,7 @@ overview:
   - Check allocation ownership during UI replacement and cleanup.
 prohibited:
   - Free borrowed objects or JSON-clone WASM instances.
-preferred:
+required:
   - Preserve instances and leave cleanup with their owner.
 compare:
   - id: wasm_contracts:ownership

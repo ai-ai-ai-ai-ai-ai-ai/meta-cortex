@@ -20,17 +20,23 @@ or required external edge; never unwrap merely to cross an application layer.
 
 ```ts
 type PanelId = string;
-interface PanelSelection { readonly id: string; }
+interface PanelSelection {
+  readonly id: string;
+}
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 class PanelId {
   private constructor(private readonly value: string) {}
-  static from(value: string): PanelId { return new PanelId(value); }
+  static from(value: string): PanelId {
+    return new PanelId(value);
+  }
 }
-interface PanelSelection { readonly id: PanelId; }
+interface PanelSelection {
+  readonly id: PanelId;
+}
 ```
 
 ## Name complex type expressions
@@ -59,7 +65,7 @@ const formRequest: YamlDecodeRequest<
 > = { source, schema: FormSchema.value };
 ```
 
-**Preferred:** give that request a name and retain its exact schema types.
+**Required:** give that request a name and retain its exact schema types.
 
 ```ts
 type FormDecodeRequest = YamlDecodeRequest<
@@ -85,11 +91,11 @@ const panel_id = raw as PanelId;
 controller.select(panel_id);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the adapter; parser returns a typed decoding Effect.
-const panel_id = yield* parser.decode(raw);
+const panel_id = yield * parser.decode(raw);
 controller.select(panel_id);
 ```
 
@@ -106,14 +112,19 @@ interface PanelState {
 }
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
-enum PanelSelectionKind { Empty = "empty", Selected = "selected" }
+enum PanelSelectionKind {
+  Empty = "empty",
+  Selected = "selected",
+}
 type PanelSelection =
   | { readonly kind: PanelSelectionKind.Empty }
   | { readonly kind: PanelSelectionKind.Selected; readonly id: PanelId };
-interface PanelState { readonly selection: PanelSelection; }
+interface PanelState {
+  readonly selection: PanelSelection;
+}
 ```
 
 ## Nest vocabulary that shares an owner
@@ -132,16 +143,24 @@ enum RequestKind {
 const allowed = new Set(["destination", "format"]);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
-enum DocumentExportOperation { Assemble = "assemble", Publish = "publish" }
+enum DocumentExportOperation {
+  Assemble = "assemble",
+  Publish = "publish",
+}
 interface DocumentExport {
   readonly operation: DocumentExportOperation;
   readonly destination: ExportPath;
 }
-interface ExportRequest { readonly documentExport: DocumentExport; }
-enum ExportField { Destination = "destination", Format = "format" }
+interface ExportRequest {
+  readonly documentExport: DocumentExport;
+}
+enum ExportField {
+  Destination = "destination",
+  Format = "format",
+}
 // Inside the codec, using its existing named vocabulary request:
 const fields: RequestFieldVocabulary<ExportField> = { vocabulary: ExportField };
 validator.check(fields);
@@ -168,10 +187,18 @@ the raw string return is confined to the external output adapter.
 ```ts
 import { stringify } from "yaml";
 
-enum OperationGroup { Framework = "Framework" }
-enum FrameworkCommand { Initialize = "Initialize" }
-enum Harness { None = "none" }
-enum InstructionAction { Skip = "skip" }
+enum OperationGroup {
+  Framework = "Framework",
+}
+enum FrameworkCommand {
+  Initialize = "Initialize",
+}
+enum Harness {
+  None = "none",
+}
+enum InstructionAction {
+  Skip = "skip",
+}
 interface InitArguments {
   readonly harness: Harness;
   readonly instructions: InstructionAction;
@@ -202,7 +229,7 @@ encode(): string {
 }
 ```
 
-**Preferred:** construct typed data and let the serializer own YAML syntax and
+**Required:** construct typed data and let the serializer own YAML syntax and
 escaping. These call-site statements belong inside the caller's owning method.
 
 ```ts
@@ -244,13 +271,15 @@ an unrecognized version.
 return decoder.current(raw); // Ignores the declared schema version.
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the importer; schema is a decoded, validated versioned record.
 switch (schema.version) {
-  case WorkspaceVersion.V1: return migrations.fromV1(schema);
-  case WorkspaceVersion.V2: return decoder.current(schema);
+  case WorkspaceVersion.V1:
+    return migrations.fromV1(schema);
+  case WorkspaceVersion.V2:
+    return decoder.current(schema);
 }
 ```
 
@@ -269,12 +298,12 @@ const approved = raw as ApprovedDraft;
 publisher.publish(approved);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the workflow owner:
-const approved = yield* review.approve(draft);
-yield* publisher.publish(approved);
+const approved = yield * review.approve(draft);
+yield * publisher.publish(approved);
 ```
 
 ## Keep failures and secrets with their owners
@@ -293,7 +322,7 @@ logs/persistence and no retained secret after the interaction ends.
 throw "import failed";
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Inside the same workflow; failure retains its concrete cause and code:

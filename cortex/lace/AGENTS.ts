@@ -120,9 +120,8 @@ const receipt: Job = {
                           },
                         },
                       },
-                      preferred: {
-                        BulletList: {
-                          label: "Preferred",
+                      required: {
+                        Required: {
                           items: {
                             useExistingDeclarations:
                               "Read the model, then write the assigned receipt beside its context using existing declarations.",
@@ -201,9 +200,8 @@ const receipt: Job = {
                           },
                         },
                       },
-                      preferred: {
-                        BulletList: {
-                          label: "Preferred",
+                      required: {
+                        Required: {
                           items: {
                             typedReadonly:
                               "Keep declaration objects readonly through the Job type.",
@@ -286,9 +284,8 @@ const receipt: Job = {
                           },
                         },
                       },
-                      preferred: {
-                        BulletList: {
-                          label: "Preferred",
+                      required: {
+                        Required: {
                           items: {
                             parallelRules:
                               "Use a BulletList for parallel rules.",
@@ -357,9 +354,8 @@ const receipt: Job = {
                           },
                         },
                       },
-                      preferred: {
-                        BulletList: {
-                          label: "Preferred",
+                      required: {
+                        Required: {
                           items: {
                             nestedReceipt:
                               "Declare const receipt: Job = { stages: { context: context, checks: { stages: { compile: compile, verify: verify } } } }; then export default receipt.",
@@ -421,9 +417,8 @@ const receipt: Job = {
                           },
                         },
                       },
-                      preferred: {
-                        BulletList: {
-                          label: "Preferred",
+                      required: {
+                        Required: {
                           items: {
                             compileOnly:
                               "Use check for compilation without emitting files.",
@@ -478,9 +473,8 @@ const receipt: Job = {
                       },
                     },
                   },
-                  preferred: {
-                    BulletList: {
-                      label: "Preferred",
+                  required: {
+                    Required: {
                       items: {
                         assignedFiles:
                           "Keep receipt work within the assigned Cortex context files.",

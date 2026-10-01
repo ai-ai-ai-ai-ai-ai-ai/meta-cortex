@@ -21,7 +21,7 @@ rendered label proves domain calculations.
 await expect(page.getByText("Total correct")).toBeVisible();
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // In the existing browser scenario, after the domain calculation tests:
@@ -43,7 +43,7 @@ contracts. Keep browser acceptance alongside the unit regression.
 port.save = () => Promise.resolve(receipt);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 // Production port returns an Effect with a typed success/failure contract:
@@ -62,7 +62,7 @@ For every subsequent repair, inspect the new failure evidence first.
 test.skip("saved state survives reload", scenario);
 ```
 
-**Preferred:**
+**Required:**
 
 ```ts
 test("saved state survives reload", scenario);

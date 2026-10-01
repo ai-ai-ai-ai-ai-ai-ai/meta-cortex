@@ -57,7 +57,7 @@ their assigned scope; coordination decisions belong to their Gizmo.
 **Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
 the integration agent sends a conflict directly to a developer.
 
-**Preferred:** the agent reports the failure and evidence to its Team Gizmo.
+**Required:** the agent reports the failure and evidence to its Team Gizmo.
 Gizmo decides the next step, assigns any repair, and supplies the resulting
 evidence to agents that need it.
 
@@ -145,7 +145,7 @@ instructions; this handoff does not select or duplicate skill contents.
 and its role path, assuming it already knows the development team’s programming
 rules and circuit breaker.
 
-**Preferred:** supply the project and library roots, global and development-team
+**Required:** supply the project and library roots, global and development-team
 circuit breakers, team instructions, documentation index and relevant programming
 documents, and the TypeScript role. Require the agent to read them in the order
 above before editing the component.

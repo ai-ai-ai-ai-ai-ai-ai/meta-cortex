@@ -15,7 +15,7 @@ Choose the body shape for each substantive H2 or H3 article.
 
 **Prohibited:** “Caching: speed, expiry, origin, retries, performance.”
 
-**Preferred:** “Cache successful lookups until their expiry. This avoids repeated
+**Required:** “Cache successful lookups until their expiry. This avoids repeated
 origin requests while bounding staleness. After expiry, fetch a fresh result.”
 
 The explanation connects the decision, reason, and consequence instead of
@@ -32,7 +32,7 @@ leaving a disconnected list of keywords.
 
 **Prohibited:** “The author and reviewer should keep examples accurate, validate them, and maybe label failures.”
 
-**Preferred:**
+**Required:**
 
 - The author records the execution result beside the example review.
 - The reviewer checks that the recorded result supports the claim.
@@ -51,7 +51,7 @@ The peer items distinguish the actors and the reporting condition.
 
 **Prohibited:** “Validation includes artifacts, checks, and fixing failures.”
 
-**Preferred:**
+**Required:**
 
 1. Build the example with its declared supporting types.
    - If compilation fails, record the diagnostic and correct the example.
@@ -74,7 +74,7 @@ step names the evidence produced.
 
 **Prohibited:** “Error handling: use typed failures; never unwrap; here is the entire error policy again.”
 
-**Preferred:** “Error handling: typed failures and propagation,” linked to the
+**Required:** “Error handling: typed failures and propagation,” linked to the
 owning practice. A command reference may show the literal command in a code block.
 
 A reference selects an authority instead of becoming another copy of it.
@@ -94,7 +94,7 @@ A reference selects an authority instead of becoming another copy of it.
 **Prohibited:** separate top-level headings for “Decode,” “Malformed input,”
 and “Report malformed input,” even though the latter two only describe decoding.
 
-**Preferred:** an H2 for “Import,” an H3 for “Decode input,” and a conditional
+**Required:** an H2 for “Import,” an H3 for “Decode input,” and a conditional
 substep for reporting a malformed field. Keep an independent “Export” topic at H2.
 
 Move callers' heading links when a topic moves; do not preserve a dead anchor
@@ -111,7 +111,7 @@ merely because the document still has a similarly named title.
 
 **Prohibited:** “Update the catalog.”
 
-**Preferred:** “Given the renamed practice and its old path, replace that path
+**Required:** “Given the renamed practice and its old path, replace that path
 in the catalog and its callers. Verify that every changed link resolves.”
 
 The input, edit, and observable completion are explicit without an empty
@@ -138,7 +138,7 @@ Preserve their required syntax when editing surrounding prose.
 **Prohibited:** replace “reject unsupported versions” with “prefer supported
 versions” while adding headings and describing the change as formatting.
 
-**Preferred:** preserve “reject unsupported versions” and move it beneath the
+**Required:** preserve “reject unsupported versions” and move it beneath the
 owning validation section. Remove an empty summary heading instead of treating
 it as completed guidance.
 
@@ -146,7 +146,7 @@ it as completed guidance.
 
 **Prohibited:** add an HTML table or hidden HTML comment to carry authored rules.
 
-**Preferred:** use a keyed Markdown list for the rules. Preserve an installer’s
+**Required:** use a keyed Markdown list for the rules. Preserve an installer’s
 required start/end markers verbatim when editing their surrounding text.
 
 A literal HTML syntax example belongs in code or escaped text. It is not a
@@ -166,7 +166,7 @@ Semantic review must establish that the chosen structure fits the content.
 
 - **Prohibited review:** “The document has headings, so its structure passes.”
 
-- **Preferred review:** “The import section uses ordered actions, its failure
+- **Required review:** “The import section uses ordered actions, its failure
   branch stays beneath decoding, and the updated catalog targets the new heading.”
 
 Heading presence is a syntax fact; useful grouping requires semantic review.

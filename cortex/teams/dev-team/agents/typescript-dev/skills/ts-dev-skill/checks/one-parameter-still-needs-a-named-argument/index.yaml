@@ -4,7 +4,7 @@ overview:
   - Check parameter declarations and object call arguments.
 prohibited:
   - Pass an anonymous object to an ordinary method.
-preferred:
+required:
   - Pass an explicitly typed binding to a named contract.
 compare:
   - id: single_parameter:semantic_request

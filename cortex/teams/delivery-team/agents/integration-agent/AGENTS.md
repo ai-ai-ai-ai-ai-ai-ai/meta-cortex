@@ -21,7 +21,7 @@ Report to Team Gizmo through the host's agent communication tools.
 
 **Prohibited:** launch workers or decide their task scope independently.
 
-**Preferred:** use Team Gizmo's task list to prepare the assigned workspaces.
+**Required:** use Team Gizmo's task list to prepare the assigned workspaces.
 
 ### Execute and report
 
@@ -52,7 +52,7 @@ Report to Team Gizmo through the host's agent communication tools.
 
 **Prohibited:** silently implement an application fix while resolving integration.
 
-**Preferred:** report the conflicting files to Team Gizmo, which assigns the repair.
+**Required:** report the conflicting files to Team Gizmo, which assigns the repair.
 
 ## Prohibited actions
 
@@ -61,7 +61,7 @@ Report to Team Gizmo through the host's agent communication tools.
 
 **Prohibited:** have the integration role take over the PR role's remote operations.
 
-**Preferred:** return the completed local feature to Team Gizmo for the selected
+**Required:** return the completed local feature to Team Gizmo for the selected
 delivery path. Under `create_pr`, continue to the PR role; in single-agent mode,
 apply the PR skill locally. Under `local_only`, finish with the validated local
 outcome. Apply the project delivery policy and any task-specific override.

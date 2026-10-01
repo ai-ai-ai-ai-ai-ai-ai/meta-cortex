@@ -25,7 +25,7 @@ team documentation belongs in `docs/` when needed.
 
 **Prohibited:** a coordinator takes over an implementation because it assigned it.
 
-**Preferred:** return the correction to its owner and assess the resulting evidence.
+**Required:** return the correction to its owner and assess the resulting evidence.
 
 ## Team circuit breaker
 
