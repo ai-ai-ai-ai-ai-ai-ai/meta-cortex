@@ -1,7 +1,17 @@
-import { Job } from "../../../../../../../../lace/src/ts/job.ts";
-import { WorkingDirectory } from "../../../../../../../../lace/src/ts/lace.ts";
+import {
+  type Job,
+  TaskKind,
+  WorkingDirectory,
+} from "../../../../../../../../lace/src/ts/lace.ts";
 
-export default Job.shellCommand({
-  cwd: WorkingDirectory.LibraryRoot,
-  script: "bun run --filter @meta-cortex/lace check",
-});
+const receipt: Job = {
+  entries: [
+    {
+      kind: TaskKind.ShellCommand,
+      cwd: WorkingDirectory.LibraryRoot,
+      script: "bun run --filter @meta-cortex/lace check",
+    },
+  ],
+};
+
+export default receipt;

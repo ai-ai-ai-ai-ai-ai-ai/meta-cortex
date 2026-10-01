@@ -1,6 +1,6 @@
 import tseslint from "typescript-eslint";
 
-/** The declaration grammar supplements TypeScript's node and import checks. */
+/** The declaration grammar supplements TypeScript's object and import checks. */
 export class ReceiptGrammar {
   /** @returns {import("eslint").Linter.Config} */
   static configuration() {
@@ -8,9 +8,7 @@ export class ReceiptGrammar {
       files: ["**/*.lace.ts", "**/AGENTS.ts"],
       linterOptions: { noInlineConfig: true },
       languageOptions: { parser: tseslint.parser },
-      plugins: {
-        "@typescript-eslint": tseslint.plugin,
-      },
+      plugins: { "@typescript-eslint": tseslint.plugin },
       rules: {
         "@typescript-eslint/ban-ts-comment": [
           "error",
@@ -30,9 +28,8 @@ export class ReceiptGrammar {
             patterns: [
               {
                 regex:
-                  "^(?!(?:(?:\\.\\.?/)+(?:lace/)?src/ts/(?:lace|job)\\.ts|(?:\\.\\.?/)(?:[^\\n]*\\.lace\\.ts|(?:[^\\n]*/)?AGENTS\\.ts))$)",
-                message:
-                  "Import only the Lace model, Job builder, or another receipt.",
+                  "^(?!(?:(?:\\.\\.?/)+(?:lace/)?src/ts/lace\\.ts|(?:\\.\\.?/)(?:[^\\n]*\\.lace\\.ts|(?:[^\\n]*/)?AGENTS\\.ts))$)",
+                message: "Import only the Lace model or another receipt.",
               },
             ],
           },
@@ -41,36 +38,23 @@ export class ReceiptGrammar {
           "error",
           {
             selector:
-              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, CallExpression, ObjectExpression, ArrayExpression, Property, TemplateLiteral, TemplateElement, MemberExpression)",
+              "*:not(Program, ImportDeclaration, ImportSpecifier, ImportDefaultSpecifier, Literal, Identifier, ExportDefaultDeclaration, VariableDeclaration, VariableDeclarator, ObjectExpression, ArrayExpression, Property, TemplateLiteral, TemplateElement, MemberExpression, TSTypeAnnotation, TSTypeReference)",
             message:
-              "Receipts contain only imports, Job builders, literal prompts and commands, and static job references.",
+              "Receipts contain only imports, typed Job objects, literal context, and static job references.",
           },
           {
             selector: "Program:not(:has(> ExportDefaultDeclaration))",
-            message: "Every receipt must default-export a job.",
-          },
-          {
-            selector: "ExportDefaultDeclaration > :not(CallExpression)",
-            message: "Every receipt must default-export a Job builder chain.",
+            message: "Every receipt must default-export receipt.",
           },
           {
             selector:
-              "CallExpression:not([callee.type='MemberExpression'][callee.computed=false][callee.property.name=/^(statement|shellCommand|job)$/])",
-            message: "Call only statement, shellCommand, or job builders.",
-          },
-          {
-            selector: "CallExpression[arguments.length!=1]",
-            message: "Each builder takes exactly one prompt, command, or Job.",
+              "ExportDefaultDeclaration:not([declaration.type='Identifier'][declaration.name='receipt'])",
+            message: "Default-export the typed receipt binding.",
           },
           {
             selector:
-              "CallExpression[callee.property.name=/^(statement|shellCommand)$/]:not([arguments.0.type='ObjectExpression'])",
-            message: "Declare builder prompts and commands as literal objects.",
-          },
-          {
-            selector:
-              "CallExpression[callee.property.name='job']:not([arguments.0.type='Identifier'], [arguments.0.type='CallExpression'])",
-            message: "Nest a declared Job or a builder chain.",
+              "Program:not(:has(VariableDeclarator[id.name='receipt']))",
+            message: "Declare const receipt: Job as the root object.",
           },
           {
             selector:
@@ -79,12 +63,19 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              "VariableDeclarator:not([id.type='Identifier'][init.type='CallExpression'])",
-            message: "Local bindings must name a Job builder chain.",
+              "VariableDeclarator:not([id.type='Identifier'][id.typeAnnotation.typeAnnotation.type='TSTypeReference'][id.typeAnnotation.typeAnnotation.typeName.name='Job'][init.type='ObjectExpression'])",
+            message:
+              "Declare each local Job as const name: Job = { entries: [...] }.",
           },
           {
-            selector: "Property[computed=true], Property[shorthand=true]",
-            message: "Give every task field an explicit literal name.",
+            selector:
+              "TSTypeReference:not([typeName.type='Identifier'][typeName.name='Job']), TSTypeReference[typeArguments]",
+            message: "Use the Job type annotation without type arguments.",
+          },
+          {
+            selector:
+              "Property[computed=true], Property[shorthand=true], Property[method=true]",
+            message: "Give every context field an explicit literal name.",
           },
           {
             selector:
@@ -93,33 +84,45 @@ export class ReceiptGrammar {
           },
           {
             selector:
-              ":matches(Property[key.name='items'], Property[key.value='items']):not([value.type='ArrayExpression'])",
-            message: "Declare list items as a literal array.",
+              ":matches(Property[key.name=/^(entries|items)$/], Property[key.value=/^(entries|items)$/]):not([value.type='ArrayExpression'])",
+            message: "Declare entries and list items as literal arrays.",
           },
           {
             selector:
-              "ArrayExpression:not(Property[key.name='items'] > ArrayExpression, Property[key.value='items'] > ArrayExpression)",
-            message: "Arrays belong only to prompt list items.",
+              "ArrayExpression:not(Property[key.name=/^(entries|items)$/] > ArrayExpression, Property[key.value=/^(entries|items)$/] > ArrayExpression)",
+            message: "Arrays belong only to Job entries and prompt list items.",
           },
           {
             selector: "ArrayExpression[elements.length=0]",
-            message: "Prompt lists contain at least one item.",
+            message:
+              "Jobs and prompt lists contain at least one entry or item.",
           },
           {
             selector:
-              "ArrayExpression > :not(Literal, TemplateLiteral, ObjectExpression)",
+              ":matches(Property[key.name='entries'], Property[key.value='entries']) > ArrayExpression > :not(ObjectExpression, Identifier)",
+            message:
+              "Job entries are literal objects or static Job references.",
+          },
+          {
+            selector:
+              ":matches(Property[key.name='items'], Property[key.value='items']) > ArrayExpression > :not(Literal, TemplateLiteral, ObjectExpression)",
             message: "List items are literal prose or labelled groups.",
           },
           {
-            selector:
-              "MemberExpression:not(Property > MemberExpression, CallExpression > MemberExpression.callee), MemberExpression[computed=true], CallExpression > MemberExpression.callee:not([object.type='Identifier'], [object.type='CallExpression'])",
+            selector: "Property[value.type='Identifier']",
             message:
-              "Member access is limited to builder calls and enum fields.",
+              "Nest literal context objects; Job references belong in entries arrays.",
           },
           {
             selector:
-              "Property[value.type='MemberExpression']:not([key.name='kind'][value.object.name='PromptKind'], [key.value='kind'][value.object.name='PromptKind'], [key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
-            message: "Use PromptKind for kind and WorkingDirectory for cwd.",
+              "MemberExpression:not(Property > MemberExpression), MemberExpression[computed=true]",
+            message: "Member access is limited to enum fields.",
+          },
+          {
+            selector:
+              "Property[value.type='MemberExpression']:not([key.name='kind'][value.object.name=/^(TaskKind|PromptKind)$/], [key.value='kind'][value.object.name=/^(TaskKind|PromptKind)$/], [key.name='cwd'][value.object.name='WorkingDirectory'], [key.value='cwd'][value.object.name='WorkingDirectory'])",
+            message:
+              "Use TaskKind or PromptKind for kind and WorkingDirectory for cwd.",
           },
           {
             selector: "Literal[value=/^\\s*$/]",
@@ -138,7 +141,7 @@ export class ReceiptGrammar {
           {
             selector:
               "ImportDeclaration[source.value=/(\\.lace\\.ts|\\/AGENTS\\.ts)$/] > ImportSpecifier",
-            message: "Import a receipt's default job as a static reference.",
+            message: "Import a receipt's default Job as a static reference.",
           },
         ],
       },

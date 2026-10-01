@@ -1,11 +1,9 @@
-import type { Job } from "./job.ts";
-
 /**
  * Neural Lace is the declaration language for Cortex context files.
  * Context authors use it for instructions, skills, and practices read by agents.
  * Read receipt files as text; do not import them to execute code.
  * Each receipt exports one Job. Jobs are directories; tasks are files.
- * The immutable Job builder groups tasks and other jobs.
+ * Readonly Job objects group tasks and other jobs.
  * Statically declared jobs compose through imports without name-keyed lookup.
  */
 export enum TaskKind {
@@ -51,13 +49,10 @@ export interface Statement {
 }
 
 /** Declared shell text. Compilation and importing never run this command. */
-export interface Command {
+export interface ShellCommand {
+  readonly kind: TaskKind.ShellCommand;
   readonly cwd: WorkingDirectory;
   readonly script: string;
-}
-
-export interface ShellCommand extends Command {
-  readonly kind: TaskKind.ShellCommand;
 }
 
 /** The task vocabulary is closed: no callbacks, scripts-as-functions, or flags. */
@@ -65,3 +60,8 @@ export type Task = Statement | ShellCommand;
 
 /** Each entry is either a nested job or a task. */
 export type Entry = Job | Task;
+
+/** A directory of ordered context entries, declared as a plain object. */
+export interface Job {
+  readonly entries: readonly Entry[];
+}
