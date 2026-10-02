@@ -31,6 +31,8 @@ impl From<ExitStatus> for BuildOutcome {
 impl FrontendBuild {
     fn run(mut self) -> Result<(), BuildFailure> {
         println!("cargo:rerun-if-changed=frontend/src");
+        println!("cargo:rerun-if-changed=frontend/tools");
+        println!("cargo:rerun-if-changed=frontend/contracts.schema.json");
         println!("cargo:rerun-if-changed=frontend/index.html");
         println!("cargo:rerun-if-changed=frontend/svelte.config.js");
         println!("cargo:rerun-if-changed=frontend/package.json");

@@ -531,4 +531,27 @@ mod tests {
         }
         Ok(())
     }
+    #[test]
+    fn completed_activity_has_no_synthesized_git_evidence() -> anyhow::Result<()> {
+        let agent = AgentId::Delivery(DeliveryAgent::PrAgent);
+        for workspace in [Workspace::ReadOnly, Workspace::Feature] {
+            let task = Task {
+                workspace,
+                state: TaskState::Completed {
+                    agent,
+                    attempt: Attempt::UNCLAIMED.advance()?,
+                },
+                ..TaskFixture::try_from(Timestamp::now()?)?
+                    .task
+                    .assign(TaskAssignment::from(agent))?
+            };
+            let text = TaskPresentation(&task).detail();
+            assert!(text.contains("completed"));
+            assert!(text.contains("Agent: Delivery/PrAgent · Reports to: Gizmo/Gizmo"));
+            assert!(text.contains("Checkpoint: unrecorded"));
+            assert!(!text.contains("Recorded integration commit:"));
+            assert!(!text.contains("Recorded checkpoint:"));
+        }
+        Ok(())
+    }
 }

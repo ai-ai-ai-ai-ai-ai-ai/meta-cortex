@@ -59,7 +59,10 @@
         }
       ]
     },
-    "AiAgent": { "enum": ["TechWriter"], "type": "string" },
+    "AiAgent": {
+      "enum": ["TechWriter", "TechWriterVerifier"],
+      "type": "string"
+    },
     "Assignment": {
       "additionalProperties": false,
       "properties": {
@@ -166,7 +169,7 @@
         {
           "properties": {
             "kind": { "const": "Task", "type": "string" },
-            "value": { "$ref": "#/$defs/Task" }
+            "value": { "$ref": "#/$defs/TaskV2" }
           },
           "required": ["kind", "value"],
           "type": "object"
@@ -279,6 +282,7 @@
         "RustRefactoring",
         "RustVerifier",
         "TypescriptDev",
+        "TypescriptVerifier",
         "WebDesigner"
       ],
       "type": "string"
@@ -289,7 +293,7 @@
         "actor": { "$ref": "#/$defs/AgentId" },
         "kind": { "$ref": "#/$defs/EventKind" },
         "note": { "$ref": "#/$defs/Note" },
-        "task": { "$ref": "#/$defs/Task" },
+        "task": { "$ref": "#/$defs/TaskV2" },
         "version": { "format": "int64", "type": "integer" }
       },
       "required": ["version", "kind", "actor", "note", "task"],
@@ -299,11 +303,13 @@
       "enum": [
         "created",
         "claimed",
+        "assigned",
         "heartbeat",
         "progress",
         "checkpoint",
         "ready",
         "integrated",
+        "completed",
         "requeued",
         "cancelled"
       ],
@@ -346,6 +352,7 @@
         "blocked",
         "ready",
         "integrated",
+        "completed",
         "cancelled"
       ],
       "type": "string"
@@ -455,13 +462,43 @@
       "required": ["commit", "actor", "at", "revision"],
       "type": "object"
     },
+    "ReportingTarget": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "Host", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinator": { "$ref": "#/$defs/GizmoAgent" },
+            "kind": { "const": "Gizmo", "type": "string" }
+          },
+          "required": ["kind", "coordinator"],
+          "type": "object"
+        }
+      ]
+    },
     "SecurityAgent": { "enum": ["SecurityAgent"], "type": "string" },
     "SreAgent": {
       "enum": ["CicdAgent", "DockerSpecialist", "KubernetesSpecialist"],
       "type": "string"
     },
-    "Task": {
+    "TaskAssignment": {
       "additionalProperties": false,
+      "description": "The intended owner and reporting line survive every task state and attempt.",
+      "properties": {
+        "agent": { "$ref": "#/$defs/AgentId" },
+        "reports_to": { "$ref": "#/$defs/ReportingTarget" }
+      },
+      "required": ["agent", "reports_to"],
+      "type": "object"
+    },
+    "TaskCommon": {
+      "additionalProperties": false,
+      "description": "Shared task fields in V2 and later records.\nKeep this shape stable for retained readers; changed field meanings need a new type.",
       "properties": {
         "acceptance": { "items": { "$ref": "#/$defs/Note" }, "type": "array" },
         "attempt": { "format": "int64", "type": "integer" },
@@ -474,22 +511,16 @@
         "last_update": { "format": "int64", "type": "integer" },
         "objective": { "$ref": "#/$defs/Note" },
         "progress": { "$ref": "#/$defs/Progress" },
-        "revision": { "format": "int64", "type": "integer" },
-        "state": { "$ref": "#/$defs/TaskState" },
-        "version": { "format": "int64", "type": "integer" },
-        "workspace": { "$ref": "#/$defs/Workspace" }
+        "revision": { "format": "int64", "type": "integer" }
       },
       "required": [
-        "version",
         "id",
         "feature",
         "objective",
         "acceptance",
         "dependencies",
-        "workspace",
         "revision",
         "attempt",
-        "state",
         "created_at",
         "last_update",
         "last_progress",
@@ -514,7 +545,7 @@
           "items": { "$ref": "#/$defs/Milestone" },
           "type": "array"
         },
-        "task": { "$ref": "#/$defs/Task" },
+        "task": { "$ref": "#/$defs/TaskV2" },
         "worker": { "$ref": "#/$defs/RecordedActor" }
       },
       "required": [
@@ -528,6 +559,26 @@
       ],
       "type": "object"
     },
+    "TaskOwnership": {
+      "description": "V1 tasks did not record an intended owner or reporting line.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "Unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "assignment": { "$ref": "#/$defs/TaskAssignment" },
+            "kind": { "const": "Assigned", "type": "string" }
+          },
+          "required": ["kind", "assignment"],
+          "type": "object"
+        }
+      ]
+    },
     "TaskQuery": {
       "additionalProperties": false,
       "properties": {
@@ -536,6 +587,11 @@
       },
       "required": ["feature", "task"],
       "type": "object"
+    },
+    "TaskRecordVersion": {
+      "description": "Current task shape. V1 payloads are decoded by the separate legacy task record.",
+      "format": "int64",
+      "type": "integer"
     },
     "TaskState": {
       "oneOf": [
@@ -576,6 +632,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "agent": { "$ref": "#/$defs/AgentId" },
+            "attempt": { "format": "int64", "type": "integer" },
+            "kind": { "const": "completed", "type": "string" }
+          },
+          "required": ["kind", "agent", "attempt"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "kind": { "const": "cancelled", "type": "string" },
             "reason": { "$ref": "#/$defs/Note" }
           },
@@ -584,11 +650,30 @@
         }
       ]
     },
+    "TaskV2": {
+      "additionalProperties": false,
+      "properties": {
+        "common": { "$ref": "#/$defs/TaskCommon" },
+        "ownership": { "$ref": "#/$defs/TaskOwnership" },
+        "state": { "$ref": "#/$defs/TaskState" },
+        "version": { "$ref": "#/$defs/TaskRecordVersion" },
+        "workspace": { "$ref": "#/$defs/Workspace" }
+      },
+      "required": ["version", "common", "ownership", "workspace", "state"],
+      "type": "object"
+    },
     "Workspace": {
       "oneOf": [
         {
           "additionalProperties": false,
           "properties": { "kind": { "const": "read_only", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Operate on the feature's existing worktree, without a worker checkpoint.",
+          "properties": { "kind": { "const": "feature", "type": "string" } },
           "required": ["kind"],
           "type": "object"
         },

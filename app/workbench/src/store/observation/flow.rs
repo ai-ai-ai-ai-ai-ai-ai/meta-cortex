@@ -1,5 +1,6 @@
 use super::{Observation, Page, PageEnd, PageIndex, TaskPage};
 use crate::agents::AgentId;
+use crate::model::workflow::TaskOwnership;
 use crate::model::{Checkpoint, Event, EventKind, Feature, Task, TaskState};
 use crate::request::TaskQuery;
 use crate::store::relational::{EventTable, FeatureTable, JsonFunction, TaskTable};
@@ -18,15 +19,17 @@ pub enum FlowState {
     Blocked,
     Ready,
     Integrated,
+    Completed,
     Cancelled,
 }
 impl FlowState {
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 7] = [
         Self::Queued,
         Self::Working,
         Self::Blocked,
         Self::Ready,
         Self::Integrated,
+        Self::Completed,
         Self::Cancelled,
     ];
     fn predicate(self) -> SimpleExpr {
@@ -42,6 +45,7 @@ impl FlowState {
             Self::Blocked => kind.eq("active").and(phase.eq("blocked")),
             Self::Ready => kind.eq("ready"),
             Self::Integrated => kind.eq("integrated"),
+            Self::Completed => kind.eq("completed"),
             Self::Cancelled => kind.eq("cancelled"),
         }
     }
@@ -161,19 +165,19 @@ impl Observation {
     async fn task_flow(&self, task: Task) -> Result<TaskFlow, LedgerError> {
         let history = self
             .history(HistoryPage {
-                feature: task.feature.clone(),
-                task: task.id.clone(),
+                feature: task.common.feature.clone(),
+                task: task.common.id.clone(),
                 page: PageIndex::FIRST,
             })
             .await?;
         let created_by = self
             .task_creator(TaskQuery {
-                feature: task.feature.clone(),
-                task: task.id.clone(),
+                feature: task.common.feature.clone(),
+                task: task.common.id.clone(),
             })
             .await?;
         let flow = TaskFlow {
-            worker: RecordedActor::from_state(&task.state),
+            worker: RecordedActor::worker(&task),
             task,
             created_by,
             checkpoints: Vec::new(),
@@ -206,12 +210,22 @@ impl Observation {
     }
 }
 impl RecordedActor {
+    fn worker(task: &Task) -> Self {
+        match &task.ownership {
+            TaskOwnership::Assigned { assignment } => Self::Recorded {
+                agent: assignment.agent,
+            },
+            TaskOwnership::Unrecorded => Self::from_state(&task.state),
+        }
+    }
     fn from_state(state: &TaskState) -> Self {
         match state {
             TaskState::Active { assignment } => Self::Recorded {
                 agent: assignment.agent,
             },
-            TaskState::Ready { agent, .. } => Self::Recorded { agent: *agent },
+            TaskState::Ready { agent, .. } | TaskState::Completed { agent, .. } => {
+                Self::Recorded { agent: *agent }
+            }
             TaskState::Queued | TaskState::Integrated { .. } | TaskState::Cancelled { .. } => {
                 Self::Unrecorded
             }
@@ -228,11 +242,13 @@ impl RecordedActor {
         match event.kind {
             EventKind::Created => Self::Recorded { agent: event.actor },
             EventKind::Claimed
+            | EventKind::Assigned
             | EventKind::Heartbeat
             | EventKind::Progress
             | EventKind::Checkpoint
             | EventKind::Ready
             | EventKind::Integrated
+            | EventKind::Completed
             | EventKind::Requeued
             | EventKind::Cancelled => Self::Unrecorded,
         }
@@ -241,14 +257,17 @@ impl RecordedActor {
 impl TaskFlow {
     #[must_use]
     fn recording(mut self, event: Event) -> Self {
-        self.worker = self.worker.observing(&event.task.state);
+        match &self.task.ownership {
+            TaskOwnership::Assigned { .. } => {}
+            TaskOwnership::Unrecorded => self.worker = self.worker.observing(&event.task.state),
+        }
         match event.kind {
-            EventKind::Checkpoint => match &event.task.checkpoint {
+            EventKind::Checkpoint => match &event.task.common.checkpoint {
                 Checkpoint::Git { commit } => self.checkpoints.push(RecordedCommit {
                     commit: commit.clone(),
                     actor: event.actor,
-                    at: event.task.last_update,
-                    revision: event.task.revision,
+                    at: event.task.common.last_update,
+                    revision: event.task.common.revision,
                 }),
                 Checkpoint::Unrecorded => {}
             },
@@ -256,16 +275,19 @@ impl TaskFlow {
                 TaskState::Integrated { commit } => self.integrations.push(RecordedCommit {
                     commit: commit.clone(),
                     actor: event.actor,
-                    at: event.task.last_update,
-                    revision: event.task.revision,
+                    at: event.task.common.last_update,
+                    revision: event.task.common.revision,
                 }),
                 TaskState::Queued
                 | TaskState::Active { .. }
                 | TaskState::Ready { .. }
+                | TaskState::Completed { .. }
                 | TaskState::Cancelled { .. } => {}
             },
             EventKind::Created
             | EventKind::Claimed
+            | EventKind::Assigned
+            | EventKind::Completed
             | EventKind::Heartbeat
             | EventKind::Progress
             | EventKind::Ready
@@ -276,16 +298,18 @@ impl TaskFlow {
             EventKind::Heartbeat | EventKind::Progress => {}
             kind @ (EventKind::Created
             | EventKind::Claimed
+            | EventKind::Assigned
             | EventKind::Checkpoint
             | EventKind::Ready
             | EventKind::Integrated
+            | EventKind::Completed
             | EventKind::Requeued
             | EventKind::Cancelled) => self.milestones.push(Milestone {
                 kind,
                 actor: event.actor,
-                at: event.task.last_update,
-                revision: event.task.revision,
-                attempt: event.task.attempt,
+                at: event.task.common.last_update,
+                revision: event.task.common.revision,
+                attempt: event.task.common.attempt,
                 note: event.note,
             }),
         }

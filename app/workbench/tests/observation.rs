@@ -1,12 +1,18 @@
+use meta_cortex_workbench::agents::DeliveryAgent;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+use meta_cortex_workbench::model::workflow::TaskAssignment;
+use meta_cortex_workbench::model::{Checkpoint, EventKind, TaskState};
 use meta_cortex_workbench::model::{Phase, Progress, Workspace};
+use meta_cortex_workbench::request::{AssignTask, CoordinatorAction, CoordinatorUpdate};
 use meta_cortex_workbench::request::{
     ClaimTask, CreateTask, InitFeature, TaskQuery, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::Extensions;
 use meta_cortex_workbench::values::{BranchName, FeatureId, LeaseSeconds, Note, Revision, TaskId};
 use meta_cortex_workbench::{
     DataDirectory, HistoryPage, LedgerError, Observation, PageEnd, PageIndex, TaskPage, Workbench,
 };
+use meta_cortex_workbench::{FlowState, RecordedActor};
 use std::collections::HashSet;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -610,6 +616,159 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
         assert_eq!(completed.integrations[0].commit, commit);
         assert_eq!(completed.milestones.len(), 5);
         assert_eq!(serde_json::to_value(&flow.counts)?[4]["count"], 1);
+        Ok::<_, anyhow::Error>(())
+    })
+}
+
+struct ActivityObservation {
+    id: TaskId,
+    workspace: Workspace,
+}
+impl Scenario {
+    async fn completed_activity(&self, activity: ActivityObservation) -> anyhow::Result<()> {
+        let ActivityObservation { id, workspace } = activity;
+        let mut ledger = self.workbench()?.open(Self::feature()?).await?;
+        let creator = AgentId::Gizmo(GizmoAgent::Gizmo);
+        let worker = AgentId::Delivery(DeliveryAgent::PrAgent);
+        let progress = Progress {
+            extensions: Extensions(serde_json::from_str(
+                r#"{"recorded-evidence":{"revision":"kept"}}"#,
+            )?),
+            ..Scenario::progress()
+        };
+        let task = ledger
+            .create(CreateTask {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                actor: creator,
+                objective: Note::from("Complete recorded activity".to_owned()),
+                acceptance: vec![Note::from("Keep ownership and evidence".to_owned())],
+                dependencies: vec![],
+                workspace: workspace.clone(),
+                progress: progress.clone(),
+            })
+            .await?;
+        let assigned = ledger
+            .assign(AssignTask {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: task.common.revision,
+                actor: creator,
+                assignment: TaskAssignment::from(worker),
+            })
+            .await?;
+        let queued = self
+            .observe()
+            .await?
+            .flow(TaskPage {
+                feature: Scenario::feature()?,
+                page: PageIndex::FIRST,
+            })
+            .await?;
+        let queued = queued
+            .tasks
+            .records
+            .iter()
+            .find(|item| item.task.common.id == id)
+            .ok_or_else(|| anyhow::anyhow!("queued assignment missing"))?;
+        assert!(matches!(queued.created_by, RecordedActor::Recorded {agent} if agent == creator));
+        assert!(matches!(queued.worker, RecordedActor::Recorded {agent} if agent == worker));
+        assert_eq!(queued.task.ownership, assigned.ownership);
+        assert!(queued.checkpoints.is_empty());
+        assert!(queued.integrations.is_empty());
+        let claimed = ledger
+            .claim(ClaimTask {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: assigned.common.revision,
+                agent: worker,
+                ttl_seconds: LeaseSeconds::TEN_MINUTES,
+            })
+            .await?;
+        let ready = ledger
+            .update(WorkerUpdate {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: claimed.common.revision,
+                agent: worker,
+                attempt: claimed.common.attempt,
+                action: WorkerAction::Ready {
+                    progress: progress.clone(),
+                },
+            })
+            .await?;
+        let completed = ledger
+            .coordinate(CoordinatorUpdate {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: ready.common.revision,
+                actor: creator,
+                action: CoordinatorAction::Complete,
+            })
+            .await?;
+        let flow = self
+            .observe()
+            .await?
+            .flow(TaskPage {
+                feature: Scenario::feature()?,
+                page: PageIndex::FIRST,
+            })
+            .await?;
+        let observed = flow
+            .tasks
+            .records
+            .iter()
+            .find(|item| item.task.common.id == id)
+            .ok_or_else(|| anyhow::anyhow!("completed activity missing"))?;
+        assert_eq!(observed.task, completed);
+        assert!(matches!(observed.task.state, TaskState::Completed {agent, ..} if agent == worker));
+        assert_eq!(observed.task.workspace, workspace);
+        assert_eq!(observed.task.common.progress, progress);
+        assert_eq!(observed.task.common.checkpoint, Checkpoint::Unrecorded);
+        assert!(matches!(observed.worker, RecordedActor::Recorded {agent} if agent == worker));
+        assert!(observed.checkpoints.is_empty());
+        assert!(observed.integrations.is_empty());
+        assert!(
+            observed
+                .milestones
+                .iter()
+                .any(|event| matches!(event.kind, EventKind::Completed))
+        );
+        Ok(())
+    }
+}
+#[test]
+fn assigned_and_completed_observations_preserve_owners_without_git_evidence() -> anyhow::Result<()>
+{
+    let scenario = Scenario::new()?;
+    scenario.initialize()?;
+    scenario.runtime.block_on(async {
+        for activity in [
+            ActivityObservation {
+                id: TaskId::try_from("review".to_owned())?,
+                workspace: Workspace::ReadOnly,
+            },
+            ActivityObservation {
+                id: TaskId::try_from("delivery".to_owned())?,
+                workspace: Workspace::Feature,
+            },
+        ] {
+            scenario.completed_activity(activity).await?;
+        }
+        let flow = scenario
+            .observe()
+            .await?
+            .flow(TaskPage {
+                feature: Scenario::feature()?,
+                page: PageIndex::FIRST,
+            })
+            .await?;
+        let count = flow
+            .counts
+            .iter()
+            .find(|count| matches!(count.state, FlowState::Completed))
+            .ok_or_else(|| anyhow::anyhow!("completed count missing"))?;
+        assert_eq!(serde_json::to_value(count)?["count"], 2);
         Ok::<_, anyhow::Error>(())
     })
 }
