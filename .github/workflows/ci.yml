@@ -36,7 +36,6 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo check --locked --workspace --all-targets
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo test --locked --workspace
       - name: Install the native Windows executable
         if: runner.os == 'Windows'
         shell: pwsh
@@ -46,6 +45,7 @@ jobs:
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE\.github\scripts\windows-e2e.ps1" -Binary "$env:RUNNER_TEMP\meta cortex installed\bin\meta-cortex.exe"
+      - run: cargo test --locked --workspace
       - name: Retain native Windows E2E evidence
         if: always() && runner.os == 'Windows'
         uses: actions/upload-artifact@v4

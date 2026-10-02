@@ -27,16 +27,23 @@ class WindowsInstallationScenario {
         $this.RequestNumber++
         $requestPath = Join-Path $this.Evidence "request-$($this.RequestNumber).json"
         $responsePath = Join-Path $this.Evidence "response-$($this.RequestNumber).yaml"
+        $stderrPath = Join-Path $this.Evidence "stderr-$($this.RequestNumber).txt"
         # JSON is a YAML subset; the CLI validates the same typed request schema.
         @{ version = 1; project = $this.Project; operation = $operation } |
             ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $requestPath -Encoding utf8
-        $output = & $this.Binary run --request $requestPath
-        switch ($LASTEXITCODE) {
+        # Retain native streams before checking the exit code or parsing YAML.
+        # A storage failure must remain readable even if its typed error is unknown.
+        $PSNativeCommandUseErrorActionPreference = $false
+        & $this.Binary run --request $requestPath 1> $responsePath 2> $stderrPath
+        $exitCode = $LASTEXITCODE
+        $output = Get-Content -LiteralPath $responsePath -Raw
+        $stderr = Get-Content -LiteralPath $stderrPath -Raw
+        Write-Host $output
+        Write-Host $stderr
+        switch ($exitCode) {
             0 { }
-            default { throw "CLI request failed ($LASTEXITCODE): $requestPath`n$($output -join "`n")" }
+            default { throw "CLI request failed ($exitCode): $requestPath; stdout: $responsePath; stderr: $stderrPath" }
         }
-        $output | Set-Content -LiteralPath $responsePath -Encoding utf8
-        Write-Host ($output -join "`n")
         # Use the provisioned Bun YAML parser; no separate parser installation.
         $json = & $this.Bun -e 'console.log(JSON.stringify(Bun.YAML.parse(await Bun.file(process.argv[1]).text())))' $responsePath
         switch ($LASTEXITCODE) {
