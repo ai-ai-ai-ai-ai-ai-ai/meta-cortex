@@ -15,6 +15,11 @@ applies to its assignment.
 Each agent's `AGENTS.md` owns its role responsibilities. Keep technical guidance
 in that role's linked skills so they can evolve independently.
 
+Team catalogs may add a `Verifier:` role link to any agent's entry. Gizmo follows
+that relationship through the shared
+[agent verification handoff](gizmo-team/docs/agent-verification.md).
+The verifier's own skill selects its subject catalogs; coordination is shared.
+
 Read and apply the shared [agent configuration rules](gizmo-team/docs/agent-configuration.md)
 before every launch, using the resolved configuration location supplied by the
 entry point. Pass this context to delegated agents.
@@ -74,7 +79,7 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - A worker entry may declare a **Verifier** link to a cataloged read-only role.
   Team Gizmo follows the shared [verification handoff](gizmo-team/docs/agent-verification.md)
   for that pair. The verifier's own role and review skill declare its catalog;
-  the shared protocol requires index-only loading and exhaustive rule coverage.
+  the shared verification workflow requires index-only loading and exhaustive rule coverage.
 - Gizmo Prime launches the single Team Gizmo as a subagent.
 - Team Gizmo launches the team agents needed for its assignments as subagents.
 - Team Gizmo assigns instructions, specifications, skills, practices, and catalog
@@ -148,7 +153,7 @@ The skill’s own `SKILL.md` still owns its technical
 instructions; this handoff does not select or duplicate skill contents.
 
 - For verifiers, retain operational context and apply the shared
-  [index-only review context](gizmo-team/docs/verifier-protocol.md#keep-practice-context-index-only)
+  [index-only review context](gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md#keep-subject-practice-context-index-only)
   instead of subject-source loading. Supply the verifier's own role and review
   skill. Do not supply or load the target worker's role, authoring skills, or
   practice Markdown. Its complete catalog supplies the practice cues.

@@ -10,9 +10,3 @@ entries:
   - title: Agent verification handoff
     path: agent-verification.md
     summary: Cataloged verifier selection, committed review, repair routing, and integration readiness.
-  - title: Verifier protocol
-    path: verifier-protocol.md
-    summary: Shared commit requests, exhaustive reports, findings, blockers, and verdicts.
-  - title: Committed review
-    path: committed-review.md
-    summary: Read-only Git object resolution, change inventories, and committed-file evidence.

@@ -2,8 +2,10 @@
 
 Use this protocol when Gizmo requires a passing review before integration.
 It owns the integration gate and replacement-review requirements. The shared
-[verifier protocol](../../../../../../gizmo-team/docs/verifier-protocol.md)
-owns index-only practice loading, exhaustive coverage, and the passing verdict.
+[verification skill](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md)
+owns index-only practice loading. Its
+[communication protocol](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/spec/communication-protocol.md)
+owns exhaustive coverage and the passing verdict.
 The [local feature catalog](../practices/local_feature/index.yaml) links the task
 commit, workspace, integration, repair, and cleanup procedures.
 Workers receive the relevant ordinary Git procedure; they do not need this protocol.
@@ -15,8 +17,8 @@ Workers receive the relevant ordinary Git procedure; they do not need this proto
 1. Receive the complete report saved in
    `progress.extensions.verification_report` and its matching `review_result`
    from Gizmo. Apply the shared protocol's
-   [report requirements](../../../../../../gizmo-team/docs/verifier-protocol.md#save-one-complete-report)
-   and [verdict rules](../../../../../../gizmo-team/docs/verifier-protocol.md#return-the-result-and-route-it).
+   [report requirements](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/spec/communication-protocol.md#save-one-complete-report)
+   and [verdict rules](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/spec/communication-protocol.md#return-the-result-and-route-it).
 2. Check that the report inventories the verifier's complete declared catalog
    snapshot, every changed file, every owned rule, and every cross-rule check.
    Reconcile every reachable catalog entry and its IDs with that snapshot,

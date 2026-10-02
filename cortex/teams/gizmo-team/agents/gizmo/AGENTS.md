@@ -82,7 +82,7 @@ for that assignment rather than preloading unrelated agents.
 flowchart LR
     G[Team Gizmo] -->|Task branches and fixes| W[Workers]
     W -->|Completion and checks| G
-    G -->|Committed SHA for a cataloged verifier| V[Verifier]
+    G -->|Committed SHA| V[Cataloged verifier]
     V -->|Full coverage and repair requirements| G
     G -->|Merge into one feature branch| I[Integration agent]
     I -->|Results or conflicts| G
@@ -94,20 +94,19 @@ flowchart LR
 - Assign workspace preparation to that agent. Give workers the returned branch
   names and paths, their task scope, checks, and library location.
 - Read durable readiness even when a final worker message is missing.
-- When a worker with a cataloged **Verifier** finishes, follow the
-  [agent verification handoff](../../docs/agent-verification.md)
-  before integration. Require its ordinary one-commit delivery, check the
-  [Git handoff](../../docs/agent-verification.md#check-the-git-handoff), and launch
-  the linked verifier with the explicit final SHA. Its role and skill own the
-  review scope. Keep consolidation commands with the worker's delivery procedure;
-  Gizmo performs no Git mutations. Then,
-  within authorized implementation, route every in-scope repair requirement back
-  to the responsible worker and require a complete new pass. For review-only
-  assignments, return the complete findings instead of starting repairs or integration.
+- For every worker with a `Verifier:` link in its team catalog, follow the
+  [agent verification handoff](../../docs/agent-verification.md). Verifiers load
+  the shared [agent verification skill](skills/agent-verification/SKILL.md)
+  through their own subject skill. When the worker finishes, require its
+  ordinary one-commit delivery, check the Git handoff, and launch the paired
+  verifier with the explicit final SHA. Gizmo performs
+  no Git mutations. Within authorized implementation, route every in-scope
+  repair to the assigned worker and require a complete new pass. For review-only
+  assignments, return all findings instead of starting repairs or integration.
 - Once required verification passes, tell the integration agent which task
-  branch to integrate next. Supply the passing report and reviewed SHA for every
-  task with a declared verifier. Order tasks by dependency and wait for each
-  integration result.
+  branch to integrate next. For every worker with a cataloged verifier, supply
+  the passing report and reviewed SHA. Order tasks by dependency and wait for
+  each integration result.
 - Route an integration conflict to the responsible worker with the task and
   target commit SHAs and the [task-repair procedure](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#repair-the-assigned-revision).
   The worker reads those revisions, resolves the conflict,

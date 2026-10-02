@@ -1,7 +1,7 @@
 # Read the Assigned Git Commit
 
 Every verifier reads committed objects without changing a checkout. This document
-owns its Git commands. The [communication protocol](verifier-protocol.md) owns messages and reports;
+owns its Git commands. The [communication protocol](communication-protocol.md) owns messages and reports;
 the delivery team's local-feature practice owns commits and merges.
 
 ## Required actions

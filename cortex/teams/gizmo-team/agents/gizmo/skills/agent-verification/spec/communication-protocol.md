@@ -4,7 +4,7 @@ Gizmo sends a commit SHA. The verifier checks every rule in its skill's scope
 against every changed file, saves one complete report, and sends Gizmo every issue
 with the evidence and instructions needed to fix it.
 Gizmo owns repairs and integration.
-Use [committed Git reads](committed-review.md) for executable commands. This protocol
+Use [committed Git reads](git-review.md) for executable commands. This protocol
 defines messages and evidence; it does not authorize checkout changes.
 
 ## Required actions
@@ -25,37 +25,6 @@ defines messages and evidence; it does not authorize checkout changes.
 
 **Required:** send one explicit SHA. If it is missing, the verifier requests it
 and waits before starting review.
-
-### Keep practice context index-only
-
-1. Start at the review catalog declared by the verifier's own skill. Recursively
-   visit every navigation entry in order, including all practice leaves and
-   cross-rule checks. Do not select branches by the changed files or the worker's
-   self-assessment. Applicability is a recorded decision, not a loading filter.
-2. Load only `index.yaml` files for practice context. Do not load the target
-   worker's role, skills, linked Markdown practices, or shared subject Markdown
-   as review authority.
-   This replaces ordinary selective catalog loading and subject prerequisites
-   for every verifier. Keep source links as citations rather than loading them.
-   Markdown in the committed change is still reviewed content; reading it as
-   evidence does not add its instructions to the verifier's practice context.
-3. Retain project instructions, the verifier's own role and review skill, team
-   instructions, circuit breakers, this protocol, and the ledger as operational
-   context. Gizmo supplies acceptance criteria and exact-revision validation
-   requirements without copying the worker's full authoring context.
-4. Resolve references relative to their containing YAML file. Record paths and
-   loaded cues as one fixed catalog snapshot. A changed catalog requires a fresh
-   review; do not mix versions.
-5. If a cue cannot determine compliance, record its exact ambiguity as a blocker.
-   Ask Gizmo to obtain the subject owner's decision or catalog correction. Do not
-   open the cited Markdown, infer an exception, or approve from memory.
-
-**Prohibited:** skip WASM indexes for a CLI change, skip writing-example rules
-for a catalog change, or load the worker's skill to resolve an unclear cue.
-
-**Required:** traverse the entire declared review catalog, record applicability
-for every rule, and return unresolved cue decisions as blockers without expanding
-context.
 
 ### Request a review
 
@@ -158,7 +127,7 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
    - Record exactly one entry per `(rule ID, changed file)` and one per cross-rule
      check. Each entry states its key, outcome, and concrete evidence or reason.
    - Outcomes are `pass`, `violation`, `not_applicable`, or `blocked`.
-     `pass` cites compliant code or workspace evidence. `violation` points to
+     `pass` cites compliant committed content or workspace evidence. `violation` points to
      all corresponding repair items. `not_applicable` explains why the rule
      does not apply to this file or change. `blocked` names the missing decision
      or evidence. Do not infer a decision from a short, ambiguous cue.
@@ -176,13 +145,13 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
      have no items. Never use an empty value to imply a completed review.
    - On repair passes, account for every previous repair item as `fixed`,
      `still_violated`, or `blocked`, with fresh evidence at the new SHA.
-     Inspect its code even if the repair commit did not change that file.
+     Inspect its committed content even if the repair commit did not change that file.
 4. **Validation**
    - List every required command and its requirement source. For each result,
      record SHA, exact command, workspace, targets, execution outcome, and evidence.
      Execution outcomes retain the ledger vocabulary: `passed`, `failed`, `not_run`.
    - Missing execution evidence is `not_run` with a reason and a blocker.
-     A failure proving a code defect produces a repair item; an unavailable
+     A failure proving a defect produces a repair item; an unavailable
      tool or unexplained failure remains a blocker. Do not invent commands from
      catalog summaries; ask Gizmo for the missing requirement or clarification.
    - If no commands apply, record `not_required` with its source and reason.
@@ -244,7 +213,7 @@ review still produces a blocked verdict.
 5. Gizmo checks the inventories, decisions, and evidence before acting. Reconcile
    all entries reachable from the declared catalog root with the report snapshot;
    the report's own selected rule list cannot establish complete discovery:
-   - Apply the [task boundary](../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
+   - Apply the [task boundary](../../../../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
      For review-only work, return the complete result through the hierarchy and
      stop. Verdicts and `required_fix` fields do not authorize implementation.
      The following integration and repair actions apply only within authorized

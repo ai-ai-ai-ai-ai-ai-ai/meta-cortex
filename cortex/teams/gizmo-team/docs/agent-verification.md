@@ -2,8 +2,8 @@
 
 Team Gizmo starts verification when an agent with a cataloged verifier reports
 committed work ready. The worker owns changes and repairs; its verifier owns
-read-only review. Every verifier uses the same [request and result protocol](verifier-protocol.md),
-[committed Git reads](committed-review.md), and [agent ledger](agent-ledger.md).
+read-only review. Every verifier uses the same [request and result protocol](../agents/gizmo/skills/agent-verification/spec/communication-protocol.md),
+[committed Git reads](../agents/gizmo/skills/agent-verification/spec/git-review.md), and [agent ledger](agent-ledger.md).
 Gizmo requires a complete passing review before integration.
 
 ```mermaid
@@ -38,14 +38,20 @@ tasks stop after reporting the verifier result, as required by the task boundary
 1. Read the selected worker's entry in its team's `AGENTS.md` catalog. An optional
    **Verifier** property links to the verifier's role instructions. Resolve it
    relative to that catalog; the linked role must also have its own catalog entry.
-2. Use that role for every completed write assignment by the worker. Do not infer
+2. Require the linked role's catalog entry and supported ledger team/role identity.
+   Use that role for every completed write assignment by the worker. Do not infer
    a verifier from file extensions, role-name suffixes, or an earlier assignment.
    A worker without a Verifier property follows ordinary task completion.
 3. Apply this handoff unchanged to each declared pair. The verifier's role and
-   linked skill declare the complete review catalog; the shared protocol owns
-   index-only loading and exhaustive review. Gizmo supplies operational assignment
+   linked skill declare the complete review catalog. The shared
+   [verification skill](../agents/gizmo/skills/agent-verification/SKILL.md) owns
+   index-only loading; its protocol owns exhaustive review. Gizmo supplies operational assignment
    context and the request SHA. No task-specific verifier instructions are needed.
-4. If a declared link, role, or required skill is missing or inconsistent, report
+4. Retain the pairing with the worker task through repairs and integration.
+   Several worker roles may share one verifier. Read-only verifier results finish
+   through the ledger's read-only path; completing a report does not trigger
+   another verifier assignment.
+5. If a declared link, role, or required skill is missing or inconsistent, report
    the context blocker before review or integration. Do not silently skip the gate.
 
 **Prohibited:** add a `tech-writer` conditional to Gizmo or launch a Rust review
@@ -144,7 +150,7 @@ readiness, and let Gizmo arrange the separate review.
    Keep the base in delivery assignment context; the verifier still receives
    only one SHA and derives its first parent from Git.
 4. Send the verified `task_sha` as `commit_sha` in `verification_request`.
-   Tell the verifier to use its [committed-object commands](committed-review.md).
+   Tell the verifier to use its [committed-object commands](../agents/gizmo/skills/agent-verification/spec/git-review.md).
    The passing report's SHA becomes `reviewed_sha` for the integration owner.
 
 **Prohibited:** the branch has two task commits, but Gizmo sends only the last
@@ -165,7 +171,7 @@ before sending that SHA to the verifier.
    available validation evidence.
 3. Supply the selected verifier's own role and review skill, which declares its
    complete review catalog. Apply the shared
-   [index-only loading rules](verifier-protocol.md#keep-practice-context-index-only).
+   [index-only loading rules](../agents/gizmo/skills/agent-verification/SKILL.md#keep-subject-practice-context-index-only).
    Do not supply the worker's role, skills, practice Markdown, or authoring
    checklist. Keep operational assignment context separate from practice context.
    Use a fresh
@@ -177,7 +183,7 @@ before sending that SHA to the verifier.
    so that dependency would prevent this pre-integration review from starting.
    Use ledger dependencies only for already integrated prerequisites.
 5. Launch the verifier and send the explicit SHA through the
-   [review request protocol](verifier-protocol.md#request-a-review).
+   [review request protocol](../agents/gizmo/skills/agent-verification/spec/communication-protocol.md#request-a-review).
    The request identifies one commit. If the verifier sends `need_commit`, resend
    a complete request with a resolvable SHA.
 6. Keep the worker branch stable during review. Require all changed files,
@@ -193,7 +199,7 @@ verifier context, the worker's ready SHA, and the complete review scope.
 ### Check the complete result
 
 1. Apply the protocol's
-   [result rules](verifier-protocol.md#return-the-result-and-route-it).
+   [result rules](../agents/gizmo/skills/agent-verification/spec/communication-protocol.md#return-the-result-and-route-it).
    Require every issue and blocker in the verifier's message, with the full
    context, evidence, correction, and validation needed for repair.
 2. Reconcile that message with the report in

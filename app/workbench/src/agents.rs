@@ -39,6 +39,7 @@ pub enum DevelopmentAgent {
     RustRefactoring,
     RustVerifier,
     TypescriptDev,
+    TypescriptVerifier,
     WebDesigner,
 }
 
@@ -85,6 +86,9 @@ impl AgentId {
             Self::Development(DevelopmentAgent::TypescriptDev) => {
                 "teams/dev-team/agents/typescript-dev/AGENTS.md"
             }
+            Self::Development(DevelopmentAgent::TypescriptVerifier) => {
+                "teams/dev-team/agents/typescript-verifier/AGENTS.md"
+            }
             Self::Development(DevelopmentAgent::WebDesigner) => {
                 "teams/dev-team/agents/web-designer/AGENTS.md"
             }
@@ -124,6 +128,7 @@ mod tests {
             AgentId::Gizmo(GizmoAgent::Gizmo),
             AgentId::Development(DevelopmentAgent::RustDev),
             AgentId::Development(DevelopmentAgent::RustVerifier),
+            AgentId::Development(DevelopmentAgent::TypescriptVerifier),
             AgentId::Ai(AiAgent::TechWriterVerifier),
             AgentId::Sre(SreAgent::DockerSpecialist),
         ] {
@@ -138,6 +143,7 @@ mod tests {
         for input in [
             r#"{"team":"Sre","role":"RustDev"}"#,
             r#"{"team":"Gizmo","role":"RustVerifier"}"#,
+            r#"{"team":"Gizmo","role":"TypescriptVerifier"}"#,
             r#"{"team":"Development","role":"DockerSpecialist"}"#,
             r#"{"team":"Gizmo","role":"RustDev"}"#,
             r#"{"team":"Delivery","role":"Gizmo"}"#,
