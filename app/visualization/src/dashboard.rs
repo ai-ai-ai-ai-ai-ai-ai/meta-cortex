@@ -1,5 +1,6 @@
 mod navigation;
 mod presentation;
+mod screen;
 mod terminal;
 
 use meta_cortex_workbench::request::TaskQuery;
@@ -94,8 +95,8 @@ impl Dashboard {
                 Err(error) => Content::Error(error),
             };
             session.draw(terminal::TerminalFrame {
-                text: content.text(&self.navigation),
-                scroll: self.navigation.scroll(),
+                content: &content,
+                navigation: &self.navigation,
             })?;
             let action = session.action()?;
             match self.navigation.apply(navigation::NavigationInput {

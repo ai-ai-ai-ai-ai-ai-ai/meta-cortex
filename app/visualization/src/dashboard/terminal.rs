@@ -1,9 +1,9 @@
 use super::DashboardError;
-use super::navigation::{Action, Direction, Scroll};
+use super::navigation::{Action, Direction, Navigation};
+use super::presentation::Content;
+use super::screen::DashboardScreen;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use meta_cortex_workbench::values::Note;
 use ratatui::DefaultTerminal;
-use ratatui::widgets::{Block, Paragraph, Wrap};
 use std::io::{self, IsTerminal};
 use std::time::Duration;
 
@@ -39,9 +39,9 @@ impl TerminalPresence {
         }
     }
 }
-pub(super) struct TerminalFrame {
-    pub text: Note,
-    pub scroll: Scroll,
+pub(super) struct TerminalFrame<'a> {
+    pub content: &'a Content,
+    pub navigation: &'a Navigation,
 }
 enum Restoration {
     Active,
@@ -68,10 +68,15 @@ impl TerminalSession {
         })
     }
     // Ratatui's externally owned terminal resource requires a mutable borrow for draw.
-    pub fn draw(&mut self, content: TerminalFrame) -> io::Result<()> {
+    pub fn draw(&mut self, content: TerminalFrame<'_>) -> io::Result<()> {
         self.terminal.draw(|frame| {
-            let paragraph = Paragraph::new(content.text.to_string()).block(Block::bordered().title("Workbench").title_bottom("↑↓ select · Enter detail · h history · Esc back · n/p page · J/K scroll · r refresh · q quit")).wrap(Wrap { trim: false }).scroll((content.scroll.lines(), 0));
-            frame.render_widget(paragraph, frame.area());
+            frame.render_widget(
+                DashboardScreen {
+                    content: content.content,
+                    navigation: content.navigation,
+                },
+                frame.area(),
+            );
         })?;
         Ok(())
     }

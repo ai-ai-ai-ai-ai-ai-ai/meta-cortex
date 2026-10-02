@@ -5,6 +5,7 @@ use meta_cortex_workbench::model::Event;
 use meta_cortex_workbench::request::TaskQuery;
 use meta_cortex_workbench::values::FeatureId;
 use meta_cortex_workbench::{PageEnd, PageIndex};
+use ratatui::widgets::ListState;
 use std::cmp::Ordering;
 
 pub(super) enum Route {
@@ -34,6 +35,12 @@ impl Selection {
             Some(record) => Selected::Record(record),
             None => Selected::Empty,
         }
+    }
+}
+impl From<Selection> for ListState {
+    fn from(selection: Selection) -> Self {
+        let Selection(index) = selection;
+        Self::default().with_selected(Some(index))
     }
 }
 pub(super) enum Selected<'a, T> {
@@ -145,9 +152,7 @@ impl Navigation {
                     .min(content.last_selection());
                 match selection.cmp(&self.selection) {
                     Ordering::Equal => {}
-                    Ordering::Less | Ordering::Greater => {
-                        self.scroll = self.scroll.move_by(direction)
-                    }
+                    Ordering::Less | Ordering::Greater => self.scroll = Scroll::default(),
                 }
                 self.selection = selection;
             }
