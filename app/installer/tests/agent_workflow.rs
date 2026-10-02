@@ -204,9 +204,9 @@ impl Scenario {
             progress: Self::progress(Note::from("Queued".to_owned())),
         }))?;
         self.task(TaskOperation::Assign(AssignTask {
-            feature: task.feature,
-            task: task.id,
-            expected_revision: task.revision,
+            feature: task.common.feature,
+            task: task.common.id,
+            expected_revision: task.common.revision,
             actor,
             assignment: TaskAssignment::from(plan.agent),
         }))
@@ -217,9 +217,9 @@ impl Scenario {
         };
         let agent = assignment.agent;
         self.task(TaskOperation::Claim(ClaimTask {
-            feature: task.feature,
-            task: task.id,
-            expected_revision: task.revision,
+            feature: task.common.feature,
+            task: task.common.id,
+            expected_revision: task.common.revision,
             agent,
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
         }))
@@ -230,11 +230,11 @@ impl Scenario {
         };
         let agent = assignment.agent;
         self.task(TaskOperation::Update(WorkerUpdate {
-            feature: input.task.feature,
-            task: input.task.id,
-            expected_revision: input.task.revision,
+            feature: input.task.common.feature,
+            task: input.task.common.id,
+            expected_revision: input.task.common.revision,
             agent,
-            attempt: input.task.attempt,
+            attempt: input.task.common.attempt,
             action: input.action,
         }))
     }
@@ -253,9 +253,9 @@ impl Scenario {
             ReportingTarget::Gizmo(coordinator) => AgentId::Gizmo(coordinator),
         };
         self.task(TaskOperation::Coordinate(CoordinatorUpdate {
-            feature: task.feature,
-            task: task.id,
-            expected_revision: task.revision,
+            feature: task.common.feature,
+            task: task.common.id,
+            expected_revision: task.common.revision,
             actor,
             action: CoordinatorAction::Complete,
         }))
@@ -378,9 +378,9 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
     let verifier = scenario.complete(verifier)?;
     scenario.merge(&commit)?;
     let worker = scenario.task(TaskOperation::Coordinate(CoordinatorUpdate {
-        feature: worker.feature,
-        task: worker.id,
-        expected_revision: worker.revision,
+        feature: worker.common.feature,
+        task: worker.common.id,
+        expected_revision: worker.common.revision,
         actor: AgentId::Delivery(DeliveryAgent::IntegrationAgent),
         action: CoordinatorAction::Integrate { commit },
     }))?;
@@ -389,7 +389,7 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
         id: TaskId::try_from("pr-delivery".to_owned())?,
         agent: AgentId::Delivery(DeliveryAgent::PrAgent),
         workspace: Workspace::Feature,
-        dependencies: vec![worker.id, verifier.id, integration.id],
+        dependencies: vec![worker.common.id, verifier.common.id, integration.common.id],
     })?)?;
     let delivery = scenario.update(ActivityUpdate {
         task: delivery,
@@ -424,8 +424,8 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
     }
     let Reply::History(history) =
         scenario.run(Operation::Task(TaskOperation::History(TaskQuery {
-            feature: root.feature,
-            task: root.id,
+            feature: root.common.feature,
+            task: root.common.id,
         })))?
     else {
         bail!("history response")
@@ -480,9 +480,9 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
         dependencies: vec![],
     })?;
     let input = AssignTask {
-        feature: task.feature.clone(),
-        task: task.id.clone(),
-        expected_revision: task.revision,
+        feature: task.common.feature.clone(),
+        task: task.common.id.clone(),
+        expected_revision: task.common.revision,
         actor: AgentId::Gizmo(GizmoAgent::Gizmo),
         assignment: TaskAssignment {
             agent,
@@ -496,8 +496,8 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
     assert_eq!(failure.code, FailureCode::InvalidRequest);
     let Outcome::Error(failure) =
         scenario.call(Operation::Task(TaskOperation::Assign(AssignTask {
-            feature: task.feature.clone(),
-            task: task.id.clone(),
+            feature: task.common.feature.clone(),
+            task: task.common.id.clone(),
             expected_revision: Revision::INITIAL,
             actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             assignment: TaskAssignment::from(agent),
@@ -508,9 +508,9 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
     assert_eq!(failure.code, FailureCode::Conflict);
     let Outcome::Error(failure) =
         scenario.call(Operation::Task(TaskOperation::Claim(ClaimTask {
-            feature: task.feature.clone(),
-            task: task.id.clone(),
-            expected_revision: task.revision,
+            feature: task.common.feature.clone(),
+            task: task.common.id.clone(),
+            expected_revision: task.common.revision,
             agent: AgentId::Development(DevelopmentAgent::RustDev),
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
         })))?
@@ -521,9 +521,9 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
     let claimed = scenario.claim(task)?;
     let Outcome::Error(failure) =
         scenario.call(Operation::Task(TaskOperation::Assign(AssignTask {
-            feature: claimed.feature.clone(),
-            task: claimed.id.clone(),
-            expected_revision: claimed.revision,
+            feature: claimed.common.feature.clone(),
+            task: claimed.common.id.clone(),
+            expected_revision: claimed.common.revision,
             actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             assignment: TaskAssignment::from(agent),
         })))?
@@ -537,11 +537,11 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
     )?;
     let Outcome::Error(failure) =
         scenario.call(Operation::Task(TaskOperation::Update(WorkerUpdate {
-            feature: claimed.feature.clone(),
-            task: claimed.id.clone(),
-            expected_revision: claimed.revision,
+            feature: claimed.common.feature.clone(),
+            task: claimed.common.id.clone(),
+            expected_revision: claimed.common.revision,
             agent,
-            attempt: claimed.attempt,
+            attempt: claimed.common.attempt,
             action: WorkerAction::Ready {
                 progress: Scenario::progress(Note::from("Not clean yet".to_owned())),
             },
@@ -554,9 +554,9 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
     let completed = scenario.complete(claimed)?;
     let Outcome::Error(failure) =
         scenario.call(Operation::Task(TaskOperation::Assign(AssignTask {
-            feature: completed.feature,
-            task: completed.id,
-            expected_revision: completed.revision,
+            feature: completed.common.feature,
+            task: completed.common.id,
+            expected_revision: completed.common.revision,
             actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             assignment: TaskAssignment::from(agent),
         })))?

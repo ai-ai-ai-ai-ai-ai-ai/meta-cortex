@@ -98,25 +98,33 @@ pub enum TaskState {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(try_from = "task_record::TaskRecord")]
-#[schemars(with = "task_record::TaskV2")]
-pub struct Task {
-    pub version: TaskRecordVersion,
+#[serde(deny_unknown_fields)]
+/// Shared task fields in V2 and later records.
+/// Keep this shape stable for retained readers; changed field meanings need a new type.
+pub struct TaskCommon {
     pub id: TaskId,
     pub feature: FeatureId,
-    pub ownership: TaskOwnership,
     pub objective: Note,
     pub acceptance: Vec<Note>,
     pub dependencies: Vec<TaskId>,
-    pub workspace: Workspace,
     pub revision: Revision,
     pub attempt: Attempt,
-    pub state: TaskState,
     pub created_at: Timestamp,
     pub last_update: Timestamp,
     pub last_progress: Timestamp,
     pub checkpoint: Checkpoint,
     pub progress: Progress,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(try_from = "task_record::TaskRecord")]
+#[schemars(with = "task_record::TaskV2")]
+pub struct Task {
+    pub version: TaskRecordVersion,
+    pub common: TaskCommon,
+    pub ownership: TaskOwnership,
+    pub workspace: Workspace,
+    pub state: TaskState,
 }
 
 pub struct ClaimAt {
@@ -189,7 +197,7 @@ impl Task {
     }
 
     pub fn require_revision(&self, expected: Revision) -> Result<(), LedgerError> {
-        match self.revision == expected {
+        match self.common.revision == expected {
             true => Ok(()),
             false => Err(LedgerError::Conflict),
         }
@@ -206,11 +214,11 @@ impl Task {
             | TaskState::Completed { .. }
             | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
-        self.attempt = self.attempt.advance()?;
+        self.common.attempt = self.common.attempt.advance()?;
         self.state = TaskState::Active {
             assignment: Assignment {
                 agent: input.agent,
-                attempt: self.attempt,
+                attempt: self.common.attempt,
                 expires_at: input.now.expires(input.ttl)?,
                 phase: Phase::Working,
             },
@@ -246,7 +254,7 @@ impl Task {
             now: input.now,
         })?;
         match &self.workspace {
-            Workspace::Git { .. } => match self.checkpoint {
+            Workspace::Git { .. } => match self.common.checkpoint {
                 Checkpoint::Unrecorded => {
                     return Err(LedgerError::Invalid(
                         "write tasks need a Git checkpoint before readiness",
@@ -361,7 +369,10 @@ impl Task {
 #[cfg(test)]
 pub mod tests {
     use super::workflow::{TaskAssignment, TaskOwnership};
-    use super::{Checkpoint, ClaimAt, LeaseHealth, Progress, Task, TaskState, WorkerAt, Workspace};
+    use super::{
+        Checkpoint, ClaimAt, LeaseHealth, Progress, Task, TaskCommon, TaskState, WorkerAt,
+        Workspace,
+    };
     use crate::LedgerError;
     use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
     use crate::values::{
@@ -383,27 +394,29 @@ pub mod tests {
             extensions.insert("custom".to_owned(), serde_json::json!([1, "note"]));
             Ok(Task {
                 version: TaskRecordVersion::CURRENT,
-                ownership: TaskOwnership::Unrecorded,
-                id,
-                feature,
-                objective: Note::from("Review".to_owned()),
-                acceptance: vec![Note::from("Report findings".to_owned())],
-                dependencies: Vec::new(),
-                workspace: Workspace::ReadOnly,
-                revision: Revision::INITIAL,
-                attempt: Attempt::UNCLAIMED,
-                state: TaskState::Queued,
-                created_at: now,
-                last_update: now,
-                last_progress: now,
-                checkpoint: Checkpoint::Unrecorded,
-                progress: Progress {
-                    summary: Note::from("Starting".to_owned()),
-                    findings: Vec::new(),
-                    next_steps: Vec::new(),
-                    checks: Vec::new(),
-                    extensions: Extensions::from(extensions),
+                common: TaskCommon {
+                    id,
+                    feature,
+                    objective: Note::from("Review".to_owned()),
+                    acceptance: vec![Note::from("Report findings".to_owned())],
+                    dependencies: Vec::new(),
+                    revision: Revision::INITIAL,
+                    attempt: Attempt::UNCLAIMED,
+                    created_at: now,
+                    last_update: now,
+                    last_progress: now,
+                    checkpoint: Checkpoint::Unrecorded,
+                    progress: Progress {
+                        summary: Note::from("Starting".to_owned()),
+                        findings: Vec::new(),
+                        next_steps: Vec::new(),
+                        checks: Vec::new(),
+                        extensions: Extensions::from(extensions),
+                    },
                 },
+                ownership: TaskOwnership::Unrecorded,
+                workspace: Workspace::ReadOnly,
+                state: TaskState::Queued,
             })
         }
 
@@ -426,7 +439,7 @@ pub mod tests {
             Err(LedgerError::DependencyPending)
         ));
         assert!(matches!(
-            task.require_revision(task.revision.advance()?),
+            task.require_revision(task.common.revision.advance()?),
             Err(LedgerError::Conflict)
         ));
         task.require_revision(Revision::INITIAL)?;
@@ -527,7 +540,7 @@ pub mod tests {
                 agent,
                 ..Scenario::claim()?
             })?;
-            let attempt = task.attempt;
+            let attempt = task.common.attempt;
             let task = task.ready(WorkerAt {
                 agent: &agent,
                 attempt,

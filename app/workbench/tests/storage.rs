@@ -144,7 +144,7 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
                 let conn = db.connect()?;
                 assert_eq!(
                     Scenario::version(&conn).await?,
-                    VersionNumber::from(i64::from(StorageVersion::RelationalV3))
+                    VersionNumber::from(i64::from(StorageVersion::CommonTasksV4))
                 );
                 conn.pragma_update(
                     &DatabasePragma::UserVersion.to_string(),
@@ -216,13 +216,13 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
             let row = rows.next().await?.context("task")?;
             let mut task: Task = serde_json::from_str(&row.get::<String>(0)?)?;
             drop(rows);
-            task.revision = Revision::try_from(999)?;
-            task.objective = Note::from("Uncommitted progress".to_owned());
+            task.common.revision = Revision::try_from(999)?;
+            task.common.objective = Note::from("Uncommitted progress".to_owned());
             tx.execute(
                 Query::update()
                     .table(TaskTable::Table)
                     .value(TaskTable::Document, serde_json::to_string(&task)?)
-                    .value(TaskTable::Revision, i64::from(task.revision))
+                    .value(TaskTable::Revision, i64::from(task.common.revision))
                     .to_string(SqliteQueryBuilder),
                 (),
             )
@@ -231,7 +231,7 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
                 version: RecordVersion::V1,
                 kind: EventKind::Progress,
                 actor: AgentId::Development(DevelopmentAgent::RustDev),
-                note: task.objective.clone(),
+                note: task.common.objective.clone(),
                 task,
             };
             tx.execute(
@@ -244,9 +244,9 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
                         EventTable::Document,
                     ])
                     .values([
-                        event.task.feature.to_string().into(),
-                        event.task.id.to_string().into(),
-                        i64::from(event.task.revision).into(),
+                        event.task.common.feature.to_string().into(),
+                        event.task.common.id.to_string().into(),
+                        i64::from(event.task.common.revision).into(),
                         serde_json::to_string(&event)?.into(),
                     ])?
                     .to_string(SqliteQueryBuilder),
@@ -269,8 +269,8 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             let queued = ledger.status().await?.remove(0).task;
             let claimed = ledger
                 .claim(ClaimTask {
-                    feature: queued.feature,
-                    task: queued.id,
+                    feature: queued.common.feature,
+                    task: queued.common.id,
                     expected_revision: Revision::INITIAL,
                     agent: AgentId::Development(DevelopmentAgent::RustDev),
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
@@ -296,14 +296,17 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             }
             drop(writer);
             let mut ledger = scenario.open().await?;
-            assert_eq!(i64::from(ledger.status().await?.remove(0).task.revision), 2);
-            assert_eq!(ledger.history(&claimed.id).await?.len(), 2);
+            assert_eq!(
+                i64::from(ledger.status().await?.remove(0).task.common.revision),
+                2
+            );
+            assert_eq!(ledger.history(&claimed.common.id).await?.len(), 2);
             let heartbeat = WorkerUpdate {
-                feature: claimed.feature,
-                task: claimed.id,
-                expected_revision: claimed.revision,
+                feature: claimed.common.feature,
+                task: claimed.common.id,
+                expected_revision: claimed.common.revision,
                 agent: AgentId::Development(DevelopmentAgent::RustDev),
-                attempt: claimed.attempt,
+                attempt: claimed.common.attempt,
                 action: WorkerAction::Heartbeat {
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 },

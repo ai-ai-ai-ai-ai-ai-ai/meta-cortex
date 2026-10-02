@@ -490,18 +490,30 @@ the recorded task plus any newer Git changes.
 
 Command protocol, persisted record, and physical database versions are distinct.
 This release writes command, feature, and event-envelope version `1`, task
-record version `2`, and database version `3`. `Task / Assign` extends command
+record version `2`, and database version `4`. `Task / Assign` extends command
 discovery without changing existing request shapes. Task readers explicitly
 convert supported version `1` records into the current model with unrecorded
 ownership; they never invent historical reporting lines. Historical envelopes,
 actors, revisions, attempts, timestamps, and evidence remain intact.
 
-The physical database schema is unchanged. Observation converts old task records
-for display without rewriting them. A later task update or an existing storage
-migration writes the current task shape, including in migrated event snapshots.
-Older executables reject version `2` tasks; stop older writers before upgrading.
+Version `1` task records retain their released flat format. Version `2` encloses
+stable fields in `common`: identity, objective, acceptance, dependencies, revision,
+attempt, timestamps, checkpoint, and progress. Ownership, workspace, and state
+remain version-specific fields. Later records can reuse `TaskCommon` while its
+field types and meanings remain unchanged; changes need a new common type so
+retained readers keep their released contracts. Serde decodes both versions into
+the current task model; writers emit only version `2`.
 
-Version `3` uses a feature primary key, a `(feature_id, id)` task primary key,
+### Database constraints
+
+Database version `4` moves JSON key constraints to `common`, including nested
+task snapshots in events. Feature discovery and task commands migrate older
+storage transactionally, preserving historical actors and all task evidence.
+Observation requires the current database schema and reports when migration is
+needed; it never rewrites old storage itself. Older executables reject version
+`2` tasks and version `4` databases; stop older writers before upgrading.
+
+Version `4` uses a feature primary key, a `(feature_id, id)` task primary key,
 and a `(feature_id, task_id, revision)` event primary key. Foreign keys require
 each task's feature and each event's task to exist; parent deletion and key
 changes are restricted while children exist. The primary-key indexes cover
@@ -512,8 +524,8 @@ keys. JSON retains progress, findings, checks, and task snapshots.
 
 ### Storage migration and supported readers
 
-Version `1` and `2` databases migrate transactionally, retaining records and
-history. On first access, Workbench imports the old
+Version `1`, `2`, and `3` databases migrate transactionally, retaining records
+and history across every feature. On first access, Workbench imports the old
 `~/.meta-cortex/<repo_id>/features/<feature-id>.db` files into the shared database.
 Each feature imports atomically and only once; an invalid source leaves its
 import uncommitted and reports an error. Stop older agents before upgrading:

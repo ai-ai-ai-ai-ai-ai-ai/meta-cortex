@@ -43,8 +43,8 @@ impl Content {
             Self::Tasks(page) => match selection.lookup(&page.records) {
                 Selected::Record(task) => SelectedRoute::Route(Route::Task {
                     query: TaskQuery {
-                        feature: task.feature.clone(),
-                        task: task.id.clone(),
+                        feature: task.common.feature.clone(),
+                        task: task.common.id.clone(),
                     },
                 }),
                 Selected::Empty => SelectedRoute::Stay,
@@ -84,8 +84,8 @@ impl Content {
             Self::Event(event) => format!(
                 "EVENT {:?} · revision {} · time {}\nRecorded by: {:?}\nNote: {}\n\n{}",
                 event.kind,
-                event.task.revision,
-                event.task.last_update,
+                event.task.common.revision,
+                event.task.common.last_update,
                 event.actor,
                 event.note,
                 TaskPresentation(&event.task).detail()
@@ -136,10 +136,10 @@ impl TaskList<'_> {
             text.push_str(&format!(
                 "{} {} · {} · revision {} · {}\n    {}\n",
                 RowMarker::from(Selection::from(index) == *selection),
-                task.id,
+                task.common.id,
                 TaskPresentation(task).state(),
-                task.revision,
-                task.progress.summary,
+                task.common.revision,
+                task.common.progress.summary,
                 TaskPresentation(task).workflow()
             ));
         }
@@ -162,7 +162,7 @@ impl EventList<'_> {
             text.push_str(&format!(
                 "{} revision {} · {:?} · recorded by {:?} · {}\n",
                 RowMarker::from(Selection::from(index) == *selection),
-                event.task.revision,
+                event.task.common.revision,
                 event.kind,
                 event.actor,
                 event.note
@@ -239,15 +239,15 @@ impl TaskPresentation<'_> {
         let Self(task) = self;
         let mut text = format!(
             "TASK {} / {} · {}\nObjective: {}\nRevision: {} · attempt {}\nCreated: {} · updated: {} · progress: {}\nWorkspace: {}\nState: {}\n",
-            task.feature,
-            task.id,
+            task.common.feature,
+            task.common.id,
             self.state(),
-            task.objective,
-            task.revision,
-            task.attempt,
-            task.created_at,
-            task.last_update,
-            task.last_progress,
+            task.common.objective,
+            task.common.revision,
+            task.common.attempt,
+            task.common.created_at,
+            task.common.last_update,
+            task.common.last_progress,
             self.workspace(),
             self.state()
         );
@@ -261,37 +261,37 @@ impl TaskPresentation<'_> {
                 text.push_str(&format!("Blocked: {reason}\n"));
             }
         }
-        match &task.checkpoint { Checkpoint::Unrecorded => text.push_str("Checkpoint: unrecorded\n"), Checkpoint::Git { commit } => text.push_str(&format!("Recorded checkpoint: {commit}\nCheckpoint recorded by: inspect Checkpoint history event (not Git authorship)\n")) }
+        match &task.common.checkpoint { Checkpoint::Unrecorded => text.push_str("Checkpoint: unrecorded\n"), Checkpoint::Git { commit } => text.push_str(&format!("Recorded checkpoint: {commit}\nCheckpoint recorded by: inspect Checkpoint history event (not Git authorship)\n")) }
         if let TaskState::Integrated { commit } = &task.state {
             text.push_str(&format!("Recorded integration commit: {commit}\nIntegration recorded by: inspect Integrated history event (not Git authorship)\n"));
         }
         text.push_str(&format!(
             "\nProgress: {}\nAcceptance:\n",
-            task.progress.summary
+            task.common.progress.summary
         ));
-        for note in &task.acceptance {
+        for note in &task.common.acceptance {
             text.push_str(&format!("- {note}\n"));
         }
         text.push_str("Dependencies:\n");
-        for dependency in &task.dependencies {
+        for dependency in &task.common.dependencies {
             text.push_str(&format!("- {dependency}\n"));
         }
         text.push_str("Findings:\n");
-        for note in &task.progress.findings {
+        for note in &task.common.progress.findings {
             text.push_str(&format!("- {note}\n"));
         }
         text.push_str("Next steps:\n");
-        for note in &task.progress.next_steps {
+        for note in &task.common.progress.next_steps {
             text.push_str(&format!("- {note}\n"));
         }
-        for check in &task.progress.checks {
+        for check in &task.common.progress.checks {
             text.push_str(&format!(
                 "Check {:?}: {}\nEvidence: {}\n",
                 check.outcome, check.command, check.evidence
             ));
         }
         text.push_str("Task-specific extensions:\n");
-        for (key, value) in &task.progress.extensions.0 {
+        for (key, value) in &task.common.progress.extensions.0 {
             text.push_str(&format!("{key}: {value}\n"));
         }
         text
@@ -306,7 +306,7 @@ pub mod tests {
     use meta_cortex_workbench::model::workflow::{TaskAssignment, TaskOwnership};
     use meta_cortex_workbench::model::{
         Assignment, Check, CheckOutcome, Checkpoint, Event, EventKind, Phase, Progress, Task,
-        TaskState, Workspace,
+        TaskCommon, TaskState, Workspace,
     };
     use meta_cortex_workbench::values::{
         Attempt, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
@@ -320,31 +320,33 @@ pub mod tests {
             let now = Timestamp::now()?;
             Ok(Task {
                 version: TaskRecordVersion::CURRENT,
-                ownership: TaskOwnership::Unrecorded,
-                id: TaskId::try_from("task".to_owned())?,
-                feature: FeatureId::try_from("feature".to_owned())?,
-                objective: Note::from("Task objective".to_owned()),
-                acceptance: vec![Note::from("Acceptance".to_owned())],
-                dependencies: vec![],
-                workspace: Workspace::ReadOnly,
-                revision: Revision::INITIAL,
-                attempt: Attempt::UNCLAIMED,
-                state: TaskState::Queued,
-                created_at: now,
-                last_update: now,
-                last_progress: now,
-                checkpoint: Checkpoint::Unrecorded,
-                progress: Progress {
-                    summary: Note::from("Summary".to_owned()),
-                    findings: vec![Note::from("Finding".to_owned())],
-                    next_steps: vec![Note::from("Next step".to_owned())],
-                    checks: vec![Check {
-                        command: Note::from("Check command".to_owned()),
-                        outcome: CheckOutcome::Passed,
-                        evidence: Note::from("Check evidence".to_owned()),
-                    }],
-                    extensions: Default::default(),
+                common: TaskCommon {
+                    id: TaskId::try_from("task".to_owned())?,
+                    feature: FeatureId::try_from("feature".to_owned())?,
+                    objective: Note::from("Task objective".to_owned()),
+                    acceptance: vec![Note::from("Acceptance".to_owned())],
+                    dependencies: vec![],
+                    revision: Revision::INITIAL,
+                    attempt: Attempt::UNCLAIMED,
+                    created_at: now,
+                    last_update: now,
+                    last_progress: now,
+                    checkpoint: Checkpoint::Unrecorded,
+                    progress: Progress {
+                        summary: Note::from("Summary".to_owned()),
+                        findings: vec![Note::from("Finding".to_owned())],
+                        next_steps: vec![Note::from("Next step".to_owned())],
+                        checks: vec![Check {
+                            command: Note::from("Check command".to_owned()),
+                            outcome: CheckOutcome::Passed,
+                            evidence: Note::from("Check evidence".to_owned()),
+                        }],
+                        extensions: Default::default(),
+                    },
                 },
+                ownership: TaskOwnership::Unrecorded,
+                workspace: Workspace::ReadOnly,
+                state: TaskState::Queued,
             })
         }
         pub fn event() -> anyhow::Result<Event> {
@@ -457,8 +459,11 @@ pub mod tests {
         }
         let commit = CommitId::try_from("a".repeat(40))?;
         let task = Task {
-            checkpoint: Checkpoint::Git {
-                commit: commit.clone(),
+            common: TaskCommon {
+                checkpoint: Checkpoint::Git {
+                    commit: commit.clone(),
+                },
+                ..task.common
             },
             state: TaskState::Integrated { commit },
             ..task

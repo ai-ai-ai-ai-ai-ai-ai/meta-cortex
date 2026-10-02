@@ -96,15 +96,15 @@ impl TaskTable {
             .check(Func::cust(JsonFunction::JsonValid).arg(Expr::col(Self::Document)))
             .check(
                 Expr::col(Self::Id).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.id")])),
+                    .args([Expr::col(Self::Document), Expr::val("$.common.id")])),
             )
             .check(
                 Expr::col(Self::FeatureId).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.feature")])),
+                    .args([Expr::col(Self::Document), Expr::val("$.common.feature")])),
             )
             .check(
                 Expr::col(Self::Revision).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.revision")])),
+                    .args([Expr::col(Self::Document), Expr::val("$.common.revision")])),
             )
             // The leading feature column indexes both status reads and the parent FK.
             .primary_key(Index::create().col(Self::FeatureId).col(Self::Id))
@@ -134,15 +134,19 @@ impl EventTable {
             .check(Func::cust(JsonFunction::JsonValid).arg(Expr::col(Self::Document)))
             .check(
                 Expr::col(Self::TaskId).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.task.id")])),
+                    .args([Expr::col(Self::Document), Expr::val("$.task.common.id")])),
             )
             .check(
-                Expr::col(Self::FeatureId).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.task.feature")])),
+                Expr::col(Self::FeatureId).is(Func::cust(JsonFunction::JsonExtract).args([
+                    Expr::col(Self::Document),
+                    Expr::val("$.task.common.feature"),
+                ])),
             )
             .check(
-                Expr::col(Self::Revision).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.task.revision")])),
+                Expr::col(Self::Revision).is(Func::cust(JsonFunction::JsonExtract).args([
+                    Expr::col(Self::Document),
+                    Expr::val("$.task.common.revision"),
+                ])),
             )
             // Covers history ordering and the composite parent FK without redundant indexes.
             .primary_key(
@@ -192,9 +196,9 @@ impl RecordWriter<'_> {
                     TaskTable::Document,
                 ])
                 .values([
-                    task.feature.to_string().into(),
-                    task.id.to_string().into(),
-                    i64::from(task.revision).into(),
+                    task.common.feature.to_string().into(),
+                    task.common.id.to_string().into(),
+                    i64::from(task.common.revision).into(),
                     serde_json::to_string(task)?.into(),
                 ])?
                 .to_owned(),
@@ -214,9 +218,9 @@ impl RecordWriter<'_> {
                     EventTable::Document,
                 ])
                 .values([
-                    event.task.feature.to_string().into(),
-                    event.task.id.to_string().into(),
-                    i64::from(event.task.revision).into(),
+                    event.task.common.feature.to_string().into(),
+                    event.task.common.id.to_string().into(),
+                    i64::from(event.task.common.revision).into(),
                     serde_json::to_string(event)?.into(),
                 ])?
                 .to_owned(),
@@ -233,7 +237,7 @@ pub mod tests {
     use crate::agents::{AgentId, GizmoAgent};
     use crate::model::workflow::TaskOwnership;
     use crate::model::{
-        Checkpoint, Event, EventKind, Feature, Progress, Task, TaskState, Workspace,
+        Checkpoint, Event, EventKind, Feature, Progress, Task, TaskCommon, TaskState, Workspace,
     };
     use crate::store::schema::LedgerSchema;
     use crate::store::sql::SqlStatement;
@@ -263,27 +267,29 @@ pub mod tests {
             let now = Timestamp::now()?;
             let task = Task {
                 version: TaskRecordVersion::CURRENT,
-                ownership: TaskOwnership::Unrecorded,
-                id: TaskId::try_from("task".to_owned())?,
-                feature: feature.id.clone(),
-                objective: feature.objective.clone(),
-                acceptance: vec![Note::from("Checked".to_owned())],
-                dependencies: Vec::new(),
-                workspace: Workspace::ReadOnly,
-                revision: Revision::INITIAL,
-                attempt: Attempt::UNCLAIMED,
-                state: TaskState::Queued,
-                created_at: now,
-                last_update: now,
-                last_progress: now,
-                checkpoint: Checkpoint::Unrecorded,
-                progress: Progress {
-                    summary: feature.objective.clone(),
-                    findings: Vec::new(),
-                    next_steps: Vec::new(),
-                    checks: Vec::new(),
-                    extensions: Extensions::default(),
+                common: TaskCommon {
+                    id: TaskId::try_from("task".to_owned())?,
+                    feature: feature.id.clone(),
+                    objective: feature.objective.clone(),
+                    acceptance: vec![Note::from("Checked".to_owned())],
+                    dependencies: Vec::new(),
+                    revision: Revision::INITIAL,
+                    attempt: Attempt::UNCLAIMED,
+                    created_at: now,
+                    last_update: now,
+                    last_progress: now,
+                    checkpoint: Checkpoint::Unrecorded,
+                    progress: Progress {
+                        summary: feature.objective.clone(),
+                        findings: Vec::new(),
+                        next_steps: Vec::new(),
+                        checks: Vec::new(),
+                        extensions: Extensions::default(),
+                    },
                 },
+                ownership: TaskOwnership::Unrecorded,
+                workspace: Workspace::ReadOnly,
+                state: TaskState::Queued,
             };
             let event = Event {
                 version: RecordVersion::V1,
@@ -381,7 +387,7 @@ pub mod tests {
                 );
                 let mut other = Records::new()?;
                 other.feature.id = FeatureId::try_from("other".to_owned())?;
-                other.task.feature = other.feature.id.clone();
+                other.task.common.feature = other.feature.id.clone();
                 other.event.task = other.task.clone();
                 RecordWriter {
                     connection: &connection,

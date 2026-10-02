@@ -1,6 +1,6 @@
 //! Typed task readers: V1 never recorded workflow ownership; V2 requires it.
 use super::workflow::TaskOwnership;
-use super::{Assignment, Checkpoint, Progress, Task, TaskState, Workspace};
+use super::{Assignment, Checkpoint, Progress, Task, TaskCommon, TaskState, Workspace};
 use crate::LedgerError;
 use crate::agents::AgentId;
 use crate::values::{Attempt, BranchName, CommitId, FeatureId, Note, Revision, TaskId, Timestamp};
@@ -20,21 +20,10 @@ pub(super) enum TaskRecord {
 #[serde(deny_unknown_fields)]
 pub(super) struct TaskV2 {
     pub version: TaskRecordVersion,
-    pub id: TaskId,
-    pub feature: FeatureId,
+    pub common: TaskCommon,
     pub ownership: TaskOwnership,
-    pub objective: Note,
-    pub acceptance: Vec<Note>,
-    pub dependencies: Vec<TaskId>,
     pub workspace: Workspace,
-    pub revision: Revision,
-    pub attempt: Attempt,
     pub state: TaskState,
-    pub created_at: Timestamp,
-    pub last_update: Timestamp,
-    pub last_progress: Timestamp,
-    pub checkpoint: Checkpoint,
-    pub progress: Progress,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -98,44 +87,11 @@ impl TryFrom<TaskRecord> for Task {
     type Error = LedgerError;
 
     fn try_from(record: TaskRecord) -> Result<Self, Self::Error> {
-        let task = match record {
-            TaskRecord::V2(record) => Self {
-                version: record.version,
-                ownership: record.ownership,
-                id: record.id,
-                feature: record.feature,
-                objective: record.objective,
-                acceptance: record.acceptance,
-                dependencies: record.dependencies,
-                workspace: record.workspace,
-                revision: record.revision,
-                attempt: record.attempt,
-                state: record.state,
-                created_at: record.created_at,
-                last_update: record.last_update,
-                last_progress: record.last_progress,
-                checkpoint: record.checkpoint,
-                progress: record.progress,
-            },
-            TaskRecord::V1(record) => Self {
-                version: TaskRecordVersion::CURRENT,
-                ownership: TaskOwnership::Unrecorded,
-                id: record.id,
-                feature: record.feature,
-                objective: record.objective,
-                acceptance: record.acceptance,
-                dependencies: record.dependencies,
-                workspace: record.workspace.into(),
-                revision: record.revision,
-                attempt: record.attempt,
-                state: record.state.into(),
-                created_at: record.created_at,
-                last_update: record.last_update,
-                last_progress: record.last_progress,
-                checkpoint: record.checkpoint,
-                progress: record.progress,
-            },
+        let record = match record {
+            TaskRecord::V2(record) => record,
+            TaskRecord::V1(record) => record.into(),
         };
+        let task = Self::from(record);
         if let TaskOwnership::Assigned { assignment } = &task.ownership {
             assignment.validate()?;
         }
@@ -150,9 +106,46 @@ impl TryFrom<TaskRecord> for Task {
     }
 }
 
+impl From<TaskV1> for TaskV2 {
+    fn from(record: TaskV1) -> Self {
+        Self {
+            version: TaskRecordVersion::V2,
+            common: TaskCommon {
+                id: record.id,
+                feature: record.feature,
+                objective: record.objective,
+                acceptance: record.acceptance,
+                dependencies: record.dependencies,
+                revision: record.revision,
+                attempt: record.attempt,
+                created_at: record.created_at,
+                last_update: record.last_update,
+                last_progress: record.last_progress,
+                checkpoint: record.checkpoint,
+                progress: record.progress,
+            },
+            ownership: TaskOwnership::Unrecorded,
+            workspace: record.workspace.into(),
+            state: record.state.into(),
+        }
+    }
+}
+
+impl From<TaskV2> for Task {
+    fn from(record: TaskV2) -> Self {
+        Self {
+            version: record.version,
+            common: record.common,
+            ownership: record.ownership,
+            workspace: record.workspace,
+            state: record.state,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{TaskRecord, TaskStateV1, TaskV1, WorkspaceV1};
+    use super::{TaskRecord, TaskStateV1, TaskV1, TaskV2, WorkspaceV1};
     use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{Assignment, Checkpoint, Phase, Progress, Task, TaskState};
@@ -196,12 +189,43 @@ mod tests {
     }
 
     #[test]
+    fn native_readers_keep_v1_flat_and_require_strict_v2_common() -> anyhow::Result<()> {
+        let legacy = serde_json::to_string(&Scenario::legacy()?)?;
+        assert!(matches!(
+            serde_json::from_str::<TaskRecord>(&legacy)?,
+            TaskRecord::V1(_)
+        ));
+        let task: Task = serde_json::from_str(&legacy)?;
+        let current = serde_json::to_string(&task)?;
+        assert!(matches!(
+            serde_json::from_str::<TaskRecord>(&current)?,
+            TaskRecord::V2(_)
+        ));
+        let decoded: TaskV2 = serde_json::from_str(&current)?;
+        assert_eq!(decoded.common, task.common);
+        assert_eq!(decoded.version, TaskRecordVersion::V2);
+        assert!(serde_json::from_str::<TaskV1>(&current).is_err());
+        for invalid in [
+            legacy.replace("\"version\":1", "\"version\":2"),
+            legacy.replacen('{', "{\"unexpected\":0,", 1),
+            current.replace("\"version\":2", "\"version\":1"),
+            current.replacen('{', "{\"unexpected\":0,", 1),
+            current.replace("\"common\":{", "\"common\":{\"unexpected\":0,"),
+            current.replace("\"common\":", "\"missing_common\":"),
+            current.replace("\"id\":\"task\"", "\"id\":\"../task\""),
+        ] {
+            assert!(serde_json::from_str::<Task>(&invalid).is_err());
+        }
+        Ok(())
+    }
+
+    #[test]
     fn v1_reader_preserves_evidence_without_inventing_a_reporting_line() -> anyhow::Result<()> {
         let encoded = serde_json::to_string(&Scenario::legacy()?)?;
         let task: Task = serde_json::from_str(&encoded)?;
         assert_eq!(task.version, TaskRecordVersion::V2);
         assert_eq!(task.ownership, TaskOwnership::Unrecorded);
-        assert_eq!(task.objective.to_string(), " Preserve history ");
+        assert_eq!(task.common.objective.to_string(), " Preserve history ");
         assert!(matches!(
             task.state,
             TaskState::Ready {
@@ -209,7 +233,7 @@ mod tests {
                 ..
             }
         ));
-        assert_eq!(task.progress.summary.to_string(), "Reviewed");
+        assert_eq!(task.common.progress.summary.to_string(), "Reviewed");
         assert_eq!(
             serde_json::from_str::<Task>(&serde_json::to_string(&task)?)?,
             task
@@ -246,7 +270,7 @@ mod tests {
         let invalid = Task {
             state: TaskState::Ready {
                 agent: AgentId::Gizmo(GizmoAgent::GizmoPrime),
-                attempt: task.attempt,
+                attempt: task.common.attempt,
             },
             ..task
         };
@@ -307,11 +331,11 @@ mod tests {
                 serde_json::to_string(&task.workspace)?,
                 serde_json::to_string(&legacy.workspace)?
             );
-            assert_eq!(task.checkpoint, legacy.checkpoint);
-            assert_eq!(task.revision, legacy.revision);
-            assert_eq!(task.attempt, legacy.attempt);
-            assert_eq!(task.last_update, legacy.last_update);
-            assert_eq!(task.progress, legacy.progress);
+            assert_eq!(task.common.checkpoint, legacy.checkpoint);
+            assert_eq!(task.common.revision, legacy.revision);
+            assert_eq!(task.common.attempt, legacy.attempt);
+            assert_eq!(task.common.last_update, legacy.last_update);
+            assert_eq!(task.common.progress, legacy.progress);
         }
         Ok(())
     }

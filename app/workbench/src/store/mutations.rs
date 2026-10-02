@@ -42,7 +42,7 @@ impl Ledger {
         let task = documents.task(&input.task).await?;
         task.require_revision(input.expected_revision)?;
         let mut task = task.assign(input.assignment)?;
-        task.last_update = Timestamp::now()?;
+        task.common.last_update = Timestamp::now()?;
         let task = documents
             .save(Event {
                 version: RecordVersion::CURRENT,
@@ -72,7 +72,7 @@ impl Ledger {
         };
         let mut task = documents.task(&input.task).await?;
         task.require_revision(input.expected_revision)?;
-        for dependency in &task.dependencies {
+        for dependency in &task.common.dependencies {
             documents.task(dependency).await?.require_dependency()?;
         }
         self.repository.require_task_workspace(TaskWorkspaceCheck {
@@ -85,7 +85,7 @@ impl Ledger {
             ttl: input.ttl_seconds,
             now,
         })?;
-        task.last_update = now;
+        task.common.last_update = now;
         let task = documents
             .save(Event {
                 version: RecordVersion::CURRENT,
@@ -178,8 +178,8 @@ impl TaskChange<'_> {
                 assignment.expires_at = self.now.expires(ttl_seconds)?;
                 assignment.phase = phase;
                 self.task.state = TaskState::Active { assignment };
-                self.task.progress = progress;
-                self.task.last_progress = self.now;
+                self.task.common.progress = progress;
+                self.task.common.last_progress = self.now;
                 EventKind::Progress
             }
             WorkerAction::Checkpoint {
@@ -194,15 +194,15 @@ impl TaskChange<'_> {
                 assignment.expires_at = self.now.expires(ttl_seconds)?;
                 assignment.phase = Phase::Working;
                 self.task.state = TaskState::Active { assignment };
-                self.task.checkpoint = Checkpoint::Git { commit };
-                self.task.progress = progress;
-                self.task.last_progress = self.now;
+                self.task.common.checkpoint = Checkpoint::Git { commit };
+                self.task.common.progress = progress;
+                self.task.common.last_progress = self.now;
                 EventKind::Checkpoint
             }
             WorkerAction::Ready { progress } => {
                 self.repository.ready(ReadyCheck {
                     workspace: &self.task.workspace,
-                    checkpoint: &self.task.checkpoint,
+                    checkpoint: &self.task.common.checkpoint,
                     feature: self.feature,
                 })?;
                 self.task = self.task.ready(WorkerAt {
@@ -210,17 +210,17 @@ impl TaskChange<'_> {
                     attempt: input.attempt,
                     now: self.now,
                 })?;
-                self.task.progress = progress;
-                self.task.last_progress = self.now;
+                self.task.common.progress = progress;
+                self.task.common.last_progress = self.now;
                 EventKind::Ready
             }
         };
-        self.task.last_update = self.now;
+        self.task.common.last_update = self.now;
         Ok(Event {
             version: RecordVersion::CURRENT,
             kind,
             actor: input.agent,
-            note: self.task.progress.summary.clone(),
+            note: self.task.common.progress.summary.clone(),
             task: self.task,
         })
     }
@@ -237,7 +237,7 @@ impl TaskChange<'_> {
             CoordinatorAction::Integrate { commit } => {
                 self.repository.integrated(IntegrationCheck {
                     feature: self.feature,
-                    checkpoint: &self.task.checkpoint,
+                    checkpoint: &self.task.common.checkpoint,
                     commit: &commit,
                 })?;
                 self.task = self.task.integrate(commit)?;
@@ -264,7 +264,7 @@ impl TaskChange<'_> {
                 }
             }
         };
-        self.task.last_update = self.now;
+        self.task.common.last_update = self.now;
         Ok(Event {
             version: RecordVersion::CURRENT,
             kind: details.kind,

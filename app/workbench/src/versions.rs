@@ -114,10 +114,12 @@ pub enum StorageVersion {
     IndexedV2,
     #[display("3")]
     RelationalV3,
+    #[display("4")]
+    CommonTasksV4,
 }
 
 impl StorageVersion {
-    pub const CURRENT: Self = Self::RelationalV3;
+    pub const CURRENT: Self = Self::CommonTasksV4;
 }
 
 impl TryFrom<i64> for StorageVersion {
@@ -129,6 +131,7 @@ impl TryFrom<i64> for StorageVersion {
             1 => Ok(StorageVersion::DocumentsV1),
             2 => Ok(StorageVersion::IndexedV2),
             3 => Ok(StorageVersion::RelationalV3),
+            4 => Ok(StorageVersion::CommonTasksV4),
             _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::Database,
                 version: VersionNumber::from(version),
@@ -144,6 +147,7 @@ impl From<StorageVersion> for i64 {
             StorageVersion::DocumentsV1 => 1,
             StorageVersion::IndexedV2 => 2,
             StorageVersion::RelationalV3 => 3,
+            StorageVersion::CommonTasksV4 => 4,
         }
     }
 }
@@ -196,6 +200,7 @@ pub mod tests {
             StorageVersion::DocumentsV1,
             StorageVersion::IndexedV2,
             StorageVersion::RelationalV3,
+            StorageVersion::CommonTasksV4,
         ] {
             let encoded = serde_json::to_string(&version)?;
             assert_eq!(encoded, i64::from(version).to_string());
@@ -211,7 +216,7 @@ pub mod tests {
             assert!(serde_json::from_str::<ProtocolVersion>(input).is_err());
             assert!(serde_json::from_str::<RecordVersion>(input).is_err());
         }
-        for input in ["-1", "4", "99", "1.5", "\"IndexedV2\""] {
+        for input in ["-1", "5", "99", "1.5", "\"IndexedV2\""] {
             assert!(serde_json::from_str::<StorageVersion>(input).is_err());
         }
     }

@@ -200,8 +200,8 @@ impl Navigation {
             },
             Route::Event { event, page } => Route::History {
                 query: TaskQuery {
-                    feature: event.task.feature,
-                    task: event.task.id,
+                    feature: event.task.common.feature,
+                    task: event.task.common.id,
                 },
                 page,
             },
@@ -393,18 +393,18 @@ pub mod tests {
         for view in [
             DashboardView::Features,
             DashboardView::Tasks {
-                feature: Scenario::task()?.feature,
+                feature: Scenario::task()?.common.feature,
             },
             DashboardView::Task {
                 query: TaskQuery {
-                    feature: Scenario::task()?.feature,
-                    task: Scenario::task()?.id,
+                    feature: Scenario::task()?.common.feature,
+                    task: Scenario::task()?.common.id,
                 },
             },
             DashboardView::History {
                 query: TaskQuery {
-                    feature: Scenario::task()?.feature,
-                    task: Scenario::task()?.id,
+                    feature: Scenario::task()?.common.feature,
+                    task: Scenario::task()?.common.id,
                 },
             },
         ] {
