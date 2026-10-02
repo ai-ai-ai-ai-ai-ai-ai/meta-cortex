@@ -60,26 +60,41 @@
     <Card.Root
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
-      <h3 class="font-bold">Git evidence</h3>
+      <h3 class="font-bold">Assignment & workspace</h3>
       <dl>
         <dt>Worker</dt>
         <dd>{presentation.actor()}</dd>
         <dt>Reports to</dt>
         <dd>{presentation.reportsTo()}</dd>
         <dt>Workspace</dt>
-        <dd class="whitespace-pre-wrap">{presentation.workspace()}</dd>
-        <dt>Checkpoint</dt>
-        <dd><code>{presentation.checkpoint()}</code></dd>
-        <dt>Integration</dt>
-        <dd><code>{presentation.integration()}</code></dd>
+        <dd>{presentation.workspaceLabel()}</dd>
+        {#if task.workspace.kind === "git"}
+          <dt>Branch</dt>
+          <dd><code>{task.workspace.branch}</code></dd>
+          <dt>Path</dt>
+          <dd><code>{task.workspace.path}</code></dd>
+        {/if}
         <dt>Updated</dt>
         <dd>{new Date(task.common.last_update).toLocaleString()}</dd>
       </dl>
-      <p class="mt-[18px] text-[11px] text-muted-foreground">
-        Actors recording commits are available in history. Git authorship is not
-        recorded.
-      </p>
     </Card.Root>
+    {#if task.common.checkpoint.kind === "git" || task.state.kind === "integrated"}
+      <Card.Root
+        class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
+      >
+        <h3 class="font-bold">Git evidence</h3>
+        <dl>
+          {#if task.common.checkpoint.kind === "git"}<dt>Checkpoint</dt>
+            <dd><code>{task.common.checkpoint.commit}</code></dd>{/if}
+          {#if task.state.kind === "integrated"}<dt>Integration</dt>
+            <dd><code>{task.state.commit}</code></dd>{/if}
+        </dl>
+        <p class="mt-[18px] text-[11px] text-muted-foreground">
+          Actors recording commits are available in history. Git authorship is
+          not recorded.
+        </p>
+      </Card.Root>
+    {/if}
     <Card.Root
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
