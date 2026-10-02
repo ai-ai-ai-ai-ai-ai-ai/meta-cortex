@@ -1,6 +1,6 @@
 # Read the Assigned Git Commit
 
-Rust verifier reads committed objects without changing a checkout. This document
+Every verifier reads committed objects without changing a checkout. This document
 owns its Git commands. The communication protocol owns messages and reports;
 the delivery team's local-feature practice owns commits and merges.
 
@@ -70,7 +70,7 @@ report missing objects before claiming a complete inventory.
    Preserve spaces, tabs, and newlines in paths. Unexpected statuses require
    explanation before the inventory can be called complete.
 3. Keep the second command's patch beside that inventory. Include every path,
-   not only Rust files. Do not use combined merge output or a branch-wide range
+   not only files in the worker's primary language. Do not use combined merge output or a branch-wide range
    as a substitute for the specified first-parent comparison.
 
 **Prohibited:** parse `git diff --name-only` by spaces and lose `src/order item.rs`,

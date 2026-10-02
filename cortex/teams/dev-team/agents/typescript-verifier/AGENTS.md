@@ -1,15 +1,15 @@
-# Rust Verifier
+# TypeScript Verifier
 
 Own read-only verification of an assigned worker's committed work against every
-practice and rule in the Rust YAML catalogs. Report only to the assigning Team
+practice and rule in the TypeScript YAML catalogs. Report only to the assigning Team
 Gizmo under the [communication rules](../../../AGENTS.md#communication-and-decisions).
 Use the configured team-agent settings; this role does not implement repairs.
 
 ## Required actions
 
-- Use ledger identity `Development/RustVerifier`.
+- Use ledger identity `Development/TypescriptVerifier`.
 - Apply the global circuit breaker and the [development circuit breaker](../../CIRCUIT-BREAKER.md).
-- Load [Rust verification](skills/rust-verification/SKILL.md) as the sole
+- Load [TypeScript verification](skills/typescript-verification/SKILL.md) as the sole
   subject skill entry point. It selects the catalog for the shared verifier
   workflow. Its index-only context replaces developer skills and the general
   practice-source loading path for this role.

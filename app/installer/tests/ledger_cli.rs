@@ -367,13 +367,17 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
 }
 
 #[test]
-fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
+fn typescript_verifier_requeue_rejects_old_attempt_and_finishes_read_only() -> anyhow::Result<()> {
+    let agent = AgentId::Development(DevelopmentAgent::TypescriptVerifier);
     let scenario = Scenario::create()?;
     let scenario = scenario.initialize(Examples::feature()?.feature)?;
     let scenario = scenario.create_task(Examples::task()?)?;
     scenario
         .client()
-        .run(Operation::Task(TaskOperation::Claim(Examples::claim()?)))?;
+        .run(Operation::Task(TaskOperation::Claim(ClaimTask {
+            agent,
+            ..Examples::claim()?
+        })))?;
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Coordinate(
@@ -386,11 +390,13 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Claim(ClaimTask {
+            agent,
             expected_revision: requeued_revision,
             ..Examples::claim()?
         })))?;
     let reclaimed_revision = scenario.status()?.remove(0).task.revision;
     let stale = WorkerUpdate {
+        agent,
         expected_revision: reclaimed_revision,
         ..Examples::heartbeat()?
     };
@@ -404,6 +410,7 @@ fn requeue_rejects_old_worker_and_accepts_new_attempt() -> anyhow::Result<()> {
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Update(WorkerUpdate {
+            agent,
             expected_revision: reclaimed_revision,
             attempt: Attempt::UNCLAIMED.advance()?.advance()?,
             action: WorkerAction::Ready {
