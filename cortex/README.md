@@ -134,14 +134,30 @@ The [development form](development.yaml) defines the session mode and delivery q
 includes a generic YAML form helper, an example, and usage instructions. It
 uses Bun and the shared workspace dependencies installed by Framework / Initialize.
 
-- Initialization installs missing mise in `~/.meta-cortex/mise`.
+- Initialization installs missing mise in `~/.meta-cortex/mise` (`$HOME\.meta-cortex\mise` on Windows).
 - Mise installs missing Bun in `~/.meta-cortex/bun` and Vale in `~/.meta-cortex/vale`.
 - Runtime versions live in [mise.toml](mise.toml).
 - Repositories, worktrees, and individual skills reuse these installations.
 - Initialization uses these managed copies and ignores tools on the user's `PATH`.
-- The entry point configures `PATH` for framework scripts.
+- The entry point configures `PATH` for framework scripts in a POSIX shell.
 - The helper validates data locally; the agent calls the host's native question tool.
 - Answers stay in session context.
+
+In PowerShell, set the managed tool paths from the framework library directory:
+
+```powershell
+$metaCortexHome = if ($env:META_CORTEX_HOME) { $env:META_CORTEX_HOME } else { Join-Path $HOME '.meta-cortex' }
+$env:PATH = "$metaCortexHome\mise\bin;$metaCortexHome\bun\bin;$metaCortexHome\vale\bin;$env:PATH"
+bun scripts/src/ts/check-library-root.ts
+```
+
+Windows uses native `.exe` tools, with no WSL or Git Bash requirement.
+
+**Prohibited:** use `export PATH=...` in PowerShell and assume Bun is configured.
+
+**Required:** set `$env:PATH` and run the library-root check as above.
+
+### Role configuration
 
 [meta-cortex.toml](meta-cortex.toml) declares the required total host agent capacity
 and selects the model and reasoning effort for each delegated role in multi-agent mode.

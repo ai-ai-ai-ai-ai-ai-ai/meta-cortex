@@ -118,6 +118,21 @@ Identify both roots before planning development work:
     bun scripts/src/ts/check-library-root.ts
     ```
 
+  - In PowerShell, use the native managed Bun path and check the exit code:
+
+    ```powershell
+    $metaCortexHome = if ($env:META_CORTEX_HOME) { $env:META_CORTEX_HOME } else { Join-Path $HOME '.meta-cortex' }
+    $env:PATH = "$metaCortexHome\bun\bin;$env:PATH"
+    bun scripts/src/ts/check-library-root.ts
+    if ($LASTEXITCODE -ne 0) { throw 'Meta-Cortex library-root check failed.' }
+    ```
+
+    **Prohibited:** continue after the library-root check returns a nonzero exit code.
+
+    **Required:** stop on failure; run subsequent framework commands only after
+    the check succeeds. See [execution configuration](README.md#execution-configuration)
+    for all managed tool paths.
+
   - Supplies Meta-Cortex instructions, roles, skills, and configuration.
   - Use this PATH for subsequent framework script commands. Supply it again when
     the host starts a new shell for each tool call.
