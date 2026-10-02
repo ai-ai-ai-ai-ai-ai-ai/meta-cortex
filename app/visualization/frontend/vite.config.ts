@@ -2,9 +2,10 @@ import type { UserConfig } from "vitest/config";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
+import { NativeValidators } from "./tools/native-validators";
 // Vite consumes this exported configuration; Vitest extends its typed test field.
 export default {
-  plugins: [tailwindcss(), svelte()],
+  plugins: [new NativeValidators(), tailwindcss(), svelte()],
   base: "./",
   resolve: {
     conditions: ["browser"],
@@ -13,7 +14,6 @@ export default {
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    commonjsOptions: { include: [/validators\.cjs$/, /node_modules/] },
     rollupOptions: {
       output: {
         manualChunks: { graph: ["@xyflow/svelte", "@dagrejs/dagre"] },

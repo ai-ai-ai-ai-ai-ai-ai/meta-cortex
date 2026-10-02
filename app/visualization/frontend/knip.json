@@ -9,5 +9,5 @@
     "src/lib/utils.ts"
   ],
   "project": ["src/**/*.{ts,svelte}", "tools/**/*.ts"],
-  "ignore": ["src/contracts.ts", "src/validators.cjs", "src/validators.d.cts"]
+  "ignore": ["src/contracts.ts"]
 }

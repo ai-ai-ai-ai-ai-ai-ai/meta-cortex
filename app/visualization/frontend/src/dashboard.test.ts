@@ -15,7 +15,13 @@ import { Progress } from "$lib/components/ui/progress";
 import type { ComponentProps } from "svelte";
 import { DashboardApi } from "./api";
 import { FlowPresentation } from "./workflow";
-import type { FeatureFlow, Task, TaskFlow } from "./contracts";
+import type {
+  DesktopReply,
+  DesktopFailure,
+  FeatureFlow,
+  Task,
+  TaskFlow,
+} from "./contracts";
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 afterEach(() => {
@@ -176,6 +182,88 @@ it("validates the native reply before use", async () => {
     Effect.result(new DashboardApi().read({ kind: "Initial" })),
   );
   expect(result._tag).toBe("Failure");
+});
+
+it("rejects unknown native enums, forbidden fields, nulls, and wrong scalar types", async () => {
+  const reply: DesktopReply = {
+    content: { kind: "Features", value: { records: [], end: "Complete" } },
+    selection: { view: { kind: "Features" }, page: 0 },
+  };
+  for (const raw of [
+    { ...reply, content: { kind: "Unknown", value: reply.content.value } },
+    {
+      ...reply,
+      content: { kind: "Features", value: { records: [], end: "Unknown" } },
+    },
+    {
+      ...reply,
+      selection: { view: { kind: "Features", unexpected: true }, page: 0 },
+    },
+    { ...reply, content: null },
+    { ...reply, selection: { ...reply.selection, page: "0" } },
+  ]) {
+    native.invoke.mockResolvedValueOnce(raw);
+    const result = await Effect.runPromise(
+      Effect.result(new DashboardApi().read({ kind: "Initial" })),
+    );
+    expect(result).toMatchObject({
+      _tag: "Failure",
+      failure: { kind: "InvalidReply", cause: raw },
+    });
+  }
+});
+
+it("preserves Unicode, empty prose, and schema-permitted extra native fields", async () => {
+  const fixture = new Fixture();
+  fixture.task.objective = "🚀 日本語 e\u0301";
+  fixture.task.progress.summary = "";
+  const reply: DesktopReply = {
+    content: { kind: "Task", value: fixture.task, extra: "allowed by schema" },
+    selection: { view: { kind: "Features" }, page: 0 },
+    extra: "allowed by schema",
+  };
+  native.invoke.mockResolvedValueOnce(reply);
+  expect(
+    await Effect.runPromise(new DashboardApi().read({ kind: "Initial" })),
+  ).toEqual(reply);
+});
+
+it("classifies valid native failures separately from malformed transport failures", async () => {
+  const failures: DesktopFailure[] = [
+    { kind: "Ledger", message: "台帳 🚀" },
+    { kind: "Runtime", message: "" },
+    {
+      kind: "Native",
+      message: "Native unavailable",
+      extra: "allowed by schema",
+    },
+  ];
+  for (const failure of failures) {
+    native.invoke.mockRejectedValueOnce(failure);
+    expect(
+      await Effect.runPromise(
+        Effect.result(new DashboardApi().read({ kind: "Initial" })),
+      ),
+    ).toMatchObject({
+      _tag: "Failure",
+      failure,
+    });
+  }
+  for (const cause of [
+    { kind: "Unknown", message: "Unrecognized native kind" },
+    { kind: "Ledger", message: null },
+    { kind: "Ledger" },
+  ]) {
+    native.invoke.mockRejectedValueOnce(cause);
+    expect(
+      await Effect.runPromise(
+        Effect.result(new DashboardApi().read({ kind: "Initial" })),
+      ),
+    ).toMatchObject({
+      _tag: "Failure",
+      failure: { kind: "Transport", cause },
+    });
+  }
 });
 
 it("keeps the team heading and progress visible while collapsing its tasks", async () => {
