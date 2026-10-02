@@ -130,12 +130,15 @@ identifies who recorded it, not who actually authored that Git commit.
 
    It resolves the existing repository identity and shared database from the
    current directory, then opens the native Tauri Features window.
-2. Use the window’s navigation to open a feature’s tasks, task detail, history,
-   and individual event snapshots. Recorded task extensions remain available
-   with the detail fields.
+2. Select a feature to open its execution tree. Expand an agent to see its
+   recorded tasks, or select an agent or task to open a closable right detail
+   panel. Narrow windows show the panel as a drawer. Use Graph, Git, and History
+   for recorded relationships, dependencies, integrations, and recent activity.
+   Full task records and individual event snapshots retain all ledger fields,
+   including task-specific extensions.
 3. Close the window to exit.
 
-The shipped executable embeds its React/TypeScript frontend assets. Native IPC
+The shipped executable embeds its Svelte/TypeScript frontend assets. Native IPC
 reads bounded Workbench observations; no HTTP server or browser tab is required.
 Loading, empty results, and observation errors are shown in the window.
 
@@ -192,7 +195,8 @@ detail, where paging does not apply. Initial views are:
 - **Features:** `view: {kind: Features}` lists feature IDs, recorded branches,
   and objectives in ID order.
 - **Tasks:** `view: {kind: Tasks, feature: example-feature}` lists tasks in ID
-  order with ID, state, revision, and progress summary.
+  order in Snapshot mode. Desktop mode opens the expandable execution tree with
+  agent work summaries, status badges, task children, and checkpoint commits.
 - **Task:** `view: {kind: Task, query: {feature: example-feature, task: example-task}}`
   shows objective, revision, attempt, created/updated/progress timestamps,
   recorded workspace, state, checkpoint and integration SHA when recorded,
@@ -200,14 +204,18 @@ detail, where paging does not apply. Initial views are:
   checks with outcome, command and evidence, and task-specific extensions.
 - **History:** `view: {kind: History, query: {feature: example-feature, task: example-task}}`
   lists events newest revision first with kind, revision, recorded-by actor,
-  and note. Opening an event shows its kind, revision, timestamp, actor, note, and
+  and note. Expand an event snapshot to inspect every recorded field and its
   full task snapshot at that revision.
 
 States distinguish queued, working, blocked, ready, integrated, and cancelled.
 Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
-current views refresh. No completion percentage, live execution status, or agent
+current views refresh. Full-feature state counts and an integrated-task percentage
+summarize recorded task states. Group progress covers its loaded task page.
+The hierarchy groups recorded creators and workers by role; it does not establish
+host session ancestry. Each task contributes its latest 100 events to the overview;
+full history can page through older records. No live execution status or agent
 conversation is inferred. For example, a passed check is a worker’s recorded
 result, not a new test execution by the dashboard.
 

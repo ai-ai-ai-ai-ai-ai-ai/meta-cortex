@@ -367,15 +367,18 @@ Features window. Use the window’s navigation to inspect tasks, recorded detail
 and history. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-The desktop dashboard presents a zoomable workflow with agent contributions,
-task dependencies, and recorded Git integrations. Full-feature totals summarize
-task states; graph nodes and contribution panels cover the selected page. The
-agent graph groups recorded creators and workers by role, not host sessions.
+The desktop dashboard opens an expandable execution tree with compact agent
+summaries, status badges, checkpoint commits, and integration progress. Select
+an agent or task to open its closable detail panel; narrow windows use a drawer.
+Graph, Git, and History views offer recorded relationships, dependencies,
+integrations, and recent activity. Full-feature totals summarize task states;
+tree rows and contribution panels cover the selected task page. The hierarchy
+groups recorded creators and workers by role, not host sessions.
 Framework lifecycle responsibilities are shown separately from ledger evidence.
 Each task projection includes its latest 100 events; task history can page through
 older attempts and checkpoints. Runtime parent session links and Git authorship
-remain unrecorded when absent from Turso.
-
+remain unrecorded when absent from Turso. Detailed task records and event snapshots
+retain all ledger fields, including task-specific extensions.
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
 an explicit project, initial view, and page. Use `mode: Desktop` for the native
