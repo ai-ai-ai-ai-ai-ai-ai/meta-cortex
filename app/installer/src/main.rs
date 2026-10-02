@@ -20,6 +20,8 @@ struct Cli {
 enum Command {
     /// Discover agent commands, typed schemas, and complete YAML requests.
     List,
+    /// Open the recorded Workbench dashboard for the current repository.
+    Dashboard,
     /// Execute a strictly typed YAML agent request; use - for stdin.
     Run {
         #[arg(long, default_value = "-")]
@@ -31,6 +33,7 @@ impl Cli {
     fn run(self) -> ExitCode {
         match self.command {
             Command::List => AgentCli::list(),
+            Command::Dashboard => AgentCli::dashboard(),
             Command::Run { request } => AgentCli::run(request),
         }
     }

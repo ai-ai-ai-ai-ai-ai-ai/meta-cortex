@@ -5,15 +5,17 @@ mod protocol;
 use crate::installation::InstallError;
 use catalog::Catalog;
 use derive_more::{Display, From};
-use meta_cortex_visualization::DashboardError;
-use meta_cortex_workbench::LedgerError;
+use meta_cortex_visualization::{
+    Dashboard, DashboardError, DashboardMode, DashboardRequest, DashboardView,
+};
 use meta_cortex_workbench::versions::ProtocolVersion;
+use meta_cortex_workbench::{LedgerError, PageIndex, Workbench};
 use protocol::{Reply, Request};
 use serde::Serialize;
-use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::{env, fs};
 use thiserror::Error;
 use tokio::runtime::Builder;
 
@@ -205,6 +207,25 @@ impl AgentCli {
             }
             Err(error) => Self::report(Err(error)),
         }
+    }
+
+    pub fn dashboard() -> ExitCode {
+        Self::report(Self::execute_dashboard())
+    }
+
+    fn execute_dashboard() -> Result<Reply, AgentError> {
+        let project = env::current_dir()?;
+        let workbench = Workbench::discover(&project)?;
+        let runtime = Builder::new_current_thread().enable_time().build()?;
+        // Observe existing storage before entering the terminal so discovery failures
+        // retain the CLI's existing structured error transport.
+        runtime.block_on(workbench.observe())?;
+        let report = runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest {
+            mode: DashboardMode::Interactive,
+            view: DashboardView::Features,
+            page: PageIndex::FIRST,
+        }))?;
+        Ok(Reply::Dashboard(report))
     }
 
     pub fn run(path: PathBuf) -> ExitCode {

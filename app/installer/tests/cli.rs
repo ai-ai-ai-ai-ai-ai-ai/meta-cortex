@@ -889,13 +889,14 @@ fn incomplete_framework_is_reported_without_overwriting_files() -> anyhow::Resul
 }
 
 #[test]
-fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
+fn cli_exposes_dashboard_discovery_and_yaml_execution() -> anyhow::Result<()> {
     let executable = env!("CARGO_BIN_EXE_meta-cortex");
     let help = Command::new(executable).arg("--help").output()?;
     assert!(help.status.success());
     let text = String::from_utf8(help.stdout)?;
     assert!(text.contains("list"));
     assert!(text.contains("run"));
+    assert!(text.contains("dashboard"));
     let scenario = CliScenario::create()?;
     fs::remove_dir_all(scenario.project.path())?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(
