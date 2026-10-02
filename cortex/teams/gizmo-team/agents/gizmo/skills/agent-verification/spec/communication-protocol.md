@@ -87,18 +87,26 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
      citations, and loaded comparison cues. Catalog and source paths are relative
      to the library root, after resolving references from their containing YAML.
      These copied cues preserve the review's catalog snapshot.
+     Comparison references reuse the practice rules; do not count them as new rules.
      Use `no_checks` only when complete traversal establishes there are no check leaves.
 2. **Rule decisions**
+   - Visit practices in catalog order and rules in leaf order. Inspect every
+     changed file and the surrounding code needed for each rule decision.
+     Evaluate cross-rule checks against the whole change.
    - Record exactly one entry per `(rule ID, changed file)` and one per cross-rule
      check. Each entry states its key, outcome, and concrete evidence or reason.
+     Cross-rule decisions also retain the compared IDs and affected paths.
    - Outcomes are `pass`, `violation`, `not_applicable`, or `blocked`.
      `pass` cites compliant code or workspace evidence. `violation` points to
      all corresponding repair items. `not_applicable` explains why the rule
      does not apply to this file or change. `blocked` names the missing decision
      or evidence. Do not infer a decision from a short, ambiguous cue.
+     Workspace requirements need workspace configuration and validation evidence;
+     a file-level pass cannot replace a required workspace check.
    - Continue through all practices and files, retaining every violation.
-     At each practice boundary, save progress and the next unchecked rule/file
-     in native `next_steps`. Unreviewed entries remain unfinished work.
+     At each practice boundary, save all accumulated decisions and the next
+     unchecked practice/rule/file or comparison in native `next_steps`.
+     Preserve earlier decisions when resuming; unreviewed entries remain unfinished.
 3. **Repairs and blockers**
    - Give each violation a stable issue ID and the full repair context defined
      in the result payload below. Use parent lines for deleted content. List
@@ -125,7 +133,9 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
 5. **Coverage and verdict**
    - State discovered file, practice, rule, and cross-rule check counts. Compare
      expected and recorded rule/file entries (`rules × changed files`) and
-     cross-rule entries. If discovery is blocked, name the count `undetermined`
+     cross-rule entries. Derive expected counts from the inventories before
+     making judgments; do not hard-code them.
+     If discovery is blocked, name the count `undetermined`
      and give the reason; never substitute zero.
    - Check exact keys as well as totals. Reject duplicates, unknown IDs, missing
      entries, and unsupported decisions. All rows being present does not mean
@@ -300,8 +310,6 @@ summary. Gizmo must receive both the repair work and the decisions still needed.
 
 - Do not edit code or catalogs, contact workers directly, or approve your own fixes.
 - Do not replace exhaustive decisions with counts, a summary, or passing build logs.
-- Do not load subject practice Markdown to resolve a blocked cue. Ask Gizmo for the
-  subject-owner decision; the verifier's subject practice context stays index-only.
 - Do not claim the ledger automatically validates this report. Gizmo and the
   verifier must inspect its completeness and evidence explicitly.
 
