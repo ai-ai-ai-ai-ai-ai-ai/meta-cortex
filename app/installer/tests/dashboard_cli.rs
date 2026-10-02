@@ -187,20 +187,24 @@ fn snapshots_use_typed_transport_and_recorded_content() -> anyhow::Result<()> {
     assert!(failure.message.to_string().contains("requires a terminal"));
     Ok(())
 }
+#[cfg(unix)]
 enum TerminalInvocation {
     Typed,
     Direct { directory: PathBuf },
 }
+#[cfg(unix)]
 #[derive(Debug, PartialEq, Eq)]
 struct StorageSnapshot {
     identity: Vec<u8>,
     files: Vec<FileSnapshot>,
 }
+#[cfg(unix)]
 #[derive(Debug, PartialEq, Eq)]
 struct FileSnapshot {
     path: PathBuf,
     bytes: Vec<u8>,
 }
+#[cfg(unix)]
 impl Scenario {
     fn storage_snapshot(&self) -> anyhow::Result<StorageSnapshot> {
         let mut files = Vec::new();
@@ -231,7 +235,6 @@ impl Scenario {
         repository.worktree("linked", &directory, Some(&options))?;
         Ok(directory)
     }
-    #[cfg(unix)]
     fn terminal(&self, invocation: TerminalInvocation) -> anyhow::Result<()> {
         let script = r#"
 import os, pty, subprocess, sys, termios, time, select, fcntl, struct
