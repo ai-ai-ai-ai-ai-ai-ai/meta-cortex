@@ -99,10 +99,8 @@
     counts={flow.counts}
     class="max-[1100px]:order-3 max-[1100px]:flex max-[1100px]:w-full max-[1100px]:items-center max-[1100px]:gap-[15px] max-[1100px]:[&_.progress-meter]:m-0 max-[1100px]:[&_.progress-meter]:ml-auto max-[1100px]:[&_.progress-meter]:min-w-[140px] max-[1100px]:[&_.progress-meter]:max-w-[250px] max-[1100px]:[&_.progress-meter]:flex-1 max-[620px]:block max-[620px]:[&_.progress-meter]:mt-[7px] max-[620px]:[&_.progress-meter]:max-w-none"
   />
-  <Button
-    variant="ghost"
-    class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
-    onclick={refresh}><span aria-hidden="true">↻</span> Refresh</Button
+  <Button variant="dashboard" class="button" onclick={refresh}
+    ><span aria-hidden="true">↻</span> Refresh</Button
   >
 </header>
 <section
@@ -133,7 +131,7 @@
         />
       {:else if view === FlowView.History}
         <Card.Root
-          class="feature-history gap-0 rounded-[6px] border border-border p-5 shadow-none max-[620px]:p-[15px] [&_h2]:mb-5 [&_h2]:text-[19px]"
+          class="feature-history gap-0 rounded-[6px] border border-border p-5 shadow-none ring-0 max-[620px]:p-[15px] [&_h2]:mb-5 [&_h2]:text-[19px]"
           role="region"
           aria-label="Recent recorded history"
         >
@@ -162,8 +160,8 @@
             <span>Recorded relationships</span>
             <div>
               {#each presentation.graphKinds() as kind (kind)}<Button
-                  variant="ghost"
-                  class="h-auto min-h-[30px] rounded-[5px] border border-control bg-secondary px-2.5 py-1.5 text-[10px] font-normal capitalize shadow-none hover:bg-secondary-hover aria-pressed:border-primary aria-pressed:text-primary"
+                  variant="dashboard"
+                  class="h-auto min-h-[30px] px-2.5 py-1.5 text-[10px] capitalize aria-pressed:border-primary aria-pressed:text-primary"
                   aria-pressed={graphKind === kind}
                   onclick={() => (graphKind = kind)}>{kind}</Button
                 >{/each}

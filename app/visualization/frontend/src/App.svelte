@@ -87,8 +87,8 @@
           </p>
         </div>
         <Button
-          variant="ghost"
-          class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
+          variant="dashboard"
+          class="button"
           onclick={() => dashboard.load(dashboard.state.request)}
           >Refresh</Button
         >
@@ -105,8 +105,8 @@
         <h2>Unable to read the ledger</h2>
         <p>{dashboard.state.failure.message}</p>
         <Button
-          variant="ghost"
-          class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
+          variant="dashboard"
+          class="button"
           onclick={() => dashboard.load(dashboard.state.request)}>Retry</Button
         >
       </div>
@@ -173,8 +173,8 @@
             class="task-detail px-8 py-6 max-[800px]:px-[22px] max-[620px]:px-4 [&>h2]:mt-6 [&>h2]:text-[23px]"
           >
             <Button
-              variant="ghost"
-              class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
+              variant="dashboard"
+              class="button"
               onclick={() =>
                 dashboard.load({
                   kind: "Task",
@@ -220,16 +220,16 @@
             >
             <div>
               <Button
-                variant="ghost"
-                class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
+                variant="dashboard"
+                class="button min-h-9 px-2.5 py-1.5 text-[11px]"
                 disabled={reply.selection.page === 0}
                 onclick={() =>
                   dashboard.load(
                     dashboard.pageRequest(reply, reply.selection.page - 1),
                   )}>Previous</Button
               ><Button
-                variant="ghost"
-                class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
+                variant="dashboard"
+                class="button min-h-9 px-2.5 py-1.5 text-[11px]"
                 disabled={dashboard.pageEnd(reply) === "Complete"}
                 onclick={() =>
                   dashboard.load(

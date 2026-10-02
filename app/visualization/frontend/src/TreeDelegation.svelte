@@ -31,7 +31,7 @@
   >
     <Button
       variant="ghost"
-      class="delegation-toggle group min-h-10 min-w-0 justify-start gap-[15px] bg-transparent p-0 text-left hover:bg-transparent"
+      class="delegation-toggle group h-auto whitespace-normal aria-expanded:bg-transparent aria-expanded:text-foreground min-h-10 min-w-0 justify-start gap-[15px] bg-transparent p-0 text-left hover:bg-transparent"
       aria-label={delegation.name()}
       aria-expanded={expansion.ariaExpanded()}
       aria-controls={identity}

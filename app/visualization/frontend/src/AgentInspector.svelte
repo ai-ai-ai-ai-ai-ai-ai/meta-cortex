@@ -1,4 +1,5 @@
 <script lang="ts">
+  import StatusMark from "./StatusMark.svelte";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import type { AgentSelection } from "./agent-tree";
@@ -73,11 +74,10 @@
             class="h-auto min-h-[42px] w-full justify-start gap-2.5 rounded-[3px] bg-transparent px-1 py-2 text-left text-[11px] font-normal whitespace-normal hover:bg-selection data-[current=true]:bg-selection [&>span:nth-child(2)]:flex-1 [&>span:nth-child(2)]:[overflow-wrap:anywhere] [&_small]:ml-auto [&_small]:text-[10px] [&_small]:capitalize"
             data-current={item.task.id === task.id}
             onclick={() => openTask(item.task)}
-            ><span
-              class="state-mark size-[18px] before:text-[11px] inline-grid shrink-0 place-items-center rounded-full bg-primary text-primary-foreground before:font-semibold before:content-['✓'] data-[state=working]:bg-working data-[state=working]:before:content-[''] data-[state=ready]:bg-ready data-[state=ready]:before:content-['→'] data-[state=queued]:border-2 data-[state=queued]:border-muted-foreground data-[state=queued]:bg-transparent data-[state=queued]:before:content-[''] data-[state=not_run]:border-2 data-[state=not_run]:border-muted-foreground data-[state=not_run]:bg-transparent data-[state=not_run]:before:content-[''] data-[state=cancelled]:border data-[state=cancelled]:border-cancelled data-[state=cancelled]:bg-transparent data-[state=cancelled]:text-cancelled data-[state=cancelled]:before:content-['×'] data-[state=blocked]:bg-blocked data-[state=blocked]:before:content-['!'] data-[state=failed]:bg-blocked data-[state=failed]:before:content-['!']"
-              data-state={new TaskPresentation(item.task).status()}
-              aria-hidden="true"
-            ></span><span>{item.task.id}</span><small
+            ><StatusMark
+              state={new TaskPresentation(item.task).status()}
+              class="size-[18px] before:text-[11px]"
+            /><span>{item.task.id}</span><small
               >{new TaskPresentation(item.task).status()}</small
             ></Button
           >{/each}
@@ -89,11 +89,10 @@
             class="inspector-check border-b border-row py-[9px] text-[11px] [&_summary]:flex [&_summary]:min-h-7 [&_summary]:cursor-pointer [&_summary]:items-center [&_summary]:gap-2 [&_code]:min-w-0 [&_code]:flex-1 [&_code]:text-[10px] [&_pre]:max-h-[200px] [&_pre]:overflow-auto [&_pre]:bg-code [&_pre]:p-2 [&_pre]:text-[10px] [&_pre]:leading-[1.7] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
           >
             <summary
-              ><span
-                class="state-mark size-[18px] before:text-[11px] inline-grid shrink-0 place-items-center rounded-full bg-primary text-primary-foreground before:font-semibold before:content-['✓'] data-[state=working]:bg-working data-[state=working]:before:content-[''] data-[state=ready]:bg-ready data-[state=ready]:before:content-['→'] data-[state=queued]:border-2 data-[state=queued]:border-muted-foreground data-[state=queued]:bg-transparent data-[state=queued]:before:content-[''] data-[state=not_run]:border-2 data-[state=not_run]:border-muted-foreground data-[state=not_run]:bg-transparent data-[state=not_run]:before:content-[''] data-[state=cancelled]:border data-[state=cancelled]:border-cancelled data-[state=cancelled]:bg-transparent data-[state=cancelled]:text-cancelled data-[state=cancelled]:before:content-['×'] data-[state=blocked]:bg-blocked data-[state=blocked]:before:content-['!'] data-[state=failed]:bg-blocked data-[state=failed]:before:content-['!']"
-                data-state={check.outcome}
-                aria-hidden="true"
-              ></span><code>{check.command}</code><span
+              ><StatusMark
+                state={check.outcome}
+                class="size-[18px] before:text-[11px]"
+              /><code>{check.command}</code><span
                 class="check-outcome text-[9px] text-muted-foreground"
                 >{check.outcome}</span
               ></summary
@@ -167,8 +166,8 @@
     </section>
     <div class="inspector-actions mt-[22px] flex flex-col gap-[7px]">
       <Button
-        variant="ghost"
-        class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
+        variant="dashboard"
+        class="button"
         onclick={() => openHistory(task)}>↶ Open full history</Button
       ><Button
         variant="ghost"

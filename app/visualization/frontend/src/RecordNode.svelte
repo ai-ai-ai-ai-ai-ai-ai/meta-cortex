@@ -7,7 +7,7 @@
 </script>
 
 <Card.Root
-  class="workflow-node block w-[230px] min-h-28 rounded-[7px] border border-node-border bg-node px-4 py-3 shadow-none data-[state=integrated]:border-primary/60 data-[state=working]:border-working/60 data-[state=blocked]:border-blocked/70 data-[state=ready]:border-ready/70 [&_strong]:my-[7px] [&_strong]:block [&_strong]:text-xs [&_strong]:[overflow-wrap:anywhere] [&_p]:text-[10px] [&_p]:leading-normal [&_p]:text-muted-foreground [&_p]:[overflow-wrap:anywhere]"
+  class="workflow-node overflow-visible block w-[230px] min-h-28 rounded-[7px] border border-node-border bg-node px-4 py-3 shadow-none ring-0 data-[state=integrated]:border-primary/60 data-[state=working]:border-working/60 data-[state=blocked]:border-blocked/70 data-[state=ready]:border-ready/70 [&_strong]:my-[7px] [&_strong]:block [&_strong]:text-xs [&_strong]:[overflow-wrap:anywhere] [&_p]:text-[10px] [&_p]:leading-normal [&_p]:text-muted-foreground [&_p]:[overflow-wrap:anywhere]"
   data-state={data.state}
 >
   <Handle type="target" position={Position.Top} />

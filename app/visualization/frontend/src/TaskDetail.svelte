@@ -14,14 +14,9 @@
 
 <section class="task-detail px-8 py-6 max-[800px]:px-[22px] max-[620px]:px-4">
   <div class="detail-toolbar mb-[25px] flex justify-between gap-3">
-    <Button
-      variant="ghost"
-      class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
-      onclick={back}>← Workflow</Button
-    ><Button
-      variant="ghost"
-      class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
-      onclick={history}>History & attempts</Button
+    <Button variant="dashboard" class="button" onclick={back}>← Workflow</Button
+    ><Button variant="dashboard" class="button" onclick={history}
+      >History & attempts</Button
     >
   </div>
   <div
@@ -40,7 +35,7 @@
   </div>
   <div class="detail-grid grid grid-cols-2 gap-[18px] max-[800px]:grid-cols-1">
     <Card.Root
-      class="detail-card block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
+      class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
       <h3>Latest contribution</h3>
       <p class="text-sm">{task.progress.summary}</p>
@@ -63,7 +58,7 @@
         </p>{/each}
     </Card.Root>
     <Card.Root
-      class="detail-card block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
+      class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
       <h3>Git evidence</h3>
       <dl>
@@ -82,7 +77,7 @@
       </p>
     </Card.Root>
     <Card.Root
-      class="detail-card block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
+      class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
       <h3>Checks <span>{task.progress.checks.length}</span></h3>
       {#each task.progress.checks as check, index (index)}<details
@@ -97,7 +92,7 @@
         </details>{/each}
     </Card.Root>
     <Card.Root
-      class="detail-card block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
+      class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
       <h3>Acceptance & dependencies</h3>
       {#each task.acceptance as criterion, index (index)}<p

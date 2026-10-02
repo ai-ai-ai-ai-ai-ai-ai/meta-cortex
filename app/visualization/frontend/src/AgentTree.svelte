@@ -17,7 +17,7 @@
 </script>
 
 <Card.Root
-  class="execution-tree @container gap-0 overflow-hidden rounded-[7px] border border-border bg-tree py-0 shadow-none"
+  class="execution-tree @container gap-0 overflow-hidden rounded-[7px] border border-border bg-tree bg-linear-[140deg] from-tree to-sidebar py-0 shadow-none ring-0"
   role="region"
   aria-label="Agent execution tree"
 >

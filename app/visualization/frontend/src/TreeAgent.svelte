@@ -1,4 +1,5 @@
 <script lang="ts">
+  import StatusMark from "./StatusMark.svelte";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import { AgentContribution, TreeExpansion, PanelKind } from "./agent-tree";
@@ -30,7 +31,7 @@
   >
     <Button
       variant="ghost"
-      class="disclosure group grid h-auto w-8 shrink-0 place-items-center rounded-[5px] bg-transparent p-0 text-2xl text-muted-foreground hover:bg-transparent hover:text-primary max-[800px]:w-[30px]"
+      class="disclosure group aria-expanded:bg-transparent aria-expanded:text-muted-foreground grid h-auto w-8 shrink-0 place-items-center rounded-[5px] bg-transparent p-0 text-2xl text-muted-foreground hover:bg-transparent hover:text-primary max-[800px]:w-[30px]"
       aria-label={`Expand ${group.name()} tasks`}
       aria-expanded={expansion.ariaExpanded()}
       onclick={toggle}
@@ -46,11 +47,7 @@
       id={identity}
       onclick={() => select({ group, task: group.latest(), origin: identity })}
     >
-      <span
-        class="state-mark size-[22px] before:text-base inline-grid shrink-0 place-items-center rounded-full bg-primary text-primary-foreground before:font-semibold before:content-['✓'] data-[state=working]:bg-working data-[state=working]:before:content-[''] data-[state=ready]:bg-ready data-[state=ready]:before:content-['→'] data-[state=queued]:border-2 data-[state=queued]:border-muted-foreground data-[state=queued]:bg-transparent data-[state=queued]:before:content-[''] data-[state=not_run]:border-2 data-[state=not_run]:border-muted-foreground data-[state=not_run]:bg-transparent data-[state=not_run]:before:content-[''] data-[state=cancelled]:border data-[state=cancelled]:border-cancelled data-[state=cancelled]:bg-transparent data-[state=cancelled]:text-cancelled data-[state=cancelled]:before:content-['×'] data-[state=blocked]:bg-blocked data-[state=blocked]:before:content-['!'] data-[state=failed]:bg-blocked data-[state=failed]:before:content-['!']"
-        data-state={group.status()}
-        aria-hidden="true"
-      ></span>
+      <StatusMark state={group.status()} />
       <div
         class="agent-title min-w-0 [&_strong]:block [&_strong]:text-sm [&_strong]:font-semibold [&_strong]:leading-[1.4] [&_strong]:[overflow-wrap:anywhere] [&_strong_small]:ml-3 [&_strong_small]:text-[10px] [&_strong_small]:font-normal [&>span]:mt-[3px] [&>span]:block [&>span]:max-w-[52ch] [&>span]:truncate [&>span]:text-xs [&>span]:text-muted-foreground max-[620px]:[&_strong]:text-[13px] max-[620px]:[&>span]:text-[11px] group-data-[inspector=true]:min-[1101px]:max-[1350px]:[&>span]:text-[11px]"
       >
@@ -91,11 +88,10 @@
                 task: item,
                 origin: `${identity}:${item.task.id}`,
               })}
-            ><span
-              class="state-mark size-[18px] before:text-[11px] inline-grid shrink-0 place-items-center rounded-full bg-primary text-primary-foreground before:font-semibold before:content-['✓'] data-[state=working]:bg-working data-[state=working]:before:content-[''] data-[state=ready]:bg-ready data-[state=ready]:before:content-['→'] data-[state=queued]:border-2 data-[state=queued]:border-muted-foreground data-[state=queued]:bg-transparent data-[state=queued]:before:content-[''] data-[state=not_run]:border-2 data-[state=not_run]:border-muted-foreground data-[state=not_run]:bg-transparent data-[state=not_run]:before:content-[''] data-[state=cancelled]:border data-[state=cancelled]:border-cancelled data-[state=cancelled]:bg-transparent data-[state=cancelled]:text-cancelled data-[state=cancelled]:before:content-['×'] data-[state=blocked]:bg-blocked data-[state=blocked]:before:content-['!'] data-[state=failed]:bg-blocked data-[state=failed]:before:content-['!']"
-              data-state={new TaskPresentation(item.task).status()}
-              aria-hidden="true"
-            ></span>
+            ><StatusMark
+              state={new TaskPresentation(item.task).status()}
+              class="size-[18px] before:text-[11px]"
+            />
             <div>
               <strong title={`${item.task.id} · ${item.task.objective}`}
                 >{item.task.objective}</strong
@@ -103,7 +99,7 @@
             </div>
             <Badge
               variant="status"
-              class="status border-0 bg-transparent p-0 text-[11px] max-[620px]:text-[9px] before:text-[13px] before:content-['✓'] data-[state=working]:before:size-[7px] data-[state=working]:before:rounded-full data-[state=working]:before:bg-current data-[state=working]:before:content-[''] data-[state=queued]:before:content-['○'] data-[state=ready]:before:content-['→'] data-[state=cancelled]:before:content-['×'] data-[state=blocked]:before:content-['!']"
+              class="status border-0 bg-transparent p-0 data-[state=integrated]:bg-transparent data-[state=working]:bg-transparent data-[state=queued]:bg-transparent data-[state=ready]:bg-transparent data-[state=blocked]:bg-transparent data-[state=cancelled]:bg-transparent text-[11px] max-[620px]:text-[9px] before:text-[13px] before:content-['✓'] data-[state=working]:before:size-[7px] data-[state=working]:before:rounded-full data-[state=working]:before:bg-current data-[state=working]:before:content-[''] data-[state=queued]:before:content-['○'] data-[state=ready]:before:content-['→'] data-[state=cancelled]:before:content-['×'] data-[state=blocked]:before:content-['!']"
               data-state={new TaskPresentation(item.task).status()}
               >{new TaskPresentation(item.task).childStatus()}</Badge
             ></Button

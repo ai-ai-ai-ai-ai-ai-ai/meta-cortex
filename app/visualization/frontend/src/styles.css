@@ -44,6 +44,18 @@
   --color-node: var(--node);
   --color-node-border: var(--node-border);
   --color-backdrop: var(--backdrop);
+  --color-status-queued: #1d292d;
+  --color-status-queued-border: #3b4f56;
+  --color-status-integrated: #15342a;
+  --color-status-integrated-border: #45605d;
+  --color-status-working: #16343f;
+  --color-status-working-border: #315665;
+  --color-status-ready: #343223;
+  --color-status-ready-border: #625d3a;
+  --color-status-cancelled: #202a2c;
+  --color-status-cancelled-border: #39494d;
+  --color-status-blocked: #3d2822;
+  --color-status-blocked-border: #6d4a3e;
   --radius-sm: 3px;
   --radius-md: 5px;
   --radius-lg: 7px;
