@@ -8,8 +8,11 @@ parts and every primitive retains its public exports and prop contracts.
 
 The generated source is formatted with the project's Prettier configuration.
 Badge adds one project-owned `status` variant: Tailwind data attributes select
-the existing dashboard state colors without interpreting domain state in code.
-All upstream variants remain available.
+the existing dashboard state colors and density without interpreting domain
+state in code. Button adds a `dashboard` variant for the repeated bordered
+dashboard control appearance. Its default size restores the original automatic
+height and padding after upstream size merging; consumer class overrides remain
+last. All upstream variants and sizes remain available.
 
 The exact dependency pins are in `package.json` and `bun.lock`. Tailwind uses its
 official Vite plugin and the existing stylesheet; `$lib` resolves in TypeScript
@@ -21,6 +24,14 @@ generated files from the authored-code branching prohibition, preserving all
 other lint checks. Authored configuration, tests, and dashboard components
 remain under the full policy. Generated utility conditional types and bindable
 element refs keep the upstream signatures rather than replacing their APIs.
+
+Knip treats exactly the four generated public `index.ts` barrels and generated
+`utils.ts` API as entrypoints, preserving their upstream aliases, types, and Card
+parts. The dashboard consumes Button, Badge, Card, and Progress directly.
+No directory or issue category is
+excluded; authored application files, exports, members, and dependencies remain
+checked. The graph renderer and layout engine share a separate vendor build
+chunk so the integrated dashboard remains within the existing warning threshold.
 
 Progress forwards `value` and `max` to Bits UI, which exposes them as
 `aria-valuenow` and `aria-valuemax` on a progressbar. Its indicator divides the

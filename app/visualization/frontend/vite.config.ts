@@ -14,6 +14,11 @@ export default {
     outDir: "dist",
     emptyOutDir: true,
     commonjsOptions: { include: [/validators\.cjs$/, /node_modules/] },
+    rollupOptions: {
+      output: {
+        manualChunks: { graph: ["@xyflow/svelte", "@dagrejs/dagre"] },
+      },
+    },
   },
   test: { environment: "jsdom", clearMocks: true },
 } satisfies UserConfig;
