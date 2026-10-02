@@ -198,15 +198,15 @@ export enum ActivityKind {
   Recorded = "recorded",
   Absent = "absent",
 }
-export type NodeActivity =
+type NodeActivity =
   | { kind: ActivityKind.Recorded; group: AgentContribution }
   | { kind: ActivityKind.Absent };
-export interface ReportingIdentity {
+interface ReportingIdentity {
   id: string;
   name: string;
   actor: RecordedActor;
 }
-export interface ReportingEdge {
+interface ReportingEdge {
   source: string;
   target: string;
   tasks: ReadonlyArray<TaskFlow>;
