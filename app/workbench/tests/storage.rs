@@ -21,7 +21,12 @@ use std::thread;
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
 use tokio::runtime::Builder;
-use turso::Connection;
+use turso::{Connection, IoBackend};
+
+#[cfg(windows)]
+const PERSISTENT_IO: IoBackend = IoBackend::IOCP;
+#[cfg(not(windows))]
+const PERSISTENT_IO: IoBackend = IoBackend::Default;
 use turso::transaction::TransactionBehavior;
 
 // Independent identifiers for compatibility and deliberate-corruption fixtures.
@@ -138,6 +143,7 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
             drop(ledger);
             {
                 let db = turso::Builder::new_local(path.to_str().context("path")?)
+                    .with_io(PERSISTENT_IO)
                     .experimental_multiprocess_wal(true)
                     .build()
                     .await?;
@@ -160,6 +166,7 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
                 })) if version == VersionNumber::from(99)
             ));
             let db = turso::Builder::new_local(path.to_str().context("path")?)
+                .with_io(PERSISTENT_IO)
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;
@@ -197,6 +204,7 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
         .build()?
         .block_on(async {
             let database = turso::Builder::new_local(path.to_str().context("path")?)
+                .with_io(PERSISTENT_IO)
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;
