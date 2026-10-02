@@ -1,7 +1,0 @@
-stages:
-  readContext:
-    $ref: ./context.lace.yaml#/exports/stages/readContext
-  compileReceipt:
-    $ref: ./compile.lace.yaml#/exports/stages/compileReceipt
-  verifyReceipt:
-    $ref: ./verify.lace.yaml#/exports/stages/verifyReceipt

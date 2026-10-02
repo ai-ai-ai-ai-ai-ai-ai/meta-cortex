@@ -217,7 +217,7 @@ or load every sibling namespace into a focused review.
 construction or serialization guidance only when those boundaries are involved.
 
 A parser can validate catalog structure and tooling can enumerate entries in a
-fixed order. Catalog indexes remain distinct from Lace YAML context receipts,
-which use the [context schema](../../../../../../../lace/src/ts/context-schema.ts)
+fixed order. Catalog indexes remain distinct from YAML context declarations,
+which use the [context schema](../../../../../../../scripts/src/ts/context-schema.ts)
 and static export references. YAML alone does not prove that an agent read, understood, or correctly
 applied a rule. Keep mechanical validation separate from that judgment.

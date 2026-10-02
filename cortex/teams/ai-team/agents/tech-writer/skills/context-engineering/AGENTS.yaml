@@ -1,7 +1,7 @@
 stages:
   overview:
     spec:
-      contextLanguage: Neural Lace defines the typed declaration language for Cortex context.
+      contextLanguage: Cortex context is YAML data checked against the shared context schema.
       contextSubjects:
         Context includes architecture, specifications, rules, agent
         instructions, skills, and practices.
@@ -28,14 +28,12 @@ stages:
       statements: {}
   coreOwnershipVocabulary:
     spec:
-      readModel: Read lace/src/ts/lace.ts before authoring receipts.
-      modelVocabulary:
-        The model contains the WorkingDirectory enum and readonly Job,
-        Stage, Statement, Required, Prohibited, and ShellCommand contracts.
-      readonlyJobs:
-        Job is a readonly interface; receipts use plain objects with named
-        Stage sections.
-      jobComposition: Job groups Stage sections in its stages map.
+      readModel: Read scripts/src/ts/context-schema.ts before authoring context
+        declarations.
+      modelVocabulary: The schema validates stages, spec, Required, Prohibited,
+        statements, exports, references, and ShellCommand fields.
+      readonlyJobs: Context documents contain literal YAML maps with named stage sections.
+      jobComposition: The document groups stage sections in its stages map.
       sectionPurpose: Each Stage separates specification, required actions, and
         prohibited actions.
       fixedStageFields: Stage has mandatory spec, Required, and Prohibited fields.
@@ -49,24 +47,26 @@ stages:
   coreOwnershipContextPlacement:
     spec:
       assignedScope: Keep receipt edits within the assigned Cortex context scope.
-      subjectLocation: Write subject receipts beside their owning context, outside lace/.
-      selfDescription:
-        This lace/AGENTS.yaml entry point describes Lace using its own
-        vocabulary.
-      inertCore: The model and validation implementation contain no operational
-        context declarations.
+      subjectLocation: Write subject context declarations beside their owning context.
+      selfDescription: This
+        teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml
+        entry point owns YAML context authoring instructions.
+      inertCore: The shared schema and validation implementation contain no
+        operational context declarations.
     Required:
       statements: {}
     Prohibited:
       statements: {}
   coreOwnershipCoreChanges:
     spec:
-      existingVocabulary: Use the existing core vocabulary and run the existing checks.
-      explicitCoreAssignment: Change the core only under an explicit user assignment to change it.
+      existingVocabulary: Use the existing context schema and run the existing checks.
+      explicitCoreAssignment: Change the shared schema or checker only under an
+        explicit assignment to change it.
       failedReceiptScope: A receipt that fails validation does not grant that assignment.
-      correctReceipt: Correct an invalid receipt using the existing vocabulary.
-      missingCapability: Report a missing capability when that vocabulary cannot
-        express the assigned context.
+      correctReceipt: Correct an invalid context declaration using the existing schema.
+      missingCapability:
+        Report a missing capability when the schema cannot express
+        the assigned context.
     Required:
       statements: {}
     Prohibited:
@@ -76,25 +76,26 @@ stages:
     Required:
       statements:
         requiredUseExistingDeclarations:
-          Read the model, then write the assigned receipt
-          beside its context using existing declarations.
+          Read the schema, then write the assigned
+          context declaration beside its context using existing fields.
         requiredUnchangedChecks: Run the unchanged checks.
-        requiredSeparateCoreRequest: Report an unsupported capability for a separate core assignment.
+        requiredSeparateCoreRequest:
+          Report an unsupported capability for a separate
+          schema or checker assignment.
     Prohibited:
       statements:
         prohibitedUnauthorizedCoreEdit:
-          While assigned to write a context receipt, add a
-          model field because the receipt fails validation.
+          While assigned to write context, add a schema
+          field because the declaration fails validation.
   receiptAuthoringReceiptContract:
     spec:
       importJob:
-        Write a YAML document with a root stages map checked against the Lace
-        context schema.
+        Write a YAML document with a root stages map checked against the
+        shared context schema.
       descriptiveNames:
-        Follow teams/ai-team/docs/lace-architecture.md#stage-names
-        when naming Job stages and short descriptive spec and statement keys.
-      modelImports:
-        Use the Lace schema vocabulary; command cwd is project-root or
+        Follow teams/ai-team/docs/context-authoring.md#stage-names
+        when naming stages and short descriptive spec and statement keys.
+      modelImports: Use the shared schema fields; command cwd is project-root or
         library-root.
       rootDeclaration: Declare the root stages map with each local Stage inline;
         optionally declare reusable stages and statements in exports.
@@ -113,12 +114,12 @@ stages:
       statements: {}
   receiptAuthoringReadonlyDeclarations:
     spec:
-      stageOrder: Job.stages is a readonly named Stage map after loading; prefer
-        nonnumeric names because JavaScript enumerates integer-like object keys
-        in ascending order before other string keys.
+      stageOrder:
+        Read stages in source mapping order; prefer nonnumeric names so
+        context readers preserve their intended ordering.
       readonlyFields:
-        Job and Stage fields, statement maps, and structured command
-        fields are readonly.
+        Keep stage fields, statement maps, and structured commands as
+        literal YAML data.
       emptyMaps:
         All stages, spec, and statements maps are literal named objects and
         may be empty.
@@ -126,11 +127,11 @@ stages:
         Compose fixed sections with literal named YAML maps and static
         Stage or Statement $ref values; calls and constructors are invalid.
       readonlyAccess:
-        The schema checks YAML structure and the loaded Job has readonly
-        model types; loading does not freeze JavaScript objects at runtime.
+        The schema checks YAML structure; validation does not establish
+        prose correctness or runtime immutability.
       importConstruction:
-        Read declarations as context; loading a receipt constructs
-        plain data and never runs declared shell commands.
+        Read declarations as context; validation checks data and
+        never runs declared shell commands.
     Required:
       statements: {}
     Prohibited:
@@ -139,7 +140,7 @@ stages:
     spec: {}
     Required:
       statements:
-        requiredTypedReadonly: Keep loaded declaration objects readonly through the Job type.
+        requiredTypedReadonly: Keep context declaration maps literal and static.
         requiredStaticComposition:
           Compose Stage and Statement declarations with static
           $ref values and literal YAML maps.
@@ -162,13 +163,14 @@ stages:
         YAML string value; keep one independent fact or rule in each statement.
       normativeStatements:
         Put mandatory actions in Required.statements and forbidden
-        actions in Prohibited.statements; do not nest Job objects or groups.
+        actions in Prohibited.statements; do not nest context documents or
+        groups.
       mandatoryStageFields:
         Include spec, Required, and Prohibited in every Stage even
         when their maps are empty.
       purposeNamedSections:
         Use purpose-named Stage sections for related statements;
-        follow teams/ai-team/docs/lace-architecture.md#normative-categories for
+        follow teams/ai-team/docs/context-authoring.md#normative-categories for
         their placement.
     Required:
       statements: {}
@@ -188,9 +190,9 @@ stages:
           single statement name.
   receiptAuthoringShellCommands:
     spec:
-      shellShape: "Declare a command statement as { content: 'Check receipts.',
-        ShellCommand: { cwd: library-root, script: 'bun run check' } }; loaded
-        command fields are readonly."
+      shellShape: "Declare a command statement as { content: 'Check context.',
+        ShellCommand: { cwd: library-root, script: 'bun run context:check' } };
+        commands remain inert YAML data."
       commandRoots: Choose project-root or library-root for command cwd.
       resolveRoots: Resolve both roots before running commands through the host's shell tool.
       inertCommands: Validation and reference resolution never execute declared commands.
@@ -222,14 +224,15 @@ stages:
         requiredStaticStages:
           "Declare stages with an inline context Stage containing
           spec: {}, Required: { statements: {} }, and Prohibited: { statements:
-          {} }; use { $ref: './compile.lace.yaml#/exports/stages/compileReceipt'
-          } and { $ref: './verify.lace.yaml#/exports/stages/verifyReceipt' } for
-          reusable Stages."
+          {} }; use { $ref:
+          './compile.context.yaml#/exports/stages/compileReceipt' } and { $ref:
+          './verify.context.yaml#/exports/stages/verifyReceipt' } for reusable
+          Stages."
         requiredAuthoringExample: See
-          teams/ai-team/agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.yaml
+          teams/ai-team/agents/tech-writer/skills/context-engineering/examples/context/authoring.context.yaml
           for an authoring example.
         requiredArchitectureReference:
-          See teams/ai-team/docs/lace-architecture.md for
+          See teams/ai-team/docs/context-authoring.md for
           the YAML schema and validation limits.
     Prohibited:
       statements:
@@ -240,8 +243,8 @@ stages:
     spec:
       compilerCheck: Use the schema and reference check while editing receipts.
       completeVerification:
-        Run complete verification before reporting that a receipt
-        passes all Lace checks.
+        Run complete workspace verification before reporting that
+        context passes all checks.
       libraryRoot: Run these commands from the Cortex library root.
     Required:
       statements: {}
@@ -252,10 +255,10 @@ stages:
     Required:
       statements:
         compile:
-          content: Validate Lace receipt schemas and references.
+          content: Validate context declaration schemas and references.
           ShellCommand:
             cwd: library-root
-            script: bun run --filter @meta-cortex/lace check
+            script: bun run context:check
     Prohibited:
       statements: {}
   validationVerify:
@@ -263,10 +266,10 @@ stages:
     Required:
       statements:
         verify:
-          content: Verify Lace receipts.
+          content: Verify context declarations.
           ShellCommand:
             cwd: library-root
-            script: bun run --filter @meta-cortex/lace verify
+            script: bun run verify
     Prohibited:
       statements: {}
   validationValidationExamples:
@@ -274,43 +277,48 @@ stages:
     Required:
       statements:
         requiredCompileOnly:
-          Use check for tooling type checking and YAML schema and
-          reference validation without emitting files.
+          Use context:check for YAML schema and reference validation
+          without executing declared commands.
         requiredFullChecks:
-          Run verify for formatting, lint, tooling types, YAML schema
-          and references, and contract tests.
+          Run verify for workspace formatting, lint, tooling types,
+          context schemas and references, and contract tests.
         requiredCommandEvidence:
           Neither check executes declared commands or proves
           their success in a consuming project.
     Prohibited:
       statements:
-        prohibitedIncompleteClaim: Report that all Lace checks pass after running only check.
+        prohibitedIncompleteClaim: Report that all workspace checks pass after running only context:check.
   scopeRestrictions:
     spec: {}
     Required:
       statements: {}
     Prohibited:
       statements:
-        contextOnly: Do not use Lace as a coding-agent API or an application workflow.
+        contextOnly: Do not use context declarations as a coding-agent API or an
+          application workflow.
         inertModel:
-          Do not put subject context declarations in the model or validation
-          implementation.
-        subjectReceipts:
-          Lace's own context entry point is lace/AGENTS.yaml; subject
-          receipts belong with their owning context outside lace/.
-        protectedCore: Do not change core types, schema, loader, tests, scripts,
-          configuration, or the core entry point during receipt authoring.
-        explicitAssignment: Core changes require an explicit user assignment to change the core.
+          Do not put subject context declarations in the shared schema or
+          validation implementation.
+        subjectReceipts: The YAML authoring entry point is
+          teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml;
+          other subject declarations belong with their owning context.
+        protectedCore: Do not change the shared schema, checker, tests, scripts,
+          configuration, or authoring entry point during ordinary context
+          authoring.
+        explicitAssignment:
+          Schema and checker changes require an explicit assignment to
+          change them.
   scopeExamples:
     spec: {}
     Required:
       statements:
         requiredAssignedFiles: Keep receipt work within the assigned Cortex context files.
         requiredAuthorizedCoreWork:
-          When explicitly assigned to change Lace, edit the
-          relevant core files and verify the project.
+          When explicitly assigned to change the shared
+          context schema or checker, edit the relevant files and verify the
+          project.
     Prohibited:
       statements:
         prohibitedWeakenCore:
-          Add an application callback to the model or weaken lint to
-          make a context receipt pass.
+          Add an application callback to the schema or weaken lint
+          to make a context declaration pass.

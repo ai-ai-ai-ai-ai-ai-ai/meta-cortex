@@ -1,6 +1,6 @@
 stages:
   verifyReceipt:
-    $ref: ./verify.lace.yaml#/exports/stages/verifyReceipt
+    $ref: ./verify.context.yaml#/exports/stages/verifyReceipt
 exports:
   stages:
     verifyReceipt:
@@ -11,7 +11,7 @@ exports:
             content: Verify receipt formatting, schema, references, and tooling types.
             ShellCommand:
               cwd: library-root
-              script: bun run --filter @meta-cortex/lace verify
+              script: bun run verify
       Prohibited:
         statements: {}
   statements: {}

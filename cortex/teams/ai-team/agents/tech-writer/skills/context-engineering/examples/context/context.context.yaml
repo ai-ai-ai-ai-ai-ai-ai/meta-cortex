@@ -1,0 +1,27 @@
+stages:
+  contextOverview:
+    spec: {}
+    Required:
+      statements:
+        readOverview: Read the overview stage in
+          teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml
+          as text.
+    Prohibited:
+      statements: {}
+  readContext:
+    $ref: ./context.context.yaml#/exports/stages/readContext
+exports:
+  stages:
+    readContext:
+      spec:
+        contextRoots: Resolve context paths from the Cortex library root.
+      Required:
+        statements:
+          readCore: Read
+            teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml
+            and scripts/src/ts/context-schema.ts as text before authoring
+            context.
+      Prohibited:
+        statements:
+          executeContext: Do not load context to execute commands.
+  statements: {}

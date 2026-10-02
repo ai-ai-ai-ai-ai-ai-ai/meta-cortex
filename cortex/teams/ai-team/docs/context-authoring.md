@@ -1,37 +1,34 @@
-# Neural Lace Architecture
+# YAML Context Authoring
 
-Neural Lace declares Cortex context as YAML data. Agents read receipts as text,
-like Markdown. The readonly Job, Stage, Statement, Required, Prohibited, and
-ShellCommand contracts remain in the TypeScript model. The authoritative YAML
-schema checks structure; the loader resolves static references without executing
-commands.
+Cortex context declarations are YAML data that agents read as text, like
+Markdown. The [shared Effect schema](../../../scripts/src/ts/context-schema.ts)
+is the authoritative structure contract. The existing developer checker validates
+that schema and static references without executing declared commands.
 
 ## Required actions
 
 ### Context ownership
 
-Keep the [model](../../../lace/src/ts/lace.ts),
-[YAML schema](../../../lace/src/ts/context-schema.ts),
-[loader](../../../lace/src/ts/context-loader.ts), and their tests in `lace/`.
-Its [entry point](../../../lace/AGENTS.yaml) describes Lace using the same
-Stage declarations as other receipts. Subject receipts belong beside their
-owning context, outside `lace/`. Context Engineering owns receipt authoring;
-other existing Markdown instructions remain authoritative.
+Keep shared schema and checking code in the existing developer tooling under
+`scripts/`. Keep subject declarations beside their owning context. The
+[authoring entry point](../agents/tech-writer/skills/context-engineering/AGENTS.yaml)
+belongs to Context Engineering; other existing Markdown instructions remain
+authoritative. Read the schema for exact admitted fields and use the examples
+below to apply it.
 
 **Prohibited:** modify the schema while assigned only to author a context receipt.
 
 **Required:** use the existing declarations and checks. Report a missing
-capability for a separate core assignment.
+capability for a separate schema or checker assignment.
 
 ### YAML document root
 
-Name receipts `*.lace.yaml` and context entry points `AGENTS.yaml`. Declare a
+Name receipts `*.context.yaml` and context entry points `AGENTS.yaml`. Declare a
 root `stages` map. Optional `exports` contains both `stages` and `statements`
 maps; empty maps are valid. YAML authors use this schema vocabulary directly.
-The private package root `@meta-cortex/lace` continues to expose the readonly
-model to TypeScript tooling; context receipts do not import code.
+Context declarations contain no code imports.
 
-**Prohibited:** use a Stage or sequence as the document root. Validation rejects it.
+**Prohibited:** use a stage or sequence as the document root. Validation rejects it.
 
 ```yaml
 spec: {}
@@ -39,7 +36,7 @@ Required: { statements: {} }
 Prohibited: { statements: {} }
 ```
 
-**Required:** place Stage values in the root map.
+**Required:** place stage values in the root map.
 
 ```yaml
 stages:
@@ -49,15 +46,15 @@ stages:
     Prohibited: { statements: {} }
 ```
 
-### Fixed Stage sections
+### Fixed stage sections
 
-Each Stage has three mandatory fields: `spec`, `Required`, and `Prohibited`.
+Each stage has three mandatory fields: `spec`, `Required`, and `Prohibited`.
 The `spec` map contains named statements. Required and Prohibited each contain
 one named `statements` map. All three maps may be empty. A statement is a
 nonblank YAML string or an object with both `content` and `ShellCommand`.
 
 **Prohibited:** omit a normative section even when it has no statements.
-Validation rejects this incomplete Stage.
+Validation rejects this incomplete stage.
 
 ```yaml
 stages:
@@ -78,16 +75,16 @@ stages:
 
 ### Inline local stages
 
-Write local Stage contents directly in the receipt's stages map. Extract a
-Stage into exports only when another receipt reuses it. Reference reusable
-Stages through `$ref` values in Stage positions.
+Write local stage contents directly in the receipt's stages map. Extract a
+stage into exports only when another receipt reuses it. Reference reusable
+stages through `$ref` values in stage positions.
 
-**Prohibited:** export a Stage used only by this receipt. It validates but adds
+**Prohibited:** export a stage used only by this receipt. It validates but adds
 an unnecessary lookup for readers.
 
 ```yaml
 stages:
-  context: { $ref: "./context.lace.yaml#/exports/stages/context" }
+  context: { $ref: "./context.context.yaml#/exports/stages/context" }
 exports:
   stages:
     context:
@@ -110,12 +107,11 @@ stages:
 ### Stage names
 
 Every key in stages, spec, and normative statements maps must describe its
-purpose. Give each Stage a name for its context section; give each statement a
+purpose. Give each stage a name for its context section; give each statement a
 short name for its fact, action, or restriction. Never use generic positional or
 placeholder names such as `step3`, `stage1`, `entry2`, or `item1`.
 Preserve source mapping order; names do not encode ordering. Prefer nonnumeric
-names because the loaded JavaScript model enumerates integer-like keys in
-numeric order before other strings.
+names so context readers preserve the intended ordering.
 
 This is a semantic authoring rule. Validation checks nonblank unique keys and
 structure; it does not infer purpose. Independent YAML catalog entries retain
@@ -141,22 +137,21 @@ stages:
     Prohibited: { statements: {} }
 ```
 
-### Readonly declarations
+### Static declarations
 
-The loader returns a Job with readonly model types. Those types reject mutation
-through typed access; they do not freeze objects at runtime or establish prose
-correctness. Keep context as literal YAML data and read maps in source order.
+Keep context as literal YAML data and read maps in source order. Schema checking
+does not establish prose correctness or runtime immutability.
 
-**Prohibited:** mutate loaded receipt sections or hide context behind runtime calls.
+**Prohibited:** hide context behind runtime calls or mutate it during validation.
 
-**Required:** compose literal declarations and static Stage or Statement references.
+**Required:** compose literal declarations and static stage or statement references.
 
 ### Normative categories
 
 Put explanatory facts in spec, mandatory actions in Required.statements, and
 forbidden actions in Prohibited.statements. Cortex instructions use the
 prohibited/required format; a Preferred category is not supported. These fields
-are fixed Stage sections, without category labels.
+are fixed stage sections, without category labels.
 
 **Prohibited:** place a mandatory validation command only in explanatory prose.
 
@@ -180,7 +175,7 @@ stages:
     Required:
       statements:
         compile:
-          ShellCommand: { cwd: library-root, script: "bun run check" }
+          ShellCommand: { cwd: library-root, script: "bun run context:check" }
     Prohibited: { statements: {} }
 ```
 
@@ -194,7 +189,7 @@ stages:
       statements:
         compile:
           content: "Validate the receipt declarations."
-          ShellCommand: { cwd: library-root, script: "bun run check" }
+          ShellCommand: { cwd: library-root, script: "bun run context:check" }
     Prohibited: { statements: {} }
 ```
 
@@ -208,66 +203,66 @@ stages:
 
 Reuse declarations from `exports.stages` or `exports.statements`. Both export
 maps are mandatory when exports is supplied. References contain only `$ref` and
-name a relative `*.lace.yaml` or `AGENTS.yaml` path with a fragment of the form
+name a relative YAML path with a fragment of the form
 `#/exports/stages/name` or `#/exports/statements/name`. Escape `/` and `~` in
-export names as `~1` and `~0`. Stage references belong in stages maps; Statement
-references belong in spec or normative statement maps. A local exported Stage
-can be reused through a reference to the same file. The loader checks target
+export names as `~1` and `~0`. Stage references belong in stages maps; statement
+references belong in spec or normative statement maps. A local exported stage
+can be reused through a reference to the same file. The checker checks target
 existence, target kind, and reference cycles. Commands remain inert data.
 
 **Prohibited:** copy canonical commands into several maintenance locations.
 
-**Required:** reuse the owning Stage export, as in the
-[authoring receipt](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.yaml).
+**Required:** reuse the owning stage export, as in the
+[authoring receipt](../agents/tech-writer/skills/context-engineering/examples/context/authoring.context.yaml).
 
 ```yaml
 stages:
   compileReceipt:
-    $ref: "./compile.lace.yaml#/exports/stages/compileReceipt"
+    $ref: "./compile.context.yaml#/exports/stages/compileReceipt"
 ```
 
-For a Statement export, use the statements namespace in its statement position:
+For a statement export, use the statements namespace in its statement position:
 
 ```yaml
 stages:
   context:
     spec:
       contextRoots:
-        $ref: "./shared.lace.yaml#/exports/statements/contextRoots"
+        $ref: "./shared.context.yaml#/exports/statements/contextRoots"
     Required: { statements: {} }
     Prohibited: { statements: {} }
 ```
 
-The latter is illustrative syntax and assumes a neighboring `shared.lace.yaml`
+The latter is illustrative syntax and assumes a neighboring `shared.context.yaml`
 with that export. The checked authoring receipt uses actual neighboring files.
 
-### Validation project
+### Validation commands
 
-The [TypeScript project](../../../tsconfig.json) checks the model, tooling, and
-contract tests. The YAML checker discovers `AGENTS.yaml` and `*.lace.yaml`
-context files separately. The existing Bun workspace owns dependencies.
+The existing Bun workspace owns dependencies and tooling. The context checker
+uses the shared schema and validates relative references, including exported
+references that are not used by the document's stages. Default discovery covers
+`AGENTS.yaml` and `*.context.yaml`; an empty discovery is an error.
 
-1. From the Cortex library root, run `bun run --filter @meta-cortex/lace check`
-   for tooling type checking, YAML schema checking, and reference resolution.
-2. For selected receipts, run `bun lace/src/ts/check.ts path/to/context.lace.yaml`.
-3. Before claiming full Lace verification, run
-   `bun run --filter @meta-cortex/lace verify` for formatting, lint, types,
-   YAML validation, and contract tests.
-4. Review prose meaning separately and report executed commands only from actual
-   host-tool results. Workspace `bun run verify` includes Lace in the CI gate.
+1. From the Cortex library root, run `bun run context:check` to validate all
+   discovered context declarations and their reference graphs.
+2. For selected files, run `bun run context:check path/to/example.context.yaml`.
+3. Before claiming full workspace verification, run `bun run verify` for
+   formatting, lint, tooling types, context validation, and contract tests.
+4. Run `bun run docs:check` for Markdown and catalog checks. Review prose meaning
+   separately and report executed commands only from actual host-tool results.
 
-**Prohibited:** report full verification after running only check.
+**Prohibited:** report full verification after running only context:check.
 
 **Required:** report the verify result and its practical limits. Checks do not
 prove prose correctness or establish command success in a consuming project.
 
 ## Prohibited actions
 
-### Core and receipt ownership
+### Schema and context ownership
 
-Follow the [core ownership rules](../../../lace/AGENTS.yaml). Receipt authoring
-uses existing declarations and checks. Core model, schema, loader, tests, and
-configuration changes require a separate explicit assignment.
+Follow the [authoring scope rules](../agents/tech-writer/skills/context-engineering/AGENTS.yaml).
+Context authoring uses existing declarations and checks. Shared schema, checker,
+tests, and configuration changes require a separate explicit assignment.
 
 **Prohibited:** weaken checking because a receipt fails.
 
@@ -277,8 +272,8 @@ configuration changes require a separate explicit assignment.
 
 Receipts contain literal YAML maps and strings with optional static references.
 The schema rejects unknown fields and incomplete shapes; parsing rejects duplicate
-keys and unsupported YAML features. Empty maps are valid. Sequences, nested Jobs,
-executable expressions, calls, constructors, and code imports are outside the
+keys and unsupported YAML features. Empty maps are valid. Sequences,
+nested context documents, executable expressions, calls, constructors, and code imports are outside the
 context format.
 
 **Prohibited:** derive a statement with a function or implementation import.

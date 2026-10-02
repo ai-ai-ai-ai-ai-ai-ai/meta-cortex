@@ -1,6 +1,6 @@
 stages:
   compileReceipt:
-    $ref: ./compile.lace.yaml#/exports/stages/compileReceipt
+    $ref: ./compile.context.yaml#/exports/stages/compileReceipt
 exports:
   stages:
     compileReceipt:
@@ -11,7 +11,7 @@ exports:
             content: Validate the receipt schema and references.
             ShellCommand:
               cwd: library-root
-              script: bun run --filter @meta-cortex/lace check
+              script: bun run context:check
       Prohibited:
         statements: {}
   statements: {}
