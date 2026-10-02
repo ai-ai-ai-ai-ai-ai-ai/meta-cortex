@@ -1,3 +1,4 @@
+use super::database::LedgerDatabase;
 use super::relational::{EventTable, FeatureTable, TaskTable};
 use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
@@ -14,7 +15,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::time::Duration;
-use turso::{Builder, Connection};
+use turso::Connection;
 
 /// A page of at most 100 records. Each operation releases its connection before returning.
 #[derive(Debug, Serialize)]
@@ -113,15 +114,11 @@ impl Observation {
             }
             Err(error) => return Err(error.into()),
         }
-        let database = Builder::new_local(
-            self.path
-                .to_str()
-                .ok_or(LedgerError::Invalid("database path is not UTF-8"))?,
-        )
-        .read_only(true)
-        .experimental_multiprocess_wal(true)
-        .build()
-        .await?;
+        let database = LedgerDatabase { path: &self.path }
+            .builder()?
+            .read_only(true)
+            .build()
+            .await?;
         let connection = database.connect()?;
         connection.busy_timeout(Duration::from_millis(250))?;
         connection
@@ -219,11 +216,11 @@ impl Observation {
 pub mod tests {
     use super::{Observation, Page, PageEnd, PageIndex, RecordCount};
     use crate::LedgerError;
+    use crate::store::database::LedgerDatabase;
     use crate::versions::StorageVersion;
     use sea_query::Iden;
     use std::fs;
     use tokio::runtime::Builder;
-    use turso::Builder as DatabaseBuilder;
 
     #[derive(Iden)]
     enum Pragma {
@@ -254,7 +251,7 @@ pub mod tests {
             assert!(matches!(Observation::open(directory.path().to_owned()).await, Err(LedgerError::Invalid(_))));
             for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2, StorageVersion::RelationalV3] {
                 let path = directory.path().join(format!("version-{version}.db"));
-                let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).build().await?;
+                let database = LedgerDatabase { path: &path }.builder()?.build().await?;
                 let connection = database.connect()?;
                 connection.pragma_update(&Pragma::UserVersion.to_string(), i64::from(version)).await?;
                 drop(connection); drop(database);
@@ -263,7 +260,7 @@ pub mod tests {
                 assert_eq!(bytes, fs::read(path)?);
             }
             let path = directory.path().join("future.db");
-            let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).build().await?;
+            let database = LedgerDatabase { path: &path }.builder()?.build().await?;
             let connection = database.connect()?;
             connection.pragma_update(&Pragma::UserVersion.to_string(), 99).await?;
             drop(connection); drop(database);

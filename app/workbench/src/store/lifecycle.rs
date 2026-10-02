@@ -1,3 +1,4 @@
+use super::database::LedgerDatabase;
 use super::legacy::LegacyImport;
 use super::relational::FeatureTable;
 use super::schema::LedgerSchema;
@@ -11,8 +12,8 @@ use crate::versions::{RecordVersion, StorageVersion};
 use sea_query::{OnConflict, Query};
 use std::fs;
 use std::time::Duration;
+use turso::Connection;
 use turso::transaction::TransactionBehavior;
-use turso::{Builder, Connection};
 
 // The input is a validated Feature for initialization or a FeatureId for opening.
 // Fields and constructors stay here so other modules cannot skip preparation.
@@ -96,12 +97,8 @@ impl Ledger<Located<FeatureId>> {
 
 impl<FeatureInput> Ledger<Located<FeatureInput>> {
     async fn connect(self) -> Result<Ledger<Connected<FeatureInput>>, LedgerError> {
-        let path = self
-            .path
-            .to_str()
-            .ok_or(LedgerError::Invalid("ledger path must be UTF-8"))?;
-        let database = Builder::new_local(path)
-            .experimental_multiprocess_wal(true)
+        let database = LedgerDatabase { path: &self.path }
+            .builder()?
             .build()
             .await?;
         let connection = database.connect()?;
@@ -252,13 +249,13 @@ pub mod tests {
     use super::{InitializeLedger, Ledger, OpenLedger};
     use crate::git::Repository;
     use crate::request::InitFeature;
+    use crate::store::database::LedgerDatabase;
     use crate::store::relational::FeatureTable;
     use crate::store::sql::SqlStatement;
     use crate::values::{BranchName, FeatureId, Note};
     use crate::{DataDirectory, LedgerError};
     use sea_query::Query;
     use tokio::runtime;
-    use turso::Builder;
 
     #[test]
     fn failed_feature_preparation_preserves_existing_data() -> anyhow::Result<()> {
@@ -319,14 +316,10 @@ pub mod tests {
                 .await?;
                 assert_eq!(reopened.info().feature, info.feature);
                 drop(reopened);
-                let database = Builder::new_local(
-                    info.path
-                        .to_str()
-                        .ok_or_else(|| anyhow::anyhow!("database path"))?,
-                )
-                .experimental_multiprocess_wal(true)
-                .build()
-                .await?;
+                let database = LedgerDatabase { path: &info.path }
+                    .builder()?
+                    .build()
+                    .await?;
                 let connection = database.connect()?;
                 let mut mismatched = info.feature;
                 mismatched.id = FeatureId::try_from("another-feature".to_owned())?;
