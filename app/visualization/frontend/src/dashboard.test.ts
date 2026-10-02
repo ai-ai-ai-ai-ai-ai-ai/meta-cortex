@@ -16,6 +16,7 @@ import { Progress } from "$lib/components/ui/progress";
 import type { ComponentProps } from "svelte";
 import { DashboardApi, ReadFailureKind, type DashboardFailure } from "./api";
 import { FlowPresentation } from "./workflow";
+import { ActivityKind, ReportingHierarchy } from "./agent-tree";
 import type {
   AgentId,
   DesktopSelection,
@@ -260,7 +261,9 @@ it("does not invent merges or assignments", () => {
   fixture.task.ownership = { kind: "Unrecorded" };
   const presentation = new FlowPresentation(fixture.flow);
   expect(presentation.git().edges).toHaveLength(0);
-  expect(presentation.agents().edges[0]?.label).toBe("created · unassigned");
+  expect(presentation.agents().edges[0]?.label).toBe(
+    "created by · reporting unrecorded",
+  );
 });
 it("keeps full-feature counts and progress visible independently of loaded agent tasks", async () => {
   const fixture = new Fixture();
@@ -577,7 +580,8 @@ it("renders completed read-only ownership and reporting without inventing Git ev
   );
   expect(within(inspector).getByText("Host")).toBeTruthy();
   expect(within(inspector).getByText("Read only")).toBeTruthy();
-  expect(within(inspector).getAllByText("Unrecorded")).toHaveLength(2);
+  expect(within(inspector).getByText("Assignment & workspace")).toBeTruthy();
+  expect(within(inspector).queryByText("Git evidence")).toBeNull();
   expect(within(inspector).getByText("Completed task")).toBeTruthy();
   expect(within(inspector).getByText(/native-contract-v2/)).toBeTruthy();
   const presentation = new FlowPresentation(fixture.flow);
@@ -586,7 +590,7 @@ it("renders completed read-only ownership and reporting without inventing Git ev
 });
 
 it("renders a queued assigned worker and feature workspace before any claim history", async () => {
-  const teamGizmoQuery: ByRoleOptions = { name: "Team Gizmo" };
+  const primeQuery: ByRoleOptions = { name: "Gizmo Prime" };
   const expandTypescriptVerifierTasksQuery: ByRoleOptions = {
     name: "Expand TypescriptVerifier tasks",
   };
@@ -632,7 +636,7 @@ it("renders a queued assigned worker and feature workspace before any claim hist
     refresh: vi.fn(),
   };
   render(Workflow, props);
-  expect(screen.getByRole("button", teamGizmoQuery)).toBeTruthy();
+  expect(screen.getByRole("button", primeQuery)).toBeTruthy();
   await userEvent.click(
     screen.getByRole("button", expandTypescriptVerifierTasksQuery),
   );
@@ -642,7 +646,7 @@ it("renders a queued assigned worker and feature workspace before any claim hist
     typescriptVerifierDetailsQuery,
   );
   expect(within(inspector).getByText("Gizmo Prime")).toBeTruthy();
-  expect(within(inspector).getByText("Feature workspace")).toBeTruthy();
+  expect(within(inspector).getByText("Shared feature workspace")).toBeTruthy();
   expect(within(inspector).getByText("Recorded assignment")).toBeTruthy();
   expect(new FlowPresentation(fixture.flow).git().edges).toHaveLength(0);
 });
@@ -680,8 +684,11 @@ it("accepts completed feature work and retains native history worker fallback fo
     back: vi.fn(),
   };
   render(TaskDetail, props);
-  expect(screen.getByText("Feature workspace")).toBeTruthy();
-  expect(screen.getAllByText("Unrecorded")).toHaveLength(3);
+  expect(screen.getByText("Shared feature workspace")).toBeTruthy();
+  expect(screen.getByText("Reports to").nextElementSibling?.textContent).toBe(
+    "Unrecorded",
+  );
+  expect(screen.queryByText("Git evidence")).toBeNull();
   expect(screen.getByText(/native-contract-v2/)).toBeTruthy();
 });
 
@@ -812,4 +819,144 @@ it("rejects legacy, future, flattened, and malformed ownership TaskV2 replies", 
         break;
     }
   }
+});
+
+interface HierarchyActivity {
+  id: string;
+  agent: AgentId;
+  target: ReportingTarget;
+}
+class HierarchyFixture {
+  activity(input: HierarchyActivity): TaskFlow {
+    const fixture = new Fixture();
+    fixture.task.common.id = input.id;
+    fixture.task.workspace = { kind: "read_only" };
+    fixture.task.state = { kind: "completed", agent: input.agent, attempt: 1 };
+    fixture.task.common.checkpoint = { kind: "unrecorded" };
+    fixture.task.ownership = {
+      kind: "Assigned",
+      assignment: { agent: input.agent, reports_to: input.target },
+    };
+    fixture.contribution.worker = { kind: "recorded", agent: input.agent };
+    fixture.contribution.checkpoints = [];
+    fixture.contribution.integrations = [];
+    return fixture.contribution;
+  }
+}
+it("uses only recorded coordinator ancestry and separates own completed activity from descendants", () => {
+  const fixture = new HierarchyFixture();
+  const definitions: ReadonlyArray<HierarchyActivity> = [
+    {
+      id: "prime",
+      agent: { team: "Gizmo", role: "GizmoPrime" },
+      target: { kind: "Host" },
+    },
+    {
+      id: "team",
+      agent: { team: "Gizmo", role: "Gizmo" },
+      target: { kind: "Gizmo", coordinator: "GizmoPrime" },
+    },
+    {
+      id: "worker-one",
+      agent: { team: "Development", role: "TypescriptDev" },
+      target: { kind: "Gizmo", coordinator: "Gizmo" },
+    },
+    {
+      id: "worker-two",
+      agent: { team: "Development", role: "TypescriptDev" },
+      target: { kind: "Gizmo", coordinator: "Gizmo" },
+    },
+  ];
+  const tasks: ReadonlyArray<TaskFlow> = definitions.map((definition) =>
+    fixture.activity(definition),
+  );
+  const hierarchy = new ReportingHierarchy(tasks);
+  expect(hierarchy.roots().map((node) => node.name())).toEqual(["Host"]);
+  const host = hierarchy.roots()[0];
+  expect(host?.activity.kind).toBe(ActivityKind.Absent);
+  expect(host?.ownTasks()).toHaveLength(0);
+  expect(host?.descendantCounts().map((count) => count.count)).toEqual([4]);
+  const team = hierarchy.nodes().find((node) => node.name() === "Team Gizmo");
+  expect(team?.ownTasks()).toHaveLength(1);
+  expect(team?.descendantCounts().map((count) => count.count)).toEqual([2]);
+  expect(team?.subtreeCounts().map((count) => count.count)).toEqual([3]);
+  const worker = hierarchy
+    .nodes()
+    .find((node) => node.name() === "TypescriptDev");
+  expect(worker?.ownTasks()).toHaveLength(2);
+  expect(worker?.descendantCounts()).toHaveLength(0);
+});
+it("does not infer Prime or Host above a missing loaded Team activity", () => {
+  const fixture = new Fixture();
+  const tasks: ReadonlyArray<TaskFlow> = [fixture.contribution];
+  const hierarchy = new ReportingHierarchy(tasks);
+  expect(hierarchy.roots().map((node) => node.name())).toEqual(["Team Gizmo"]);
+  expect(hierarchy.roots()[0]?.activity.kind).toBe(ActivityKind.Absent);
+  expect(hierarchy.nodes()).toHaveLength(2);
+  const graph = new FlowPresentation(fixture.flow).agents();
+  expect(graph.nodes[0]?.data.activity).toBe(ActivityKind.Absent);
+  expect(graph.nodes[0]?.data.tasks).toHaveLength(0);
+  expect(graph.nodes[0]?.data.state).toBe("No activity on this page");
+  expect(graph.nodes[1]?.data.state).toBe("integrated");
+});
+it("preserves multiple reporting targets and deduplicates shared descendant activity", () => {
+  const fixture = new HierarchyFixture();
+  const definitions: ReadonlyArray<HierarchyActivity> = [
+    {
+      id: "prime",
+      agent: { team: "Gizmo", role: "GizmoPrime" },
+      target: { kind: "Host" },
+    },
+    {
+      id: "team",
+      agent: { team: "Gizmo", role: "Gizmo" },
+      target: { kind: "Gizmo", coordinator: "GizmoPrime" },
+    },
+    {
+      id: "via-team",
+      agent: { team: "Development", role: "TypescriptDev" },
+      target: { kind: "Gizmo", coordinator: "Gizmo" },
+    },
+    {
+      id: "via-prime",
+      agent: { team: "Development", role: "TypescriptDev" },
+      target: { kind: "Gizmo", coordinator: "GizmoPrime" },
+    },
+  ];
+  const tasks: ReadonlyArray<TaskFlow> = definitions.map((definition) =>
+    fixture.activity(definition),
+  );
+  const hierarchy = new ReportingHierarchy(tasks);
+  expect(hierarchy.nodes()).toHaveLength(4);
+  expect(hierarchy.edges()).toHaveLength(4);
+  expect(
+    hierarchy
+      .roots()[0]
+      ?.descendantCounts()
+      .map((count) => count.count),
+  ).toEqual([4]);
+  expect(
+    hierarchy
+      .edges()
+      .flatMap((edge) => edge.tasks)
+      .map((task) => task.task.common.id),
+  ).toEqual(definitions.map((definition) => definition.id));
+});
+it("keeps migrated creator and history worker evidence outside recorded reporting ancestry", () => {
+  const fixture = new Fixture();
+  fixture.task.ownership = { kind: "Unrecorded" };
+  const tasks: ReadonlyArray<TaskFlow> = [fixture.contribution];
+  const hierarchy = new ReportingHierarchy(tasks);
+  expect(hierarchy.nodes()).toHaveLength(0);
+  expect(hierarchy.edges()).toHaveLength(0);
+  expect(hierarchy.historical()[0]?.actor).toEqual(
+    fixture.contribution.created_by,
+  );
+  expect(hierarchy.historical()[0]?.tasks()[0]?.worker).toEqual(
+    fixture.contribution.worker,
+  );
+  const graph = new FlowPresentation(fixture.flow).agents();
+  expect(graph.nodes[0]?.data.tasks).toHaveLength(0);
+  expect(graph.nodes[1]?.data.tasks).toEqual(tasks);
+  expect(graph.edges[0]?.label).toBe("created by · reporting unrecorded");
 });
