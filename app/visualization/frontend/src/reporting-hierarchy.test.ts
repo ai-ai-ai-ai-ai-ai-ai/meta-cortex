@@ -342,15 +342,10 @@ it("uses the real Agents graph selection handler for prioritized own activity an
   render(Workflow, props);
   await userEvent.click(screen.getByRole("button", graphQuery));
   const prime = await screen.findByText("Gizmo / GizmoPrime");
-  const mouseEvent: MouseEventInit = { view: prime.ownerDocument.defaultView };
-  await fireEvent.mouseDown(prime, mouseEvent);
-  await fireEvent.mouseUp(prime, mouseEvent);
-  await fireEvent.click(prime, mouseEvent);
+  await fireEvent.click(prime);
   expect(screen.queryAllByRole("complementary")).toHaveLength(0);
   const team = screen.getByText("Gizmo / Gizmo");
-  await fireEvent.mouseDown(team, mouseEvent);
-  await fireEvent.mouseUp(team, mouseEvent);
-  await fireEvent.click(team, mouseEvent);
+  await fireEvent.click(team);
   const inspector = screen.getByRole("complementary", inspectorQuery);
   expect(within(inspector).getByRole("heading", objectiveQuery)).toBeTruthy();
   expect(
