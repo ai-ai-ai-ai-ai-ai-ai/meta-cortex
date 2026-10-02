@@ -1,4 +1,4 @@
-use super::relational::{EventTable, FeatureTable, RecordWriter, TaskTable};
+use super::relational::{EventTable, FeatureTable, RecordWriter, RelationalSchema, TaskTable};
 use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
 use crate::LedgerError;
@@ -17,23 +17,49 @@ enum LegacyFeature {
     Document,
 }
 
-/// The supported V1/V2 record shapes, loaded before replacing their physical schema.
+#[derive(Clone, Copy)]
+pub(super) enum LegacyLayout {
+    FeatureDatabase,
+    RepositoryDatabase,
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct LegacySource<'a> {
+    pub connection: &'a Connection,
+    pub layout: LegacyLayout,
+}
+
+/// Supported historical records, loaded before replacing their physical schema.
 pub(super) struct LegacyRecords {
     features: Vec<Feature>,
     tasks: Vec<Task>,
     events: Vec<Event>,
 }
 impl LegacyRecords {
-    pub(super) async fn read(connection: &Connection) -> Result<Self, LedgerError> {
+    pub(super) async fn migrate(source: LegacySource<'_>) -> Result<(), LedgerError> {
+        let records = Self::read(source).await?;
+        Self::replace_tables(source).await?;
+        RelationalSchema::create(source.connection).await?;
+        records.write(source.connection).await
+    }
+
+    pub(super) async fn read(source: LegacySource<'_>) -> Result<Self, LedgerError> {
+        let connection = source.connection;
         let mut features: Vec<Feature> = Vec::new();
-        let mut rows = SqlStatement::build(
-            Query::select()
-                .column(LegacyFeature::Document)
-                .from(LegacyFeature::Table)
-                .to_owned(),
-        )?
-        .query(connection)
-        .await?;
+        let mut query = Query::select();
+        match source.layout {
+            LegacyLayout::FeatureDatabase => {
+                query
+                    .column(LegacyFeature::Document)
+                    .from(LegacyFeature::Table);
+            }
+            LegacyLayout::RepositoryDatabase => {
+                query
+                    .column(FeatureTable::Document)
+                    .from(FeatureTable::Table);
+            }
+        }
+        let mut rows = SqlStatement::build(query)?.query(connection).await?;
         while let Some(row) = rows.next().await? {
             features.push(serde_json::from_str(&row.get::<String>(0)?)?);
         }
@@ -50,7 +76,8 @@ impl LegacyRecords {
             let task: Task = serde_json::from_str(&row.get::<String>(2)?)?;
             match (row.get::<String>(0)?, row.get::<i64>(1)?) {
                 (id, revision)
-                    if id == task.id.to_string() && revision == i64::from(task.revision) =>
+                    if id == task.common.id.to_string()
+                        && revision == i64::from(task.common.revision) =>
                 {
                     tasks.push(task)
                 }
@@ -78,8 +105,8 @@ impl LegacyRecords {
             let event: Event = serde_json::from_str(&row.get::<String>(2)?)?;
             match (row.get::<String>(0)?, row.get::<i64>(1)?) {
                 (id, revision)
-                    if id == event.task.id.to_string()
-                        && revision == i64::from(event.task.revision) =>
+                    if id == event.task.common.id.to_string()
+                        && revision == i64::from(event.task.common.revision) =>
                 {
                     events.push(event)
                 }
@@ -90,16 +117,22 @@ impl LegacyRecords {
                 }
             }
         }
-        match features.as_slice() {
-            [] if tasks.is_empty() && events.is_empty() => {}
-            [feature]
-                if tasks.iter().all(|task| task.feature == feature.id)
-                    && events.iter().all(|event| event.task.feature == feature.id) => {}
-            _ => {
-                return Err(LedgerError::Invalid(
-                    "legacy records must belong to their feature",
-                ));
-            }
+        match source.layout {
+            LegacyLayout::FeatureDatabase => match features.as_slice() {
+                [] if tasks.is_empty() && events.is_empty() => {}
+                [feature]
+                    if tasks.iter().all(|task| task.common.feature == feature.id)
+                        && events
+                            .iter()
+                            .all(|event| event.task.common.feature == feature.id) => {}
+                _ => {
+                    return Err(LedgerError::Invalid(
+                        "legacy records must belong to their feature",
+                    ));
+                }
+            },
+            // The rebuilt schema checks all repository feature/task relationships on write.
+            LegacyLayout::RepositoryDatabase => {}
         }
         Ok(Self {
             features,
@@ -108,16 +141,24 @@ impl LegacyRecords {
         })
     }
 
-    pub(super) async fn replace_tables(connection: &Connection) -> Result<(), LedgerError> {
+    async fn replace_tables(source: LegacySource<'_>) -> Result<(), LedgerError> {
         for table in [
             Table::drop().table(EventTable::Table).to_owned(),
             Table::drop().table(TaskTable::Table).to_owned(),
-            Table::drop().table(LegacyFeature::Table).to_owned(),
         ] {
-            connection
+            source
+                .connection
                 .execute(table.to_string(SqliteQueryBuilder), ())
                 .await?;
         }
+        let table = match source.layout {
+            LegacyLayout::FeatureDatabase => Table::drop().table(LegacyFeature::Table).to_owned(),
+            LegacyLayout::RepositoryDatabase => Table::drop().table(FeatureTable::Table).to_owned(),
+        };
+        source
+            .connection
+            .execute(table.to_string(SqliteQueryBuilder), ())
+            .await?;
         Ok(())
     }
 
@@ -181,11 +222,17 @@ impl LegacyImport<'_> {
         let snapshot = source.transaction().await?;
         match LedgerSchema::version(&snapshot).await? {
             StorageVersion::DocumentsV1 | StorageVersion::IndexedV2 => {}
-            StorageVersion::Empty | StorageVersion::RelationalV3 => {
+            StorageVersion::Empty
+            | StorageVersion::RelationalV3
+            | StorageVersion::CommonTasksV4 => {
                 return Err(LedgerError::Invalid("expected a V1/V2 feature database"));
             }
         }
-        let records = LegacyRecords::read(&snapshot).await?;
+        let records = LegacyRecords::read(LegacySource {
+            connection: &snapshot,
+            layout: LegacyLayout::FeatureDatabase,
+        })
+        .await?;
         match records.features.as_slice() {
             [stored] if stored.id == feature => {}
             _ => {

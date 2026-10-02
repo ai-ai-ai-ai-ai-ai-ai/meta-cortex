@@ -53,6 +53,10 @@ not bypass Team Gizmo to direct workers. Agents retain technical judgment within
 their assigned scope; coordination decisions belong to their Gizmo.
 
 - Persist assignments and progress through the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
+- Record each participating role's own activity under the
+  [entire feature workflow](gizmo-team/docs/agent-ledger.md#record-the-entire-feature-workflow),
+  including coordinators and delivery roles. A message or an event on another
+  role's task does not replace that record.
 - Use ordinary host communication tools to notify the assigning coordinator.
   Messages are not the only record of work.
 - All assigned agents may read their feature ledger while retaining this decision hierarchy.
@@ -113,6 +117,9 @@ following from the active library and supplies them in the launch instructions:
   ledger location, and the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
   Record the assignment before launching its worker. Coordinator and workspace
   bootstrap assignments establish this context before task workers launch.
+- The activity's assigned role, recorded reporting coordinator, and current
+  ledger revision and attempt. Coordinator activities use the same context once
+  the feature ledger is available.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
 - The validated session `development.mode` and `development.delivery`, plus any

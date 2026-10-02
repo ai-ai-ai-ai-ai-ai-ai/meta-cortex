@@ -139,7 +139,7 @@ impl Scenario<FeatureReady> {
         let Reply::Task(task) = reply else {
             bail!("unexpected task creation reply: {reply:?}");
         };
-        if task.id != id || !matches!(task.state, State::Queued) {
+        if task.common.id != id || !matches!(task.state, State::Queued) {
             bail!("unexpected created task: {task:?}");
         }
         Ok(Scenario {
@@ -263,7 +263,7 @@ impl Cli<'_> {
         let Reply::Status { ledger, tasks } = reply else {
             bail!("unexpected status reply: {reply:?}");
         };
-        assert_eq!(ledger.storage_version, StorageVersion::RelationalV3);
+        assert_eq!(ledger.storage_version, StorageVersion::CommonTasksV4);
         Ok(tasks)
     }
 }

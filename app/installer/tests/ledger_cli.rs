@@ -10,8 +10,8 @@ use meta_cortex_workbench::model::{
     Assignment, Check, CheckOutcome, EventKind, LeaseHealth, Phase, Progress, Workspace,
 };
 use meta_cortex_workbench::request::{
-    ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
-    StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
+    AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery,
+    InitFeature, StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
     Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
@@ -64,6 +64,7 @@ enum FeatureOperation {
 #[serde(tag = "name", content = "arguments", deny_unknown_fields)]
 enum TaskOperation {
     Create(CreateTask),
+    Assign(AssignTask),
     Get(TaskQuery),
     History(TaskQuery),
     Claim(ClaimTask),
@@ -154,10 +155,14 @@ struct LedgerInfo {
 }
 #[derive(Debug, Deserialize)]
 struct Task {
+    common: TaskCommon,
+    state: State,
+}
+#[derive(Debug, Deserialize)]
+struct TaskCommon {
     id: TaskId,
     revision: Revision,
     attempt: Attempt,
-    state: State,
     last_update: Timestamp,
     last_progress: Timestamp,
     progress: Progress,
@@ -192,7 +197,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     let scenario = scenario.initialize(Examples::feature()?.feature)?;
     assert_eq!(
         scenario.ledger().storage_version,
-        StorageVersion::RelationalV3
+        StorageVersion::CommonTasksV4
     );
     let Reply::Ledger(reopened) = scenario
         .client()
@@ -209,7 +214,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     };
     assert_eq!(scenario.ledger().path, other.path);
     let scenario = scenario.create_task(Examples::task()?)?;
-    assert_eq!(scenario.created_task().id, Examples::query()?.task);
+    assert_eq!(scenario.created_task().common.id, Examples::query()?.task);
     assert!(matches!(scenario.created_task().state, State::Queued));
     let first = scenario
         .client()
@@ -230,8 +235,8 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         match result.result {
             Outcome::Error(error) => assert_eq!(error.code, "conflict"),
             Outcome::Success(Reply::Task(task)) => {
-                assert_eq!(task.revision, Revision::INITIAL.advance()?);
-                assert_eq!(task.attempt, Attempt::UNCLAIMED.advance()?);
+                assert_eq!(task.common.revision, Revision::INITIAL.advance()?);
+                assert_eq!(task.common.attempt, Attempt::UNCLAIMED.advance()?);
                 let State::Active { assignment } = task.state else {
                     bail!("claimed task must retain its active assignment")
                 };
@@ -247,7 +252,9 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         .client()
         .run(Operation::Task(TaskOperation::Get(Examples::query()?)))?
     {
-        Reply::TaskView(view) => assert_eq!(view.task.revision, Revision::INITIAL.advance()?),
+        Reply::TaskView(view) => {
+            assert_eq!(view.task.common.revision, Revision::INITIAL.advance()?)
+        }
         other @ (Reply::Features(_)
         | Reply::FrameworkInitialized { .. }
         | Reply::FrameworkInfo { .. }
@@ -265,9 +272,12 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             Examples::heartbeat()?
         )))?;
     let after = scenario.status()?.remove(0);
-    assert_eq!(after.task.revision, before.revision.advance()?);
-    assert_eq!(after.task.last_progress, before.last_progress);
-    assert!(after.task.last_update >= before.last_update);
+    assert_eq!(
+        after.task.common.revision,
+        before.common.revision.advance()?
+    );
+    assert_eq!(after.task.common.last_progress, before.common.last_progress);
+    assert!(after.task.common.last_update >= before.common.last_update);
     assert_eq!(after.lease, LeaseHealth::Current);
     assert_eq!(
         scenario
@@ -294,7 +304,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
                 events[2].actor,
                 AgentId::Development(DevelopmentAgent::RustDev)
             );
-            assert_eq!(events[2].task.revision, after.task.revision);
+            assert_eq!(events[2].task.common.revision, after.task.common.revision);
         }
         other @ (Reply::Features(_)
         | Reply::FrameworkInitialized { .. }
@@ -326,11 +336,17 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         .run(Operation::Task(TaskOperation::Create(other_task)))?;
     assert_eq!(scenario.client().status(other_id.clone())?.len(), 1);
     assert_eq!(
-        scenario.client().status(other_id.clone())?[0].task.revision,
+        scenario.client().status(other_id.clone())?[0]
+            .task
+            .common
+            .revision,
         Revision::INITIAL
     );
     assert_eq!(scenario.status()?.len(), 1);
-    assert_eq!(scenario.status()?[0].task.revision, after.task.revision);
+    assert_eq!(
+        scenario.status()?[0].task.common.revision,
+        after.task.common.revision
+    );
     let Reply::History(events) = scenario
         .client()
         .run(Operation::Task(TaskOperation::History(TaskQuery {
@@ -386,7 +402,7 @@ fn typescript_verifier_requeue_rejects_old_attempt_and_finishes_read_only() -> a
                 previous_execution: StoppedExecution::StoppedOrFinished,
             })?,
         )))?;
-    let requeued_revision = scenario.status()?.remove(0).task.revision;
+    let requeued_revision = scenario.status()?.remove(0).task.common.revision;
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Claim(ClaimTask {
@@ -394,7 +410,7 @@ fn typescript_verifier_requeue_rejects_old_attempt_and_finishes_read_only() -> a
             expected_revision: requeued_revision,
             ..Examples::claim()?
         })))?;
-    let reclaimed_revision = scenario.status()?.remove(0).task.revision;
+    let reclaimed_revision = scenario.status()?.remove(0).task.common.revision;
     let stale = WorkerUpdate {
         agent,
         expected_revision: reclaimed_revision,
@@ -418,7 +434,7 @@ fn typescript_verifier_requeue_rejects_old_attempt_and_finishes_read_only() -> a
             },
             ..Examples::heartbeat()?
         })))?;
-    let ready_revision = scenario.status()?.remove(0).task.revision;
+    let ready_revision = scenario.status()?.remove(0).task.common.revision;
     let commit = scenario.head()?;
     scenario
         .client()
@@ -505,7 +521,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
             },
             ..Examples::heartbeat()?
         })))?;
-    let checkpoint_revision = worker.status()?.remove(0).task.revision;
+    let checkpoint_revision = worker.status()?.remove(0).task.common.revision;
     let ready = || -> anyhow::Result<Operation> {
         Ok(Operation::Task(TaskOperation::Update(WorkerUpdate {
             expected_revision: checkpoint_revision,
@@ -519,7 +535,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     assert_eq!(worker.client().failure(ready()?)?.code, "invalid_request");
     fs::remove_file(worker.path().join("unfinished.txt"))?;
     worker.client().run(ready()?)?;
-    let ready_revision = worker.status()?.remove(0).task.revision;
+    let ready_revision = worker.status()?.remove(0).task.common.revision;
     let integrate = || -> anyhow::Result<Operation> {
         Ok(Operation::Task(TaskOperation::Coordinate(
             CoordinatorUpdate {
@@ -606,7 +622,7 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         task,
         workbench,
     } = catalog.commands;
-    assert_eq!([framework.len(), feature.len(), task.len()], [2, 3, 6]);
+    assert_eq!([framework.len(), feature.len(), task.len()], [2, 3, 7]);
     for command in &framework {
         assert!(matches!(command.example.operation, Operation::Framework(_)));
     }
@@ -722,12 +738,12 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
     else {
         bail!("task view")
     };
-    assert_eq!(view.task.progress, progress);
+    assert_eq!(view.task.common.progress, progress);
     assert_eq!(
         scenario
             .client()
             .failure(Operation::Task(TaskOperation::Claim(ClaimTask {
-                expected_revision: view.task.revision,
+                expected_revision: view.task.common.revision,
                 ..Examples::claim()?
             })))?
             .code,
@@ -775,7 +791,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         .client()
         .run(Operation::Task(TaskOperation::Coordinate(
             CoordinatorUpdate {
-                expected_revision: view.task.revision,
+                expected_revision: view.task.common.revision,
                 ..Examples::coordinate(CoordinatorAction::Cancel {
                     reason: Note::from("Scope removed".to_owned()),
                 })?
@@ -931,12 +947,12 @@ fn empty_notes_survive_cli_storage_and_history() -> anyhow::Result<()> {
             ..Examples::heartbeat()?
         })))?;
     let task = scenario.status()?.remove(0).task;
-    assert_eq!(task.progress, empty_progress);
+    assert_eq!(task.common.progress, empty_progress);
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Coordinate(
             CoordinatorUpdate {
-                expected_revision: task.revision,
+                expected_revision: task.common.revision,
                 ..Examples::coordinate(CoordinatorAction::Cancel {
                     reason: Note::Empty,
                 })?
@@ -950,7 +966,7 @@ fn empty_notes_survive_cli_storage_and_history() -> anyhow::Result<()> {
     };
     let cancelled = events.last().context("cancelled event")?;
     assert_eq!(cancelled.note, Note::Empty);
-    assert_eq!(cancelled.task.progress, empty_progress);
+    assert_eq!(cancelled.task.common.progress, empty_progress);
     assert!(matches!(cancelled.task.state, State::Cancelled));
     Ok(())
 }

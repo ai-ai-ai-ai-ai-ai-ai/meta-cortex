@@ -1,4 +1,5 @@
 use super::navigation::{Navigation, Route, Selected, SelectedRoute, Selection};
+use meta_cortex_workbench::model::workflow::TaskOwnership;
 use meta_cortex_workbench::model::{Checkpoint, Event, Feature, Phase, Task, TaskState, Workspace};
 use meta_cortex_workbench::request::TaskQuery;
 use meta_cortex_workbench::values::Note;
@@ -42,8 +43,8 @@ impl Content {
             Self::Tasks(page) => match selection.lookup(&page.records) {
                 Selected::Record(task) => SelectedRoute::Route(Route::Task {
                     query: TaskQuery {
-                        feature: task.feature.clone(),
-                        task: task.id.clone(),
+                        feature: task.common.feature.clone(),
+                        task: task.common.id.clone(),
                     },
                 }),
                 Selected::Empty => SelectedRoute::Stay,
@@ -83,8 +84,8 @@ impl Content {
             Self::Event(event) => format!(
                 "EVENT {:?} · revision {} · time {}\nRecorded by: {:?}\nNote: {}\n\n{}",
                 event.kind,
-                event.task.revision,
-                event.task.last_update,
+                event.task.common.revision,
+                event.task.common.last_update,
                 event.actor,
                 event.note,
                 TaskPresentation(&event.task).detail()
@@ -133,12 +134,13 @@ impl TaskList<'_> {
         let mut text = String::from("TASKS · Enter: detail · h from detail: history\n");
         for (index, task) in page.records.iter().enumerate() {
             text.push_str(&format!(
-                "{} {} · {} · revision {} · {}\n",
+                "{} {} · {} · revision {} · {}\n    {}\n",
                 RowMarker::from(Selection::from(index) == *selection),
-                task.id,
+                task.common.id,
                 TaskPresentation(task).state(),
-                task.revision,
-                task.progress.summary
+                task.common.revision,
+                task.common.progress.summary,
+                TaskPresentation(task).workflow()
             ));
         }
         text.push_str(match page.records.as_slice() {
@@ -160,7 +162,7 @@ impl EventList<'_> {
             text.push_str(&format!(
                 "{} revision {} · {:?} · recorded by {:?} · {}\n",
                 RowMarker::from(Selection::from(index) == *selection),
-                event.task.revision,
+                event.task.common.revision,
                 event.kind,
                 event.actor,
                 event.note
@@ -200,62 +202,96 @@ impl TaskPresentation<'_> {
             },
             TaskState::Ready { .. } => "ready",
             TaskState::Integrated { .. } => "integrated",
+            TaskState::Completed { .. } => "completed",
             TaskState::Cancelled { .. } => "cancelled",
         }
     }
     fn workspace(&self) -> String {
-        match &self.0.workspace {
+        let Self(task) = self;
+        match &task.workspace {
             Workspace::ReadOnly => "read only".into(),
+            Workspace::Feature => "shared feature worktree".into(),
             Workspace::Git { branch, path } => format!("{branch} at {}", path.display()),
+        }
+    }
+    fn workflow(&self) -> String {
+        let Self(task) = self;
+        match &task.ownership {
+            TaskOwnership::Assigned { assignment } => format!(
+                "Agent: {} · Reports to: {}",
+                assignment.agent, assignment.reports_to
+            ),
+            TaskOwnership::Unrecorded => match &task.state {
+                TaskState::Active { assignment } => format!(
+                    "Claimed agent: {} · Reports to: unrecorded",
+                    assignment.agent
+                ),
+                TaskState::Ready { agent, .. } | TaskState::Completed { agent, .. } => {
+                    format!("Claimed agent: {agent} · Reports to: unrecorded")
+                }
+                TaskState::Queued | TaskState::Integrated { .. } | TaskState::Cancelled { .. } => {
+                    "Agent: unrecorded · Reports to: unrecorded".into()
+                }
+            },
         }
     }
     fn detail(&self) -> String {
         let Self(task) = self;
         let mut text = format!(
             "TASK {} / {} · {}\nObjective: {}\nRevision: {} · attempt {}\nCreated: {} · updated: {} · progress: {}\nWorkspace: {}\nState: {}\n",
-            task.feature,
-            task.id,
+            task.common.feature,
+            task.common.id,
             self.state(),
-            task.objective,
-            task.revision,
-            task.attempt,
-            task.created_at,
-            task.last_update,
-            task.last_progress,
+            task.common.objective,
+            task.common.revision,
+            task.common.attempt,
+            task.common.created_at,
+            task.common.last_update,
+            task.common.last_progress,
             self.workspace(),
             self.state()
         );
-        match &task.checkpoint { Checkpoint::Unrecorded => text.push_str("Checkpoint: unrecorded\n"), Checkpoint::Git { commit } => text.push_str(&format!("Recorded checkpoint: {commit}\nCheckpoint recorded by: inspect Checkpoint history event (not Git authorship)\n")) }
+        text.push_str(&format!("{}\n", self.workflow()));
+        if let TaskState::Active { assignment } = &task.state {
+            text.push_str(&format!(
+                "Claimed agent: {} · expires: {}\n",
+                assignment.agent, assignment.expires_at
+            ));
+            if let Phase::Blocked { reason } = &assignment.phase {
+                text.push_str(&format!("Blocked: {reason}\n"));
+            }
+        }
+        match &task.common.checkpoint { Checkpoint::Unrecorded => text.push_str("Checkpoint: unrecorded\n"), Checkpoint::Git { commit } => text.push_str(&format!("Recorded checkpoint: {commit}\nCheckpoint recorded by: inspect Checkpoint history event (not Git authorship)\n")) }
         if let TaskState::Integrated { commit } = &task.state {
             text.push_str(&format!("Recorded integration commit: {commit}\nIntegration recorded by: inspect Integrated history event (not Git authorship)\n"));
         }
         text.push_str(&format!(
             "\nProgress: {}\nAcceptance:\n",
-            task.progress.summary
+            task.common.progress.summary
         ));
-        for note in &task.acceptance {
+        for note in &task.common.acceptance {
             text.push_str(&format!("- {note}\n"));
         }
         text.push_str("Dependencies:\n");
-        for dependency in &task.dependencies {
+        for dependency in &task.common.dependencies {
             text.push_str(&format!("- {dependency}\n"));
         }
         text.push_str("Findings:\n");
-        for note in &task.progress.findings {
+        for note in &task.common.progress.findings {
             text.push_str(&format!("- {note}\n"));
         }
         text.push_str("Next steps:\n");
-        for note in &task.progress.next_steps {
+        for note in &task.common.progress.next_steps {
             text.push_str(&format!("- {note}\n"));
         }
-        for check in &task.progress.checks {
+        for check in &task.common.progress.checks {
             text.push_str(&format!(
                 "Check {:?}: {}\nEvidence: {}\n",
                 check.outcome, check.command, check.evidence
             ));
         }
         text.push_str("Task-specific extensions:\n");
-        for (key, value) in &task.progress.extensions.0 {
+        for (key, value) in &task.common.progress.extensions.0 {
             text.push_str(&format!("{key}: {value}\n"));
         }
         text
@@ -266,15 +302,16 @@ impl TaskPresentation<'_> {
 pub mod tests {
     use super::super::navigation::{Navigation, SelectedRoute, Selection};
     use super::{Content, TaskPresentation};
-    use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+    use meta_cortex_workbench::agents::{AgentId, DeliveryAgent, DevelopmentAgent, GizmoAgent};
+    use meta_cortex_workbench::model::workflow::{TaskAssignment, TaskOwnership};
     use meta_cortex_workbench::model::{
         Assignment, Check, CheckOutcome, Checkpoint, Event, EventKind, Phase, Progress, Task,
-        TaskState, Workspace,
+        TaskCommon, TaskState, Workspace,
     };
     use meta_cortex_workbench::values::{
         Attempt, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
     };
-    use meta_cortex_workbench::versions::RecordVersion;
+    use meta_cortex_workbench::versions::{RecordVersion, TaskRecordVersion};
     use meta_cortex_workbench::{LedgerError, Page, PageEnd};
 
     pub struct Scenario;
@@ -282,31 +319,34 @@ pub mod tests {
         pub fn task() -> anyhow::Result<Task> {
             let now = Timestamp::now()?;
             Ok(Task {
-                version: RecordVersion::CURRENT,
-                id: TaskId::try_from("task".to_owned())?,
-                feature: FeatureId::try_from("feature".to_owned())?,
-                objective: Note::from("Task objective".to_owned()),
-                acceptance: vec![Note::from("Acceptance".to_owned())],
-                dependencies: vec![],
-                workspace: Workspace::ReadOnly,
-                revision: Revision::INITIAL,
-                attempt: Attempt::UNCLAIMED,
-                state: TaskState::Queued,
-                created_at: now,
-                last_update: now,
-                last_progress: now,
-                checkpoint: Checkpoint::Unrecorded,
-                progress: Progress {
-                    summary: Note::from("Summary".to_owned()),
-                    findings: vec![Note::from("Finding".to_owned())],
-                    next_steps: vec![Note::from("Next step".to_owned())],
-                    checks: vec![Check {
-                        command: Note::from("Check command".to_owned()),
-                        outcome: CheckOutcome::Passed,
-                        evidence: Note::from("Check evidence".to_owned()),
-                    }],
-                    extensions: Default::default(),
+                version: TaskRecordVersion::CURRENT,
+                common: TaskCommon {
+                    id: TaskId::try_from("task".to_owned())?,
+                    feature: FeatureId::try_from("feature".to_owned())?,
+                    objective: Note::from("Task objective".to_owned()),
+                    acceptance: vec![Note::from("Acceptance".to_owned())],
+                    dependencies: vec![],
+                    revision: Revision::INITIAL,
+                    attempt: Attempt::UNCLAIMED,
+                    created_at: now,
+                    last_update: now,
+                    last_progress: now,
+                    checkpoint: Checkpoint::Unrecorded,
+                    progress: Progress {
+                        summary: Note::from("Summary".to_owned()),
+                        findings: vec![Note::from("Finding".to_owned())],
+                        next_steps: vec![Note::from("Next step".to_owned())],
+                        checks: vec![Check {
+                            command: Note::from("Check command".to_owned()),
+                            outcome: CheckOutcome::Passed,
+                            evidence: Note::from("Check evidence".to_owned()),
+                        }],
+                        extensions: Default::default(),
+                    },
                 },
+                ownership: TaskOwnership::Unrecorded,
+                workspace: Workspace::ReadOnly,
+                state: TaskState::Queued,
             })
         }
         pub fn event() -> anyhow::Result<Event> {
@@ -319,6 +359,86 @@ pub mod tests {
             })
         }
     }
+    #[test]
+    fn feature_tasks_show_coordinators_and_delivery_owners() -> anyhow::Result<()> {
+        let mut records = Vec::new();
+        for agent in [
+            AgentId::Gizmo(GizmoAgent::GizmoPrime),
+            AgentId::Gizmo(GizmoAgent::Gizmo),
+            AgentId::Delivery(DeliveryAgent::IntegrationAgent),
+        ] {
+            records.push(Task {
+                state: TaskState::Active {
+                    assignment: Assignment {
+                        agent,
+                        attempt: Attempt::UNCLAIMED.advance()?,
+                        expires_at: Timestamp::now()?.expires(LeaseSeconds::TEN_MINUTES)?,
+                        phase: Phase::Working,
+                    },
+                },
+                ..Scenario::task()?
+            });
+        }
+        let text = Content::Tasks(Page {
+            records,
+            end: PageEnd::Complete,
+        })
+        .text(&Navigation::default())
+        .to_string();
+        for owner in ["GizmoPrime", "IntegrationAgent", "Reports to: unrecorded"] {
+            assert!(
+                text.contains(owner),
+                "missing workflow information: {owner}"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn reporting_lines_remain_visible_before_claim_and_after_completion() -> anyhow::Result<()> {
+        let mut records = Vec::new();
+        for agent in [
+            AgentId::Gizmo(GizmoAgent::GizmoPrime),
+            AgentId::Gizmo(GizmoAgent::Gizmo),
+            AgentId::Delivery(DeliveryAgent::IntegrationAgent),
+        ] {
+            let mut task = Scenario::task()?;
+            task = task.assign(TaskAssignment::from(agent))?;
+            let text = TaskPresentation(&task).detail();
+            assert!(text.contains(&agent.to_string()));
+            assert!(text.contains(&agent.reports_to().to_string()));
+            records.push(task);
+        }
+        let text = Content::Tasks(Page {
+            records,
+            end: PageEnd::Complete,
+        })
+        .text(&Navigation::default())
+        .to_string();
+        for relationship in [
+            "Agent: Gizmo/GizmoPrime · Reports to: host",
+            "Agent: Gizmo/Gizmo · Reports to: Gizmo/GizmoPrime",
+            "Agent: Delivery/IntegrationAgent · Reports to: Gizmo/Gizmo",
+        ] {
+            assert!(text.contains(relationship), "missing {relationship}");
+        }
+        let agent = AgentId::Delivery(DeliveryAgent::PrAgent);
+        let task = Scenario::task()?.assign(TaskAssignment::from(agent))?;
+        let task = Task {
+            state: TaskState::Completed {
+                agent,
+                attempt: Attempt::UNCLAIMED.advance()?,
+            },
+            workspace: Workspace::Feature,
+            ..task
+        };
+        let text = TaskPresentation(&task).detail();
+        assert!(text.contains("completed"));
+        assert!(text.contains("Agent: Delivery/PrAgent · Reports to: Gizmo/Gizmo"));
+        assert!(text.contains("shared feature worktree"));
+        Ok(())
+    }
+
     #[test]
     fn details_preserve_recorded_progress_commits_checks_and_actor_labels() -> anyhow::Result<()> {
         let task = Scenario::task()?;
@@ -339,8 +459,11 @@ pub mod tests {
         }
         let commit = CommitId::try_from("a".repeat(40))?;
         let task = Task {
-            checkpoint: Checkpoint::Git {
-                commit: commit.clone(),
+            common: TaskCommon {
+                checkpoint: Checkpoint::Git {
+                    commit: commit.clone(),
+                },
+                ..task.common
             },
             state: TaskState::Integrated { commit },
             ..task
@@ -387,6 +510,10 @@ pub mod tests {
             },
             TaskState::Integrated {
                 commit: CommitId::try_from("a".repeat(40))?,
+            },
+            TaskState::Completed {
+                agent,
+                attempt: Attempt::UNCLAIMED.advance()?,
             },
             TaskState::Cancelled {
                 reason: Note::from("Cancelled reason".to_owned()),

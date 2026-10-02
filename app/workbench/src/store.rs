@@ -8,11 +8,13 @@ mod sql;
 
 use super::LedgerError;
 use super::git::Repository;
+use super::git::TaskWorkspaceCheck;
 use super::model::Workspace;
-use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskState, TaskView};
+use super::model::workflow::TaskOwnership;
+use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskCommon, TaskState, TaskView};
 use super::request::{CreateTask, InitFeature};
 use super::values::{Attempt, FeatureId, Revision, TaskId, Timestamp};
-use super::versions::{RecordVersion, StorageVersion};
+use super::versions::{RecordVersion, StorageVersion, TaskRecordVersion};
 use relational::{EventTable, FeatureTable, RecordWriter, TaskTable};
 use sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
 use serde::Serialize;
@@ -88,7 +90,10 @@ impl Ledger {
         if input.feature != self.state.feature.id {
             return Err(LedgerError::Invalid("feature mismatch"));
         }
-        self.repository.require_workspace(&input.workspace)?;
+        self.repository.require_task_workspace(TaskWorkspaceCheck {
+            workspace: &input.workspace,
+            feature: &self.state.feature,
+        })?;
         if let Workspace::Git { branch, .. } = &input.workspace
             && branch == &self.state.feature.branch
         {
@@ -119,21 +124,24 @@ impl Ledger {
         }
         let now = Timestamp::now()?;
         let task = Task {
-            version: RecordVersion::CURRENT,
-            id: input.task,
-            feature: input.feature,
-            objective: input.objective,
-            acceptance: input.acceptance,
-            dependencies: input.dependencies,
+            version: TaskRecordVersion::CURRENT,
+            common: TaskCommon {
+                id: input.task,
+                feature: input.feature,
+                objective: input.objective,
+                acceptance: input.acceptance,
+                dependencies: input.dependencies,
+                revision: Revision::INITIAL,
+                attempt: Attempt::UNCLAIMED,
+                created_at: now,
+                last_update: now,
+                last_progress: now,
+                checkpoint: Checkpoint::Unrecorded,
+                progress: input.progress,
+            },
+            ownership: TaskOwnership::Unrecorded,
             workspace: input.workspace,
-            revision: Revision::INITIAL,
-            attempt: Attempt::UNCLAIMED,
             state: TaskState::Queued,
-            created_at: now,
-            last_update: now,
-            last_progress: now,
-            checkpoint: Checkpoint::Unrecorded,
-            progress: input.progress,
         };
         let changed = SqlStatement::build(
             Query::insert()
@@ -145,9 +153,9 @@ impl Ledger {
                     TaskTable::Document,
                 ])
                 .values([
-                    task.feature.to_string().into(),
-                    task.id.to_string().into(),
-                    i64::from(task.revision).into(),
+                    task.common.feature.to_string().into(),
+                    task.common.id.to_string().into(),
+                    i64::from(task.common.revision).into(),
                     serde_json::to_string(&task)?.into(),
                 ])?
                 .on_conflict(
@@ -167,7 +175,7 @@ impl Ledger {
                 version: RecordVersion::CURRENT,
                 kind: EventKind::Created,
                 actor: input.actor,
-                note: task.objective.clone(),
+                note: task.common.objective.clone(),
                 task: task.clone(),
             })
             .await?;
@@ -270,15 +278,15 @@ impl Documents<'_> {
     }
 
     async fn save(&self, mut event: Event) -> Result<Task, LedgerError> {
-        let previous = event.task.revision;
-        event.task.revision = previous.advance()?;
+        let previous = event.task.common.revision;
+        event.task.common.revision = previous.advance()?;
         let changed = SqlStatement::build(
             Query::update()
                 .table(TaskTable::Table)
-                .value(TaskTable::Revision, i64::from(event.task.revision))
+                .value(TaskTable::Revision, i64::from(event.task.common.revision))
                 .value(TaskTable::Document, serde_json::to_string(&event.task)?)
                 .and_where(Expr::col(TaskTable::FeatureId).eq(self.feature.to_string()))
-                .and_where(Expr::col(TaskTable::Id).eq(event.task.id.to_string()))
+                .and_where(Expr::col(TaskTable::Id).eq(event.task.common.id.to_string()))
                 .and_where(Expr::col(TaskTable::Revision).eq(i64::from(previous)))
                 .to_owned(),
         )?

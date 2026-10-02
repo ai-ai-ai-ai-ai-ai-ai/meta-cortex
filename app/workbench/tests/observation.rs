@@ -249,7 +249,7 @@ fn observer_and_writer_run_in_distinct_processes() -> anyhow::Result<()> {
                 WriterLifecycle::Running => {}
             }
             let task = observation.task(Scenario::query()?).await?;
-            revisions.insert(task.revision);
+            revisions.insert(task.common.revision);
             observation.features(PageIndex::FIRST).await?;
             observation
                 .history(HistoryPage {
@@ -279,7 +279,7 @@ fn observer_and_writer_run_in_distinct_processes() -> anyhow::Result<()> {
     scenario.runtime.block_on(async {
         let observation = scenario.observe().await?;
         let task = observation.task(Scenario::query()?).await?;
-        assert_eq!(i64::from(task.revision), 32);
+        assert_eq!(i64::from(task.common.revision), 32);
         let history = observation
             .history(HistoryPage {
                 feature: Scenario::feature()?,
@@ -333,9 +333,9 @@ fn multiprocess_writer() -> anyhow::Result<()> {
                     .update(WorkerUpdate {
                         feature: Scenario::feature()?,
                         task: Scenario::task()?,
-                        expected_revision: task.revision,
+                        expected_revision: task.common.revision,
                         agent,
-                        attempt: task.attempt,
+                        attempt: task.common.attempt,
                         action: WorkerAction::Progress {
                             ttl_seconds: LeaseSeconds::TEN_MINUTES,
                             phase: Phase::Working,
@@ -399,9 +399,9 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
                 .update(WorkerUpdate {
                     feature: Scenario::feature()?,
                     task: Scenario::task()?,
-                    expected_revision: task.revision,
+                    expected_revision: task.common.revision,
                     agent,
-                    attempt: task.attempt,
+                    attempt: task.common.attempt,
                     action: WorkerAction::Progress {
                         ttl_seconds: LeaseSeconds::TEN_MINUTES,
                         phase: Phase::Working,
@@ -452,7 +452,7 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(first.end, PageEnd::More);
         assert_eq!(second.end, PageEnd::Complete);
         assert_eq!(first.records[0].task, task);
-        assert_eq!(second.records[1].task.revision, Revision::INITIAL);
+        assert_eq!(second.records[1].task.common.revision, Revision::INITIAL);
         Ok::<_, anyhow::Error>(())
     })
 }
