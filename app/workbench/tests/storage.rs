@@ -21,8 +21,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
 use tokio::runtime::Builder;
-use turso::Connection;
 use turso::transaction::TransactionBehavior;
+use turso::{Builder as DatabaseBuilder, Connection, IoBackend};
 
 // Independent identifiers for compatibility and deliberate-corruption fixtures.
 #[derive(Iden)]
@@ -137,7 +137,12 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
             assert_eq!(ledger.status().await?.len(), 1);
             drop(ledger);
             {
-                let db = turso::Builder::new_local(path.to_str().context("path")?)
+                #[cfg(windows)]
+                let io = IoBackend::IOCP;
+                #[cfg(not(windows))]
+                let io = IoBackend::Default;
+                let db = DatabaseBuilder::new_local(path.to_str().context("path")?)
+                    .with_io(io)
                     .experimental_multiprocess_wal(true)
                     .build()
                     .await?;
@@ -159,7 +164,12 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
                     version
                 })) if version == VersionNumber::from(99)
             ));
-            let db = turso::Builder::new_local(path.to_str().context("path")?)
+            #[cfg(windows)]
+            let io = IoBackend::IOCP;
+            #[cfg(not(windows))]
+            let io = IoBackend::Default;
+            let db = DatabaseBuilder::new_local(path.to_str().context("path")?)
+                .with_io(io)
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;
@@ -196,7 +206,12 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
         .enable_time()
         .build()?
         .block_on(async {
-            let database = turso::Builder::new_local(path.to_str().context("path")?)
+            #[cfg(windows)]
+            let io = IoBackend::IOCP;
+            #[cfg(not(windows))]
+            let io = IoBackend::Default;
+            let database = DatabaseBuilder::new_local(path.to_str().context("path")?)
+                .with_io(io)
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;
