@@ -8,15 +8,21 @@ the consuming project.
 - **[Rust developer](agents/rust-dev/AGENTS.md)**
   - New Rust implementation, compiled tooling, tests, and behavior corrections.
   - Rust domain behavior, contract changes, and Rust-owned WASM interfaces.
+  - Verifier: [Rust verifier](agents/rust-verifier/AGENTS.md).
 - **[Rust refactoring agent](agents/rust-refactoring/AGENTS.md)**
   - Behavior-preserving Rust structural refactors, their tests, and mandatory checks.
   - Module decomposition and ownership-preserving moves under existing contracts.
+  - Verifier: [Rust verifier](agents/rust-verifier/AGENTS.md).
 - **[Rust verifier](agents/rust-verifier/AGENTS.md)**
   - Read-only, exhaustive Rust catalog compliance review of committed work.
   - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
 - **[TypeScript developer](agents/typescript-dev/AGENTS.md)**
   - TypeScript and JavaScript implementation: browser components, application state, APIs, libraries, services, and tooling.
   - Functional tests, browser integration, and corrections for those implementations.
+  - Verifier: [TypeScript verifier](agents/typescript-verifier/AGENTS.md).
+- **[TypeScript verifier](agents/typescript-verifier/AGENTS.md)**
+  - Read-only, exhaustive TypeScript catalog compliance review of committed work.
+  - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
 - **[Web designer](agents/web-designer/AGENTS.md)**
   - UI/UX, navigation, layout, typography, responsive styling, and visual states.
   - Assigned markup/CSS and visual accessibility validation.

@@ -15,6 +15,11 @@ applies to its assignment.
 Each agent's `AGENTS.md` owns its role responsibilities. Keep technical guidance
 in that role's linked skills so they can evolve independently.
 
+Team catalogs may add a `Verifier:` role link to any agent's entry. Gizmo follows
+that relationship through the shared
+[agent verification handoff](gizmo-team/docs/agent-verification.md).
+The verifier's own skill selects its subject catalogs; coordination is shared.
+
 Read and apply the shared [agent configuration rules](gizmo-team/docs/agent-configuration.md)
 before every launch, using the resolved configuration location supplied by the
 entry point. Pass this context to delegated agents.

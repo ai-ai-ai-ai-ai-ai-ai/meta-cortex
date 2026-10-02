@@ -36,7 +36,7 @@ Report to Team Gizmo through the host's agent communication tools.
   - Task branch integrated and destination feature branch.
   - Combined check results.
   - The conflicting commit pair, failed checks, or unfinished work.
-- For rust-dev work, apply the separate
+- For every worker with a cataloged verifier, apply the separate
   [reviewed-task integration protocol](skills/local-feature/spec/reviewed-integration.md)
   before the ordinary merge procedure. Gizmo supplies the passing report;
   return missing approval or a changed SHA to Gizmo for verification.
