@@ -16,7 +16,7 @@
   - Contains the embedded Turso feature ledger and coordination domain.
 - **Visualization: [app/visualization/](app/visualization)**
   - Contains the native Tauri window and read-only Workbench IPC.
-  - Builds and embeds its React/TypeScript frontend from `frontend/`.
+  - Builds and embeds its Svelte/TypeScript frontend from `frontend/`.
 - **License: [LICENSE](LICENSE)**
   - Remains at the repository root.
   - Is included in installed framework copies.

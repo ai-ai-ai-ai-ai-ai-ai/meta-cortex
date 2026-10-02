@@ -256,7 +256,7 @@ The [Rust workspace](app/Cargo.toml) contains three crates:
   tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
 - [visualization](app/visualization): the `meta-cortex-visualization` library for
-  the native Tauri dashboard with embedded React/TypeScript assets, using
+  the native Tauri dashboard with embedded Svelte/TypeScript assets, using
   Workbench’s read-only observation API.
 
 Install the dashboard’s package-local dependencies once before Cargo builds:
@@ -366,6 +366,16 @@ existing repository identity and shared database, then opens the native Tauri
 Features window. Use the window’s navigation to inspect tasks, recorded detail,
 and history. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
+
+The desktop dashboard presents a zoomable workflow with agent contributions,
+task dependencies, and recorded Git integrations. Full-feature totals summarize
+task states; graph nodes and contribution panels cover the selected page. The
+agent graph groups recorded creators and workers by role, not host sessions.
+Framework lifecycle responsibilities are shown separately from ledger evidence.
+Each task projection includes its latest 100 events; task history can page through
+older attempts and checkpoints. Runtime parent session links and Git authorship
+remain unrecorded when absent from Turso.
+
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
 an explicit project, initial view, and page. Use `mode: Desktop` for the native
