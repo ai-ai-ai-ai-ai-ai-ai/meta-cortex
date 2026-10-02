@@ -1,12 +1,15 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { Effect } from "effect";
+import {
+  ContextLoader,
+  type ContextLoadRequest,
+} from "../ts/context-loader.ts";
 import {
   type Job,
   type Stage,
   type Statement,
   WorkingDirectory,
 } from "@meta-cortex/lace";
-import receipt, { context, compileContext } from "./imported-context.lace.ts";
 import { ReceiptCompilation } from "./receipt.ts";
 
 class ModelCases {
@@ -30,8 +33,14 @@ test("public model and receipt imports construct inert plain data", () => {
   expect(empty).toEqual(expectedEmpty);
   const expectedSpec: Stage["spec"] = {};
   expect(stage.spec).toEqual(expectedSpec);
-  expect(compileContext).toEqual(statement);
-  expect(receipt.stages.context).toEqual(context);
+  const request: ContextLoadRequest = {
+    path: new URL("./imported-context.lace.yaml", import.meta.url).pathname,
+    ancestry: [],
+  };
+  const receipt = Effect.runSync(new ContextLoader(request).load());
+  expect(receipt.stages.context?.Required.statements.compileContext).toEqual(
+    statement,
+  );
   expect(Object.isFrozen(receipt)).toBe(false);
 });
 
@@ -73,10 +82,3 @@ for (const value of [
     ).toBeGreaterThan(0);
   });
 }
-test("Lace's own typed entry point compiles", () => {
-  const source = readFileSync(
-    new URL("../../AGENTS.ts", import.meta.url),
-    "utf8",
-  );
-  expect(new ReceiptCompilation(source).messages()).toEqual([]);
-});

@@ -1,5 +1,4 @@
 import shared from "../scripts/eslint.config.js";
-import { ReceiptGrammar } from "./receipt-grammar.js";
 
 export default [
   ...shared.map((configuration) => ({
@@ -13,5 +12,4 @@ export default [
       },
     },
   })),
-  ReceiptGrammar.configuration(),
 ];

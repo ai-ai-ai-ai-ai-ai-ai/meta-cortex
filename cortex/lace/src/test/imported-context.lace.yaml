@@ -1,0 +1,22 @@
+stages:
+  context:
+    $ref: ./imported-context.lace.yaml#/exports/stages/context
+exports:
+  stages:
+    context:
+      spec:
+        readContext:
+          $ref: ./imported-context.lace.yaml#/exports/statements/readContext
+      Required:
+        statements:
+          compileContext:
+            $ref: ./imported-context.lace.yaml#/exports/statements/compileContext
+      Prohibited:
+        statements: {}
+  statements:
+    readContext: Read context.
+    compileContext:
+      content: Compile context.
+      ShellCommand:
+        cwd: library-root
+        script: exit 99
