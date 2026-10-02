@@ -121,21 +121,26 @@ identifies who recorded it, not who actually authored that Git commit.
 
 ### Open the dashboard
 
-1. Open a terminal in the consuming repository root, any subdirectory, or a linked
-   worktree.
-2. Run the command without a request file or required arguments:
+1. Run the command from the consuming repository root, any subdirectory, or a
+   linked worktree, without a request file or required arguments:
 
    ```sh
    meta-cortex dashboard
    ```
 
    It resolves the existing repository identity and shared database from the
-   current directory, then opens Interactive mode at Features page `0`.
-   Terminal stdin and stdout are required.
-3. Select a feature and press Enter for tasks. Select a task and press Enter for
-   detail, then `h` for history. Enter on an event opens its recorded snapshot.
-4. Exit with `q` or Ctrl-C. The terminal is restored and the normal typed response
-   reports closure.
+   current directory, then opens the native Tauri Features window.
+2. Select a feature to open its execution tree. Expand an agent to see its
+   recorded tasks, or select an agent or task to open a closable right detail
+   panel. Narrow windows show the panel as a drawer. Use Graph, Git, and History
+   for recorded relationships, dependencies, integrations, and recent activity.
+   Full task records and individual event snapshots retain all ledger fields,
+   including task-specific extensions.
+3. Close the window to exit.
+
+The shipped executable embeds its Svelte/TypeScript frontend assets. Native IPC
+reads bounded Workbench observations; no HTTP server or browser tab is required.
+Loading, empty results, and observation errors are shown in the window.
 
 **Prohibited:** tell the user a request file is required to open the current
 repository’s Features view.
@@ -156,38 +161,30 @@ repository’s Features view.
      command:
        name: Dashboard
        arguments:
-         mode: Interactive
+         mode: Desktop
          view: {kind: Features}
          page: 0
    ```
 
-3. Run it from a terminal:
+3. Run the request to open the native window at the selected view:
 
    ```sh
    meta-cortex run --request dashboard.yaml
    ```
 
-   Interactive requires terminal stdin and stdout. Use a request file so stdin
-   remains available for keyboard input; a heredoc or pipe does not provide it.
-4. Select a feature and press Enter for tasks. Select a task and press Enter for
-   detail, then `h` for history. Enter on an event opens its recorded snapshot.
-   Exit with `q` or Ctrl-C; the terminal is restored and the normal typed response
-   reports closure.
-
-For noninteractive observation, change the request to `mode: Snapshot`:
+For headless observation, change the request to `mode: Snapshot`:
 
 ```sh
 meta-cortex run --request dashboard.yaml > dashboard-output.yaml
 ```
 
-Snapshot accepts file or stdin requests and redirected output. It reads once and
-returns the normal versioned YAML response with `data.kind: dashboard` and
+Both modes accept file or stdin requests. Snapshot reads once and returns the
+normal versioned YAML response with `data.kind: dashboard` and
 `data.value.content` containing the selected view’s text.
 
-**Prohibited:** pipe an Interactive request into stdin and expect keyboard navigation.
+**Prohibited:** expect `mode: Desktop` to produce a headless report.
 
-**Required:** use a request file with terminal stdin/stdout, or choose Snapshot
-for a pipe or redirected output.
+**Required:** choose `mode: Snapshot` for scripted or redirected text output.
 
 ### Views and recorded fields
 
@@ -198,7 +195,8 @@ detail, where paging does not apply. Initial views are:
 - **Features:** `view: {kind: Features}` lists feature IDs, recorded branches,
   and objectives in ID order.
 - **Tasks:** `view: {kind: Tasks, feature: example-feature}` lists tasks in ID
-  order with ID, state, revision, and progress summary.
+  order in Snapshot mode. Desktop mode opens the expandable execution tree with
+  agent work summaries, status badges, task children, and checkpoint commits.
 - **Task:** `view: {kind: Task, query: {feature: example-feature, task: example-task}}`
   shows objective, revision, attempt, created/updated/progress timestamps,
   recorded workspace, state, checkpoint and integration SHA when recorded,
@@ -206,14 +204,18 @@ detail, where paging does not apply. Initial views are:
   checks with outcome, command and evidence, and task-specific extensions.
 - **History:** `view: {kind: History, query: {feature: example-feature, task: example-task}}`
   lists events newest revision first with kind, revision, recorded-by actor,
-  and note. Enter opens the event kind, revision, timestamp, actor, note, and
+  and note. Expand an event snapshot to inspect every recorded field and its
   full task snapshot at that revision.
 
 States distinguish queued, working, blocked, ready, integrated, and cancelled.
 Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
-current views refresh. No completion percentage, live execution status, or agent
+current views refresh. Full-feature state counts and an integrated-task percentage
+summarize recorded task states. Group progress covers its loaded task page.
+The hierarchy groups recorded creators and workers by role; it does not establish
+host session ancestry. Each task contributes its latest 100 events to the overview;
+full history can page through older records. No live execution status or agent
 conversation is inferred. For example, a passed check is a worker’s recorded
 result, not a new test execution by the dashboard.
 
@@ -221,44 +223,36 @@ result, not a new test execution by the dashboard.
 
 **Required:** inspect its event revision and recorded evidence before reporting it.
 
-### Keys, refresh, and pages
+### Navigation, refresh, and pages
 
-- Up/Down or `k`/`j` select rows; Enter opens details.
-- `h` opens history from task detail.
-- Esc or Backspace returns to the parent view.
-- `n`/`p` move to the next/previous record page.
-- `J`/`K` or PageDown/PageUp scroll the selected full objective in feature/task
-  lists, the selected full note in history, or the full task/event detail.
-  Changing the selected row resets preview scrolling.
-- `r` refreshes manually; `q` or Ctrl-C exits.
+Use the native window’s controls to navigate between features, tasks, detail,
+history, and event snapshots. Scroll the window’s content to read long objectives,
+notes, findings, checks, and extensions. Use Refresh to read current evidence or
+Retry after an observation failure; the window does not refresh on a timer.
 
-Interactive lists separate compact rows from the selected objective or note
-preview. Their page labels start at `Page 1`; `last page` or `more pages` reflects
-the recorded query’s `PageEnd`. Typed request indexes remain zero-based: request
-`page: 0` opens interactive `Page 1`. Snapshot text remains zero-based and retains
-`Page end: More` or `Complete`.
+Feature, task, and history queries return at most 100 records per page. Typed
+request page indexes and Snapshot text remain zero-based. Previous and Next
+move between bounded pages. The native indicator starts at `Page 1`; its
+`More`/`Complete` value describes whether another record page exists, not feature
+or task completion. Snapshot retains
+`Page end: More` or `Complete` to indicate whether another page exists.
+Each query releases its connection after reading. Pages use live offsets, so
+concurrent writes can shift records between pages. For example, a new history
+event can push an older event onto the next page.
 
-Interactive views reload after input and automatically after 500 ms without
-input. Feature, task, and history queries return at most 100 records per page.
-Each query releases its connection after reading; no transaction is held while
-waiting for input. Pages use live offsets, so concurrent writes can shift records
-between pages. For example, a new history event can push an older event onto the
-next page; refresh and navigate again when comparing revisions.
-
-- **Prohibited:** assume page 1 retains the same records while new events arrive.
-
+- **Prohibited:** assume a page retains the same records while new events arrive.
 - **Required:** refresh and compare event revisions across the live pages.
 
 ### Storage requirements and errors
 
 `meta-cortex dashboard` reports a structured error with exit status `2` before
-entering the terminal when run outside Git or when repository identity or the
+opening the window when run outside Git or when repository identity or the
 shared database is missing. It does not create storage to recover from these errors.
 
 Observation requires an existing repository identity and shared database at the
 current schema version; it never initializes either. The observer uses a short
-250 ms database busy timeout. Interactive read failures appear in the view;
-press `r` to retry or `q` to exit. Snapshot failures return structured errors
+250 ms database busy timeout. Desktop read failures appear in the window;
+refresh to retry or close the window to exit. Snapshot failures return structured errors
 with exit status `2`.
 
 An older or empty schema reports that migration is required; unsupported
