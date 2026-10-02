@@ -90,7 +90,9 @@
   <div
     class="workflow-heading min-w-0 flex-1 [&_h1]:text-[25px] [&_h1]:tracking-[-.65px] [&_h1]:[overflow-wrap:anywhere] max-[800px]:[&_h1]:text-[23px] max-[620px]:[&_h1]:text-xl"
   >
-    <h1 title={flow.feature.id}>{FlowPresentation.label(flow.feature.id)}</h1>
+    <h1 class="font-bold" title={flow.feature.id}>
+      {FlowPresentation.label(flow.feature.id)}
+    </h1>
     <p class="mt-[7px] text-[13px] text-muted-foreground">
       Recorded work · Turso
     </p>
@@ -113,7 +115,7 @@
   >
     {#each presentation.views() as item (item)}<Button
         variant="ghost"
-        class="h-auto min-h-11 rounded-none border-b-2 border-transparent bg-transparent px-[15px] pt-2.5 pb-[13px] text-sm font-normal text-muted-foreground capitalize hover:bg-transparent hover:text-foreground aria-pressed:border-primary aria-pressed:text-primary aria-pressed:font-medium max-[620px]:px-3 max-[620px]:text-xs"
+        class="h-auto min-h-11 rounded-none border-0 border-b-2 border-transparent bg-transparent px-[15px] pt-2.5 pb-[13px] text-sm font-normal text-muted-foreground capitalize hover:bg-transparent hover:text-foreground aria-pressed:border-primary aria-pressed:text-primary aria-pressed:font-medium max-[620px]:px-3 max-[620px]:text-xs"
         id={`view-${item}`}
         aria-pressed={view === item}
         onclick={() => switchView(item)}>{item}</Button
@@ -135,7 +137,7 @@
           role="region"
           aria-label="Recent recorded history"
         >
-          <h2>Recent activity</h2>
+          <h2 class="font-bold">Recent activity</h2>
           {#each presentation.activity() as item (`${item.task.id}:${item.event.revision}`)}<Button
               variant="ghost"
               class="h-auto min-h-[70px] w-full justify-start gap-3 rounded-none border-t border-border bg-transparent px-1 py-[15px] text-left whitespace-normal hover:bg-secondary [&_strong]:block [&_strong]:text-[13px] [&_strong]:font-medium [&_div>span]:mt-[5px] [&_div>span]:block [&_div>span]:text-[11px] [&_div>span]:text-muted-foreground [&_time]:ml-auto [&_time]:text-[10px] [&_time]:text-muted-foreground max-[620px]:[&_time]:text-[9px]"

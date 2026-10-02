@@ -79,7 +79,7 @@
         class="app-header flex items-center justify-between gap-6 px-[25px] pt-[25px] pb-[18px] max-[800px]:px-[22px] max-[800px]:pt-6 max-[620px]:gap-2.5 max-[620px]:px-4 max-[620px]:pt-[23px] max-[620px]:pb-[17px] [&_h1]:text-[28px] [&_h1]:tracking-[-.65px] max-[800px]:[&_h1]:text-[23px] max-[620px]:[&_h1]:text-xl"
       >
         <div>
-          <h1>
+          <h1 class="font-bold">
             {FlowPresentation.label(dashboard.currentFeature()) || "Workbench"}
           </h1>
           <p class="mt-[7px] text-[13px] text-muted-foreground">
@@ -97,12 +97,12 @@
         class="empty-state px-6 py-[60px] text-center [&_h2]:text-xl [&_p]:my-[15px] [&_p]:text-xs [&_p]:text-muted-foreground"
       >
         <span class="mb-5 inline-block size-2.5 rounded-full bg-primary"></span>
-        <h2>Reading recorded work…</h2>
+        <h2 class="font-bold">Reading recorded work…</h2>
       </div>
     {:else if dashboard.state.kind === LoadKind.Failed}<div
         class="empty-state px-6 py-[60px] text-center [&_h2]:text-xl [&_p]:my-[15px] [&_p]:text-xs [&_p]:text-muted-foreground"
       >
-        <h2>Unable to read the ledger</h2>
+        <h2 class="font-bold">Unable to read the ledger</h2>
         <p>{dashboard.state.failure.message}</p>
         <Button
           variant="dashboard"
@@ -120,7 +120,7 @@
             <div
               class="section-heading [&_h2]:text-xl [&_p]:mt-2.5 [&_p]:mb-[25px] [&_p]:text-xs [&_p]:text-muted-foreground"
             >
-              <h2>Choose a feature</h2>
+              <h2 class="font-bold">Choose a feature</h2>
               <p>
                 Explore its agents, task dependencies, and recorded Git
                 integrations.
@@ -135,7 +135,7 @@
                     class="eyebrow text-[10px] tracking-[1.3px] text-muted-foreground"
                     >FEATURE</span
                   >
-                  <h3>{feature.id}</h3>
+                  <h3 class="font-bold">{feature.id}</h3>
                   <p>{feature.objective}</p>
                   <code>{feature.branch}</code><span
                     class="open-feature mt-[13px] block text-[11px] text-primary"
@@ -181,7 +181,7 @@
                   query: dashboard.historyQuery(reply),
                 })}>← Task</Button
             >
-            <h2>Recorded history</h2>
+            <h2 class="font-bold">Recorded history</h2>
             <div
               class="history-feed mt-6 [&_h3]:mb-2 [&_h3]:text-xs [&_p]:mb-2.5 [&_p]:text-xs [&_p]:text-muted-foreground [&_small]:text-[10px]"
             >
@@ -190,7 +190,9 @@
                 >
                   <Badge variant="status" class="status">{event.kind}</Badge>
                   <div>
-                    <h3>{event.actor.team} / {event.actor.role}</h3>
+                    <h3 class="font-bold">
+                      {event.actor.team} / {event.actor.role}
+                    </h3>
                     <p>{event.note}</p>
                     <small
                       >Attempt {event.task.attempt} · revision {event.task

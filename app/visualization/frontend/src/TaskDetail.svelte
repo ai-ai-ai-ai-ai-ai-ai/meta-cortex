@@ -26,7 +26,7 @@
       <span class="eyebrow text-[10px] tracking-[1.3px] text-muted-foreground"
         >TASK · ATTEMPT {task.attempt}</span
       >
-      <h2>{task.id}</h2>
+      <h2 class="font-bold">{task.id}</h2>
       <p>{task.objective}</p>
     </div>
     <Badge variant="status" class="status" data-state={presentation.status()}
@@ -37,20 +37,20 @@
     <Card.Root
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
-      <h3>Latest contribution</h3>
+      <h3 class="font-bold">Latest contribution</h3>
       <p class="text-sm">{task.progress.summary}</p>
       {#if presentation.reason()}<p
           class="mt-[15px] border-l-2 border-blocked pl-2.5 text-xs text-blocked"
         >
           {presentation.reason()}
         </p>{/if}
-      <h4>Findings</h4>
+      <h4 class="font-bold">Findings</h4>
       {#each task.progress.findings as finding, index (index)}<p
           class="finding mb-2.5 border-l-2 border-tree-line pl-3 text-xs"
         >
           {finding}
         </p>{/each}
-      <h4>Next steps</h4>
+      <h4 class="font-bold">Next steps</h4>
       {#each task.progress.next_steps as step, index (index)}<p
           class="finding mb-2.5 border-l-2 border-tree-line pl-3 text-xs"
         >
@@ -60,7 +60,7 @@
     <Card.Root
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
-      <h3>Git evidence</h3>
+      <h3 class="font-bold">Git evidence</h3>
       <dl>
         <dt>Workspace</dt>
         <dd class="whitespace-pre-wrap">{presentation.workspace()}</dd>
@@ -79,7 +79,9 @@
     <Card.Root
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
-      <h3>Checks <span>{task.progress.checks.length}</span></h3>
+      <h3 class="font-bold">
+        Checks <span>{task.progress.checks.length}</span>
+      </h3>
       {#each task.progress.checks as check, index (index)}<details
           class="check border-t border-border py-3 [&_summary]:flex [&_summary]:cursor-pointer [&_summary]:items-center [&_summary]:gap-2.5 [&_pre]:bg-code [&_pre]:p-3 [&_pre]:text-[11px] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
         >
@@ -94,7 +96,7 @@
     <Card.Root
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
-      <h3>Acceptance & dependencies</h3>
+      <h3 class="font-bold">Acceptance & dependencies</h3>
       {#each task.acceptance as criterion, index (index)}<p
           class="finding mb-2.5 border-l-2 border-tree-line pl-3 text-xs"
         >

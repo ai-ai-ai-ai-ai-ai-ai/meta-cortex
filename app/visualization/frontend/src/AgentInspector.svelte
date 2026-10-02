@@ -34,7 +34,7 @@
       <span class="eyebrow text-[10px] tracking-[1.3px] text-muted-foreground"
         >AGENT DETAILS</span
       >
-      <h2>{selection.group.name()}</h2>
+      <h2 class="font-bold">{selection.group.name()}</h2>
     </div>
     <button
       type="button"

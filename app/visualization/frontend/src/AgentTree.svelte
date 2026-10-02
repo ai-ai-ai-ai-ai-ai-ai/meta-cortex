@@ -27,7 +27,7 @@
   {#if tasks.length === 0}<div
       class="empty-state px-6 py-[60px] text-center [&_h2]:text-xl [&_p]:my-[15px] [&_p]:text-xs [&_p]:text-muted-foreground"
     >
-      <h2>No tasks on this page</h2>
+      <h2 class="font-bold">No tasks on this page</h2>
       <p>Tasks will appear here after they are recorded in Turso.</p>
     </div>{/if}
 </Card.Root>
