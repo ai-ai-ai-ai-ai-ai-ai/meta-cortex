@@ -745,11 +745,11 @@ progress::-moz-progress-bar {
   .disclosure {
     min-width: 30px;
   }
-  .delegation > summary {
+  .delegation-header {
     gap: 10px;
     padding: 16px;
   }
-  .delegation > summary strong {
+  .team-title strong {
     font-size: 16px;
   }
   .status {

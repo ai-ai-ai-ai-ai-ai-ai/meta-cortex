@@ -10,33 +10,43 @@
 .delegation:last-child {
   border-bottom: 0;
 }
-.delegation > summary {
+.delegation-header {
   display: flex;
   align-items: center;
   gap: 15px;
-  cursor: pointer;
   min-height: 67px;
   padding: 13px 16px;
   background: #121f23;
 }
-.delegation > summary:before {
+.delegation-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+}
+.delegation-toggle:before {
   content: "⌄";
   color: var(--muted);
   font-size: 19px;
   width: 10px;
+  flex-shrink: 0;
 }
-.delegation:not([open]) > summary:before {
+.delegation-toggle[aria-expanded="false"]:before {
   content: "›";
 }
-.delegation > summary::-webkit-details-marker {
-  display: none;
+.team-title {
+  min-width: 0;
 }
-.delegation > summary strong {
+.team-title strong {
   font-size: 15px;
   font-weight: 600;
   display: block;
 }
-.delegation > summary div > span {
+.team-title > span {
   display: block;
   margin-top: 5px;
   font-size: 11px;

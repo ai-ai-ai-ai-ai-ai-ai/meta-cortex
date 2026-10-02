@@ -155,7 +155,7 @@
     flex: 1;
     margin-left: auto;
   }
-  .delegation > summary {
+  .delegation-header {
     flex-wrap: wrap;
   }
   .delegation .progress-overview {

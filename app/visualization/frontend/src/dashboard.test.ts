@@ -154,6 +154,31 @@ it("validates the native reply before use", async () => {
   expect(result._tag).toBe("Failure");
 });
 
+it("keeps the team heading and progress visible while collapsing its tasks", async () => {
+  const fixture = new Fixture();
+  render(Workflow, {
+    flow: fixture.flow,
+    select: vi.fn(),
+    history: vi.fn(),
+    refresh: vi.fn(),
+  });
+  const team = screen.getByRole("button", { name: "Team Gizmo" });
+  expect(team.getAttribute("aria-expanded")).toBe("true");
+  expect(team.textContent).toContain("1 recorded tasks");
+  await userEvent.click(team);
+  expect(team.getAttribute("aria-expanded")).toBe("false");
+  expect(
+    screen.queryByRole("button", { name: "Expand TypescriptDev tasks" }),
+  ).toBeNull();
+  expect(
+    screen.getAllByRole("progressbar", { name: "Integrated tasks" }),
+  ).toHaveLength(2);
+  await userEvent.keyboard("{Enter}");
+  expect(team.getAttribute("aria-expanded")).toBe("true");
+  expect(
+    screen.getByRole("button", { name: "Expand TypescriptDev tasks" }),
+  ).toBeTruthy();
+});
 it("expands real tasks and opens a closable agent inspector", async () => {
   const fixture = new Fixture();
   const select = vi.fn();
