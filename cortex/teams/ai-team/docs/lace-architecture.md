@@ -1,179 +1,153 @@
 # Neural Lace Architecture
 
-Neural Lace declares Cortex context as plain readonly data. Agents read receipts
-as text, like Markdown. The model contains one WorkingDirectory enum and the
-Job, Stage, Statement, Required, Prohibited, and ShellCommand contracts.
-Compilation checks their shape and imports without executing declared commands.
+Neural Lace declares Cortex context as YAML data. Agents read receipts as text,
+like Markdown. The readonly Job, Stage, Statement, Required, Prohibited, and
+ShellCommand contracts remain in the TypeScript model. The authoritative YAML
+schema checks structure; the loader resolves static references without executing
+commands.
 
 ## Required actions
 
 ### Context ownership
 
 Keep the [model](../../../lace/src/ts/lace.ts),
-[declaration grammar](../../../lace/receipt-grammar.js), and their tests in
-`lace/`. Its [entry point](../../../lace/AGENTS.ts) describes Lace through the
-same declarations used by other receipts. Subject receipts belong beside their
+[YAML schema](../../../lace/src/ts/context-schema.ts),
+[loader](../../../lace/src/ts/context-loader.ts), and their tests in `lace/`.
+Its [entry point](../../../lace/AGENTS.yaml) describes Lace using the same
+Stage declarations as other receipts. Subject receipts belong beside their
 owning context, outside `lace/`. Context Engineering owns receipt authoring;
 other existing Markdown instructions remain authoritative.
 
-**Prohibited:** modify the model while assigned only to author a context receipt.
+**Prohibited:** modify the schema while assigned only to author a context receipt.
 
 **Required:** use the existing declarations and checks. Report a missing
 capability for a separate core assignment.
 
-### Public authoring imports
+### YAML document root
 
-Import model vocabulary from the private workspace package root
-`@meta-cortex/lace`. Its package exports only `.` to `./src/ts/lace.ts`;
-workspace resolution supplies the actual types and enum without a custom resolver.
-Import other receipts through static relative `*.lace.ts` or `AGENTS.ts` paths.
-Source-reading links continue to name the model file.
+Name receipts `*.lace.yaml` and context entry points `AGENTS.yaml`. Declare a
+root `stages` map. Optional `exports` contains both `stages` and `statements`
+maps; empty maps are valid. YAML authors use this schema vocabulary directly.
+The private package root `@meta-cortex/lace` continues to expose the readonly
+model to TypeScript tooling; context receipts do not import code.
 
-**Prohibited:** import an implementation file or a private package subpath.
-The grammar rejects this import source.
+**Prohibited:** use a Stage or sequence as the document root. Validation rejects it.
 
-```typescript
-import { type Job } from "@meta-cortex/lace/src/ts/lace.ts";
-const receipt: Job = { stages: {} };
-export default receipt;
+```yaml
+spec: {}
+Required: { statements: {} }
+Prohibited: { statements: {} }
 ```
 
-**Required:** import the public root.
+**Required:** place Stage values in the root map.
 
-```typescript
-import { type Job } from "@meta-cortex/lace";
-const receipt: Job = { stages: {} };
-export default receipt;
+```yaml
+stages:
+  context:
+    spec: {}
+    Required: { statements: {} }
+    Prohibited: { statements: {} }
 ```
 
 ### Fixed Stage sections
 
-Declare `const receipt: Job` and default-export `receipt`. Job has
-`readonly stages: Readonly<Record<string, Stage>>`. Each Stage has three mandatory
-fields: `spec: Readonly<Record<string, Statement>>`, `Required: Required`, and
-`Prohibited: Prohibited`. Required and Prohibited each have
-`readonly statements: Readonly<Record<string, Statement>>`.
-All fields are readonly; all three kinds of named map may be empty.
-
-A Statement is a string or a readonly object with both `content: string` and
-`ShellCommand: ShellCommand`. ShellCommand has readonly `cwd: WorkingDirectory`
-and `script: string`. Use literal strings or noninterpolated templates for text,
-content, and scripts. A structured statement always describes its command in
-content. Jobs contain only Stage values; each Stage contains the fixed
-statement sections.
+Each Stage has three mandatory fields: `spec`, `Required`, and `Prohibited`.
+The `spec` map contains named statements. Required and Prohibited each contain
+one named `statements` map. All three maps may be empty. A statement is a
+nonblank YAML string or an object with both `content` and `ShellCommand`.
 
 **Prohibited:** omit a normative section even when it has no statements.
-The compiler and grammar reject the incomplete Stage.
+Validation rejects this incomplete Stage.
 
-```typescript
-import { type Job } from "@meta-cortex/lace";
-const receipt: Job = { stages: { context: { spec: {} } } };
-export default receipt;
+```yaml
+stages:
+  context:
+    spec: {}
 ```
 
 **Required:** declare every fixed section and use empty maps where appropriate.
 
-```typescript
-import { type Job } from "@meta-cortex/lace";
-const receipt: Job = {
-  stages: {
-    context: {
-      spec: { contextLanguage: "Cortex context is read as text." },
-      Required: { statements: { readContext: "Read the assigned context." } },
-      Prohibited: { statements: {} },
-    },
-  },
-};
-export default receipt;
+```yaml
+stages:
+  context:
+    spec: { contextLanguage: "Cortex context is read as text." }
+    Required:
+      statements: { readContext: "Read the assigned context." }
+    Prohibited: { statements: {} }
 ```
 
 ### Inline local stages
 
-Write local Stage contents directly in the receipt's stages map. Extract a typed
-Stage only when another receipt reuses its named export. Static references to
-imported reusable Stages remain valid.
+Write local Stage contents directly in the receipt's stages map. Extract a
+Stage into exports only when another receipt reuses it. Reference reusable
+Stages through `$ref` values in Stage positions.
 
-**Prohibited:** extract a Stage used only by this receipt. This compiles and
-passes grammar but adds an unnecessary lookup for readers.
+**Prohibited:** export a Stage used only by this receipt. It validates but adds
+an unnecessary lookup for readers.
 
-```typescript
-import { type Job, type Stage } from "@meta-cortex/lace";
-const context: Stage = {
-  spec: {}, Required: { statements: {} }, Prohibited: { statements: {} },
-};
-const receipt: Job = { stages: { context: context } };
-export default receipt;
+```yaml
+stages:
+  context: { $ref: "./context.lace.yaml#/exports/stages/context" }
+exports:
+  stages:
+    context:
+      spec: {}
+      Required: { statements: {} }
+      Prohibited: { statements: {} }
+  statements: {}
 ```
 
 **Required:** keep the same local section inline.
 
-```typescript
-import { type Job } from "@meta-cortex/lace";
-const receipt: Job = {
-  stages: {
-    context: {
-      spec: {}, Required: { statements: {} }, Prohibited: { statements: {} },
-    },
-  },
-};
-export default receipt;
+```yaml
+stages:
+  context:
+    spec: {}
+    Required: { statements: {} }
+    Prohibited: { statements: {} }
 ```
 
 ### Stage names
 
-Every key in Job.stages, Stage.spec, and Required or Prohibited statements must
-describe its purpose. Give each Stage a name for its context section; give each
-statement a short name for its fact, action, or restriction. Never use generic
-positional or placeholder names such as `step3`, `stage1`, `entry2`, or `item1`.
-Preserve source declaration order; names do not encode ordering. Prefer
-nonnumeric names because JavaScript enumerates integer-like object keys in
+Every key in stages, spec, and normative statements maps must describe its
+purpose. Give each Stage a name for its context section; give each statement a
+short name for its fact, action, or restriction. Never use generic positional or
+placeholder names such as `step3`, `stage1`, `entry2`, or `item1`.
+Preserve source mapping order; names do not encode ordering. Prefer nonnumeric
+names because the loaded JavaScript model enumerates integer-like keys in
 numeric order before other strings.
 
-This is a semantic authoring rule. Grammar accepts arbitrary explicit unique
-identifier or quoted string names, including schema names such as `spec`,
-`Required`, `statements`, `ShellCommand`, and `stages`. It does not infer purpose.
-Independent YAML catalog entries retain their own vocabulary.
+This is a semantic authoring rule. Validation checks nonblank unique keys and
+structure; it does not infer purpose. Independent YAML catalog entries retain
+their own vocabulary.
 
-**Prohibited:** use a placeholder name. This compiles and passes grammar but
-violates the naming rule.
+**Prohibited:** use a placeholder name. This validates but violates the naming rule.
 
-```typescript
-import { type Job } from "@meta-cortex/lace";
-const receipt: Job = {
-  stages: {
-    stage1: {
-      spec: {},
-      Required: { statements: {} },
-      Prohibited: { statements: {} },
-    },
-  },
-};
-export default receipt;
+```yaml
+stages:
+  stage1:
+    spec: {}
+    Required: { statements: {} }
+    Prohibited: { statements: {} }
 ```
 
 **Required:** name the same section for its purpose.
 
-```typescript
-import { type Job } from "@meta-cortex/lace";
-const receipt: Job = {
-  stages: {
-    receiptOrientation: {
-      spec: {},
-      Required: { statements: {} },
-      Prohibited: { statements: {} },
-    },
-  },
-};
-export default receipt;
+```yaml
+stages:
+  receiptOrientation:
+    spec: {}
+    Required: { statements: {} }
+    Prohibited: { statements: {} }
 ```
 
 ### Readonly declarations
 
-Readonly declarations reject mutation through model types. They do not freeze
-objects at runtime or establish prose correctness. Keep context as literal data;
-use source order when reading its maps.
+The loader returns a Job with readonly model types. Those types reject mutation
+through typed access; they do not freeze objects at runtime or establish prose
+correctness. Keep context as literal YAML data and read maps in source order.
 
-**Prohibited:** mutate receipt sections or hide context behind runtime calls.
+**Prohibited:** mutate loaded receipt sections or hide context behind runtime calls.
 
 **Required:** compose literal declarations and static Stage or Statement references.
 
@@ -191,114 +165,108 @@ its command in content.
 
 ### Statement declarations
 
-A prose statement is a literal string. A command statement has both descriptive
-content and a literal ShellCommand payload. `WorkingDirectory.ProjectRoot` and
-`WorkingDirectory.LibraryRoot` resolve against the consuming session's two roots.
-No declared shell command runs during compilation or receipt import.
+A prose statement is a nonblank YAML string. A command statement has both
+descriptive `content` and a `ShellCommand` payload containing `cwd` and `script`.
+The cwd values `project-root` and `library-root` resolve against the consuming
+session's two roots. Validation and reference resolution never run commands.
 
 **Prohibited:** declare a command without its descriptive content.
-The compiler and grammar reject the missing field.
+Validation rejects the missing field.
 
-```typescript
-import { type Job, WorkingDirectory } from "@meta-cortex/lace";
-const receipt: Job = {
-  stages: {
-    compilation: {
-      spec: {},
-      Required: {
-        statements: {
-          compile: {
-            ShellCommand: {
-              cwd: WorkingDirectory.LibraryRoot,
-              script: "bun run check",
-            },
-          },
-        },
-      },
-      Prohibited: { statements: {} },
-    },
-  },
-};
-export default receipt;
+```yaml
+stages:
+  compilation:
+    spec: {}
+    Required:
+      statements:
+        compile:
+          ShellCommand: { cwd: library-root, script: "bun run check" }
+    Prohibited: { statements: {} }
 ```
 
 **Required:** pair the command with a concise description.
 
-```typescript
-import { type Job, WorkingDirectory } from "@meta-cortex/lace";
-const receipt: Job = {
-  stages: {
-    compilation: {
-      spec: {},
-      Required: {
-        statements: {
-          compile: {
-            content: "Compile the receipt declarations.",
-            ShellCommand: {
-              cwd: WorkingDirectory.LibraryRoot,
-              script: "bun run check",
-            },
-          },
-        },
-      },
-      Prohibited: { statements: {} },
-    },
-  },
-};
-export default receipt;
+```yaml
+stages:
+  compilation:
+    spec: {}
+    Required:
+      statements:
+        compile:
+          content: "Validate the receipt declarations."
+          ShellCommand: { cwd: library-root, script: "bun run check" }
+    Prohibited: { statements: {} }
 ```
 
 ### Composition and execution
 
-1. Read the receipt and its imported declarations as text in source order.
-2. Resolve relative receipt imports from the containing file.
+1. Read the receipt and its referenced declarations as text in source order.
+2. Resolve relative `$ref` paths from the containing file.
 3. Establish the consuming project's root and the Cortex library root.
 4. Interpret statement wording within the active assignment.
 5. Run an instructed command through the host's shell tool with its declared cwd.
 
-Reuse typed const Stage and Statement declarations through named receipt exports.
-A receipt still default-exports its Job; only Stage and Statement bindings may be
-named exports. Static references belong in stages or statement maps respectively.
-The compiler checks their types. Grammar checks declaration positions without
-tracking imports or evaluating bindings. Commands remain inert data.
+Reuse declarations from `exports.stages` or `exports.statements`. Both export
+maps are mandatory when exports is supplied. References contain only `$ref` and
+name a relative `*.lace.yaml` or `AGENTS.yaml` path with a fragment of the form
+`#/exports/stages/name` or `#/exports/statements/name`. Escape `/` and `~` in
+export names as `~1` and `~0`. Stage references belong in stages maps; Statement
+references belong in spec or normative statement maps. A local exported Stage
+can be reused through a reference to the same file. The loader checks target
+existence, target kind, and reference cycles. Commands remain inert data.
 
 **Prohibited:** copy canonical commands into several maintenance locations.
 
 **Required:** reuse the owning Stage export, as in the
-[authoring receipt](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.ts).
+[authoring receipt](../agents/tech-writer/skills/context-engineering/examples/lace/authoring.lace.yaml).
 
-```typescript
-import { type Job } from "@meta-cortex/lace";
-import { compileReceipt } from "./compile.lace.ts";
-const receipt: Job = { stages: { compileReceipt: compileReceipt } };
-export default receipt;
+```yaml
+stages:
+  compileReceipt:
+    $ref: "./compile.lace.yaml#/exports/stages/compileReceipt"
 ```
+
+For a Statement export, use the statements namespace in its statement position:
+
+```yaml
+stages:
+  context:
+    spec:
+      contextRoots:
+        $ref: "./shared.lace.yaml#/exports/statements/contextRoots"
+    Required: { statements: {} }
+    Prohibited: { statements: {} }
+```
+
+The latter is illustrative syntax and assumes a neighboring `shared.lace.yaml`
+with that export. The checked authoring receipt uses actual neighboring files.
 
 ### Validation project
 
-The [TypeScript project](../../../tsconfig.json) includes receipts, entry points,
-the model, and contract tests. It enables strict types, checked indexed access,
-unused-code checks, and noEmit. The existing Bun workspace owns dependencies.
+The [TypeScript project](../../../tsconfig.json) checks the model, tooling, and
+contract tests. The YAML checker discovers `AGENTS.yaml` and `*.lace.yaml`
+context files separately. The existing Bun workspace owns dependencies.
 
 1. From the Cortex library root, run `bun run --filter @meta-cortex/lace check`
-   to compile declarations and resolve imports.
-2. Before claiming full Lace verification, run
-   `bun run --filter @meta-cortex/lace verify` for formatting, grammar, types,
-   and contract tests.
-3. Review prose meaning separately and report executed commands only from actual
+   for tooling type checking, YAML schema checking, and reference resolution.
+2. For selected receipts, run `bun lace/src/ts/check.ts path/to/context.lace.yaml`.
+3. Before claiming full Lace verification, run
+   `bun run --filter @meta-cortex/lace verify` for formatting, lint, types,
+   YAML validation, and contract tests.
+4. Review prose meaning separately and report executed commands only from actual
    host-tool results. Workspace `bun run verify` includes Lace in the CI gate.
 
 **Prohibited:** report full verification after running only check.
 
 **Required:** report the verify result and its practical limits. Checks do not
-prove prose correctness, detect circular context imports, or establish command success.
+prove prose correctness or establish command success in a consuming project.
 
 ## Prohibited actions
 
 ### Core and receipt ownership
 
-Follow the [core ownership rules](../../../lace/AGENTS.ts). Receipt authoring
-uses existing declarations and checks. Core model, grammar, tests, and
+Follow the [core ownership rules](../../../lace/AGENTS.yaml). Receipt authoring
+uses existing declarations and checks. Core model, schema, loader, tests, and
 configuration changes require a separate explicit assignment.
 
 **Prohibited:** weaken checking because a receipt fails.
@@ -307,14 +275,11 @@ configuration changes require a separate explicit assignment.
 
 ### Runtime logic in receipts
 
-The grammar permits public-root and static relative receipt imports, top-level
-typed const Job, Stage, and Statement bindings, literal fixed fields and named
-maps, and static Stage or Statement references in their positions. Every receipt
-has a typed Job root named receipt and its default export. Names are explicit
-unique identifiers or string literals; blank names and text are invalid.
-Arrays, computed fields, spreads, methods, interpolated text, arbitrary imports,
-calls, constructors, casts, mutable declarations, and nested Jobs are invalid.
-Empty maps are valid. WorkingDirectory enum members occur only as command cwd.
+Receipts contain literal YAML maps and strings with optional static references.
+The schema rejects unknown fields and incomplete shapes; parsing rejects duplicate
+keys and unsupported YAML features. Empty maps are valid. Sequences, nested Jobs,
+executable expressions, calls, constructors, and code imports are outside the
+context format.
 
 **Prohibited:** derive a statement with a function or implementation import.
 

@@ -1,0 +1,21 @@
+stages:
+  readContext:
+    $ref: ./context.lace.yaml#/exports/stages/readContext
+  authorReceipt:
+    spec: {}
+    Required:
+      statements:
+        writeReceipt:
+          Write the assigned Cortex context receipt using the existing Lace
+          YAML schema.
+        preserveCore: Keep the Lace core and its verification configuration unchanged.
+        literalSelection: Express context selection as literal statement content.
+        reuseContext:
+          Reuse canonical Stage and Statement declarations through static
+          $ref values.
+    Prohibited:
+      statements: {}
+  compileReceipt:
+    $ref: ./compile.lace.yaml#/exports/stages/compileReceipt
+  verifyReceipt:
+    $ref: ./verify.lace.yaml#/exports/stages/verifyReceipt

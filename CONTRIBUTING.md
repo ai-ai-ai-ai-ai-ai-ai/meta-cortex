@@ -105,13 +105,13 @@ The documentation check reads actual Markdown files and fails on findings. Its
 Vale styles ship with the framework, so checks require no style downloads.
 
 The [Neural Lace foundation](cortex/teams/ai-team/docs/lace-architecture.md)
-defines typed Cortex context files alongside the existing Markdown framework.
+defines typed YAML Cortex context files alongside the existing Markdown framework.
 Context Engineering owns their authoring examples. From
-`cortex/`, run `bun run --filter @meta-cortex/lace check` to compile the receipt
-project, or `bun run --filter @meta-cortex/lace verify` for all Lace checks.
+`cortex/`, run `bun run --filter @meta-cortex/lace check` to type-check tooling and validate receipt schemas
+and references, or `bun run --filter @meta-cortex/lace verify` for all Lace checks.
 The workspace verification above already includes Lace. Receipt authoring uses
-the [existing core](cortex/lace/AGENTS.ts) without changing its types or checks.
-Lace's own entry point uses the same Job declarations. Read it as text; the
+the [existing core](cortex/lace/AGENTS.yaml) without changing its types or checks.
+Lace's own entry point uses the same YAML Job declarations. Read it as text; the
 other Markdown context files retain their current roles.
 
 ## Publish a release

@@ -153,22 +153,23 @@ its tests in its worktree, and pass both roots in assignments.
 
 ## Cortex context format
 
-[Neural Lace](lace/AGENTS.ts) is the core for typed Cortex context files.
-Read its [model](lace/src/ts/lace.ts) to learn the vocabulary, then read
-`lace/AGENTS.ts` as text for its context instructions. That entry point describes
-Lace through its own Job and Stage declarations. The model contains the WorkingDirectory enum and readonly Job, Stage, Statement,
-Required, Prohibited, and ShellCommand contracts. Import authoring vocabulary
-from the private workspace package root `@meta-cortex/lace`.
-Receipts declare plain readonly Jobs with named Stage maps. Every Stage contains
-spec, Required, and Prohibited sections; their statement maps may be empty.
-Use literal strings for prose and mandatory content plus ShellCommand for commands.
+[Neural Lace](lace/AGENTS.yaml) is the core for typed YAML Cortex context files.
+Read its [model](lace/src/ts/lace.ts) and
+[schema](lace/src/ts/context-schema.ts) to learn the vocabulary, then read
+`lace/AGENTS.yaml` as text for its context instructions. That entry point describes
+Lace through its own Job and Stage declarations. The TypeScript model retains
+readonly Job, Stage, Statement, Required, Prohibited, and ShellCommand contracts.
+Receipts declare YAML Jobs with named Stage maps. Every Stage contains spec,
+Required, and Prohibited sections; their statement maps may be empty.
+Use YAML strings for prose and mandatory content plus ShellCommand for commands.
+Command cwd is `project-root` or `library-root`.
 Apply the [stage and statement naming rule](teams/ai-team/docs/lace-architecture.md#stage-names)
 and [normative categories](teams/ai-team/docs/lace-architecture.md#normative-categories).
 Subject receipts belong beside their owning context, outside `lace/`.
-Agents read entry points and receipts as text; TypeScript checks their structure
-and imports. Importing a receipt constructs plain data and never runs declared
-shell commands. Compose typed Stage and Statement declarations through static
-imports; do not nest Jobs or use runtime calls.
+Agents read entry points and receipts as text; schema validation checks structure
+and resolves static `$ref` values without running declared shell commands.
+Compose Stage and Statement declarations through references to their respective
+export maps; do not nest Jobs or use runtime calls.
 [Context Engineering](teams/ai-team/agents/tech-writer/skills/context-engineering/SKILL.md#cortex-context-with-lace)
 owns this context authoring. Other existing Markdown context remains authoritative.
 

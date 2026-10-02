@@ -1,0 +1,24 @@
+stages:
+  laceOverview:
+    spec: {}
+    Required:
+      statements:
+        readOverview: Read the overview stage in lace/AGENTS.yaml as text.
+    Prohibited:
+      statements: {}
+  readContext:
+    $ref: ./context.lace.yaml#/exports/stages/readContext
+exports:
+  stages:
+    readContext:
+      spec:
+        contextRoots: Resolve context paths from the Cortex library root.
+      Required:
+        statements:
+          readCore:
+            Read lace/AGENTS.yaml and lace/src/ts/lace.ts as text before authoring
+            receipts.
+      Prohibited:
+        statements:
+          executeContext: Do not load context to execute commands.
+  statements: {}

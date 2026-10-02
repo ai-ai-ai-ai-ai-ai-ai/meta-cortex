@@ -75,26 +75,27 @@ Its local links resolve; the code example was reviewed but not executed.”
 
 ## Cortex context with Lace
 
-When the assignment concerns Cortex's own typed context files, use the
+When the assignment concerns Cortex's own typed YAML context files, use the
 [Neural Lace architecture](../../../../docs/lace-architecture.md).
-Its [authoring example](examples/lace/authoring.lace.ts) demonstrates static
-Stage composition and existing compilation checks. A Job has named Stage sections;
+Its [authoring example](examples/lace/authoring.lace.yaml) demonstrates static
+Stage composition and existing validation checks. A Job has named Stage sections;
 each Stage contains spec, Required, and Prohibited. All named maps may be empty.
-Place literal prose in spec or normative statements maps, following the
+Place literal YAML prose in spec or normative statements maps, following the
 [normative category contract](../../../../docs/lace-architecture.md#normative-categories).
 Command statements have both descriptive content and a ShellCommand payload.
-Import model vocabulary from `@meta-cortex/lace` and named typed Stage or Statement
-exports from static relative receipt paths. Jobs do not recursively contain Jobs;
-receipts contain no calls or builders. Agents read declarations as text. Compilation
-and importing never execute declared shell commands.
+Use `project-root` or `library-root` for command cwd. Compose named Stage or
+Statement declarations through relative `$ref` values targeting their respective
+export maps. Jobs do not recursively contain Jobs; receipts contain no calls or
+builders. Agents read declarations as text. Schema validation and reference
+resolution never execute declared shell commands.
 Apply the [stage and statement naming rule](../../../../docs/lace-architecture.md#stage-names)
-and [core ownership rules](../../../../../../lace/AGENTS.ts).
+and [core ownership rules](../../../../../../lace/AGENTS.yaml).
 
 **Prohibited:** use the context format as an application programming API or
-modify its core to make an assigned context receipt compile.
+modify its core to make an assigned context receipt validate.
 
-**Required:** write the assigned Cortex context with the existing declarations
-and check it using the provided compiler and grammar checks.
+**Required:** write the assigned Cortex context with the existing YAML schema
+and check it using the provided schema and reference checks.
 
 ## Executable audits
 
