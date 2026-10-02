@@ -341,8 +341,8 @@ it("uses the real Agents graph selection handler for prioritized own activity an
   };
   render(Workflow, props);
   await userEvent.click(screen.getByRole("button", graphQuery));
-  const mouseEvent: MouseEventInit = { view: window };
   const prime = await screen.findByText("Gizmo / GizmoPrime");
+  const mouseEvent: MouseEventInit = { view: prime.ownerDocument.defaultView };
   await fireEvent.mouseDown(prime, mouseEvent);
   await fireEvent.mouseUp(prime, mouseEvent);
   await fireEvent.click(prime, mouseEvent);
