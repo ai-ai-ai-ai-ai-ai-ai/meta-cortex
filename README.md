@@ -343,31 +343,25 @@ ownership, recovery, version compatibility, and local storage boundaries.
 
 ### Observe recorded work
 
-Save this request as `dashboard.yaml`, replacing `project` with your repository:
-
-```yaml
-version: 1
-project: /absolute/project
-operation:
-  group: Workbench
-  command:
-    name: Dashboard
-    arguments:
-      mode: Interactive
-      view: {kind: Features}
-      page: 0
-```
+From your repository root, any subdirectory, or a linked worktree, run:
 
 ```sh
-meta-cortex list
-meta-cortex run --request dashboard.yaml
+meta-cortex dashboard
 ```
 
-Interactive mode requires terminal stdin and stdout, so use a request file.
-Select with arrow keys or `j`/`k`, open details with Enter, open task history with
-`h`, and exit with `q` or Ctrl-C. For redirected output, change `mode` to
-`Snapshot` and run `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
+No request file or required arguments are needed. The command resolves the
+existing repository identity and shared database, then opens the interactive
+Features view. Terminal stdin and stdout are required. Select with Up/Down or
+`j`/`k`, press Enter for details, press `h` for task history, and exit with `q`
+or Ctrl-C.
+
+Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
+an explicit project, initial view, and page. Typed Interactive requests use a
+request file to preserve keyboard stdin. Typed Snapshot requests support
+redirected output through `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
-for views, fields, paging, refresh, and storage requirements.
+for exact typed requests, views, fields, paging, refresh, and storage requirements.
+The command reports errors outside Git or when repository identity or the ledger
+is missing. It does not initialize, migrate, or import storage.
