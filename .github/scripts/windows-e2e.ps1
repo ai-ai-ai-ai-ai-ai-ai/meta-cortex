@@ -120,9 +120,17 @@ class WindowsInstallationScenario {
             'framework_info' { }
             default { throw 'Framework Info failed' }
         }
-        switch ($info.value.paths.project) {
-            $nativeProject { }
-            default { throw 'Framework Info did not retain the native project path' }
+        # Rust canonicalize returns Windows extended paths. Resolve the existing
+        # fixture directories, then normalize the local-drive prefix for comparison.
+        $reportedProject = (Get-Item -LiteralPath $info.value.paths.project -Force).FullName
+        $expectedProject = (Get-Item -LiteralPath $nativeProject -Force).FullName
+        switch ($reportedProject.StartsWith('\\?\')) {
+            $true { $reportedProject = $reportedProject.Substring(4) }
+            $false { }
+        }
+        switch ($reportedProject) {
+            $expectedProject { }
+            default { throw 'Framework Info did not retain the native project directory' }
         }
         switch (Test-Path -LiteralPath (Join-Path $nativeProject '.meta-cortex\node_modules\effect')) {
             $true { }
