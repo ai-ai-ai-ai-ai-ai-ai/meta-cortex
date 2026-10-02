@@ -225,7 +225,7 @@ coordinator acceptance of a read-only or feature activity.
 Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
-current views refresh. Full-feature state counts and an integrated-task percentage
+current views refresh. Full-feature state counts and a percentage of tasks completed or integrated
 summarize recorded task states. Group progress covers its loaded task page.
 Recorded ownership identifies the assigned role and reporting target. Task
 creators, claimed workers, and event actors remain separate recorded facts; none
