@@ -3,7 +3,7 @@
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import type { AgentSelection } from "./agent-tree";
-  import type { Task } from "./contracts";
+  import type { TaskV2 } from "./contracts";
   import { TaskPresentation } from "./task-presentation";
   import { FlowPresentation } from "./workflow";
   import ProgressSummary from "./ProgressSummary.svelte";
@@ -15,8 +15,8 @@
   }: {
     selection: AgentSelection;
     close: () => void;
-    openTask: (task: Task) => void;
-    openHistory: (task: Task) => void;
+    openTask: (task: TaskV2) => void;
+    openHistory: (task: TaskV2) => void;
   } = $props();
   let task = $derived(selection.task.task);
   let presentation = $derived(new TaskPresentation(task));
@@ -52,14 +52,14 @@
     >
       <Badge variant="status" class="status" data-state={presentation.status()}
         >{presentation.status()}</Badge
-      ><span>Attempt {task.attempt} · {selection.group.summary()}</span>
+      ><span>Attempt {task.common.attempt} · {selection.group.summary()}</span>
     </div>
     <ProgressSummary counts={selection.group.counts()} class="my-4 w-full" />
-    <h3>{task.objective}</h3>
+    <h3>{task.common.objective}</h3>
     <p
       class="inspector-summary mt-3 text-xs leading-[1.7] text-muted-foreground"
     >
-      {task.progress.summary || "No progress summary recorded."}
+      {task.common.progress.summary || "No progress summary recorded."}
     </p>
     {#if presentation.reason()}<p
         class="mt-[15px] border-l-2 border-blocked pl-2.5 text-xs text-blocked"
@@ -69,23 +69,23 @@
     <section>
       <h4>Recorded tasks <span>{selection.group.tasks.length}</span></h4>
       <div class="inspector-tasks flex flex-col">
-        {#each selection.group.tasks as item (item.task.id)}<Button
+        {#each selection.group.tasks as item (item.task.common.id)}<Button
             variant="ghost"
             class="h-auto min-h-[42px] w-full justify-start gap-2.5 rounded-[3px] bg-transparent px-1 py-2 text-left text-[11px] font-normal whitespace-normal hover:bg-selection data-[current=true]:bg-selection [&>span:nth-child(2)]:flex-1 [&>span:nth-child(2)]:[overflow-wrap:anywhere] [&_small]:ml-auto [&_small]:text-[10px] [&_small]:capitalize"
-            data-current={item.task.id === task.id}
+            data-current={item.task.common.id === task.common.id}
             onclick={() => openTask(item.task)}
             ><StatusMark
               state={new TaskPresentation(item.task).status()}
               class="size-[18px] before:text-[11px]"
-            /><span>{item.task.id}</span><small
+            /><span>{item.task.common.id}</span><small
               >{new TaskPresentation(item.task).status()}</small
             ></Button
           >{/each}
       </div>
     </section>
-    {#if task.progress.checks.length > 0}<section>
+    {#if task.common.progress.checks.length > 0}<section>
         <h4>Recorded checks</h4>
-        {#each task.progress.checks as check, index (index)}<details
+        {#each task.common.progress.checks as check, index (index)}<details
             class="inspector-check border-b border-row py-[9px] text-[11px] [&_summary]:flex [&_summary]:min-h-7 [&_summary]:cursor-pointer [&_summary]:items-center [&_summary]:gap-2 [&_code]:min-w-0 [&_code]:flex-1 [&_code]:text-[10px] [&_pre]:max-h-[200px] [&_pre]:overflow-auto [&_pre]:bg-code [&_pre]:p-2 [&_pre]:text-[10px] [&_pre]:leading-[1.7] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
           >
             <summary
@@ -103,10 +103,19 @@
     <section>
       <h4>Git evidence</h4>
       <dl>
+        <dt>Worker</dt>
+        <dd>
+          {#if selection.task.worker.kind === "recorded"}
+            {selection.task.worker.agent.team} / {selection.task.worker.agent
+              .role}
+          {:else}Unrecorded{/if}
+        </dd>
+        <dt>Reports to</dt>
+        <dd>{presentation.reportsTo()}</dd>
         <dt>Branch</dt>
         <dd>
           {#if task.workspace.kind === "git"}<code>{task.workspace.branch}</code
-            >{:else}Read only{/if}
+            >{:else}{presentation.workspace()}{/if}
         </dd>
         <dt>Checkpoint</dt>
         <dd>
@@ -129,19 +138,19 @@
           ><time>{new Date(commit.at).toLocaleDateString()}</time>
         </div>{/each}
     </section>
-    {#if task.progress.findings.length > 0}<details
+    {#if task.common.progress.findings.length > 0}<details
         class="inspector-notes mt-5 border-t border-border pt-[15px] [&_summary]:cursor-pointer [&_summary]:text-[11px] [&_summary]:text-foreground [&_p]:mt-2.5 [&_p]:text-[11px] [&_p]:text-muted-foreground"
       >
-        <summary>Findings · {task.progress.findings.length}</summary
-        >{#each task.progress.findings as finding, index (index)}<p>
+        <summary>Findings · {task.common.progress.findings.length}</summary
+        >{#each task.common.progress.findings as finding, index (index)}<p>
             {finding}
           </p>{/each}
       </details>{/if}
-    {#if task.progress.next_steps.length > 0}<details
+    {#if task.common.progress.next_steps.length > 0}<details
         class="inspector-notes mt-5 border-t border-border pt-[15px] [&_summary]:cursor-pointer [&_summary]:text-[11px] [&_summary]:text-foreground [&_p]:mt-2.5 [&_p]:text-[11px] [&_p]:text-muted-foreground"
       >
-        <summary>Next steps · {task.progress.next_steps.length}</summary
-        >{#each task.progress.next_steps as step, index (index)}<p>
+        <summary>Next steps · {task.common.progress.next_steps.length}</summary
+        >{#each task.common.progress.next_steps as step, index (index)}<p>
             {step}
           </p>{/each}
       </details>{/if}

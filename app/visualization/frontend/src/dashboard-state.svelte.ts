@@ -4,7 +4,7 @@ import type {
   DesktopRead,
   DesktopReply,
   Feature,
-  Task,
+  TaskV2,
   TaskQuery,
 } from "./contracts";
 import { DashboardApi } from "./api";
@@ -96,11 +96,12 @@ export class DashboardController {
         this.execution = { kind: ExecutionKind.Idle };
     }
   }
-  task(task: Task): void {
-    this.load({
+  task(task: TaskV2): void {
+    const request: DesktopRead = {
       kind: "Task",
-      query: { feature: task.feature, task: task.id },
-    });
+      query: { feature: task.common.feature, task: task.common.id },
+    };
+    this.load(request);
   }
   feature(feature: Feature): void {
     this.load({ kind: "Workflow", feature: feature.id, page: 0 });
@@ -154,12 +155,13 @@ export class DashboardController {
         return "";
     }
   }
-  history(task: Task): void {
-    this.load({
+  history(task: TaskV2): void {
+    const request: DesktopRead = {
       kind: "History",
-      query: { feature: task.feature, task: task.id },
+      query: { feature: task.common.feature, task: task.common.id },
       page: 0,
-    });
+    };
+    this.load(request);
   }
   currentFeature(): string {
     switch (this.state.kind) {

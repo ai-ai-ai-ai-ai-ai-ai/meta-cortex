@@ -35,7 +35,7 @@ export type DesktopContent =
     }
   | {
       kind: "Task";
-      value: Task;
+      value: TaskV2;
       [k: string]: unknown;
     }
   | {
@@ -50,6 +50,7 @@ export type FlowState =
   | "blocked"
   | "ready"
   | "integrated"
+  | "completed"
   | "cancelled";
 /**
  * An agent role scoped to its owning Cortex team.
@@ -85,8 +86,9 @@ export type DevelopmentAgent =
   | "RustRefactoring"
   | "RustVerifier"
   | "TypescriptDev"
+  | "TypescriptVerifier"
   | "WebDesigner";
-export type AiAgent = "TechWriter";
+export type AiAgent = "TechWriter" | "TechWriterVerifier";
 export type SecurityAgent = "SecurityAgent";
 export type SreAgent =
   | "CicdAgent"
@@ -106,11 +108,13 @@ export type RecordedActor =
 export type EventKind =
   | "created"
   | "claimed"
+  | "assigned"
   | "heartbeat"
   | "progress"
   | "checkpoint"
   | "ready"
   | "integrated"
+  | "completed"
   | "requeued"
   | "cancelled";
 export type Checkpoint =
@@ -122,6 +126,25 @@ export type Checkpoint =
       kind: "git";
     };
 export type CheckOutcome = "passed" | "failed" | "not_run";
+/**
+ * V1 tasks did not record an intended owner or reporting line.
+ */
+export type TaskOwnership =
+  | {
+      kind: "Unrecorded";
+    }
+  | {
+      assignment: TaskAssignment;
+      kind: "Assigned";
+    };
+export type ReportingTarget =
+  | {
+      kind: "Host";
+    }
+  | {
+      coordinator: GizmoAgent;
+      kind: "Gizmo";
+    };
 export type TaskState =
   | {
       kind: "queued";
@@ -140,6 +163,11 @@ export type TaskState =
       kind: "integrated";
     }
   | {
+      agent: AgentId;
+      attempt: number;
+      kind: "completed";
+    }
+  | {
       kind: "cancelled";
       reason: Note;
     };
@@ -151,9 +179,16 @@ export type Phase =
       kind: "blocked";
       reason: Note;
     };
+/**
+ * Current task shape. V1 payloads are decoded by the separate legacy task record.
+ */
+export type TaskRecordVersion = 2;
 export type Workspace =
   | {
       kind: "read_only";
+    }
+  | {
+      kind: "feature";
     }
   | {
       branch: string;
@@ -251,7 +286,7 @@ export interface TaskFlow {
   history_end: PageEnd;
   integrations: RecordedCommit[];
   milestones: Milestone[];
-  task: Task;
+  task: TaskV2;
   worker: RecordedActor;
   [k: string]: unknown;
 }
@@ -271,7 +306,18 @@ export interface Milestone {
   revision: number;
   [k: string]: unknown;
 }
-export interface Task {
+export interface TaskV2 {
+  common: TaskCommon;
+  ownership: TaskOwnership;
+  state: TaskState;
+  version: TaskRecordVersion;
+  workspace: Workspace;
+}
+/**
+ * Shared task fields in V2 and later records.
+ * Keep this shape stable for retained readers; changed field meanings need a new type.
+ */
+export interface TaskCommon {
   acceptance: Note[];
   attempt: number;
   checkpoint: Checkpoint;
@@ -284,9 +330,6 @@ export interface Task {
   objective: Note;
   progress: Progress;
   revision: number;
-  state: TaskState;
-  version: number;
-  workspace: Workspace;
 }
 export interface Progress {
   checks: Check[];
@@ -304,6 +347,13 @@ export interface Check {
   command: Note;
   evidence: Note;
   outcome: CheckOutcome;
+}
+/**
+ * The intended owner and reporting line survive every task state and attempt.
+ */
+export interface TaskAssignment {
+  agent: AgentId;
+  reports_to: ReportingTarget;
 }
 export interface Assignment {
   agent: AgentId;
@@ -323,7 +373,7 @@ export interface Event {
   actor: AgentId;
   kind: EventKind;
   note: Note;
-  task: Task;
+  task: TaskV2;
   version: number;
 }
 export interface DesktopSelection {

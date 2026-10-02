@@ -10,18 +10,23 @@ import {
 import userEvent from "@testing-library/user-event";
 import TaskDetail from "./TaskDetail.svelte";
 import Workflow from "./Workflow.svelte";
+import ProgressSummary from "./ProgressSummary.svelte";
 import App from "./App.svelte";
 import { Progress } from "$lib/components/ui/progress";
 import type { ComponentProps } from "svelte";
-import { DashboardApi } from "./api";
+import { DashboardApi, ReadFailureKind } from "./api";
 import { FlowPresentation } from "./workflow";
 import type {
+  AgentId,
+  DesktopSelection,
+  DesktopRead,
   DesktopReply,
   DesktopFailure,
   FeatureFlow,
-  Task,
+  TaskV2,
   TaskFlow,
 } from "./contracts";
+const initialRead: DesktopRead = { kind: "Initial" };
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 afterEach(() => {
@@ -29,26 +34,36 @@ afterEach(() => {
   native.invoke.mockReset();
 });
 class Fixture {
-  task: Task = {
-    id: "implement",
-    feature: "dashboard",
-    version: 1,
-    attempt: 1,
-    revision: 5,
-    objective: "Build workflow",
-    acceptance: ["Show recorded work"],
-    dependencies: [],
-    created_at: 1000,
-    last_update: 2000,
-    last_progress: 1500,
+  task: TaskV2 = {
+    version: 2,
+    ownership: {
+      kind: "Assigned",
+      assignment: {
+        agent: { team: "Development", role: "TypescriptDev" },
+        reports_to: { kind: "Gizmo", coordinator: "Gizmo" },
+      },
+    },
     workspace: { kind: "git", branch: "codex/worker", path: "/fixture" },
-    checkpoint: { kind: "git", commit: "a".repeat(40) },
     state: { kind: "integrated", commit: "b".repeat(40) },
-    progress: {
-      summary: "Graph completed",
-      findings: [],
-      next_steps: [],
-      checks: [],
+    common: {
+      id: "implement",
+      feature: "dashboard",
+      attempt: 1,
+      revision: 5,
+      objective: "Build workflow",
+      acceptance: ["Show recorded work"],
+      dependencies: [],
+      created_at: 1000,
+      last_update: 2000,
+      last_progress: 1500,
+      checkpoint: { kind: "git", commit: "a".repeat(40) },
+      progress: {
+        summary: "Graph completed",
+        findings: [],
+        next_steps: [],
+        checks: [],
+        extensions: { artifact: "native-contract-v2" },
+      },
     },
   };
   contribution: TaskFlow = {
@@ -105,6 +120,7 @@ it("does not invent merges or assignments", () => {
   const fixture = new Fixture();
   fixture.contribution.integrations = [];
   fixture.contribution.worker = { kind: "unrecorded" };
+  fixture.task.ownership = { kind: "Unrecorded" };
   const presentation = new FlowPresentation(fixture.flow);
   expect(presentation.git().edges).toHaveLength(0);
   expect(presentation.agents().edges[0]?.label).toBe("created · unassigned");
@@ -128,7 +144,7 @@ it("keeps full-feature counts and progress visible independently of loaded agent
   expect(screen.getByText("1 queued")).toBeTruthy();
   expect(screen.getByText("60%")).toBeTruthy();
   const totals = screen.getAllByRole("progressbar", {
-    name: "Integrated tasks",
+    name: "Finished tasks",
   });
   expect(totals[0]?.getAttribute("aria-valuenow")).toBe("3");
   expect(totals[0]?.getAttribute("aria-valuemax")).toBe("5");
@@ -170,16 +186,14 @@ it("validates the native reply before use", async () => {
     content: { kind: "Features", value: { records: [], end: "Complete" } },
     selection: { view: { kind: "Features" }, page: 0 },
   });
-  const reply = await Effect.runPromise(
-    new DashboardApi().read({ kind: "Initial" }),
-  );
+  const reply = await Effect.runPromise(new DashboardApi().read(initialRead));
   expect(reply.content.kind).toBe("Features");
   expect(native.invoke).toHaveBeenCalledWith("dashboard_read", {
     request: { kind: "Initial" },
   });
   native.invoke.mockResolvedValueOnce({ content: "invalid" });
   const result = await Effect.runPromise(
-    Effect.result(new DashboardApi().read({ kind: "Initial" })),
+    Effect.result(new DashboardApi().read(initialRead)),
   );
   expect(result._tag).toBe("Failure");
 });
@@ -204,28 +218,28 @@ it("rejects unknown native enums, forbidden fields, nulls, and wrong scalar type
   ]) {
     native.invoke.mockResolvedValueOnce(raw);
     const result = await Effect.runPromise(
-      Effect.result(new DashboardApi().read({ kind: "Initial" })),
+      Effect.result(new DashboardApi().read(initialRead)),
     );
     expect(result).toMatchObject({
       _tag: "Failure",
-      failure: { kind: "InvalidReply", cause: raw },
+      failure: { kind: ReadFailureKind.InvalidReply, cause: raw },
     });
   }
 });
 
 it("preserves Unicode, empty prose, and schema-permitted extra native fields", async () => {
   const fixture = new Fixture();
-  fixture.task.objective = "🚀 日本語 e\u0301";
-  fixture.task.progress.summary = "";
+  fixture.task.common.objective = "🚀 日本語 e\u0301";
+  fixture.task.common.progress.summary = "";
   const reply: DesktopReply = {
     content: { kind: "Task", value: fixture.task, extra: "allowed by schema" },
     selection: { view: { kind: "Features" }, page: 0 },
     extra: "allowed by schema",
   };
   native.invoke.mockResolvedValueOnce(reply);
-  expect(
-    await Effect.runPromise(new DashboardApi().read({ kind: "Initial" })),
-  ).toEqual(reply);
+  expect(await Effect.runPromise(new DashboardApi().read(initialRead))).toEqual(
+    reply,
+  );
 });
 
 it("classifies valid native failures separately from malformed transport failures", async () => {
@@ -242,7 +256,7 @@ it("classifies valid native failures separately from malformed transport failure
     native.invoke.mockRejectedValueOnce(failure);
     expect(
       await Effect.runPromise(
-        Effect.result(new DashboardApi().read({ kind: "Initial" })),
+        Effect.result(new DashboardApi().read(initialRead)),
       ),
     ).toMatchObject({
       _tag: "Failure",
@@ -257,11 +271,11 @@ it("classifies valid native failures separately from malformed transport failure
     native.invoke.mockRejectedValueOnce(cause);
     expect(
       await Effect.runPromise(
-        Effect.result(new DashboardApi().read({ kind: "Initial" })),
+        Effect.result(new DashboardApi().read(initialRead)),
       ),
     ).toMatchObject({
       _tag: "Failure",
-      failure: { kind: "Transport", cause },
+      failure: { kind: ReadFailureKind.Transport, cause },
     });
   }
 });
@@ -283,7 +297,7 @@ it("keeps the team heading and progress visible while collapsing its tasks", asy
     screen.queryByRole("button", { name: "Expand TypescriptDev tasks" }),
   ).toBeNull();
   expect(
-    screen.getAllByRole("progressbar", { name: "Integrated tasks" }),
+    screen.getAllByRole("progressbar", { name: "Finished tasks" }),
   ).toHaveLength(2);
   await userEvent.keyboard("{Enter}");
   expect(team.getAttribute("aria-expanded")).toBe("true");
@@ -308,7 +322,7 @@ it("expands real tasks and opens a closable agent inspector", async () => {
   await userEvent.click(expand);
   expect(expand.getAttribute("aria-expanded")).toBe("true");
   const task = screen.getByRole("button", {
-    name: "Build workflow Completed",
+    name: "Build workflow Integrated",
   });
   await userEvent.click(task);
   const inspector = screen.getByRole("complementary", {
@@ -345,4 +359,313 @@ it("retries a native read failure without issuing coordination commands", async 
     ["dashboard_read", { request: { kind: "Initial" } }],
     ["dashboard_read", { request: { kind: "Initial" } }],
   ]);
+});
+
+it("includes completed activity in terminal progress while preserving integrated counts", () => {
+  const finishedTasksQuery: ByRoleOptions = { name: "Finished tasks" };
+  const props: ComponentProps<typeof ProgressSummary> = {
+    counts: [
+      { state: "integrated", count: 1 },
+      { state: "completed", count: 1 },
+      { state: "queued", count: 1 },
+    ],
+  };
+  render(ProgressSummary, props);
+  expect(screen.getByText("1 integrated")).toBeTruthy();
+  expect(screen.getByText("1 completed")).toBeTruthy();
+  const meter = screen.getByRole("progressbar", finishedTasksQuery);
+  expect(meter.getAttribute("aria-valuenow")).toBe("2");
+  expect(meter.getAttribute("aria-valuemax")).toBe("3");
+  expect(screen.getByText("67%")).toBeTruthy();
+});
+
+it("renders completed read-only ownership and reporting without inventing Git evidence", async () => {
+  const expandTechWriterVerifierTasksQuery: ByRoleOptions = {
+    name: "Expand TechWriterVerifier tasks",
+  };
+  const buildWorkflowCompletedQuery: ByRoleOptions = {
+    name: "Build workflow Completed",
+  };
+  const techWriterVerifierDetailsQuery: ByRoleOptions = {
+    name: "TechWriterVerifier details",
+  };
+  const fixture = new Fixture();
+  const agent = {
+    team: "Ai",
+    role: "TechWriterVerifier",
+  } satisfies AgentId;
+  fixture.task.workspace = { kind: "read_only" };
+  fixture.task.state = { kind: "completed", agent, attempt: 1 };
+  fixture.task.ownership = {
+    kind: "Assigned",
+    assignment: { agent, reports_to: { kind: "Host" } },
+  };
+  fixture.task.common.checkpoint = { kind: "unrecorded" };
+  fixture.contribution.worker = { kind: "recorded", agent };
+  fixture.contribution.checkpoints = [];
+  fixture.contribution.integrations = [];
+  fixture.flow.counts = [{ state: "completed", count: 1 }];
+  fixture.contribution.milestones = [
+    {
+      actor: agent,
+      at: 2000,
+      attempt: 1,
+      kind: "completed",
+      note: "Review finished",
+      revision: 5,
+    },
+  ];
+  const props: ComponentProps<typeof Workflow> = {
+    flow: fixture.flow,
+    select: vi.fn(),
+    history: vi.fn(),
+    refresh: vi.fn(),
+  };
+  render(Workflow, props);
+  expect(screen.getAllByText("1 completed").length).toBeGreaterThan(0);
+  await userEvent.click(
+    screen.getByRole("button", expandTechWriterVerifierTasksQuery),
+  );
+  await userEvent.click(
+    screen.getByRole("button", buildWorkflowCompletedQuery),
+  );
+  const inspector = screen.getByRole(
+    "complementary",
+    techWriterVerifierDetailsQuery,
+  );
+  expect(within(inspector).getByText("Host")).toBeTruthy();
+  expect(within(inspector).getByText("Read only")).toBeTruthy();
+  expect(within(inspector).getAllByText("Unrecorded")).toHaveLength(2);
+  expect(within(inspector).getByText("Completed task")).toBeTruthy();
+  expect(within(inspector).getByText(/native-contract-v2/)).toBeTruthy();
+  const presentation = new FlowPresentation(fixture.flow);
+  expect(presentation.git().edges).toHaveLength(0);
+  expect(presentation.git().nodes).toHaveLength(1);
+});
+
+it("renders a queued assigned worker and feature workspace before any claim history", async () => {
+  const teamGizmoQuery: ByRoleOptions = { name: "Team Gizmo" };
+  const expandTypescriptVerifierTasksQuery: ByRoleOptions = {
+    name: "Expand TypescriptVerifier tasks",
+  };
+  const buildWorkflowQueuedQuery: ByRoleOptions = {
+    name: "Build workflow Queued",
+  };
+  const typescriptVerifierDetailsQuery: ByRoleOptions = {
+    name: "TypescriptVerifier details",
+  };
+  const fixture = new Fixture();
+  const agent = {
+    team: "Development",
+    role: "TypescriptVerifier",
+  } satisfies AgentId;
+  fixture.task.workspace = { kind: "feature" };
+  fixture.task.state = { kind: "queued" };
+  fixture.task.ownership = {
+    kind: "Assigned",
+    assignment: {
+      agent,
+      reports_to: { kind: "Gizmo", coordinator: "GizmoPrime" },
+    },
+  };
+  fixture.task.common.checkpoint = { kind: "unrecorded" };
+  fixture.contribution.worker = { kind: "recorded", agent };
+  fixture.contribution.checkpoints = [];
+  fixture.contribution.integrations = [];
+  fixture.contribution.milestones = [
+    {
+      actor: { team: "Gizmo", role: "Gizmo" },
+      at: 1500,
+      attempt: 0,
+      kind: "assigned",
+      note: "Review assigned",
+      revision: 2,
+    },
+  ];
+  fixture.flow.counts = [{ state: "queued", count: 1 }];
+  const props: ComponentProps<typeof Workflow> = {
+    flow: fixture.flow,
+    select: vi.fn(),
+    history: vi.fn(),
+    refresh: vi.fn(),
+  };
+  render(Workflow, props);
+  expect(screen.getByRole("button", teamGizmoQuery)).toBeTruthy();
+  await userEvent.click(
+    screen.getByRole("button", expandTypescriptVerifierTasksQuery),
+  );
+  await userEvent.click(screen.getByRole("button", buildWorkflowQueuedQuery));
+  const inspector = screen.getByRole(
+    "complementary",
+    typescriptVerifierDetailsQuery,
+  );
+  expect(within(inspector).getByText("Gizmo Prime")).toBeTruthy();
+  expect(within(inspector).getByText("Feature workspace")).toBeTruthy();
+  expect(within(inspector).getByText("Recorded assignment")).toBeTruthy();
+  expect(new FlowPresentation(fixture.flow).git().edges).toHaveLength(0);
+});
+
+it("accepts completed feature work and retains native history worker fallback for unrecorded ownership", async () => {
+  const fixture = new Fixture();
+  const agent = {
+    team: "Development",
+    role: "TypescriptDev",
+  } satisfies AgentId;
+  fixture.task.workspace = { kind: "feature" };
+  fixture.task.state = { kind: "completed", agent, attempt: 1 };
+  fixture.task.ownership = { kind: "Unrecorded" };
+  fixture.task.common.checkpoint = { kind: "unrecorded" };
+  fixture.contribution.checkpoints = [];
+  fixture.contribution.integrations = [];
+  fixture.flow.counts = [{ state: "completed", count: 1 }];
+  const reply: DesktopReply = {
+    content: { kind: "Workflow", value: fixture.flow },
+    selection: { view: { kind: "Tasks", feature: "dashboard" }, page: 0 },
+  };
+  native.invoke.mockResolvedValueOnce(reply);
+  expect(await Effect.runPromise(new DashboardApi().read(initialRead))).toEqual(
+    reply,
+  );
+  const presentation = new FlowPresentation(fixture.flow);
+  expect(presentation.agents().nodes.map((node) => node.data.title)).toContain(
+    "Development / TypescriptDev",
+  );
+  expect(presentation.git().edges).toHaveLength(0);
+  expect(presentation.git().nodes).toHaveLength(1);
+  const props: ComponentProps<typeof TaskDetail> = {
+    task: fixture.task,
+    history: vi.fn(),
+    back: vi.fn(),
+  };
+  render(TaskDetail, props);
+  expect(screen.getByText("Feature workspace")).toBeTruthy();
+  expect(screen.getAllByText("Unrecorded")).toHaveLength(3);
+  expect(screen.getByText(/native-contract-v2/)).toBeTruthy();
+});
+
+it("shows the native history worker of a migrated integrated task without inventing reporting ownership", async () => {
+  const expandTypescriptDevTasksQuery: ByRoleOptions = {
+    name: "Expand TypescriptDev tasks",
+  };
+  const buildWorkflowIntegratedQuery: ByRoleOptions = {
+    name: "Build workflow Integrated",
+  };
+  const typescriptDevDetailsQuery: ByRoleOptions = {
+    name: "TypescriptDev details",
+  };
+  const fixture = new Fixture();
+  fixture.task.ownership = { kind: "Unrecorded" };
+  fixture.contribution.milestones = [
+    {
+      actor: { team: "Development", role: "TypescriptDev" },
+      at: 1200,
+      attempt: 1,
+      kind: "claimed",
+      note: "Recorded before ownership migration",
+      revision: 2,
+    },
+    {
+      actor: { team: "Delivery", role: "IntegrationAgent" },
+      at: 2000,
+      attempt: 1,
+      kind: "integrated",
+      note: "Recorded integration",
+      revision: 5,
+    },
+  ];
+  const props: ComponentProps<typeof Workflow> = {
+    flow: fixture.flow,
+    select: vi.fn(),
+    history: vi.fn(),
+    refresh: vi.fn(),
+  };
+  render(Workflow, props);
+  await userEvent.click(
+    screen.getByRole("button", expandTypescriptDevTasksQuery),
+  );
+  await userEvent.click(
+    screen.getByRole("button", buildWorkflowIntegratedQuery),
+  );
+  const inspector = screen.getByRole(
+    "complementary",
+    typescriptDevDetailsQuery,
+  );
+  expect(
+    within(inspector).getByText("Development / TypescriptDev"),
+  ).toBeTruthy();
+  expect(within(inspector).getByText("Unrecorded")).toBeTruthy();
+  expect(within(inspector).getByTitle("a".repeat(40))).toBeTruthy();
+  expect(within(inspector).getByTitle("b".repeat(40))).toBeTruthy();
+  expect(within(inspector).getByText("Claimed attempt 1")).toBeTruthy();
+  expect(within(inspector).getByText("Recorded integration")).toBeTruthy();
+  expect(within(inspector).getByText(/native-contract-v2/)).toBeTruthy();
+  cleanup();
+  const detail: ComponentProps<typeof TaskDetail> = {
+    task: fixture.task,
+    history: vi.fn(),
+    back: vi.fn(),
+  };
+  render(TaskDetail, detail);
+  expect(screen.getByText("Worker").nextElementSibling?.textContent).toBe(
+    "Unrecorded",
+  );
+  expect(screen.getByText("Reports to").nextElementSibling?.textContent).toBe(
+    "Unrecorded",
+  );
+});
+
+it("rejects legacy, future, flattened, and malformed ownership TaskV2 replies", async () => {
+  const fixture = new Fixture();
+  const selection = {
+    view: { kind: "Features" },
+    page: 0,
+  } satisfies DesktopSelection;
+  for (const task of [
+    { ...fixture.task, version: 1 },
+    { ...fixture.task, version: 3 },
+    {
+      ...fixture.task.common,
+      version: 2,
+      ownership: fixture.task.ownership,
+      workspace: fixture.task.workspace,
+      state: fixture.task.state,
+    },
+    { ...fixture.task, common: { ...fixture.task.common, unexpected: true } },
+    {
+      ...fixture.task,
+      ownership: {
+        kind: "Assigned",
+        assignment: {
+          agent: { team: "Ai", role: "TypescriptVerifier" },
+          reports_to: { kind: "Host" },
+        },
+      },
+    },
+    {
+      ...fixture.task,
+      ownership: {
+        kind: "Assigned",
+        assignment: {
+          agent: { team: "Development", role: "TypescriptDev" },
+          reports_to: { kind: "Gizmo" },
+        },
+      },
+    },
+  ]) {
+    native.invoke.mockResolvedValueOnce({
+      content: { kind: "Task", value: task },
+      selection,
+    });
+    const result = await Effect.runPromise(
+      Effect.result(new DashboardApi().read(initialRead)),
+    );
+    expect(result._tag).toBe("Failure");
+    switch (result._tag) {
+      case "Failure":
+        expect(result.failure.kind).toBe(ReadFailureKind.InvalidReply);
+        break;
+      case "Success":
+        break;
+    }
+  }
 });

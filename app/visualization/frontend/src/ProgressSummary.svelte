@@ -28,11 +28,12 @@
   >
     <Progress
       class="h-1.5 flex-1 rounded-[3px] bg-meter [&>[data-slot=progress-indicator]]:rounded-[3px]"
-      aria-label="Integrated tasks"
-      value={progress.integrated()}
+      aria-label="Finished tasks"
+      value={progress.finished()}
       max={Math.max(1, progress.total())}
     />
-    <span title={`${progress.integrated()} / ${progress.total()} integrated`}
+    <span
+      title={`${progress.finished()} / ${progress.total()} integrated or completed`}
       >{progress.percent()}%</span
     >
   </div>

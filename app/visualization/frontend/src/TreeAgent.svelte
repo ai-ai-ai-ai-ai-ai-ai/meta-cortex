@@ -55,8 +55,8 @@
           >{group.name()}{#if group.tasks.length > 1}<small
               >{group.tasks.length} tasks</small
             >{/if}</strong
-        ><span title={group.latest().task.objective}
-          >{group.latest().task.objective}</span
+        ><span title={group.latest().task.common.objective}
+          >{group.latest().task.common.objective}</span
         >
       </div>
       <Badge
@@ -77,24 +77,25 @@
     <ul
       class="task-children m-0 ml-[46px] list-none pb-3 pr-[15px] max-[620px]:ml-9 max-[620px]:pr-[7px] [&>li]:relative [&>li]:border-l [&>li]:border-tree-line [&>li]:pl-[18px] [&>li]:before:absolute [&>li]:before:top-[27px] [&>li]:before:left-0 [&>li]:before:w-3 [&>li]:before:border-t [&>li]:before:border-tree-line"
     >
-      {#each group.tasks as item (item.task.id)}<li>
+      {#each group.tasks as item (item.task.common.id)}<li>
           <Button
             variant="ghost"
             class="h-auto min-h-12 w-full justify-start gap-3 rounded-[5px] bg-transparent px-1.5 py-2.5 text-left font-normal whitespace-normal hover:bg-selection max-[620px]:gap-[7px] [&>div]:min-w-0 [&>div]:flex-1 [&_strong]:block [&_strong]:truncate [&_strong]:text-xs [&_strong]:font-medium"
-            id={`${identity}:${item.task.id}`}
+            id={`${identity}:${item.task.common.id}`}
             onclick={() =>
               select({
                 group,
                 task: item,
-                origin: `${identity}:${item.task.id}`,
+                origin: `${identity}:${item.task.common.id}`,
               })}
             ><StatusMark
               state={new TaskPresentation(item.task).status()}
               class="size-[18px] before:text-[11px]"
             />
             <div>
-              <strong title={`${item.task.id} · ${item.task.objective}`}
-                >{item.task.objective}</strong
+              <strong
+                title={`${item.task.common.id} · ${item.task.common.objective}`}
+                >{item.task.common.objective}</strong
               >
             </div>
             <Badge

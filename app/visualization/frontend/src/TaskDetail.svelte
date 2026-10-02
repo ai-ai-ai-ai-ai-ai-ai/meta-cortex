@@ -2,13 +2,13 @@
   import * as Card from "$lib/components/ui/card";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import type { Task } from "./contracts";
+  import type { TaskV2 } from "./contracts";
   import { TaskPresentation } from "./task-presentation";
   let {
     task,
     back,
     history,
-  }: { task: Task; back: () => void; history: () => void } = $props();
+  }: { task: TaskV2; back: () => void; history: () => void } = $props();
   let presentation = $derived(new TaskPresentation(task));
 </script>
 
@@ -24,10 +24,10 @@
   >
     <div>
       <span class="eyebrow text-[10px] tracking-[1.3px] text-muted-foreground"
-        >TASK · ATTEMPT {task.attempt}</span
+        >TASK · ATTEMPT {task.common.attempt}</span
       >
-      <h2 class="font-bold">{task.id}</h2>
-      <p>{task.objective}</p>
+      <h2 class="font-bold">{task.common.id}</h2>
+      <p>{task.common.objective}</p>
     </div>
     <Badge variant="status" class="status" data-state={presentation.status()}
       >{presentation.status()}</Badge
@@ -38,20 +38,20 @@
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
       <h3 class="font-bold">Latest contribution</h3>
-      <p class="text-sm">{task.progress.summary}</p>
+      <p class="text-sm">{task.common.progress.summary}</p>
       {#if presentation.reason()}<p
           class="mt-[15px] border-l-2 border-blocked pl-2.5 text-xs text-blocked"
         >
           {presentation.reason()}
         </p>{/if}
       <h4 class="font-bold">Findings</h4>
-      {#each task.progress.findings as finding, index (index)}<p
+      {#each task.common.progress.findings as finding, index (index)}<p
           class="finding mb-2.5 border-l-2 border-tree-line pl-3 text-xs"
         >
           {finding}
         </p>{/each}
       <h4 class="font-bold">Next steps</h4>
-      {#each task.progress.next_steps as step, index (index)}<p
+      {#each task.common.progress.next_steps as step, index (index)}<p
           class="finding mb-2.5 border-l-2 border-tree-line pl-3 text-xs"
         >
           {step}
@@ -62,6 +62,10 @@
     >
       <h3 class="font-bold">Git evidence</h3>
       <dl>
+        <dt>Worker</dt>
+        <dd>{presentation.actor()}</dd>
+        <dt>Reports to</dt>
+        <dd>{presentation.reportsTo()}</dd>
         <dt>Workspace</dt>
         <dd class="whitespace-pre-wrap">{presentation.workspace()}</dd>
         <dt>Checkpoint</dt>
@@ -69,7 +73,7 @@
         <dt>Integration</dt>
         <dd><code>{presentation.integration()}</code></dd>
         <dt>Updated</dt>
-        <dd>{new Date(task.last_update).toLocaleString()}</dd>
+        <dd>{new Date(task.common.last_update).toLocaleString()}</dd>
       </dl>
       <p class="mt-[18px] text-[11px] text-muted-foreground">
         Actors recording commits are available in history. Git authorship is not
@@ -80,9 +84,9 @@
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
       <h3 class="font-bold">
-        Checks <span>{task.progress.checks.length}</span>
+        Checks <span>{task.common.progress.checks.length}</span>
       </h3>
-      {#each task.progress.checks as check, index (index)}<details
+      {#each task.common.progress.checks as check, index (index)}<details
           class="check border-t border-border py-3 [&_summary]:flex [&_summary]:cursor-pointer [&_summary]:items-center [&_summary]:gap-2.5 [&_pre]:bg-code [&_pre]:p-3 [&_pre]:text-[11px] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
         >
           <summary
@@ -97,13 +101,13 @@
       class="detail-card overflow-visible block min-w-0 rounded-[6px] border border-border bg-card p-5 shadow-none ring-0 [&_h3]:mb-[18px] [&_h3]:text-base [&_h4]:mt-5 [&_h4]:mb-2.5 [&_h4]:text-[11px] [&_h4]:text-muted-foreground [&_dl]:grid [&_dl]:grid-cols-[100px_minmax(0,1fr)] [&_dl]:gap-[14px] [&_dl]:text-xs [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:[overflow-wrap:anywhere]"
     >
       <h3 class="font-bold">Acceptance & dependencies</h3>
-      {#each task.acceptance as criterion, index (index)}<p
+      {#each task.common.acceptance as criterion, index (index)}<p
           class="finding mb-2.5 border-l-2 border-tree-line pl-3 text-xs"
         >
           {criterion}
         </p>{/each}
       <div class="dependency-list mt-5 flex flex-wrap gap-2.5 text-primary">
-        {#each task.dependencies as dependency (dependency)}<code
+        {#each task.common.dependencies as dependency (dependency)}<code
             >{dependency}</code
           >{/each}
       </div>

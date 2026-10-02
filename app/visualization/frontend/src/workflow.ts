@@ -3,7 +3,7 @@ import { graphlib, layout, type GraphLabel } from "@dagrejs/dagre";
 import type {
   FeatureFlow,
   TaskFlow,
-  Task,
+  TaskV2,
   FlowState,
   RecordedActor,
   Milestone,
@@ -48,6 +48,10 @@ interface LayoutNode {
   x: number;
   y: number;
 }
+interface TaskActivity {
+  task: TaskV2;
+  event: Milestone;
+}
 export class FlowPresentation {
   constructor(readonly flow: FeatureFlow) {}
   static label(id: string): string {
@@ -77,7 +81,10 @@ export class FlowPresentation {
     const ready = tasks.filter(
       (item) => item.task.state.kind === "ready",
     ).length;
-    return `${integrated} integrated · ${ready} ready · ${tasks.length} tasks`;
+    const completed = tasks.filter(
+      (item) => item.task.state.kind === "completed",
+    ).length;
+    return `${integrated} integrated · ${completed} completed · ${ready} ready · ${tasks.length} tasks`;
   }
   views(): FlowView[] {
     return [FlowView.Tree, FlowView.Agents, FlowView.Git, FlowView.History];
@@ -148,9 +155,9 @@ export class FlowPresentation {
   }
   tasks(): Diagram {
     const nodes = this.flow.tasks.records.map((item) =>
-      this.node(`task:${item.task.id}`, {
+      this.node(`task:${item.task.common.id}`, {
         kind: NodeKind.Task,
-        title: item.task.id,
+        title: item.task.common.id,
         subtitle: this.actor(item.worker),
         state: new TaskPresentation(item.task).status(),
         tasks: [item],
@@ -158,7 +165,7 @@ export class FlowPresentation {
       }),
     );
     const knownTasks = new Set(
-      this.flow.tasks.records.map((item) => item.task.id),
+      this.flow.tasks.records.map((item) => item.task.common.id),
     );
     const edges = this.flow.tasks.records.flatMap((item) =>
       this.dependencies(item, knownTasks),
@@ -180,10 +187,11 @@ export class FlowPresentation {
     for (const item of this.flow.tasks.records) {
       switch (item.task.workspace.kind) {
         case "read_only":
+        case "feature":
           break;
         case "git":
           nodes.push(
-            this.node(`branch:${item.task.id}`, {
+            this.node(`branch:${item.task.common.id}`, {
               kind: NodeKind.Task,
               title: item.task.workspace.branch,
               subtitle: new TaskPresentation(item.task)
@@ -204,20 +212,20 @@ export class FlowPresentation {
     item: TaskFlow,
     knownTasks: ReadonlySet<string>,
   ): Edge[] {
-    return item.task.dependencies
+    return item.task.common.dependencies
       .filter((id) => knownTasks.has(id))
       .map((id) => ({
-        id: `dependency:${id}:${item.task.id}`,
+        id: `dependency:${id}:${item.task.common.id}`,
         source: `task:${id}`,
-        target: `task:${item.task.id}`,
+        target: `task:${item.task.common.id}`,
         label: "prerequisite",
         type: "smoothstep",
       }));
   }
   private integrations(item: TaskFlow): Edge[] {
     return item.integrations.map((commit) => ({
-      id: `merge:${item.task.id}:${commit.revision}`,
-      source: `branch:${item.task.id}`,
+      id: `merge:${item.task.common.id}:${commit.revision}`,
+      source: `branch:${item.task.common.id}`,
       target: "feature",
       label: `integrated ${commit.commit.slice(0, 8)}`,
       type: "smoothstep",
@@ -253,7 +261,7 @@ export class FlowPresentation {
       edges: diagram.edges,
     };
   }
-  activity(): ReadonlyArray<{ task: Task; event: Milestone }> {
+  activity(): ReadonlyArray<TaskActivity> {
     return this.flow.tasks.records
       .flatMap((item) =>
         item.milestones.map((event) => ({ task: item.task, event })),
@@ -265,6 +273,8 @@ export class FlowPresentation {
     switch (event.kind) {
       case "created":
         return "Created task";
+      case "assigned":
+        return "Recorded assignment";
       case "claimed":
         return `Claimed attempt ${event.attempt}`;
       case "checkpoint":
@@ -273,6 +283,8 @@ export class FlowPresentation {
         return "Ready for handoff";
       case "integrated":
         return "Recorded integration";
+      case "completed":
+        return "Completed task";
       case "requeued":
         return "Requeued for another attempt";
       case "cancelled":

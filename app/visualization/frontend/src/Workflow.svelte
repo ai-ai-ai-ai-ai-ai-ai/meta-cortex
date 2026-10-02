@@ -2,7 +2,7 @@
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
   import { SvelteFlow, Background, Controls, MiniMap } from "@xyflow/svelte";
-  import type { FeatureFlow, Task } from "./contracts";
+  import type { FeatureFlow, TaskV2 } from "./contracts";
   import { FlowPresentation, FlowView, GraphKind, NodeKind } from "./workflow";
   import type { DiagramNode } from "./workflow";
   import { AgentContribution, PanelKind } from "./agent-tree";
@@ -18,8 +18,8 @@
     refresh,
   }: {
     flow: FeatureFlow;
-    select: (task: Task) => void;
-    history: (task: Task) => void;
+    select: (task: TaskV2) => void;
+    history: (task: TaskV2) => void;
     refresh: () => void;
   } = $props();
   let view = $state<FlowView>(FlowView.Tree);
@@ -138,7 +138,7 @@
           aria-label="Recent recorded history"
         >
           <h2 class="font-bold">Recent activity</h2>
-          {#each presentation.activity() as item (`${item.task.id}:${item.event.revision}`)}<Button
+          {#each presentation.activity() as item (`${item.task.common.id}:${item.event.revision}`)}<Button
               variant="ghost"
               class="h-auto min-h-[70px] w-full justify-start gap-3 rounded-none border-t border-border bg-transparent px-1 py-[15px] text-left whitespace-normal hover:bg-secondary [&_strong]:block [&_strong]:text-[13px] [&_strong]:font-medium [&_div>span]:mt-[5px] [&_div>span]:block [&_div>span]:text-[11px] [&_div>span]:text-muted-foreground [&_time]:ml-auto [&_time]:text-[10px] [&_time]:text-muted-foreground max-[620px]:[&_time]:text-[9px]"
               onclick={() => history(item.task)}
@@ -149,7 +149,7 @@
               >
               <div>
                 <strong>{FlowPresentation.action(item.event)}</strong><span
-                  >{item.task.id} · {item.event.actor.role}</span
+                  >{item.task.common.id} · {item.event.actor.role}</span
                 >
               </div>
               <time>{new Date(item.event.at).toLocaleString()}</time></Button

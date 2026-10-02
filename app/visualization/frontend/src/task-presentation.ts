@@ -1,6 +1,6 @@
-import type { Task, FlowState } from "./contracts";
+import type { TaskV2, FlowState, ReportingTarget } from "./contracts";
 export class TaskPresentation {
-  constructor(readonly task: Task) {}
+  constructor(readonly task: TaskV2) {}
   status(): FlowState {
     switch (this.task.state.kind) {
       case "active":
@@ -8,6 +8,7 @@ export class TaskPresentation {
       case "queued":
       case "ready":
       case "integrated":
+      case "completed":
       case "cancelled":
         return this.task.state.kind;
     }
@@ -15,6 +16,8 @@ export class TaskPresentation {
   childStatus(): string {
     switch (this.status()) {
       case "integrated":
+        return "Integrated";
+      case "completed":
         return "Completed";
       case "working":
         return "In progress";
@@ -29,15 +32,43 @@ export class TaskPresentation {
     }
   }
   actor(): string {
+    switch (this.task.ownership.kind) {
+      case "Assigned":
+        return `${this.task.ownership.assignment.agent.team} / ${this.task.ownership.assignment.agent.role}`;
+      case "Unrecorded":
+        break;
+    }
     switch (this.task.state.kind) {
       case "active":
         return `${this.task.state.assignment.agent.team} / ${this.task.state.assignment.agent.role}`;
       case "ready":
+      case "completed":
         return `${this.task.state.agent.team} / ${this.task.state.agent.role}`;
       case "queued":
       case "integrated":
       case "cancelled":
         return "Unrecorded";
+    }
+  }
+  reportsTo(): string {
+    switch (this.task.ownership.kind) {
+      case "Unrecorded":
+        return "Unrecorded";
+      case "Assigned":
+        return this.reportingTarget(this.task.ownership.assignment.reports_to);
+    }
+  }
+  private reportingTarget(target: ReportingTarget): string {
+    switch (target.kind) {
+      case "Host":
+        return "Host";
+      case "Gizmo":
+        switch (target.coordinator) {
+          case "Gizmo":
+            return "Team Gizmo";
+          case "GizmoPrime":
+            return "Gizmo Prime";
+        }
     }
   }
   lease(): string {
@@ -47,16 +78,17 @@ export class TaskPresentation {
       case "queued":
       case "ready":
       case "integrated":
+      case "completed":
       case "cancelled":
         return "Unrecorded";
     }
   }
   checkpoint(): string {
-    switch (this.task.checkpoint.kind) {
+    switch (this.task.common.checkpoint.kind) {
       case "unrecorded":
         return "Unrecorded";
       case "git":
-        return this.task.checkpoint.commit;
+        return this.task.common.checkpoint.commit;
     }
   }
   integration(): string {
@@ -66,6 +98,7 @@ export class TaskPresentation {
       case "queued":
       case "active":
       case "ready":
+      case "completed":
       case "cancelled":
         return "Unrecorded";
     }
@@ -74,6 +107,8 @@ export class TaskPresentation {
     switch (this.task.workspace.kind) {
       case "read_only":
         return "Read only";
+      case "feature":
+        return "Feature workspace";
       case "git":
         return `${this.task.workspace.branch}\n${this.task.workspace.path}`;
     }
@@ -93,6 +128,7 @@ export class TaskPresentation {
       case "queued":
       case "ready":
       case "integrated":
+      case "completed":
         return "";
     }
   }

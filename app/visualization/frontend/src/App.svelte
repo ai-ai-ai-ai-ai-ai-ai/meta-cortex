@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import type { Task } from "./contracts";
+  import type { TaskV2 } from "./contracts";
   import { onMount } from "svelte";
   import { DashboardController, LoadKind } from "./dashboard-state.svelte";
   import { DashboardApi } from "./api";
@@ -147,8 +147,8 @@
         {:else if reply.content.kind === "Workflow"}
           <Workflow
             flow={reply.content.value}
-            select={(task: Task) => dashboard.task(task)}
-            history={(task: Task) => dashboard.history(task)}
+            select={(task: TaskV2) => dashboard.task(task)}
+            history={(task: TaskV2) => dashboard.history(task)}
             refresh={() => dashboard.load(dashboard.state.request)}
           />
         {:else if reply.content.kind === "Task"}
@@ -158,13 +158,13 @@
             back={() =>
               dashboard.load({
                 kind: "Workflow",
-                feature: task.feature,
+                feature: task.common.feature,
                 page: 0,
               })}
             history={() =>
               dashboard.load({
                 kind: "History",
-                query: { feature: task.feature, task: task.id },
+                query: { feature: task.common.feature, task: task.common.id },
                 page: 0,
               })}
           />
@@ -185,7 +185,7 @@
             <div
               class="history-feed mt-6 [&_h3]:mb-2 [&_h3]:text-xs [&_p]:mb-2.5 [&_p]:text-xs [&_p]:text-muted-foreground [&_small]:text-[10px]"
             >
-              {#each reply.content.value.records as event (event.task.revision)}<article
+              {#each reply.content.value.records as event (event.task.common.revision)}<article
                   class="mb-[5px] flex flex-wrap gap-5 border-l-2 border-primary/60 bg-card p-5 max-[620px]:gap-2.5 max-[620px]:p-[14px]"
                 >
                   <Badge variant="status" class="status">{event.kind}</Badge>
@@ -195,9 +195,9 @@
                     </h3>
                     <p>{event.note}</p>
                     <small
-                      >Attempt {event.task.attempt} · revision {event.task
-                        .revision} · {new Date(
-                        event.task.last_update,
+                      >Attempt {event.task.common.attempt} · revision {event
+                        .task.common.revision} · {new Date(
+                        event.task.common.last_update,
                       ).toLocaleString()}</small
                     >
                   </div>
@@ -205,7 +205,8 @@
                     class="recorded-snapshot w-full mt-[18px] text-[11px] [&_summary]:cursor-pointer [&_summary]:text-muted-foreground [&_pre]:max-h-[400px] [&_pre]:overflow-auto [&_pre]:bg-code [&_pre]:p-[14px] [&_pre]:text-[11px] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
                   >
                     <summary
-                      >Event snapshot · revision {event.task.revision}</summary
+                      >Event snapshot · revision {event.task.common
+                        .revision}</summary
                     >
                     <pre>{JSON.stringify(event, null, 2)}</pre>
                   </details>

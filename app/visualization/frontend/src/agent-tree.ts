@@ -47,14 +47,6 @@ export interface AgentSelection {
   task: TaskFlow;
   origin: string;
 }
-const priority: Record<FlowState, number> = {
-  blocked: 0,
-  working: 1,
-  ready: 2,
-  queued: 3,
-  integrated: 4,
-  cancelled: 5,
-};
 class AgentLabel {
   constructor(private readonly actor: RecordedActor) {}
   name(): string {
@@ -85,6 +77,15 @@ class AgentLabel {
   }
 }
 export class AgentContribution {
+  private static readonly priority: Record<FlowState, number> = {
+    blocked: 0,
+    working: 1,
+    ready: 2,
+    queued: 3,
+    integrated: 4,
+    completed: 5,
+    cancelled: 6,
+  };
   constructor(
     readonly actor: RecordedActor,
     readonly tasks: readonly [TaskFlow, ...TaskFlow[]],
@@ -98,14 +99,20 @@ export class AgentContribution {
   status(): FlowState {
     const states = this.tasks
       .map((item) => new TaskPresentation(item.task).status())
-      .sort((left, right) => priority[left] - priority[right]);
+      .sort(
+        (left, right) =>
+          AgentContribution.priority[left] - AgentContribution.priority[right],
+      );
     return states[0] ?? new TaskPresentation(this.first().task).status();
   }
   summary(): string {
     const integrated = this.tasks.filter(
       (item) => item.task.state.kind === "integrated",
     ).length;
-    return `${integrated} / ${this.tasks.length} integrated`;
+    const completed = this.tasks.filter(
+      (item) => item.task.state.kind === "completed",
+    ).length;
+    return `${integrated} integrated · ${completed} completed / ${this.tasks.length} tasks`;
   }
   counts(): ReadonlyArray<FlowCount> {
     return new ContributionProgress(this.tasks).counts();
@@ -113,7 +120,8 @@ export class AgentContribution {
   latest(): TaskFlow {
     return (
       [...this.tasks].sort(
-        (left, right) => right.task.last_update - left.task.last_update,
+        (left, right) =>
+          right.task.common.last_update - left.task.common.last_update,
       )[0] ?? this.first()
     );
   }
