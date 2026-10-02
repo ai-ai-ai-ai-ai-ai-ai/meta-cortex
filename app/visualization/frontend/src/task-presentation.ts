@@ -103,12 +103,22 @@ export class TaskPresentation {
         return "Unrecorded";
     }
   }
+  workspaceLabel(): string {
+    switch (this.task.workspace.kind) {
+      case "read_only":
+        return "Read only";
+      case "feature":
+        return "Shared feature workspace";
+      case "git":
+        return "Git worker";
+    }
+  }
   workspace(): string {
     switch (this.task.workspace.kind) {
       case "read_only":
         return "Read only";
       case "feature":
-        return "Feature workspace";
+        return "Shared feature workspace";
       case "git":
         return `${this.task.workspace.branch}\n${this.task.workspace.path}`;
     }

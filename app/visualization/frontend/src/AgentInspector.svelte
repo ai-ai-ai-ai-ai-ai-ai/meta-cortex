@@ -54,6 +54,7 @@
         >{presentation.status()}</Badge
       ><span>Attempt {task.common.attempt} · {selection.group.summary()}</span>
     </div>
+    <p class="text-[9px] text-muted-foreground">Own activities · loaded page</p>
     <ProgressSummary counts={selection.group.counts()} class="my-4 w-full" />
     <h3>{task.common.objective}</h3>
     <p
@@ -67,7 +68,7 @@
         {presentation.reason()}
       </p>{/if}
     <section>
-      <h4>Recorded tasks <span>{selection.group.tasks.length}</span></h4>
+      <h4>Recorded activities <span>{selection.group.tasks.length}</span></h4>
       <div class="inspector-tasks flex flex-col">
         {#each selection.group.tasks as item (item.task.common.id)}<Button
             variant="ghost"
@@ -77,9 +78,13 @@
             ><StatusMark
               state={new TaskPresentation(item.task).status()}
               class="size-[18px] before:text-[11px]"
-            /><span>{item.task.common.id}</span><small
-              >{new TaskPresentation(item.task).status()}</small
-            ></Button
+            /><span
+              >{item.task.common.id}<span
+                class="mt-1 block text-[9px] text-muted-foreground"
+                title={new TaskPresentation(item.task).workspace()}
+                >{new TaskPresentation(item.task).workspaceLabel()}</span
+              ></span
+            ><small>{new TaskPresentation(item.task).status()}</small></Button
           >{/each}
       </div>
     </section>
@@ -101,43 +106,64 @@
           </details>{/each}
       </section>{/if}
     <section>
-      <h4>Git evidence</h4>
+      <h4>Assignment & workspace</h4>
       <dl>
         <dt>Worker</dt>
         <dd>
-          {#if selection.task.worker.kind === "recorded"}
-            {selection.task.worker.agent.team} / {selection.task.worker.agent
-              .role}
-          {:else}Unrecorded{/if}
+          {#if selection.task.worker.kind === "recorded"}{selection.task.worker
+              .agent.team} / {selection.task.worker.agent
+              .role}{:else}Unrecorded{/if}
+        </dd>
+        <dt>Assignment</dt>
+        <dd>
+          {#if task.ownership.kind === "Assigned"}{task.ownership.assignment
+              .agent.team} / {task.ownership.assignment.agent
+              .role}{:else}Unrecorded{/if}
         </dd>
         <dt>Reports to</dt>
         <dd>{presentation.reportsTo()}</dd>
-        <dt>Branch</dt>
-        <dd>
-          {#if task.workspace.kind === "git"}<code>{task.workspace.branch}</code
-            >{:else}{presentation.workspace()}{/if}
-        </dd>
-        <dt>Checkpoint</dt>
-        <dd>
-          <code title={presentation.checkpoint()}
-            >{presentation.checkpoint().slice(0, 12)}</code
-          >
-        </dd>
-        <dt>Integration</dt>
-        <dd>
-          <code title={presentation.integration()}
-            >{presentation.integration().slice(0, 12)}</code
-          >
-        </dd>
+        <dt>Workspace</dt>
+        <dd>{presentation.workspaceLabel()}</dd>
+        {#if task.workspace.kind === "git"}
+          <dt>Branch</dt>
+          <dd><code>{task.workspace.branch}</code></dd>
+          <dt>Path</dt>
+          <dd><code>{task.workspace.path}</code></dd>
+        {/if}
       </dl>
-      {#each [...selection.task.checkpoints, ...selection.task.integrations] as commit (`${commit.revision}:${commit.commit}`)}<div
-          class="commit-evidence mt-3 flex flex-wrap gap-2 text-[10px] [&_code]:text-[10px] [&_code]:text-primary [&_span]:text-muted-foreground [&_time]:ml-auto [&_time]:text-muted-foreground"
-        >
-          <code>{commit.commit.slice(0, 8)}</code><span
-            >{commit.actor.role}</span
-          ><time>{new Date(commit.at).toLocaleDateString()}</time>
-        </div>{/each}
     </section>
+    {#if task.common.checkpoint.kind === "git" || task.state.kind === "integrated" || selection.task.checkpoints.length > 0 || selection.task.integrations.length > 0}
+      <section>
+        <h4>Git evidence</h4>
+        <dl>
+          {#if task.common.checkpoint.kind === "git"}
+            <dt>Checkpoint</dt>
+            <dd>
+              <code title={task.common.checkpoint.commit}
+                >{task.common.checkpoint.commit.slice(0, 12)}</code
+              >
+            </dd>
+          {/if}
+          {#if task.state.kind === "integrated"}
+            <dt>Integration</dt>
+            <dd>
+              <code title={task.state.commit}
+                >{task.state.commit.slice(0, 12)}</code
+              >
+            </dd>
+          {/if}
+        </dl>
+        {#each [...selection.task.checkpoints, ...selection.task.integrations] as commit (`${commit.revision}:${commit.commit}`)}
+          <div
+            class="commit-evidence mt-3 flex flex-wrap gap-2 text-[10px] [&_code]:text-[10px] [&_code]:text-primary [&_span]:text-muted-foreground [&_time]:ml-auto [&_time]:text-muted-foreground"
+          >
+            <code title={commit.commit}>{commit.commit.slice(0, 8)}</code><span
+              >{commit.actor.role}</span
+            ><time>{new Date(commit.at).toLocaleDateString()}</time>
+          </div>
+        {/each}
+      </section>
+    {/if}
     {#if task.common.progress.findings.length > 0}<details
         class="inspector-notes mt-5 border-t border-border pt-[15px] [&_summary]:cursor-pointer [&_summary]:text-[11px] [&_summary]:text-foreground [&_p]:mt-2.5 [&_p]:text-[11px] [&_p]:text-muted-foreground"
       >

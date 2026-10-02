@@ -3,6 +3,7 @@
   import { Handle, Position } from "@xyflow/svelte";
   import type { NodeProps } from "@xyflow/svelte";
   import type { DiagramNode } from "./workflow";
+  import { ActivityKind } from "./agent-tree";
   let { data }: NodeProps<DiagramNode> = $props();
 </script>
 
@@ -16,10 +17,14 @@
   >
   <strong>{data.title}</strong>
   <p>{data.subtitle}</p>
-  <div
-    class="node-footer mt-2.5 flex justify-between text-[9px] text-muted-foreground"
-  >
-    <span>{data.state}</span><span>{data.tasks.length} tasks</span>
-  </div>
+  {#if data.activity === ActivityKind.Absent}
+    <p class="mt-2.5">No activity on this page</p>
+  {:else}
+    <div
+      class="node-footer mt-2.5 flex justify-between text-[9px] text-muted-foreground"
+    >
+      <span>{data.state}</span><span>{data.tasks.length} tasks</span>
+    </div>
+  {/if}
   <Handle type="source" position={Position.Bottom} />
 </Card.Root>
