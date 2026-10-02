@@ -25,9 +25,8 @@ Workers receive the relevant ordinary Git procedure; they do not need this proto
    using YAML indexes without loading practice Markdown. Derive expected keys
    from the complete catalog and committed file inventory, not only the rules
    the report chose to list.
-   Require the actual decisions and evidence, with exactly one decision for
-   every expected rule/file pair and cross-rule check. Compare exact keys as
-   well as counts; a skipped rule or duplicated row blocks integration.
+   Require the actual decisions and evidence. Apply the
+   [unique-key check](#check-unique-decision-keys) to that complete inventory.
 3. Require `pass`, no violations or blockers, satisfied exact-revision validation,
    and fresh evidence that every previous repair is fixed. A ready review task,
    matching SHA, or "all practices checked" summary cannot replace this evidence.
@@ -42,6 +41,27 @@ a writing review that lists practice filenames without individual decisions.
 **Required:** return either incomplete report to Gizmo, obtain the full coverage
 and evidence for that SHA, then apply the matching-commit gate below.
 
+#### Check unique decision keys
+
+1. Compare the expected keys with the complete report's actual decision keys.
+   Require exactly one decision for every expected rule/file pair and cross-rule
+   check. Compare exact keys as well as counts.
+2. Return skipped or duplicated decisions to Gizmo before proceeding.
+   Matching totals and a matching SHA cannot establish unique coverage.
+
+For this example, two expected keys for `docs/review.md` use
+`focused_examples:required_pair` and `delivery_writing:command_inputs`.
+Assume all other expected decisions are present exactly once.
+
+**Prohibited:** accept a report with two `focused_examples:required_pair` rows
+and no `delivery_writing:command_inputs` row for that file because its total and
+SHA match the expected values.
+
+**Required:** return that report to Gizmo. Require the verifier to supply one
+evidenced decision for each of those two keys, keeping all other decisions
+complete. Recheck the complete key set before proceeding. The repaired report
+has the same total, but no duplicate or missing key.
+
 ### Match the reviewed commit before merging
 
 1. Use Gizmo's complete passing report and integration assignment after the
@@ -54,23 +74,25 @@ and evidence for that SHA, then apply the matching-commit gate below.
    Do not obtain the review verdict by interpreting ledger readiness as approval.
 2. Perform the checkout, cleanliness, and scope checks in steps 1–3 of
    [branch integration](../practices/local_feature/branch-integration.md#integrate-finished-branches).
-   Keep the worker branch stable. Immediately before its merge, run:
+   Keep the worker branch stable. Immediately before its merge, run this gate
+   in a POSIX `sh` script:
 
    ```sh
-   task_sha=$(git -C "$task_path" rev-parse --verify HEAD)
-   branch_sha=$(git -C "$feature_path" rev-parse --verify "refs/heads/$task_branch")
-   test "$task_sha" = "$branch_sha"
-   test "$task_sha" = "$checkpoint_sha"
-   test "$task_sha" = "$reviewed_sha"
+   task_sha=$(git -C "$task_path" rev-parse --verify HEAD) || exit 1
+   branch_sha=$(git -C "$feature_path" rev-parse --verify "refs/heads/$task_branch") || exit 1
+   test "$task_sha" = "$branch_sha" || exit 1
+   test "$task_sha" = "$checkpoint_sha" || exit 1
+   test "$task_sha" = "$reviewed_sha" || exit 1
    ```
 
-   Require every command to succeed and the task to remain ready and clean.
-   A missing report or mismatched SHA stops integration. Return it to Gizmo;
-   do not substitute the latest branch head for the reviewed SHA.
-3. For a one-commit handoff, repeat the count and sole-parent checks from
-   [task completion](../practices/local_feature/task-commits.md#finish-task-work)
-   against the assigned `task_base_sha`. Require exactly one task commit with
-   that base as its sole parent. Return an unconsolidated handoff to Gizmo.
+   Every failed lookup or comparison exits the script with status `1` before
+   a later command can replace the failure. Require a successful exit and the
+   task to remain ready and clean. A missing report or mismatch stops integration.
+   Return the failed lookup or mismatch to Gizmo; do not substitute the latest
+   branch head for the reviewed SHA.
+3. Apply the [assigned one-commit check](#check-an-assigned-one-commit-handoff)
+   when the assignment requires that handoff. SHA equality does not establish
+   commit count or parentage.
 4. Only after the gate passes, continue the ordinary branch-integration
    procedure at its merge step. Preserve the reviewed commit without squashing
    or rebasing it during integration. Run combined checks and record the actual
@@ -82,6 +104,28 @@ report passed, or treat a complete `changes_required` report as approval.
 **Required:** match the passing report, current task head, branch ref, and ready
 checkpoint before merging. Report the actual integration SHA and combined checks
 separately; a task review does not establish that the combined feature passed.
+
+#### Check an assigned one-commit handoff
+
+1. Confirm that the assignment requires one consolidated task commit.
+   Apply this count and parent check only to that handoff.
+2. Repeat the checks from
+   [task completion](../practices/local_feature/task-commits.md#finish-task-work)
+   against the assigned `task_base_sha`. Require exactly one task commit with
+   that base as its sole parent. Return an unconsolidated handoff to Gizmo.
+
+Assume the assignment requires one commit above base `B`, but the private task
+branch contains consecutive commits `C1` and `C2`. Its passing report, head,
+branch ref, and ready checkpoint all identify `C2`.
+
+**Prohibited:** integrate `C2` because those SHAs agree. The branch still has
+two task commits, and `C2` has `C1` as its parent instead of `B`.
+
+**Required:** return that handoff to Gizmo. The worker follows ordinary task
+completion to supply one consolidated commit `C3` with `B` as its sole parent.
+Require a complete passing review of `C3` and a matching ready checkpoint before
+integration. These establish both the assigned consolidation boundary and the
+reviewed revision; the earlier report for `C2` cannot approve `C3`.
 
 ### Require a new review after repairs
 
