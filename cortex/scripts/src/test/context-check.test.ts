@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { Effect, Exit } from "effect";
+import { Cause, Effect, Exit } from "effect";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import type { RmOptions } from "node:fs";
 import { tmpdir } from "node:os";
@@ -173,7 +173,13 @@ test("reject exported reference cycles", () => {
       statements: {},
     },
   };
-  expect(
-    Exit.isFailure(ContextCases.check(ContextCases.encode(document))),
-  ).toBe(true);
+  const result = ContextCases.check(ContextCases.encode(document));
+  expect(Exit.isFailure(result)).toBe(true);
+  switch (result._tag) {
+    case "Failure":
+      expect(Cause.pretty(result.cause)).toContain("Cyclic context reference");
+      break;
+    case "Success":
+      throw new Error("Expected cyclic reference rejection");
+  }
 });

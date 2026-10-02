@@ -93,10 +93,10 @@ export class ContextCheck {
         break;
     }
     switch (selected.length) {
-      case 0:
-        return yield* Effect.fail(
-          new Cause.UnknownError("No YAML context declarations found."),
-        );
+      case 0: {
+        const message = "No YAML context declarations found.";
+        return yield* Effect.fail(new Cause.UnknownError(message, message));
+      }
       default:
         break;
     }
@@ -227,6 +227,6 @@ export class ContextCheck {
     });
   }
   private reject(message: string) {
-    return Effect.fail(new Cause.UnknownError(message));
+    return Effect.fail(new Cause.UnknownError(message, message));
   }
 }
