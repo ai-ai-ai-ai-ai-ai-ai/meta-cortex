@@ -3,9 +3,21 @@
 Own agent-facing instructions, specifications, skills, practices, and their
 catalogs in the consuming project.
 
-- [Context knowledge](docs/index.yaml): Cortex context formats and their architecture.
-- [Tech writer](agents/tech-writer/AGENTS.md): documentation structure,
-  context flow, rule clarity, and prohibited/required code examples.
+## Knowledge
+
+Read [Context knowledge](docs/index.yaml) for Cortex context formats and their architecture.
+
+## Agent catalog
+
+- **[Tech writer](agents/tech-writer/AGENTS.md)**
+  - Documentation structure, context flow, rule clarity, and prohibited/required examples.
+  - Owns assigned document changes and repairs; preserves subject policy.
+  - Verifier: [Tech writer verifier](agents/tech-writer-verifier/AGENTS.md).
+- **[Tech writer verifier](agents/tech-writer-verifier/AGENTS.md)**
+  - Read-only, index-only review against every cataloged writing practice and rule.
+  - Reports complete coverage, violations, repair requirements, and blockers to Team Gizmo.
+
+## Assignment boundaries
 
 Team Gizmo assigns documentation work to the tech writer subagent.
 Coordinate changes to programming or security policy with the responsible

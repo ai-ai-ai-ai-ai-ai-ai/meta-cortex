@@ -1,0 +1,52 @@
+kind: practice
+owner: writing:delivery_writing
+title: Delivery instructions
+source_title: Delivery Writing
+source: ../../SKILL.md
+owns:
+  - Delivery responsibility wording and Git example evidence.
+excludes:
+  - Generic writing rules and technical delivery policy.
+relationships:
+  - Extends shared writing while preserving delivery authority.
+related: []
+rules:
+  - id: delivery_writing:responsibilities
+    source: ../../SKILL.md#make-responsibilities-concrete
+    summary: Name workspace creators, integration owners, and result recipients.
+  - id: delivery_writing:ordinary_progress
+    source: ../../SKILL.md#make-responsibilities-concrete
+    summary: Describe completion and communication as ordinary task progress.
+  - id: delivery_writing:report_content
+    source: ../../SKILL.md#make-responsibilities-concrete
+    summary: State the branch, workspace, checks, and correction evidence required.
+  - id: delivery_writing:role_skill_boundary
+    source: ../../SKILL.md#make-responsibilities-concrete
+    summary: Roles own responsibility; skills own Git procedures and updated callers.
+  - id: delivery_writing:command_workspace
+    source: ../../SKILL.md#supply-command-context
+    summary: Name affected workspaces and branches; distinguish repository and task paths.
+  - id: delivery_writing:command_inputs
+    source: ../../SKILL.md#supply-command-context
+    summary: Define assignment variables before use and quote paths and branches.
+  - id: delivery_writing:executable_actions
+    source: ../../SKILL.md#supply-command-context
+    summary: Show commands performing the action and identify repetition scope.
+  - id: delivery_writing:observable_results
+    source: ../../SKILL.md#explain-results-and-failure-paths
+    summary: Explain observable results, failures, and Git versus check outcomes.
+  - id: delivery_writing:conditional_steps
+    source: ../../SKILL.md#explain-results-and-failure-paths
+    summary: Keep conflict, abort, and cleanup conditional on their owning steps.
+  - id: delivery_writing:no_extra_coordination
+    source: ../../SKILL.md#explain-results-and-failure-paths
+    summary: Use ordinary branch workflows without new revision bookkeeping mechanisms.
+  - id: delivery_writing:disposable_validation
+    source: ../../SKILL.md#validation
+    summary: Exercise documented Git paths in disposable linked-worktree repositories.
+  - id: delivery_writing:failure_validation
+    source: ../../SKILL.md#validation
+    summary: Verify claimed failures, resulting files, ancestry, and workspace state.
+  - id: delivery_writing:evidence_scope
+    source: ../../SKILL.md#validation
+    summary: Separate executed evidence and untested scenarios without authorizing live operations.

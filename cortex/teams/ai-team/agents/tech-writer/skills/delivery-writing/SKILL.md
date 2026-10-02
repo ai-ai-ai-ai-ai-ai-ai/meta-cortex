@@ -8,6 +8,7 @@ description: Write and maintain delivery-agent instructions and Git workflow doc
 Apply this authoring guidance to delivery roles, skills, and practices. Use the
 shared writing and executable-example prerequisites supplied by the tech-writer
 role. The assigned delivery requirements remain the technical authority.
+The [rule catalog](index.yaml) identifies every decision and its source section.
 
 ## Required actions
 

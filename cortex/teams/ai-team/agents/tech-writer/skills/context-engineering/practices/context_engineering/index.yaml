@@ -1,0 +1,85 @@
+kind: practice
+owner: writing:context_engineering
+title: Context authoring
+source_title: Context Engineering
+source: ../../SKILL.md
+owns:
+  - Documentation authoring scope, context declarations, and audits.
+excludes:
+  - Detailed prose and subject-specific writing practices.
+relationships:
+  - Applies all Context Engineering practices during authoring.
+related: []
+rules:
+  - id: context_engineering:authoring_practices
+    source: ../../SKILL.md#authoring
+    summary: Apply all five writing practices to their changed subjects.
+  - id: context_engineering:defect_severity
+    source: ../../SKILL.md#authoring
+    summary: Treat writing-practice violations as P1 documentation defects.
+  - id: context_engineering:preserve_policy
+    source: ../../SKILL.md#authoring
+    summary: Preserve policy meaning; compose one canonical authority through links.
+  - id: context_engineering:bounded_scope
+    source: ../../SKILL.md#scope-and-ownership
+    summary: Keep edits bounded and subject ownership with its owner.
+  - id: context_engineering:domain_extensions
+    source: ../../SKILL.md#scope-and-ownership
+    summary: Name extensions for their domain and additional requirements.
+  - id: context_engineering:self_application
+    source: ../../SKILL.md#scope-and-ownership
+    summary: Apply these practices when editing the authoring skill itself.
+  - id: context_engineering:no_duplication
+    source: ../../SKILL.md#prohibited-actions
+    summary: Do not duplicate generic authoring instructions in extensions.
+  - id: context_engineering:no_role_inference
+    source: ../../SKILL.md#prohibited-actions
+    summary: Loading a writing skill does not launch another role.
+  - id: context_engineering:project_context
+    source: ../../SKILL.md#prohibited-actions
+    summary: Use actual project locations and workflow without broadening scope.
+  - id: context_engineering:semantic_validation
+    source: ../../SKILL.md#validation
+    summary: Review meaning, ownership, practices, and substantive examples.
+  - id: context_engineering:navigation_validation
+    source: ../../SKILL.md#validation
+    summary: Verify affected paths, links, headings, and indexes.
+  - id: context_engineering:validation_evidence
+    source: ../../SKILL.md#validation
+    summary: Run applicable project checks; report actual results and inconsistencies.
+  - id: context_engineering:yaml_guidance
+    source: ../../SKILL.md#yaml-cortex-context
+    summary: Apply context authoring guidance and the existing shared schema.
+  - id: context_engineering:yaml_order
+    source: ../../SKILL.md#yaml-cortex-context
+    summary: Preserve stage order, prose statements, and static references.
+  - id: context_engineering:inert_commands
+    source: ../../SKILL.md#yaml-cortex-context
+    summary: Context commands remain inert; Markdown remains authoritative.
+  - id: context_engineering:context_checks
+    source: ../../SKILL.md#yaml-cortex-context
+    summary: Run context checks; full workspace claims require workspace verification.
+  - id: context_engineering:audit_inputs
+    source: ../../SKILL.md#executable-audits
+    summary: Audit actual Markdown and YAML paths, never authored descriptions.
+  - id: context_engineering:reuse_tooling
+    source: ../../SKILL.md#executable-audits
+    summary: Reuse initialized tools and dependencies for executable audits.
+  - id: context_engineering:audit_failures
+    source: ../../SKILL.md#executable-audits
+    summary: Empty selections, findings, and tool failures fail the audit.
+  - id: context_engineering:audit_limits
+    source: ../../SKILL.md#check-coverage
+    summary: Mechanical checks do not prove policy meaning or rule completeness.
+  - id: context_engineering:comparison_scope
+    source: ../../SKILL.md#check-coverage
+    summary: Check comparison identities through the enclosing skill root audit.
+  - id: context_engineering:maintained_checks
+    source: ../../SKILL.md#maintain-the-checks
+    summary: Prefer maintained tools; custom checks cover only Cortex structure.
+  - id: context_engineering:check_regressions
+    source: ../../SKILL.md#maintain-the-checks
+    summary: Retain check fixtures and run workspace verification after implementation.
+  - id: context_engineering:license_notices
+    source: ../../SKILL.md#maintain-the-checks
+    summary: Preserve adapted Nook and selected Google rule notices.

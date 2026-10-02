@@ -4,6 +4,9 @@ Use a skill's hierarchical `index.yaml` catalogs as a rule-level map before
 editing its Markdown practices. A file list is not enough: readers need the
 distinct decisions and their source sections to find relevant guidance.
 The source practice owns the full requirements, exceptions, checks, and examples.
+The source-loading procedure below applies to authoring and implementation.
+Read-only verifiers follow their review protocol's exhaustive, index-only
+loading. Their source links remain citations; an insufficient cue is a blocker.
 
 ## Inventory decisions, not just files
 
@@ -45,8 +48,8 @@ before removing that detail. Do not delete policy to reduce index size.
 **Prohibited:** copy a source procedure into a long YAML summary or replace
 distinct rule entries with one generic “follow best practices” item.
 
-The cue selects a source; it is not sufficient to apply or compare policy.
-Read the linked Markdown before acting on the rule.
+For authoring and implementation, the cue selects a source rather than supplying
+its full policy. Read the linked Markdown before acting on the rule.
 
 ## Find the owner and inspect overlaps
 

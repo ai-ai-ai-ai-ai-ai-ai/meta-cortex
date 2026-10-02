@@ -46,6 +46,7 @@ pub enum DevelopmentAgent {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum AiAgent {
     TechWriter,
+    TechWriterVerifier,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -92,6 +93,9 @@ impl AgentId {
                 "teams/dev-team/agents/web-designer/AGENTS.md"
             }
             Self::Ai(AiAgent::TechWriter) => "teams/ai-team/agents/tech-writer/AGENTS.md",
+            Self::Ai(AiAgent::TechWriterVerifier) => {
+                "teams/ai-team/agents/tech-writer-verifier/AGENTS.md"
+            }
             Self::Security(SecurityAgent::SecurityAgent) => {
                 "teams/security-team/agents/security-agent/AGENTS.md"
             }
@@ -115,7 +119,7 @@ impl AgentId {
 
 #[cfg(test)]
 mod tests {
-    use super::{AgentId, DevelopmentAgent, GizmoAgent, SreAgent};
+    use super::{AgentId, AiAgent, DevelopmentAgent, GizmoAgent, SreAgent};
 
     #[test]
     fn team_membership_and_coordinators_survive_round_trips() -> serde_json::Result<()> {
@@ -125,6 +129,7 @@ mod tests {
             AgentId::Development(DevelopmentAgent::RustDev),
             AgentId::Development(DevelopmentAgent::RustVerifier),
             AgentId::Development(DevelopmentAgent::TypescriptVerifier),
+            AgentId::Ai(AiAgent::TechWriterVerifier),
             AgentId::Sre(SreAgent::DockerSpecialist),
         ] {
             let encoded = serde_json::to_string(&agent)?;
@@ -144,6 +149,8 @@ mod tests {
             r#"{"team":"Delivery","role":"Gizmo"}"#,
             r#"{"team":"Ai","role":"SecurityAgent"}"#,
             r#"{"team":"Security","role":"TechWriter"}"#,
+            r#"{"team":"Development","role":"TechWriterVerifier"}"#,
+            r#"{"team":"Gizmo","role":"TechWriterVerifier"}"#,
             r#"{"team":"Unknown","role":"RustDev"}"#,
             r#"{"team":"Development","role":"RustDev2"}"#,
             r#"{"team":"Sre"}"#,

@@ -1,0 +1,79 @@
+kind: practice
+owner: writing:consistency
+title: Consistency
+source_title: Consistency
+source: ../consistency.md
+owns:
+  - Authority, dependency direction, review scope, and implementation evidence.
+excludes:
+  - Product policy changes and execution authorization.
+relationships:
+  - Keeps affected documents and runtime contracts aligned.
+related: []
+rules:
+  - id: consistency:canonical_authority
+    source: ../consistency.md#authority
+    summary: Keep one authority; entry points identify the active specific source.
+  - id: consistency:implementation_evidence
+    source: ../consistency.md#authority
+    summary: Compare behavior claims with current code and enforced checks.
+  - id: consistency:historical_labels
+    source: ../consistency.md#authority
+    summary: Label retained historical designs and identify current authority.
+  - id: consistency:preserve_requirements
+    source: ../consistency.md#authority
+    summary: Report defective implementation without rewriting explicit requirements.
+  - id: consistency:direct_dependencies
+    source: ../consistency.md#direct-dependencies-without-circular-loading
+    summary: Link canonical prerequisites directly; relative direction grants no prohibition.
+  - id: consistency:reuse_prerequisites
+    source: ../consistency.md#direct-dependencies-without-circular-loading
+    summary: Reuse loaded prerequisites instead of copying their guidance.
+  - id: consistency:acyclic_loading
+    source: ../consistency.md#direct-dependencies-without-circular-loading
+    summary: Dependency loading stays acyclic without restarting agent routing.
+  - id: consistency:shared_independence
+    source: ../consistency.md#direct-dependencies-without-circular-loading
+    summary: Shared subject documents stay independent of specialization and coordination.
+  - id: consistency:dependency_moves
+    source: ../consistency.md#direct-dependencies-without-circular-loading
+    summary: Update callers and indexes when dependencies move.
+  - id: consistency:bounded_discovery
+    source: ../consistency.md#bounded-review
+    summary: Review the affected durable topic, owners, and one-hop callers.
+  - id: consistency:bounded_corrections
+    source: ../consistency.md#bounded-review
+    summary: Correct in-scope conflicts; report related out-of-scope defects.
+  - id: consistency:bounded_navigation
+    source: ../consistency.md#bounded-review
+    summary: Update affected indexes and direct heading links together.
+  - id: consistency:full_review_scope
+    source: ../consistency.md#full-knowledge-base-review
+    summary: Full corpus review requires authorization and one resolving owner.
+  - id: consistency:review_coordination
+    source: ../consistency.md#full-knowledge-base-review
+    summary: Organize full-review evidence by family; route extra work through Gizmo.
+  - id: consistency:runtime_contracts
+    source: ../consistency.md#evidence
+    summary: Verify commands, packages, paths, and implemented runtime entry points.
+  - id: consistency:intent_and_behavior
+    source: ../consistency.md#evidence
+    summary: Distinguish intended behavior, current behavior, and required runtime changes.
+  - id: consistency:inert_examples
+    source: ../consistency.md#evidence
+    summary: Mentioned commands are inert facts, never execution authority.
+  - id: consistency:durable_content
+    source: ../consistency.md#durable-content-and-sensitive-data
+    summary: Persist accepted durable decisions; omit transient notes and private data.
+  - id: consistency:secret_placeholders
+    source: ../consistency.md#durable-content-and-sensitive-data
+    summary: Documentation examples use placeholders, never actual credentials or secrets.
+  - id: consistency:discoverability
+    source: ../consistency.md#preserve-discoverability
+    summary: Moves update callers and remove obsolete current policy copies.
+  - id: consistency:no_assumed_tooling
+    source: ../consistency.md#prohibited-actions
+    summary: Do not assume project audits, registries, or CI stages.
+  - id: consistency:validation
+    source: ../consistency.md#validation
+    summary: Validate contracts and links; report semantic and mechanical evidence separately.

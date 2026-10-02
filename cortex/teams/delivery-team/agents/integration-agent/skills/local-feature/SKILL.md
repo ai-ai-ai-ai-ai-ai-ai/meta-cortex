@@ -19,8 +19,9 @@ role instructions define assignments and communication.
   - [Branch integration and repairs](practices/local_feature/branch-integration.md): merge completed tasks, run combined checks, and recover failures.
   - [Cleanup](practices/local_feature/cleanup.md): remove completed worker workspaces after validation.
 - For an integration assignment that requires a passing review, also apply
-  [reviewed-task integration](spec/reviewed-integration.md). It owns the SHA
-  gate and renewed review after repairs; worker commit instructions remain in
+  [reviewed-task integration](spec/reviewed-integration.md). It requires complete
+  exhaustive review evidence, the matching-SHA gate, and renewed review after
+  repairs; worker commit instructions remain in
   the ordinary task-commit procedure.
 - Use the [rule map](index.yaml) to locate individual decisions when
   reviewing or changing these practices.

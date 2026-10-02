@@ -1,0 +1,43 @@
+kind: practice
+owner: writing:code_practice_writing
+title: Programming examples
+source_title: Code Practice Writing
+source: ../../SKILL.md
+owns:
+  - Programming example clarity and execution evidence.
+excludes:
+  - Generic prose structure and language policy.
+relationships:
+  - Extends Context Engineering for programming documentation.
+related: []
+rules:
+  - id: code_practice_writing:code_pairs
+    source: ../../SKILL.md#let-code-carry-programming-rules
+    summary: Code examples dominate explanation and demonstrate focused rule pairs.
+  - id: code_practice_writing:essential_code
+    source: ../../SKILL.md#let-code-carry-programming-rules
+    summary: Cut repeated prose before essential code; avoid ratio padding.
+  - id: code_practice_writing:decisive_context
+    source: ../../SKILL.md#show-the-code-needed-to-decide
+    summary: Show signatures, calls, types, and boundary code needed for judgment.
+  - id: code_practice_writing:fragment_dependencies
+    source: ../../SKILL.md#show-the-code-needed-to-decide
+    summary: Identify fragment dependencies and omitted context; required code complies.
+  - id: code_practice_writing:external_exception
+    source: ../../SKILL.md#identify-the-boundary-behind-an-exception
+    summary: Name actual external contracts and show compliant internal boundaries.
+  - id: code_practice_writing:hypothetical_contracts
+    source: ../../SKILL.md#identify-the-boundary-behind-an-exception
+    summary: Label hypothetical contracts without granting internal APIs their exceptions.
+  - id: code_practice_writing:design_and_compilation
+    source: ../../SKILL.md#separate-design-violations-from-compiler-errors
+    summary: Distinguish compiler errors from design and behavior violations.
+  - id: code_practice_writing:execute_examples
+    source: ../../SKILL.md#execute-examples-with-their-stated-context
+    summary: Execute available examples with their declared support and dependencies.
+  - id: code_practice_writing:temporary_scaffolding
+    source: ../../SKILL.md#execute-examples-with-their-stated-context
+    summary: Keep temporary validation scaffolding outside distributed skills.
+  - id: code_practice_writing:failure_cause
+    source: ../../SKILL.md#verify-the-claimed-failure
+    summary: Verify failure causes; report compiler, semantic, and behavior evidence separately.

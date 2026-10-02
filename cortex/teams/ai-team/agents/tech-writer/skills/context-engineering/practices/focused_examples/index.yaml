@@ -1,0 +1,46 @@
+kind: practice
+owner: writing:focused_examples
+title: Focused rules and examples
+source_title: Focused Rules and Examples
+source: ../focused-examples.md
+owns:
+  - Concrete decisions and their prohibited/required examples.
+excludes:
+  - Programming execution and Git example validation.
+relationships:
+  - Supplies generic examples for subject-specific extensions.
+related: []
+rules:
+  - id: focused_examples:one_decision
+    source: ../focused-examples.md#state-one-decision
+    summary: Name the condition, required action, and prohibited consequence.
+  - id: focused_examples:independent_sections
+    source: ../focused-examples.md#state-one-decision
+    summary: Split independent decisions; shared pairs demonstrate every covered statement.
+  - id: focused_examples:required_pair
+    source: ../focused-examples.md#demonstrate-the-difference
+    summary: Every substantive section needs labeled prohibited and required alternatives.
+  - id: focused_examples:same_situation
+    source: ../focused-examples.md#demonstrate-the-difference
+    summary: Alternatives keep the same situation and intended outcome.
+  - id: focused_examples:concrete_difference
+    source: ../focused-examples.md#demonstrate-the-difference
+    summary: Show affected wording, code, or sequence with sufficient context.
+  - id: focused_examples:adjacent_explanation
+    source: ../focused-examples.md#demonstrate-the-difference
+    summary: Place pairs beside their rule and explain required compliance.
+  - id: focused_examples:bounded_exception
+    source: ../focused-examples.md#demonstrate-the-difference
+    summary: Demonstrate each exception with a concrete boundary case.
+  - id: focused_examples:canonical_examples
+    source: ../focused-examples.md#keep-examples-with-their-authority
+    summary: Keep full rules, exceptions, and examples in one authority.
+  - id: focused_examples:catalog_cues
+    source: ../focused-examples.md#keep-examples-with-their-authority
+    summary: Catalogs contain brief cues; new rules move to practices.
+  - id: focused_examples:preserve_requirements
+    source: ../focused-examples.md#prohibited-actions
+    summary: Do not weaken rules or substitute decorative, unrelated examples.
+  - id: focused_examples:validation
+    source: ../focused-examples.md#validation
+    summary: Verify each pair demonstrates every decision and satisfies its rules.

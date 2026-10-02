@@ -3,6 +3,15 @@ import type { ParseOptions } from "effect/SchemaAST";
 import { parse, type ParseOptions as YamlParseOptions } from "yaml";
 
 import {
+  TechWriterRule,
+  ContextEngineeringRule,
+  WritingClarityRule,
+  FocusedExamplesRule,
+  ArticleStructureRule,
+  ConsistencyRule,
+  KnowledgeGraphsRule,
+  CodePracticeWritingRule,
+  DeliveryWritingRule,
   ApiInputsRule,
   BranchingRule,
   BrowserImplementationRule,
@@ -45,6 +54,7 @@ import {
   type RuleName,
 } from "./rule-name.ts";
 import {
+  WritingPracticeOwner,
   DeliveryPracticeOwner,
   ProgrammingPracticeOwner,
   RustPracticeOwner,
@@ -67,6 +77,15 @@ export class CatalogSchema {
     identifier: "registered PracticeOwner",
   } satisfies Schema.Annotations.Bottom<PracticeOwner, readonly []>;
   static readonly ruleName = Schema.Literals([
+    ...Object.values(TechWriterRule),
+    ...Object.values(ContextEngineeringRule),
+    ...Object.values(WritingClarityRule),
+    ...Object.values(FocusedExamplesRule),
+    ...Object.values(ArticleStructureRule),
+    ...Object.values(ConsistencyRule),
+    ...Object.values(KnowledgeGraphsRule),
+    ...Object.values(CodePracticeWritingRule),
+    ...Object.values(DeliveryWritingRule),
     ...Object.values(ApiInputsRule),
     ...Object.values(BranchingRule),
     ...Object.values(BrowserImplementationRule),
@@ -108,6 +127,7 @@ export class CatalogSchema {
     ...Object.values(WorkflowTypestateRule),
   ]).annotate(CatalogSchema.ruleAnnotations);
   static readonly practiceOwner = Schema.Literals([
+    ...Object.values(WritingPracticeOwner),
     ...Object.values(DeliveryPracticeOwner),
     ...Object.values(ProgrammingPracticeOwner),
     ...Object.values(RustPracticeOwner),

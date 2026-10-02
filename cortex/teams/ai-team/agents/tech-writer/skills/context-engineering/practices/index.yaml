@@ -1,0 +1,24 @@
+kind: navigation
+title: Context Engineering Practices
+entries:
+  - title: Tech writer responsibilities
+    path: tech_writer/index.yaml
+    summary: Subject ownership, prerequisites, skills, and knowledge placement.
+  - title: Context authoring
+    path: context_engineering/index.yaml
+    summary: Authoring scope, YAML context, audits, and validation evidence.
+  - title: Writing clarity
+    path: writing_clarity/index.yaml
+    summary: Atomic prose, grouping, representations, and host capacity.
+  - title: Focused rules and examples
+    path: focused_examples/index.yaml
+    summary: Concrete decisions, required pairs, authority, and validation.
+  - title: Article structure
+    path: article_structure/index.yaml
+    summary: Body shapes, hierarchy, action blocks, and preserved meaning.
+  - title: Consistency
+    path: consistency/index.yaml
+    summary: Authorities, dependencies, bounded review, and runtime evidence.
+  - title: Practice knowledge graphs
+    path: knowledge_graphs/index.yaml
+    summary: Complete rule inventories, catalog ownership, loading, and synchronization.
