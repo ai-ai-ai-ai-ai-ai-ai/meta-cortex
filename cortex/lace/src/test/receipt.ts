@@ -4,11 +4,11 @@ import ts from "typescript";
 type CompilerSourceRequest = Parameters<ts.CompilerHost["getSourceFile"]>;
 type CompilerMessages = readonly string[];
 
-/** Compile a virtual receipt against the real model without evaluating it. */
+/** Compile a virtual readonly model declaration without evaluating it. */
 export class ReceiptCompilation {
   private static readonly path = resolve(
     import.meta.dirname,
-    "compiler-case.lace.ts",
+    "compiler-case.ts",
   );
   private static readonly options: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2022,
