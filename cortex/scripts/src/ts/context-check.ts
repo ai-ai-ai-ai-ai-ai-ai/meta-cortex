@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { Cause, Effect, Schema } from "effect";
 import type { ParseOptions } from "effect/SchemaAST";
-import { parseDocument, visit, isScalar, type visitor } from "yaml";
+import {
+  parseDocument,
+  visit,
+  isScalar,
+  type visitor,
+  type Scalar,
+} from "yaml";
 import { ContextSchema } from "./context-schema.ts";
 
 enum ExportKind {
@@ -24,7 +30,12 @@ interface ContextUse {
   readonly kind: ExportKind;
   readonly value: ContextValue;
 }
-type CheckFailure = Cause.UnknownError | Schema.SchemaError;
+type CheckFailure =
+  Cause.UnknownError | Schema.SchemaError | ContextValidationError;
+interface SyntaxIssues {
+  readonly messages: readonly string[];
+  readonly keys: readonly Scalar[];
+}
 
 /** Validate schema data and the named export graph; commands stay literal data. */
 export class ContextCheck {
@@ -33,14 +44,17 @@ export class ContextCheck {
   };
   constructor(private readonly path: string) {}
 
-  private parse() {
-    const parsed = parseDocument(readFileSync(this.path, "utf8"));
-    for (const error of [...parsed.errors, ...parsed.warnings]) {
-      throw error;
-    }
+  static readonly failureFields = {
+    message: Schema.String,
+  } satisfies Schema.Struct.Fields;
+  private syntax(document: ReturnType<typeof parseDocument>): SyntaxIssues {
+    const messages = [...document.errors, ...document.warnings].map(
+      (error) => error.message,
+    );
+    const keys: Scalar[] = [];
     const callbacks: visitor = {
       Alias: () => {
-        throw new Error(
+        messages.push(
           "Use explicit $ref declarations instead of YAML aliases.",
         );
       },
@@ -49,24 +63,33 @@ export class ContextCheck {
           case undefined:
             break;
           default:
-            throw new Error("Explicit YAML tags are not context vocabulary.");
+            messages.push("Explicit YAML tags are not context vocabulary.");
         }
       },
       Pair: (...request) => {
         switch (true) {
           case isScalar(request[1].key):
-            Schema.decodeUnknownSync(ContextSchema.text)(request[1].key.value);
+            keys.push(request[1].key);
             break;
           case true:
-            throw new Error("Context map keys must be literal strings.");
+            messages.push("Context map keys must be literal strings.");
         }
       },
     };
-    visit(parsed, callbacks);
-    return parsed;
+    visit(document, callbacks);
+    return { messages, keys };
   }
   readonly read = Effect.fnUntraced(function* (this: ContextCheck) {
-    const document = yield* Effect.try(() => this.parse());
+    const document = yield* Effect.try(() =>
+      parseDocument(readFileSync(this.path, "utf8")),
+    );
+    const issues = this.syntax(document);
+    for (const message of issues.messages) {
+      return yield* ContextCheck.reject(message);
+    }
+    for (const key of issues.keys) {
+      yield* Schema.decodeUnknownEffect(ContextSchema.text)(key.value);
+    }
     return yield* Schema.decodeUnknownEffect(
       ContextSchema.document,
       ContextCheck.admission,
@@ -95,7 +118,7 @@ export class ContextCheck {
     switch (selected.length) {
       case 0: {
         const message = "No YAML context declarations found.";
-        return yield* Effect.fail(new Cause.UnknownError(message, message));
+        return yield* ContextCheck.reject(message);
       }
       default:
         break;
@@ -168,11 +191,12 @@ export class ContextCheck {
     return [];
   }
 
-  private checkReference(
-    request: ReferenceCheck,
-  ): Effect.Effect<void, CheckFailure> {
+  private readonly checkReference = this.referenceChecker();
+  private referenceChecker() {
     const owner = this;
-    return Effect.gen(function* () {
+    return Effect.fnUntraced(function* (
+      request: ReferenceCheck,
+    ): Effect.fn.Return<void, CheckFailure> {
       const [file = "", ...fragments] = request.reference.$ref.split("#");
       const pointer = fragments.join("#");
       const [, , kind = "", escaped = ""] = pointer.split("/");
@@ -180,7 +204,7 @@ export class ContextCheck {
         case request.reference.kind:
           break;
         default:
-          return yield* owner.reject(
+          return yield* ContextCheck.reject(
             `Wrong-kind context reference: ${request.reference.$ref}`,
           );
       }
@@ -188,7 +212,9 @@ export class ContextCheck {
       const identity = `${path}#${pointer}`;
       switch (request.ancestors.includes(identity)) {
         case true:
-          return yield* owner.reject(`Cyclic context reference: ${identity}`);
+          return yield* ContextCheck.reject(
+            `Cyclic context reference: ${identity}`,
+          );
         case false:
           break;
       }
@@ -198,21 +224,27 @@ export class ContextCheck {
       const exports = document.exports;
       switch (exports) {
         case undefined:
-          return yield* owner.reject(`Unresolved context export: ${identity}`);
+          return yield* ContextCheck.reject(
+            `Unresolved context export: ${identity}`,
+          );
         default:
           break;
       }
       const values = exports[request.reference.kind];
       switch (Object.hasOwn(values, name)) {
         case false:
-          return yield* owner.reject(`Unresolved context export: ${identity}`);
+          return yield* ContextCheck.reject(
+            `Unresolved context export: ${identity}`,
+          );
         case true:
           break;
       }
       const value = values[name];
       switch (value) {
         case undefined:
-          return yield* owner.reject(`Unresolved context export: ${identity}`);
+          return yield* ContextCheck.reject(
+            `Unresolved context export: ${identity}`,
+          );
         default:
           break;
       }
@@ -226,7 +258,15 @@ export class ContextCheck {
       }
     });
   }
-  private reject(message: string) {
-    return Effect.fail(new Cause.UnknownError(message, message));
+  private static reject(message: string) {
+    const payload: ConstructorParameters<typeof ContextValidationError>[0] = {
+      message,
+    };
+    return Effect.fail(new ContextValidationError(payload));
   }
 }
+
+export class ContextValidationError extends Schema.TaggedError<ContextValidationError>()(
+  "ContextValidationError",
+  ContextCheck.failureFields,
+) {}

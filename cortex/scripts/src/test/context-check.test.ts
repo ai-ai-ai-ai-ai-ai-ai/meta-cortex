@@ -5,7 +5,7 @@ import type { RmOptions } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { stringify, type CreateNodeOptions } from "yaml";
-import { ContextCheck } from "../ts/context-check.ts";
+import { ContextCheck, ContextValidationError } from "../ts/context-check.ts";
 import type { ContextDocument } from "../ts/context-schema.ts";
 
 class ContextCases {
@@ -178,8 +178,22 @@ test("reject exported reference cycles", () => {
   switch (result._tag) {
     case "Failure":
       expect(Cause.pretty(result.cause)).toContain("Cyclic context reference");
+      const failure = Cause.findError(result.cause);
+      switch (failure._tag) {
+        case "Success":
+          expect(failure.success).toBeInstanceOf(ContextValidationError);
+          break;
+        case "Failure":
+          throw new Error("Expected a typed failure rather than a defect");
+      }
       break;
     case "Success":
       throw new Error("Expected cyclic reference rejection");
   }
+});
+
+test("foreign filesystem failure retains the Effect boundary error", () => {
+  const path = new URL("./missing-context.yaml", import.meta.url).pathname;
+  const failure = Effect.runSync(Effect.flip(new ContextCheck(path).read()));
+  expect(failure._tag).toBe("UnknownError");
 });
