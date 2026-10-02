@@ -29,6 +29,9 @@ impl SqlStatement {
         match value {
             Value::String(Some(text)) => Ok(turso::Value::Text(text)),
             Value::BigInt(Some(number)) => Ok(turso::Value::Integer(number)),
+            Value::BigUnsigned(Some(number)) => Ok(turso::Value::Integer(
+                i64::try_from(number).map_err(|_| LedgerError::UnsupportedSqlBinding)?,
+            )),
             Value::Int(Some(number)) => Ok(turso::Value::Integer(i64::from(number))),
             Value::String(None)
             | Value::BigInt(None)
@@ -39,7 +42,7 @@ impl SqlStatement {
             | Value::TinyUnsigned(_)
             | Value::SmallUnsigned(_)
             | Value::Unsigned(_)
-            | Value::BigUnsigned(_)
+            | Value::BigUnsigned(None)
             | Value::Float(_)
             | Value::Double(_)
             | Value::Enum(_)

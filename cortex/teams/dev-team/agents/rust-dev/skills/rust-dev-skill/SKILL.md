@@ -26,7 +26,8 @@ mandatory, independent of the selected implementation practices. Complete the
 
 **Critical: follow the standard Rust inline unit-test structure.** Keep unit tests
 in the same file as the code they exercise, using Cortex's required
-`#[cfg(test)] pub mod tests { ... }` form.
+`#[cfg(test)] mod tests { ... }` form defined by
+[test placement](practices/tooling/rust-testing.md#test-placement).
 Do not extract them into separate files. Keep ordinary production `mod`/`pub mod`
 declarations; the module-layout prohibition applies to `mod.rs` filenames only.
 Crate-level integration tests retain their own files, as defined by

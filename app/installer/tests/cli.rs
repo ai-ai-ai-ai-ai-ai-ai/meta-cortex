@@ -4,8 +4,8 @@ mod report;
 use anyhow::{Context, bail};
 use meta_cortex_workbench::versions::ProtocolVersion;
 use report::{
-    InfoDocument, Integration, ModelAvailability, ReportHarness, ReportModels, ReportSchemaVersion,
-    ReportVersion,
+    InfoDocument, Integration, ModelAvailability, ReportHarness, ReportModels,
+    ReportRequiredTotalAgents, ReportSchemaVersion, ReportVersion,
 };
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -216,7 +216,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     })?;
     let info = scenario.info()?;
     assert_eq!(info.schema_version, ReportSchemaVersion::V5);
-    assert_eq!(info.cli_version, ReportVersion::V0_11_0);
+    assert_eq!(info.cli_version, ReportVersion::V0_12_0);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
         env!("CARGO_PKG_VERSION")
@@ -235,6 +235,10 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(codex.path, root.join("AGENTS.md"));
     assert_eq!(info.model_availability, ModelAvailability::NotChecked);
     assert_eq!(info.models.team.gizmo, info.models.gizmo_prime);
+    assert_eq!(
+        info.models.host.required_total_agents,
+        ReportRequiredTotalAgents::STANDARD
+    );
     assert_eq!(info.models.team.agent.model, "gpt-6-astra");
     assert_eq!(info.models.team.agent.reasoning_effort, "high");
     assert_eq!(fs::read_to_string(&config)?, customized);
@@ -889,13 +893,14 @@ fn incomplete_framework_is_reported_without_overwriting_files() -> anyhow::Resul
 }
 
 #[test]
-fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
+fn cli_exposes_dashboard_discovery_and_yaml_execution() -> anyhow::Result<()> {
     let executable = env!("CARGO_BIN_EXE_meta-cortex");
     let help = Command::new(executable).arg("--help").output()?;
     assert!(help.status.success());
     let text = String::from_utf8(help.stdout)?;
     assert!(text.contains("list"));
     assert!(text.contains("run"));
+    assert!(text.contains("dashboard"));
     let scenario = CliScenario::create()?;
     fs::remove_dir_all(scenario.project.path())?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(

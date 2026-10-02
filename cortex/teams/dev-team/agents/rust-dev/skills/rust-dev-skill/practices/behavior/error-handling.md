@@ -118,6 +118,8 @@ use `anyhow::Result`; declare `anyhow` under `[dev-dependencies]`. Do not substi
 `Box<dyn std::error::Error>` as a catch-all test error.
 
 These alternatives use the `RetryCount` and `RetryCountError` definitions above.
+Each test fragment belongs inside the private inline module required by
+[test placement](../tooling/rust-testing.md#test-placement).
 
 **Prohibited:** panic during fixture setup or error extraction.
 

@@ -19,7 +19,7 @@ rules:
     summary: Prove domain behavior in Rust and boundaries in WASM.
   - id: testing:colocation
     source: ../rust-testing.md#test-placement
-    summary: Keep unit tests inline with their production owner.
+    summary: Keep unit tests in private inline test modules with their production owner.
   - id: testing:no_size_evasion
     source: ../rust-testing.md#split-production-ownership-before-tests
     summary: Split responsibilities without moving tests to evade size limits.

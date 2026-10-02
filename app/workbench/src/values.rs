@@ -132,7 +132,7 @@ impl TryFrom<String> for CommitId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Display, Serialize, Deserialize, JsonSchema)]
 #[serde(try_from = "i64")]
 #[schemars(with = "i64")]
 pub struct Revision(i64);

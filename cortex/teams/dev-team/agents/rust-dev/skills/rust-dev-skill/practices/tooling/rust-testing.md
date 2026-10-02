@@ -8,30 +8,41 @@ flows. Neither replaces tests of the Rust implementation.
 
 These fragments assume `RetryLimit::try_from(u16)` rejects zero with
 `Err(RetryLimitError::Zero)` and returns `Ok(RetryLimit)` for positive values.
-The value and error implement `Debug` and `PartialEq`. Prohibited examples
-compile but test the wrong thing.
+The value and error implement `Debug` and `PartialEq`. Each unit-test module
+below belongs at the bottom of its implementation file. The prohibited
+algorithm example compiles but tests the wrong thing.
 
 **Prohibited:** duplicate the validation algorithm in the test. This passes
 even if `RetryLimit` accepts zero.
 
 ```rust
-#[test]
-fn rejects_zero() {
-    let result = match 0_u16 {
-        0 => Err(RetryLimitError::Zero),
-        value => Ok(value),
-    };
+#[cfg(test)]
+mod tests {
+    use super::RetryLimitError;
 
-    assert_eq!(result, Err(RetryLimitError::Zero));
+    #[test]
+    fn rejects_zero() {
+        let result = match 0_u16 {
+            0 => Err(RetryLimitError::Zero),
+            value => Ok(value),
+        };
+
+        assert_eq!(result, Err(RetryLimitError::Zero));
+    }
 }
 ```
 
 **Required:** call the implementation and check its domain error.
 
 ```rust
-#[test]
-fn rejects_zero() {
-    assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+#[cfg(test)]
+mod tests {
+    use super::{RetryLimit, RetryLimitError};
+
+    #[test]
+    fn rejects_zero() {
+        assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+    }
 }
 ```
 
@@ -56,11 +67,12 @@ place checks at their owning layer:
 ## Test placement
 
 **Critical requirement:** follow Rust's standard inline unit-test organization.
-Cortex requires `#[cfg(test)] pub mod tests { ... }` at the bottom of the same
+Cortex requires private `#[cfg(test)] mod tests { ... }` at the bottom of the same
 file as the implementation being tested. Keep unit tests and their helpers
-inside that module. The `pub` visibility is the Cortex convention; `#[cfg(test)]`
-keeps the entire module out of normal builds. Access private items
-through `super`. Do not extract unit tests into `tests.rs`, `<module>/tests.rs`,
+inside that module. Do not put bare `#[test]` functions at production-module
+scope or add `pub` to the test module. `#[cfg(test)]`
+keeps the entire module out of normal builds. Access private items through
+`super`. Do not extract unit tests into `tests.rs`, `<module>/tests.rs`,
 or another file loaded through `mod tests;`, `#[path]`, or `include!`.
 
 Normal `mod child;` and `pub mod child;` declarations still connect production
@@ -76,11 +88,21 @@ may remain in API doc comments.
 mod tests; // Loads tests from a separate file.
 ```
 
+**Prohibited — `src/retry_limit.rs`:** a bare unit-test function compiles but
+violates placement, even when the function itself is private.
+
+```rust
+#[test]
+fn rejects_zero() {
+    assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+}
+```
+
 **Required — `src/retry_limit.rs`:**
 
 ```rust
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::{RetryLimit, RetryLimitError};
 
     #[test]
@@ -128,6 +150,44 @@ fn public_api_rejects_zero() {
 }
 ```
 
+### Place scenario entrypoints by their boundary
+
+A test's name does not determine whether it is a unit or integration test.
+The following alternatives assume `Scenario::new()` and `Scenario::terminal()`
+return `anyhow::Result`, `TerminalInvocation::Typed` selects the typed invocation,
+and `anyhow` is a dev-dependency. The scenario owner supplies the setup, actions,
+and assertions.
+
+**Prohibited — production implementation file:** leave the unit scenario outside
+its inline test module.
+
+```rust
+#[test]
+fn terminal_startup_navigation_exit_and_restoration() -> anyhow::Result<()> {
+    Scenario::new()?.terminal(TerminalInvocation::Typed)
+}
+```
+
+**Required — production implementation file:** keep a scenario exercising the
+owner's private implementation in its inline unit-test module.
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::{Scenario, TerminalInvocation};
+
+    #[test]
+    fn terminal_startup_navigation_exit_and_restoration() -> anyhow::Result<()> {
+        Scenario::new()?.terminal(TerminalInvocation::Typed)
+    }
+}
+```
+
+If this scenario instead exercises the crate's public API as an integration
+test, its `#[test]` function may remain at crate scope in `tests/terminal.rs`.
+Its fixture imports the public API rather than the private implementation file,
+as shown in [integration tests](#integration-tests-exercise-public-apis).
+
 ### Split production ownership before tests
 
 The 1,000-line file limit includes inline unit tests. Split distinct production
@@ -149,18 +209,28 @@ cross-layer bug, cover both the affected contract and the user flow.
 **Prohibited:** call the broken operation without checking its result.
 
 ```rust
-#[test]
-fn zero_limit_regression() {
-    let _ = RetryLimit::try_from(0);
+#[cfg(test)]
+mod tests {
+    use super::RetryLimit;
+
+    #[test]
+    fn zero_limit_regression() {
+        let _ = RetryLimit::try_from(0);
+    }
 }
 ```
 
 **Required:** assert the behavior the fix must restore.
 
 ```rust
-#[test]
-fn zero_limit_regression() {
-    assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+#[cfg(test)]
+mod tests {
+    use super::{RetryLimit, RetryLimitError};
+
+    #[test]
+    fn zero_limit_regression() {
+        assert_eq!(RetryLimit::try_from(0), Err(RetryLimitError::Zero));
+    }
 }
 ```
 

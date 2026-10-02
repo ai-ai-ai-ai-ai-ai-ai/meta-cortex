@@ -62,7 +62,7 @@ The installed `meta-cortex` executable includes both framework installation and
 ledger commands. No database server, separate database executable, or Rust
 installation is needed when using a prebuilt binary.
 
-1. Run `meta-cortex list`. It returns the command catalog grouped into framework, feature, and task operations, complete YAML request
+1. Run `meta-cortex list`. It returns the command catalog grouped into framework, feature, task, and Workbench operations, complete YAML request
    examples, and a JSON Schema generated from the actual Rust request types.
 2. Adapt the example for the selected command. Set `project` to the consuming
    repository or its assigned worktree. Use the assigned feature and task IDs.
@@ -86,7 +86,8 @@ LEDGER_REQUEST
 
 This is a local discovery-and-call interface, similar to skill scripts. It is
 not an MCP JSON-RPC server. `Framework / Initialize` and `Framework / Info` run
-through the same typed YAML interface. `list` and `run` are the CLI commands.
+through the same typed YAML interface. `list` and `run` provide discovery and
+request execution; `dashboard` opens interactive observation for the current repository.
 
 Commands use `operation.group` and a group-specific `operation.command` with
 `name` and `arguments`. References such as `Task / Claim` below name that pair;
@@ -103,6 +104,166 @@ YAML/JSON are wire formats; the application operates on concrete Rust types.
 
 **Required:** discover the schema and send `action.kind: heartbeat` with the
 current revision and attempt from the previous response.
+
+## Workbench dashboard
+
+`meta-cortex dashboard` and typed `Workbench / Dashboard` requests observe
+recorded Turso ledger content without claims, heartbeats, requeues, imports,
+migrations, or other updates. It does not collect
+host agent state, runtime metadata, chat content, or Git work and authorship data.
+Git is used only to resolve the existing repository identity and storage path.
+For example, a recorded integration SHA is ledger evidence; its event actor
+identifies who recorded it, not who actually authored that Git commit.
+
+**Prohibited:** report “RustDev authored this commit” from its Checkpoint event.
+
+**Required:** report “RustDev recorded this checkpoint; Git authorship is unrecorded.”
+
+### Open the dashboard
+
+1. Open a terminal in the consuming repository root, any subdirectory, or a linked
+   worktree.
+2. Run the command without a request file or required arguments:
+
+   ```sh
+   meta-cortex dashboard
+   ```
+
+   It resolves the existing repository identity and shared database from the
+   current directory, then opens Interactive mode at Features page `0`.
+   Terminal stdin and stdout are required.
+3. Select a feature and press Enter for tasks. Select a task and press Enter for
+   detail, then `h` for history. Enter on an event opens its recorded snapshot.
+4. Exit with `q` or Ctrl-C. The terminal is restored and the normal typed response
+   reports closure.
+
+**Prohibited:** tell the user a request file is required to open the current
+repository’s Features view.
+
+**Required:** run `meta-cortex dashboard` from that repository or its linked worktree.
+
+### Advanced typed requests
+
+1. Run `meta-cortex list` to discover the typed `Workbench / Dashboard` request.
+2. Save this request as `dashboard.yaml`, replacing `project` with the absolute
+   consuming project or linked worktree path:
+
+   ```yaml
+   version: 1
+   project: /absolute/project
+   operation:
+     group: Workbench
+     command:
+       name: Dashboard
+       arguments:
+         mode: Interactive
+         view: {kind: Features}
+         page: 0
+   ```
+
+3. Run it from a terminal:
+
+   ```sh
+   meta-cortex run --request dashboard.yaml
+   ```
+
+   Interactive requires terminal stdin and stdout. Use a request file so stdin
+   remains available for keyboard input; a heredoc or pipe does not provide it.
+4. Select a feature and press Enter for tasks. Select a task and press Enter for
+   detail, then `h` for history. Enter on an event opens its recorded snapshot.
+   Exit with `q` or Ctrl-C; the terminal is restored and the normal typed response
+   reports closure.
+
+For noninteractive observation, change the request to `mode: Snapshot`:
+
+```sh
+meta-cortex run --request dashboard.yaml > dashboard-output.yaml
+```
+
+Snapshot accepts file or stdin requests and redirected output. It reads once and
+returns the normal versioned YAML response with `data.kind: dashboard` and
+`data.value.content` containing the selected view’s text.
+
+**Prohibited:** pipe an Interactive request into stdin and expect keyboard navigation.
+
+**Required:** use a request file with terminal stdin/stdout, or choose Snapshot
+for a pipe or redirected output.
+
+### Views and recorded fields
+
+Typed requests require `mode`, `view`, and `page`. Modes and view kinds are
+case-sensitive. `page` is a zero-based unsigned 32-bit integer; use `0` for task
+detail, where paging does not apply. Initial views are:
+
+- **Features:** `view: {kind: Features}` lists feature IDs, recorded branches,
+  and objectives in ID order.
+- **Tasks:** `view: {kind: Tasks, feature: example-feature}` lists tasks in ID
+  order with ID, state, revision, and progress summary.
+- **Task:** `view: {kind: Task, query: {feature: example-feature, task: example-task}}`
+  shows objective, revision, attempt, created/updated/progress timestamps,
+  recorded workspace, state, checkpoint and integration SHA when recorded,
+  progress summary, acceptance criteria, dependencies, findings, next steps,
+  checks with outcome, command and evidence, and task-specific extensions.
+- **History:** `view: {kind: History, query: {feature: example-feature, task: example-task}}`
+  lists events newest revision first with kind, revision, recorded-by actor,
+  and note. Enter opens the event kind, revision, timestamp, actor, note, and
+  full task snapshot at that revision.
+
+States distinguish queued, working, blocked, ready, integrated, and cancelled.
+Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
+are not rerun. Checkpoint and integration details refer to their history events
+for the recording actor. Event snapshots retain their historical revision while
+current views refresh. No completion percentage, live execution status, or agent
+conversation is inferred. For example, a passed check is a worker’s recorded
+result, not a new test execution by the dashboard.
+
+**Prohibited:** treat a historical passed check as a fresh validation run.
+
+**Required:** inspect its event revision and recorded evidence before reporting it.
+
+### Keys, refresh, and pages
+
+- Up/Down or `k`/`j` select rows; Enter opens details.
+- `h` opens history from task detail.
+- Esc or Backspace returns to the parent view.
+- `n`/`p` move to the next/previous record page.
+- `J`/`K` or PageDown/PageUp scroll displayed text.
+- `r` refreshes manually; `q` or Ctrl-C exits.
+
+Interactive views reload after input and automatically after 500 ms without
+input. Feature, task, and history queries return at most 100 records per page;
+`Page end: More` or `Complete` indicates whether another page exists. Each query
+releases its connection after reading; no transaction is held while waiting for
+input. Pages use live offsets, so concurrent writes can shift records between
+pages. For example, a new history event can push an older event onto the next
+page; refresh and navigate again when comparing revisions.
+
+**Prohibited:** assume page 1 retains the same records while new events arrive.
+
+**Required:** refresh and compare event revisions across the live pages.
+
+### Storage requirements and errors
+
+`meta-cortex dashboard` reports a structured error with exit status `2` before
+entering the terminal when run outside Git or when repository identity or the
+shared database is missing. It does not create storage to recover from these errors.
+
+Observation requires an existing repository identity and shared database at the
+current schema version; it never initializes either. The observer uses a short
+250 ms database busy timeout. Interactive read failures appear in the view;
+press `r` to retry or `q` to exit. Snapshot failures return structured errors
+with exit status `2`.
+
+An older or empty schema reports that migration is required; unsupported
+versions are rejected. Use existing Workbench initialization/access under the
+[version and migration contract](#versions-and-durable-contracts), then retry.
+Those operations retain their migration and import semantics; opening the
+dashboard does not perform them. For example, observing a version `2` database
+reports the required migration instead of upgrading it.
+
+- **Prohibited:** expect Dashboard to migrate a version `2` database.
+
+- **Required:** complete the existing Workbench upgrade workflow, then retry observation.
 
 ## Assignment and worker lifecycle
 

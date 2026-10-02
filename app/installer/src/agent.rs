@@ -4,20 +4,25 @@ mod protocol;
 
 use crate::installation::InstallError;
 use catalog::Catalog;
-use derive_more::Display;
-use meta_cortex_workbench::LedgerError;
+use derive_more::{Display, From};
+use meta_cortex_visualization::{
+    Dashboard, DashboardError, DashboardMode, DashboardRequest, DashboardView,
+};
 use meta_cortex_workbench::versions::ProtocolVersion;
+use meta_cortex_workbench::{LedgerError, PageIndex, Workbench};
 use protocol::{Reply, Request};
 use serde::Serialize;
-use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::{env, fs};
 use thiserror::Error;
 use tokio::runtime::Builder;
 
 #[derive(Debug, Error)]
 pub enum AgentError {
+    #[error(transparent)]
+    Dashboard(#[from] meta_cortex_visualization::DashboardError),
     #[error("invalid request YAML: {0}")]
     Request(#[from] serde_saphyr::DeserializeError),
     #[error("could not encode response: {0}")]
@@ -48,46 +53,62 @@ pub enum ErrorCode {
     Response,
 }
 
+#[derive(Serialize, From)]
+#[serde(transparent)]
+struct FailureMessage(String);
+
 #[derive(Serialize)]
 pub struct Failure {
     code: ErrorCode,
-    message: String,
+    message: FailureMessage,
 }
 
 impl From<&AgentError> for Failure {
     fn from(error: &AgentError) -> Self {
         let code = match error {
+            AgentError::Dashboard(DashboardError::Terminal(_)) => ErrorCode::Io,
+            AgentError::Dashboard(DashboardError::TerminalRequired) => ErrorCode::InvalidRequest,
             AgentError::Request(_) => ErrorCode::InvalidRequest,
             AgentError::Response(_) => ErrorCode::Response,
             AgentError::Io(_) => ErrorCode::Io,
             AgentError::Install(_) => ErrorCode::Installation,
-            AgentError::Ledger(error) => match error {
-                LedgerError::Conflict | LedgerError::AlreadyExists => ErrorCode::Conflict,
-                LedgerError::NotFound | LedgerError::Uninitialized => ErrorCode::NotFound,
-                LedgerError::Invalid(_)
-                | LedgerError::Identifier(_)
-                | LedgerError::BranchName(_)
-                | LedgerError::CommitId(_)
-                | LedgerError::Revision(_)
-                | LedgerError::Attempt(_)
-                | LedgerError::Timestamp(_)
-                | LedgerError::LeaseSeconds(_) => ErrorCode::InvalidRequest,
-                LedgerError::InvalidTransition => ErrorCode::InvalidState,
-                LedgerError::AssignmentChanged => ErrorCode::AssignmentChanged,
-                LedgerError::Expired => ErrorCode::Expired,
-                LedgerError::DependencyPending => ErrorCode::DependencyPending,
-                LedgerError::UnsupportedVersion(_) => ErrorCode::UnsupportedVersion,
-                LedgerError::Git(_) => ErrorCode::Git,
-                LedgerError::Io(_) | LedgerError::Clock(_) => ErrorCode::Io,
-                LedgerError::Database(_)
-                | LedgerError::Json(_)
-                | LedgerError::SqlBuild(_)
-                | LedgerError::UnsupportedSqlBinding => ErrorCode::Storage,
-            },
+            AgentError::Ledger(error) | AgentError::Dashboard(DashboardError::Ledger(error)) => {
+                ErrorCode::ledger(error)
+            }
         };
         Self {
             code,
-            message: error.to_string(),
+            message: FailureMessage::from(error.to_string()),
+        }
+    }
+}
+
+impl ErrorCode {
+    fn ledger(error: &LedgerError) -> Self {
+        match error {
+            LedgerError::Conflict | LedgerError::AlreadyExists => ErrorCode::Conflict,
+            LedgerError::NotFound | LedgerError::Uninitialized => ErrorCode::NotFound,
+            LedgerError::Invalid(_)
+            | LedgerError::Identifier(_)
+            | LedgerError::BranchName(_)
+            | LedgerError::CommitId(_)
+            | LedgerError::Revision(_)
+            | LedgerError::Attempt(_)
+            | LedgerError::Timestamp(_)
+            | LedgerError::LeaseSeconds(_) => ErrorCode::InvalidRequest,
+            LedgerError::InvalidTransition => ErrorCode::InvalidState,
+            LedgerError::AssignmentChanged => ErrorCode::AssignmentChanged,
+            LedgerError::Expired => ErrorCode::Expired,
+            LedgerError::DependencyPending => ErrorCode::DependencyPending,
+            LedgerError::ObservationMigrationRequired(_) | LedgerError::UnsupportedVersion(_) => {
+                ErrorCode::UnsupportedVersion
+            }
+            LedgerError::Git(_) => ErrorCode::Git,
+            LedgerError::Io(_) | LedgerError::Clock(_) => ErrorCode::Io,
+            LedgerError::Database(_)
+            | LedgerError::Json(_)
+            | LedgerError::SqlBuild(_)
+            | LedgerError::UnsupportedSqlBinding => ErrorCode::Storage,
         }
     }
 }
@@ -186,6 +207,25 @@ impl AgentCli {
             }
             Err(error) => Self::report(Err(error)),
         }
+    }
+
+    pub fn dashboard() -> ExitCode {
+        Self::report(Self::execute_dashboard())
+    }
+
+    fn execute_dashboard() -> Result<Reply, AgentError> {
+        let project = env::current_dir()?;
+        let workbench = Workbench::discover(&project)?;
+        let runtime = Builder::new_current_thread().enable_time().build()?;
+        // Observe existing storage before entering the terminal so discovery failures
+        // retain the CLI's existing structured error transport.
+        runtime.block_on(workbench.observe())?;
+        let report = runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest {
+            mode: DashboardMode::Interactive,
+            view: DashboardView::Features,
+            page: PageIndex::FIRST,
+        }))?;
+        Ok(Reply::Dashboard(report))
     }
 
     pub fn run(path: PathBuf) -> ExitCode {
