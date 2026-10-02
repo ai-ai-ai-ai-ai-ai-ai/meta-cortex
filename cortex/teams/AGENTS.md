@@ -7,13 +7,18 @@ applies to its assignment.
 
 - The [Gizmo team](gizmo-team/AGENTS.md) contains Gizmo Prime and Team Gizmo, which own feature coordination and agent assignments.
 - Agents in the [development team](dev-team/AGENTS.md), [security team](security-team/AGENTS.md), and [SRE team](sre-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
-- The [AI team](ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer subagent.
+- The [AI team](ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer and read-only tech writer verifier.
 - The [delivery team](delivery-team/AGENTS.md) owns local feature integration
   and GitHub pull-request management through separate agents. The SRE CI/CD
   agent owns pipeline execution and infrastructure, using project-owned procedures.
 
 Each agent's `AGENTS.md` owns its role responsibilities. Keep technical guidance
 in that role's linked skills so they can evolve independently.
+
+Team catalogs may add a `Verifier:` role link to any agent's entry. Gizmo follows
+that relationship through the shared
+[agent verification handoff](gizmo-team/docs/agent-verification.md).
+The verifier's own skill selects its subject catalogs; coordination is shared.
 
 Read and apply the shared [agent configuration rules](gizmo-team/docs/agent-configuration.md)
 before every launch, using the resolved configuration location supplied by the
@@ -48,6 +53,10 @@ not bypass Team Gizmo to direct workers. Agents retain technical judgment within
 their assigned scope; coordination decisions belong to their Gizmo.
 
 - Persist assignments and progress through the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
+- Record each participating role's own activity under the
+  [entire feature workflow](gizmo-team/docs/agent-ledger.md#record-the-entire-feature-workflow),
+  including coordinators and delivery roles. A message or an event on another
+  role's task does not replace that record.
 - Use ordinary host communication tools to notify the assigning coordinator.
   Messages are not the only record of work.
 - All assigned agents may read their feature ledger while retaining this decision hierarchy.
@@ -71,6 +80,10 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Keep the team directory complete. Each team's `AGENTS.md` catalogs every
   agent under its `agents/` directory with responsibilities, assignment boundaries, a role link,
   and any incomplete-role status, so Team Gizmo can select agents from these summaries.
+- A worker entry may declare a **Verifier** link to a cataloged read-only role.
+  Team Gizmo follows the shared [verification handoff](gizmo-team/docs/agent-verification.md)
+  for that pair. The verifier's own role and review skill declare its catalog;
+  the shared verification workflow requires index-only loading and exhaustive rule coverage.
 - Gizmo Prime launches the single Team Gizmo as a subagent.
 - Team Gizmo launches the team agents needed for its assignments as subagents.
 - Team Gizmo assigns instructions, specifications, skills, practices, and catalog
@@ -104,11 +117,16 @@ following from the active library and supplies them in the launch instructions:
   ledger location, and the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
   Record the assignment before launching its worker. Coordinator and workspace
   bootstrap assignments establish this context before task workers launch.
+- The activity's assigned role, recorded reporting coordinator, and current
+  ledger revision and attempt. Coordinator activities use the same context once
+  the feature ledger is available.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
 - The validated session `development.mode` and `development.delivery`, plus any
   task-specific override; assigned agents inherit them and never repeat
   configuration collection.
+- The completed [host capacity preflight](gizmo-team/docs/agent-configuration.md#check-host-capacity),
+  including the configured target, observed total allocation, and host evidence source.
 - Project root, library root, working directory, and relevant project instructions.
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.
 - The assigned agent’s team directory and team `AGENTS.md`.
@@ -140,6 +158,12 @@ the user's scope; a broader goal requires user authorization through the hierarc
 Load newly relevant documents only for the authorized assignment.
 The skill’s own `SKILL.md` still owns its technical
 instructions; this handoff does not select or duplicate skill contents.
+
+- For verifiers, retain operational context and apply the shared
+  [index-only review context](gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md#keep-subject-practice-context-index-only)
+  instead of subject-source loading. Supply the verifier's own role and review
+  skill. Do not supply or load the target worker's role, authoring skills, or
+  practice Markdown. Its complete catalog supplies the practice cues.
 
 **Prohibited:** launch a TypeScript agent with only “implement this component”
 and its role path, assuming it already knows the development team’s programming

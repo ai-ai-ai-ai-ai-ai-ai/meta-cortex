@@ -1,0 +1,52 @@
+kind: practice
+owner: writing:writing_clarity
+title: Writing clarity
+source_title: Writing Clarity
+source: ../writing-clarity.md
+owns:
+  - Sentence clarity, semantic grouping, and representations.
+excludes:
+  - Article body shapes and subject policy.
+relationships:
+  - Applies clarity to every article and instruction.
+related: []
+rules:
+  - id: writing_clarity:atomic_content
+    source: ../writing-clarity.md#atomic-content
+    summary: Separate independent facts, rules, actors, and commands.
+  - id: writing_clarity:connected_reasoning
+    source: ../writing-clarity.md#atomic-content
+    summary: Keep necessary reasoning connected; group parallel facts in bullets.
+  - id: writing_clarity:instruction_order
+    source: ../writing-clarity.md#instruction-grouping
+    summary: Group required then prohibited instructions by real subjects.
+  - id: writing_clarity:semantic_groups
+    source: ../writing-clarity.md#instruction-grouping
+    summary: Preserve homogeneous lists and indivisible ordered procedures.
+  - id: writing_clarity:owned_substeps
+    source: ../writing-clarity.md#instruction-grouping
+    summary: Nest conditions and failures beneath their owning action.
+  - id: writing_clarity:keyed_mappings
+    source: ../writing-clarity.md#mappings-and-diagrams
+    summary: Use enclosed keyed lists for repeated fields and mappings.
+  - id: writing_clarity:diagrams
+    source: ../writing-clarity.md#mappings-and-diagrams
+    summary: Use Mermaid for diagrams and lists for procedures.
+  - id: writing_clarity:repository_structure
+    source: ../writing-clarity.md#mappings-and-diagrams
+    summary: Inspect actual paths; document only flat subsystem lists.
+  - id: writing_clarity:host_capacity
+    source: ../writing-clarity.md#host-capacity
+    summary: Use active host capacity without inventing numeric architecture limits.
+  - id: writing_clarity:prohibited_structure
+    source: ../writing-clarity.md#prohibited-actions
+    summary: Avoid tables, static trees, ASCII graphics, and arbitrary chunks.
+  - id: writing_clarity:bounded_edits
+    source: ../writing-clarity.md#prohibited-actions
+    summary: Report out-of-scope grouping defects without expanding the edit.
+  - id: writing_clarity:literal_syntax
+    source: ../writing-clarity.md#prohibited-presentation-patterns
+    summary: Code fences cannot disguise prohibited authored navigation structures.
+  - id: writing_clarity:validation
+    source: ../writing-clarity.md#validation
+    summary: Review comprehension, semantic grouping, structures, and actual evidence.

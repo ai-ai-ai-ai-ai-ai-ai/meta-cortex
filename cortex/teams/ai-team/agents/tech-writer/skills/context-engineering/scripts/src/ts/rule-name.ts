@@ -1,5 +1,199 @@
 // Rule identities grouped by namespace; serialized catalog IDs remain unchanged.
 
+export enum TechWriterRule {
+  Communication = "tech_writer:communication",
+  ContextPrerequisite = "tech_writer:context_prerequisite",
+  CodePrerequisite = "tech_writer:code_prerequisite",
+  DeliveryPrerequisite = "tech_writer:delivery_prerequisite",
+  ProgrammingPrerequisite = "tech_writer:programming_prerequisite",
+  SecurityPrerequisite = "tech_writer:security_prerequisite",
+  SubjectPolicy = "tech_writer:subject_policy",
+  GraphSync = "tech_writer:graph_sync",
+  ExamplesAndCallers = "tech_writer:examples_and_callers",
+  Reporting = "tech_writer:reporting",
+  AgentPlacement = "tech_writer:agent_placement",
+  SkillPlacement = "tech_writer:skill_placement",
+  PracticeOwnership = "tech_writer:practice_ownership",
+  RoleSkillBoundary = "tech_writer:role_skill_boundary",
+  SkillMoves = "tech_writer:skill_moves",
+  SharedKnowledge = "tech_writer:shared_knowledge",
+  TeamNavigation = "tech_writer:team_navigation",
+  SkillCatalogs = "tech_writer:skill_catalogs",
+  NoScaffolding = "tech_writer:no_scaffolding",
+  LanguageIndependence = "tech_writer:language_independence",
+  ContextFormats = "tech_writer:context_formats",
+  ImplementationBoundary = "tech_writer:implementation_boundary",
+}
+
+export enum ContextEngineeringRule {
+  AuthoringPractices = "context_engineering:authoring_practices",
+  DefectSeverity = "context_engineering:defect_severity",
+  PreservePolicy = "context_engineering:preserve_policy",
+  BoundedScope = "context_engineering:bounded_scope",
+  DomainExtensions = "context_engineering:domain_extensions",
+  SelfApplication = "context_engineering:self_application",
+  NoDuplication = "context_engineering:no_duplication",
+  NoRoleInference = "context_engineering:no_role_inference",
+  ProjectContext = "context_engineering:project_context",
+  SemanticValidation = "context_engineering:semantic_validation",
+  NavigationValidation = "context_engineering:navigation_validation",
+  ValidationEvidence = "context_engineering:validation_evidence",
+  YamlGuidance = "context_engineering:yaml_guidance",
+  YamlOrder = "context_engineering:yaml_order",
+  InertCommands = "context_engineering:inert_commands",
+  ContextChecks = "context_engineering:context_checks",
+  AuditInputs = "context_engineering:audit_inputs",
+  ReuseTooling = "context_engineering:reuse_tooling",
+  AuditFailures = "context_engineering:audit_failures",
+  AuditLimits = "context_engineering:audit_limits",
+  ComparisonScope = "context_engineering:comparison_scope",
+  MaintainedChecks = "context_engineering:maintained_checks",
+  CheckRegressions = "context_engineering:check_regressions",
+  LicenseNotices = "context_engineering:license_notices",
+}
+
+export enum WritingClarityRule {
+  AtomicContent = "writing_clarity:atomic_content",
+  ConnectedReasoning = "writing_clarity:connected_reasoning",
+  InstructionOrder = "writing_clarity:instruction_order",
+  SemanticGroups = "writing_clarity:semantic_groups",
+  OwnedSubsteps = "writing_clarity:owned_substeps",
+  KeyedMappings = "writing_clarity:keyed_mappings",
+  Diagrams = "writing_clarity:diagrams",
+  RepositoryStructure = "writing_clarity:repository_structure",
+  HostCapacity = "writing_clarity:host_capacity",
+  ProhibitedStructure = "writing_clarity:prohibited_structure",
+  BoundedEdits = "writing_clarity:bounded_edits",
+  LiteralSyntax = "writing_clarity:literal_syntax",
+  Validation = "writing_clarity:validation",
+}
+
+export enum FocusedExamplesRule {
+  OneDecision = "focused_examples:one_decision",
+  IndependentSections = "focused_examples:independent_sections",
+  RequiredPair = "focused_examples:required_pair",
+  SameSituation = "focused_examples:same_situation",
+  ConcreteDifference = "focused_examples:concrete_difference",
+  AdjacentExplanation = "focused_examples:adjacent_explanation",
+  BoundedException = "focused_examples:bounded_exception",
+  CanonicalExamples = "focused_examples:canonical_examples",
+  CatalogCues = "focused_examples:catalog_cues",
+  PreserveRequirements = "focused_examples:preserve_requirements",
+  Validation = "focused_examples:validation",
+}
+
+export enum ArticleStructureRule {
+  ExplanationOpening = "article_structure:explanation_opening",
+  ExplanationBody = "article_structure:explanation_body",
+  NavigableSubtopics = "article_structure:navigable_subtopics",
+  ActionImplications = "article_structure:action_implications",
+  RulesBody = "article_structure:rules_body",
+  OwnedDetails = "article_structure:owned_details",
+  ProcedureOrder = "article_structure:procedure_order",
+  ProcedureOutcome = "article_structure:procedure_outcome",
+  ReferenceBody = "article_structure:reference_body",
+  ReferenceAuthority = "article_structure:reference_authority",
+  HeadingOwnership = "article_structure:heading_ownership",
+  VisibleTransitions = "article_structure:visible_transitions",
+  NavigationUpdates = "article_structure:navigation_updates",
+  ActionInputs = "article_structure:action_inputs",
+  NoHtmlTables = "article_structure:no_html_tables",
+  NoEmptyStructure = "article_structure:no_empty_structure",
+  PreservePolicy = "article_structure:preserve_policy",
+  ManagedMarkers = "article_structure:managed_markers",
+  Validation = "article_structure:validation",
+}
+
+export enum ConsistencyRule {
+  CanonicalAuthority = "consistency:canonical_authority",
+  ImplementationEvidence = "consistency:implementation_evidence",
+  HistoricalLabels = "consistency:historical_labels",
+  PreserveRequirements = "consistency:preserve_requirements",
+  DirectDependencies = "consistency:direct_dependencies",
+  ReusePrerequisites = "consistency:reuse_prerequisites",
+  AcyclicLoading = "consistency:acyclic_loading",
+  SharedIndependence = "consistency:shared_independence",
+  DependencyMoves = "consistency:dependency_moves",
+  BoundedDiscovery = "consistency:bounded_discovery",
+  BoundedCorrections = "consistency:bounded_corrections",
+  BoundedNavigation = "consistency:bounded_navigation",
+  FullReviewScope = "consistency:full_review_scope",
+  ReviewCoordination = "consistency:review_coordination",
+  RuntimeContracts = "consistency:runtime_contracts",
+  IntentAndBehavior = "consistency:intent_and_behavior",
+  InertExamples = "consistency:inert_examples",
+  DurableContent = "consistency:durable_content",
+  SecretPlaceholders = "consistency:secret_placeholders",
+  Discoverability = "consistency:discoverability",
+  NoAssumedTooling = "consistency:no_assumed_tooling",
+  Validation = "consistency:validation",
+}
+
+export enum KnowledgeGraphsRule {
+  VerifierBoundary = "knowledge_graphs:verifier_boundary",
+  DecisionInventory = "knowledge_graphs:decision_inventory",
+  ReadableIds = "knowledge_graphs:readable_ids",
+  SourceAnchors = "knowledge_graphs:source_anchors",
+  BriefCues = "knowledge_graphs:brief_cues",
+  PracticeMetadata = "knowledge_graphs:practice_metadata",
+  SourceAuthority = "knowledge_graphs:source_authority",
+  OwnerInspection = "knowledge_graphs:owner_inspection",
+  ExistingOwner = "knowledge_graphs:existing_owner",
+  SourceSync = "knowledge_graphs:source_sync",
+  StableNames = "knowledge_graphs:stable_names",
+  UniqueOwnership = "knowledge_graphs:unique_ownership",
+  EntrypointLoading = "knowledge_graphs:entrypoint_loading",
+  AcyclicPrerequisites = "knowledge_graphs:acyclic_prerequisites",
+  Relationships = "knowledge_graphs:relationships",
+  ConflictResolution = "knowledge_graphs:conflict_resolution",
+  SemanticCoverage = "knowledge_graphs:semantic_coverage",
+  GraphIntegrity = "knowledge_graphs:graph_integrity",
+  MeaningEvidence = "knowledge_graphs:meaning_evidence",
+  NavigableHeadings = "knowledge_graphs:navigable_headings",
+  CatalogHierarchy = "knowledge_graphs:catalog_hierarchy",
+  NavigationShape = "knowledge_graphs:navigation_shape",
+  PracticeShape = "knowledge_graphs:practice_shape",
+  RegisteredVocabulary = "knowledge_graphs:registered_vocabulary",
+  CheckLeaves = "knowledge_graphs:check_leaves",
+  RelativePaths = "knowledge_graphs:relative_paths",
+  TeamNavigation = "knowledge_graphs:team_navigation",
+  MandatoryPrerequisites = "knowledge_graphs:mandatory_prerequisites",
+  SelectedBranches = "knowledge_graphs:selected_branches",
+  OrderedSourceReview = "knowledge_graphs:ordered_source_review",
+  BoundaryPrerequisites = "knowledge_graphs:boundary_prerequisites",
+  FocusedAssignments = "knowledge_graphs:focused_assignments",
+  ContextFormatBoundary = "knowledge_graphs:context_format_boundary",
+}
+
+export enum CodePracticeWritingRule {
+  CodePairs = "code_practice_writing:code_pairs",
+  EssentialCode = "code_practice_writing:essential_code",
+  DecisiveContext = "code_practice_writing:decisive_context",
+  FragmentDependencies = "code_practice_writing:fragment_dependencies",
+  ExternalException = "code_practice_writing:external_exception",
+  HypotheticalContracts = "code_practice_writing:hypothetical_contracts",
+  DesignAndCompilation = "code_practice_writing:design_and_compilation",
+  ExecuteExamples = "code_practice_writing:execute_examples",
+  TemporaryScaffolding = "code_practice_writing:temporary_scaffolding",
+  FailureCause = "code_practice_writing:failure_cause",
+}
+
+export enum DeliveryWritingRule {
+  Responsibilities = "delivery_writing:responsibilities",
+  OrdinaryProgress = "delivery_writing:ordinary_progress",
+  ReportContent = "delivery_writing:report_content",
+  RoleSkillBoundary = "delivery_writing:role_skill_boundary",
+  CommandWorkspace = "delivery_writing:command_workspace",
+  CommandInputs = "delivery_writing:command_inputs",
+  ExecutableActions = "delivery_writing:executable_actions",
+  ObservableResults = "delivery_writing:observable_results",
+  ConditionalSteps = "delivery_writing:conditional_steps",
+  NoExtraCoordination = "delivery_writing:no_extra_coordination",
+  DisposableValidation = "delivery_writing:disposable_validation",
+  FailureValidation = "delivery_writing:failure_validation",
+  EvidenceScope = "delivery_writing:evidence_scope",
+}
+
 export enum ApiInputsRule {
   CommandDecoding = "api_inputs:command_decoding",
   ExternalSignatures = "api_inputs:external_signatures",
@@ -435,6 +629,15 @@ export enum WorkflowTypestateRule {
 }
 
 export type RuleName =
+  | TechWriterRule
+  | ContextEngineeringRule
+  | WritingClarityRule
+  | FocusedExamplesRule
+  | ArticleStructureRule
+  | ConsistencyRule
+  | KnowledgeGraphsRule
+  | CodePracticeWritingRule
+  | DeliveryWritingRule
   | ApiInputsRule
   | BranchingRule
   | BrowserImplementationRule

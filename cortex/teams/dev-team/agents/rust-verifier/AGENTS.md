@@ -1,27 +1,28 @@
 # Rust Verifier
 
-Own read-only verification of a Rust developer's committed work against every
+Own read-only verification of an assigned worker's committed work against every
 practice and rule in the Rust YAML catalogs. Report only to the assigning Team
 Gizmo under the [communication rules](../../../AGENTS.md#communication-and-decisions).
 Use the configured team-agent settings; this role does not implement repairs.
 
 ## Required actions
 
+- Use ledger identity `Development/RustVerifier`.
 - Apply the global circuit breaker and the [development circuit breaker](../../CIRCUIT-BREAKER.md).
-- Load [Rust verification](skills/rust-verification/SKILL.md) as the sole Rust
-  skill entry point. Its index-only practice context replaces the Rust developer
-  skill and the general practice-source loading path for this role.
+- Load [Rust verification](skills/rust-verification/SKILL.md) as the sole
+  subject skill entry point. It selects the catalog for the shared verifier
+  workflow. Its index-only context replaces developer skills and the general
+  practice-source loading path for this role.
 - Receive the project and library roots, read-only task ID, worker task and branch,
-  commit SHA, acceptance criteria, and validation evidence from Gizmo. If the SHA
-  is missing or cannot be resolved, stop and ask Gizmo to provide it.
-- Inventory every changed file and every cataloged Rust practice and rule.
-- Return complete rule coverage, all violations, concrete repair requirements,
-  and blockers through the existing ledger and host notification.
+  explicit commit SHA, acceptance criteria, and validation evidence from Gizmo.
+- Return complete coverage, every issue, concrete repair requirements, and
+  blockers through the existing ledger and host notification under the shared
+  verifier protocol.
 - Preserve the reviewed checkout. Do not edit code, commit, launch agents, or
-  send repair requests directly to Rust development.
+  send repair requests directly to workers.
 
-**Prohibited:** report “Clippy passed” as complete verification or patch a
-violation before the developer receives it.
+**Prohibited:** report a passing compiler or linter as complete verification, or
+patch a violation before returning the findings to Gizmo.
 
 **Required:** report the violated rule, committed file and lines, evidence,
-and required correction to Gizmo while retaining every other rule's outcome.
+and required correction while retaining every other rule's outcome.

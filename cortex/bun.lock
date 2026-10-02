@@ -8,17 +8,6 @@
         "effect": "4.0.0-rc.117",
       },
     },
-    "lace": {
-      "name": "@meta-cortex/lace",
-      "version": "0.1.0",
-      "devDependencies": {
-        "@types/bun": "catalog:",
-        "eslint": "10.8.1",
-        "prettier": "3.9.6",
-        "typescript": "6.0.3",
-        "typescript-eslint": "8.66.0",
-      },
-    },
     "scripts": {
       "name": "@meta-cortex/scripts",
       "version": "0.1.0",
@@ -31,6 +20,7 @@
         "prettier": "3.9.6",
         "typescript": "6.0.3",
         "typescript-eslint": "8.66.0",
+        "yaml": "2.9.0",
       },
     },
     "teams/ai-team/agents/tech-writer/skills/context-engineering/scripts": {
@@ -116,8 +106,6 @@
     "@isaacs/cliui": ["@isaacs/cliui@8.0.2", "", { "dependencies": { "string-width": "^5.1.2", "string-width-cjs": "npm:string-width@^4.2.0", "strip-ansi": "^7.0.1", "strip-ansi-cjs": "npm:strip-ansi@^6.0.1", "wrap-ansi": "^8.1.0", "wrap-ansi-cjs": "npm:wrap-ansi@^7.0.0" } }, "sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA=="],
 
     "@meta-cortex/context-engineering": ["@meta-cortex/context-engineering@workspace:teams/ai-team/agents/tech-writer/skills/context-engineering/scripts"],
-
-    "@meta-cortex/lace": ["@meta-cortex/lace@workspace:lace"],
 
     "@meta-cortex/scripts": ["@meta-cortex/scripts@workspace:scripts"],
 

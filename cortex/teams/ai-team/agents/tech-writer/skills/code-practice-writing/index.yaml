@@ -1,0 +1,6 @@
+kind: navigation
+title: Code Practice Writing Catalog
+entries:
+  - title: Programming examples
+    path: practices/code_practice_writing/index.yaml
+    summary: Concrete examples, boundaries, and accurate execution claims.

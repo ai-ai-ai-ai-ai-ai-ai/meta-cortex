@@ -6,9 +6,9 @@
   "scripts": {
     "check": "tsc --noEmit",
     "test": "bun test src/test",
-    "format": "prettier --write src package.json tsconfig.json eslint.config.js",
-    "format:check": "prettier --check src package.json tsconfig.json eslint.config.js",
-    "verify": "bun run format:check && bun run lint && bun run check && bun test src/test",
+    "format": "prettier --write src package.json tsconfig.json eslint.config.js \"../**/*.context.yaml\" \"../**/AGENTS.yaml\" --no-error-on-unmatched-pattern",
+    "format:check": "prettier --check src package.json tsconfig.json eslint.config.js \"../**/*.context.yaml\" \"../**/AGENTS.yaml\" --no-error-on-unmatched-pattern",
+    "verify": "bun run format:check && bun run lint && bun run check && bun test src/test && cd .. && bun run context:check",
     "lint": "eslint src --max-warnings 0"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "typescript": "6.0.3",
     "prettier": "3.9.6",
     "eslint": "10.8.1",
-    "typescript-eslint": "8.66.0"
+    "typescript-eslint": "8.66.0",
+    "yaml": "2.9.0"
   }
 }

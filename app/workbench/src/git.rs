@@ -167,6 +167,9 @@ impl Repository {
     pub fn require_workspace(&self, workspace: &Workspace) -> Result<(), LedgerError> {
         match workspace {
             Workspace::ReadOnly => Ok(()),
+            Workspace::Feature => Err(LedgerError::Invalid(
+                "feature workspace requires its feature context",
+            )),
             Workspace::Git { branch, path } => {
                 if !path.is_absolute() {
                     return Err(LedgerError::Invalid("worktree path must be absolute"));
@@ -181,6 +184,13 @@ impl Repository {
         }
     }
 
+    pub fn require_task_workspace(&self, input: TaskWorkspaceCheck<'_>) -> Result<(), LedgerError> {
+        match input.workspace {
+            Workspace::Feature => self.require_feature(input.feature),
+            Workspace::ReadOnly | Workspace::Git { .. } => self.require_workspace(input.workspace),
+        }
+    }
+
     pub fn require_feature(&self, feature: &Feature) -> Result<(), LedgerError> {
         self.require_workspace(&Workspace::Git {
             branch: feature.branch.clone(),
@@ -191,7 +201,7 @@ impl Repository {
     pub fn checkpoint(&self, input: CheckpointCheck<'_>) -> Result<(), LedgerError> {
         self.require_workspace(input.workspace)?;
         match input.workspace {
-            Workspace::ReadOnly => Err(LedgerError::Invalid(
+            Workspace::ReadOnly | Workspace::Feature => Err(LedgerError::Invalid(
                 "read-only tasks do not have code checkpoints",
             )),
             Workspace::Git { path, .. } => {
@@ -201,15 +211,25 @@ impl Repository {
     }
 
     pub fn ready(&self, input: ReadyCheck<'_>) -> Result<(), LedgerError> {
-        self.require_workspace(input.workspace)?;
+        self.require_task_workspace(TaskWorkspaceCheck {
+            workspace: input.workspace,
+            feature: input.feature,
+        })?;
         match input {
             ReadyCheck {
                 workspace: Workspace::ReadOnly,
                 checkpoint: Checkpoint::Unrecorded,
+                ..
             } => Ok(()),
+            ReadyCheck {
+                workspace: Workspace::Feature,
+                checkpoint: Checkpoint::Unrecorded,
+                ..
+            } => GitWorktree::from(input.feature.worktree.clone()).require_clean(),
             ReadyCheck {
                 workspace: Workspace::Git { path, .. },
                 checkpoint: Checkpoint::Git { commit },
+                ..
             } => {
                 let git = GitWorktree::from(path.clone());
                 git.require_clean()?;
@@ -221,12 +241,14 @@ impl Repository {
                 Ok(())
             }
             ReadyCheck {
-                workspace: Workspace::ReadOnly,
+                workspace: Workspace::ReadOnly | Workspace::Feature,
                 checkpoint: Checkpoint::Git { .. },
+                ..
             }
             | ReadyCheck {
                 workspace: Workspace::Git { .. },
                 checkpoint: Checkpoint::Unrecorded,
+                ..
             } => Err(LedgerError::Invalid(
                 "checkpoint does not match task workspace",
             )),
@@ -256,6 +278,11 @@ pub struct CheckpointCheck<'a> {
 pub struct ReadyCheck<'a> {
     pub workspace: &'a Workspace,
     pub checkpoint: &'a Checkpoint,
+    pub feature: &'a Feature,
+}
+pub struct TaskWorkspaceCheck<'a> {
+    pub workspace: &'a Workspace,
+    pub feature: &'a Feature,
 }
 pub struct IntegrationCheck<'a> {
     pub feature: &'a Feature,

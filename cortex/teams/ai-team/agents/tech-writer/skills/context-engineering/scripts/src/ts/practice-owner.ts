@@ -1,4 +1,16 @@
 // Canonical practice identities; source paths remain separate catalog metadata.
+export enum WritingPracticeOwner {
+  TechWriter = "writing:tech_writer",
+  ContextEngineering = "writing:context_engineering",
+  WritingClarity = "writing:writing_clarity",
+  FocusedExamples = "writing:focused_examples",
+  ArticleStructure = "writing:article_structure",
+  Consistency = "writing:consistency",
+  KnowledgeGraphs = "writing:knowledge_graphs",
+  CodePracticeWriting = "writing:code_practice_writing",
+  DeliveryWriting = "writing:delivery_writing",
+}
+
 export enum DeliveryPracticeOwner {
   WorkspaceSetup = "delivery:workspace_setup",
   TaskCommits = "delivery:task_commits",
@@ -60,6 +72,7 @@ export enum TypescriptPracticeOwner {
 }
 
 export type PracticeOwner =
+  | WritingPracticeOwner
   | DeliveryPracticeOwner
   | ProgrammingPracticeOwner
   | RustPracticeOwner

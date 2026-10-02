@@ -268,7 +268,7 @@ fn observer_and_writer_run_in_distinct_processes() -> anyhow::Result<()> {
                 WriterLifecycle::Running => {}
             }
             let task = observation.task(Scenario::query()?).await?;
-            revisions.insert(task.revision);
+            revisions.insert(task.common.revision);
             observation
                 .flow(TaskPage {
                     feature: Scenario::feature()?,
@@ -304,7 +304,7 @@ fn observer_and_writer_run_in_distinct_processes() -> anyhow::Result<()> {
     scenario.runtime.block_on(async {
         let observation = scenario.observe().await?;
         let task = observation.task(Scenario::query()?).await?;
-        assert_eq!(i64::from(task.revision), 32);
+        assert_eq!(i64::from(task.common.revision), 32);
         let history = observation
             .history(HistoryPage {
                 feature: Scenario::feature()?,
@@ -358,9 +358,9 @@ fn multiprocess_writer() -> anyhow::Result<()> {
                     .update(WorkerUpdate {
                         feature: Scenario::feature()?,
                         task: Scenario::task()?,
-                        expected_revision: task.revision,
+                        expected_revision: task.common.revision,
                         agent,
-                        attempt: task.attempt,
+                        attempt: task.common.attempt,
                         action: WorkerAction::Progress {
                             ttl_seconds: LeaseSeconds::TEN_MINUTES,
                             phase: Phase::Working,
@@ -424,9 +424,9 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
                 .update(WorkerUpdate {
                     feature: Scenario::feature()?,
                     task: Scenario::task()?,
-                    expected_revision: task.revision,
+                    expected_revision: task.common.revision,
                     agent,
-                    attempt: task.attempt,
+                    attempt: task.common.attempt,
                     action: WorkerAction::Progress {
                         ttl_seconds: LeaseSeconds::TEN_MINUTES,
                         phase: Phase::Working,
@@ -477,7 +477,7 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(first.end, PageEnd::More);
         assert_eq!(second.end, PageEnd::Complete);
         assert_eq!(first.records[0].task, task);
-        assert_eq!(second.records[1].task.revision, Revision::INITIAL);
+        assert_eq!(second.records[1].task.common.revision, Revision::INITIAL);
         let flow = observation
             .flow(TaskPage {
                 feature: Scenario::feature()?,
@@ -547,7 +547,7 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
             .claim(ClaimTask {
                 feature: Scenario::feature()?,
                 task: id.clone(),
-                expected_revision: task.revision,
+                expected_revision: task.common.revision,
                 agent: worker,
                 ttl_seconds: LeaseSeconds::TEN_MINUTES,
             })
@@ -556,9 +556,9 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
             .update(WorkerUpdate {
                 feature: Scenario::feature()?,
                 task: id.clone(),
-                expected_revision: task.revision,
+                expected_revision: task.common.revision,
                 agent: worker,
-                attempt: task.attempt,
+                attempt: task.common.attempt,
                 action: WorkerAction::Checkpoint {
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
                     commit: commit.clone(),
@@ -570,9 +570,9 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
             .update(WorkerUpdate {
                 feature: Scenario::feature()?,
                 task: id.clone(),
-                expected_revision: task.revision,
+                expected_revision: task.common.revision,
                 agent: worker,
-                attempt: task.attempt,
+                attempt: task.common.attempt,
                 action: WorkerAction::Ready {
                     progress: Scenario::progress(),
                 },
@@ -582,7 +582,7 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
             .coordinate(CoordinatorUpdate {
                 feature: Scenario::feature()?,
                 task: id.clone(),
-                expected_revision: task.revision,
+                expected_revision: task.common.revision,
                 actor: integrator,
                 action: CoordinatorAction::Integrate {
                     commit: commit.clone(),
@@ -601,7 +601,7 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
             .tasks
             .records
             .iter()
-            .find(|item| item.task.id == id)
+            .find(|item| item.task.common.id == id)
             .ok_or_else(|| anyhow::anyhow!("missing completed task"))?;
         assert!(matches!(completed.created_by,RecordedActor::Recorded {agent} if agent==creator));
         assert!(matches!(completed.worker,RecordedActor::Recorded {agent} if agent==worker));

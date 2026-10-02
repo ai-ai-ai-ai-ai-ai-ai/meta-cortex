@@ -5,7 +5,8 @@ use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationO
 use meta_cortex_visualization::{Dashboard, DashboardReport, DashboardRequest};
 use meta_cortex_workbench::model::{Event, Task, TaskView};
 use meta_cortex_workbench::request::{
-    ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery, WorkerUpdate,
+    AssignTask, ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery,
+    WorkerUpdate,
 };
 use meta_cortex_workbench::values::FeatureId;
 use meta_cortex_workbench::versions::ProtocolVersion;
@@ -50,6 +51,7 @@ pub enum FeatureOperation {
 #[serde(tag = "name", content = "arguments", deny_unknown_fields)]
 pub enum TaskOperation {
     Create(CreateTask),
+    Assign(AssignTask),
     Get(TaskQuery),
     History(TaskQuery),
     Claim(ClaimTask),
@@ -211,6 +213,7 @@ impl TaskOperation {
     fn feature(&self) -> &FeatureId {
         match self {
             Self::Create(input) => &input.feature,
+            Self::Assign(input) => &input.feature,
             Self::Get(input) | Self::History(input) => &input.feature,
             Self::Claim(input) => &input.feature,
             Self::Update(input) => &input.feature,
@@ -221,6 +224,7 @@ impl TaskOperation {
     async fn execute(self, ledger: &mut Ledger) -> Result<Reply, AgentError> {
         match self {
             Self::Create(input) => Ok(Reply::Task(ledger.create(input).await?)),
+            Self::Assign(input) => Ok(Reply::Task(ledger.assign(input).await?)),
             Self::Get(input) => Ok(Reply::TaskView(ledger.task(&input.task).await?)),
             Self::History(input) => Ok(Reply::History(ledger.history(&input.task).await?)),
             Self::Claim(input) => Ok(Reply::Task(ledger.claim(input).await?)),

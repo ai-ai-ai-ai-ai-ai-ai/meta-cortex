@@ -42,6 +42,10 @@ flowchart LR
   including after delivery or cancellation.
 - Own a stable feature ID and its [durable ledger](../../docs/agent-ledger.md).
   Reuse both on follow-ups and recover existing progress after interruption.
+- Record and maintain Prime's own activity under the
+  [entire feature workflow](../../docs/agent-ledger.md#record-the-entire-feature-workflow).
+  Persist scope decisions, waiting or blocked progress, acceptance evidence, and
+  the final outcome. Record earlier bootstrap decisions once the ledger exists.
 - Own one feature branch for the entire feature with Team Gizmo. Keep that
   branch for follow-up tasks and corrections within the feature.
 - Give Team Gizmo:

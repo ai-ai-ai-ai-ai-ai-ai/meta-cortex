@@ -133,10 +133,13 @@ impl Observation {
             .pragma_update(&ConnectionPragma::ForeignKeys.to_string(), 1)
             .await?;
         match LedgerSchema::version(&connection).await? {
-            StorageVersion::RelationalV3 => Ok(connection),
+            StorageVersion::CommonTasksV4 => Ok(connection),
             version @ (StorageVersion::Empty
             | StorageVersion::DocumentsV1
-            | StorageVersion::IndexedV2) => Err(LedgerError::ObservationMigrationRequired(version)),
+            | StorageVersion::IndexedV2
+            | StorageVersion::RelationalV3) => {
+                Err(LedgerError::ObservationMigrationRequired(version))
+            }
         }
     }
     pub async fn features(&self, page: PageIndex) -> Result<Page<Feature>, LedgerError> {
@@ -254,7 +257,7 @@ pub mod tests {
         Builder::new_current_thread().enable_time().build()?.block_on(async {
             assert!(matches!(Observation::open(directory.path().join("missing")).await, Err(LedgerError::Uninitialized)));
             assert!(matches!(Observation::open(directory.path().to_owned()).await, Err(LedgerError::Invalid(_))));
-            for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2] {
+            for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2, StorageVersion::RelationalV3] {
                 let path = directory.path().join(format!("version-{version}.db"));
                 let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).build().await?;
                 let connection = database.connect()?;

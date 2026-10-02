@@ -1,0 +1,6 @@
+fields:
+  - name: development.host_capacity
+    question: "Active host capacity is below Cortex's configured target. Allow the exact host configuration update just shown, then restart the host, or keep the host settings and stop development?"
+    options:
+      - allow_host_update
+      - keep_host_settings

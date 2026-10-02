@@ -1,6 +1,6 @@
 kind: navigation
 title: AI Documentation
 entries:
-  - title: Neural Lace architecture
-    path: lace-architecture.md
-    summary: Typed Cortex context declarations, composition, and core ownership.
+  - title: YAML context authoring
+    path: context-authoring.md
+    summary: YAML context declarations, static references, and schema validation.

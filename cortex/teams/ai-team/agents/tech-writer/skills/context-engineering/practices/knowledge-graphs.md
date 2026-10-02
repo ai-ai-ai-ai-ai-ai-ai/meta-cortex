@@ -4,6 +4,9 @@ Use a skill's hierarchical `index.yaml` catalogs as a rule-level map before
 editing its Markdown practices. A file list is not enough: readers need the
 distinct decisions and their source sections to find relevant guidance.
 The source practice owns the full requirements, exceptions, checks, and examples.
+The source-loading procedure below applies to authoring and implementation.
+Read-only verifiers follow their review protocol's exhaustive, index-only
+loading. Their source links remain citations; an insufficient cue is a blocker.
 
 ## Inventory decisions, not just files
 
@@ -45,8 +48,8 @@ before removing that detail. Do not delete policy to reduce index size.
 **Prohibited:** copy a source procedure into a long YAML summary or replace
 distinct rule entries with one generic “follow best practices” item.
 
-The cue selects a source; it is not sufficient to apply or compare policy.
-Read the linked Markdown before acting on the rule.
+For authoring and implementation, the cue selects a source rather than supplying
+its full policy. Read the linked Markdown before acting on the rule.
 
 ## Find the owner and inspect overlaps
 
@@ -216,6 +219,8 @@ or load every sibling namespace into a focused review.
 `domain_types/index.yaml`, check it against the changed code, and bring in
 construction or serialization guidance only when those boundaries are involved.
 
-A parser can validate structure and tooling can enumerate entries in a fixed
-order. YAML alone does not prove that an agent read, understood, or correctly
+A parser can validate catalog structure and tooling can enumerate entries in a
+fixed order. Catalog indexes remain distinct from YAML context declarations,
+which use the [context schema](../../../../../../../scripts/src/ts/context-schema.ts)
+and static export references. YAML alone does not prove that an agent read, understood, or correctly
 applied a rule. Keep mechanical validation separate from that judgment.

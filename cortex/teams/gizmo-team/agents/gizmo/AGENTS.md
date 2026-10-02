@@ -59,6 +59,11 @@ for that assignment rather than preloading unrelated agents.
 - Read and follow the [agent ledger protocol](../../docs/agent-ledger.md).
   Recover existing status before scheduling work. Record bounded tasks before
   launching workers and pass their feature/task IDs with every assignment.
+- Maintain Team Gizmo's own coordination activity. Apply the
+  [entire feature workflow](../../docs/agent-ledger.md#record-the-entire-feature-workflow)
+  to every selected role, including workspace preparation, integration,
+  verifiers, and PR delivery. Record each queued task's agent and reporting line
+  with `Task / Assign` before launch or resumed work.
 - Turn the feature assignment into bounded tasks for the appropriate agents.
 - Preserve the parent's permitted changes and stopping condition under the
   [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
@@ -82,7 +87,7 @@ for that assignment rather than preloading unrelated agents.
 flowchart LR
     G[Team Gizmo] -->|Task branches and fixes| W[Workers]
     W -->|Completion and checks| G
-    G -->|Rust commit SHA| V[Rust verifier]
+    G -->|Committed SHA| V[Cataloged verifier]
     V -->|Full coverage and repair requirements| G
     G -->|Merge into one feature branch| I[Integration agent]
     I -->|Results or conflicts| G
@@ -94,17 +99,19 @@ flowchart LR
 - Assign workspace preparation to that agent. Give workers the returned branch
   names and paths, their task scope, checks, and library location.
 - Read durable readiness even when a final worker message is missing.
-- When rust-dev finishes, follow the [Rust verification handoff](../../docs/rust-verification.md)
-  before integration. Require its ordinary one-commit delivery, check the
-  [Git handoff](../../docs/rust-verification.md#check-the-git-handoff), and launch
-  rust-verifier with the explicit final SHA. Keep consolidation commands with
-  the developer's delivery procedure; Gizmo performs no Git mutations. Then,
-  within authorized implementation, route every in-scope repair requirement back
-  to rust-dev and require a complete new pass. For review-only assignments,
-  return the complete findings instead of starting repairs or integration.
+- For every worker with a `Verifier:` link in its team catalog, follow the
+  [agent verification handoff](../../docs/agent-verification.md). Verifiers load
+  the shared [agent verification skill](skills/agent-verification/SKILL.md)
+  through their own subject skill. When the worker finishes, require its
+  ordinary one-commit delivery, check the Git handoff, and launch the paired
+  verifier with the explicit final SHA. Gizmo performs
+  no Git mutations. Within authorized implementation, route every in-scope
+  repair to the assigned worker and require a complete new pass. For review-only
+  assignments, return all findings instead of starting repairs or integration.
 - Once required verification passes, tell the integration agent which task
-  branch to integrate next. Supply the passing report and reviewed SHA for Rust
-  developer work. Order tasks by dependency and wait for each integration result.
+  branch to integrate next. For every worker with a cataloged verifier, supply
+  the passing report and reviewed SHA. Order tasks by dependency and wait for
+  each integration result.
 - Route an integration conflict to the responsible worker with the task and
   target commit SHAs and the [task-repair procedure](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#repair-the-assigned-revision).
   The worker reads those revisions, resolves the conflict,

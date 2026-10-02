@@ -1,4 +1,5 @@
 use super::agents::AgentId;
+use super::model::workflow::TaskAssignment;
 use super::model::{Phase, Progress, Workspace};
 use super::values::{
     Attempt, BranchName, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId,
@@ -40,6 +41,16 @@ pub struct CreateTask {
     pub dependencies: Vec<TaskId>,
     pub workspace: Workspace,
     pub progress: Progress,
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AssignTask {
+    pub feature: FeatureId,
+    pub task: TaskId,
+    pub expected_revision: Revision,
+    pub actor: AgentId,
+    pub assignment: TaskAssignment,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -97,6 +108,7 @@ pub struct CoordinatorUpdate {
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum CoordinatorAction {
+    Complete,
     Integrate {
         commit: CommitId,
     },

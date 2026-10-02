@@ -3,10 +3,10 @@ title: Gizmo Documentation
 entries:
   - title: Agent configuration
     path: agent-configuration.md
-    summary: Role settings, launches, context, and session reuse.
+    summary: Host capacity preflight, configuration approval, role settings, and launches.
   - title: Agent work ledger
     path: agent-ledger.md
-    summary: Durable task progress and recovery.
-  - title: Rust verification handoff
-    path: rust-verification.md
-    summary: Committed Rust review, exhaustive coverage, repair routing, and integration readiness.
+    summary: Entire feature workflow, agent reporting lines, durable progress, and recovery.
+  - title: Agent verification handoff
+    path: agent-verification.md
+    summary: Cataloged verifier selection, committed review, repair routing, and integration readiness.

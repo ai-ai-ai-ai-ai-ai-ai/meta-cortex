@@ -1,0 +1,17 @@
+stages:
+  compileReceipt:
+    $ref: ./compile.context.yaml#/exports/stages/compileReceipt
+exports:
+  stages:
+    compileReceipt:
+      spec: {}
+      Required:
+        statements:
+          compileDeclarations:
+            content: Validate the receipt schema and references.
+            ShellCommand:
+              cwd: library-root
+              script: bun run context:check
+      Prohibited:
+        statements: {}
+  statements: {}
