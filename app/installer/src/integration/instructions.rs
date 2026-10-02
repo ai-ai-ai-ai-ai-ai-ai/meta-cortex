@@ -101,6 +101,7 @@ pub mod tests {
     use super::{InstructionError, InstructionStatus, PreparedInstructions};
     use crate::integration::{Harness, ProjectHarnesses};
     use std::fs;
+    #[cfg(unix)]
     use std::os::unix::fs::{PermissionsExt, symlink};
     use tempfile::{TempDir, tempdir};
 
@@ -126,6 +127,7 @@ pub mod tests {
                 &path,
                 "# Project instructions\nDo not change my build steps.\n",
             )?;
+            #[cfg(unix)]
             fs::set_permissions(&path, fs::Permissions::from_mode(0o640))?;
             let target = self.project().target(Harness::Codex)?;
             let prepared = PreparedInstructions::read(target.clone())?;
@@ -133,6 +135,7 @@ pub mod tests {
             prepared.write()?;
             let first = fs::read(&path)?;
             assert!(first.starts_with(b"# Project instructions\nDo not change my build steps.\n"));
+            #[cfg(unix)]
             assert_eq!(fs::metadata(&path)?.permissions().mode() & 0o777, 0o640);
             let repeated = PreparedInstructions::read(target)?;
             assert_eq!(repeated.status(), InstructionStatus::Connected);
@@ -192,6 +195,7 @@ pub mod tests {
             Ok(())
         }
 
+        #[cfg(unix)]
         fn rejects_symlinked_files_and_parents(self) -> Result<(), InstructionError> {
             let external = tempdir()?;
             let original = external.path().join("AGENTS.md");
@@ -234,6 +238,7 @@ pub mod tests {
         Fixture::create()?.creates_and_validates_cursor_rule()
     }
     #[test]
+    #[cfg(unix)]
     fn refuses_symlinked_instructions_and_parent_directories() -> Result<(), InstructionError> {
         Fixture::create()?.rejects_symlinked_files_and_parents()
     }

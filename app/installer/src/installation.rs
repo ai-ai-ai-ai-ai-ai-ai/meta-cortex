@@ -240,8 +240,10 @@ pub mod tests {
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
+    use std::env::consts::EXE_SUFFIX;
     use std::fs;
     use std::io;
+    #[cfg(unix)]
     use std::os::unix::fs::symlink;
     use std::process::Command;
     use tempfile::{TempDir, tempdir};
@@ -264,14 +266,26 @@ pub mod tests {
         fn seed_tools(&self) -> io::Result<()> {
             // Tests supply managed installations from the runner's toolchain.
             for name in ["mise", "bun", "vale"] {
+                #[cfg(unix)]
                 let output = Command::new("sh")
                     .args(["-c", "command -v \"$1\"", "sh", name])
+                    .output()?;
+                #[cfg(windows)]
+                let output = Command::new("where.exe")
+                    .arg(format!("{name}.exe"))
                     .output()?;
                 assert!(output.status.success(), "missing test tool: {name}");
                 let directory = self.data.path().join(name).join("bin");
                 fs::create_dir_all(&directory)?;
                 let executable = String::from_utf8(output.stdout).map_err(io::Error::other)?;
-                symlink(executable.trim(), directory.join(name))?;
+                fs::copy(
+                    executable
+                        .lines()
+                        .next()
+                        .ok_or_else(|| io::Error::other("runner tool path is missing"))?
+                        .trim(),
+                    directory.join(format!("{name}{}", EXE_SUFFIX)),
+                )?;
             }
             Ok(())
         }
@@ -325,12 +339,16 @@ pub mod tests {
         }
         fn rejects_linked_dependencies(self) -> Result<(), InstallError> {
             self.install()?;
+            #[cfg(unix)]
             let external = tempdir()?;
             let modules = self.directory.path().join(".meta-cortex/node_modules");
             fs::remove_dir_all(&modules)?;
-            symlink(external.path(), &modules)?;
-            assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
-            fs::remove_file(&modules)?;
+            #[cfg(unix)]
+            {
+                symlink(external.path(), &modules)?;
+                assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
+                fs::remove_file(&modules)?;
+            }
             fs::write(&modules, "not a directory")?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             Ok(())
@@ -372,6 +390,7 @@ pub mod tests {
             assert!(!agents.exists());
             Ok(())
         }
+        #[cfg(unix)]
         fn rejects_symlink(self) -> Result<(), InstallError> {
             let external = tempdir()?;
             symlink(external.path(), self.directory.path().join(".meta-cortex"))?;
@@ -390,6 +409,7 @@ pub mod tests {
             assert_eq!(fs::read_to_string(config)?, "broken = [");
             Ok(())
         }
+        #[cfg(unix)]
         fn rejects_linked_metadata(self) -> Result<(), InstallError> {
             self.install()?;
             let external = tempdir()?;
@@ -502,6 +522,7 @@ pub mod tests {
         Fixture::create()?.rejects_license_changed_after_prepare()
     }
     #[test]
+    #[cfg(unix)]
     fn rejects_symbolic_link() -> Result<(), InstallError> {
         Fixture::create()?.rejects_symlink()
     }
@@ -514,6 +535,7 @@ pub mod tests {
         Fixture::create()?.preserves_invalid_configuration()
     }
     #[test]
+    #[cfg(unix)]
     fn rejects_config_and_version_symlinks() -> Result<(), InstallError> {
         Fixture::create()?.rejects_linked_metadata()
     }

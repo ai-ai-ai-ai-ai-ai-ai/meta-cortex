@@ -1,9 +1,12 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::env::consts::EXE_SUFFIX;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+#[cfg(windows)]
+use tempfile::NamedTempFile;
 
 #[derive(Debug, Default, Serialize, Deserialize, JsonSchema)]
 pub enum ToolSetup {
@@ -45,6 +48,10 @@ impl ToolConfiguration {
 }
 
 impl Tool {
+    fn executable_name(self) -> PathBuf {
+        PathBuf::from(format!("{}{}", self.name(), EXE_SUFFIX))
+    }
+
     fn name(self) -> &'static str {
         match self {
             Self::Mise => "mise",
@@ -81,7 +88,7 @@ impl ToolSetup {
     pub(super) fn prepare(self, request: ToolRequest) -> io::Result<InstalledTool> {
         let directory = request.home.join(request.tool.name());
         let installed = InstalledTool {
-            executable: directory.join("bin").join(request.tool.name()),
+            executable: directory.join("bin").join(request.tool.executable_name()),
             directory: directory.clone(),
         };
         match installed.check(request.tool) {
@@ -138,6 +145,27 @@ impl InstalledTool {
         }
     }
 
+    #[cfg(windows)]
+    fn install_mise(&self) -> io::Result<()> {
+        fs::create_dir_all(self.directory.join("bin"))?;
+        // Upstream publishes a standalone Windows executable; no shell is required.
+        let download = NamedTempFile::new_in(self.directory.join("bin"))?.into_temp_path();
+        Self::run(
+            Command::new("curl.exe")
+                .args([
+                    "--fail",
+                    "--silent",
+                    "--show-error",
+                    "--location",
+                    "https://github.com/jdx/mise/releases/download/v2026.10.0/mise-v2026.10.0-windows-x64.exe",
+                    "--output",
+                ])
+                .arg(&download),
+        )?;
+        fs::rename(download, &self.executable)
+    }
+
+    #[cfg(not(windows))]
     fn install_mise(&self) -> io::Result<()> {
         fs::create_dir_all(self.directory.join("bin"))?;
         let script = self.directory.join("install.sh");

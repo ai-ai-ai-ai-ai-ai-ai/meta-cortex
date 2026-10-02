@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::fs;
 use std::io;
+#[cfg(unix)]
 use std::os::unix::fs::symlink;
 use std::path::PathBuf;
 use tempfile::{TempDir, tempdir};
@@ -64,6 +65,7 @@ impl BundleFixture {
         Ok(())
     }
 
+    #[cfg(unix)]
     fn rejects_source_links(self) -> io::Result<()> {
         let source = self.directory.path().join("source");
         fs::create_dir(&source)?;
@@ -83,6 +85,7 @@ fn bundles_framework_without_local_dependencies_or_stale_files() -> io::Result<(
 }
 
 #[test]
+#[cfg(unix)]
 fn rejects_symlinks_in_framework_source() -> io::Result<()> {
     BundleFixture::create()?.rejects_source_links()
 }
