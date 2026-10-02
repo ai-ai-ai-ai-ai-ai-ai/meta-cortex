@@ -42,9 +42,6 @@ identified by Gizmo's corrected request.
    programming prerequisites for this verifier.
 3. Retain the supplied project instructions, verifier role and skill, team
    instructions, circuit breakers, and ledger protocol as operational context.
-   Load [practice evidence](spec/practice-evidence.md) for the review procedure
-   across modeling, behavior, boundaries, tooling, and cross-rule checks.
-   It identifies evidence to inspect; YAML cues remain the rule authority.
 4. Resolve references relative to their containing YAML file. Record the loaded
    paths and cues as one fixed catalog snapshot. Report a catalog change instead
    of mixing versions during a review.
@@ -97,9 +94,21 @@ cross-rule checks separately, with references to those same rule IDs.
 
 1. Visit practices in catalog order and rules in leaf order. For each rule,
    inspect every changed file and the surrounding code needed to decide compliance.
-   Use the practice-evidence procedure to trace relevant owners, callers,
-   adapters, configuration, and tests at the reviewed revision. Do not limit
-   evidence collection to domain-type declarations or keyword matches.
+   Inspect the relevant committed evidence for every catalog branch:
+   - **Modeling:** domain types and conversions, domain states and payloads,
+     struct construction paths and visibility, and default values and consumers.
+   - **Behavior:** branching and exhaustiveness, function ownership and dependency
+     direction, API inputs and callers, workflow states and capability transitions,
+     owned updates and replacement use, and typed errors and propagation.
+   - **Boundaries:** serialization and validation, Rust–TypeScript ownership,
+     generated WASM contracts and allocation lifecycle, reactive UI callers,
+     and symbol, schema, and command names at both sides of the boundary.
+   - **Tooling:** code-check configuration and results, libraries and features,
+     module layout and moves, paths and imports, typed SQL and bound values,
+     dependency adoption evidence, authored and ecosystem macros, and test
+     placement, behavior, regressions, and measured coverage.
+   These evidence groups do not replace discovered practices or their rules.
+   Include newly cataloged practices in the same review.
 2. Record exactly one outcome per rule/file pair: `pass`, `violation`,
    `not_applicable`, or `blocked`. Give concrete evidence or a precise reason.
    A rule that applies to no changed files still needs those applicability decisions.
@@ -108,15 +117,20 @@ cross-rule checks separately, with references to those same rule IDs.
    A file-level pass does not satisfy a required workspace check.
 4. Evaluate every cross-rule check against the whole change. Record its outcome,
    compared IDs, affected paths, and evidence or applicability reason.
+   Trace the joined path across the compared rules, including unchanged callers
+   and non-Rust consumers when needed to decide the check.
 5. At each practice boundary, save all accumulated decisions in the existing
    ledger. Record the next unchecked practice/rule/file or comparison in
    `next_steps`. Preserve earlier decisions when resuming.
 
-**Prohibited:** mark a practice “OK,” skip remaining rules after finding a
-violation, or mark unfinished work `not_applicable` before an interruption.
+**Prohibited:** review only domain types, mark the other practices “OK” because
+Clippy passed, or mark unfinished work `not_applicable` before an interruption.
 
 **Required:** finish every rule/file decision, save the completed work, and
-resume from the exact next unchecked entry. Continue through the last catalog entry.
+resume from the exact next unchecked entry. For an API-input rule, inspect
+signatures and callers; for a WASM ownership check, trace retention, replacement,
+and cleanup. Continue through every modeling, behavior, boundary, and tooling
+practice and the last cross-rule check.
 
 ### Record every issue and blocker
 
