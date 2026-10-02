@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import {
   cleanup,
   render,
+  fireEvent,
   screen,
   within,
   type ByRoleOptions,
@@ -340,9 +341,16 @@ it("uses the real Agents graph selection handler for prioritized own activity an
   };
   render(Workflow, props);
   await userEvent.click(screen.getByRole("button", graphQuery));
-  await userEvent.click(await screen.findByText("Gizmo / GizmoPrime"));
+  const mouseEvent: MouseEventInit = { view: window };
+  const prime = await screen.findByText("Gizmo / GizmoPrime");
+  await fireEvent.mouseDown(prime, mouseEvent);
+  await fireEvent.mouseUp(prime, mouseEvent);
+  await fireEvent.click(prime, mouseEvent);
   expect(screen.queryAllByRole("complementary")).toHaveLength(0);
-  await userEvent.click(screen.getByText("Gizmo / Gizmo"));
+  const team = screen.getByText("Gizmo / Gizmo");
+  await fireEvent.mouseDown(team, mouseEvent);
+  await fireEvent.mouseUp(team, mouseEvent);
+  await fireEvent.click(team, mouseEvent);
   const inspector = screen.getByRole("complementary", inspectorQuery);
   expect(within(inspector).getByRole("heading", objectiveQuery)).toBeTruthy();
   expect(
