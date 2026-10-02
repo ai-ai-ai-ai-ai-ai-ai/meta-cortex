@@ -14,11 +14,47 @@
   - Embeds the framework at build time.
 - **Workbench: [app/workbench/](app/workbench)**
   - Contains the embedded Turso feature ledger and coordination domain.
+- **Visualization: [app/visualization/](app/visualization)**
+  - Contains the native Tauri window and read-only Workbench IPC.
+  - Builds and embeds its React/TypeScript frontend from `frontend/`.
 - **License: [LICENSE](LICENSE)**
   - Remains at the repository root.
   - Is included in installed framework copies.
 
 Read this repository's [development instructions](AGENTS.md) before making changes.
+
+### Native dashboard prerequisites
+
+The CLI and native dashboard ship as one executable. Tauri uses macOS’s system
+WKWebView. Linux builds require GTK 3 and WebKitGTK 4.1 development packages;
+installed Linux binaries also require the corresponding shared runtime libraries,
+even for headless `list` and `run` commands. Follow the distribution-specific
+[Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
+Opening the dashboard requires a graphical desktop session.
+
+Install package-local frontend dependencies from the repository root:
+
+```sh
+cd app/visualization/frontend
+bun install --frozen-lockfile
+bun run verify
+bun run test
+bun run build
+cd ../..
+```
+
+`verify` runs Prettier, TypeScript, ESLint with zero warnings, and Knip checks;
+`test` runs Vitest with
+jsdom. `build` typechecks and generates Vite assets in `frontend/dist`.
+Ordinary Cargo builds also invoke `bun run build` before Tauri’s build step and
+embed those assets in debug and release executables. The build watches frontend
+sources, configuration, and lockfile. Install dependencies before invoking Cargo;
+missing tools or dependencies produce a setup error. Generated `dist` assets are
+not committed. No development server is needed for the embedded native window.
+
+**Prohibited:** build a fresh checkout with Cargo before installing its frontend dependencies.
+
+**Required:** run the frozen package-local Bun installation, then use the ordinary Cargo commands.
 
 ### Run and validate locally
 
@@ -29,7 +65,8 @@ Documentation checks require Bun and Vale.
 Framework initialization installs missing tools; see the
 [initialization prerequisites](README.md#initialize-your-project).
 
-Run Cargo and dist commands from `app/`:
+After preparing the native prerequisites and frontend dependencies above, run
+Cargo and dist commands from `app/`:
 
 ```sh
 cd app
@@ -39,6 +76,7 @@ cd app
    using the [README initialization example](README.md#initialize-your-project):
 
    ```sh
+   cargo run --package meta-cortex -- dashboard
    cargo run --package meta-cortex -- list
    cargo run --package meta-cortex -- run --request /path/to/request.yaml
    ```
@@ -142,6 +180,9 @@ other Markdown context files retain their current roles.
 - Only version-tag pushes publish a release. A miss in both Cargo's target cache
   and the remote compiler cache still compiles dependencies.
 - macOS packages use GitHub-hosted Apple Silicon and Intel macOS runners.
+- Native package jobs install and build the frontend before Cargo and local dist
+  builds. The existing four macOS/Linux targets ship the same executable with
+  embedded frontend assets. Linux runner setup includes GTK 3/WebKitGTK 4.1.
 
 ### Distribution tooling
 
@@ -176,7 +217,8 @@ It uses its own GitHub Actions token; no cross-repository token is required.
    with `allow-dirty = ["ci"]` to preserve its `app/` directory adjustments.
    Keep those adjustments when adopting changes from a newer cargo-dist template.
 
-5. Inspect the release plan and build a native package:
+5. Prepare frontend dependencies and assets with the native setup above. From
+   `app/`, inspect the release plan and build a native package:
 
    ```sh
    dist plan

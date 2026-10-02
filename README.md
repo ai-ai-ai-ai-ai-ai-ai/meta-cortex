@@ -256,10 +256,22 @@ The [Rust workspace](app/Cargo.toml) contains three crates:
   tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
 - [visualization](app/visualization): the `meta-cortex-visualization` library for
-  the terminal dashboard, using Workbench’s read-only observation API.
+  the native Tauri dashboard with embedded React/TypeScript assets, using
+  Workbench’s read-only observation API.
+
+Install the dashboard’s package-local dependencies once before Cargo builds:
 
 ```sh
-cd app
+cd app/visualization/frontend
+bun install --frozen-lockfile
+cd ../..
+```
+
+Ordinary Cargo builds run the frontend TypeScript/Vite build and embed its assets.
+See [native build prerequisites](CONTRIBUTING.md#native-dashboard-prerequisites).
+From `app/`, run:
+
+```sh
 cargo fmt --all --check
 cargo check --locked --workspace --all-targets
 cargo clippy --locked --workspace --all-targets -- -D warnings
@@ -350,15 +362,15 @@ meta-cortex dashboard
 ```
 
 No request file or required arguments are needed. The command resolves the
-existing repository identity and shared database, then opens the interactive
-Features view. Terminal stdin and stdout are required. Select with Up/Down or
-`j`/`k`, press Enter for details, press `h` for task history, and exit with `q`
-or Ctrl-C.
+existing repository identity and shared database, then opens the native Tauri
+Features window. Use the window’s navigation to inspect tasks, recorded detail,
+and history. Close the window to exit. The executable embeds the dashboard
+assets and reads through native IPC; no HTTP server is required.
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
-an explicit project, initial view, and page. Typed Interactive requests use a
-request file to preserve keyboard stdin. Typed Snapshot requests support
-redirected output through `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
+an explicit project, initial view, and page. Use `mode: Desktop` for the native
+window or `mode: Snapshot` for headless text output through
+`meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
