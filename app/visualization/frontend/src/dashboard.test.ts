@@ -1,10 +1,18 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { Effect } from "effect";
-import { cleanup, render, screen, within } from "@testing-library/svelte";
+import {
+  cleanup,
+  render,
+  screen,
+  within,
+  type ByRoleOptions,
+} from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import TaskDetail from "./TaskDetail.svelte";
 import Workflow from "./Workflow.svelte";
 import App from "./App.svelte";
+import { Progress } from "$lib/components/ui/progress";
+import type { ComponentProps } from "svelte";
 import { DashboardApi } from "./api";
 import { FlowPresentation } from "./workflow";
 import type { FeatureFlow, Task, TaskFlow } from "./contracts";
@@ -121,6 +129,22 @@ it("keeps full-feature counts and progress visible independently of loaded agent
   expect(totals[1]?.getAttribute("max")).toBe("1");
   await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
   expect(refresh).toHaveBeenCalledOnce();
+});
+it("exposes raw completed task quantities through the generated progress primitive", () => {
+  const props: ComponentProps<typeof Progress> = {
+    value: 3,
+    max: 5,
+    "aria-label": "Recorded task completion",
+  };
+  render(Progress, props);
+  const query: ByRoleOptions = {
+    name: "Recorded task completion",
+  };
+  const meter = screen.getByRole("progressbar", query);
+  expect(meter.getAttribute("aria-valuenow")).toBe("3");
+  expect(meter.getAttribute("aria-valuemax")).toBe("5");
+  expect(meter.getAttribute("aria-valuemin")).toBe("0");
+  expect(meter.innerHTML).toContain("translateX(-40%)");
 });
 it("opens history through the Svelte task view", async () => {
   const fixture = new Fixture();

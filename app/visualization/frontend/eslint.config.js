@@ -46,4 +46,13 @@ export default tseslint.config(
     files: ["**/*.svelte"],
     languageOptions: { parserOptions: { parser: tseslint.parser } },
   },
+  {
+    // Registry-generated shadcn APIs retain their upstream anchor/disabled handling.
+    // See src/lib/UPSTREAM.md; all other rules and authored dashboard files remain checked.
+    files: [
+      "src/lib/components/ui/button/button.svelte",
+      "src/lib/components/ui/badge/badge.svelte",
+    ],
+    rules: { "no-restricted-syntax": "off" },
+  },
 );
