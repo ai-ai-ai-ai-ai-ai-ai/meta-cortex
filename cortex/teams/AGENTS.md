@@ -109,6 +109,8 @@ following from the active library and supplies them in the launch instructions:
 - The validated session `development.mode` and `development.delivery`, plus any
   task-specific override; assigned agents inherit them and never repeat
   configuration collection.
+- The completed [host capacity preflight](gizmo-team/docs/agent-configuration.md#check-host-capacity),
+  including the configured target, observed total allocation, and host evidence source.
 - Project root, library root, working directory, and relevant project instructions.
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.
 - The assigned agent’s team directory and team `AGENTS.md`.

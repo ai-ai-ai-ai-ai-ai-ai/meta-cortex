@@ -17,9 +17,11 @@ For each new user task, follow this order:
 2. Establish the [project context](#project-context).
 3. Resolve the session's [mode and delivery choices](#development-mode) before
    planning, implementation, or an agent launch.
-4. In `multi_agent` mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
+4. Complete the [host capacity preflight](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
+   before development work in either mode.
+5. In `multi_agent` mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
    [agent configuration rules](teams/gizmo-team/docs/agent-configuration.md).
-5. In `multi_agent` mode, read the [team instructions](teams/AGENTS.md). Launch
+6. In `multi_agent` mode, read the [team instructions](teams/AGENTS.md). Launch
    Gizmo Prime through the host's agent execution tool and pass the task context.
    The team instructions govern later launches and coordination.
 
@@ -27,7 +29,7 @@ For each new user task, follow this order:
 circuit breaker or resolving the session choices.
 
 **Required:** read the circuit breaker, identify both roots, collect the session
-choices, then follow the selected execution path.
+choices, complete the host capacity preflight, then follow the selected execution path.
 
 ### Development mode
 
