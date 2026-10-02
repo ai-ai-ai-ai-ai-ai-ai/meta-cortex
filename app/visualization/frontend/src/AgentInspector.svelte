@@ -73,13 +73,18 @@
         {#each selection.group.tasks as item (item.task.common.id)}<Button
             variant="ghost"
             class="h-auto min-h-[42px] w-full justify-start gap-2.5 rounded-[3px] bg-transparent px-1 py-2 text-left text-[11px] font-normal whitespace-normal hover:bg-selection data-[current=true]:bg-selection [&>span:nth-child(2)]:flex-1 [&>span:nth-child(2)]:[overflow-wrap:anywhere] [&_small]:ml-auto [&_small]:text-[10px] [&_small]:capitalize"
+            aria-label={`${item.task.common.id} · ${item.task.common.objective}`}
             data-current={item.task.common.id === task.common.id}
             onclick={() => openTask(item.task)}
             ><StatusMark
               state={new TaskPresentation(item.task).status()}
               class="size-[18px] before:text-[11px]"
-            /><span
-              >{item.task.common.id}<span
+            /><span class="min-w-0"
+              ><strong
+                class="block truncate font-medium"
+                title={`${item.task.common.id} · ${item.task.common.objective}`}
+                >{item.task.common.objective}</strong
+              ><span
                 class="mt-1 block text-[9px] text-muted-foreground"
                 title={new TaskPresentation(item.task).workspace()}
                 >{new TaskPresentation(item.task).workspaceLabel()}</span
