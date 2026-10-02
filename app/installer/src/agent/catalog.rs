@@ -2,11 +2,13 @@ use super::AgentError;
 use super::discovery::{InvocationGuide, TransportGuide};
 use super::protocol::{
     AgentHarness, AgentInstructions, EmptyArguments, FeatureOperation, FrameworkInit,
-    FrameworkOperation, Operation, Request, TaskOperation,
+    FrameworkOperation, Operation, Request, TaskOperation, WorkbenchOperation,
 };
 use crate::installation::ToolSetup;
 use derive_more::{Display, From};
+use meta_cortex_visualization::{DashboardMode, DashboardRequest, DashboardView};
 use meta_cortex_workbench::LedgerError;
+use meta_cortex_workbench::PageIndex;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::{Progress, Workspace};
 use meta_cortex_workbench::request::{
@@ -35,6 +37,7 @@ struct CommandGroups {
     framework: Vec<CommandDescription>,
     feature: Vec<CommandDescription>,
     task: Vec<CommandDescription>,
+    workbench: Vec<CommandDescription>,
 }
 
 impl CommandGroups {
@@ -44,6 +47,7 @@ impl CommandGroups {
             Operation::Framework(_) => &mut self.framework,
             Operation::Feature(_) => &mut self.feature,
             Operation::Task(_) => &mut self.task,
+            Operation::Workbench(_) => &mut self.workbench,
         };
         commands.push(CommandDescription {
             description: example.description,
@@ -85,6 +89,16 @@ impl Catalog {
         let claimed_revision = Revision::INITIAL.advance()?;
         let heartbeat_revision = claimed_revision.advance()?;
         let examples = [
+            CommandExample {
+                description: CommandSummary::from(
+                    "Observe recorded Workbench data in a terminal dashboard. Interactive requires stdin/stdout terminals; Snapshot returns text. Arrow keys select, Enter opens details, h opens task history, Esc goes back, n/p change bounded pages, J/K scroll, r refreshes and q or Ctrl-C exits. Observation never initializes, migrates, imports or updates the ledger.",
+                ),
+                operation: Operation::Workbench(WorkbenchOperation::Dashboard(DashboardRequest {
+                    mode: DashboardMode::Interactive,
+                    view: DashboardView::Features,
+                    page: PageIndex::FIRST,
+                })),
+            },
             CommandExample {
                 description: CommandSummary::from(
                     "Discover existing feature IDs in the shared repository database after a coordinator restart.",

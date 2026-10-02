@@ -19,6 +19,7 @@ use request::InitFeature;
 use sea_query::error;
 use std::path::Path;
 use std::{io, time::SystemTimeError};
+pub use store::observation::{HistoryPage, Observation, Page, PageEnd, PageIndex, TaskPage};
 pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};
 use thiserror::Error;
@@ -61,6 +62,11 @@ impl Workbench {
             feature,
         })
         .await
+    }
+
+    /// Observe existing current-schema storage without initialization or migration.
+    pub async fn observe(&self) -> Result<Observation, LedgerError> {
+        Observation::open(self.repository.ledger_path()?).await
     }
 
     pub async fn features(&self) -> Result<Vec<LedgerInfo>, LedgerError> {
@@ -106,6 +112,10 @@ pub enum LedgerError {
     Git(#[from] git2::Error),
     #[error("ledger has not been initialized; run Feature / Initialize")]
     Uninitialized,
+    #[error(
+        "Workbench database version {0} requires migration; run Feature / List with the current meta-cortex before observing"
+    )]
+    ObservationMigrationRequired(versions::StorageVersion),
     #[error("file operation failed: {0}")]
     Io(#[from] io::Error),
     #[error("unsupported Workbench SQL binding type")]

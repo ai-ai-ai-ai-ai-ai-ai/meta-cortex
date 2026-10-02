@@ -2,6 +2,7 @@ use super::AgentError;
 use crate::information::InfoReport;
 use crate::installation::{InitRequest, Project, ToolSetup};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
+use meta_cortex_visualization::{Dashboard, DashboardReport, DashboardRequest};
 use meta_cortex_workbench::model::{Event, Task, TaskView};
 use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery, WorkerUpdate,
@@ -27,6 +28,7 @@ pub enum Operation {
     Framework(FrameworkOperation),
     Feature(FeatureOperation),
     Task(TaskOperation),
+    Workbench(WorkbenchOperation),
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -53,6 +55,12 @@ pub enum TaskOperation {
     Claim(ClaimTask),
     Update(WorkerUpdate),
     Coordinate(CoordinatorUpdate),
+}
+
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
+pub enum WorkbenchOperation {
+    Dashboard(DashboardRequest),
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -128,6 +136,7 @@ pub enum Reply {
         tasks: Vec<TaskView>,
     },
     History(Vec<Event>),
+    Dashboard(DashboardReport),
 }
 
 // Read only the version at the transport edge before selecting a supported decoder.
@@ -146,6 +155,12 @@ impl Request {
 
     pub async fn execute(self) -> Result<Reply, AgentError> {
         match self.operation {
+            Operation::Workbench(WorkbenchOperation::Dashboard(input)) => {
+                let workbench = Workbench::discover(&self.project)?;
+                Ok(Reply::Dashboard(
+                    Dashboard::from(workbench).execute(input).await?,
+                ))
+            }
             Operation::Framework(operation) => operation.execute(self.project),
             Operation::Feature(operation) => {
                 operation.execute(Workbench::discover(&self.project)?).await

@@ -248,13 +248,15 @@ coordination, model configuration, and agent skills.
 
 ## Develop the application
 
-The [Rust workspace](app/Cargo.toml) contains two crates:
+The [Rust workspace](app/Cargo.toml) contains three crates:
 
 - [installer](app/installer): the `meta-cortex` executable, framework installation,
   command discovery, and typed YAML transport.
 - [workbench](app/workbench): the `meta-cortex-workbench` library for durable agent
   tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
+- [visualization](app/visualization): the `meta-cortex-visualization` library for
+  the terminal dashboard, using Workbench’s read-only observation API.
 
 ```sh
 cd app
@@ -338,3 +340,28 @@ integration records, framework initialization, and project inspection.
 
 See the [agent ledger protocol](cortex/teams/gizmo-team/docs/agent-ledger.md) for
 ownership, recovery, version compatibility, and local storage boundaries.
+
+### Observe recorded work
+
+From your repository root, any subdirectory, or a linked worktree, run:
+
+```sh
+meta-cortex dashboard
+```
+
+No request file or required arguments are needed. The command resolves the
+existing repository identity and shared database, then opens the interactive
+Features view. Terminal stdin and stdout are required. Select with Up/Down or
+`j`/`k`, press Enter for details, press `h` for task history, and exit with `q`
+or Ctrl-C.
+
+Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
+an explicit project, initial view, and page. Typed Interactive requests use a
+request file to preserve keyboard stdin. Typed Snapshot requests support
+redirected output through `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
+The dashboard observes recorded ledger content; event actors identify who
+recorded evidence and do not establish Git authorship. See the canonical
+[dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
+for exact typed requests, views, fields, paging, refresh, and storage requirements.
+The command reports errors outside Git or when repository identity or the ledger
+is missing. It does not initialize, migrate, or import storage.

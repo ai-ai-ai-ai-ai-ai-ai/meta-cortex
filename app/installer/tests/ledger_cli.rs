@@ -36,6 +36,13 @@ enum Operation {
     Framework(FrameworkOperation),
     Feature(FeatureOperation),
     Task(TaskOperation),
+    Workbench(WorkbenchOperation),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
+enum WorkbenchOperation {
+    Dashboard(meta_cortex_visualization::DashboardRequest),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -549,6 +556,7 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         framework: Vec<CommandDescription>,
         feature: Vec<CommandDescription>,
         task: Vec<CommandDescription>,
+        workbench: Vec<CommandDescription>,
     }
     #[derive(Debug, PartialEq, Deserialize, From)]
     #[serde(transparent)]
@@ -589,6 +597,7 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         framework,
         feature,
         task,
+        workbench,
     } = catalog.commands;
     assert_eq!([framework.len(), feature.len(), task.len()], [2, 3, 6]);
     for command in &framework {
@@ -600,7 +609,16 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
     for command in &task {
         assert!(matches!(command.example.operation, Operation::Task(_)));
     }
-    for command in framework.into_iter().chain(feature).chain(task) {
+    assert_eq!(workbench.len(), 1);
+    for command in &workbench {
+        assert!(matches!(command.example.operation, Operation::Workbench(_)));
+    }
+    for command in framework
+        .into_iter()
+        .chain(feature)
+        .chain(task)
+        .chain(workbench)
+    {
         assert_ne!(command.description, CommandSummary::from(String::new()));
         assert_eq!(command.example.version, ProtocolVersion::CURRENT);
         assert_eq!(command.example.project, PathBuf::from("/absolute/project"));

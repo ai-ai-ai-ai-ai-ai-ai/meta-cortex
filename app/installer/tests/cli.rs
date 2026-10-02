@@ -216,7 +216,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     })?;
     let info = scenario.info()?;
     assert_eq!(info.schema_version, ReportSchemaVersion::V5);
-    assert_eq!(info.cli_version, ReportVersion::V0_11_0);
+    assert_eq!(info.cli_version, ReportVersion::V0_12_0);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
         env!("CARGO_PKG_VERSION")
@@ -889,13 +889,14 @@ fn incomplete_framework_is_reported_without_overwriting_files() -> anyhow::Resul
 }
 
 #[test]
-fn cli_exposes_only_discovery_and_yaml_execution() -> anyhow::Result<()> {
+fn cli_exposes_dashboard_discovery_and_yaml_execution() -> anyhow::Result<()> {
     let executable = env!("CARGO_BIN_EXE_meta-cortex");
     let help = Command::new(executable).arg("--help").output()?;
     assert!(help.status.success());
     let text = String::from_utf8(help.stdout)?;
     assert!(text.contains("list"));
     assert!(text.contains("run"));
+    assert!(text.contains("dashboard"));
     let scenario = CliScenario::create()?;
     fs::remove_dir_all(scenario.project.path())?;
     let Outcome::Error(error) = scenario.call(Operation::Framework(
