@@ -171,6 +171,25 @@ fn read_only_observation_preserves_records_history_schema_and_files() -> anyhow:
                 })
                 .await?;
             assert_eq!(tasks.records.len(), 1);
+            let flow = observation
+                .flow(TaskPage {
+                    feature: Scenario::feature()?,
+                    page: PageIndex::FIRST,
+                })
+                .await?;
+            assert_eq!(flow.tasks.records.len(), 1);
+            assert!(matches!(
+                flow.tasks.records[0].created_by,
+                meta_cortex_workbench::RecordedActor::Recorded {
+                    agent: AgentId::Gizmo(GizmoAgent::Gizmo)
+                }
+            ));
+            assert!(matches!(
+                flow.tasks.records[0].worker,
+                meta_cortex_workbench::RecordedActor::Unrecorded
+            ));
+            assert_eq!(serde_json::to_value(&flow.counts)?[0]["count"], 1);
+
             let history = observation
                 .history(HistoryPage {
                     feature: Scenario::feature()?,
@@ -250,6 +269,12 @@ fn observer_and_writer_run_in_distinct_processes() -> anyhow::Result<()> {
             }
             let task = observation.task(Scenario::query()?).await?;
             revisions.insert(task.revision);
+            observation
+                .flow(TaskPage {
+                    feature: Scenario::feature()?,
+                    page: PageIndex::FIRST,
+                })
+                .await?;
             observation.features(PageIndex::FIRST).await?;
             observation
                 .history(HistoryPage {
@@ -453,6 +478,138 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(second.end, PageEnd::Complete);
         assert_eq!(first.records[0].task, task);
         assert_eq!(second.records[1].task.revision, Revision::INITIAL);
+        let flow = observation
+            .flow(TaskPage {
+                feature: Scenario::feature()?,
+                page: PageIndex::FIRST,
+            })
+            .await?;
+        assert_eq!(flow.tasks.records.len(), 100);
+        assert_eq!(flow.tasks.end, PageEnd::More);
+        let counts = serde_json::to_value(&flow.counts)?;
+        assert_eq!(counts[0]["count"], 100);
+        assert_eq!(counts[1]["count"], 1);
+        assert_eq!(flow.tasks.records[0].history_end, PageEnd::More);
+        assert!(matches!(
+            flow.tasks.records[0].created_by,
+            meta_cortex_workbench::RecordedActor::Recorded {
+                agent: AgentId::Gizmo(GizmoAgent::Gizmo)
+            }
+        ));
+
+        Ok::<_, anyhow::Error>(())
+    })
+}
+
+#[test]
+fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Result<()> {
+    use meta_cortex_workbench::RecordedActor;
+    use meta_cortex_workbench::agents::DeliveryAgent;
+    use meta_cortex_workbench::request::{CoordinatorAction, CoordinatorUpdate};
+    use meta_cortex_workbench::values::CommitId;
+    let scenario = Scenario::new()?;
+    scenario.initialize()?;
+    scenario.runtime.block_on(async {
+        let mut ledger = scenario.workbench()?.open(Scenario::feature()?).await?;
+        let repository = git2::Repository::open(&scenario.project)?;
+        let head = repository.head()?;
+        let commit = CommitId::try_from(head.peel_to_commit()?.id().to_string())?;
+        let worker_path = scenario.directory.path().join("worker");
+        let worker_reference = repository
+            .branch("worker", &head.peel_to_commit()?, false)?
+            .into_reference();
+        let mut worktree_options = git2::WorktreeAddOptions::new();
+        worktree_options.reference(Some(&worker_reference));
+        repository.worktree("worker", &worker_path, Some(&worktree_options))?;
+
+        let id = TaskId::try_from("code".to_owned())?;
+        let creator = AgentId::Gizmo(GizmoAgent::Gizmo);
+        let worker = AgentId::Development(DevelopmentAgent::RustDev);
+        let integrator = AgentId::Delivery(DeliveryAgent::IntegrationAgent);
+        let mut task = ledger
+            .create(CreateTask {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                actor: creator,
+                objective: Note::from("Code evidence".to_owned()),
+                acceptance: vec![Note::from(
+                    "Record a worker checkpoint and integration".to_owned(),
+                )],
+                dependencies: vec![],
+                workspace: Workspace::Git {
+                    branch: BranchName::try_from("worker".to_owned())?,
+                    path: worker_path,
+                },
+                progress: Scenario::progress(),
+            })
+            .await?;
+        task = ledger
+            .claim(ClaimTask {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: task.revision,
+                agent: worker,
+                ttl_seconds: LeaseSeconds::TEN_MINUTES,
+            })
+            .await?;
+        task = ledger
+            .update(WorkerUpdate {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: task.revision,
+                agent: worker,
+                attempt: task.attempt,
+                action: WorkerAction::Checkpoint {
+                    ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                    commit: commit.clone(),
+                    progress: Scenario::progress(),
+                },
+            })
+            .await?;
+        task = ledger
+            .update(WorkerUpdate {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: task.revision,
+                agent: worker,
+                attempt: task.attempt,
+                action: WorkerAction::Ready {
+                    progress: Scenario::progress(),
+                },
+            })
+            .await?;
+        ledger
+            .coordinate(CoordinatorUpdate {
+                feature: Scenario::feature()?,
+                task: id.clone(),
+                expected_revision: task.revision,
+                actor: integrator,
+                action: CoordinatorAction::Integrate {
+                    commit: commit.clone(),
+                },
+            })
+            .await?;
+        let flow = scenario
+            .observe()
+            .await?
+            .flow(TaskPage {
+                feature: Scenario::feature()?,
+                page: PageIndex::FIRST,
+            })
+            .await?;
+        let completed = flow
+            .tasks
+            .records
+            .iter()
+            .find(|item| item.task.id == id)
+            .ok_or_else(|| anyhow::anyhow!("missing completed task"))?;
+        assert!(matches!(completed.created_by,RecordedActor::Recorded {agent} if agent==creator));
+        assert!(matches!(completed.worker,RecordedActor::Recorded {agent} if agent==worker));
+        assert_eq!(completed.checkpoints[0].actor, worker);
+        assert_eq!(completed.integrations[0].actor, integrator);
+        assert_eq!(completed.integrations[0].commit, commit);
+        assert_eq!(completed.milestones.len(), 5);
+        assert_eq!(serde_json::to_value(&flow.counts)?[4]["count"], 1);
         Ok::<_, anyhow::Error>(())
     })
 }

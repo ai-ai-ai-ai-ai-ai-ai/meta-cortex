@@ -1,3 +1,4 @@
+mod flow;
 use super::relational::{EventTable, FeatureTable, TaskTable};
 use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
@@ -7,6 +8,10 @@ use crate::request::TaskQuery;
 use crate::values::{FeatureId, TaskId};
 use crate::versions::StorageVersion;
 use derive_more::Display;
+pub use flow::{
+    FeatureFlow, FlowCount, FlowState, Milestone, RecordedActor, RecordedCommit, TaskCount,
+    TaskFlow,
+};
 use schemars::JsonSchema;
 use sea_query::{Expr, ExprTrait, Iden, Order, Query};
 use serde::{Deserialize, Serialize};
@@ -17,12 +22,12 @@ use std::time::Duration;
 use turso::{Builder, Connection};
 
 /// A page of at most 100 records. Each operation releases its connection before returning.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct Page<T> {
     pub records: Vec<T>,
     pub end: PageEnd,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, JsonSchema)]
 pub enum PageEnd {
     Complete,
     More,

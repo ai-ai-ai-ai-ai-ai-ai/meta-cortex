@@ -1,0 +1,617 @@
+{
+  "$defs": {
+    "AgentId": {
+      "description": "An agent role scoped to its owning Cortex team.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/GizmoAgent" },
+            "team": { "const": "Gizmo", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/DevelopmentAgent" },
+            "team": { "const": "Development", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/AiAgent" },
+            "team": { "const": "Ai", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/SecurityAgent" },
+            "team": { "const": "Security", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/SreAgent" },
+            "team": { "const": "Sre", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/DeliveryAgent" },
+            "team": { "const": "Delivery", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        }
+      ]
+    },
+    "AiAgent": { "enum": ["TechWriter"], "type": "string" },
+    "Assignment": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": { "$ref": "#/$defs/AgentId" },
+        "attempt": { "format": "int64", "type": "integer" },
+        "expires_at": { "format": "int64", "type": "integer" },
+        "phase": { "$ref": "#/$defs/Phase" }
+      },
+      "required": ["agent", "attempt", "expires_at", "phase"],
+      "type": "object"
+    },
+    "Check": {
+      "additionalProperties": false,
+      "properties": {
+        "command": { "$ref": "#/$defs/Note" },
+        "evidence": { "$ref": "#/$defs/Note" },
+        "outcome": { "$ref": "#/$defs/CheckOutcome" }
+      },
+      "required": ["command", "outcome", "evidence"],
+      "type": "object"
+    },
+    "CheckOutcome": {
+      "enum": ["passed", "failed", "not_run"],
+      "type": "string"
+    },
+    "Checkpoint": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "commit": { "type": "string" },
+            "kind": { "const": "git", "type": "string" }
+          },
+          "required": ["kind", "commit"],
+          "type": "object"
+        }
+      ]
+    },
+    "DashboardView": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "Features", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "feature": { "type": "string" },
+            "kind": { "const": "Tasks", "type": "string" }
+          },
+          "required": ["kind", "feature"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "Task", "type": "string" },
+            "query": { "$ref": "#/$defs/TaskQuery" }
+          },
+          "required": ["kind", "query"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "History", "type": "string" },
+            "query": { "$ref": "#/$defs/TaskQuery" }
+          },
+          "required": ["kind", "query"],
+          "type": "object"
+        }
+      ]
+    },
+    "DeliveryAgent": {
+      "enum": ["IntegrationAgent", "PrAgent"],
+      "type": "string"
+    },
+    "DesktopContent": {
+      "oneOf": [
+        {
+          "properties": {
+            "kind": { "const": "Features", "type": "string" },
+            "value": { "$ref": "#/$defs/Page" }
+          },
+          "required": ["kind", "value"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "Workflow", "type": "string" },
+            "value": { "$ref": "#/$defs/FeatureFlow" }
+          },
+          "required": ["kind", "value"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "Task", "type": "string" },
+            "value": { "$ref": "#/$defs/Task" }
+          },
+          "required": ["kind", "value"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "History", "type": "string" },
+            "value": { "$ref": "#/$defs/Page3" }
+          },
+          "required": ["kind", "value"],
+          "type": "object"
+        }
+      ]
+    },
+    "DesktopFailure": {
+      "oneOf": [
+        {
+          "properties": {
+            "kind": { "const": "Ledger", "type": "string" },
+            "message": { "$ref": "#/$defs/Note" }
+          },
+          "required": ["kind", "message"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "Runtime", "type": "string" },
+            "message": { "$ref": "#/$defs/Note" }
+          },
+          "required": ["kind", "message"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "Native", "type": "string" },
+            "message": { "$ref": "#/$defs/Note" }
+          },
+          "required": ["kind", "message"],
+          "type": "object"
+        }
+      ]
+    },
+    "DesktopRead": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "Initial", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "Features", "type": "string" },
+            "page": { "format": "uint32", "minimum": 0, "type": "integer" }
+          },
+          "required": ["kind", "page"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "feature": { "type": "string" },
+            "kind": { "const": "Workflow", "type": "string" },
+            "page": { "format": "uint32", "minimum": 0, "type": "integer" }
+          },
+          "required": ["kind", "feature", "page"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "Task", "type": "string" },
+            "query": { "$ref": "#/$defs/TaskQuery" }
+          },
+          "required": ["kind", "query"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "History", "type": "string" },
+            "page": { "format": "uint32", "minimum": 0, "type": "integer" },
+            "query": { "$ref": "#/$defs/TaskQuery" }
+          },
+          "required": ["kind", "query", "page"],
+          "type": "object"
+        }
+      ]
+    },
+    "DesktopReply": {
+      "properties": {
+        "content": { "$ref": "#/$defs/DesktopContent" },
+        "selection": { "$ref": "#/$defs/DesktopSelection" }
+      },
+      "required": ["selection", "content"],
+      "type": "object"
+    },
+    "DesktopSelection": {
+      "properties": {
+        "page": { "format": "uint32", "minimum": 0, "type": "integer" },
+        "view": { "$ref": "#/$defs/DashboardView" }
+      },
+      "required": ["view", "page"],
+      "type": "object"
+    },
+    "DevelopmentAgent": {
+      "enum": [
+        "RustDev",
+        "RustRefactoring",
+        "RustVerifier",
+        "TypescriptDev",
+        "WebDesigner"
+      ],
+      "type": "string"
+    },
+    "Event": {
+      "additionalProperties": false,
+      "properties": {
+        "actor": { "$ref": "#/$defs/AgentId" },
+        "kind": { "$ref": "#/$defs/EventKind" },
+        "note": { "$ref": "#/$defs/Note" },
+        "task": { "$ref": "#/$defs/Task" },
+        "version": { "format": "int64", "type": "integer" }
+      },
+      "required": ["version", "kind", "actor", "note", "task"],
+      "type": "object"
+    },
+    "EventKind": {
+      "enum": [
+        "created",
+        "claimed",
+        "heartbeat",
+        "progress",
+        "checkpoint",
+        "ready",
+        "integrated",
+        "requeued",
+        "cancelled"
+      ],
+      "type": "string"
+    },
+    "Feature": {
+      "additionalProperties": false,
+      "properties": {
+        "branch": { "type": "string" },
+        "id": { "type": "string" },
+        "objective": { "$ref": "#/$defs/Note" },
+        "version": { "format": "int64", "type": "integer" },
+        "worktree": { "type": "string" }
+      },
+      "required": ["version", "id", "objective", "branch", "worktree"],
+      "type": "object"
+    },
+    "FeatureFlow": {
+      "properties": {
+        "counts": { "items": { "$ref": "#/$defs/FlowCount" }, "type": "array" },
+        "feature": { "$ref": "#/$defs/Feature" },
+        "observed_at": { "format": "int64", "type": "integer" },
+        "tasks": { "$ref": "#/$defs/Page2" }
+      },
+      "required": ["feature", "counts", "tasks", "observed_at"],
+      "type": "object"
+    },
+    "FlowCount": {
+      "properties": {
+        "count": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "state": { "$ref": "#/$defs/FlowState" }
+      },
+      "required": ["state", "count"],
+      "type": "object"
+    },
+    "FlowState": {
+      "enum": [
+        "queued",
+        "working",
+        "blocked",
+        "ready",
+        "integrated",
+        "cancelled"
+      ],
+      "type": "string"
+    },
+    "GizmoAgent": { "enum": ["GizmoPrime", "Gizmo"], "type": "string" },
+    "Milestone": {
+      "properties": {
+        "actor": { "$ref": "#/$defs/AgentId" },
+        "at": { "format": "int64", "type": "integer" },
+        "attempt": { "format": "int64", "type": "integer" },
+        "kind": { "$ref": "#/$defs/EventKind" },
+        "note": { "$ref": "#/$defs/Note" },
+        "revision": { "format": "int64", "type": "integer" }
+      },
+      "required": ["kind", "actor", "at", "revision", "attempt", "note"],
+      "type": "object"
+    },
+    "Note": { "type": "string" },
+    "Page": {
+      "description": "A page of at most 100 records. Each operation releases its connection before returning.",
+      "properties": {
+        "end": { "$ref": "#/$defs/PageEnd" },
+        "records": { "items": { "$ref": "#/$defs/Feature" }, "type": "array" }
+      },
+      "required": ["records", "end"],
+      "type": "object"
+    },
+    "Page2": {
+      "description": "A page of at most 100 records. Each operation releases its connection before returning.",
+      "properties": {
+        "end": { "$ref": "#/$defs/PageEnd" },
+        "records": { "items": { "$ref": "#/$defs/TaskFlow" }, "type": "array" }
+      },
+      "required": ["records", "end"],
+      "type": "object"
+    },
+    "Page3": {
+      "description": "A page of at most 100 records. Each operation releases its connection before returning.",
+      "properties": {
+        "end": { "$ref": "#/$defs/PageEnd" },
+        "records": { "items": { "$ref": "#/$defs/Event" }, "type": "array" }
+      },
+      "required": ["records", "end"],
+      "type": "object"
+    },
+    "PageEnd": { "enum": ["Complete", "More"], "type": "string" },
+    "Phase": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "working", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "blocked", "type": "string" },
+            "reason": { "$ref": "#/$defs/Note" }
+          },
+          "required": ["kind", "reason"],
+          "type": "object"
+        }
+      ]
+    },
+    "Progress": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": { "items": { "$ref": "#/$defs/Check" }, "type": "array" },
+        "extensions": {
+          "additionalProperties": true,
+          "default": {},
+          "description": "Task-specific data only. Coordination never interprets these keys.",
+          "type": "object"
+        },
+        "findings": { "items": { "$ref": "#/$defs/Note" }, "type": "array" },
+        "next_steps": { "items": { "$ref": "#/$defs/Note" }, "type": "array" },
+        "summary": { "$ref": "#/$defs/Note" }
+      },
+      "required": ["summary", "findings", "next_steps", "checks"],
+      "type": "object"
+    },
+    "RecordedActor": {
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "agent": { "$ref": "#/$defs/AgentId" },
+            "kind": { "const": "recorded", "type": "string" }
+          },
+          "required": ["kind", "agent"],
+          "type": "object"
+        }
+      ]
+    },
+    "RecordedCommit": {
+      "properties": {
+        "actor": { "$ref": "#/$defs/AgentId" },
+        "at": { "format": "int64", "type": "integer" },
+        "commit": { "type": "string" },
+        "revision": { "format": "int64", "type": "integer" }
+      },
+      "required": ["commit", "actor", "at", "revision"],
+      "type": "object"
+    },
+    "SecurityAgent": { "enum": ["SecurityAgent"], "type": "string" },
+    "SreAgent": {
+      "enum": ["CicdAgent", "DockerSpecialist", "KubernetesSpecialist"],
+      "type": "string"
+    },
+    "Task": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptance": { "items": { "$ref": "#/$defs/Note" }, "type": "array" },
+        "attempt": { "format": "int64", "type": "integer" },
+        "checkpoint": { "$ref": "#/$defs/Checkpoint" },
+        "created_at": { "format": "int64", "type": "integer" },
+        "dependencies": { "items": { "type": "string" }, "type": "array" },
+        "feature": { "type": "string" },
+        "id": { "type": "string" },
+        "last_progress": { "format": "int64", "type": "integer" },
+        "last_update": { "format": "int64", "type": "integer" },
+        "objective": { "$ref": "#/$defs/Note" },
+        "progress": { "$ref": "#/$defs/Progress" },
+        "revision": { "format": "int64", "type": "integer" },
+        "state": { "$ref": "#/$defs/TaskState" },
+        "version": { "format": "int64", "type": "integer" },
+        "workspace": { "$ref": "#/$defs/Workspace" }
+      },
+      "required": [
+        "version",
+        "id",
+        "feature",
+        "objective",
+        "acceptance",
+        "dependencies",
+        "workspace",
+        "revision",
+        "attempt",
+        "state",
+        "created_at",
+        "last_update",
+        "last_progress",
+        "checkpoint",
+        "progress"
+      ],
+      "type": "object"
+    },
+    "TaskFlow": {
+      "properties": {
+        "checkpoints": {
+          "items": { "$ref": "#/$defs/RecordedCommit" },
+          "type": "array"
+        },
+        "created_by": { "$ref": "#/$defs/RecordedActor" },
+        "history_end": { "$ref": "#/$defs/PageEnd" },
+        "integrations": {
+          "items": { "$ref": "#/$defs/RecordedCommit" },
+          "type": "array"
+        },
+        "milestones": {
+          "items": { "$ref": "#/$defs/Milestone" },
+          "type": "array"
+        },
+        "task": { "$ref": "#/$defs/Task" },
+        "worker": { "$ref": "#/$defs/RecordedActor" }
+      },
+      "required": [
+        "task",
+        "created_by",
+        "worker",
+        "checkpoints",
+        "integrations",
+        "milestones",
+        "history_end"
+      ],
+      "type": "object"
+    },
+    "TaskQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "feature": { "type": "string" },
+        "task": { "type": "string" }
+      },
+      "required": ["feature", "task"],
+      "type": "object"
+    },
+    "TaskState": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "queued", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "assignment": { "$ref": "#/$defs/Assignment" },
+            "kind": { "const": "active", "type": "string" }
+          },
+          "required": ["kind", "assignment"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "agent": { "$ref": "#/$defs/AgentId" },
+            "attempt": { "format": "int64", "type": "integer" },
+            "kind": { "const": "ready", "type": "string" }
+          },
+          "required": ["kind", "agent", "attempt"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "commit": { "type": "string" },
+            "kind": { "const": "integrated", "type": "string" }
+          },
+          "required": ["kind", "commit"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "cancelled", "type": "string" },
+            "reason": { "$ref": "#/$defs/Note" }
+          },
+          "required": ["kind", "reason"],
+          "type": "object"
+        }
+      ]
+    },
+    "Workspace": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "read_only", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "branch": { "type": "string" },
+            "kind": { "const": "git", "type": "string" },
+            "path": { "type": "string" }
+          },
+          "required": ["kind", "branch", "path"],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "failure": { "$ref": "#/$defs/DesktopFailure" },
+    "reply": { "$ref": "#/$defs/DesktopReply" },
+    "request": { "$ref": "#/$defs/DesktopRead" }
+  },
+  "required": ["request", "reply", "failure"],
+  "title": "DesktopContract",
+  "type": "object"
+}

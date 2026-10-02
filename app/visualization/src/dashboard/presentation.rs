@@ -1,64 +1,24 @@
-use super::navigation::{Navigation, Route, Selected, SelectedRoute, Selection};
+use super::snapshot::{Selection, SnapshotContext};
 use meta_cortex_workbench::model::{Checkpoint, Event, Feature, Phase, Task, TaskState, Workspace};
-use meta_cortex_workbench::request::TaskQuery;
-use meta_cortex_workbench::values::Note;
-use meta_cortex_workbench::{LedgerError, Page, PageEnd, PageIndex};
+use meta_cortex_workbench::values::{Extensions, Note};
+use meta_cortex_workbench::{Page, PageEnd};
 
 pub(super) enum Content {
     Features(Page<Feature>),
     Tasks(Page<Task>),
     History(Page<Event>),
-    Task(Task),
-    Event(Event),
-    Error(LedgerError),
+    Task(Box<Task>),
 }
 impl Content {
-    pub fn last_selection(&self) -> Selection {
-        let count = match self {
-            Self::Features(page) => page.records.len(),
-            Self::Tasks(page) => page.records.len(),
-            Self::History(page) => page.records.len(),
-            Self::Task(_) | Self::Event(_) | Self::Error(_) => 0,
-        };
-        Selection::from(count.saturating_sub(1))
-    }
     pub fn end(&self) -> PageEnd {
         match self {
             Self::Features(page) => page.end,
             Self::Tasks(page) => page.end,
             Self::History(page) => page.end,
-            Self::Task(_) | Self::Event(_) | Self::Error(_) => PageEnd::Complete,
+            Self::Task(_) => PageEnd::Complete,
         }
     }
-    pub fn enter(&self, selection: Selection) -> SelectedRoute {
-        match self {
-            Self::Features(page) => match selection.lookup(&page.records) {
-                Selected::Record(feature) => SelectedRoute::Route(Route::Tasks {
-                    feature: feature.id.clone(),
-                    page: PageIndex::FIRST,
-                }),
-                Selected::Empty => SelectedRoute::Stay,
-            },
-            Self::Tasks(page) => match selection.lookup(&page.records) {
-                Selected::Record(task) => SelectedRoute::Route(Route::Task {
-                    query: TaskQuery {
-                        feature: task.feature.clone(),
-                        task: task.id.clone(),
-                    },
-                }),
-                Selected::Empty => SelectedRoute::Stay,
-            },
-            Self::History(page) => match selection.lookup(&page.records) {
-                Selected::Record(event) => SelectedRoute::Route(Route::Event {
-                    event: Box::new(event.clone()),
-                    page: PageIndex::FIRST,
-                }),
-                Selected::Empty => SelectedRoute::Stay,
-            },
-            Self::Task(_) | Self::Event(_) | Self::Error(_) => SelectedRoute::Stay,
-        }
-    }
-    pub fn text(&self, navigation: &Navigation) -> Note {
+    pub fn text(&self, navigation: &SnapshotContext) -> Note {
         let heading = format!(
             "WORKBENCH · recorded ledger data · page {}\nGit authorship: unrecorded. Actors identify who recorded ledger events.\n\n",
             navigation.route().page()
@@ -80,18 +40,6 @@ impl Content {
             }
             .text(),
             Self::Task(task) => TaskPresentation(task).detail(),
-            Self::Event(event) => format!(
-                "EVENT {:?} · revision {} · time {}\nRecorded by: {:?}\nNote: {}\n\n{}",
-                event.kind,
-                event.task.revision,
-                event.task.last_update,
-                event.actor,
-                event.note,
-                TaskPresentation(&event.task).detail()
-            ),
-            Self::Error(error) => {
-                format!("Unable to observe ledger: {error}\nPress r to retry or q to exit.")
-            }
         };
         Note::from(format!(
             "{heading}{body}\n\nPage end: {:?} · 100 records maximum per query",
@@ -204,7 +152,8 @@ impl TaskPresentation<'_> {
         }
     }
     fn workspace(&self) -> String {
-        match &self.0.workspace {
+        let Self(task) = self;
+        match &task.workspace {
             Workspace::ReadOnly => "read only".into(),
             Workspace::Git { branch, path } => format!("{branch} at {}", path.display()),
         }
@@ -226,8 +175,12 @@ impl TaskPresentation<'_> {
             self.state()
         );
         match &task.checkpoint { Checkpoint::Unrecorded => text.push_str("Checkpoint: unrecorded\n"), Checkpoint::Git { commit } => text.push_str(&format!("Recorded checkpoint: {commit}\nCheckpoint recorded by: inspect Checkpoint history event (not Git authorship)\n")) }
-        if let TaskState::Integrated { commit } = &task.state {
-            text.push_str(&format!("Recorded integration commit: {commit}\nIntegration recorded by: inspect Integrated history event (not Git authorship)\n"));
+        match &task.state {
+            TaskState::Integrated { commit } => text.push_str(&format!("Recorded integration commit: {commit}\nIntegration recorded by: inspect Integrated history event (not Git authorship)\n")),
+            TaskState::Queued
+            | TaskState::Active { .. }
+            | TaskState::Ready { .. }
+            | TaskState::Cancelled { .. } => {}
         }
         text.push_str(&format!(
             "\nProgress: {}\nAcceptance:\n",
@@ -255,7 +208,8 @@ impl TaskPresentation<'_> {
             ));
         }
         text.push_str("Task-specific extensions:\n");
-        for (key, value) in &task.progress.extensions.0 {
+        let Extensions(extensions) = &task.progress.extensions;
+        for (key, value) in extensions {
             text.push_str(&format!("{key}: {value}\n"));
         }
         text
@@ -263,8 +217,8 @@ impl TaskPresentation<'_> {
 }
 
 #[cfg(test)]
-pub mod tests {
-    use super::super::navigation::{Navigation, SelectedRoute, Selection};
+mod tests {
+    use super::super::snapshot::SnapshotContext;
     use super::{Content, TaskPresentation};
     use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
     use meta_cortex_workbench::model::{
@@ -275,55 +229,61 @@ pub mod tests {
         Attempt, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
     };
     use meta_cortex_workbench::versions::RecordVersion;
-    use meta_cortex_workbench::{LedgerError, Page, PageEnd};
+    use meta_cortex_workbench::{Page, PageEnd};
 
-    pub struct Scenario;
-    impl Scenario {
-        pub fn task() -> anyhow::Result<Task> {
-            let now = Timestamp::now()?;
-            Ok(Task {
-                version: RecordVersion::CURRENT,
-                id: TaskId::try_from("task".to_owned())?,
-                feature: FeatureId::try_from("feature".to_owned())?,
-                objective: Note::from("Task objective".to_owned()),
-                acceptance: vec![Note::from("Acceptance".to_owned())],
-                dependencies: vec![],
-                workspace: Workspace::ReadOnly,
-                revision: Revision::INITIAL,
-                attempt: Attempt::UNCLAIMED,
-                state: TaskState::Queued,
-                created_at: now,
-                last_update: now,
-                last_progress: now,
-                checkpoint: Checkpoint::Unrecorded,
-                progress: Progress {
-                    summary: Note::from("Summary".to_owned()),
-                    findings: vec![Note::from("Finding".to_owned())],
-                    next_steps: vec![Note::from("Next step".to_owned())],
-                    checks: vec![Check {
-                        command: Note::from("Check command".to_owned()),
-                        outcome: CheckOutcome::Passed,
-                        evidence: Note::from("Check evidence".to_owned()),
-                    }],
-                    extensions: Default::default(),
+    struct TaskFixture {
+        task: Task,
+    }
+    impl TryFrom<Timestamp> for TaskFixture {
+        type Error = anyhow::Error;
+        fn try_from(now: Timestamp) -> Result<Self, Self::Error> {
+            Ok(Self {
+                task: Task {
+                    version: RecordVersion::CURRENT,
+                    id: TaskId::try_from("task".to_owned())?,
+                    feature: FeatureId::try_from("feature".to_owned())?,
+                    objective: Note::from("Task objective".to_owned()),
+                    acceptance: vec![Note::from("Acceptance".to_owned())],
+                    dependencies: vec![],
+                    workspace: Workspace::ReadOnly,
+                    revision: Revision::INITIAL,
+                    attempt: Attempt::UNCLAIMED,
+                    state: TaskState::Queued,
+                    created_at: now,
+                    last_update: now,
+                    last_progress: now,
+                    checkpoint: Checkpoint::Unrecorded,
+                    progress: Progress {
+                        summary: Note::from("Summary".to_owned()),
+                        findings: vec![Note::from("Finding".to_owned())],
+                        next_steps: vec![Note::from("Next step".to_owned())],
+                        checks: vec![Check {
+                            command: Note::from("Check command".to_owned()),
+                            outcome: CheckOutcome::Passed,
+                            evidence: Note::from("Check evidence".to_owned()),
+                        }],
+                        extensions: Default::default(),
+                    },
                 },
             })
         }
-        pub fn event() -> anyhow::Result<Event> {
-            Ok(Event {
+    }
+    impl TaskFixture {
+        fn event(&self) -> Event {
+            Event {
                 version: RecordVersion::CURRENT,
                 kind: EventKind::Created,
                 actor: AgentId::Gizmo(GizmoAgent::Gizmo),
                 note: Note::from("Event note".to_owned()),
-                task: Self::task()?,
-            })
+                task: self.task.clone(),
+            }
         }
     }
     #[test]
     fn details_preserve_recorded_progress_commits_checks_and_actor_labels() -> anyhow::Result<()> {
-        let task = Scenario::task()?;
-        let content = Content::Task(task.clone())
-            .text(&Navigation::default())
+        let task = TaskFixture::try_from(Timestamp::now()?)?.task;
+        let content = Content::Task(Box::new(task.clone()))
+            .text(&SnapshotContext::default())
             .to_string();
         for expected in [
             "Task objective",
@@ -345,21 +305,18 @@ pub mod tests {
             state: TaskState::Integrated { commit },
             ..task
         };
-        let text = Content::Task(task).text(&Navigation::default()).to_string();
+        let text = Content::Task(Box::new(task))
+            .text(&SnapshotContext::default())
+            .to_string();
         assert!(text.contains("Recorded checkpoint:"));
         assert!(text.contains("Recorded integration commit:"));
         assert!(text.contains("not Git authorship"));
-        let event = Content::Event(Scenario::event()?)
-            .text(&Navigation::default())
-            .to_string();
-        assert!(event.contains("Recorded by:"));
-        assert!(event.contains("Gizmo"));
-        assert!(event.contains("Event note"));
+
         Ok(())
     }
     #[test]
     fn all_task_states_are_distinguished() -> anyhow::Result<()> {
-        let task = Scenario::task()?;
+        let task = TaskFixture::try_from(Timestamp::now()?)?.task;
         let agent = AgentId::Development(DevelopmentAgent::RustDev);
         let states = [
             TaskState::Queued,
@@ -404,35 +361,29 @@ pub mod tests {
     }
     #[test]
     fn lists_and_empty_error_states_are_presented() -> anyhow::Result<()> {
-        let task = Scenario::task()?;
+        let task = TaskFixture::try_from(Timestamp::now()?)?.task;
         let task_page = Content::Tasks(Page {
             records: vec![task],
             end: PageEnd::More,
         });
         assert!(
             task_page
-                .text(&Navigation::default())
+                .text(&SnapshotContext::default())
                 .to_string()
                 .contains("> task")
         );
-        assert!(matches!(
-            task_page.enter(Selection::FIRST),
-            SelectedRoute::Route(_)
-        ));
+
         let history = Content::History(Page {
-            records: vec![Scenario::event()?],
+            records: vec![TaskFixture::try_from(Timestamp::now()?)?.event()],
             end: PageEnd::Complete,
         });
         assert!(
             history
-                .text(&Navigation::default())
+                .text(&SnapshotContext::default())
                 .to_string()
                 .contains("recorded by")
         );
-        assert!(matches!(
-            history.enter(Selection::FIRST),
-            SelectedRoute::Route(_)
-        ));
+
         for content in [
             Content::Features(Page {
                 records: vec![],
@@ -446,13 +397,13 @@ pub mod tests {
                 records: vec![],
                 end: PageEnd::Complete,
             }),
-            Content::Error(LedgerError::Uninitialized),
         ] {
-            assert!(matches!(
-                content.enter(Selection::FIRST),
-                SelectedRoute::Stay
-            ));
-            assert!(!content.text(&Navigation::default()).to_string().is_empty());
+            assert!(
+                !content
+                    .text(&SnapshotContext::default())
+                    .to_string()
+                    .is_empty()
+            );
         }
         Ok(())
     }
