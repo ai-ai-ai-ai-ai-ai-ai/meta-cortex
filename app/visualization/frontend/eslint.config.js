@@ -4,12 +4,7 @@ import globals from "globals";
 import svelte from "eslint-plugin-svelte";
 export default tseslint.config(
   {
-    ignores: [
-      "dist/**",
-      "node_modules/**",
-      "src/contracts.ts",
-      "src/validators.cjs",
-    ],
+    ignores: ["dist/**", "node_modules/**", "src/contracts.ts"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,

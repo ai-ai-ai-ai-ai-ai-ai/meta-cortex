@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Effect, Match } from "effect";
-import { reply, failure } from "./validators.cjs";
+import { reply, failure } from "virtual:dashboard-validators";
 import type { DesktopRead, DesktopReply, DesktopFailure } from "./contracts";
 enum ReadFailureKind {
   InvalidReply = "InvalidReply",
