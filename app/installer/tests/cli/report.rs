@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::num::NonZeroU32;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -101,9 +102,24 @@ pub(super) struct ReportPaths {
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct ReportModels {
+    pub(super) host: ReportHost,
     #[serde(rename = "gizmo-prime")]
     pub(super) gizmo_prime: ReportAgent,
     pub(super) team: ReportTeam,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct ReportHost {
+    pub(super) required_total_agents: ReportRequiredTotalAgents,
+}
+
+#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[serde(transparent)]
+pub(super) struct ReportRequiredTotalAgents(NonZeroU32);
+
+impl ReportRequiredTotalAgents {
+    pub(super) const STANDARD: Self = Self(NonZeroU32::MIN.saturating_add(19));
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
@@ -121,8 +137,18 @@ pub(super) struct ReportAgent {
 }
 
 #[cfg(test)]
-pub mod tests {
-    use super::{ReportSchemaVersion, ReportVersion};
+mod tests {
+    use super::{ReportRequiredTotalAgents, ReportSchemaVersion, ReportVersion};
+
+    #[test]
+    fn report_consumer_rejects_invalid_host_capacity() {
+        for input in ["0", "-1", "1.5", "true", "4294967296", "null"] {
+            assert!(
+                serde_saphyr::from_str::<ReportRequiredTotalAgents>(input).is_err(),
+                "{input}"
+            );
+        }
+    }
 
     #[test]
     fn report_consumer_rejects_undeclared_or_malformed_versions() {

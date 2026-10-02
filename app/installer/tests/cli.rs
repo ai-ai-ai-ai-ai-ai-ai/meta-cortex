@@ -4,8 +4,8 @@ mod report;
 use anyhow::{Context, bail};
 use meta_cortex_workbench::versions::ProtocolVersion;
 use report::{
-    InfoDocument, Integration, ModelAvailability, ReportHarness, ReportModels, ReportSchemaVersion,
-    ReportVersion,
+    InfoDocument, Integration, ModelAvailability, ReportHarness, ReportModels,
+    ReportRequiredTotalAgents, ReportSchemaVersion, ReportVersion,
 };
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -235,6 +235,10 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(codex.path, root.join("AGENTS.md"));
     assert_eq!(info.model_availability, ModelAvailability::NotChecked);
     assert_eq!(info.models.team.gizmo, info.models.gizmo_prime);
+    assert_eq!(
+        info.models.host.required_total_agents,
+        ReportRequiredTotalAgents::STANDARD
+    );
     assert_eq!(info.models.team.agent.model, "gpt-6-astra");
     assert_eq!(info.models.team.agent.reasoning_effort, "high");
     assert_eq!(fs::read_to_string(&config)?, customized);
