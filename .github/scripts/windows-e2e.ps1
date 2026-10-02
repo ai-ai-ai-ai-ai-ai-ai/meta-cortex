@@ -128,9 +128,16 @@ class WindowsInstallationScenario {
             'framework_info' { }
             default { throw 'Framework Info failed' }
         }
-        switch ($info.value.paths.project) {
-            $nativeProject { }
-            default { throw 'Framework Info did not retain the native project path' }
+        # The known local drive fixture may be returned with Windows' extended prefix.
+        $reportedProject = [string] $info.value.paths.project
+        if ($reportedProject.StartsWith('\\?\', [StringComparison]::Ordinal)) {
+            $reportedProject = $reportedProject.Substring(4)
+        }
+        $expectedProject = [IO.Path]::GetFullPath($nativeProject)
+        $reportedProject = [IO.Path]::GetFullPath($reportedProject)
+        if (-not [IO.Directory]::Exists($reportedProject) -or
+            -not [StringComparer]::OrdinalIgnoreCase.Equals($expectedProject, $reportedProject)) {
+            throw 'Framework Info did not retain the native project path'
         }
         switch (Test-Path -LiteralPath (Join-Path $nativeProject '.meta-cortex\node_modules\effect')) {
             $true { }
