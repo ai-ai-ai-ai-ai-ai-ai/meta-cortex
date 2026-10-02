@@ -33,6 +33,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app -> target
+          cache-on-failure: ${{ runner.os == 'Windows' }}
       - run: cargo fmt --all --check
       - run: cargo check --locked --workspace --all-targets
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings

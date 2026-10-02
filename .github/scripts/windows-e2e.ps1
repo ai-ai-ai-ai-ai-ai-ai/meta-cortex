@@ -72,10 +72,11 @@ class WindowsInstallationScenario {
         $evidenceDirectory = $this.Evidence
         $linkedProject = Join-Path (Split-Path -Parent $nativeProject) 'linked worktree with spaces'
         $gitDirectory = Split-Path -Parent (Get-Command git.exe).Source
+        $systemPowerShellDirectory = Split-Path -Parent (Get-Command powershell.exe).Source
         $env:META_CORTEX_HOME = $managedHome
         # Git and Windows utilities remain available; runner-hosted mise/Bun/Vale
         # are deliberately unavailable, so Initialize must install all three.
-        $env:PATH = "$env:WINDIR\System32;$env:WINDIR;$global:PSHOME;$gitDirectory"
+        $env:PATH = "$env:WINDIR\System32;$env:WINDIR;$global:PSHOME;$systemPowerShellDirectory;$gitDirectory"
         foreach ($tool in @('mise', 'bun', 'vale')) {
             switch (@(Get-Command $tool -ErrorAction SilentlyContinue).Count) {
                 0 { }
