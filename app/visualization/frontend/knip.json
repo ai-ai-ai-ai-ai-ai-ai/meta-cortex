@@ -1,5 +1,13 @@
 {
-  "entry": ["src/main.ts", "src/**/*.test.ts"],
+  "entry": [
+    "src/main.ts",
+    "src/**/*.test.ts",
+    "src/lib/components/ui/button/index.ts",
+    "src/lib/components/ui/badge/index.ts",
+    "src/lib/components/ui/card/index.ts",
+    "src/lib/components/ui/progress/index.ts",
+    "src/lib/utils.ts"
+  ],
   "project": ["src/**/*.{ts,svelte}", "tools/**/*.ts"],
   "ignore": ["src/contracts.ts", "src/validators.cjs", "src/validators.d.cts"]
 }

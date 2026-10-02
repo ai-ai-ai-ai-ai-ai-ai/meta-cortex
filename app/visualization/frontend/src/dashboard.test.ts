@@ -124,9 +124,9 @@ it("keeps full-feature counts and progress visible independently of loaded agent
   const totals = screen.getAllByRole("progressbar", {
     name: "Integrated tasks",
   });
-  expect(totals[0]?.getAttribute("value")).toBe("3");
-  expect(totals[0]?.getAttribute("max")).toBe("5");
-  expect(totals[1]?.getAttribute("max")).toBe("1");
+  expect(totals[0]?.getAttribute("aria-valuenow")).toBe("3");
+  expect(totals[0]?.getAttribute("aria-valuemax")).toBe("5");
+  expect(totals[1]?.getAttribute("aria-valuemax")).toBe("1");
   await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
   expect(refresh).toHaveBeenCalledOnce();
 });
