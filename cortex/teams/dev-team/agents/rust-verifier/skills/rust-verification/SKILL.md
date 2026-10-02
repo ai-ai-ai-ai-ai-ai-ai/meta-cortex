@@ -15,9 +15,9 @@ the verifier's outcome is a complete review, not a repaired implementation.
 
 ### Require the assigned commit
 
-1. Load the [communication protocol](spec/communication-protocol.md).
+1. Load the [communication protocol](../../../../../gizmo-team/docs/verifier-protocol.md).
    It owns request fields, report sections, result payloads, and Gizmo's responses.
-   Load [committed Git reads](spec/git-review.md) for the exact SHA, parent,
+   Load [committed Git reads](../../../../../gizmo-team/docs/committed-review.md) for the exact SHA, parent,
    inventory, patch, and file-reading commands. Run them in the assigned project repository.
 2. Require an explicit, resolvable commit SHA before starting review.
    - If it is missing, ambiguous, or unresolvable, send `need_commit` to Gizmo.
@@ -116,7 +116,7 @@ resume from the exact next unchecked entry. Continue through the last catalog en
 
 1. Record each observed violation as a separate issue, including multiple
    violations of the same rule in one file. Use the protocol's
-   [issue payload and examples](spec/communication-protocol.md#complete-issues-example).
+   [issue payload and examples](../../../../../gizmo-team/docs/verifier-protocol.md#complete-issues-example).
 2. Include the rule/source, committed location, context, offending evidence,
    required correction, and validation needed to fix the issue. Use parent
    lines when the offending content was deleted.
@@ -138,7 +138,7 @@ and validation steps. Include any unresolved blockers alongside them.
 1. Check that each required result identifies the reviewed SHA, exact command,
    workspace, target scope, execution outcome, and supporting evidence.
 2. Record missing or failed checks using the protocol's
-   [validation and verdict rules](spec/communication-protocol.md#save-one-complete-report).
+   [validation and verdict rules](../../../../../gizmo-team/docs/verifier-protocol.md#save-one-complete-report).
    A demonstrated code defect needs a repair; unavailable or ambiguous evidence
    remains a blocker. A passing command does not replace rule review.
 3. Run available read-only analysis. Ask Gizmo to arrange checks that need
@@ -152,10 +152,10 @@ the reviewed SHA, and retain every code violation already established.
 
 ### Return the complete review
 
-1. Build the protocol's [five report sections](spec/communication-protocol.md#save-one-complete-report).
+1. Build the protocol's [five report sections](../../../../../gizmo-team/docs/verifier-protocol.md#save-one-complete-report).
    Include the actual inventories and all decisions, not only counts.
 2. Reconcile exact decision keys and expected counts under the protocol's
-   [completion rules](spec/communication-protocol.md#return-the-result-and-route-it).
+   [completion rules](../../../../../gizmo-team/docs/verifier-protocol.md#return-the-result-and-route-it).
    A present but blocked decision still prevents approval.
 3. Persist the report, then send the complete `review_result` payload to Gizmo.
    The message must contain every issue and blocker with all required context.
@@ -182,7 +182,7 @@ For a review-only task, return those findings without starting a repair exercise
    not approve a replacement commit; a developer's fix list does not limit review.
 
 **Prohibited:** approve the new SHA after checking only the first issue that
-rust-dev says it fixed.
+the worker says it fixed.
 
 **Required:** recheck all earlier issues, evaluate every cataloged rule against
 the new change, and report any remaining or newly introduced violation.

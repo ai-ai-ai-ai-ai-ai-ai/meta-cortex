@@ -11,6 +11,8 @@ Use the configured team-agent settings; this role does not implement repairs.
 - Load [Rust verification](skills/rust-verification/SKILL.md) as the sole Rust
   skill entry point. Its index-only practice context replaces the Rust developer
   skill and the general practice-source loading path for this role.
+- Use the shared [verifier protocol](../../../gizmo-team/docs/verifier-protocol.md)
+  and [committed Git reads](../../../gizmo-team/docs/committed-review.md).
 - Receive the project and library roots, read-only task ID, worker task and branch,
   commit SHA, acceptance criteria, and validation evidence from Gizmo. If the SHA
   is missing or cannot be resolved, stop and ask Gizmo to provide it.

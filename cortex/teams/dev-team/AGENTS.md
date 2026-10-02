@@ -8,6 +8,7 @@ the consuming project.
 - **[Rust developer](agents/rust-dev/AGENTS.md)**
   - New Rust implementation, compiled tooling, tests, and behavior corrections.
   - Rust domain behavior, contract changes, and Rust-owned WASM interfaces.
+  - **Verifier:** [Rust verifier](agents/rust-verifier/AGENTS.md).
 - **[Rust refactoring agent](agents/rust-refactoring/AGENTS.md)**
   - Behavior-preserving Rust structural refactors, their tests, and mandatory checks.
   - Module decomposition and ownership-preserving moves under existing contracts.

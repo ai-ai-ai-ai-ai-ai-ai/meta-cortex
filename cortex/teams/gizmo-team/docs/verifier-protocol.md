@@ -1,10 +1,10 @@
-# Gizmo and Rust Verifier Protocol
+# Gizmo and Verifier Protocol
 
-Gizmo sends a commit SHA. The verifier checks every cataloged practice against
-every changed file, saves one complete report, and sends Gizmo every issue
+Gizmo sends a commit SHA. The verifier checks every rule in its skill's scope
+against every changed file, saves one complete report, and sends Gizmo every issue
 with the evidence and instructions needed to fix it.
 Gizmo owns repairs and integration.
-Use [committed Git reads](git-review.md) for executable commands. This protocol
+Use [committed Git reads](committed-review.md) for executable commands. This protocol
 defines messages and evidence; it does not authorize checkout changes.
 
 ## Required actions
@@ -12,7 +12,7 @@ defines messages and evidence; it does not authorize checkout changes.
 ### Reuse the assignment context
 
 - Use the existing host channel and read-only ledger task. Project and library
-  roots, workspace, developer task, acceptance criteria, and required validation
+  roots, workspace, worker task, acceptance criteria, and required validation
   already belong to the assignment; do not repeat them in each message.
 - Keep attempt, revision, lease, and task state in the native ledger fields.
 - Use the exact message fields and enum values defined below. Every field in
@@ -32,8 +32,8 @@ and waits before starting review.
    a full resolvable commit object ID.
 2. The verifier reviews the change introduced by that commit relative to its
    first parent. A root commit adds its entire tree. Do not construct a task-wide
-   base, follow a moving branch, or select only some practices.
-   For implementation handoffs, Gizmo ensures the developer supplied one
+   base, follow a moving branch, or select only some required rules.
+   For implementation handoffs, Gizmo ensures the worker supplied one
    consolidated task commit before sending this request. The verifier derives
    its parent from Git; no base field is added to the message.
 3. If the SHA is missing, ambiguous, or unresolvable, stop before reading the
@@ -46,7 +46,7 @@ and waits before starting review.
 5. A corrected request can resume the same task before review starts. After
    review starts, a different SHA requires a new read-only review task.
 
-**Prohibited:** replace the missing SHA with the developer branch tip.
+**Prohibited:** replace the missing SHA with the worker branch tip.
 
 **Required:** exchange these messages; the SHA below is fictional:
 
@@ -69,7 +69,7 @@ reason: The assignment lacks project_root. Provide the absolute consuming-projec
 
 ### Save one complete report
 
-Use readable Markdown in `progress.extensions.rust_verification_report`.
+Use readable Markdown in `progress.extensions.verification_report`.
 The report has the following five sections. Its inventories and decisions prove
 review coverage. Its complete repairs and blockers must also appear in the
 message to Gizmo; storing them only in the ledger is not a completed handoff.
@@ -78,16 +78,23 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
    - State the reviewed SHA and list every changed file with its change kind:
      `added`, `modified`, `deleted`, `renamed`, or `type_changed`.
      A rename includes both paths; other changes carry only their actual path.
-     Paths are relative to the assigned developer workspace.
-   - List every traversed Rust `index.yaml`, in order. For each practice, record
-     its owner, catalog path, canonical source file, and every ordered rule ID,
-     source anchor, and loaded summary. This is one practice, one source file,
-     and its complete rule set.
+     Paths are relative to the assigned worker workspace.
+   - List every loaded requirement source and traversed catalog, in order.
+     For each practice or requirement document, record
+     its owner, catalog path or `no_catalog`, canonical source file, and every
+     ordered rule ID, source anchor, and loaded summary or requirement wording.
+     This is one owner, one source file,
+     and its complete rule set. If a source has no cataloged rule IDs, use readable
+     source-qualified names in the report and inventory every distinct normative
+     decision, exception, example obligation, and validation requirement. Do not
+     treat an entire Markdown section with several decisions as one rule.
    - List each cross-rule check with its catalog path, compared rules and source
      citations, and loaded comparison cues. Catalog and source paths are relative
      to the library root, after resolving references from their containing YAML.
-     These copied cues preserve the review's catalog snapshot.
-     Use `no_checks` only when complete traversal establishes there are no check leaves.
+     Preserve the loaded cues or requirement wording as the review's source snapshot.
+     Use `no_checks` only when complete discovery establishes there are no checks.
+     Follow the selected skill's source-loading rules; this format does not
+     require an index-only reviewer to load canonical Markdown.
 2. **Rule decisions**
    - Record exactly one entry per `(rule ID, changed file)` and one per cross-rule
      check. Each entry states its key, outcome, and concrete evidence or reason.
@@ -96,8 +103,8 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
      all corresponding repair items. `not_applicable` explains why the rule
      does not apply to this file or change. `blocked` names the missing decision
      or evidence. Do not infer a decision from a short, ambiguous cue.
-   - Continue through all practices and files, retaining every violation.
-     At each practice boundary, save progress and the next unchecked rule/file
+   - Continue through the entire required scope and files, retaining every violation.
+     At each requirement-source boundary, save progress and the next unchecked rule/file
      in native `next_steps`. Unreviewed entries remain unfinished work.
 3. **Repairs and blockers**
    - Give each violation a stable issue ID and the full repair context defined
@@ -132,7 +139,7 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
      all decisions are resolved: a blocked row still prevents approval.
    - State one verdict under the rules below.
 
-**Prohibited:** save only “178 rules checked,” mark an entire practice passed,
+**Prohibited:** save only “all rules checked,” mark an entire practice passed,
 or use an empty repairs section to imply there are no violations.
 
 **Required:** retain every rule/file decision and every cross-rule decision.
@@ -144,7 +151,7 @@ review still produces a blocked verdict.
 1. Derive the verdict in this order:
    - `blocked`: any required input, inventory, decision, or evidence is incomplete
      or ambiguous. Keep all known violations in the report.
-   - `changes_required`: the review is complete and decisive, but code violations,
+   - `changes_required`: the review is complete and decisive, but violations,
      proven validation failures, or unresolved previous repairs remain.
    - `pass`: the review is complete, every applicable rule and required validation
      is satisfied, and every previous repair is fixed. No blockers remain.
@@ -162,13 +169,13 @@ review still produces a blocked verdict.
      state `kind: no_violations` when no violations have been found.
    - Every issue has `id`, `rule`, `source`, `location`, `context`, `evidence`,
      `required_fix`, and `validation`. Each value is nonempty.
-     `rule` identifies the violated catalog rule or explicit validation
+     `rule` identifies the violated inventoried rule or explicit validation
      requirement; `source` cites its canonical source or project instruction.
      `location` gives the committed path and lines, or the failing command and
      workspace for a validation-only issue. `context` explains the requirement,
      the observed violation, and relevant callers or effects. `evidence` quotes
-     the offending code or diagnostic at the reviewed SHA. `required_fix`
-     specifies the correction and affected code. `validation` states how to
+     the offending content or diagnostic at the reviewed SHA. `required_fix`
+     specifies the correction and affected files. `validation` states how to
      verify the fix, including expected behavior and applicable commands.
    - `blockers` is `kind: blocked` with a nonempty `items` list, or the unit
      state `kind: no_blockers`. Each blocker has nonempty `id`, `context`, and
@@ -176,48 +183,49 @@ review still produces a blocked verdict.
      exact input or decision Gizmo must obtain. A blocked verdict still carries
      every known issue with all its repair context.
 5. Gizmo checks the inventories, decisions, and evidence before acting:
-   - Apply the [task boundary](../../../../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
+   - Apply the [task boundary](../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
      For review-only work, return the complete result through the hierarchy and
      stop. Verdicts and `required_fix` fields do not authorize implementation.
      The following integration and repair actions apply only within authorized
      implementation or an explicitly requested workflow exercise. Preserve
      unrelated findings in the result without assigning their repair.
-   - For `pass`, verify the developer's ready checkpoint and branch head match
+   - For `pass`, verify the worker's ready checkpoint and branch head match
      the reviewed SHA, then follow normal integration and combined checks.
-   - For `changes_required`, send every in-scope implementation correction to rust-dev
+   - For `changes_required`, send every in-scope implementation correction to the responsible worker
      as one ordinary repair assignment. Preserve every issue's rule/source,
      location, context, evidence, required fix, and validation instructions;
      do not reduce the payload to titles or a shorter selection. Require strict
      rule compliance. Keep verifier instructions and review bookkeeping out of
-     developer context.
+     worker context.
    - For `blocked`, keep integration stopped and supply missing evidence or route
      the policy question to its subject owner. Authorized repairs may proceed, but
      they do not clear unrelated blockers.
-6. A repair commit gets a new task and a complete review of all practices.
+6. A repair commit gets a new task and a complete review of the entire required scope.
    Gizmo supplies the previous report to the verifier as assignment context.
-   Do not review only the fixes. A changed catalog also requires a fresh review.
+   Do not review only the fixes. Changed requirement sources also require a fresh
+   review; do not mix source snapshots.
 
 **Prohibited:** send “one type issue; see the ledger,” stop after the first
-violation, or forward only the most severe issue to rust-dev.
+violation, or forward only the most severe issue to the responsible worker.
 
-**Required:** finish the catalog traversal and send every issue with its full
+**Required:** finish the required review and send every issue with its full
 repair context, as in the following YAML example. For authorized implementation,
-Gizmo gives rust-dev all in-scope repairs and obtains a complete review of the
-replacement commit. For review-only work, Gizmo returns the complete findings.
+Gizmo gives the responsible worker all in-scope repairs and obtains a complete
+review of the replacement commit. For review-only work, Gizmo returns the complete findings.
 
 ## Complete issues example
 
 This fictional result demonstrates two separately explained issues in different
-files. The paths, code, and SHA are illustrative; it is not a review of the real
-Rust catalog. A real result must contain every issue found across all practices,
+files. The paths, code, and SHA are illustrative; they do not describe an actual
+review. A real result must contain every issue found across the entire required scope,
 with no truncation or fixed limit on the number of issues.
 
 **Prohibited:** send only `customer-id-type` because it was found first, or send
 both IDs without the code context and instructions needed to fix them.
 
 **Required:** send both complete issues in the message to Gizmo. Each issue is
-usable as an ordinary rust-dev repair requirement without opening the verifier's
-private conversation or reconstructing the problem from a title:
+usable as an ordinary repair requirement for its owner without opening the
+verifier's private conversation or reconstructing the problem from a title:
 
 ```yaml
 type: review_result
@@ -296,12 +304,49 @@ For a blocked review with known violations, keep the entire `issues` payload
 and add the unresolved blockers. Do not replace the findings with a blocker
 summary. Gizmo must receive both the repair work and the decisions still needed.
 
+### Documentation issue example
+
+The same payload describes documentation defects. This fictional issue uses an
+uncataloged writing rule identified by its source section; it introduces no new
+message fields or routing instructions.
+
+**Prohibited:** send "add examples" without the rule, committed section, or
+the decision its examples must demonstrate.
+
+**Required:** send the complete issue through the ordinary `review_result`:
+
+```yaml
+type: review_result
+commit_sha: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+verdict: changes_required
+issues:
+  kind: violations
+  items:
+    - id: missing-validation-pair
+      rule: focused_examples:demonstrate_the_difference
+      source: teams/ai-team/agents/tech-writer/skills/context-engineering/practices/focused-examples.md#demonstrate-the-difference
+      location: docs/review.md:12-14 at the reviewed commit
+      context: >-
+        The validation section requires identifying unexecuted checks, but has
+        no prohibited/required pair demonstrating that reporting decision.
+      evidence: >-
+        Validation reports must name checks that have not run.
+      required_fix: >-
+        Add a pair contrasting an unsupported completion claim with a report
+        that names the specific unexecuted check. Preserve the reporting rule.
+      validation: >-
+        Review both alternatives against the canonical writing practice and
+        run the assignment's documentation audit on docs/review.md.
+blockers:
+  kind: no_blockers
+```
+
 ## Prohibited actions
 
-- Do not edit code or catalogs, contact rust-dev directly, or approve your own fixes.
+- Do not edit reviewed files, contact the worker directly, or approve your own fixes.
 - Do not replace exhaustive decisions with counts, a summary, or passing build logs.
-- Do not load Rust practice Markdown to resolve a blocked cue. Ask Gizmo for the
-  subject-owner decision; the verifier's Rust practice context stays index-only.
+- Follow the selected verifier skill's source-loading rules. If its permitted
+  sources cannot resolve a decision, report the ambiguity to Gizmo and the subject owner.
 - Do not claim the ledger automatically validates this report. Gizmo and the
   verifier must inspect its completeness and evidence explicitly.
 

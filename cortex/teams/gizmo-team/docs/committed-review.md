@@ -1,7 +1,7 @@
 # Read the Assigned Git Commit
 
-Rust verifier reads committed objects without changing a checkout. This document
-owns its Git commands. The communication protocol owns messages and reports;
+Every verifier reads committed objects without changing a checkout. This document
+owns its Git commands. The [communication protocol](verifier-protocol.md) owns messages and reports;
 the delivery team's local-feature practice owns commits and merges.
 
 ## Required actions
@@ -70,10 +70,10 @@ report missing objects before claiming a complete inventory.
    Preserve spaces, tabs, and newlines in paths. Unexpected statuses require
    explanation before the inventory can be called complete.
 3. Keep the second command's patch beside that inventory. Include every path,
-   not only Rust files. Do not use combined merge output or a branch-wide range
+   not only subject-specific files. Do not use combined merge output or a branch-wide range
    as a substitute for the specified first-parent comparison.
 
-**Prohibited:** parse `git diff --name-only` by spaces and lose `src/order item.rs`,
+**Prohibited:** parse `git diff --name-only` by spaces and lose `docs/order item.md`,
 or use a merge's combined diff and miss a first-parent change.
 
 **Required:** retain the NUL-delimited path as one inventory entry. For a rename,
@@ -125,16 +125,16 @@ the reviewed commit. Keep an unreadable object as an explicit blocker.
 
 ### Finish without changing Git state
 
-1. Apply every catalog rule and save the complete report under the communication
+1. Apply every required rule and save the complete report under the communication
    protocol. A successful Git command establishes available evidence, not compliance.
 2. Return the reviewed SHA, full findings, and blockers to Gizmo. The verifier
    creates no code commit or checkpoint; its read-only ledger result is the handoff.
 3. If validation needs a checkout, ask Gizmo to have the integration owner prepare
    the exact revision and the assigned validation owner run the required commands.
    Do not check out the SHA, reset, clean, stage, commit, merge, or modify the
-   developer's workspace. Existing matching validation evidence can be reused.
+   worker's workspace. Existing matching validation evidence can be reused.
 
-**Prohibited:** check out the reviewed SHA in the developer's worktree to run
+**Prohibited:** check out the reviewed SHA in the worker's worktree to run
 tests, then commit a report to make the read-only task ready.
 
 **Required:** inspect objects in place, record the report in the ledger, and

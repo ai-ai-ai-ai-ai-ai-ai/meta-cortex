@@ -12,7 +12,7 @@ Workers receive the relevant ordinary Git procedure; they do not need this proto
 
 1. Receive Gizmo's passing report and integration assignment. Use these inputs:
    - `reviewed_sha`: full commit SHA from the passing report.
-   - `checkpoint_sha`: full SHA from the developer's current ready ledger record.
+   - `checkpoint_sha`: full SHA from the worker's current ready ledger record.
    - `task_path` and `task_branch`: assigned worker worktree and branch.
    - `feature_path`: assigned integration worktree.
    - `task_base_sha`: assigned consolidation base for a one-commit handoff.
@@ -53,7 +53,7 @@ separately; a task review does not establish that the combined feature passed.
 1. Use ordinary
    [integration failure recovery](../practices/local_feature/branch-integration.md#resolve-integration-failures)
    for Git conflicts or failed combined checks. Return the exact commit
-   references and failure outcome to Gizmo; the assigned developer inspects
+   references and failure outcome to Gizmo; the assigned worker inspects
    those revisions and owns implementation corrections and commits.
 2. When repairs, conflict resolution, or consolidation produce a replacement
    task SHA, require Gizmo to obtain a complete review of that SHA before retrying

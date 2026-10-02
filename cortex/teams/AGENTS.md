@@ -7,7 +7,7 @@ applies to its assignment.
 
 - The [Gizmo team](gizmo-team/AGENTS.md) contains Gizmo Prime and Team Gizmo, which own feature coordination and agent assignments.
 - Agents in the [development team](dev-team/AGENTS.md), [security team](security-team/AGENTS.md), and [SRE team](sre-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
-- The [AI team](ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer subagent.
+- The [AI team](ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer and read-only tech writer verifier.
 - The [delivery team](delivery-team/AGENTS.md) owns local feature integration
   and GitHub pull-request management through separate agents. The SRE CI/CD
   agent owns pipeline execution and infrastructure, using project-owned procedures.
@@ -71,6 +71,9 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
 - Keep the team directory complete. Each team's `AGENTS.md` catalogs every
   agent under its `agents/` directory with responsibilities, assignment boundaries, a role link,
   and any incomplete-role status, so Team Gizmo can select agents from these summaries.
+- A worker entry may declare a **Verifier** link to a cataloged read-only role.
+  Team Gizmo follows the shared [verification handoff](gizmo-team/docs/agent-verification.md)
+  for that pair; the verifier's role and linked skill own its review requirements.
 - Gizmo Prime launches the single Team Gizmo as a subagent.
 - Team Gizmo launches the team agents needed for its assignments as subagents.
 - Team Gizmo assigns instructions, specifications, skills, practices, and catalog
