@@ -128,10 +128,19 @@ export class AgentContribution {
   }
   latest(): TaskFlow {
     return (
-      [...this.tasks].sort(
-        (left, right) =>
-          right.task.common.last_update - left.task.common.last_update,
-      )[0] ?? this.first()
+      [...this.tasks].sort((left, right) => {
+        const leftState = new TaskPresentation(left.task).status();
+        const rightState = new TaskPresentation(right.task).status();
+        const priority =
+          AgentContribution.priority[leftState] -
+          AgentContribution.priority[rightState];
+        switch (priority) {
+          case 0:
+            return right.task.common.last_update - left.task.common.last_update;
+          default:
+            return priority;
+        }
+      })[0] ?? this.first()
     );
   }
   checkpoint(): string {

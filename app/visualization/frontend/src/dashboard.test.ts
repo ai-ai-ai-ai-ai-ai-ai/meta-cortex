@@ -899,7 +899,7 @@ it("does not infer Prime or Host above a missing loaded Team activity", () => {
   expect(graph.nodes[0]?.data.state).toBe("No activity on this page");
   expect(graph.nodes[1]?.data.state).toBe("integrated");
 });
-it("counts repeated valid worker activities once in own and subtree aggregates", () => {
+it("counts repeated valid activities once and represents older Working before newer Completed", () => {
   const fixture = new HierarchyFixture();
   const definitions: ReadonlyArray<HierarchyActivity> = [
     {
@@ -950,6 +950,31 @@ it("counts repeated valid worker activities once in own and subtree aggregates",
       .flatMap((edge) => edge.tasks)
       .map((task) => task.task.common.id),
   ).toEqual(definitions.map((definition) => definition.id));
+  switch (worker?.activity.kind) {
+    case ActivityKind.Recorded: {
+      const group = worker.activity.group;
+      const working = group.first();
+      const agent: AgentId = { team: "Development", role: "TypescriptDev" };
+      working.task.state = {
+        kind: "active",
+        assignment: {
+          agent,
+          attempt: 1,
+          expires_at: 3000,
+          phase: { kind: "working" },
+        },
+      };
+      working.task.common.last_update = 1000;
+      expect(group.status()).toBe("working");
+      expect(group.latest()).toBe(working);
+      expect(group.latest().task.common.id).toBe("worker-one");
+      expect(group.tasks).toHaveLength(3);
+      break;
+    }
+    case ActivityKind.Absent:
+    case undefined:
+      break;
+  }
 });
 it("keeps migrated creator and history worker evidence outside recorded reporting ancestry", () => {
   const fixture = new Fixture();
