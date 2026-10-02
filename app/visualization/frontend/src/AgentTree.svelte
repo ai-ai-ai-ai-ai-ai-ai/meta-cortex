@@ -30,7 +30,7 @@
       Descendant progress excludes each coordinator’s own activities.
     </p>
     <ul class="m-0 list-none p-0">
-      {#each tree.groups() as node (node.id())}
+      {#each tree.groups() as node (node.id().serialize())}
         <ReportingBranch {node} {select} {panel} />
       {/each}
     </ul>

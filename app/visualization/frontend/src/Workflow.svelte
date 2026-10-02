@@ -5,7 +5,7 @@
   import type { FeatureFlow, TaskV2 } from "./contracts";
   import { FlowPresentation, FlowView, GraphKind, NodeKind } from "./workflow";
   import type { DiagramNode } from "./workflow";
-  import { AgentContribution, PanelKind } from "./agent-tree";
+  import { AgentContribution, PanelKind, ActivityKind } from "./agent-tree";
   import type { AgentPanel, AgentSelection } from "./agent-tree";
   import AgentTree from "./AgentTree.svelte";
   import AgentInspector from "./AgentInspector.svelte";
@@ -57,6 +57,21 @@
       case NodeKind.Branch:
         return;
       case NodeKind.Agent:
+        switch (node.data.activity.kind) {
+          case ActivityKind.Absent:
+            return;
+          case ActivityKind.Recorded: {
+            const group = node.data.activity.group;
+            const selection: AgentSelection = {
+              group,
+              task: group.latest(),
+              origin: `view-${view}`,
+            };
+            open(selection);
+            return;
+          }
+        }
+        break;
       case NodeKind.Task:
         for (const item of node.data.tasks) {
           const group = new AgentContribution(node.data.actor, [
