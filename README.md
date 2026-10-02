@@ -372,8 +372,16 @@ summaries, status badges, checkpoint commits, and integration progress. Select
 an agent or task to open its closable detail panel; narrow windows use a drawer.
 Graph, Git, and History views offer recorded relationships, dependencies,
 integrations, and recent activity. Full-feature totals summarize task states;
-tree rows and contribution panels cover the selected task page. The hierarchy
-groups recorded creators and workers by role, not host sessions.
+tree rows and contribution panels cover the selected task page. For tasks with
+`Assigned` ownership, the hierarchy follows the assigned role's recorded
+`reports_to` target. Each coordinator's own activities are separate from
+descendant workflow progress. Rows represent roles, not host sessions.
+A recorded reporting target without its own activity on this page shows
+`No activity on this page`; it has no inferred status or upstream reporting line.
+Historical tasks with `Unrecorded` ownership appear separately under `Created by`
+with their recorded creator and available worker evidence from task history;
+their reporting line stays unrecorded. Task dependencies remain separate from
+reporting relationships.
 Framework lifecycle responsibilities are shown separately from ledger evidence.
 Each task projection includes its latest 100 events; task history can page through
 older attempts and checkpoints. Runtime parent session links and Git authorship
