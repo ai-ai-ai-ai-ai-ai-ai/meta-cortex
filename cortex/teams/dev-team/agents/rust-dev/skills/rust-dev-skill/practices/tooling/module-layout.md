@@ -43,7 +43,9 @@ pub mod worker;
 Normal `mod` and `pub mod` declarations are required to connect module files.
 Use `pub mod` for public modules and `mod` for private modules; this filename
 convention does not change visibility. It prohibits the filename `mod.rs`, not
-the `mod` keyword.
+the `mod` keyword. Inline modules, including the private
+`#[cfg(test)] mod tests { ... }` module required by
+[test placement](rust-testing.md#test-placement), remain permitted.
 
 The convention also applies recursively: `agent/worker.rs` owns children under
 `agent/worker/`. Crate entry points retain `lib.rs` and `main.rs`; integration

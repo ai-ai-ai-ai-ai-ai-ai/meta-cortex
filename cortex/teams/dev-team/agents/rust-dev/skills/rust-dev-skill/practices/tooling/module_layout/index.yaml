@@ -18,7 +18,7 @@ related:
 rules:
   - id: module_layout:named_files
     source: ../module-layout.md#use-named-module-files
-    summary: Use named module files instead of mod.rs.
+    summary: Use named module files instead of mod.rs; permit inline modules.
   - id: module_layout:preserve_resolution
     source: ../module-layout.md#preserve-resolution-when-moving-modules
     summary: Preserve module identity and references when moving files.
