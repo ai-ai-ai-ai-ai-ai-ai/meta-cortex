@@ -72,6 +72,7 @@ pub mod tests {
     use super::RepositoryId;
     use crate::LedgerError;
     use std::fs;
+    #[cfg(unix)]
     use std::os::unix::fs::symlink;
     use std::path::Path;
     use std::thread;
@@ -98,15 +99,18 @@ pub mod tests {
             "broken ID"
         );
         fs::remove_file(root.join(RepositoryId::FILE))?;
-        symlink(
-            git.path().join("info/exclude"),
-            root.join(RepositoryId::FILE),
-        )?;
-        assert!(matches!(
-            RepositoryId::initialize(root, git.path()),
-            Err(LedgerError::Invalid(_))
-        ));
-        assert_eq!(exclusions, fs::read(git.path().join("info/exclude"))?);
+        #[cfg(unix)]
+        {
+            symlink(
+                git.path().join("info/exclude"),
+                root.join(RepositoryId::FILE),
+            )?;
+            assert!(matches!(
+                RepositoryId::initialize(root, git.path()),
+                Err(LedgerError::Invalid(_))
+            ));
+            assert_eq!(exclusions, fs::read(git.path().join("info/exclude"))?);
+        }
         Ok(())
     }
 
