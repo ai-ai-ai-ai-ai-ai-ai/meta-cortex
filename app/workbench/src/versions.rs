@@ -69,6 +69,40 @@ impl TryFrom<i64> for RecordVersion {
     }
 }
 
+/// Current task shape. V1 payloads are decoded by the separate legacy task record.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(try_from = "i64", into = "i64")]
+#[schemars(with = "i64")]
+pub enum TaskRecordVersion {
+    V2,
+}
+
+impl TaskRecordVersion {
+    pub const CURRENT: Self = Self::V2;
+}
+
+impl From<TaskRecordVersion> for i64 {
+    fn from(version: TaskRecordVersion) -> Self {
+        match version {
+            TaskRecordVersion::V2 => 2,
+        }
+    }
+}
+
+impl TryFrom<i64> for TaskRecordVersion {
+    type Error = VersionParseError;
+
+    fn try_from(version: i64) -> Result<Self, Self::Error> {
+        match version {
+            2 => Ok(Self::V2),
+            _ => Err(VersionParseError::Unsupported {
+                schema: VersionFamily::TaskRecord,
+                version: VersionNumber::from(version),
+            }),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize)]
 #[serde(try_from = "i64", into = "i64")]
 pub enum StorageVersion {
@@ -120,6 +154,8 @@ pub enum VersionFamily {
     Command,
     #[display("record")]
     Record,
+    #[display("task record")]
+    TaskRecord,
     #[display("database")]
     Database,
 }

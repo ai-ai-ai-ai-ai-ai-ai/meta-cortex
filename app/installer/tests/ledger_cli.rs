@@ -10,8 +10,8 @@ use meta_cortex_workbench::model::{
     Assignment, Check, CheckOutcome, EventKind, LeaseHealth, Phase, Progress, Workspace,
 };
 use meta_cortex_workbench::request::{
-    ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
-    StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
+    AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery,
+    InitFeature, StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
     Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
@@ -64,6 +64,7 @@ enum FeatureOperation {
 #[serde(tag = "name", content = "arguments", deny_unknown_fields)]
 enum TaskOperation {
     Create(CreateTask),
+    Assign(AssignTask),
     Get(TaskQuery),
     History(TaskQuery),
     Claim(ClaimTask),
@@ -606,7 +607,7 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         task,
         workbench,
     } = catalog.commands;
-    assert_eq!([framework.len(), feature.len(), task.len()], [2, 3, 6]);
+    assert_eq!([framework.len(), feature.len(), task.len()], [2, 3, 7]);
     for command in &framework {
         assert!(matches!(command.example.operation, Operation::Framework(_)));
     }

@@ -59,6 +59,11 @@ for that assignment rather than preloading unrelated agents.
 - Read and follow the [agent ledger protocol](../../docs/agent-ledger.md).
   Recover existing status before scheduling work. Record bounded tasks before
   launching workers and pass their feature/task IDs with every assignment.
+- Maintain Team Gizmo's own coordination activity. Apply the
+  [entire feature workflow](../../docs/agent-ledger.md#record-the-entire-feature-workflow)
+  to every selected role, including workspace preparation, integration,
+  verifiers, and PR delivery. Record each queued task's agent and reporting line
+  with `Task / Assign` before launch or resumed work.
 - Turn the feature assignment into bounded tasks for the appropriate agents.
 - Preserve the parent's permitted changes and stopping condition under the
   [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).

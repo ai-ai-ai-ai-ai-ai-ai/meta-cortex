@@ -1,7 +1,8 @@
 # Agent Work Ledger
 
-The ledger is the durable record of a feature's assignments, progress, and
-integration. Host messages notify coordinators; the ledger lets a replacement
+The ledger is the durable record of the entire feature workflow: coordination,
+assignments, implementation, verification, integration, and delivery.
+Host messages notify coordinators; the ledger lets a replacement
 coordinator or worker recover without the final message.
 
 ## Storage and ownership
@@ -45,16 +46,22 @@ agent, or worktree. Preserve the database and its engine-managed sidecars togeth
 - Workers claim their assigned tasks and persist their own progress and results.
 - In single-agent mode, the current agent performs these responsibilities locally.
 
+Every participating role needs its own activity record, including both Gizmo
+coordinators, workspace preparation, integration, verifiers, and PR delivery.
+An integration event on a developer's task does not replace the integration
+agent's own activity. An integrated task does not mean the feature was accepted
+or its PR delivered.
+
 Everyone assigned to the feature may read its status and history. Reading does
 not authorize claiming a peer's assignment, expanding scope, or bypassing Gizmo.
 Actor names describe trusted workflow participants; they are not credentials.
 The CLI does not launch, stop, or monitor host agents.
 
-**Prohibited:** create a database inside each worker checkout or wait until a
-worker's final message to record its assignment.
+- **Prohibited:** create a database inside each worker checkout or wait until a
+  worker's final message to record its assignment.
 
-**Required:** initialize one ledger for the feature and supply its ID to every
-worker before launch.
+- **Required:** initialize one ledger for the feature and supply its ID to every
+  worker before launch.
 
 ## Discover and invoke commands
 
@@ -198,18 +205,21 @@ detail, where paging does not apply. Initial views are:
 - **Features:** `view: {kind: Features}` lists feature IDs, recorded branches,
   and objectives in ID order.
 - **Tasks:** `view: {kind: Tasks, feature: example-feature}` lists tasks in ID
-  order with ID, state, revision, and progress summary.
+  order with ID, state, revision, progress summary, assigned agent, and reporting
+  coordinator. The recorded lines show Gizmo Prime reporting to the host,
+  Team Gizmo reporting to Prime, and specialists reporting to Team Gizmo.
 - **Task:** `view: {kind: Task, query: {feature: example-feature, task: example-task}}`
-  shows objective, revision, attempt, created/updated/progress timestamps,
+  shows objective, assigned agent and reporting line, revision, attempt, created/updated/progress timestamps,
   recorded workspace, state, checkpoint and integration SHA when recorded,
   progress summary, acceptance criteria, dependencies, findings, next steps,
   checks with outcome, command and evidence, and task-specific extensions.
+  An active task also shows its claimed agent, expiration, and blocked reason.
 - **History:** `view: {kind: History, query: {feature: example-feature, task: example-task}}`
   lists events newest revision first with kind, revision, recorded-by actor,
   and note. Enter opens the event kind, revision, timestamp, actor, note, and
   full task snapshot at that revision.
 
-States distinguish queued, working, blocked, ready, integrated, and cancelled.
+States distinguish queued, working, blocked, ready, integrated, completed, and cancelled.
 Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
@@ -220,6 +230,19 @@ result, not a new test execution by the dashboard.
 **Prohibited:** treat a historical passed check as a fresh validation run.
 
 **Required:** inspect its event revision and recorded evidence before reporting it.
+
+### Historical ownership
+
+Version `1` tasks did not record intended ownership or reporting lines.
+Their views label that information `unrecorded`. A retained active or ready
+claim can identify the claimed role, but it cannot establish a reporting line.
+Current views and historical event snapshots use only their recorded information.
+
+**Prohibited:** infer that a historical integration event proves a coordinator
+or integration activity existed.
+
+**Required:** show the old reporting line as unrecorded and record the actual
+roles and activities when continuing the feature.
 
 ### Keys, refresh, and pages
 
@@ -265,6 +288,77 @@ reports the required migration instead of upgrading it.
 
 - **Required:** complete the existing Workbench upgrade workflow, then retry observation.
 
+## Record the entire feature workflow
+
+Use ordinary tasks for every feature responsibility. A task identifies an
+activity; `Task / Assign` records its intended role and reporting coordinator.
+The reporting line is scoped to the feature's single Prime and Team Gizmo.
+Different tasks may belong to the same role. Role identities describe recorded
+responsibilities, not host processes or proof that a subagent was launched.
+
+1. Prepare or reuse the feature workspace and initialize its ledger through the
+   existing bootstrap procedure. Before routine assignments begin, record Prime,
+   Team Gizmo, and workspace preparation activities. Include the initial scope,
+   branch decision, and workspace setup results in their progress. If the ledger
+   already exists, record coordination before launching downstream work.
+2. Create a `read_only` activity for Prime and another for Team Gizmo.
+   Use `Task / Assign` with their actual roles and reporting lines. Each
+   coordinator claims its own activity and records decisions, findings,
+   acceptance checks, blockers, and next steps through `Task / Update`.
+3. Create and assign activities for all selected specialists before their work.
+   Include integration, verifier, documentation, security, pipeline, and PR
+   responsibilities when selected. Integration and PR operations on the shared
+   feature worktree use `workspace: {kind: feature}`. Implementation tasks retain
+   their separate Git workspaces. Read-only review and coordination use
+   `workspace: {kind: read_only}`.
+4. Keep each activity's revision and attempt in its assignment context. Record
+   progress at milestones and heartbeat while waiting for downstream results.
+   Use a blocked phase when progress depends on a decision or failed operation.
+   Never make a worker depend on completing its supervising coordinator;
+   dependency gates require integrated or completed work.
+5. Workers record readiness before notifying their coordinator. Integrate code
+   tasks with the verified feature SHA. Accept ready read-only or feature
+   activities through `Task / Coordinate` with `action.kind: complete`.
+   Completion retains their ownership, reporting line, and evidence. Feature
+   readiness requires a clean feature worktree and no worker checkpoint.
+6. Complete Team Gizmo's activity only after the selected local or PR delivery
+   outcome is recorded. Prime accepts that result, records its final acceptance
+   evidence, and completes its own activity before the final host handoff.
+   In single-agent mode, the current agent records these responsibilities locally
+   without claiming that separate host agents ran.
+
+For example, after creating integration's activity, assign its reporting line:
+
+```yaml
+version: 1
+project: /absolute/project
+operation:
+  group: Task
+  command:
+    name: Assign
+    arguments:
+      feature: example-feature
+      task: integration
+      expected_revision: 1
+      actor: {team: Gizmo, role: Gizmo}
+      assignment:
+        agent: {team: Delivery, role: IntegrationAgent}
+        reports_to: {kind: Gizmo, coordinator: Gizmo}
+```
+
+Use the observed revision in actual calls. Prime's assignment uses
+`agent: {team: Gizmo, role: GizmoPrime}` with `reports_to: {kind: Host}`.
+Team Gizmo uses `agent: {team: Gizmo, role: Gizmo}` with
+`reports_to: {kind: Gizmo, coordinator: GizmoPrime}`. Every specialist reports to
+`{kind: Gizmo, coordinator: Gizmo}`. Assignment validates this hierarchy and
+survives claim, readiness, integration, completion, cancellation, and requeue.
+
+**Prohibited:** record only developer tasks, put relationships in extensions,
+or mark the feature complete while integration and PR delivery are unrecorded.
+
+**Required:** retain Prime → Team Gizmo → integration and specialist reporting
+lines, with progress and acceptance evidence on each participating role's activity.
+
 ## Assignment and worker lifecycle
 
 Prepare the feature branch and worktree using the delivery team's existing Git
@@ -275,11 +369,15 @@ workflow. The ledger records these resources; it does not create or merge them.
    initialization reopens it; conflicting metadata is rejected.
 2. Team Gizmo runs `Task / Create` before launching each worker. Supply its
    objective, at least one acceptance criterion, dependencies, initial continuation
-   notes, and either a Git workspace or `kind: read_only`. Dependencies must
+   notes, and the appropriate workspace. Dependencies must
    already exist; self-dependencies and duplicates are rejected.
+   Run `Task / Assign` on the queued task with its observed revision, intended
+   agent, and reporting line. Only queued tasks accept assignment changes.
+   Reassignment to another role requires an inspected requeue first.
 3. The worker reads `Task / Get` and runs `Task / Claim` with its catalog agent identity,
    expected revision, and TTL. A claim succeeds only for a queued task whose
-   dependencies are integrated. The result contains its new attempt and revision.
+   dependencies are integrated or completed. The agent must match recorded
+   ownership when available. The result contains its new attempt and revision.
 4. While working, the worker runs `Task / Update` at meaningful milestones and
    before a potentially long operation. Choose the action from the catalog:
    - `heartbeat` renews activity and expiration without claiming meaningful progress.
@@ -391,7 +489,18 @@ the recorded task plus any newer Git changes.
 ## Versions and durable contracts
 
 Command protocol, persisted record, and physical database versions are distinct.
-This release writes command/record version `1` and database version `3`.
+This release writes command, feature, and event-envelope version `1`, task
+record version `2`, and database version `3`. `Task / Assign` extends command
+discovery without changing existing request shapes. Task readers explicitly
+convert supported version `1` records into the current model with unrecorded
+ownership; they never invent historical reporting lines. Historical envelopes,
+actors, revisions, attempts, timestamps, and evidence remain intact.
+
+The physical database schema is unchanged. Observation converts old task records
+for display without rewriting them. A later task update or an existing storage
+migration writes the current task shape, including in migrated event snapshots.
+Older executables reject version `2` tasks; stop older writers before upgrading.
+
 Version `3` uses a feature primary key, a `(feature_id, id)` task primary key,
 and a `(feature_id, task_id, revision)` event primary key. Foreign keys require
 each task's feature and each event's task to exist; parent deletion and key
@@ -400,6 +509,8 @@ feature status and ordered task history without redundant indexes. Required
 columns reject nulls, revisions must be positive, and JSON IDs and revisions
 must match their relational columns. Every Workbench connection enables foreign
 keys. JSON retains progress, findings, checks, and task snapshots.
+
+### Storage migration and supported readers
 
 Version `1` and `2` databases migrate transactionally, retaining records and
 history. On first access, Workbench imports the old
@@ -412,7 +523,7 @@ removed together. Never resume older writers against those backups. Unsupported
 versions are rejected; the CLI never resets a database or guesses how to decode
 an unknown record.
 
-There are no historical command/record formats before this feature's version
+There are no historical command/record formats before version
 `1`. When evolving those formats, retain typed readers for the current version
 and up to two previously released versions. Add explicit conversions into the
 current domain model and fixture tests before advancing the writer. Do not

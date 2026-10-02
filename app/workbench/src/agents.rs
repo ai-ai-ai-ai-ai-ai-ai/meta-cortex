@@ -1,4 +1,5 @@
 //! Agent identities preserve the membership defined by Cortex's team catalogs.
+use derive_more::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -15,25 +16,31 @@ use std::path::PathBuf;
 /// use meta_cortex_workbench::agents::SreAgent;
 /// let agent = SreAgent::RustDev;
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "team", content = "role", deny_unknown_fields)]
 #[schemars(description = "An agent role scoped to its owning Cortex team.")]
 pub enum AgentId {
+    #[display("Gizmo/{_0}")]
     Gizmo(GizmoAgent),
+    #[display("Development/{_0}")]
     Development(DevelopmentAgent),
+    #[display("Ai/{_0}")]
     Ai(AiAgent),
+    #[display("Security/{_0}")]
     Security(SecurityAgent),
+    #[display("Sre/{_0}")]
     Sre(SreAgent),
+    #[display("Delivery/{_0}")]
     Delivery(DeliveryAgent),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 pub enum GizmoAgent {
     GizmoPrime,
     Gizmo,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 pub enum DevelopmentAgent {
     RustDev,
     RustRefactoring,
@@ -43,30 +50,43 @@ pub enum DevelopmentAgent {
     WebDesigner,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 pub enum AiAgent {
     TechWriter,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 pub enum SecurityAgent {
     SecurityAgent,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 pub enum SreAgent {
     CicdAgent,
     DockerSpecialist,
     KubernetesSpecialist,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
 pub enum DeliveryAgent {
     IntegrationAgent,
     PrAgent,
 }
 
 impl AgentId {
+    /// The framework's reporting hierarchy; this is workflow metadata, not authorization.
+    pub fn reports_to(self) -> ReportingTarget {
+        match self {
+            Self::Gizmo(GizmoAgent::GizmoPrime) => ReportingTarget::Host,
+            Self::Gizmo(GizmoAgent::Gizmo) => ReportingTarget::Gizmo(GizmoAgent::GizmoPrime),
+            Self::Development(_)
+            | Self::Ai(_)
+            | Self::Security(_)
+            | Self::Sre(_)
+            | Self::Delivery(_) => ReportingTarget::Gizmo(GizmoAgent::Gizmo),
+        }
+    }
+
     /// Resolve the actual role instructions relative to the Cortex library root.
     /// Directory spellings belong at this filesystem boundary, not on the wire.
     pub fn instructions_path(self) -> PathBuf {
@@ -111,6 +131,15 @@ impl AgentId {
         };
         PathBuf::from(path)
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "kind", content = "coordinator", deny_unknown_fields)]
+pub enum ReportingTarget {
+    #[display("host")]
+    Host,
+    #[display("Gizmo/{_0}")]
+    Gizmo(GizmoAgent),
 }
 
 #[cfg(test)]

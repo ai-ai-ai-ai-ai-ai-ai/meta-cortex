@@ -10,10 +10,11 @@ use meta_cortex_visualization::{DashboardMode, DashboardRequest, DashboardView};
 use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::PageIndex;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+use meta_cortex_workbench::model::workflow::TaskAssignment;
 use meta_cortex_workbench::model::{Progress, Workspace};
 use meta_cortex_workbench::request::{
-    ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
-    StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
+    AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery,
+    InitFeature, StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
     Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
@@ -86,7 +87,8 @@ impl Catalog {
         let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
         let worker = AgentId::Development(DevelopmentAgent::RustDev);
         let ttl = LeaseSeconds::TEN_MINUTES;
-        let claimed_revision = Revision::INITIAL.advance()?;
+        let assigned_revision = Revision::INITIAL.advance()?;
+        let claimed_revision = assigned_revision.advance()?;
         let heartbeat_revision = claimed_revision.advance()?;
         let examples = [
             CommandExample {
@@ -143,7 +145,7 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Record a bounded assignment before launching its worker. Dependencies must already exist.",
+                    "Record a bounded assignment before launching its worker. Then use Task / Assign to record the intended agent and its reporting coordinator. Dependencies must already exist; coordinator activities and delivery work also need tasks.",
                 ),
                 operation: Operation::Task(TaskOperation::Create(CreateTask {
                     feature: feature.clone(),
@@ -160,6 +162,18 @@ impl Catalog {
                         checks: Vec::new(),
                         extensions: Extensions::default(),
                     },
+                })),
+            },
+            CommandExample {
+                description: CommandSummary::from(
+                    "Record a queued task's agent and reporting line before launch. Gizmo Prime reports to the host, Team Gizmo to Prime, and every specialist (including integration and PR delivery) to Team Gizmo. Assignment survives readiness, integration, completion, cancellation and requeue.",
+                ),
+                operation: Operation::Task(TaskOperation::Assign(AssignTask {
+                    feature: feature.clone(),
+                    task: task.clone(),
+                    expected_revision: Revision::INITIAL,
+                    actor: coordinator,
+                    assignment: TaskAssignment::from(worker),
                 })),
             },
             CommandExample {
@@ -182,12 +196,12 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Claim a queued task atomically. All dependencies must be integrated.",
+                    "Claim a queued task atomically. Dependencies must be integrated or completed, and the agent must match the recorded assignment.",
                 ),
                 operation: Operation::Task(TaskOperation::Claim(ClaimTask {
                     feature: feature.clone(),
                     task: task.clone(),
-                    expected_revision: Revision::INITIAL,
+                    expected_revision: assigned_revision,
                     agent: worker,
                     ttl_seconds: ttl,
                 })),
@@ -207,7 +221,7 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Coordinator operation: integrate, requeue, or cancel. Requeue only after inspecting/stopping the previous execution.",
+                    "Coordinator operation: integrate, complete, requeue, or cancel. Complete accepts ready read-only or feature-workspace activities without inventing a Git merge. Requeue only after inspecting/stopping the previous execution.",
                 ),
                 operation: Operation::Task(TaskOperation::Coordinate(CoordinatorUpdate {
                     feature,

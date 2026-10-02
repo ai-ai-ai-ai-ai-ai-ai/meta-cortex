@@ -168,12 +168,80 @@ pub mod tests {
     use super::{
         DatabasePragma, EventTable, FeatureTable, LedgerSchema, StorageVersion, TaskTable,
     };
-    use crate::model::Event;
+    use crate::agents::AgentId;
+    use crate::model::workflow::TaskOwnership;
+    use crate::model::{Checkpoint, Event, EventKind, Progress, Task, TaskState, Workspace};
     use crate::store::relational::tests::Records;
     use crate::store::sql::SqlStatement;
+    use crate::values::{Attempt, FeatureId, Note, Revision, TaskId, Timestamp};
+    use crate::versions::{RecordVersion, TaskRecordVersion};
     use sea_query::{Iden, Query, SqliteQueryBuilder};
+    use serde::{Deserialize, Serialize};
     use tokio::runtime;
     use turso::Connection;
+
+    // Independent released V1 payloads keep migration tests from silently writing V2 fixtures.
+    #[derive(Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct LegacyTask {
+        version: RecordVersion,
+        id: TaskId,
+        feature: FeatureId,
+        objective: Note,
+        acceptance: Vec<Note>,
+        dependencies: Vec<TaskId>,
+        workspace: Workspace,
+        revision: Revision,
+        attempt: Attempt,
+        state: TaskState,
+        created_at: Timestamp,
+        last_update: Timestamp,
+        last_progress: Timestamp,
+        checkpoint: Checkpoint,
+        progress: Progress,
+    }
+    impl From<Task> for LegacyTask {
+        fn from(task: Task) -> Self {
+            Self {
+                version: RecordVersion::V1,
+                id: task.id,
+                feature: task.feature,
+                objective: task.objective,
+                acceptance: task.acceptance,
+                dependencies: task.dependencies,
+                workspace: task.workspace,
+                revision: task.revision,
+                attempt: task.attempt,
+                state: task.state,
+                created_at: task.created_at,
+                last_update: task.last_update,
+                last_progress: task.last_progress,
+                checkpoint: task.checkpoint,
+                progress: task.progress,
+            }
+        }
+    }
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct LegacyEvent {
+        version: RecordVersion,
+        kind: EventKind,
+        actor: AgentId,
+        note: Note,
+        task: LegacyTask,
+    }
+    impl From<Event> for LegacyEvent {
+        fn from(event: Event) -> Self {
+            Self {
+                version: event.version,
+                kind: event.kind,
+                actor: event.actor,
+                note: event.note,
+                task: event.task.into(),
+            }
+        }
+    }
 
     pub(crate) struct LegacyFixture;
     impl LegacyFixture {
@@ -205,7 +273,7 @@ pub mod tests {
                     .values([
                         records.task.id.to_string().into(),
                         i64::from(records.task.revision).into(),
-                        serde_json::to_string(&records.task)?.into(),
+                        serde_json::to_string(&LegacyTask::from(records.task.clone()))?.into(),
                     ])?
                     .to_owned(),
             )?
@@ -222,7 +290,7 @@ pub mod tests {
                     .values([
                         records.task.id.to_string().into(),
                         i64::from(records.task.revision).into(),
-                        serde_json::to_string(&records.event)?.into(),
+                        serde_json::to_string(&LegacyEvent::from(records.event))?.into(),
                     ])?
                     .to_owned(),
             )?
@@ -260,6 +328,10 @@ pub mod tests {
                     .ok_or_else(|| anyhow::anyhow!("missing source history"))?
                     .get::<String>(0)?;
                 drop(source_rows);
+                let original_record: LegacyEvent = serde_json::from_str(&original)?;
+                assert_eq!(original_record.task.version, RecordVersion::V1);
+                let expected: Event = serde_json::from_str(&original)?;
+                assert_eq!(expected.task.ownership, TaskOwnership::Unrecorded);
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
@@ -278,7 +350,10 @@ pub mod tests {
                     .next()
                     .await?
                     .ok_or_else(|| anyhow::anyhow!("missing history"))?;
-                assert_eq!(row.get::<String>(0)?, original);
+                let migrated = row.get::<String>(0)?;
+                assert_eq!(migrated, serde_json::to_string(&expected)?);
+                assert_eq!(serde_json::from_str::<Event>(&migrated)?, expected);
+                assert_eq!(expected.task.version, TaskRecordVersion::V2);
                 drop(rows);
                 connection
                     .pragma_update(&DatabasePragma::UserVersion.to_string(), 99)

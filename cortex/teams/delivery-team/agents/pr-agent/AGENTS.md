@@ -18,6 +18,10 @@ applies this role directly.
 - Publish the assigned branch and create or update its PR under the project's
   configured `create_pr` delivery policy or an explicit PR assignment.
 - Track required checks and review feedback through the PR skill's procedure.
+- Maintain the assigned PR activity under the
+  [entire feature workflow](../../../gizmo-team/docs/agent-ledger.md#record-the-entire-feature-workflow).
+  Persist publication progress, the PR URL, evaluated revision, observed checks,
+  and blockers before notifying Team Gizmo. Record readiness for its acceptance.
 - Report integration conflicts, product defects, and pipeline execution or
   infrastructure needs to the assigning Team Gizmo. Gizmo decides further assignments.
 - Perform an authorized merge only after the project's requirements are met.

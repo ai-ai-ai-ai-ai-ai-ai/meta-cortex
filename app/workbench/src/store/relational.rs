@@ -231,6 +231,7 @@ impl RecordWriter<'_> {
 pub mod tests {
     use super::{EventTable, FeatureTable, RecordWriter, TaskTable};
     use crate::agents::{AgentId, GizmoAgent};
+    use crate::model::workflow::TaskOwnership;
     use crate::model::{
         Checkpoint, Event, EventKind, Feature, Progress, Task, TaskState, Workspace,
     };
@@ -239,7 +240,7 @@ pub mod tests {
     use crate::values::{
         Attempt, BranchName, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
     };
-    use crate::versions::RecordVersion;
+    use crate::versions::{RecordVersion, TaskRecordVersion};
     use sea_query::{Expr, ExprTrait, Query};
     use std::path::PathBuf;
     use tokio::runtime;
@@ -261,7 +262,8 @@ pub mod tests {
             };
             let now = Timestamp::now()?;
             let task = Task {
-                version: RecordVersion::V1,
+                version: TaskRecordVersion::CURRENT,
+                ownership: TaskOwnership::Unrecorded,
                 id: TaskId::try_from("task".to_owned())?,
                 feature: feature.id.clone(),
                 objective: feature.objective.clone(),

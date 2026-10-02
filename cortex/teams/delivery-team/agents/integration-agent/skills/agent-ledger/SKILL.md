@@ -16,7 +16,10 @@ agent's use of the ledger alongside its existing Git workspace procedure.
 2. After preparing the feature workspace, initialize `Feature / Initialize` using Gizmo's
    stable feature ID, objective, branch, and absolute worktree path.
 3. Return the ledger path and feature ID with the task branch/worktree mappings.
-   Team Gizmo records each assignment before launching the worker.
+   Team Gizmo records and assigns every participating role's activity through the
+   [entire feature workflow](../../../../../gizmo-team/docs/agent-ledger.md#record-the-entire-feature-workflow).
+   Claim the integration activity once assigned. Record workspace preparation,
+   merge results, combined checks, conflicts, and cleanup on that activity.
 4. Before integration, read the task's durable readiness and recorded checkpoint.
    Follow the local-feature skill for merging and combined validation.
 5. Read the task again and record `Task / Coordinate` with the latest revision,
@@ -24,6 +27,9 @@ agent's use of the ledger alongside its existing Git workspace procedure.
    update leaves the Git work intact; inspect both before retrying.
 6. Preserve the ledger when cleaning completed worker worktrees. Report failures
    to Team Gizmo; it decides whether to requeue work or assign a repair.
+7. Record readiness on the integration activity before the completion
+   notification. Team Gizmo records its acceptance with `action.kind: complete`.
+   An integration event on a worker task remains separate code-integration evidence.
 
 **Prohibited:** merge code on an expired heartbeat alone or delete a feature's
 ledger with a finished worker worktree.

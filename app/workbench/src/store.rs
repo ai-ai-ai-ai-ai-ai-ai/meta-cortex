@@ -8,11 +8,13 @@ mod sql;
 
 use super::LedgerError;
 use super::git::Repository;
+use super::git::TaskWorkspaceCheck;
 use super::model::Workspace;
+use super::model::workflow::TaskOwnership;
 use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskState, TaskView};
 use super::request::{CreateTask, InitFeature};
 use super::values::{Attempt, FeatureId, Revision, TaskId, Timestamp};
-use super::versions::{RecordVersion, StorageVersion};
+use super::versions::{RecordVersion, StorageVersion, TaskRecordVersion};
 use relational::{EventTable, FeatureTable, RecordWriter, TaskTable};
 use sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
 use serde::Serialize;
@@ -88,7 +90,10 @@ impl Ledger {
         if input.feature != self.state.feature.id {
             return Err(LedgerError::Invalid("feature mismatch"));
         }
-        self.repository.require_workspace(&input.workspace)?;
+        self.repository.require_task_workspace(TaskWorkspaceCheck {
+            workspace: &input.workspace,
+            feature: &self.state.feature,
+        })?;
         if let Workspace::Git { branch, .. } = &input.workspace
             && branch == &self.state.feature.branch
         {
@@ -119,7 +124,8 @@ impl Ledger {
         }
         let now = Timestamp::now()?;
         let task = Task {
-            version: RecordVersion::CURRENT,
+            version: TaskRecordVersion::CURRENT,
+            ownership: TaskOwnership::Unrecorded,
             id: input.task,
             feature: input.feature,
             objective: input.objective,

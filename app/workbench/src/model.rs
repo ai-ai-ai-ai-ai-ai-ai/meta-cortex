@@ -1,13 +1,17 @@
+mod task_record;
+pub mod workflow;
+
 use super::LedgerError;
 use super::agents::AgentId;
 use super::values::{
     Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
     Timestamp,
 };
-use super::versions::RecordVersion;
+use super::versions::{RecordVersion, TaskRecordVersion};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use workflow::{TaskAssignment, TaskOwnership};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -23,7 +27,12 @@ pub struct Feature {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Workspace {
     ReadOnly,
-    Git { branch: BranchName, path: PathBuf },
+    /// Operate on the feature's existing worktree, without a worker checkpoint.
+    Feature,
+    Git {
+        branch: BranchName,
+        path: PathBuf,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -84,15 +93,18 @@ pub enum TaskState {
     Active { assignment: Assignment },
     Ready { agent: AgentId, attempt: Attempt },
     Integrated { commit: CommitId },
+    Completed { agent: AgentId, attempt: Attempt },
     Cancelled { reason: Note },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[serde(try_from = "task_record::TaskRecord")]
+#[schemars(with = "task_record::TaskV2")]
 pub struct Task {
-    pub version: RecordVersion,
+    pub version: TaskRecordVersion,
     pub id: TaskId,
     pub feature: FeatureId,
+    pub ownership: TaskOwnership,
     pub objective: Note,
     pub acceptance: Vec<Note>,
     pub dependencies: Vec<TaskId>,
@@ -124,11 +136,13 @@ pub struct WorkerAt<'a> {
 pub enum EventKind {
     Created,
     Claimed,
+    Assigned,
     Heartbeat,
     Progress,
     Checkpoint,
     Ready,
     Integrated,
+    Completed,
     Requeued,
     Cancelled,
 }
@@ -159,19 +173,37 @@ pub struct TaskView {
 }
 
 impl Task {
-    pub fn require_revision(&self, expected: Revision) -> Result<(), LedgerError> {
-        if self.revision != expected {
-            return Err(LedgerError::Conflict);
-        }
-        Ok(())
-    }
-
-    pub fn claim(&mut self, input: ClaimAt) -> Result<(), LedgerError> {
+    #[must_use = "Save the task returned by this transition"]
+    pub fn assign(mut self, assignment: TaskAssignment) -> Result<Self, LedgerError> {
+        assignment.validate()?;
         match self.state {
             TaskState::Queued => {}
             TaskState::Active { .. }
             | TaskState::Ready { .. }
             | TaskState::Integrated { .. }
+            | TaskState::Completed { .. }
+            | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
+        }
+        self.ownership = TaskOwnership::Assigned { assignment };
+        Ok(self)
+    }
+
+    pub fn require_revision(&self, expected: Revision) -> Result<(), LedgerError> {
+        match self.revision == expected {
+            true => Ok(()),
+            false => Err(LedgerError::Conflict),
+        }
+    }
+
+    #[must_use = "Save the task returned by this transition"]
+    pub fn claim(mut self, input: ClaimAt) -> Result<Self, LedgerError> {
+        self.ownership.require_agent(input.agent)?;
+        match self.state {
+            TaskState::Queued => {}
+            TaskState::Active { .. }
+            | TaskState::Ready { .. }
+            | TaskState::Integrated { .. }
+            | TaskState::Completed { .. }
             | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
         self.attempt = self.attempt.advance()?;
@@ -183,87 +215,126 @@ impl Task {
                 phase: Phase::Working,
             },
         };
-        Ok(())
+        Ok(self)
     }
 
-    pub fn worker(&mut self, input: WorkerAt<'_>) -> Result<&mut Assignment, LedgerError> {
-        match &mut self.state {
+    pub fn worker(&self, input: WorkerAt<'_>) -> Result<&Assignment, LedgerError> {
+        match &self.state {
             TaskState::Active { assignment } => {
-                if &assignment.agent != input.agent || assignment.attempt != input.attempt {
-                    return Err(LedgerError::AssignmentChanged);
+                match assignment.agent == *input.agent && assignment.attempt == input.attempt {
+                    true => {}
+                    false => return Err(LedgerError::AssignmentChanged),
                 }
-                if assignment.expires_at <= input.now {
-                    return Err(LedgerError::Expired);
+                match assignment.expires_at <= input.now {
+                    true => Err(LedgerError::Expired),
+                    false => Ok(assignment),
                 }
-                Ok(assignment)
             }
             TaskState::Queued
             | TaskState::Ready { .. }
             | TaskState::Integrated { .. }
+            | TaskState::Completed { .. }
             | TaskState::Cancelled { .. } => Err(LedgerError::InvalidTransition),
         }
     }
 
-    pub fn ready(&mut self, input: WorkerAt<'_>) -> Result<(), LedgerError> {
+    #[must_use = "Save the task returned by this transition"]
+    pub fn ready(mut self, input: WorkerAt<'_>) -> Result<Self, LedgerError> {
         self.worker(WorkerAt {
             agent: input.agent,
             attempt: input.attempt,
             now: input.now,
         })?;
-        if matches!(self.workspace, Workspace::Git { .. })
-            && matches!(self.checkpoint, Checkpoint::Unrecorded)
-        {
-            return Err(LedgerError::Invalid(
-                "write tasks need a Git checkpoint before readiness",
-            ));
+        match &self.workspace {
+            Workspace::Git { .. } => match self.checkpoint {
+                Checkpoint::Unrecorded => {
+                    return Err(LedgerError::Invalid(
+                        "write tasks need a Git checkpoint before readiness",
+                    ));
+                }
+                Checkpoint::Git { .. } => {}
+            },
+            Workspace::ReadOnly | Workspace::Feature => {}
         }
         self.state = TaskState::Ready {
             agent: *input.agent,
             attempt: input.attempt,
         };
-        Ok(())
+        Ok(self)
     }
 
-    pub fn integrate(&mut self, commit: CommitId) -> Result<(), LedgerError> {
+    #[must_use = "Save the task returned by this transition"]
+    pub fn complete(mut self) -> Result<Self, LedgerError> {
+        match self.workspace {
+            Workspace::ReadOnly | Workspace::Feature => {}
+            Workspace::Git { .. } => {
+                return Err(LedgerError::Invalid(
+                    "write tasks must be integrated rather than completed",
+                ));
+            }
+        }
         match self.state {
-            TaskState::Ready { .. } => {
-                self.state = TaskState::Integrated { commit };
-                Ok(())
+            TaskState::Ready { agent, attempt } => {
+                self.state = TaskState::Completed { agent, attempt }
             }
             TaskState::Queued
             | TaskState::Active { .. }
             | TaskState::Integrated { .. }
-            | TaskState::Cancelled { .. } => Err(LedgerError::InvalidTransition),
+            | TaskState::Completed { .. }
+            | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
+        Ok(self)
     }
 
-    pub fn requeue(&mut self) -> Result<(), LedgerError> {
+    #[must_use = "Save the task returned by this transition"]
+    pub fn integrate(mut self, commit: CommitId) -> Result<Self, LedgerError> {
+        match self.workspace {
+            Workspace::Feature => {
+                return Err(LedgerError::Invalid(
+                    "feature activities complete without a worker merge",
+                ));
+            }
+            Workspace::ReadOnly | Workspace::Git { .. } => {}
+        }
         match self.state {
-            TaskState::Active { .. } | TaskState::Ready { .. } => {
-                self.state = TaskState::Queued;
-                Ok(())
-            }
-            TaskState::Queued | TaskState::Integrated { .. } | TaskState::Cancelled { .. } => {
-                Err(LedgerError::InvalidTransition)
-            }
+            TaskState::Ready { .. } => self.state = TaskState::Integrated { commit },
+            TaskState::Queued
+            | TaskState::Active { .. }
+            | TaskState::Integrated { .. }
+            | TaskState::Completed { .. }
+            | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
+        Ok(self)
     }
 
-    pub fn cancel(&mut self, reason: Note) -> Result<(), LedgerError> {
+    #[must_use = "Save the task returned by this transition"]
+    pub fn requeue(mut self) -> Result<Self, LedgerError> {
+        match self.state {
+            TaskState::Active { .. } | TaskState::Ready { .. } => self.state = TaskState::Queued,
+            TaskState::Queued
+            | TaskState::Integrated { .. }
+            | TaskState::Completed { .. }
+            | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
+        }
+        Ok(self)
+    }
+
+    #[must_use = "Save the task returned by this transition"]
+    pub fn cancel(mut self, reason: Note) -> Result<Self, LedgerError> {
         match self.state {
             TaskState::Queued | TaskState::Active { .. } | TaskState::Ready { .. } => {
-                self.state = TaskState::Cancelled { reason };
-                Ok(())
+                self.state = TaskState::Cancelled { reason }
             }
-            TaskState::Integrated { .. } | TaskState::Cancelled { .. } => {
-                Err(LedgerError::InvalidTransition)
-            }
+            TaskState::Integrated { .. }
+            | TaskState::Completed { .. }
+            | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
+        Ok(self)
     }
 
     pub fn require_dependency(&self) -> Result<(), LedgerError> {
         match self.state {
-            TaskState::Integrated { .. } => Ok(()),
+            TaskState::Integrated { .. } | TaskState::Completed { .. } => Ok(()),
             TaskState::Queued
             | TaskState::Active { .. }
             | TaskState::Ready { .. }
@@ -280,6 +351,7 @@ impl Task {
             TaskState::Queued
             | TaskState::Ready { .. }
             | TaskState::Integrated { .. }
+            | TaskState::Completed { .. }
             | TaskState::Cancelled { .. } => LeaseHealth::NotRunning,
         };
         TaskView { task: self, lease }
@@ -288,14 +360,17 @@ impl Task {
 
 #[cfg(test)]
 pub mod tests {
+    use super::workflow::{TaskAssignment, TaskOwnership};
     use super::{Checkpoint, ClaimAt, LeaseHealth, Progress, Task, TaskState, WorkerAt, Workspace};
     use crate::LedgerError;
-    use crate::agents::{AgentId, DevelopmentAgent};
+    use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
     use crate::values::{
-        Attempt, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
+        Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+        Timestamp,
     };
-    use crate::versions::RecordVersion;
+    use crate::versions::TaskRecordVersion;
     use std::collections::BTreeMap;
+    use std::path::PathBuf;
 
     struct Scenario;
 
@@ -307,7 +382,8 @@ pub mod tests {
             let mut extensions = BTreeMap::new();
             extensions.insert("custom".to_owned(), serde_json::json!([1, "note"]));
             Ok(Task {
-                version: RecordVersion::V1,
+                version: TaskRecordVersion::CURRENT,
+                ownership: TaskOwnership::Unrecorded,
                 id,
                 feature,
                 objective: Note::from("Review".to_owned()),
@@ -354,26 +430,26 @@ pub mod tests {
             Err(LedgerError::Conflict)
         ));
         task.require_revision(Revision::INITIAL)?;
-        task.claim(Scenario::claim()?)?;
+        task = task.claim(Scenario::claim()?)?;
         assert!(matches!(
-            task.claim(Scenario::claim()?),
+            task.clone().claim(Scenario::claim()?),
             Err(LedgerError::InvalidTransition)
         ));
         let agent = AgentId::Development(DevelopmentAgent::RustDev);
-        task.ready(WorkerAt {
+        task = task.ready(WorkerAt {
             agent: &agent,
             attempt: Attempt::UNCLAIMED.advance()?,
             now: Timestamp::try_from(2000)?,
         })?;
         assert!(matches!(task.state, TaskState::Ready { .. }));
-        task.integrate(CommitId::try_from("a".repeat(40))?)?;
+        task = task.integrate(CommitId::try_from("a".repeat(40))?)?;
         task.require_dependency()?;
         assert!(matches!(
-            task.requeue(),
+            task.clone().requeue(),
             Err(LedgerError::InvalidTransition)
         ));
         assert!(matches!(
-            task.cancel(Note::from("cancel".to_owned())),
+            task.clone().cancel(Note::from("cancel".to_owned())),
             Err(LedgerError::InvalidTransition)
         ));
         assert_eq!(
@@ -386,7 +462,7 @@ pub mod tests {
     #[test]
     fn expiry_and_reassignment_reject_stale_attempts() -> anyhow::Result<()> {
         let mut task = Scenario::task()?;
-        task.claim(Scenario::claim()?)?;
+        task = task.claim(Scenario::claim()?)?;
         let agent = AgentId::Development(DevelopmentAgent::RustDev);
         assert_eq!(
             task.clone().view(Timestamp::try_from(10000)?).lease,
@@ -404,8 +480,8 @@ pub mod tests {
             }),
             Err(LedgerError::Expired)
         ));
-        task.requeue()?;
-        task.claim(Scenario::claim()?)?;
+        task = task.requeue()?;
+        task = task.claim(Scenario::claim()?)?;
         assert!(matches!(
             task.worker(WorkerAt {
                 agent: &agent,
@@ -423,8 +499,72 @@ pub mod tests {
             }),
             Err(LedgerError::AssignmentChanged)
         ));
-        task.cancel(Note::from("No longer needed".to_owned()))?;
+        task = task.cancel(Note::from("No longer needed".to_owned()))?;
         assert!(matches!(task.state, TaskState::Cancelled { .. }));
+        Ok(())
+    }
+
+    #[test]
+    fn activities_complete_without_losing_ownership_or_requiring_a_merge() -> anyhow::Result<()> {
+        let agent = AgentId::Gizmo(GizmoAgent::GizmoPrime);
+        for workspace in [Workspace::ReadOnly, Workspace::Feature] {
+            let task = Task {
+                ownership: TaskOwnership::Assigned {
+                    assignment: TaskAssignment::from(agent),
+                },
+                workspace,
+                ..Scenario::task()?
+            };
+            assert!(matches!(
+                task.clone().complete(),
+                Err(LedgerError::InvalidTransition)
+            ));
+            assert!(matches!(
+                task.clone().claim(Scenario::claim()?),
+                Err(LedgerError::AssignmentChanged)
+            ));
+            let task = task.claim(ClaimAt {
+                agent,
+                ..Scenario::claim()?
+            })?;
+            let attempt = task.attempt;
+            let task = task.ready(WorkerAt {
+                agent: &agent,
+                attempt,
+                now: Timestamp::try_from(2000)?,
+            })?;
+            let ownership = task.ownership.clone();
+            let task = task.complete()?;
+            assert_eq!(task.ownership, ownership);
+            assert!(
+                matches!(task.state, TaskState::Completed { agent: owner, .. } if owner == agent)
+            );
+            task.require_dependency()?;
+            assert!(matches!(
+                task.clone().complete(),
+                Err(LedgerError::InvalidTransition)
+            ));
+            assert!(matches!(
+                task.clone().requeue(),
+                Err(LedgerError::InvalidTransition)
+            ));
+            assert!(matches!(
+                task.clone().cancel(Note::Empty),
+                Err(LedgerError::InvalidTransition)
+            ));
+            assert_eq!(
+                task.view(Timestamp::try_from(50000)?).lease,
+                LeaseHealth::NotRunning
+            );
+        }
+        let write = Task {
+            workspace: Workspace::Git {
+                branch: BranchName::try_from("codex/worker".to_owned())?,
+                path: PathBuf::from("/worker"),
+            },
+            ..Scenario::task()?
+        };
+        assert!(matches!(write.complete(), Err(LedgerError::Invalid(_))));
         Ok(())
     }
 
@@ -432,7 +572,7 @@ pub mod tests {
     fn rejects_invalid_known_fields_and_versions() -> anyhow::Result<()> {
         let document = serde_json::to_string(&Scenario::task()?)?;
         for invalid in [
-            document.replace("\"version\":1", "\"version\":99"),
+            document.replace("\"version\":2", "\"version\":99"),
             document.replace("\"id\":\"task\"", "\"id\":\"../task\""),
             document.replace("\"kind\":\"queued\"", "\"kind\":\"invented\""),
             document.replace("\"revision\":1", "\"revision\":0"),

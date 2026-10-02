@@ -6,7 +6,7 @@ entries:
     summary: Host capacity preflight, configuration approval, role settings, and launches.
   - title: Agent work ledger
     path: agent-ledger.md
-    summary: Durable task progress and recovery.
+    summary: Entire feature workflow, agent reporting lines, durable progress, and recovery.
   - title: Agent verification handoff
     path: agent-verification.md
     summary: Cataloged verifier selection, committed review, repair routing, and integration readiness.
