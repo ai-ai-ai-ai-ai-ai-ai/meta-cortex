@@ -9,6 +9,9 @@ Keep the consuming project's persistent agent context readable and accurate.
 This includes specifications, instructions, skills, practices, and their indexes.
 Identify relevant documents by their purpose and the project's conventions.
 Discover their locations from project instructions and actual files.
+Use the [rule catalog](index.yaml) to locate the complete writing decisions and
+their canonical sources. Authoring follows the source-loading procedure in
+Practice Knowledge Graphs; verifiers use their own index-only review protocol.
 
 ## Required actions
 

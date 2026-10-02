@@ -7,6 +7,7 @@ description: Write and maintain coding practices with concrete rules, supporting
 
 Write coding-practice documentation for any language, including tests, scripts,
 and boundary adapters. Use code to make each rule concrete and verifiable.
+The [rule catalog](index.yaml) identifies every decision and its source section.
 
 ## Required actions
 

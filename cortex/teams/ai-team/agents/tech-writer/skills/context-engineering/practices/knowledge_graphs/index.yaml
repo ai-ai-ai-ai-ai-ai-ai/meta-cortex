@@ -1,0 +1,112 @@
+kind: practice
+owner: writing:knowledge_graphs
+title: Practice knowledge graphs
+source_title: Practice Knowledge Graphs
+source: ../knowledge-graphs.md
+owns:
+  - Rule inventories, graph ownership, synchronization, and loading.
+excludes:
+  - Canonical subject policy and verifier operational context.
+relationships:
+  - Catalog cues cite canonical Markdown decisions.
+related: []
+rules:
+  - id: knowledge_graphs:verifier_boundary
+    source: ../knowledge-graphs.md#practice-knowledge-graphs
+    summary: Verifier loading follows its separate index-only review protocol.
+  - id: knowledge_graphs:decision_inventory
+    source: ../knowledge-graphs.md#inventory-decisions-not-just-files
+    summary: Inventory complete distinct decisions, not only practice files.
+  - id: knowledge_graphs:readable_ids
+    source: ../knowledge-graphs.md#inventory-decisions-not-just-files
+    summary: Use readable namespaced rule identities with separate decision entries.
+  - id: knowledge_graphs:source_anchors
+    source: ../knowledge-graphs.md#inventory-decisions-not-just-files
+    summary: Every rule cites its exact canonical Markdown heading.
+  - id: knowledge_graphs:brief_cues
+    source: ../knowledge-graphs.md#inventory-decisions-not-just-files
+    summary: Use brief scalar decision cues; leave details in sources.
+  - id: knowledge_graphs:practice_metadata
+    source: ../knowledge-graphs.md#inventory-decisions-not-just-files
+    summary: Record practice ownership, exclusions, and related subjects concisely.
+  - id: knowledge_graphs:source_authority
+    source: ../knowledge-graphs.md#inventory-decisions-not-just-files
+    summary: Catalog cues select authority without replacing full subject policy.
+  - id: knowledge_graphs:owner_inspection
+    source: ../knowledge-graphs.md#find-the-owner-and-inspect-overlaps
+    summary: Before edits, inspect canonical owners, related rules, and prerequisites.
+  - id: knowledge_graphs:existing_owner
+    source: ../knowledge-graphs.md#find-the-owner-and-inspect-overlaps
+    summary: Extend existing owners; new subjects require explicit boundaries.
+  - id: knowledge_graphs:source_sync
+    source: ../knowledge-graphs.md#synchronize-source-and-catalog
+    summary: Update changed source decisions and their cues together.
+  - id: knowledge_graphs:stable_names
+    source: ../knowledge-graphs.md#synchronize-source-and-catalog
+    summary: Preserve surviving IDs; remove deleted names and update references.
+  - id: knowledge_graphs:unique_ownership
+    source: ../knowledge-graphs.md#synchronize-source-and-catalog
+    summary: Catalog each practice once with one canonical decision owner.
+  - id: knowledge_graphs:entrypoint_loading
+    source: ../knowledge-graphs.md#synchronize-source-and-catalog
+    summary: Skill entry points link root catalogs and retain loading requirements.
+  - id: knowledge_graphs:acyclic_prerequisites
+    source: ../knowledge-graphs.md#synchronize-source-and-catalog
+    summary: Direct shared prerequisites remain acyclic without restarting routing.
+  - id: knowledge_graphs:relationships
+    source: ../knowledge-graphs.md#make-conflicts-visible
+    summary: Name rule relationships; detailed comparisons stay in owning practices.
+  - id: knowledge_graphs:conflict_resolution
+    source: ../knowledge-graphs.md#make-conflicts-visible
+    summary: Resolve conflicts through authority or report exact incompatible requirements.
+  - id: knowledge_graphs:semantic_coverage
+    source: ../knowledge-graphs.md#validate-rule-coverage-and-meaning
+    summary: Account for every normative decision, exception, example, and validation.
+  - id: knowledge_graphs:graph_integrity
+    source: ../knowledge-graphs.md#validate-rule-coverage-and-meaning
+    summary: Validate unique ownership, names, links, anchors, and acyclic loading.
+  - id: knowledge_graphs:meaning_evidence
+    source: ../knowledge-graphs.md#validate-rule-coverage-and-meaning
+    summary: Compare cue meaning separately from mechanical checks and unresolved conflicts.
+  - id: knowledge_graphs:navigable_headings
+    source: ../knowledge-graphs.md#make-rules-directly-navigable
+    summary: Use focused real headings; avoid artificial anchors and numeric codes.
+  - id: knowledge_graphs:catalog_hierarchy
+    source: ../knowledge-graphs.md#split-catalogs-by-subject
+    summary: Split subject and namespace catalogs into directory-local indexes.
+  - id: knowledge_graphs:navigation_shape
+    source: ../knowledge-graphs.md#split-catalogs-by-subject
+    summary: Navigation indexes contain ordered paths and brief selection summaries.
+  - id: knowledge_graphs:practice_shape
+    source: ../knowledge-graphs.md#split-catalogs-by-subject
+    summary: Practice leaves contain complete ownership metadata and ordered rules.
+  - id: knowledge_graphs:registered_vocabulary
+    source: ../knowledge-graphs.md#split-catalogs-by-subject
+    summary: Register rule and owner enums with matching catalog vocabulary.
+  - id: knowledge_graphs:check_leaves
+    source: ../knowledge-graphs.md#split-catalogs-by-subject
+    summary: Separate comparison leaves cite existing rules and canonical sources.
+  - id: knowledge_graphs:relative_paths
+    source: ../knowledge-graphs.md#split-catalogs-by-subject
+    summary: Resolve YAML paths locally; update moves and remove superseded indexes.
+  - id: knowledge_graphs:team_navigation
+    source: ../knowledge-graphs.md#split-catalogs-by-subject
+    summary: Team documentation catalogs remain navigation-only.
+  - id: knowledge_graphs:mandatory_prerequisites
+    source: ../knowledge-graphs.md#load-only-selected-branches
+    summary: Focused authoring retains entry-point and mandatory subject prerequisites.
+  - id: knowledge_graphs:selected_branches
+    source: ../knowledge-graphs.md#load-only-selected-branches
+    summary: Authoring selects ordered catalog branches by authorized assignment scope.
+  - id: knowledge_graphs:ordered_source_review
+    source: ../knowledge-graphs.md#load-only-selected-branches
+    summary: Authoring reads selected rules and full sources in order.
+  - id: knowledge_graphs:boundary_prerequisites
+    source: ../knowledge-graphs.md#load-only-selected-branches
+    summary: Load related requirements when authoring crosses their subject boundaries.
+  - id: knowledge_graphs:focused_assignments
+    source: ../knowledge-graphs.md#load-only-selected-branches
+    summary: Supply focused authoring context and refresh it when scope expands.
+  - id: knowledge_graphs:context_format_boundary
+    source: ../knowledge-graphs.md#load-only-selected-branches
+    summary: Catalog indexes differ from context declarations and semantic proof.

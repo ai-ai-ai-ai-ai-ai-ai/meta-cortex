@@ -1,0 +1,79 @@
+kind: practice
+owner: writing:tech_writer
+title: Tech writer responsibilities
+source_title: Tech Writer
+source: ../../../../AGENTS.md
+owns:
+  - Documentation role boundaries and context organization.
+excludes:
+  - Subject policy and implementation ownership.
+relationships:
+  - Supplies authoring requirements without loading the worker role.
+related: []
+rules:
+  - id: tech_writer:communication
+    source: ../../../../AGENTS.md#tech-writer
+    summary: Follow the assigned Gizmo hierarchy and configured settings.
+  - id: tech_writer:context_prerequisite
+    source: ../../../../AGENTS.md#required-actions
+    summary: Apply Context Engineering to all documentation work.
+  - id: tech_writer:code_prerequisite
+    source: ../../../../AGENTS.md#required-actions
+    summary: Apply code writing to programming, commands, and delivery.
+  - id: tech_writer:delivery_prerequisite
+    source: ../../../../AGENTS.md#required-actions
+    summary: Apply delivery writing and Git procedures to delivery instructions.
+  - id: tech_writer:programming_prerequisite
+    source: ../../../../AGENTS.md#required-actions
+    summary: Programming examples require subject and language prerequisites.
+  - id: tech_writer:security_prerequisite
+    source: ../../../../AGENTS.md#required-actions
+    summary: Security and secrets require their owning subject guidance.
+  - id: tech_writer:subject_policy
+    source: ../../../../AGENTS.md#required-actions
+    summary: Preserve subject policy; route unresolved decisions through Gizmo.
+  - id: tech_writer:graph_sync
+    source: ../../../../AGENTS.md#required-actions
+    summary: Locate affected rules and synchronize catalogs with practices.
+  - id: tech_writer:examples_and_callers
+    source: ../../../../AGENTS.md#required-actions
+    summary: Keep examples beside authority; update moved guidance's callers.
+  - id: tech_writer:reporting
+    source: ../../../../AGENTS.md#required-actions
+    summary: Report changed paths, actual checks, and unresolved inconsistencies.
+  - id: tech_writer:agent_placement
+    source: ../../../../AGENTS.md#skill-organization
+    summary: Group each team's agents under its agents directory.
+  - id: tech_writer:skill_placement
+    source: ../../../../AGENTS.md#skill-organization
+    summary: Skills belong under owning agents, never library or team roots.
+  - id: tech_writer:practice_ownership
+    source: ../../../../AGENTS.md#skill-organization
+    summary: Keep one canonical practice with its subject.
+  - id: tech_writer:role_skill_boundary
+    source: ../../../../AGENTS.md#skill-organization
+    summary: Roles own tasks; linked skills own technical instructions and prerequisites.
+  - id: tech_writer:skill_moves
+    source: ../../../../AGENTS.md#skill-organization
+    summary: Update role instructions, catalogs, and links when moving skills.
+  - id: tech_writer:shared_knowledge
+    source: ../../../../AGENTS.md#knowledge-organization
+    summary: Shared subject knowledge belongs in its owning team's docs.
+  - id: tech_writer:team_navigation
+    source: ../../../../AGENTS.md#knowledge-organization
+    summary: Team indexes contain navigation; named documents contain rules.
+  - id: tech_writer:skill_catalogs
+    source: ../../../../AGENTS.md#knowledge-organization
+    summary: Skill catalogs navigate focused namespaces and canonical decision sources.
+  - id: tech_writer:no_scaffolding
+    source: ../../../../AGENTS.md#knowledge-organization
+    summary: Add context structure only for existing content needs.
+  - id: tech_writer:language_independence
+    source: ../../../../AGENTS.md#knowledge-organization
+    summary: Keep language-independent knowledge outside language-specific skills.
+  - id: tech_writer:context_formats
+    source: ../../../../AGENTS.md#knowledge-organization
+    summary: Use AGENTS.md for roles and SKILL.md for skills.
+  - id: tech_writer:implementation_boundary
+    source: ../../../../AGENTS.md#prohibited-actions
+    summary: Documentation work cannot take over behavior, policy, or coordination.

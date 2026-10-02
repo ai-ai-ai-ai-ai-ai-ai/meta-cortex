@@ -42,7 +42,8 @@ tasks stop after reporting the verifier result, as required by the task boundary
    a verifier from file extensions, role-name suffixes, or an earlier assignment.
    A worker without a Verifier property follows ordinary task completion.
 3. Apply this handoff unchanged to each declared pair. The verifier's role and
-   linked skill supply the subject requirements; Gizmo supplies ordinary assignment
+   linked skill declare the complete review catalog; the shared protocol owns
+   index-only loading and exhaustive review. Gizmo supplies operational assignment
    context and the request SHA. No task-specific verifier instructions are needed.
 4. If a declared link, role, or required skill is missing or inconsistent, report
    the context blocker before review or integration. Do not silently skip the gate.
@@ -162,8 +163,12 @@ before sending that SHA to the verifier.
    [assignment context](../../AGENTS.md#assignment-context): project and library
    roots, workspace, session choices, acceptance criteria, required checks, and
    available validation evidence.
-3. Supply the selected verifier's role instructions. It loads its linked review
-   skill, which owns requirement discovery and source-loading rules. Use a fresh
+3. Supply the selected verifier's own role and review skill, which declares its
+   complete review catalog. Apply the shared
+   [index-only loading rules](verifier-protocol.md#keep-practice-context-index-only).
+   Do not supply the worker's role, skills, practice Markdown, or authoring
+   checklist. Keep operational assignment context separate from practice context.
+   Use a fresh
    review context when the host supports it. Do not inherit the worker's
    conversation or choose review rules from the worker's self-assessment.
    - If the host cannot provide that separation, report the limitation.
@@ -195,6 +200,10 @@ verifier context, the worker's ready SHA, and the complete review scope.
    `progress.extensions.verification_report`. Check its SHA, inventories,
    every rule/file and cross-rule decision, supporting evidence, and counts.
    Reject missing findings, unsupported decisions, or a summary-only handoff.
+   Reconcile the snapshot with every entry reachable from the review skill's
+   declared catalog root. Do not derive expected coverage from the report's
+   selected rules alone. Require every expected decision key; matching totals
+   cannot excuse skipped rules or duplicate decisions.
 3. Act on the verified verdict. A review task marked `ready` means its report
    is complete; it does not mean the code passed. Keep integration blocked for
    violations, incomplete coverage, missing evidence, or unresolved policy.

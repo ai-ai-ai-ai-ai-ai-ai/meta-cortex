@@ -1,0 +1,70 @@
+kind: practice
+owner: writing:article_structure
+title: Article structure
+source_title: Article Structure
+source: ../article-structure.md
+owns:
+  - Article body shapes, hierarchy, and action blocks.
+excludes:
+  - Policy decisions and rule catalog definitions.
+relationships:
+  - Structure reflects the meaning of focused content.
+related: []
+rules:
+  - id: article_structure:explanation_opening
+    source: ../article-structure.md#explanation-articles
+    summary: Open explanations with their conclusion, purpose, or owned question.
+  - id: article_structure:explanation_body
+    source: ../article-structure.md#explanation-articles
+    summary: Connect rationale in prose; use bullets for parallel facts.
+  - id: article_structure:navigable_subtopics
+    source: ../article-structure.md#explanation-articles
+    summary: Introduce subheadings only for independently navigable subtopics.
+  - id: article_structure:action_implications
+    source: ../article-structure.md#explanation-articles
+    summary: Action-driving explanations end with implications or a decision.
+  - id: article_structure:rules_body
+    source: ../article-structure.md#rules-articles
+    summary: Use unordered peer rules with one decision per item.
+  - id: article_structure:owned_details
+    source: ../article-structure.md#rules-articles
+    summary: Nest owned details; place substantial rationale with its rule.
+  - id: article_structure:procedure_order
+    source: ../article-structure.md#procedure-articles
+    summary: Procedures use imperative steps and owned conditional branches.
+  - id: article_structure:procedure_outcome
+    source: ../article-structure.md#procedure-articles
+    summary: Name observable results and finish with validation or terminal outcome.
+  - id: article_structure:reference_body
+    source: ../article-structure.md#reference-articles
+    summary: Use short catalogs, keyed properties, and literal code references.
+  - id: article_structure:reference_authority
+    source: ../article-structure.md#reference-articles
+    summary: References link authorities; skill graph cues remain synchronized.
+  - id: article_structure:heading_ownership
+    source: ../article-structure.md#hierarchy
+    summary: Headings and containment match actual article and subarticle ownership.
+  - id: article_structure:visible_transitions
+    source: ../article-structure.md#hierarchy
+    summary: Explain relationships and transitions between combined body shapes.
+  - id: article_structure:navigation_updates
+    source: ../article-structure.md#hierarchy
+    summary: Update indexes and heading links when discoverability changes.
+  - id: article_structure:action_inputs
+    source: ../article-structure.md#action-blocks
+    summary: Define action inputs, outcome, sequence, failures, and observable validation.
+  - id: article_structure:no_html_tables
+    source: ../article-structure.md#prohibited-actions
+    summary: Prohibit authored HTML and rendered Markdown tables.
+  - id: article_structure:no_empty_structure
+    source: ../article-structure.md#prohibited-actions
+    summary: Avoid decorative nesting, sentence headings, and empty boilerplate.
+  - id: article_structure:preserve_policy
+    source: ../article-structure.md#presentation-without-policy-changes
+    summary: Presentation edits preserve exact policy meaning and substantive content.
+  - id: article_structure:managed_markers
+    source: ../article-structure.md#markdown-and-managed-markers
+    summary: Preserve required managed markers; literal HTML belongs in examples.
+  - id: article_structure:validation
+    source: ../article-structure.md#validation
+    summary: Review purpose, body shape, containment, evidence, and preserved navigation.

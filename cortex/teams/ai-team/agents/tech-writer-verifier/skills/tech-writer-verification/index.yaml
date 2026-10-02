@@ -1,0 +1,15 @@
+kind: navigation
+title: Writing Review Catalog
+entries:
+  - title: Context Engineering
+    path: ../../../tech-writer/skills/context-engineering/index.yaml
+    summary: Writing, context structure, ownership, and catalog decisions.
+  - title: Code Practice Writing
+    path: ../../../tech-writer/skills/code-practice-writing/index.yaml
+    summary: Programming examples, boundary exceptions, and execution evidence.
+  - title: Delivery Writing
+    path: ../../../tech-writer/skills/delivery-writing/index.yaml
+    summary: Git responsibilities, command context, and observable results.
+  - title: Local Feature Work
+    path: ../../../../../delivery-team/agents/integration-agent/skills/local-feature/index.yaml
+    summary: Git workspace, completion, integration, repair, and cleanup.

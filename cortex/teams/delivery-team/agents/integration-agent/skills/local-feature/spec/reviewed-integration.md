@@ -1,16 +1,49 @@
 # Integrate a Reviewed Task
 
 Use this protocol when Gizmo requires a passing review before integration.
-It owns the review gate and replacement-review requirements. The
-[local feature catalog](../practices/local_feature/index.yaml) links the task
+It owns the integration gate and replacement-review requirements. The shared
+[verifier protocol](../../../../../../gizmo-team/docs/verifier-protocol.md)
+owns index-only practice loading, exhaustive coverage, and the passing verdict.
+The [local feature catalog](../practices/local_feature/index.yaml) links the task
 commit, workspace, integration, repair, and cleanup procedures.
 Workers receive the relevant ordinary Git procedure; they do not need this protocol.
 
 ## Required actions
 
+### Require complete review evidence
+
+1. Receive the complete report saved in
+   `progress.extensions.verification_report` and its matching `review_result`
+   from Gizmo. Apply the shared protocol's
+   [report requirements](../../../../../../gizmo-team/docs/verifier-protocol.md#save-one-complete-report)
+   and [verdict rules](../../../../../../gizmo-team/docs/verifier-protocol.md#return-the-result-and-route-it).
+2. Check that the report inventories the verifier's complete declared catalog
+   snapshot, every changed file, every owned rule, and every cross-rule check.
+   Reconcile every reachable catalog entry and its IDs with that snapshot,
+   using YAML indexes without loading practice Markdown. Derive expected keys
+   from the complete catalog and committed file inventory, not only the rules
+   the report chose to list.
+   Require the actual decisions and evidence, with exactly one decision for
+   every expected rule/file pair and cross-rule check. Compare exact keys as
+   well as counts; a skipped rule or duplicated row blocks integration.
+3. Require `pass`, no violations or blockers, satisfied exact-revision validation,
+   and fresh evidence that every previous repair is fixed. A ready review task,
+   matching SHA, or "all practices checked" summary cannot replace this evidence.
+4. Return missing or inconsistent evidence to Gizmo before merging. Do not
+   reconstruct the review by loading the target worker's context or practice
+   Markdown; the verifier completes any missing decisions under the shared
+   index-only protocol. Continue to the SHA gate only after this evidence passes.
+
+**Prohibited:** merge a matching SHA when the report omits WASM rules, or accept
+a writing review that lists practice filenames without individual decisions.
+
+**Required:** return either incomplete report to Gizmo, obtain the full coverage
+and evidence for that SHA, then apply the matching-commit gate below.
+
 ### Match the reviewed commit before merging
 
-1. Receive Gizmo's passing report and integration assignment. Use these inputs:
+1. Use Gizmo's complete passing report and integration assignment after the
+   evidence gate above. Use these inputs:
    - `reviewed_sha`: full commit SHA from the passing report.
    - `checkpoint_sha`: full SHA from the worker's current ready ledger record.
    - `task_path` and `task_branch`: assigned worker worktree and branch.

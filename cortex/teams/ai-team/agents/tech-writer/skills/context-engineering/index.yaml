@@ -1,0 +1,6 @@
+kind: navigation
+title: Context Engineering Catalog
+entries:
+  - title: Practices
+    path: practices/index.yaml
+    summary: Writing decisions and context authoring requirements.
