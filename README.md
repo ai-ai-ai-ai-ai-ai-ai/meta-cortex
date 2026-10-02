@@ -31,9 +31,24 @@ brew install ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.sh | sh
 ```
 
-Prebuilt binaries are available for macOS and Linux on ARM64 and x86-64.
+**Windows PowerShell installer**
+
+For a release that includes the Windows installer, run this in native PowerShell:
+
+```powershell
+irm https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.ps1 | iex
+```
+
+Release targets include macOS and Linux on ARM64 and x86-64, plus native Windows
+on x86-64 (`x86_64-pc-windows-msvc`). The Windows archive contains `meta-cortex.exe`.
 See [GitHub Releases](https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases)
-for downloadable artifacts.
+for the artifacts published by each release. The command above requires a latest
+release containing `meta-cortex-installer.ps1`.
+
+**Prohibited:** pipe the Unix `.sh` installer into native PowerShell; it requires
+a Unix shell.
+
+**Required:** use the generated `.ps1` installer for a native Windows installation.
 
 ### Initialize your project
 
@@ -57,6 +72,29 @@ Then run:
 meta-cortex run --request request.yaml
 ```
 
+In native PowerShell, use an existing Windows Git project path. This example
+writes the same typed request and runs it from a file:
+
+```powershell
+@'
+version: 1
+project: 'C:\Projects\Example Project'
+operation:
+  group: Framework
+  command:
+    name: Initialize
+    arguments:
+      harness: codex
+      instructions: write
+'@ | Set-Content -LiteralPath '.\request.yaml' -Encoding utf8
+meta-cortex run --request '.\request.yaml'
+```
+
+- **Prohibited:** keep `project: /path/to/project` when initializing
+  `C:\Projects\Example Project` on native Windows.
+- **Required:** use the existing Windows project path in the YAML request, as above.
+  Quoting the path preserves spaces.
+
 Use `harness: none` and `instructions: skip` to install only the framework.
 Initialization installs `.meta-cortex/` with the bundled model and reasoning-effort
 settings, without terminal prompts. Edit `.meta-cortex/meta-cortex.toml` if your
@@ -64,11 +102,12 @@ host needs different models or reasoning efforts. Repeating the request preserve
 settings and does not replace a modified framework.
 
 Initialization requires a Git repository. It uses its own tools under
-`~/.meta-cortex` and ignores copies on the user's `PATH`.
+`~/.meta-cortex` and ignores copies on the user's `PATH`. On Windows, the default
+is `.meta-cortex` under the user's home directory (`USERPROFILE`).
 It installs missing tools in this order:
 
-1. Install mise through its [official installer](https://mise.jdx.dev/installing-mise.html#https-mise-run)
-   into `~/.meta-cortex/mise/bin/mise`.
+1. Install mise into `~/.meta-cortex/mise/bin/mise`, or `mise\bin\mise.exe`
+   under the application directory on Windows.
 2. Use mise's `install-into` command to install Bun into `~/.meta-cortex/bun`
    and Vale into `~/.meta-cortex/vale/bin`.
 3. Use Bun to install the shared framework dependencies.
@@ -80,7 +119,10 @@ It installs missing tools in this order:
   installation or shell activation is performed.
 - Mise's data, cache, configuration, and state directories stay under `~/.meta-cortex/mise`.
 - `META_CORTEX_HOME` overrides the application directory.
-- Bootstrapping mise uses `curl`, `sh`, and the official installer's platform requirements.
+- On macOS and Linux, bootstrapping mise uses `curl`, `sh`, and its
+  [official installer](https://mise.jdx.dev/installing-mise.html#https-mise-run).
+- On Windows, initialization installs native executables at `mise\bin\mise.exe`,
+  `bun\bin\bun.exe`, and `vale\bin\vale.exe` under the application directory.
 - Setup leaves shell configuration unchanged and ignores the user's `BUN_INSTALL`.
 
 For framework script commands in a new shell:
@@ -89,12 +131,25 @@ For framework script commands in a new shell:
 export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/mise/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH"
 ```
 
+In PowerShell:
+
+```powershell
+$cortexDataRoot = if ($env:META_CORTEX_HOME) { $env:META_CORTEX_HOME } else { Join-Path $HOME '.meta-cortex' }
+$env:PATH = "$cortexDataRoot\mise\bin;$cortexDataRoot\bun\bin;$cortexDataRoot\vale\bin;$env:PATH"
+```
+
 - The request's `mise`, `bun`, and `vale` arguments each default to `InstallMissing`.
 - Set a tool's argument to `RequireExisting` to require an existing copy in the
   application directory.
 - An existing tool that cannot run produces an error without replacement.
 - Tool setup failures return structured errors before writing framework or harness
   instruction files. Downloaded tool files can remain for inspection.
+
+**Prohibited:** assume a global `bun.exe` satisfies `RequireExisting`; initialization
+checks the managed application directory.
+
+**Required:** leave `InstallMissing` at its default to provision the managed tools,
+or use `RequireExisting` after those tools are installed there.
 
 After the tools are ready, initialization runs the shared dependency installation:
 
@@ -226,6 +281,7 @@ response on stdout with exit status 2.
 - **Executable**
   - Homebrew manages it under the prefix shown by `brew --prefix`.
   - The command is available through that prefix's `bin/` directory.
+  - The generated shell or PowerShell installer reports its executable location.
 - **Project framework**
   - Initialization writes the framework to `<project>/.meta-cortex/`.
   - The current directory is the default project.
@@ -287,7 +343,7 @@ For a Homebrew installation:
 brew upgrade ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 ```
 
-For a shell installation, rerun the shell installer above.
+For a shell or PowerShell installation, rerun the corresponding installer above.
 
 ### Replace an installed framework
 
@@ -325,6 +381,8 @@ renaming the checkout preserve the ID and the existing named data directory.
 Bun is shared across repositories at `~/.meta-cortex/bun`; Vale is shared at `~/.meta-cortex/vale`.
 `META_CORTEX_HOME` overrides the application directory. Keep the identity file when replacing an installed framework or
 restoring a repository whose ledgers you want to retain.
+On native Windows, the default ledger is
+`%USERPROFILE%\.meta-cortex\<repo-name>\<repo_id>\workbench.db`.
 Database files and their engine-managed sidecars are persistent state; keep them
 together when backing up or moving them. Application storage is outside `.git`.
 
