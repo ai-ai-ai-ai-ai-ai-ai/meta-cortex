@@ -227,20 +227,27 @@ result, not a new test execution by the dashboard.
 - `h` opens history from task detail.
 - Esc or Backspace returns to the parent view.
 - `n`/`p` move to the next/previous record page.
-- `J`/`K` or PageDown/PageUp scroll displayed text.
+- `J`/`K` or PageDown/PageUp scroll the selected full objective in feature/task
+  lists, the selected full note in history, or the full task/event detail.
+  Changing the selected row resets preview scrolling.
 - `r` refreshes manually; `q` or Ctrl-C exits.
 
+Interactive lists separate compact rows from the selected objective or note
+preview. Their page labels start at `Page 1`; `last page` or `more pages` reflects
+the recorded query’s `PageEnd`. Typed request indexes remain zero-based: request
+`page: 0` opens interactive `Page 1`. Snapshot text remains zero-based and retains
+`Page end: More` or `Complete`.
+
 Interactive views reload after input and automatically after 500 ms without
-input. Feature, task, and history queries return at most 100 records per page;
-`Page end: More` or `Complete` indicates whether another page exists. Each query
-releases its connection after reading; no transaction is held while waiting for
-input. Pages use live offsets, so concurrent writes can shift records between
-pages. For example, a new history event can push an older event onto the next
-page; refresh and navigate again when comparing revisions.
+input. Feature, task, and history queries return at most 100 records per page.
+Each query releases its connection after reading; no transaction is held while
+waiting for input. Pages use live offsets, so concurrent writes can shift records
+between pages. For example, a new history event can push an older event onto the
+next page; refresh and navigate again when comparing revisions.
 
-**Prohibited:** assume page 1 retains the same records while new events arrive.
+- **Prohibited:** assume page 1 retains the same records while new events arrive.
 
-**Required:** refresh and compare event revisions across the live pages.
+- **Required:** refresh and compare event revisions across the live pages.
 
 ### Storage requirements and errors
 
