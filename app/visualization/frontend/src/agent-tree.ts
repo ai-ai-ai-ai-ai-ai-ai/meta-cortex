@@ -48,15 +48,48 @@ export interface AgentSelection {
   task: TaskFlow;
   origin: string;
 }
+enum IdentityMatch {
+  Same = "same",
+  Different = "different",
+}
+export class ReportingNodeId {
+  private constructor(private readonly value: string) {}
+  static actor(actor: RecordedActor): ReportingNodeId {
+    switch (actor.kind) {
+      case "unrecorded":
+        return new ReportingNodeId("unrecorded");
+      case "recorded":
+        return new ReportingNodeId(`${actor.agent.team}:${actor.agent.role}`);
+    }
+  }
+  static host(): ReportingNodeId {
+    return new ReportingNodeId("host");
+  }
+  match(other: ReportingNodeId): IdentityMatch {
+    switch (this.value === other.value) {
+      case true:
+        return IdentityMatch.Same;
+      case false:
+        return IdentityMatch.Different;
+    }
+  }
+  // String identity is required only at DOM and graph rendering boundaries.
+  serialize(): string {
+    return this.value;
+  }
+}
+enum VisitKind {
+  FirstVisit = "first-visit",
+  AlreadyVisited = "already-visited",
+}
+interface ReportingVisit {
+  seen: ReadonlySet<ReportingNodeId>;
+  id: ReportingNodeId;
+}
 class AgentLabel {
   constructor(private readonly actor: RecordedActor) {}
-  id(): string {
-    switch (this.actor.kind) {
-      case "unrecorded":
-        return "unrecorded";
-      case "recorded":
-        return `${this.actor.agent.team}:${this.actor.agent.role}`;
-    }
+  id(): ReportingNodeId {
+    return ReportingNodeId.actor(this.actor);
   }
   name(): string {
     switch (this.actor.kind) {
@@ -151,7 +184,7 @@ export class AgentContribution {
   }
 }
 export class Delegation {
-  readonly workers = new Map<string, AgentContribution>();
+  readonly workers = new Map<ReportingNodeId, AgentContribution>();
   constructor(readonly actor: RecordedActor) {}
   name(): string {
     switch (this.actor.kind) {
@@ -162,7 +195,18 @@ export class Delegation {
     }
   }
   add(task: TaskFlow): void {
-    const key = new AgentLabel(task.worker).id();
+    const requested = new AgentLabel(task.worker).id();
+    // Array.find requires a boolean; the value owner retains identity meaning.
+    const key = Array.from(this.workers.keys()).find(
+      (id) => id.match(requested) === IdentityMatch.Same,
+    );
+    switch (key) {
+      case undefined:
+        this.workers.set(requested, new AgentContribution(task.worker, [task]));
+        return;
+      default:
+        break;
+    }
     const worker = this.workers.get(key);
     switch (worker) {
       case undefined:
@@ -198,24 +242,27 @@ export enum ActivityKind {
   Recorded = "recorded",
   Absent = "absent",
 }
-type NodeActivity =
+export type NodeActivity =
   | { kind: ActivityKind.Recorded; group: AgentContribution }
   | { kind: ActivityKind.Absent };
 interface ReportingIdentity {
-  id: string;
+  id: ReportingNodeId;
   name: string;
   actor: RecordedActor;
 }
 interface ReportingEdge {
-  source: string;
-  target: string;
+  source: ReportingNodeId;
+  target: ReportingNodeId;
   tasks: ReadonlyArray<TaskFlow>;
 }
 export class ReportingNode {
   private ownActivity: NodeActivity = { kind: ActivityKind.Absent };
-  private readonly reportingChildren = new Map<string, ReportingNode>();
+  private readonly reportingChildren = new Map<
+    ReportingNodeId,
+    ReportingNode
+  >();
   constructor(private readonly identity: ReportingIdentity) {}
-  id(): string {
+  id(): ReportingNodeId {
     return this.identity.id;
   }
   name(): string {
@@ -271,13 +318,14 @@ export class ReportingNode {
   private descendantTasks(): ReadonlyArray<TaskFlow> {
     const pending = [...this.children];
     const reached: ReportingNode[] = [];
-    const initialIds: ReadonlyArray<string> = [this.id()];
-    const seen = new Set<string>(initialIds);
+    const initialIds: ReadonlyArray<ReportingNodeId> = [this.id()];
+    const seen = new Set<ReportingNodeId>(initialIds);
     for (const node of pending) {
-      switch (seen.has(node.id())) {
-        case true:
+      const visit: ReportingVisit = { seen, id: node.id() };
+      switch (this.visit(visit)) {
+        case VisitKind.AlreadyVisited:
           break;
-        case false:
+        case VisitKind.FirstVisit:
           seen.add(node.id());
           reached.push(node);
           pending.push(...node.children);
@@ -290,6 +338,14 @@ export class ReportingNode {
       (task) => !ownIds.has(task.task.common.id),
     );
   }
+  private visit(visit: ReportingVisit): VisitKind {
+    switch (visit.seen.has(visit.id)) {
+      case true:
+        return VisitKind.AlreadyVisited;
+      case false:
+        return VisitKind.FirstVisit;
+    }
+  }
   private uniqueTasks(tasks: ReadonlyArray<TaskFlow>): ReadonlyArray<TaskFlow> {
     const unique = new Map<string, TaskFlow>();
     for (const task of tasks) {
@@ -299,9 +355,9 @@ export class ReportingNode {
   }
 }
 export class ReportingHierarchy {
-  private readonly identities = new Map<string, ReportingNode>();
-  private readonly links = new Map<string, ReportingEdge>();
-  private readonly history = new Map<string, Delegation>();
+  private readonly identities = new Map<ReportingNodeId, ReportingNode>();
+  private readonly links: ReportingEdge[] = [];
+  private readonly history = new Map<ReportingNodeId, Delegation>();
   constructor(tasks: ReadonlyArray<TaskFlow>) {
     for (const task of tasks) {
       this.record(task);
@@ -315,7 +371,7 @@ export class ReportingHierarchy {
     return Array.from(this.identities.values());
   }
   edges(): ReadonlyArray<ReportingEdge> {
-    return Array.from(this.links.values());
+    return this.links;
   }
   historical(): ReadonlyArray<Delegation> {
     return Array.from(this.history.values());
@@ -330,7 +386,20 @@ export class ReportingHierarchy {
     }
   }
   private recordHistory(task: TaskFlow): void {
-    const key = new AgentLabel(task.created_by).id();
+    const requested = new AgentLabel(task.created_by).id();
+    const key = Array.from(this.history.keys()).find(
+      (id) => id.match(requested) === IdentityMatch.Same,
+    );
+    switch (key) {
+      case undefined: {
+        const group = new Delegation(task.created_by);
+        group.add(task);
+        this.history.set(requested, group);
+        return;
+      }
+      default:
+        break;
+    }
     const previous = this.history.get(key);
     switch (previous) {
       case undefined: {
@@ -366,19 +435,18 @@ export class ReportingHierarchy {
     }
   }
   private recordEdge(edge: ReportingEdge): void {
-    const key = `${edge.source}->${edge.target}`;
-    const previous = this.links.get(key);
+    // Array.find requires a predicate; both endpoints retain their value owner.
+    const previous = this.links.find(
+      (link) =>
+        link.source.match(edge.source) === IdentityMatch.Same &&
+        link.target.match(edge.target) === IdentityMatch.Same,
+    );
     switch (previous) {
       case undefined:
-        this.links.set(key, edge);
+        this.links.push(edge);
         return;
-      default: {
-        const updated: ReportingEdge = {
-          ...edge,
-          tasks: [...previous.tasks, ...edge.tasks],
-        };
-        this.links.set(key, updated);
-      }
+      default:
+        previous.tasks = [...previous.tasks, ...edge.tasks];
     }
   }
   private agent(actor: RecordedActor): ReportingNode {
@@ -394,7 +462,11 @@ export class ReportingHierarchy {
     switch (target.kind) {
       case "Host": {
         const actor: RecordedActor = { kind: "unrecorded" };
-        const identity: ReportingIdentity = { id: "host", name: "Host", actor };
+        const identity: ReportingIdentity = {
+          id: ReportingNodeId.host(),
+          name: "Host",
+          actor,
+        };
         return this.obtain(identity);
       }
       case "Gizmo": {
@@ -407,7 +479,9 @@ export class ReportingHierarchy {
     }
   }
   private obtain(identity: ReportingIdentity): ReportingNode {
-    const previous = this.identities.get(identity.id);
+    const previous = this.nodes().find(
+      (node) => node.id().match(identity.id) === IdentityMatch.Same,
+    );
     switch (previous) {
       case undefined: {
         const node = new ReportingNode(identity);
