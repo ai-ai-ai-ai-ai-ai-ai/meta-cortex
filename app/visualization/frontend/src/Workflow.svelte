@@ -1,4 +1,6 @@
 <script lang="ts">
+  import * as Card from "$lib/components/ui/card";
+  import { Button } from "$lib/components/ui/button";
   import { SvelteFlow, Background, Controls, MiniMap } from "@xyflow/svelte";
   import type { FeatureFlow, Task } from "./contracts";
   import { FlowPresentation, FlowView, GraphKind, NodeKind } from "./workflow";
@@ -82,41 +84,66 @@
 </script>
 
 <svelte:window onkeydown={key} />
-<header class="app-header workflow-header">
-  <div class="workflow-heading">
+<header
+  class="app-header workflow-header flex items-center justify-between gap-[22px] px-[25px] pt-[25px] pb-[19px] max-[1100px]:flex-wrap max-[1100px]:gap-4 max-[800px]:px-[22px] max-[800px]:pt-6 max-[620px]:gap-2.5 max-[620px]:px-4 max-[620px]:pt-[23px] max-[620px]:pb-[17px]"
+>
+  <div
+    class="workflow-heading min-w-0 flex-1 [&_h1]:text-[25px] [&_h1]:tracking-[-.65px] [&_h1]:[overflow-wrap:anywhere] max-[800px]:[&_h1]:text-[23px] max-[620px]:[&_h1]:text-xl"
+  >
     <h1 title={flow.feature.id}>{FlowPresentation.label(flow.feature.id)}</h1>
-    <p class="header-subtitle">Recorded work · Turso</p>
+    <p class="mt-[7px] text-[13px] text-muted-foreground">
+      Recorded work · Turso
+    </p>
   </div>
-  <ProgressSummary counts={flow.counts} />
-  <button class="button" onclick={refresh}
-    ><span aria-hidden="true">↻</span> Refresh</button
+  <ProgressSummary
+    counts={flow.counts}
+    class="max-[1100px]:order-3 max-[1100px]:flex max-[1100px]:w-full max-[1100px]:items-center max-[1100px]:gap-[15px] max-[1100px]:[&_.progress-meter]:m-0 max-[1100px]:[&_.progress-meter]:ml-auto max-[1100px]:[&_.progress-meter]:min-w-[140px] max-[1100px]:[&_.progress-meter]:max-w-[250px] max-[1100px]:[&_.progress-meter]:flex-1 max-[620px]:block max-[620px]:[&_.progress-meter]:mt-[7px] max-[620px]:[&_.progress-meter]:max-w-none"
+  />
+  <Button
+    variant="ghost"
+    class="button h-auto whitespace-normal rounded-[5px] font-normal shadow-none min-h-10 border border-control bg-secondary px-[14px] py-2 text-xs hover:bg-secondary-hover"
+    onclick={refresh}><span aria-hidden="true">↻</span> Refresh</Button
   >
 </header>
-<section class="workflow-overview" aria-label="Feature workflow">
-  <nav class="workflow-tabs" aria-label="Workflow views">
-    {#each presentation.views() as item (item)}<button
+<section
+  class="workflow-overview px-[25px] pb-5 max-[800px]:px-[22px] max-[800px]:pt-1 max-[620px]:px-4"
+  aria-label="Feature workflow"
+>
+  <nav
+    class="workflow-tabs mb-[22px] flex gap-[7px] border-b border-border max-[620px]:gap-[3px]"
+    aria-label="Workflow views"
+  >
+    {#each presentation.views() as item (item)}<Button
+        variant="ghost"
+        class="h-auto min-h-11 rounded-none border-b-2 border-transparent bg-transparent px-[15px] pt-2.5 pb-[13px] text-sm font-normal text-muted-foreground capitalize hover:bg-transparent hover:text-foreground aria-pressed:border-primary aria-pressed:text-primary aria-pressed:font-medium max-[620px]:px-3 max-[620px]:text-xs"
         id={`view-${item}`}
         aria-pressed={view === item}
-        onclick={() => switchView(item)}>{item}</button
+        onclick={() => switchView(item)}>{item}</Button
       >{/each}
   </nav>
   <div
-    class="workflow-workspace"
-    class:inspector-open={panel.kind === PanelKind.Agent}
+    class="workflow-workspace group relative grid grid-cols-[minmax(0,1fr)] items-start data-[inspector=true]:min-[1101px]:grid-cols-[minmax(0,1fr)_340px] data-[inspector=true]:min-[1101px]:gap-[22px] data-[inspector=true]:min-[1101px]:max-[1350px]:grid-cols-[minmax(0,1fr)_330px] data-[inspector=true]:min-[1101px]:max-[1350px]:gap-4"
+    data-inspector={panel.kind === PanelKind.Agent}
   >
-    <div class="workflow-primary">
+    <div class="workflow-primary min-w-0">
       {#if view === FlowView.Tree}<AgentTree
           tasks={flow.tasks.records}
           {panel}
           select={open}
         />
       {:else if view === FlowView.History}
-        <section class="feature-history" aria-label="Recent recorded history">
+        <Card.Root
+          class="feature-history gap-0 rounded-[6px] border border-border p-5 shadow-none max-[620px]:p-[15px] [&_h2]:mb-5 [&_h2]:text-[19px]"
+          role="region"
+          aria-label="Recent recorded history"
+        >
           <h2>Recent activity</h2>
-          {#each presentation.activity() as item (`${item.task.id}:${item.event.revision}`)}<button
+          {#each presentation.activity() as item (`${item.task.id}:${item.event.revision}`)}<Button
+              variant="ghost"
+              class="h-auto min-h-[70px] w-full justify-start gap-3 rounded-none border-t border-border bg-transparent px-1 py-[15px] text-left whitespace-normal hover:bg-secondary [&_strong]:block [&_strong]:text-[13px] [&_strong]:font-medium [&_div>span]:mt-[5px] [&_div>span]:block [&_div>span]:text-[11px] [&_div>span]:text-muted-foreground [&_time]:ml-auto [&_time]:text-[10px] [&_time]:text-muted-foreground max-[620px]:[&_time]:text-[9px]"
               onclick={() => history(item.task)}
               ><span
-                class="event-icon"
+                class="event-icon text-2xl text-primary"
                 data-event={item.event.kind}
                 aria-hidden="true">↳</span
               >
@@ -125,21 +152,26 @@
                   >{item.task.id} · {item.event.actor.role}</span
                 >
               </div>
-              <time>{new Date(item.event.at).toLocaleString()}</time></button
+              <time>{new Date(item.event.at).toLocaleString()}</time></Button
             >{/each}
-        </section>
+        </Card.Root>
       {:else}
-        {#if view === FlowView.Agents}<div class="graph-toolbar">
+        {#if view === FlowView.Agents}<div
+            class="graph-toolbar flex items-center justify-between rounded-t-[6px] border border-border p-3 text-[11px] text-muted-foreground max-[620px]:flex-wrap max-[620px]:gap-2.5 [&>div]:flex [&>div]:gap-2"
+          >
             <span>Recorded relationships</span>
             <div>
-              {#each presentation.graphKinds() as kind (kind)}<button
-                  class="button"
+              {#each presentation.graphKinds() as kind (kind)}<Button
+                  variant="ghost"
+                  class="h-auto min-h-[30px] rounded-[5px] border border-control bg-secondary px-2.5 py-1.5 text-[10px] font-normal capitalize shadow-none hover:bg-secondary-hover aria-pressed:border-primary aria-pressed:text-primary"
                   aria-pressed={graphKind === kind}
-                  onclick={() => (graphKind = kind)}>{kind}</button
+                  onclick={() => (graphKind = kind)}>{kind}</Button
                 >{/each}
             </div>
           </div>{/if}
-        <div class="flow-canvas">
+        <div
+          class="flow-canvas h-[540px] min-w-0 overflow-hidden rounded-[6px] border border-border bg-canvas max-[620px]:h-[420px]"
+        >
           {#key `${view}:${graphKind}`}<SvelteFlow
               nodes={diagram.nodes}
               edges={diagram.edges}
@@ -160,7 +192,8 @@
       {/if}
     </div>
     {#if panel.kind === PanelKind.Agent}<button
-        class="drawer-backdrop"
+        type="button"
+        class="drawer-backdrop fixed inset-0 z-20 hidden cursor-default bg-backdrop max-[1100px]:block"
         aria-label="Return to execution tree"
         onclick={close}
       ></button><AgentInspector
@@ -170,7 +203,9 @@
         openHistory={history}
       />{/if}
   </div>
-  <details class="workflow-information">
+  <details
+    class="workflow-information mt-[14px] text-[10px] text-muted-foreground [&_summary]:cursor-pointer [&_p]:max-w-[700px] [&_p]:pt-3"
+  >
     <summary>About this hierarchy</summary>
     <p>
       Rows group recorded task creators and workers by role. They do not
@@ -185,7 +220,9 @@
       PR.
     </p>
   </details>
-  <details class="feature-metadata workflow-information">
+  <details
+    class="feature-metadata workflow-information mt-[14px] text-[10px] text-muted-foreground [&_summary]:cursor-pointer [&_dl]:grid [&_dl]:max-w-[650px] [&_dl]:grid-cols-[85px_minmax(0,1fr)] [&_dl]:gap-x-3 [&_dl]:gap-y-2 [&_dl]:py-[14px] [&_dl]:text-left [&_dl]:text-[11px] [&_dt]:text-muted-foreground [&_dd]:m-0 [&_dd]:[overflow-wrap:anywhere]"
+  >
     <summary>Feature record</summary>
     <dl>
       <dt>ID</dt>

@@ -1,378 +1,138 @@
-@import url("./tree.css");
-@import url("./progress.css");
-@import url("@xyflow/svelte/dist/style.css");
-:root {
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  font-synthesis: none;
-  font-size: 14px;
-  color: #e4ebea;
-  background: #0d1517;
-  --surface: #111b1e;
-  --surface-raised: #162226;
-  --border: #2b383c;
-  --muted: #a0b2c1;
-  --accent: #79edc1;
-  --working: #61c9ed;
-  --ready: #d9c78c;
-  --blocked: #eea184;
-  --cancelled: #92a0a3;
-}
-* {
-  box-sizing: border-box;
-}
-body {
-  margin: 0;
-}
-button,
-a,
-input {
-  font: inherit;
-}
-button {
-  color: inherit;
-  cursor: pointer;
-  border: 0;
-}
-button:focus-visible,
-a:focus-visible,
-summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-button:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-h1,
-h2,
-h3,
-h4,
-p {
-  margin: 0;
-}
-p {
-  line-height: 1.6;
-}
-small,
-.muted {
-  color: var(--muted);
-}
-code {
-  font-family: ui-monospace, SFMono-Regular, monospace;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-h1 {
-  font-size: 28px;
-  letter-spacing: -0.65px;
-}
-h2 {
-  font-size: 23px;
-}
-h3 {
-  font-size: 16px;
-}
-.eyebrow {
-  font-size: 10px;
-  letter-spacing: 1.3px;
-  color: var(--muted);
-}
-.app-shell {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  height: 100dvh;
-  grid-template-rows: minmax(0, 1fr) 38px;
-}
-.sidebar {
-  grid-row: 1 / -1;
-  background: #10191c;
-  border-right: 1px solid var(--border);
-  padding: 26px 12px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  padding: 0 10px 28px;
-  min-height: 70px;
-  font-size: 17px;
-  font-weight: 650;
-}
-.brand-mark {
-  width: 33px;
-  height: 33px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  color: var(--accent);
-}
-.brand-mark svg {
-  width: 30px;
-  height: 30px;
-}
-.brand small {
-  display: block;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin-top: 4px;
-}
-.sidebar-label {
-  padding: 0 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--muted);
-}
-.sidebar nav {
-  flex: 1;
-  overflow: auto;
-}
-.sidebar nav button {
-  background: transparent;
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  text-align: left;
-  border-radius: 5px;
-  padding: 11px 12px;
-  margin-bottom: 4px;
-  color: #a1b3b6;
-}
-.sidebar nav button strong {
-  font-size: 12px;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.sidebar nav button:hover {
-  background: #17262a;
-}
-.sidebar nav button.selected {
-  background: #1d3734;
-  color: #b5f4db;
-  box-shadow: inset 3px 0 var(--accent);
-}
-.feature-dot {
-  width: 19px;
-  height: 19px;
-  flex-shrink: 0;
-}
-.selected .feature-dot {
-  color: var(--accent);
-}
-.feature-short {
-  display: none;
-}
-.sidebar-note {
-  padding: 17px 10px 0;
-  font-size: 11px;
-  color: var(--accent);
-  border-top: 1px solid var(--border);
-}
-.sidebar-note small {
-  display: block;
-  font-size: 10px;
-  line-height: 1.8;
-  margin-top: 6px;
-}
-main {
-  min-width: 0;
-  overflow: auto;
-}
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 24px;
-  padding: 25px 25px 18px;
-}
-.header-subtitle {
-  font-size: 13px;
-  color: var(--muted);
-  margin-top: 7px;
-}
-.button {
-  background: #17262a;
-  border: 1px solid #374e54;
-  border-radius: 5px;
-  min-height: 40px;
-  padding: 8px 14px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.button:hover {
-  background: #23383b;
-}
-.icon-button {
-  width: 40px;
-  height: 40px;
-  background: transparent;
-  color: #93afb4;
-  font-size: 24px;
-  border-radius: 4px;
-}
-.icon-button:hover {
-  background: #243337;
-  color: var(--accent);
-}
-.text-button {
-  background: transparent;
-  color: var(--accent);
-  font-size: 12px;
-  padding: 12px 0;
-  text-align: center;
-  min-height: 44px;
-}
-.workflow-overview {
-  padding: 0 25px 20px;
-}
-progress {
-  display: block;
-  height: 6px;
-  width: 100%;
-  border: 0;
-  border-radius: 3px;
-  overflow: hidden;
-  background: #35464b;
-  appearance: none;
-}
-progress::-webkit-progress-bar {
-  background: #35464b;
-}
-progress::-webkit-progress-value {
-  background: var(--accent);
-  border-radius: 3px;
-}
-progress::-moz-progress-bar {
-  background: var(--accent);
-  border-radius: 3px;
-}
-.workflow-tabs {
-  display: flex;
-  gap: 7px;
-  border-bottom: 1px solid var(--border);
-  margin: 0 0 22px;
-}
-.workflow-tabs button {
-  min-height: 44px;
-  background: transparent;
-  color: #97acb0;
-  border-bottom: 2px solid transparent;
-  padding: 10px 15px 13px;
-  font-size: 14px;
-  text-transform: capitalize;
-}
-.workflow-tabs button[aria-pressed="true"] {
-  color: #adf5d9;
-  border-color: var(--accent);
-  font-weight: 550;
-}
-.workflow-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  position: relative;
-}
-.workflow-workspace.inspector-open {
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 22px;
-}
-.workflow-primary {
-  min-width: 0;
-}
-.graph-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px 6px 0 0;
-  color: var(--muted);
-  font-size: 11px;
-}
-.graph-toolbar > div {
-  display: flex;
-  gap: 8px;
-}
-.graph-toolbar .button {
-  min-height: 30px;
-  padding: 6px 10px;
-  text-transform: capitalize;
-  font-size: 10px;
-}
-.graph-toolbar button[aria-pressed="true"] {
-  color: var(--accent);
-  border-color: #689488;
-}
-.flow-canvas {
-  height: 540px;
-  min-width: 0;
-  background: #101b1f;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-.workflow-node {
-  width: 230px;
-  min-height: 112px;
-  padding: 12px 16px;
-  background: #16262c;
-  border: 1px solid #405c62;
-  border-radius: 7px;
-}
-.workflow-node strong {
-  display: block;
-  font-size: 12px;
-  margin: 7px 0;
-  overflow-wrap: anywhere;
-}
-.workflow-node p {
-  font-size: 10px;
-  line-height: 1.5;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
-.node-kind {
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--accent);
-}
-.node-footer {
-  display: flex;
-  justify-content: space-between;
-  font-size: 9px;
-  color: #9cb3b9;
-  margin-top: 10px;
-}
-.workflow-node[data-state="integrated"] {
-  border-color: #518f77;
-}
-.workflow-node[data-state="working"] {
-  border-color: #527b8c;
-}
-.workflow-node[data-state="blocked"] {
-  border-color: #b27454;
-}
-.workflow-node[data-state="ready"] {
-  border-color: #a09458;
-}
+@import "tailwindcss";
+@import "@xyflow/svelte/dist/style.css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--panel);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--blocked);
+  --color-destructive-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-input: var(--control);
+  --color-ring: var(--primary);
+  --color-working: var(--working);
+  --color-ready: var(--ready);
+  --color-blocked: var(--blocked);
+  --color-cancelled: var(--cancelled);
+  --color-surface: var(--surface);
+  --color-sidebar: var(--sidebar);
+  --color-panel: var(--panel);
+  --color-panel-border: var(--panel-border);
+  --color-tree: var(--tree);
+  --color-delegation: var(--delegation);
+  --color-tree-line: var(--tree-line);
+  --color-row: var(--row);
+  --color-selection: var(--selection);
+  --color-control: var(--control);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-team: var(--team);
+  --color-commit: var(--commit);
+  --color-progress: var(--progress);
+  --color-activity: var(--activity);
+  --color-meter: var(--meter);
+  --color-code: var(--code);
+  --color-canvas: var(--canvas);
+  --color-node: var(--node);
+  --color-node-border: var(--node-border);
+  --color-backdrop: var(--backdrop);
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 7px;
+  --radius-xl: 7px;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    font-family:
+      Inter,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-synthesis: none;
+    font-size: 16px;
+    --background: #0d1517;
+    --foreground: #e4ebea;
+    --card: #142226;
+    --primary: #79edc1;
+    --primary-foreground: #102b24;
+    --secondary: #17262a;
+    --secondary-hover: #23383b;
+    --muted: #1d292d;
+    --muted-foreground: #a0b2c1;
+    --border: #2b383c;
+    --working: #61c9ed;
+    --ready: #d9c78c;
+    --blocked: #eea184;
+    --cancelled: #92a0a3;
+    --surface: #111b1e;
+    --sidebar: #10191c;
+    --panel: #122025;
+    --panel-border: #34494f;
+    --tree: #101b1e;
+    --delegation: #121f23;
+    --tree-line: #3b5055;
+    --row: #25353a;
+    --selection: #162b29;
+    --control: #374e54;
+    --team: #a9b9cd;
+    --commit: #c1d1d4;
+    --progress: #dbe4e4;
+    --activity: #b5c6d0;
+    --meter: #35464b;
+    --code: #0b171b;
+    --canvas: #101b1f;
+    --node: #16262c;
+    --node-border: #405c62;
+    --backdrop: #07101490;
+  }
+  body {
+    font-size: 14px;
+    margin: 0;
+    color: var(--foreground);
+    background: var(--background);
+  }
+  button,
+  a,
+  input {
+    font: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+  }
+  p {
+    line-height: 1.6;
+  }
+  small {
+    color: var(--muted-foreground);
+  }
+  code {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Svelte Flow owns these elements; its stylesheet requires targeted overrides. */
 .svelte-flow__edge-text {
   fill: #a4c0c4;
   font-size: 10px;
@@ -397,487 +157,4 @@ progress::-moz-progress-bar {
   background: #20373d;
   border-color: #44656b;
   fill: #cfe7e5;
-}
-.feature-history {
-  padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-.feature-history h2 {
-  font-size: 19px;
-  margin-bottom: 20px;
-}
-.feature-history button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: transparent;
-  min-height: 70px;
-  width: 100%;
-  text-align: left;
-  padding: 15px 4px;
-  border-top: 1px solid var(--border);
-}
-.feature-history button:hover {
-  background: #192b2f;
-}
-.feature-history strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-}
-.feature-history div > span {
-  display: block;
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 5px;
-}
-.feature-history time {
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 10px;
-}
-.event-icon {
-  color: var(--accent);
-  font-size: 24px;
-}
-.feature-catalog {
-  padding: 15px 32px;
-}
-.section-heading h2 {
-  font-size: 20px;
-}
-.section-heading p {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 10px 0 25px;
-}
-.feature-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.feature-grid > button {
-  background: #122024;
-  border: 1px solid var(--border);
-  padding: 18px 22px;
-  text-align: left;
-  border-radius: 6px;
-}
-.feature-grid > button:hover {
-  border-color: #548779;
-}
-.feature-grid h3 {
-  font-size: 16px;
-  margin: 7px 0 8px;
-}
-.feature-grid p {
-  font-size: 12px;
-  color: var(--muted);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  max-width: 780px;
-}
-.feature-grid code {
-  display: block;
-  color: #819fa7;
-  font-size: 10px;
-  margin-top: 12px;
-}
-.open-feature {
-  display: block;
-  color: var(--accent);
-  font-size: 11px;
-  margin-top: 13px;
-}
-.empty-state {
-  padding: 60px 24px;
-  text-align: center;
-}
-.empty-state p {
-  color: var(--muted);
-  font-size: 12px;
-  margin: 15px 0;
-}
-.empty-state h2 {
-  font-size: 20px;
-}
-.loading-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--accent);
-  margin-bottom: 20px;
-}
-.page-controls {
-  display: flex;
-  gap: 15px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px 24px;
-  font-size: 10px;
-  color: var(--muted);
-}
-.page-controls > div {
-  display: flex;
-  gap: 7px;
-}
-.page-controls .button {
-  font-size: 11px;
-  min-height: 36px;
-  padding: 6px 10px;
-}
-.task-detail {
-  padding: 24px 32px;
-}
-.detail-toolbar {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 25px;
-}
-.detail-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 25px;
-  margin-bottom: 25px;
-}
-.detail-title h2 {
-  margin: 8px 0 12px;
-}
-.detail-title p {
-  max-width: 750px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-.detail-card {
-  padding: 20px;
-  background: #142226;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  min-width: 0;
-}
-.detail-card h3 {
-  margin-bottom: 18px;
-}
-.detail-card h4 {
-  font-size: 11px;
-  color: var(--muted);
-  margin: 20px 0 10px;
-}
-.progress-summary {
-  font-size: 14px;
-}
-.finding {
-  font-size: 12px;
-  margin-bottom: 10px;
-  padding-left: 12px;
-  border-left: 2px solid #3c5d63;
-}
-.detail-card dl {
-  display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 14px;
-  font-size: 12px;
-}
-.detail-card dt {
-  color: var(--muted);
-}
-.detail-card dd {
-  margin: 0;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.workspace {
-  white-space: pre-wrap;
-}
-.detail-card .muted {
-  font-size: 11px;
-  margin-top: 18px;
-}
-.check {
-  padding: 12px 0;
-  border-top: 1px solid var(--border);
-}
-.check summary {
-  cursor: pointer;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-.check pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-size: 11px;
-  background: #0b171b;
-  padding: 12px;
-}
-.dependency-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  color: var(--accent);
-  margin-top: 20px;
-}
-.history-feed {
-  margin-top: 24px;
-}
-.history-feed article {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-  border-left: 2px solid #528c81;
-  margin-bottom: 5px;
-  background: #142226;
-}
-.history-feed h3 {
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-.history-feed p {
-  font-size: 12px;
-  color: #b8cbcf;
-  margin-bottom: 10px;
-}
-.history-feed small {
-  font-size: 10px;
-}
-@media (min-width: 1101px) and (max-width: 1350px) {
-  .inspector-open .agent-select {
-    grid-template-columns: 24px minmax(0, 1fr) 72px;
-    gap: 10px;
-  }
-  .inspector-open .row-commit {
-    display: none;
-  }
-  .inspector-open .agent-title strong {
-    font-size: 14px;
-  }
-  .inspector-open .agent-title > span {
-    font-size: 11px;
-  }
-  .workflow-workspace.inspector-open {
-    gap: 16px;
-    grid-template-columns: minmax(0, 1fr) 330px;
-  }
-}
-@media (max-width: 1100px) {
-  .workflow-workspace.inspector-open {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .agent-inspector {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    height: 100dvh;
-    max-height: none;
-    min-height: 0;
-    width: min(410px, 90vw);
-    z-index: 30;
-    border-radius: 0;
-    border-top: 0;
-    border-bottom: 0;
-    box-shadow: -14px 0 40px #0005;
-  }
-  .drawer-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 20;
-    background: #07101490;
-    cursor: default;
-  }
-  .agent-inspector > header {
-    padding: 24px;
-  }
-  .inspector-content {
-    padding: 24px;
-  }
-}
-@media (max-width: 800px) {
-  .app-shell {
-    grid-template-columns: 175px minmax(0, 1fr);
-  }
-  .app-header {
-    padding: 24px 22px 18px;
-  }
-  .app-header h1 {
-    font-size: 23px;
-    overflow-wrap: anywhere;
-  }
-  .workflow-overview {
-    padding: 4px 22px 20px;
-  }
-  .agent-select {
-    grid-template-columns: 20px minmax(0, 1fr) 76px;
-    gap: 8px;
-  }
-  .row-commit {
-    display: none;
-  }
-  .agent-title strong {
-    font-size: 14px;
-  }
-  .brand {
-    font-size: 14px;
-    padding-left: 3px;
-    gap: 7px;
-  }
-  .team-icon {
-    display: none;
-  }
-  .agent-children {
-    padding-left: 18px;
-  }
-  .agent-row {
-    padding-right: 7px;
-    padding-left: 6px;
-  }
-  .disclosure {
-    min-width: 30px;
-  }
-  .delegation-header {
-    gap: 10px;
-    padding: 16px;
-  }
-  .team-title strong {
-    font-size: 16px;
-  }
-  .status {
-    font-size: 10px;
-    padding: 5px 6px;
-  }
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-  .page-controls,
-  .feature-catalog,
-  .task-detail {
-    padding-left: 22px;
-    padding-right: 22px;
-  }
-}
-@media (max-width: 620px) {
-  .app-shell {
-    grid-template-columns: 65px minmax(0, 1fr);
-  }
-  .sidebar {
-    padding: 20px 8px;
-  }
-  .brand {
-    padding: 0 7px 15px;
-    min-height: 50px;
-  }
-  .brand > div,
-  .sidebar-label,
-  .sidebar-note,
-  .feature-dot,
-  .sidebar nav strong {
-    display: none;
-  }
-  .sidebar nav button {
-    padding: 9px;
-    justify-content: center;
-  }
-  .feature-short {
-    display: inline-block;
-    text-transform: uppercase;
-    font-size: 10px;
-  }
-  .app-header {
-    padding: 23px 16px 17px;
-    gap: 10px;
-  }
-  .app-header h1 {
-    font-size: 20px;
-  }
-  .app-header .button {
-    padding: 8px 10px;
-  }
-  .workflow-overview {
-    padding: 4px 16px 20px;
-  }
-  .workflow-tabs {
-    gap: 3px;
-  }
-  .workflow-tabs button {
-    font-size: 12px;
-    padding: 10px 12px;
-  }
-  .agent-title strong {
-    font-size: 13px;
-  }
-  .agent-title > span {
-    font-size: 11px;
-  }
-  .agent-select {
-    grid-template-columns: 18px minmax(0, 1fr) 68px;
-    gap: 7px;
-  }
-  .state-mark {
-    width: 20px;
-    height: 20px;
-  }
-  .agent-row {
-    min-height: 60px;
-  }
-  .task-children {
-    margin-left: 36px;
-    padding-right: 7px;
-  }
-  .task-children button {
-    gap: 7px;
-  }
-  .task-children .status {
-    font-size: 9px;
-  }
-  .task-children div > span {
-    font-size: 10px;
-  }
-  .page-controls {
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 0 16px 22px;
-  }
-  .page-controls > span {
-    font-size: 9px;
-  }
-  .feature-history time {
-    font-size: 9px;
-  }
-  .feature-history {
-    padding: 15px;
-  }
-  .feature-history div > span {
-    font-size: 10px;
-  }
-  .flow-canvas {
-    height: 420px;
-  }
-  .task-detail,
-  .feature-catalog {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
-  .detail-title {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .history-feed article {
-    gap: 10px;
-    padding: 14px;
-  }
-  .graph-toolbar {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
 }
