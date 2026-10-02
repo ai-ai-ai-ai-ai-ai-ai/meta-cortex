@@ -16,3 +16,12 @@ cache-builds = true
 # Release workflow runs dist from app/; retain its directory adjustments.
 allow-dirty = ["ci"]
 include = ["../LICENSE", "../README.md"]
+
+# Native Linux builds link the Tauri desktop runtime against system WebKitGTK.
+[dist.dependencies.apt]
+"libwebkit2gtk-4.1-dev" = "*"
+build-essential = "*"
+libxdo-dev = "*"
+libssl-dev = "*"
+libayatana-appindicator3-dev = "*"
+librsvg2-dev = "*"
