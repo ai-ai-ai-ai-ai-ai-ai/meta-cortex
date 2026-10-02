@@ -306,6 +306,20 @@ class BrowserMediaQueries {
     return new BrowserMediaQuery(query);
   }
 }
+// JSDOM has no layout-driven resize notifications. Track native observer
+// lifecycles while leaving SvelteFlow rendering and selection handlers real.
+class BrowserResizeObserver implements ResizeObserver {
+  private readonly targets = new Set<Element>();
+  observe(target: Element): void {
+    this.targets.add(target);
+  }
+  unobserve(target: Element): void {
+    this.targets.delete(target);
+  }
+  disconnect(): void {
+    this.targets.clear();
+  }
+}
 it("uses the real Agents graph selection handler for prioritized own activity and leaves absent targets nonselectable", async () => {
   const fixture = new CoordinatorFixture();
   const props: ComponentProps<typeof Workflow> = {
@@ -315,7 +329,10 @@ it("uses the real Agents graph selection handler for prioritized own activity an
     refresh: vi.fn(),
   };
   const mediaQueries = new BrowserMediaQueries();
-  vi.stubGlobal("matchMedia", mediaQueries.matchMedia);
+  const matchMedia: BrowserMediaQueries["matchMedia"] =
+    mediaQueries.matchMedia.bind(mediaQueries);
+  vi.stubGlobal("matchMedia", matchMedia);
+  vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
   const graphQuery: ByRoleOptions = { name: "graph" };
   const inspectorQuery: ByRoleOptions = { name: "Team Gizmo details" };
   const objectiveQuery: ByRoleOptions = {

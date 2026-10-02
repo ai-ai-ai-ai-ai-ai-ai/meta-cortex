@@ -699,8 +699,13 @@ it("shows the native history worker of a migrated integrated task without invent
     within(inspector).getByText("Assignment", definitionQuery)
       .nextElementSibling?.textContent,
   ).toBe("Unrecorded");
-  expect(within(inspector).getByTitle("a".repeat(40))).toBeTruthy();
-  expect(within(inspector).getByTitle("b".repeat(40))).toBeTruthy();
+  const commitQuery: SelectorMatcherOptions = { selector: "code" };
+  expect(
+    within(inspector).getAllByTitle("a".repeat(40), commitQuery),
+  ).toHaveLength(2);
+  expect(
+    within(inspector).getAllByTitle("b".repeat(40), commitQuery),
+  ).toHaveLength(2);
   expect(within(inspector).getByText("Claimed attempt 1")).toBeTruthy();
   expect(within(inspector).getByText("Recorded integration")).toBeTruthy();
   expect(within(inspector).getByText(/native-contract-v2/)).toBeTruthy();
