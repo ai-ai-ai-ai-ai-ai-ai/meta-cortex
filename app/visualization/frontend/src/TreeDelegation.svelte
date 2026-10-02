@@ -56,7 +56,10 @@
         class="team-title min-w-0 [&_strong]:block [&_strong]:text-[15px] [&_strong]:font-semibold [&_span]:mt-[5px] [&_span]:block [&_span]:text-[11px] [&_span]:text-muted-foreground"
       >
         <strong>{delegation.name()}</strong>
-        <span>{delegation.tasks().length} recorded tasks · task creator</span>
+        <span
+          >Created by · {delegation.tasks().length} recorded activities · reporting
+          unrecorded</span
+        >
       </span>
     </Button>
     <ProgressSummary

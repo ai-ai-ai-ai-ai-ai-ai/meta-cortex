@@ -53,7 +53,7 @@
       >
         <strong
           >{group.name()}{#if group.tasks.length > 1}<small
-              >{group.tasks.length} tasks</small
+              >{group.tasks.length} activities</small
             >{/if}</strong
         ><span title={group.latest().task.common.objective}
           >{group.latest().task.common.objective}</span
@@ -96,6 +96,10 @@
               <strong
                 title={`${item.task.common.id} · ${item.task.common.objective}`}
                 >{item.task.common.objective}</strong
+              ><span
+                class="mt-1 block text-[9px] text-muted-foreground"
+                title={new TaskPresentation(item.task).workspace()}
+                >{new TaskPresentation(item.task).workspaceLabel()}</span
               >
             </div>
             <Badge
