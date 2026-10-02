@@ -6,6 +6,7 @@ import {
   screen,
   within,
   type ByRoleOptions,
+  type SelectorMatcherOptions,
 } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import TaskDetail from "./TaskDetail.svelte";
@@ -512,7 +513,12 @@ it("renders completed read-only ownership and reporting without inventing Git ev
     techWriterVerifierDetailsQuery,
   );
   expect(within(inspector).getByText("Host")).toBeTruthy();
-  expect(within(inspector).getByText("Read only")).toBeTruthy();
+  const definitionQuery: SelectorMatcherOptions = { selector: "dt" };
+  expect(
+    within(inspector).getByText("Workspace", definitionQuery).nextElementSibling
+      ?.textContent,
+  ).toBe("Read only");
+  expect(within(inspector).getAllByText("Read only")).toHaveLength(2);
   expect(within(inspector).getByText("Assignment & workspace")).toBeTruthy();
   expect(within(inspector).queryByText("Git evidence")).toBeNull();
   expect(within(inspector).getByText("Completed task")).toBeTruthy();
@@ -581,7 +587,14 @@ it("renders a queued assigned worker and feature workspace before any claim hist
     typescriptVerifierDetailsQuery,
   );
   expect(within(inspector).getByText("Gizmo Prime")).toBeTruthy();
-  expect(within(inspector).getByText("Shared feature workspace")).toBeTruthy();
+  const definitionQuery: SelectorMatcherOptions = { selector: "dt" };
+  expect(
+    within(inspector).getByText("Workspace", definitionQuery).nextElementSibling
+      ?.textContent,
+  ).toBe("Shared feature workspace");
+  expect(
+    within(inspector).getAllByText("Shared feature workspace"),
+  ).toHaveLength(2);
   expect(within(inspector).getByText("Recorded assignment")).toBeTruthy();
   expect(new FlowPresentation(fixture.flow).git().edges).toHaveLength(0);
 });
@@ -677,7 +690,15 @@ it("shows the native history worker of a migrated integrated task without invent
   expect(
     within(inspector).getByText("Development / TypescriptDev"),
   ).toBeTruthy();
-  expect(within(inspector).getByText("Unrecorded")).toBeTruthy();
+  const definitionQuery: SelectorMatcherOptions = { selector: "dt" };
+  expect(
+    within(inspector).getByText("Reports to", definitionQuery)
+      .nextElementSibling?.textContent,
+  ).toBe("Unrecorded");
+  expect(
+    within(inspector).getByText("Assignment", definitionQuery)
+      .nextElementSibling?.textContent,
+  ).toBe("Unrecorded");
   expect(within(inspector).getByTitle("a".repeat(40))).toBeTruthy();
   expect(within(inspector).getByTitle("b".repeat(40))).toBeTruthy();
   expect(within(inspector).getByText("Claimed attempt 1")).toBeTruthy();
