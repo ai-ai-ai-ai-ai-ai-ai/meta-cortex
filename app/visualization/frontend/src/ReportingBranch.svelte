@@ -14,7 +14,7 @@
   }
   let { node, select, panel }: ReportingBranchProperties = $props();
   let expansion = $state(new TreeExpansion().toggle());
-  let identity = $derived(`reporting:${node.id()}`);
+  let identity = $derived(`reporting:${node.id().serialize()}`);
   function toggle() {
     expansion = expansion.toggle();
   }
@@ -111,7 +111,7 @@
       hidden={!expansion.ariaExpanded()}
       class="m-0 list-none border-l border-tree-line pl-5 max-[800px]:pl-[18px]"
     >
-      {#each node.children as child (child.id())}
+      {#each node.children as child (child.id().serialize())}
         <ReportingBranch node={child} {select} {panel} />
       {/each}
     </ul>
