@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use thiserror::Error;
 
 use derive_more::{Display, From};
@@ -79,8 +81,19 @@ pub struct TeamSettings {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct RequiredTotalAgents(NonZeroU32);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HostSettings {
+    pub required_total_agents: RequiredTotalAgents,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Configuration {
+    pub host: HostSettings,
     // Preserve the framework's existing, published TOML key.
     #[serde(rename = "gizmo-prime")]
     pub gizmo_prime: AgentSettings,
@@ -138,13 +151,20 @@ impl TryFrom<Configuration> for ConfigText {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
+    use std::num::NonZeroU32;
+
     use super::{
-        AgentSettings, ConfigError, ConfigText, Configuration, Effort, Model, TeamSettings,
+        AgentSettings, ConfigError, ConfigText, Configuration, Effort, HostSettings, Model,
+        RequiredTotalAgents, TeamSettings,
     };
 
     impl Model {
         const ALL: [Self; 3] = [Self::Luna, Self::Astra, Self::Sol61];
+    }
+
+    impl RequiredTotalAgents {
+        const STANDARD: Self = Self(NonZeroU32::MIN.saturating_add(19));
     }
 
     #[test]
@@ -157,6 +177,10 @@ pub mod tests {
         assert_eq!(config.gizmo_prime, expected);
         assert_eq!(config.team.gizmo, expected);
         assert_eq!(config.team.agent, expected);
+        assert_eq!(
+            config.host.required_total_agents,
+            RequiredTotalAgents::STANDARD
+        );
         Ok(())
     }
 
@@ -169,6 +193,9 @@ pub mod tests {
                     reasoning_effort,
                 };
                 let config = Configuration {
+                    host: HostSettings {
+                        required_total_agents: RequiredTotalAgents::STANDARD,
+                    },
                     gizmo_prime: settings,
                     team: TeamSettings {
                         gizmo: settings,
@@ -225,6 +252,9 @@ pub mod tests {
     #[test]
     fn rejects_invalid_or_incomplete_configuration() -> Result<(), ConfigError> {
         let text = ConfigText::try_from(Configuration {
+            host: HostSettings {
+                required_total_agents: RequiredTotalAgents::STANDARD,
+            },
             gizmo_prime: AgentSettings {
                 model: Model::Luna,
                 reasoning_effort: Effort::Max,
@@ -269,6 +299,9 @@ pub mod tests {
             reasoning_effort: Effort::Ultra,
         };
         let config = Configuration {
+            host: HostSettings {
+                required_total_agents: RequiredTotalAgents::STANDARD,
+            },
             gizmo_prime: settings,
             team: TeamSettings {
                 gizmo: settings,
@@ -283,5 +316,48 @@ pub mod tests {
                 effort: Effort::Ultra
             })
         ));
+    }
+
+    #[test]
+    fn custom_host_capacity_round_trips() -> Result<(), ConfigError> {
+        let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
+        let customized = ConfigText::from(
+            text.replace("required_total_agents = 20", "required_total_agents = 37"),
+        );
+        let config = customized.parse()?;
+        assert_ne!(
+            config.host.required_total_agents,
+            RequiredTotalAgents::STANDARD
+        );
+        let encoded = ConfigText::try_from(config)?;
+        assert_eq!(encoded.parse()?, config);
+        assert!(encoded.to_string().contains("required_total_agents = 37"));
+        Ok(())
+    }
+
+    #[test]
+    fn rejects_invalid_or_missing_host_capacity() -> Result<(), ConfigError> {
+        let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
+        for value in ["0", "-1", "1.5", "true", "\"20\"", "4294967296"] {
+            let invalid = text.replace(
+                "required_total_agents = 20",
+                &format!("required_total_agents = {value}"),
+            );
+            assert!(matches!(
+                ConfigText::from(invalid).parse(),
+                Err(ConfigError::Decode(_))
+            ));
+        }
+        for invalid in [
+            text.replace("required_total_agents = 20", ""),
+            text.replace("[host]\nrequired_total_agents = 20", ""),
+            text.replace("[host]", "[host]\nunknown = true"),
+        ] {
+            assert!(matches!(
+                ConfigText::from(invalid).parse(),
+                Err(ConfigError::Decode(_))
+            ));
+        }
+        Ok(())
     }
 }

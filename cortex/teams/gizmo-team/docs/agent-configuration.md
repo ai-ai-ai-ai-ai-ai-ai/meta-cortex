@@ -56,10 +56,22 @@ does not increase the host allocation.
 1. Identify the host's supported capacity setting and effective configuration
    location. Inspect only the relevant settings and current profile or overrides.
    Verify the setting against installed host documentation or official documentation.
+   - Codex configuration is TOML. Read it through a maintained TOML library.
+     Use that library's document editor for the approved change; do not use
+     regular expressions, string replacement, or append a duplicate table.
+     Preserve unrelated settings and comments. If no suitable TOML library is
+     available, report the missing dependency before proposing an executable edit.
    - For Codex, the current [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
      defines `agents.max_concurrent_threads_per_session` as the spawned-thread
      limit, excluding the primary thread. Its proposed value is the framework's
      required total minus one. Use the setting supported by the installed version.
+     Inspect multi-agent enablement as well; the current setting is `agents.enabled`.
+     Include enabling agents in the approval proposal when multi-agent mode
+     requires it. Do not silently change enablement.
+   - Compare the parsed capacity setting with the required value. Propose raising
+     a smaller setting or adding a missing setting. If the saved setting already
+     meets or exceeds the target, preserve it and request a restart followed by
+     an active capacity recheck. Do not lower a larger saved limit.
    - If the setting is unsupported, enforced by the host, or cannot be resolved,
      report the blocker. Do not invent another setting or bypass host policy.
 2. Show the observed limit, framework target, exact configuration path, and
@@ -72,8 +84,9 @@ does not increase the host allocation.
    - For `keep_host_settings`, cancellation, or unavailable input, preserve
      configuration and report that development is blocked by insufficient capacity.
    - Do not lower the framework target unless the user explicitly requests it.
-4. After approval, change only the proposed host setting and verify the saved
-   value. Preserve unrelated settings. Report any write failure as a blocker.
+4. After approval, change only the proposed host settings through the TOML
+   library. Reparse the saved document and verify the approved values.
+   Preserve unrelated settings. Report any write failure as a blocker.
 5. Ask the user to restart Codex and resume this chat. For another host, name
    that host's required restart procedure. Preserve the task, validated session
    choices, approval, and preflight evidence in continuation context.
@@ -82,11 +95,13 @@ does not increase the host allocation.
    If it still falls short, report the observed mismatch; do not claim that
    saving configuration expanded the current session.
 
-**Prohibited:** silently rewrite Codex settings or launch workers immediately
+**Prohibited:** replace TOML text with a regular expression, silently rewrite
+Codex settings, lower a sufficient saved limit, or launch workers immediately
 after saving a larger limit.
 
-**Required:** show the exact proposed host setting, obtain approval, verify
-the saved edit, request a restart, and recheck active capacity on resumption.
+**Required:** parse the TOML settings with a library, show the exact proposed
+changes, obtain approval, reparse the saved edit, request a restart, and recheck
+active capacity on resumption.
 
 ### Launch with the configured settings
 
