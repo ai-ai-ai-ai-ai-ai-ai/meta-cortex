@@ -49,7 +49,10 @@
         panel = { kind: PanelKind.Closed };
     }
   }
-  function selectNode({ node }: { node: DiagramNode }) {
+  interface DiagramSelectionEvent {
+    node: DiagramNode;
+  }
+  function selectNode({ node }: DiagramSelectionEvent) {
     switch (node.data.kind) {
       case NodeKind.Branch:
         return;
@@ -60,11 +63,12 @@
             item,
             ...node.data.tasks.slice(1),
           ]);
-          open({
+          const selection: AgentSelection = {
             group,
             task: group.latest(),
             origin: `view-${view}`,
-          });
+          };
+          open(selection);
           return;
         }
     }

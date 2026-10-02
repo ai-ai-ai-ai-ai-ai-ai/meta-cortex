@@ -7,15 +7,12 @@
   import ReportingBranch from "./ReportingBranch.svelte";
   import ProgressSummary from "./ProgressSummary.svelte";
   import StatusMark from "./StatusMark.svelte";
-  let {
-    node,
-    select,
-    panel,
-  }: {
+  interface ReportingBranchProperties {
     node: ReportingNode;
     select: (selection: AgentSelection) => void;
     panel: AgentPanel;
-  } = $props();
+  }
+  let { node, select, panel }: ReportingBranchProperties = $props();
   let expansion = $state(new TreeExpansion().toggle());
   let identity = $derived(`reporting:${node.id()}`);
   function toggle() {
@@ -45,18 +42,22 @@
         </Button>
         {#if node.activity.kind === ActivityKind.Recorded}
           {@const group = node.activity.group}
+          {@const representative = group.latest()}
+          {@const checkpoint = representative.task.common.checkpoint}
           <Button
             variant="ghost"
             class="grid h-auto min-w-0 flex-1 grid-cols-[20px_minmax(0,1fr)_68px] items-center gap-2 rounded-[5px] bg-transparent px-1.5 py-2.5 text-left font-normal whitespace-normal hover:bg-selection data-[selected=true]:bg-selection @min-[800px]:grid-cols-[20px_minmax(0,1fr)_68px_58px]"
             id={`${identity}:own`}
             data-selected={panel.kind === PanelKind.Agent &&
               panel.origin === `${identity}:own`}
-            onclick={() =>
-              select({
+            onclick={() => {
+              const selection: AgentSelection = {
                 group,
-                task: group.latest(),
+                task: representative,
                 origin: `${identity}:own`,
-              })}
+              };
+              select(selection);
+            }}
           >
             <StatusMark state={group.status()} />
             <span class="min-w-0">
@@ -69,17 +70,16 @@
               >
               <span
                 class="mt-0.5 block truncate text-[11px] text-muted-foreground"
-                title={group.latest().task.common.objective}
-                >{group.latest().task.common.objective}</span
+                title={representative.task.common.objective}
+                >{representative.task.common.objective}</span
               >
             </span>
             <Badge variant="status" class="status" data-state={group.status()}
               >{group.status()}</Badge
             >
-            {#if group.checkpoint() !== "Unrecorded"}<code
+            {#if checkpoint.kind === "git"}<code
                 class="hidden text-right text-[11px] font-normal text-commit @min-[800px]:block"
-                title={group.checkpoint()}
-                >{group.checkpoint().slice(0, 7)}</code
+                title={checkpoint.commit}>{checkpoint.commit.slice(0, 7)}</code
               >
             {:else}<span
                 class="hidden text-right text-[11px] text-muted-foreground @min-[800px]:block"
