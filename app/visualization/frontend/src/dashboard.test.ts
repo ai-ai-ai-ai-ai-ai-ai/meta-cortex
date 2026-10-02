@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { Effect } from "effect";
+import { Effect, type Result } from "effect";
 import {
   cleanup,
   render,
@@ -14,18 +14,155 @@ import ProgressSummary from "./ProgressSummary.svelte";
 import App from "./App.svelte";
 import { Progress } from "$lib/components/ui/progress";
 import type { ComponentProps } from "svelte";
-import { DashboardApi, ReadFailureKind } from "./api";
+import { DashboardApi, ReadFailureKind, type DashboardFailure } from "./api";
 import { FlowPresentation } from "./workflow";
 import type {
   AgentId,
   DesktopSelection,
   DesktopRead,
   DesktopReply,
+  DesktopContent,
+  DashboardView,
+  Page,
+  TaskCommon,
+  TaskOwnership,
+  TaskAssignment,
+  ReportingTarget,
   DesktopFailure,
   FeatureFlow,
   TaskV2,
   TaskFlow,
 } from "./contracts";
+type FeaturesContent = Extract<DesktopContent, { kind: "Features" }>;
+interface FeaturesReply extends Pick<DesktopReply, "selection"> {
+  content: FeaturesContent;
+}
+type FeaturesView = Extract<DashboardView, { kind: "Features" }>;
+interface UnknownContent {
+  kind: "Unknown";
+  value: Page;
+}
+interface UnknownPageEnd extends Pick<Page, "records"> {
+  end: "Unknown";
+}
+interface FeaturesWithUnknownPageEnd extends Pick<FeaturesContent, "kind"> {
+  value: UnknownPageEnd;
+}
+interface UnexpectedFeatureView extends FeaturesView {
+  unexpected: true;
+}
+interface SelectionWithUnexpectedView extends Pick<DesktopSelection, "page"> {
+  view: UnexpectedFeatureView;
+}
+interface SelectionWithStringPage extends Pick<DesktopSelection, "view"> {
+  page: "0";
+}
+interface UnknownContentReply extends Pick<DesktopReply, "selection"> {
+  content: UnknownContent;
+}
+interface UnknownPageEndReply extends Pick<DesktopReply, "selection"> {
+  content: FeaturesWithUnknownPageEnd;
+}
+interface UnexpectedViewReply extends Pick<DesktopReply, "content"> {
+  selection: SelectionWithUnexpectedView;
+}
+interface NullContentReply extends Pick<DesktopReply, "selection"> {
+  content: null;
+}
+interface StringPageReply extends Pick<DesktopReply, "content"> {
+  selection: SelectionWithStringPage;
+}
+type MalformedReply =
+  | UnknownContentReply
+  | UnknownPageEndReply
+  | UnexpectedViewReply
+  | NullContentReply
+  | StringPageReply;
+interface UnknownFailureKind {
+  kind: "Unknown";
+  message: "Unrecognized native kind";
+}
+type LedgerFailure = Extract<DesktopFailure, { kind: "Ledger" }>;
+interface NullFailureMessage extends Pick<LedgerFailure, "kind"> {
+  message: null;
+}
+type MissingFailureMessage = Pick<LedgerFailure, "kind">;
+type MalformedFailure =
+  | UnknownFailureKind
+  | NullFailureMessage
+  | MissingFailureMessage;
+type FailedReadTag = Result.Failure<DesktopReply, DashboardFailure>["_tag"];
+interface InvalidReplyFailureExpectation {
+  kind: ReadFailureKind.InvalidReply;
+  cause: MalformedReply;
+}
+interface InvalidReplyExpectation {
+  _tag: FailedReadTag;
+  failure: InvalidReplyFailureExpectation;
+}
+interface NativeFailureExpectation {
+  _tag: FailedReadTag;
+  failure: DesktopFailure;
+}
+interface TransportFailureExpectation {
+  kind: ReadFailureKind.Transport;
+  cause: MalformedFailure;
+}
+interface TransportExpectation {
+  _tag: FailedReadTag;
+  failure: TransportFailureExpectation;
+}
+type UnsupportedTaskVersion = 1 | 3;
+interface UnsupportedVersionTask extends Omit<TaskV2, "version"> {
+  version: UnsupportedTaskVersion;
+}
+type FlattenedTask = TaskCommon & Omit<TaskV2, "common">;
+interface CommonWithUnexpectedField extends TaskCommon {
+  unexpected: true;
+}
+interface UnexpectedCommonTask extends Omit<TaskV2, "common"> {
+  common: CommonWithUnexpectedField;
+}
+interface WrongTeamAgent {
+  team: "Ai";
+  role: "TypescriptVerifier";
+}
+interface WrongAgentAssignment extends Omit<TaskAssignment, "agent"> {
+  agent: WrongTeamAgent;
+}
+type AssignedOwnership = Extract<TaskOwnership, { kind: "Assigned" }>;
+interface WrongAgentOwnership extends Omit<AssignedOwnership, "assignment"> {
+  assignment: WrongAgentAssignment;
+}
+interface WrongAgentTask extends Omit<TaskV2, "ownership"> {
+  ownership: WrongAgentOwnership;
+}
+type GizmoReporting = Extract<ReportingTarget, { kind: "Gizmo" }>;
+type MissingCoordinatorReporting = Pick<GizmoReporting, "kind">;
+interface MissingCoordinatorAssignment
+  extends Omit<TaskAssignment, "reports_to"> {
+  reports_to: MissingCoordinatorReporting;
+}
+interface MissingCoordinatorOwnership
+  extends Omit<AssignedOwnership, "assignment"> {
+  assignment: MissingCoordinatorAssignment;
+}
+interface MissingCoordinatorTask extends Omit<TaskV2, "ownership"> {
+  ownership: MissingCoordinatorOwnership;
+}
+type MalformedTask =
+  | UnsupportedVersionTask
+  | FlattenedTask
+  | UnexpectedCommonTask
+  | WrongAgentTask
+  | MissingCoordinatorTask;
+type TaskContent = Extract<DesktopContent, { kind: "Task" }>;
+interface MalformedTaskContent extends Pick<TaskContent, "kind"> {
+  value: MalformedTask;
+}
+interface MalformedTaskReply extends Pick<DesktopReply, "selection"> {
+  content: MalformedTaskContent;
+}
 const initialRead: DesktopRead = { kind: "Initial" };
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
@@ -199,11 +336,11 @@ it("validates the native reply before use", async () => {
 });
 
 it("rejects unknown native enums, forbidden fields, nulls, and wrong scalar types", async () => {
-  const reply: DesktopReply = {
+  const reply: FeaturesReply = {
     content: { kind: "Features", value: { records: [], end: "Complete" } },
     selection: { view: { kind: "Features" }, page: 0 },
   };
-  for (const raw of [
+  const malformedReplies: ReadonlyArray<MalformedReply> = [
     { ...reply, content: { kind: "Unknown", value: reply.content.value } },
     {
       ...reply,
@@ -215,15 +352,17 @@ it("rejects unknown native enums, forbidden fields, nulls, and wrong scalar type
     },
     { ...reply, content: null },
     { ...reply, selection: { ...reply.selection, page: "0" } },
-  ]) {
+  ];
+  for (const raw of malformedReplies) {
     native.invoke.mockResolvedValueOnce(raw);
     const result = await Effect.runPromise(
       Effect.result(new DashboardApi().read(initialRead)),
     );
-    expect(result).toMatchObject({
+    const rejectedReply: InvalidReplyExpectation = {
       _tag: "Failure",
       failure: { kind: ReadFailureKind.InvalidReply, cause: raw },
-    });
+    };
+    expect(result).toMatchObject(rejectedReply);
   }
 });
 
@@ -254,29 +393,32 @@ it("classifies valid native failures separately from malformed transport failure
   ];
   for (const failure of failures) {
     native.invoke.mockRejectedValueOnce(failure);
+    const nativeFailure: NativeFailureExpectation = {
+      _tag: "Failure",
+      failure,
+    };
     expect(
       await Effect.runPromise(
         Effect.result(new DashboardApi().read(initialRead)),
       ),
-    ).toMatchObject({
-      _tag: "Failure",
-      failure,
-    });
+    ).toMatchObject(nativeFailure);
   }
-  for (const cause of [
+  const malformedFailures: ReadonlyArray<MalformedFailure> = [
     { kind: "Unknown", message: "Unrecognized native kind" },
     { kind: "Ledger", message: null },
     { kind: "Ledger" },
-  ]) {
+  ];
+  for (const cause of malformedFailures) {
     native.invoke.mockRejectedValueOnce(cause);
+    const transportFailure: TransportExpectation = {
+      _tag: "Failure",
+      failure: { kind: ReadFailureKind.Transport, cause },
+    };
     expect(
       await Effect.runPromise(
         Effect.result(new DashboardApi().read(initialRead)),
       ),
-    ).toMatchObject({
-      _tag: "Failure",
-      failure: { kind: ReadFailureKind.Transport, cause },
-    });
+    ).toMatchObject(transportFailure);
   }
 });
 
@@ -616,11 +758,11 @@ it("shows the native history worker of a migrated integrated task without invent
 
 it("rejects legacy, future, flattened, and malformed ownership TaskV2 replies", async () => {
   const fixture = new Fixture();
-  const selection = {
+  const selection: DesktopSelection = {
     view: { kind: "Features" },
     page: 0,
-  } satisfies DesktopSelection;
-  for (const task of [
+  };
+  const malformedTasks: ReadonlyArray<MalformedTask> = [
     { ...fixture.task, version: 1 },
     { ...fixture.task, version: 3 },
     {
@@ -651,11 +793,13 @@ it("rejects legacy, future, flattened, and malformed ownership TaskV2 replies", 
         },
       },
     },
-  ]) {
-    native.invoke.mockResolvedValueOnce({
+  ];
+  for (const task of malformedTasks) {
+    const malformedReply: MalformedTaskReply = {
       content: { kind: "Task", value: task },
       selection,
-    });
+    };
+    native.invoke.mockResolvedValueOnce(malformedReply);
     const result = await Effect.runPromise(
       Effect.result(new DashboardApi().read(initialRead)),
     );
