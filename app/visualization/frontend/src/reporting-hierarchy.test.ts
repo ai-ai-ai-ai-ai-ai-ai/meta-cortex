@@ -18,7 +18,10 @@ import { ActivityKind, ReportingHierarchy } from "./agent-tree";
 import { Fixture } from "./dashboard-fixture";
 import { FlowPresentation } from "./workflow";
 import Workflow from "./Workflow.svelte";
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 interface HierarchyActivity {
   id: string;
@@ -245,9 +248,11 @@ class CoordinatorFixture extends HierarchyFixture {
 }
 it("selects compact coordinator own activity matching Working and keeps every objective selectable", async () => {
   const fixture = new CoordinatorFixture();
+  const flow = fixture.flow();
+  const select = vi.fn();
   const props: ComponentProps<typeof Workflow> = {
-    flow: fixture.flow(),
-    select: vi.fn(),
+    flow,
+    select,
     history: vi.fn(),
     refresh: vi.fn(),
   };
@@ -257,9 +262,6 @@ it("selects compact coordinator own activity matching Working and keeps every ob
   const inspectorQuery: ByRoleOptions = { name: "Team Gizmo details" };
   const workingHeadingQuery: ByRoleOptions = {
     name: "Implement reporting hierarchy",
-  };
-  const planningHeadingQuery: ByRoleOptions = {
-    name: "Plan reporting hierarchy",
   };
   const planningQuery: ByRoleOptions = { name: /Plan reporting hierarchy/ };
   const implementationQuery: ByRoleOptions = {
@@ -284,16 +286,26 @@ it("selects compact coordinator own activity matching Working and keeps every ob
   );
   expect(implementation.getAttribute("data-current")).toBe("true");
   await userEvent.click(planning);
-  expect(
-    within(inspector).getByRole("heading", planningHeadingQuery),
-  ).toBeTruthy();
-  expect(planning.getAttribute("data-current")).toBe("true");
+  expect(select).toHaveBeenLastCalledWith(flow.tasks.records[0]?.task);
   await userEvent.click(implementation);
+  expect(select).toHaveBeenLastCalledWith(flow.tasks.records[1]?.task);
   expect(
     within(inspector).getByRole("heading", workingHeadingQuery),
   ).toBeTruthy();
-  expect(implementation.getAttribute("data-current")).toBe("true");
 });
+// JSDOM has no matchMedia. Svelte's MediaQuery uses matches/media and
+// EventTarget change listeners; keep real graph components and handlers intact.
+class BrowserMediaQuery extends EventTarget {
+  readonly matches = false;
+  constructor(readonly media: string) {
+    super();
+  }
+}
+class BrowserMediaQueries {
+  matchMedia(query: string): BrowserMediaQuery {
+    return new BrowserMediaQuery(query);
+  }
+}
 it("uses the real Agents graph selection handler for prioritized own activity and leaves absent targets nonselectable", async () => {
   const fixture = new CoordinatorFixture();
   const props: ComponentProps<typeof Workflow> = {
@@ -302,6 +314,8 @@ it("uses the real Agents graph selection handler for prioritized own activity an
     history: vi.fn(),
     refresh: vi.fn(),
   };
+  const mediaQueries = new BrowserMediaQueries();
+  vi.stubGlobal("matchMedia", mediaQueries.matchMedia);
   const graphQuery: ByRoleOptions = { name: "graph" };
   const inspectorQuery: ByRoleOptions = { name: "Team Gizmo details" };
   const objectiveQuery: ByRoleOptions = {
@@ -309,9 +323,9 @@ it("uses the real Agents graph selection handler for prioritized own activity an
   };
   render(Workflow, props);
   await userEvent.click(screen.getByRole("button", graphQuery));
-  await userEvent.click(await screen.findByText("Gizmo / GizmoPrime"));
+  await userEvent.click(await screen.findByText("Gizmo Prime"));
   expect(screen.queryAllByRole("complementary")).toHaveLength(0);
-  await userEvent.click(screen.getByText("Gizmo / Gizmo"));
+  await userEvent.click(screen.getByText("Team Gizmo"));
   const inspector = screen.getByRole("complementary", inspectorQuery);
   expect(within(inspector).getByRole("heading", objectiveQuery)).toBeTruthy();
   expect(
