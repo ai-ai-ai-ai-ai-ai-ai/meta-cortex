@@ -899,36 +899,45 @@ it("does not infer Prime or Host above a missing loaded Team activity", () => {
   expect(graph.nodes[0]?.data.state).toBe("No activity on this page");
   expect(graph.nodes[1]?.data.state).toBe("integrated");
 });
-it("preserves multiple reporting targets and deduplicates shared descendant activity", () => {
+it("counts repeated valid worker activities once in own and subtree aggregates", () => {
   const fixture = new HierarchyFixture();
   const definitions: ReadonlyArray<HierarchyActivity> = [
-    {
-      id: "prime",
-      agent: { team: "Gizmo", role: "GizmoPrime" },
-      target: { kind: "Host" },
-    },
     {
       id: "team",
       agent: { team: "Gizmo", role: "Gizmo" },
       target: { kind: "Gizmo", coordinator: "GizmoPrime" },
     },
     {
-      id: "via-team",
+      id: "worker-one",
       agent: { team: "Development", role: "TypescriptDev" },
       target: { kind: "Gizmo", coordinator: "Gizmo" },
     },
     {
-      id: "via-prime",
+      id: "worker-two",
       agent: { team: "Development", role: "TypescriptDev" },
-      target: { kind: "Gizmo", coordinator: "GizmoPrime" },
+      target: { kind: "Gizmo", coordinator: "Gizmo" },
+    },
+    {
+      id: "worker-three",
+      agent: { team: "Development", role: "TypescriptDev" },
+      target: { kind: "Gizmo", coordinator: "Gizmo" },
     },
   ];
   const tasks: ReadonlyArray<TaskFlow> = definitions.map((definition) =>
     fixture.activity(definition),
   );
   const hierarchy = new ReportingHierarchy(tasks);
-  expect(hierarchy.nodes()).toHaveLength(4);
-  expect(hierarchy.edges()).toHaveLength(4);
+  expect(hierarchy.nodes()).toHaveLength(3);
+  expect(hierarchy.edges()).toHaveLength(2);
+  const team = hierarchy.nodes().find((node) => node.name() === "Team Gizmo");
+  const worker = hierarchy
+    .nodes()
+    .find((node) => node.name() === "TypescriptDev");
+  expect(worker?.ownTasks()).toHaveLength(3);
+  expect(worker?.subtreeCounts().map((count) => count.count)).toEqual([3]);
+  expect(team?.ownTasks()).toHaveLength(1);
+  expect(team?.descendantCounts().map((count) => count.count)).toEqual([3]);
+  expect(team?.subtreeCounts().map((count) => count.count)).toEqual([4]);
   expect(
     hierarchy
       .roots()[0]
