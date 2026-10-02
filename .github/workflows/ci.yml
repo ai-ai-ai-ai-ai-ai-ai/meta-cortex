@@ -31,6 +31,8 @@ jobs:
         working-directory: app/visualization/frontend
         run: |
           bun install --frozen-lockfile
+          bun run verify
+          bun run test
           bun run build
       - name: Set up compiler cache
         uses: ./.github/actions/rust-sccache
