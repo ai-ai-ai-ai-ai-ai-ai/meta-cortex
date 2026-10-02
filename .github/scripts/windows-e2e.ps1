@@ -238,13 +238,13 @@ $originalPath = $env:PATH
 $originalHome = $env:META_CORTEX_HOME
 $root = Join-Path $env:RUNNER_TEMP 'meta cortex Windows E2E'
 $project = Join-Path $root 'native project with spaces'
-$home = Join-Path $root 'clean managed home with spaces'
+$scenarioManagedHome = Join-Path $root 'clean managed home with spaces'
 $evidence = Join-Path $root 'evidence'
 $scenario = [WindowsInstallationScenario]::new(@{
     Binary = [IO.Path]::GetFullPath($Binary)
     Project = $project
-    Home = $home
-    Bun = Join-Path $home 'bun\bin\bun.exe'
+    Home = $scenarioManagedHome
+    Bun = Join-Path $scenarioManagedHome 'bun\bin\bun.exe'
     Evidence = $evidence
 })
 switch ([IO.Path]::GetExtension($scenario.Binary)) {
