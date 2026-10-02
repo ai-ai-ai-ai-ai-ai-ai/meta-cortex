@@ -289,6 +289,8 @@ Use raw JSON/YAML only when testing malformed/unknown input or exact property pr
 that inspection does not replace a typed round trip.
 
 These tests use the first `DeliverySettings` definition.
+Each test fragment belongs inside the private inline module required by
+[test placement](../tooling/rust-testing.md#test-placement).
 
 **Prohibited:** inspect raw JSON to verify a known domain value.
 
