@@ -17,13 +17,23 @@ import type {
 } from "./contracts";
 import { ActivityKind, ReportingHierarchy } from "./agent-tree";
 import { Fixture } from "./dashboard-fixture";
-import { FlowPresentation } from "./workflow";
+import { FlowPresentation, NodeKind } from "./workflow";
 import Workflow from "./Workflow.svelte";
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 
+interface AbsentActivityExpectation {
+  kind: ActivityKind.Absent;
+}
+interface RecordedActivityExpectation {
+  kind: ActivityKind.Recorded;
+  group: ActivityTasksExpectation;
+}
+interface ActivityTasksExpectation {
+  tasks: ReadonlyArray<TaskFlow>;
+}
 interface HierarchyActivity {
   id: string;
   agent: AgentId;
@@ -97,10 +107,30 @@ it("does not infer Prime or Host above a missing loaded Team activity", () => {
   expect(hierarchy.roots()[0]?.activity.kind).toBe(ActivityKind.Absent);
   expect(hierarchy.nodes()).toHaveLength(2);
   const graph = new FlowPresentation(fixture.flow).agents();
-  expect(graph.nodes[0]?.data.activity).toBe(ActivityKind.Absent);
-  expect(graph.nodes[0]?.data.tasks).toHaveLength(0);
-  expect(graph.nodes[0]?.data.state).toBe("No activity on this page");
-  expect(graph.nodes[1]?.data.state).toBe("integrated");
+  const absent: AbsentActivityExpectation = { kind: ActivityKind.Absent };
+  expect(graph.nodes[0]?.data.kind).toBe(NodeKind.Agent);
+  expect(graph.nodes[0]?.data.activity).toEqual(absent);
+  expect(graph.nodes[0]?.data).not.toHaveProperty("tasks");
+  expect(graph.nodes[0]?.data).not.toHaveProperty("state");
+  const workerData = graph.nodes[1]?.data;
+  expect(workerData?.kind).toBe(NodeKind.Agent);
+  switch (workerData?.kind) {
+    case NodeKind.Agent:
+      expect(workerData.activity.kind).toBe(ActivityKind.Recorded);
+      switch (workerData.activity.kind) {
+        case ActivityKind.Recorded:
+          expect(workerData.activity.group.status()).toBe("integrated");
+          expect(workerData.activity.group.tasks).toEqual(tasks);
+          break;
+        case ActivityKind.Absent:
+          break;
+      }
+      break;
+    case NodeKind.Task:
+    case NodeKind.Branch:
+    case undefined:
+      break;
+  }
 });
 it("counts repeated valid activities once and represents older Working before newer Completed", () => {
   const fixture = new HierarchyFixture();
@@ -193,8 +223,14 @@ it("keeps migrated creator and history worker evidence outside recorded reportin
     fixture.contribution.worker,
   );
   const graph = new FlowPresentation(fixture.flow).agents();
-  expect(graph.nodes[0]?.data.tasks).toHaveLength(0);
-  expect(graph.nodes[1]?.data.tasks).toEqual(tasks);
+  const absent: AbsentActivityExpectation = { kind: ActivityKind.Absent };
+  expect(graph.nodes[0]?.data.activity).toEqual(absent);
+  expect(graph.nodes[0]?.data).not.toHaveProperty("tasks");
+  const recorded: RecordedActivityExpectation = {
+    kind: ActivityKind.Recorded,
+    group: { tasks },
+  };
+  expect(graph.nodes[1]?.data.activity).toMatchObject(recorded);
   expect(graph.edges[0]?.label).toBe("created by · reporting unrecorded");
 });
 

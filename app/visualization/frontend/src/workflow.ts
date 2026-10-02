@@ -13,6 +13,7 @@ import {
   ActivityKind,
   ReportingHierarchy,
   type ReportingNode,
+  type NodeActivity,
 } from "./agent-tree";
 export enum FlowView {
   Tree = "tree",
@@ -30,18 +31,29 @@ export enum NodeKind {
   Branch = "branch",
 }
 enum NodeState {
-  NoActivity = "No activity on this page",
   Feature = "feature",
 }
-interface FlowNodeData extends Record<string, unknown> {
-  kind: NodeKind;
+interface GraphNodeLabel extends Record<string, unknown> {
   title: string;
   subtitle: string;
-  state: FlowState | NodeState;
+}
+interface AgentNodeData extends GraphNodeLabel {
+  kind: NodeKind.Agent;
+  activity: NodeActivity;
+}
+interface TaskNodeData extends GraphNodeLabel {
+  kind: NodeKind.Task;
+  state: FlowState;
   tasks: ReadonlyArray<TaskFlow>;
   actor: RecordedActor;
-  activity?: ActivityKind;
 }
+interface BranchNodeData extends GraphNodeLabel {
+  kind: NodeKind.Branch;
+  state: NodeState.Feature;
+  tasks: ReadonlyArray<TaskFlow>;
+  actor: RecordedActor;
+}
+type FlowNodeData = AgentNodeData | TaskNodeData | BranchNodeData;
 export type DiagramNode = Node<FlowNodeData, "record">;
 interface Diagram {
   nodes: DiagramNode[];
@@ -112,9 +124,9 @@ export class FlowPresentation {
     const hierarchy = new ReportingHierarchy(this.flow.tasks.records);
     const nodes = hierarchy.nodes().map((node) => this.reportingNode(node));
     const edges: Edge[] = hierarchy.edges().map((edge) => ({
-      id: `reporting:${edge.source}->${edge.target}`,
-      source: edge.source,
-      target: edge.target,
+      id: `reporting:${edge.source.serialize()}->${edge.target.serialize()}`,
+      source: edge.source.serialize(),
+      target: edge.target.serialize(),
       label: "Recorded reporting line",
       type: "smoothstep",
     }));
@@ -124,10 +136,7 @@ export class FlowPresentation {
         kind: NodeKind.Agent,
         title: this.actor(group.actor),
         subtitle: "Created by · reporting unrecorded",
-        state: NodeState.NoActivity,
-        tasks: [],
-        actor: group.actor,
-        activity: ActivityKind.Absent,
+        activity: { kind: ActivityKind.Absent },
       };
       nodes.push(this.node(parentId, data));
       for (const worker of group.workers.values()) {
@@ -136,10 +145,7 @@ export class FlowPresentation {
           kind: NodeKind.Agent,
           title: this.actor(worker.actor),
           subtitle: `History worker · reporting unrecorded · ${this.agentSummary(worker.tasks)}`,
-          state: worker.status(),
-          tasks: worker.tasks,
-          actor: worker.actor,
-          activity: ActivityKind.Recorded,
+          activity: { kind: ActivityKind.Recorded, group: worker },
         };
         nodes.push(this.node(workerId, workerData));
         const edge: Edge = {
@@ -163,24 +169,18 @@ export class FlowPresentation {
           kind: NodeKind.Agent,
           title: this.reportingTitle(node),
           subtitle: "Recorded reporting target",
-          state: NodeState.NoActivity,
-          tasks: [],
-          actor: node.actor(),
-          activity: ActivityKind.Absent,
+          activity,
         };
-        return this.node(node.id(), data);
+        return this.node(node.id().serialize(), data);
       }
       case ActivityKind.Recorded: {
         const data: FlowNodeData = {
           kind: NodeKind.Agent,
           title: this.reportingTitle(node),
           subtitle: this.agentSummary(activity.group.tasks),
-          state: activity.group.status(),
-          tasks: activity.group.tasks,
-          actor: activity.group.actor,
-          activity: ActivityKind.Recorded,
+          activity,
         };
-        return this.node(node.id(), data);
+        return this.node(node.id().serialize(), data);
       }
     }
   }
