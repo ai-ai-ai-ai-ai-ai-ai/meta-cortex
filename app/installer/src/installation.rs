@@ -235,15 +235,19 @@ impl Installation {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::{DataDirectory, InitRequest, InstallError, Project, ToolSetup};
     use crate::integration::{
         Harness, HarnessChoice, InstructionAction, InstructionError, IntegrationOptions,
     };
+    use std::env;
+    use std::env::consts::EXE_SUFFIX;
     use std::fs;
-    use std::io;
-    use std::os::unix::fs::symlink;
-    use std::process::Command;
+    use std::io::{self, Error, ErrorKind};
+    #[cfg(unix)]
+    use std::os::unix::fs::{symlink, symlink as symlink_dir};
+    #[cfg(windows)]
+    use std::os::windows::fs::{symlink_dir, symlink_file as symlink};
     use tempfile::{TempDir, tempdir};
 
     struct Fixture {
@@ -262,16 +266,21 @@ pub mod tests {
             Ok(fixture)
         }
         fn seed_tools(&self) -> io::Result<()> {
-            // Tests supply managed installations from the runner's toolchain.
+            let search = env::var_os("PATH").ok_or_else(|| Error::other("missing PATH"))?;
             for name in ["mise", "bun", "vale"] {
-                let output = Command::new("sh")
-                    .args(["-c", "command -v \"$1\"", "sh", name])
-                    .output()?;
-                assert!(output.status.success(), "missing test tool: {name}");
+                let executable = format!("{name}{}", EXE_SUFFIX);
+                let source = env::split_paths(&search)
+                    .map(|directory| directory.join(&executable))
+                    .find(|candidate| candidate.is_file())
+                    .ok_or_else(|| {
+                        Error::new(
+                            ErrorKind::NotFound,
+                            format!("missing test tool: {executable}"),
+                        )
+                    })?;
                 let directory = self.data.path().join(name).join("bin");
                 fs::create_dir_all(&directory)?;
-                let executable = String::from_utf8(output.stdout).map_err(io::Error::other)?;
-                symlink(executable.trim(), directory.join(name))?;
+                fs::copy(source, directory.join(executable))?;
             }
             Ok(())
         }
@@ -328,9 +337,12 @@ pub mod tests {
             let external = tempdir()?;
             let modules = self.directory.path().join(".meta-cortex/node_modules");
             fs::remove_dir_all(&modules)?;
-            symlink(external.path(), &modules)?;
+            symlink_dir(external.path(), &modules)?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
+            #[cfg(unix)]
             fs::remove_file(&modules)?;
+            #[cfg(windows)]
+            fs::remove_dir(&modules)?;
             fs::write(&modules, "not a directory")?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             Ok(())
@@ -374,7 +386,7 @@ pub mod tests {
         }
         fn rejects_symlink(self) -> Result<(), InstallError> {
             let external = tempdir()?;
-            symlink(external.path(), self.directory.path().join(".meta-cortex"))?;
+            symlink_dir(external.path(), self.directory.path().join(".meta-cortex"))?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
             assert!(!external.path().join("AGENTS.md").exists());
             Ok(())
