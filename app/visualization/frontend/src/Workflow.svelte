@@ -56,12 +56,13 @@
       case NodeKind.Agent:
       case NodeKind.Task:
         for (const item of node.data.tasks) {
+          const group = new AgentContribution(node.data.actor, [
+            item,
+            ...node.data.tasks.slice(1),
+          ]);
           open({
-            group: new AgentContribution(node.data.actor, [
-              item,
-              ...node.data.tasks.slice(1),
-            ]),
-            task: item,
+            group,
+            task: group.latest(),
             origin: `view-${view}`,
           });
           return;
@@ -208,10 +209,11 @@
   >
     <summary>About this hierarchy</summary>
     <p>
-      Rows group recorded task creators and workers by role. They do not
-      represent host session ancestry. Summaries cover the loaded task page;
-      totals cover the feature. Recent history includes up to 100 events per
-      task.
+      Rows follow recorded reporting relationships. Historical records with
+      unrecorded reporting appear separately under Created by. Counts and
+      descendant progress cover the loaded task page; totals cover the feature.
+      These relationships do not represent host session ancestry. Recent history
+      includes up to 100 events per task.
     </p>
     <p class="lifecycle-copy">
       Framework responsibilities: Gizmo Prime scopes the feature → Team Gizmo
