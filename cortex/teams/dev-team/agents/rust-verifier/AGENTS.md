@@ -15,6 +15,8 @@ Use the configured team-agent settings; this role does not implement repairs.
   commit SHA, acceptance criteria, and validation evidence from Gizmo. If the SHA
   is missing or cannot be resolved, stop and ask Gizmo to provide it.
 - Inventory every changed file and every cataloged Rust practice and rule.
+- Review modeling, behavior, boundaries, and tooling with the skill's evidence
+  procedure. Include cross-rule checks and explicit applicability decisions.
 - Return complete rule coverage, all violations, concrete repair requirements,
   and blockers through the existing ledger and host notification.
 - Preserve the reviewed checkout. Do not edit code, commit, launch agents, or

@@ -99,6 +99,10 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
    - Continue through all practices and files, retaining every violation.
      At each practice boundary, save progress and the next unchecked rule/file
      in native `next_steps`. Unreviewed entries remain unfinished work.
+   - Use [practice evidence](practice-evidence.md) to gather the committed
+     context for each decision. Cite inspected callers, adapters, manifests,
+     generated contracts, and tests where relevant. A keyword search or one
+     domain-types example does not establish coverage of another practice.
 3. **Repairs and blockers**
    - Give each violation a stable issue ID and the full repair context defined
      in the result payload below. Use parent lines for deleted content. List

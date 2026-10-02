@@ -42,6 +42,9 @@ identified by Gizmo's corrected request.
    programming prerequisites for this verifier.
 3. Retain the supplied project instructions, verifier role and skill, team
    instructions, circuit breakers, and ledger protocol as operational context.
+   Load [practice evidence](spec/practice-evidence.md) for the review procedure
+   across modeling, behavior, boundaries, tooling, and cross-rule checks.
+   It identifies evidence to inspect; YAML cues remain the rule authority.
 4. Resolve references relative to their containing YAML file. Record the loaded
    paths and cues as one fixed catalog snapshot. Report a catalog change instead
    of mixing versions during a review.
@@ -94,6 +97,9 @@ cross-rule checks separately, with references to those same rule IDs.
 
 1. Visit practices in catalog order and rules in leaf order. For each rule,
    inspect every changed file and the surrounding code needed to decide compliance.
+   Use the practice-evidence procedure to trace relevant owners, callers,
+   adapters, configuration, and tests at the reviewed revision. Do not limit
+   evidence collection to domain-type declarations or keyword matches.
 2. Record exactly one outcome per rule/file pair: `pass`, `violation`,
    `not_applicable`, or `blocked`. Give concrete evidence or a precise reason.
    A rule that applies to no changed files still needs those applicability decisions.

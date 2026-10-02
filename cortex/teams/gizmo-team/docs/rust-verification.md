@@ -156,6 +156,8 @@ before sending that SHA to the verifier.
 6. Keep the developer branch stable during review. Require all changed files,
    every cataloged rule, and all cross-rule checks to be covered. Do not restrict
    review to rules selected by rust-dev or findings from an earlier pass.
+   Require the verifier's [practice evidence procedure](../../dev-team/agents/rust-verifier/skills/rust-verification/spec/practice-evidence.md)
+   across all practice families, including non-Rust consumers and workspace evidence.
 
 **Prohibited:** inherit rust-dev's full context or make the review depend on
 integrating the very developer task it must check first.
