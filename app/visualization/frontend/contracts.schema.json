@@ -589,6 +589,7 @@
       "type": "object"
     },
     "TaskRecordVersion": {
+      "const": 2,
       "description": "Current task shape. V1 payloads are decoded by the separate legacy task record.",
       "format": "int64",
       "type": "integer"

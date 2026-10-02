@@ -72,7 +72,7 @@ impl TryFrom<i64> for RecordVersion {
 /// Current task shape. V1 payloads are decoded by the separate legacy task record.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(try_from = "i64", into = "i64")]
-#[schemars(with = "i64")]
+#[schemars(with = "i64", extend("const" = i64::from(Self::CURRENT)))]
 pub enum TaskRecordVersion {
     V2,
 }
@@ -177,11 +177,36 @@ pub enum VersionParseError {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::{
-        ProtocolVersion, RecordVersion, StorageVersion, VersionFamily, VersionNumber,
-        VersionParseError,
+        ProtocolVersion, RecordVersion, StorageVersion, TaskRecordVersion, VersionFamily,
+        VersionNumber, VersionParseError,
     };
+
+    #[test]
+    fn task_record_schema_preserves_the_supported_wire_version() -> anyhow::Result<()> {
+        let version = TaskRecordVersion::CURRENT;
+        let encoded = serde_json::to_string(&version)?;
+        assert_eq!(encoded, "2");
+        assert_eq!(
+            serde_json::from_str::<TaskRecordVersion>(&encoded)?,
+            version
+        );
+
+        let schema = schemars::schema_for!(TaskRecordVersion);
+        assert_eq!(schema.get("type"), Some(&serde_json::json!("integer")));
+        assert_eq!(schema.get("const"), Some(&serde_json::to_value(version)?));
+        Ok(())
+    }
+
+    #[test]
+    fn task_record_decoder_rejects_other_or_malformed_versions() {
+        for input in [
+            "1", "3", "-1", "0", "99", "1.5", "\"2\"", "null", "true", "{}", "[]",
+        ] {
+            assert!(serde_json::from_str::<TaskRecordVersion>(input).is_err());
+        }
+    }
 
     #[test]
     fn supported_versions_preserve_numeric_wire_identity() -> anyhow::Result<()> {
