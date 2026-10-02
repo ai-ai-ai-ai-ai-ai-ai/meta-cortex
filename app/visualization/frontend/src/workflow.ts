@@ -9,6 +9,11 @@ import type {
   Milestone,
 } from "./contracts";
 import { TaskPresentation } from "./task-presentation";
+import {
+  ActivityKind,
+  ReportingHierarchy,
+  type ReportingNode,
+} from "./agent-tree";
 export enum FlowView {
   Tree = "tree",
   Agents = "graph",
@@ -25,8 +30,7 @@ export enum NodeKind {
   Branch = "branch",
 }
 enum NodeState {
-  Coordinator = "coordinator",
-  Worker = "worker",
+  NoActivity = "No activity on this page",
   Feature = "feature",
 }
 interface FlowNodeData extends Record<string, unknown> {
@@ -36,6 +40,7 @@ interface FlowNodeData extends Record<string, unknown> {
   state: FlowState | NodeState;
   tasks: ReadonlyArray<TaskFlow>;
   actor: RecordedActor;
+  activity?: ActivityKind;
 }
 export type DiagramNode = Node<FlowNodeData, "record">;
 interface Diagram {
@@ -104,54 +109,89 @@ export class FlowPresentation {
     return { id, type: "record", data, position: { x: 0, y: 0 } };
   }
   agents(): Diagram {
-    const nodes = new Map<string, DiagramNode>();
-    const edges = new Map<string, Edge>();
-    for (const item of this.flow.tasks.records) {
-      const creator = this.actor(item.created_by);
-      const worker = this.actor(item.worker);
-      const parentId = `coordinator:${creator}`;
-      const workerId = `worker:${worker}`;
-      const created = this.flow.tasks.records.filter(
-        (candidate) => this.actor(candidate.created_by) === creator,
-      );
-      const assigned = this.flow.tasks.records.filter(
-        (candidate) => this.actor(candidate.worker) === worker,
-      );
-      nodes.set(
-        parentId,
-        this.node(parentId, {
+    const hierarchy = new ReportingHierarchy(this.flow.tasks.records);
+    const nodes = hierarchy.nodes().map((node) => this.reportingNode(node));
+    const edges: Edge[] = hierarchy.edges().map((edge) => ({
+      id: `reporting:${edge.source}->${edge.target}`,
+      source: edge.source,
+      target: edge.target,
+      label: "Recorded reporting line",
+      type: "smoothstep",
+    }));
+    for (const group of hierarchy.historical()) {
+      const parentId = `historical:creator:${this.actor(group.actor)}`;
+      const data: FlowNodeData = {
+        kind: NodeKind.Agent,
+        title: this.actor(group.actor),
+        subtitle: "Created by · reporting unrecorded",
+        state: NodeState.NoActivity,
+        tasks: [],
+        actor: group.actor,
+        activity: ActivityKind.Absent,
+      };
+      nodes.push(this.node(parentId, data));
+      for (const worker of group.workers.values()) {
+        const workerId = `${parentId}:worker:${this.actor(worker.actor)}`;
+        const workerData: FlowNodeData = {
           kind: NodeKind.Agent,
-          title: creator,
-          subtitle: "Task creation & delegation",
-          state: NodeState.Coordinator,
-          tasks: created,
-          actor: item.created_by,
-        }),
-      );
-      nodes.set(
-        workerId,
-        this.node(workerId, {
-          kind: NodeKind.Agent,
-          title: worker,
-          subtitle: this.agentSummary(assigned),
-          state: NodeState.Worker,
-          tasks: assigned,
-          actor: item.worker,
-        }),
-      );
-      const edgeId = `${parentId}:${workerId}`;
-      edges.set(edgeId, {
-        id: edgeId,
-        source: parentId,
-        target: workerId,
-        label: this.handoff(item.worker),
-        type: "smoothstep",
-      });
+          title: this.actor(worker.actor),
+          subtitle: `History worker · reporting unrecorded · ${this.agentSummary(worker.tasks)}`,
+          state: worker.status(),
+          tasks: worker.tasks,
+          actor: worker.actor,
+          activity: ActivityKind.Recorded,
+        };
+        nodes.push(this.node(workerId, workerData));
+        const edge: Edge = {
+          id: `${parentId}->${workerId}`,
+          source: parentId,
+          target: workerId,
+          label: "created by · reporting unrecorded",
+          type: "smoothstep",
+        };
+        edges.push(edge);
+      }
     }
-    return this.arrange({
-      nodes: Array.from(nodes.values()),
-      edges: Array.from(edges.values()),
-    });
+    const diagram: Diagram = { nodes, edges };
+    return this.arrange(diagram);
+  }
+  private reportingNode(node: ReportingNode): DiagramNode {
+    const activity = node.activity;
+    switch (activity.kind) {
+      case ActivityKind.Absent: {
+        const data: FlowNodeData = {
+          kind: NodeKind.Agent,
+          title: this.reportingTitle(node),
+          subtitle: "Recorded reporting target",
+          state: NodeState.NoActivity,
+          tasks: [],
+          actor: node.actor(),
+          activity: ActivityKind.Absent,
+        };
+        return this.node(node.id(), data);
+      }
+      case ActivityKind.Recorded: {
+        const data: FlowNodeData = {
+          kind: NodeKind.Agent,
+          title: this.reportingTitle(node),
+          subtitle: this.agentSummary(activity.group.tasks),
+          state: activity.group.status(),
+          tasks: activity.group.tasks,
+          actor: activity.group.actor,
+          activity: ActivityKind.Recorded,
+        };
+        return this.node(node.id(), data);
+      }
+    }
+  }
+  private reportingTitle(node: ReportingNode): string {
+    const actor = node.actor();
+    switch (actor.kind) {
+      case "unrecorded":
+        return node.name();
+      case "recorded":
+        return this.actor(actor);
+    }
   }
   tasks(): Diagram {
     const nodes = this.flow.tasks.records.map((item) =>
@@ -230,14 +270,6 @@ export class FlowPresentation {
       label: `integrated ${commit.commit.slice(0, 8)}`,
       type: "smoothstep",
     }));
-  }
-  private handoff(actor: RecordedActor): string {
-    switch (actor.kind) {
-      case "recorded":
-        return "created → assigned";
-      case "unrecorded":
-        return "created · unassigned";
-    }
   }
   private arrange(diagram: Diagram): Diagram {
     const graph = new graphlib.Graph<GraphLabel, LayoutNode>();

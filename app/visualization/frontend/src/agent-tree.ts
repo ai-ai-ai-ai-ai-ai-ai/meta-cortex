@@ -4,6 +4,7 @@ import type {
   FlowCount,
   RecordedActor,
   TaskFlow,
+  ReportingTarget,
 } from "./contracts";
 import { TaskPresentation } from "./task-presentation";
 enum Expansion {
@@ -49,6 +50,14 @@ export interface AgentSelection {
 }
 class AgentLabel {
   constructor(private readonly actor: RecordedActor) {}
+  id(): string {
+    switch (this.actor.kind) {
+      case "unrecorded":
+        return "unrecorded";
+      case "recorded":
+        return `${this.actor.agent.team}:${this.actor.agent.role}`;
+    }
+  }
   name(): string {
     switch (this.actor.kind) {
       case "unrecorded":
@@ -144,7 +153,7 @@ export class Delegation {
     }
   }
   add(task: TaskFlow): void {
-    const key = new AgentLabel(task.worker).name();
+    const key = new AgentLabel(task.worker).id();
     const worker = this.workers.get(key);
     switch (worker) {
       case undefined:
@@ -176,18 +185,240 @@ class ContributionProgress {
     return Array.from(counts, ([state, count]) => ({ state, count }));
   }
 }
-export class AgentTree {
-  constructor(private readonly tasks: ReadonlyArray<TaskFlow>) {}
-  groups(): ReadonlyArray<Delegation> {
-    const groups = new Map<string, Delegation>();
-    for (const task of this.tasks) {
-      const key = new AgentLabel(task.created_by).name();
-      const group = groups.get(key) ?? new Delegation(task.created_by);
-      group.add(task);
-      groups.set(key, group);
+export enum ActivityKind {
+  Recorded = "recorded",
+  Absent = "absent",
+}
+export type NodeActivity =
+  | { kind: ActivityKind.Recorded; group: AgentContribution }
+  | { kind: ActivityKind.Absent };
+export interface ReportingIdentity {
+  id: string;
+  name: string;
+  actor: RecordedActor;
+}
+export interface ReportingEdge {
+  source: string;
+  target: string;
+  tasks: ReadonlyArray<TaskFlow>;
+}
+export class ReportingNode {
+  private ownActivity: NodeActivity = { kind: ActivityKind.Absent };
+  private readonly reportingChildren = new Map<string, ReportingNode>();
+  constructor(private readonly identity: ReportingIdentity) {}
+  id(): string {
+    return this.identity.id;
+  }
+  name(): string {
+    return this.identity.name;
+  }
+  actor(): RecordedActor {
+    return this.identity.actor;
+  }
+  get activity(): NodeActivity {
+    return this.ownActivity;
+  }
+  get children(): ReadonlyArray<ReportingNode> {
+    return Array.from(this.reportingChildren.values());
+  }
+  add(task: TaskFlow): void {
+    switch (this.ownActivity.kind) {
+      case ActivityKind.Absent: {
+        const tasks: readonly [TaskFlow] = [task];
+        const group = new AgentContribution(this.actor(), tasks);
+        this.ownActivity = { kind: ActivityKind.Recorded, group };
+        return;
+      }
+      case ActivityKind.Recorded:
+        this.ownActivity = {
+          kind: ActivityKind.Recorded,
+          group: this.ownActivity.group.adding(task),
+        };
     }
-    return Array.from(groups.values()).sort(
-      (left, right) => right.tasks().length - left.tasks().length,
+  }
+  attach(child: ReportingNode): void {
+    this.reportingChildren.set(child.id(), child);
+  }
+  ownTasks(): ReadonlyArray<TaskFlow> {
+    switch (this.ownActivity.kind) {
+      case ActivityKind.Absent:
+        return [];
+      case ActivityKind.Recorded:
+        return this.ownActivity.group.tasks;
+    }
+  }
+  descendantCounts(): ReadonlyArray<FlowCount> {
+    const tasks = this.descendantTasks();
+    return new ContributionProgress(tasks).counts();
+  }
+  subtreeCounts(): ReadonlyArray<FlowCount> {
+    const collected: ReadonlyArray<TaskFlow> = [
+      ...this.ownTasks(),
+      ...this.descendantTasks(),
+    ];
+    const tasks = this.uniqueTasks(collected);
+    return new ContributionProgress(tasks).counts();
+  }
+  private descendantTasks(): ReadonlyArray<TaskFlow> {
+    const pending = [...this.children];
+    const reached: ReportingNode[] = [];
+    const initialIds: ReadonlyArray<string> = [this.id()];
+    const seen = new Set<string>(initialIds);
+    for (const node of pending) {
+      switch (seen.has(node.id())) {
+        case true:
+          break;
+        case false:
+          seen.add(node.id());
+          reached.push(node);
+          pending.push(...node.children);
+          break;
+      }
+    }
+    const ownIds = new Set(this.ownTasks().map((task) => task.task.common.id));
+    const tasks = reached.flatMap((node) => node.ownTasks());
+    return this.uniqueTasks(tasks).filter(
+      (task) => !ownIds.has(task.task.common.id),
     );
+  }
+  private uniqueTasks(tasks: ReadonlyArray<TaskFlow>): ReadonlyArray<TaskFlow> {
+    const unique = new Map<string, TaskFlow>();
+    for (const task of tasks) {
+      unique.set(task.task.common.id, task);
+    }
+    return Array.from(unique.values());
+  }
+}
+export class ReportingHierarchy {
+  private readonly identities = new Map<string, ReportingNode>();
+  private readonly links = new Map<string, ReportingEdge>();
+  private readonly history = new Map<string, Delegation>();
+  constructor(tasks: ReadonlyArray<TaskFlow>) {
+    for (const task of tasks) {
+      this.record(task);
+    }
+  }
+  roots(): ReadonlyArray<ReportingNode> {
+    const children = new Set(this.edges().map((edge) => edge.target));
+    return this.nodes().filter((node) => !children.has(node.id()));
+  }
+  nodes(): ReadonlyArray<ReportingNode> {
+    return Array.from(this.identities.values());
+  }
+  edges(): ReadonlyArray<ReportingEdge> {
+    return Array.from(this.links.values());
+  }
+  historical(): ReadonlyArray<Delegation> {
+    return Array.from(this.history.values());
+  }
+  private record(task: TaskFlow): void {
+    switch (task.task.ownership.kind) {
+      case "Unrecorded":
+        this.recordHistory(task);
+        return;
+      case "Assigned":
+        this.recordAssignment(task);
+    }
+  }
+  private recordHistory(task: TaskFlow): void {
+    const key = new AgentLabel(task.created_by).id();
+    const previous = this.history.get(key);
+    switch (previous) {
+      case undefined: {
+        const group = new Delegation(task.created_by);
+        group.add(task);
+        this.history.set(key, group);
+        return;
+      }
+      default:
+        previous.add(task);
+    }
+  }
+  private recordAssignment(task: TaskFlow): void {
+    switch (task.task.ownership.kind) {
+      case "Unrecorded":
+        return;
+      case "Assigned": {
+        const actor: RecordedActor = {
+          kind: "recorded",
+          agent: task.task.ownership.assignment.agent,
+        };
+        const parent = this.target(task.task.ownership.assignment.reports_to);
+        const worker = this.agent(actor);
+        worker.add(task);
+        parent.attach(worker);
+        const edge: ReportingEdge = {
+          source: parent.id(),
+          target: worker.id(),
+          tasks: [task],
+        };
+        this.recordEdge(edge);
+      }
+    }
+  }
+  private recordEdge(edge: ReportingEdge): void {
+    const key = `${edge.source}->${edge.target}`;
+    const previous = this.links.get(key);
+    switch (previous) {
+      case undefined:
+        this.links.set(key, edge);
+        return;
+      default: {
+        const updated: ReportingEdge = {
+          ...edge,
+          tasks: [...previous.tasks, ...edge.tasks],
+        };
+        this.links.set(key, updated);
+      }
+    }
+  }
+  private agent(actor: RecordedActor): ReportingNode {
+    const label = new AgentLabel(actor);
+    const identity: ReportingIdentity = {
+      id: label.id(),
+      name: label.name(),
+      actor,
+    };
+    return this.obtain(identity);
+  }
+  private target(target: ReportingTarget): ReportingNode {
+    switch (target.kind) {
+      case "Host": {
+        const actor: RecordedActor = { kind: "unrecorded" };
+        const identity: ReportingIdentity = { id: "host", name: "Host", actor };
+        return this.obtain(identity);
+      }
+      case "Gizmo": {
+        const actor: RecordedActor = {
+          kind: "recorded",
+          agent: { team: "Gizmo", role: target.coordinator },
+        };
+        return this.agent(actor);
+      }
+    }
+  }
+  private obtain(identity: ReportingIdentity): ReportingNode {
+    const previous = this.identities.get(identity.id);
+    switch (previous) {
+      case undefined: {
+        const node = new ReportingNode(identity);
+        this.identities.set(identity.id, node);
+        return node;
+      }
+      default:
+        return previous;
+    }
+  }
+}
+export class AgentTree {
+  private readonly hierarchy: ReportingHierarchy;
+  constructor(tasks: ReadonlyArray<TaskFlow>) {
+    this.hierarchy = new ReportingHierarchy(tasks);
+  }
+  groups(): ReadonlyArray<ReportingNode> {
+    return this.hierarchy.roots();
+  }
+  historical(): ReadonlyArray<Delegation> {
+    return this.hierarchy.historical();
   }
 }
