@@ -143,9 +143,11 @@ uses Bun and the shared workspace dependencies installed by Framework / Initiali
 - The helper validates data locally; the agent calls the host's native question tool.
 - Answers stay in session context.
 
-[meta-cortex.toml](meta-cortex.toml) selects the model and reasoning effort for
-each delegated role in multi-agent mode. Speed comes from the host session.
-Single-agent mode keeps the current host settings. The
+[meta-cortex.toml](meta-cortex.toml) declares the required total host agent capacity
+and selects the model and reasoning effort for each delegated role in multi-agent mode.
+The entry point runs the [host capacity preflight](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
+after session choices, before development in either mode. Speed comes from the host session.
+Single-agent mode keeps the current host model and reasoning effort. The
 [configuration rules](teams/gizmo-team/docs/agent-configuration.md) define how
 the host applies those settings.
 
