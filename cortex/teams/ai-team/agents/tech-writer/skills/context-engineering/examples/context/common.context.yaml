@@ -1,0 +1,7 @@
+stages:
+  readContext:
+    $ref: ./context.context.yaml#/exports/stages/readContext
+  compileReceipt:
+    $ref: ./compile.context.yaml#/exports/stages/compileReceipt
+  verifyReceipt:
+    $ref: ./verify.context.yaml#/exports/stages/verifyReceipt

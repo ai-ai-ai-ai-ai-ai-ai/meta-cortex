@@ -1,0 +1,17 @@
+stages:
+  verifyReceipt:
+    $ref: ./verify.context.yaml#/exports/stages/verifyReceipt
+exports:
+  stages:
+    verifyReceipt:
+      spec: {}
+      Required:
+        statements:
+          verifyDeclarations:
+            content: Verify receipt formatting, schema, references, and tooling types.
+            ShellCommand:
+              cwd: library-root
+              script: bun run verify
+      Prohibited:
+        statements: {}
+  statements: {}

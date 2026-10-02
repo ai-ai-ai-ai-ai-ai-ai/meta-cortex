@@ -2,13 +2,13 @@
   "name": "@meta-cortex/skill-workspace",
   "private": true,
   "workspaces": [
-    "lace",
     "scripts",
     "teams/*/agents/*/skills/*/scripts"
   ],
   "scripts": {
     "verify": "bun run --workspaces verify",
-    "docs:check": "PATH=\"${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH\" bun teams/ai-team/agents/tech-writer/skills/context-engineering/scripts/src/ts/cli.ts"
+    "docs:check": "PATH=\"${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH\" bun teams/ai-team/agents/tech-writer/skills/context-engineering/scripts/src/ts/cli.ts",
+    "context:check": "bun scripts/src/ts/check-context.ts"
   },
   "devDependencies": {
     "effect": "4.0.0-rc.117"

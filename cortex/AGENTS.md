@@ -155,30 +155,22 @@ its tests in its worktree, and pass both roots in assignments.
 
 ## Cortex context format
 
-[Neural Lace](lace/AGENTS.ts) is the core for typed Cortex context files.
-Read its [model](lace/src/ts/lace.ts) to learn the vocabulary, then read
-`lace/AGENTS.ts` as text for its context instructions. That entry point describes
-Lace through its own Job and Stage declarations. The model contains the WorkingDirectory enum and readonly Job, Stage, Statement,
-Required, Prohibited, and ShellCommand contracts. Import authoring vocabulary
-from the private workspace package root `@meta-cortex/lace`.
-Receipts declare plain readonly Jobs with named Stage maps. Every Stage contains
-spec, Required, and Prohibited sections; their statement maps may be empty.
-Use literal strings for prose and mandatory content plus ShellCommand for commands.
-Apply the [stage and statement naming rule](teams/ai-team/docs/lace-architecture.md#stage-names)
-and [normative categories](teams/ai-team/docs/lace-architecture.md#normative-categories).
-Subject receipts belong beside their owning context, outside `lace/`.
-Agents read entry points and receipts as text; TypeScript checks their structure
-and imports. Importing a receipt constructs plain data and never runs declared
-shell commands. Compose typed Stage and Statement declarations through static
-imports; do not nest Jobs or use runtime calls.
-[Context Engineering](teams/ai-team/agents/tech-writer/skills/context-engineering/SKILL.md#cortex-context-with-lace)
-owns this context authoring. Other existing Markdown context remains authoritative.
+Read the [YAML context authoring entry point](teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml)
+as text before changing Cortex context declarations. Context Engineering owns
+these instructions and the
+[authoring examples](teams/ai-team/agents/tech-writer/skills/context-engineering/examples/context/authoring.context.yaml).
+The [shared Effect schema](scripts/src/ts/context-schema.ts) owns structural
+validation; `bun run context:check` checks discovered `AGENTS.yaml` and
+`*.context.yaml` files plus their static references. Run it from the library root.
+Subject declarations belong beside their owning context. Agents read them as
+text and interpret their wording within the active assignment. Validation never
+executes ShellCommand strings. Existing Markdown instructions remain authoritative.
 
-**Prohibited:** change Lace's core while writing a context receipt, or use Lace
-as a coding-agent API for the consuming application.
+**Prohibited:** change the shared schema while assigned only to write context,
+or use context declarations as an application workflow.
 
-**Required:** compose the assigned Cortex context with the existing vocabulary
-and run the existing checks; request a separate core assignment for a missing capability.
+**Required:** author the assigned context with existing schema fields and run
+`bun run context:check`; report a missing capability for a separate assignment.
 
 ## Prohibited actions
 

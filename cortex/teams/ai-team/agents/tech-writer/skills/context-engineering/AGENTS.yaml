@@ -1,0 +1,324 @@
+stages:
+  overview:
+    spec:
+      contextLanguage: Cortex context is YAML data checked against the shared context schema.
+      contextSubjects:
+        Context includes architecture, specifications, rules, agent
+        instructions, skills, and practices.
+      readAsText: Agents read declarations as text, just as they read Markdown.
+      entryPointReading: Read this entry point as context; do not load it to execute commands.
+      authoringOwner: Context Engineering owns receipt authoring.
+      markdownAuthority: Other existing Cortex Markdown instructions remain authoritative.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  orientation:
+    spec: {}
+    Required:
+      statements:
+        followContract:
+          Follow the core ownership, receipt contract, and validation
+          context below.
+        resolvePaths:
+          "Resolve prose paths in this entry point from the Cortex library
+          root: cortex/ in this repository or .meta-cortex/ in an installed
+          project."
+    Prohibited:
+      statements: {}
+  coreOwnershipVocabulary:
+    spec:
+      readModel: Read scripts/src/ts/context-schema.ts before authoring context
+        declarations.
+      modelVocabulary: The schema validates stages, spec, Required, Prohibited,
+        statements, exports, references, and ShellCommand fields.
+      readonlyJobs: Context documents contain literal YAML maps with named stage sections.
+      jobComposition: The document groups stage sections in its stages map.
+      sectionPurpose: Each Stage separates specification, required actions, and
+        prohibited actions.
+      fixedStageFields: Stage has mandatory spec, Required, and Prohibited fields.
+      statementForms: Statement is a literal string or an object with mandatory
+        content and ShellCommand.
+      normativeSections: Required and Prohibited each contain a named statements map.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  coreOwnershipContextPlacement:
+    spec:
+      assignedScope: Keep receipt edits within the assigned Cortex context scope.
+      subjectLocation: Write subject context declarations beside their owning context.
+      selfDescription: This
+        teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml
+        entry point owns YAML context authoring instructions.
+      inertCore: The shared schema and validation implementation contain no
+        operational context declarations.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  coreOwnershipCoreChanges:
+    spec:
+      existingVocabulary: Use the existing context schema and run the existing checks.
+      explicitCoreAssignment: Change the shared schema or checker only under an
+        explicit assignment to change it.
+      failedReceiptScope: A receipt that fails validation does not grant that assignment.
+      correctReceipt: Correct an invalid context declaration using the existing schema.
+      missingCapability:
+        Report a missing capability when the schema cannot express
+        the assigned context.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  coreOwnershipOwnershipExamples:
+    spec: {}
+    Required:
+      statements:
+        requiredUseExistingDeclarations:
+          Read the schema, then write the assigned
+          context declaration beside its context using existing fields.
+        requiredUnchangedChecks: Run the unchanged checks.
+        requiredSeparateCoreRequest:
+          Report an unsupported capability for a separate
+          schema or checker assignment.
+    Prohibited:
+      statements:
+        prohibitedUnauthorizedCoreEdit:
+          While assigned to write context, add a schema
+          field because the declaration fails validation.
+  receiptAuthoringReceiptContract:
+    spec:
+      importJob:
+        Write a YAML document with a root stages map checked against the
+        shared context schema.
+      descriptiveNames:
+        Follow teams/ai-team/docs/context-authoring.md#stage-names
+        when naming stages and short descriptive spec and statement keys.
+      modelImports: Use the shared schema fields; command cwd is project-root or
+        library-root.
+      rootDeclaration: Declare the root stages map with each local Stage inline;
+        optionally declare reusable stages and statements in exports.
+      explicitStageKeys:
+        Give each stage an explicit unique YAML mapping key; write
+        local Stage contents inline and use $ref for reusable exported Stages.
+      fixedSections:
+        Keep context in fixed Stage sections; use source declaration
+        order when reading named maps.
+      statementPayloads:
+        "Use a literal string for prose or { content, ShellCommand: {
+        cwd, script } } for a command statement."
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  receiptAuthoringReadonlyDeclarations:
+    spec:
+      stageOrder:
+        Read stages in source mapping order; prefer nonnumeric names so
+        context readers preserve their intended ordering.
+      readonlyFields:
+        Keep stage fields, statement maps, and structured commands as
+        literal YAML data.
+      emptyMaps:
+        All stages, spec, and statements maps are literal named objects and
+        may be empty.
+      literalSections:
+        Compose fixed sections with literal named YAML maps and static
+        Stage or Statement $ref values; calls and constructors are invalid.
+      readonlyAccess:
+        The schema checks YAML structure; validation does not establish
+        prose correctness or runtime immutability.
+      importConstruction:
+        Read declarations as context; validation checks data and
+        never runs declared shell commands.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  receiptAuthoringReadonlyExamples:
+    spec: {}
+    Required:
+      statements:
+        requiredTypedReadonly: Keep context declaration maps literal and static.
+        requiredStaticComposition:
+          Compose Stage and Statement declarations with static
+          $ref values and literal YAML maps.
+    Prohibited:
+      statements:
+        prohibitedStageMutation: Mutate receipt sections or hide context behind calls.
+  receiptAuthoringStatementShapes:
+    spec:
+      literalStatementShape:
+        Declare prose as a literal string in spec or a Required
+        or Prohibited statements map.
+      statementMeaning: A statement can explain architecture, describe a
+        specification, state a rule, or give an instruction.
+      statementRequiredWording: Its wording conveys whether it describes context or requires an action.
+      literalStatementText: Use one nonblank YAML string for each prose statement.
+      specificationStatements: Declare Stage.spec as a named Statement map for
+        specifications and explanatory context.
+      shortStatementKeys:
+        Give each statement a short descriptive key and nonblank
+        YAML string value; keep one independent fact or rule in each statement.
+      normativeStatements:
+        Put mandatory actions in Required.statements and forbidden
+        actions in Prohibited.statements; do not nest context documents or
+        groups.
+      mandatoryStageFields:
+        Include spec, Required, and Prohibited in every Stage even
+        when their maps are empty.
+      purposeNamedSections:
+        Use purpose-named Stage sections for related statements;
+        follow teams/ai-team/docs/context-authoring.md#normative-categories for
+        their placement.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  receiptAuthoringStatementExamples:
+    spec: {}
+    Required:
+      statements:
+        requiredParallelRules: Use named statements for parallel rules.
+        requiredSubjectSections: Use separate purpose-named Stages for different subjects.
+        requiredExplicitActions: State required actions explicitly in the statement's wording.
+    Prohibited:
+      statements:
+        prohibitedHiddenStructure:
+          Hide independent rules in one long paragraph under a
+          single statement name.
+  receiptAuthoringShellCommands:
+    spec:
+      shellShape: "Declare a command statement as { content: 'Check context.',
+        ShellCommand: { cwd: library-root, script: 'bun run context:check' } };
+        commands remain inert YAML data."
+      commandRoots: Choose project-root or library-root for command cwd.
+      resolveRoots: Resolve both roots before running commands through the host's shell tool.
+      inertCommands: Validation and reference resolution never execute declared commands.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  receiptAuthoringComposition:
+    spec:
+      declarationGrammar:
+        Limit receipts to a root stages map, optional exports with
+        both stages and statements maps, literal text and commands, and static
+        $ref values. Maps may be empty; sequences, executable logic, unknown
+        fields, and nonliteral map shapes are invalid.
+      importedContext:
+        Reference named Stage and Statement declarations in another
+        receipt through its exports to reuse its context.
+      readImportedSource: Read the referenced source before applying its context.
+      relativeImports: Relative $ref paths resolve from the receipt file.
+      literalConditions: Express conditions and context selection in literal statement text.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  receiptAuthoringCompositionExamples:
+    spec: {}
+    Required:
+      statements:
+        requiredStaticStages:
+          "Declare stages with an inline context Stage containing
+          spec: {}, Required: { statements: {} }, and Prohibited: { statements:
+          {} }; use { $ref:
+          './compile.context.yaml#/exports/stages/compileReceipt' } and { $ref:
+          './verify.context.yaml#/exports/stages/verifyReceipt' } for reusable
+          Stages."
+        requiredAuthoringExample: See
+          teams/ai-team/agents/tech-writer/skills/context-engineering/examples/context/authoring.context.yaml
+          for an authoring example.
+        requiredArchitectureReference:
+          See teams/ai-team/docs/context-authoring.md for
+          the YAML schema and validation limits.
+    Prohibited:
+      statements:
+        prohibitedInvalidRoot:
+          Use a raw sequence or Stage as the root, a constructor,
+          or an implementation function.
+  validationValidationGuidance:
+    spec:
+      compilerCheck: Use the schema and reference check while editing receipts.
+      completeVerification:
+        Run complete workspace verification before reporting that
+        context passes all checks.
+      libraryRoot: Run these commands from the Cortex library root.
+    Required:
+      statements: {}
+    Prohibited:
+      statements: {}
+  validationCompile:
+    spec: {}
+    Required:
+      statements:
+        compile:
+          content: Validate context declaration schemas and references.
+          ShellCommand:
+            cwd: library-root
+            script: bun run context:check
+    Prohibited:
+      statements: {}
+  validationVerify:
+    spec: {}
+    Required:
+      statements:
+        verify:
+          content: Verify context declarations.
+          ShellCommand:
+            cwd: library-root
+            script: bun run verify
+    Prohibited:
+      statements: {}
+  validationValidationExamples:
+    spec: {}
+    Required:
+      statements:
+        requiredCompileOnly:
+          Use context:check for YAML schema and reference validation
+          without executing declared commands.
+        requiredFullChecks:
+          Run verify for workspace formatting, lint, tooling types,
+          context schemas and references, and contract tests.
+        requiredCommandEvidence:
+          Neither check executes declared commands or proves
+          their success in a consuming project.
+    Prohibited:
+      statements:
+        prohibitedIncompleteClaim: Report that all workspace checks pass after running only context:check.
+  scopeRestrictions:
+    spec: {}
+    Required:
+      statements: {}
+    Prohibited:
+      statements:
+        contextOnly: Do not use context declarations as a coding-agent API or an
+          application workflow.
+        inertModel:
+          Do not put subject context declarations in the shared schema or
+          validation implementation.
+        subjectReceipts: The YAML authoring entry point is
+          teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml;
+          other subject declarations belong with their owning context.
+        protectedCore: Do not change the shared schema, checker, tests, scripts,
+          configuration, or authoring entry point during ordinary context
+          authoring.
+        explicitAssignment:
+          Schema and checker changes require an explicit assignment to
+          change them.
+  scopeExamples:
+    spec: {}
+    Required:
+      statements:
+        requiredAssignedFiles: Keep receipt work within the assigned Cortex context files.
+        requiredAuthorizedCoreWork:
+          When explicitly assigned to change the shared
+          context schema or checker, edit the relevant files and verify the
+          project.
+    Prohibited:
+      statements:
+        prohibitedWeakenCore:
+          Add an application callback to the schema or weaken lint
+          to make a context declaration pass.

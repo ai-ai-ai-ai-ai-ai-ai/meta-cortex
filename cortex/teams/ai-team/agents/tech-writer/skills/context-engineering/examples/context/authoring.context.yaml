@@ -1,0 +1,23 @@
+stages:
+  readContext:
+    $ref: ./context.context.yaml#/exports/stages/readContext
+  authorReceipt:
+    spec: {}
+    Required:
+      statements:
+        writeReceipt:
+          Write the assigned Cortex context declaration using the existing
+          shared YAML schema.
+        preserveCore:
+          Keep the shared schema, checker, and verification configuration
+          unchanged.
+        literalSelection: Express context selection as literal statement content.
+        reuseContext:
+          Reuse canonical Stage and Statement declarations through static
+          $ref values.
+    Prohibited:
+      statements: {}
+  compileReceipt:
+    $ref: ./compile.context.yaml#/exports/stages/compileReceipt
+  verifyReceipt:
+    $ref: ./verify.context.yaml#/exports/stages/verifyReceipt

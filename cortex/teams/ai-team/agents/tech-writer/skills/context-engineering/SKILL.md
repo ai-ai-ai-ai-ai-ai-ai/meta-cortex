@@ -73,28 +73,22 @@ locations and reports the specific semantic and mechanical checks performed.
 **Required report:** “Reviewed the changed section against the four practices.
 Its local links resolve; the code example was reviewed but not executed.”
 
-## Cortex context with Lace
+## YAML Cortex context
 
-When the assignment concerns Cortex's own typed context files, use the
-[Neural Lace architecture](../../../../docs/lace-architecture.md).
-Its [authoring example](examples/lace/authoring.lace.ts) demonstrates static
-Stage composition and existing compilation checks. A Job has named Stage sections;
-each Stage contains spec, Required, and Prohibited. All named maps may be empty.
-Place literal prose in spec or normative statements maps, following the
-[normative category contract](../../../../docs/lace-architecture.md#normative-categories).
-Command statements have both descriptive content and a ShellCommand payload.
-Import model vocabulary from `@meta-cortex/lace` and named typed Stage or Statement
-exports from static relative receipt paths. Jobs do not recursively contain Jobs;
-receipts contain no calls or builders. Agents read declarations as text. Compilation
-and importing never execute declared shell commands.
-Apply the [stage and statement naming rule](../../../../docs/lace-architecture.md#stage-names)
-and [core ownership rules](../../../../../../lace/AGENTS.ts).
+Read this skill's [authoring entry point](AGENTS.yaml) before changing YAML
+context. Use the [authoring guidance](../../../../docs/context-authoring.md)
+and [composition example](examples/context/authoring.context.yaml) to apply the
+[shared Effect schema](../../../../../../scripts/src/ts/context-schema.ts).
+Keep named stages and statement maps in source order. Use descriptive prose,
+static export references, and inert ShellCommand payloads. Existing Markdown
+context remains authoritative.
 
-**Prohibited:** use the context format as an application programming API or
-modify its core to make an assigned context receipt compile.
+**Prohibited:** use context declarations as an application programming API or
+modify the shared schema to make an assigned context declaration validate.
 
-**Required:** write the assigned Cortex context with the existing declarations
-and check it using the provided compiler and grammar checks.
+**Required:** write the assigned context with the existing schema and run
+`bun run context:check` from the library root. Use `bun run verify` before claiming
+full workspace verification.
 
 ## Executable audits
 
