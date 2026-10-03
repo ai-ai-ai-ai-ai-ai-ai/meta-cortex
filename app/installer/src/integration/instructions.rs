@@ -97,11 +97,14 @@ pub enum InstructionStatus {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::{InstructionError, InstructionStatus, PreparedInstructions};
     use crate::integration::{Harness, ProjectHarnesses};
     use std::fs;
-    use std::os::unix::fs::{PermissionsExt, symlink};
+    #[cfg(unix)]
+    use std::os::unix::fs::{PermissionsExt, symlink, symlink as symlink_dir};
+    #[cfg(windows)]
+    use std::os::windows::fs::{symlink_dir, symlink_file as symlink};
     use tempfile::{TempDir, tempdir};
 
     struct Fixture {
@@ -126,14 +129,16 @@ pub mod tests {
                 &path,
                 "# Project instructions\nDo not change my build steps.\n",
             )?;
+            #[cfg(unix)]
             fs::set_permissions(&path, fs::Permissions::from_mode(0o640))?;
+            let permissions = fs::metadata(&path)?.permissions();
             let target = self.project().target(Harness::Codex)?;
             let prepared = PreparedInstructions::read(target.clone())?;
             assert_eq!(prepared.status(), InstructionStatus::Missing);
             prepared.write()?;
             let first = fs::read(&path)?;
             assert!(first.starts_with(b"# Project instructions\nDo not change my build steps.\n"));
-            assert_eq!(fs::metadata(&path)?.permissions().mode() & 0o777, 0o640);
+            assert_eq!(fs::metadata(&path)?.permissions(), permissions);
             let repeated = PreparedInstructions::read(target)?;
             assert_eq!(repeated.status(), InstructionStatus::Connected);
             repeated.write()?;
@@ -206,7 +211,7 @@ pub mod tests {
             // The parent directory must not be traversed either during reading or writing.
             let cursor = self.project().target(Harness::Cursor)?;
             let prepared = PreparedInstructions::read(cursor.clone())?;
-            symlink(external.path(), self.directory.path().join(".cursor"))?;
+            symlink_dir(external.path(), self.directory.path().join(".cursor"))?;
             assert!(matches!(
                 prepared.write(),
                 Err(InstructionError::Conflict(_))

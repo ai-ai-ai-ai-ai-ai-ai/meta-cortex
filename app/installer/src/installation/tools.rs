@@ -1,7 +1,12 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+#[cfg(windows)]
+use std::env::consts::ARCH;
+use std::env::consts::EXE_SUFFIX;
 use std::fs;
 use std::io;
+#[cfg(windows)]
+use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
@@ -77,11 +82,38 @@ pub(super) struct InstalledTool {
     pub directory: PathBuf,
 }
 
+#[cfg(windows)]
+#[derive(Debug, PartialEq, Eq, derive_more::Display)]
+enum WindowsArchitecture {
+    #[display("x64")]
+    X64,
+    #[display("arm64")]
+    Arm64,
+}
+
+#[cfg(windows)]
+impl TryFrom<&str> for WindowsArchitecture {
+    type Error = io::Error;
+
+    fn try_from(architecture: &str) -> Result<Self, Self::Error> {
+        match architecture {
+            "x86_64" => Ok(Self::X64),
+            "aarch64" => Ok(Self::Arm64),
+            architecture => Err(Error::new(
+                ErrorKind::Unsupported,
+                format!("mise does not provide a native Windows release for {architecture}"),
+            )),
+        }
+    }
+}
+
 impl ToolSetup {
     pub(super) fn prepare(self, request: ToolRequest) -> io::Result<InstalledTool> {
         let directory = request.home.join(request.tool.name());
         let installed = InstalledTool {
-            executable: directory.join("bin").join(request.tool.name()),
+            executable: directory
+                .join("bin")
+                .join(format!("{}{EXE_SUFFIX}", request.tool.name())),
             directory: directory.clone(),
         };
         match installed.check(request.tool) {
@@ -138,6 +170,7 @@ impl InstalledTool {
         }
     }
 
+    #[cfg(unix)]
     fn install_mise(&self) -> io::Result<()> {
         fs::create_dir_all(self.directory.join("bin"))?;
         let script = self.directory.join("install.sh");
@@ -159,6 +192,28 @@ impl InstalledTool {
             installer
                 .arg(&script)
                 .env("MISE_INSTALL_PATH", &self.executable),
+        )
+    }
+
+    #[cfg(windows)]
+    fn install_mise(&self) -> io::Result<()> {
+        fs::create_dir_all(self.directory.join("bin"))?;
+        let architecture = WindowsArchitecture::try_from(ARCH)?;
+        // PowerShell owns HTTPS download and GitHub's release JSON projection.
+        // The destination is passed as environment data, never interpolated shell code.
+        Self::run(
+            Command::new("powershell.exe")
+                .args([
+                    "-NoLogo",
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-Command",
+                ])
+                .arg(include_str!("tools/install-mise.ps1"))
+                .env("META_CORTEX_MISE_ARCH", architecture.to_string())
+                .env("META_CORTEX_MISE_EXE", &self.executable),
         )
     }
 
@@ -196,5 +251,53 @@ impl InstalledTool {
                 String::from_utf8_lossy(&output.stderr),
             ))),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{EXE_SUFFIX, Tool, ToolRequest, ToolSetup};
+    use std::io::{self, Error, ErrorKind};
+    use tempfile::Builder;
+
+    #[test]
+    fn missing_managed_tools_report_native_executable_paths() -> io::Result<()> {
+        let directory = Builder::new().prefix("managed tools 雪 ").tempdir()?;
+        for tool in [Tool::Mise, Tool::Bun, Tool::Vale] {
+            let expected = directory.path().join(tool.name()).join("bin").join(format!(
+                "{}{}",
+                tool.name(),
+                EXE_SUFFIX
+            ));
+            let result = ToolSetup::RequireExisting.prepare(ToolRequest {
+                tool,
+                home: directory.path().to_owned(),
+            });
+            let error = result
+                .err()
+                .ok_or_else(|| Error::other("missing tool accepted"))?;
+            assert_eq!(error.kind(), ErrorKind::NotFound);
+            assert!(error.to_string().contains(&expected.display().to_string()));
+            assert!(!expected.exists());
+        }
+        Ok(())
+    }
+    #[cfg(windows)]
+    #[test]
+    fn native_windows_architecture_selects_official_assets() -> io::Result<()> {
+        use super::WindowsArchitecture;
+        assert_eq!(
+            WindowsArchitecture::try_from("x86_64")?,
+            WindowsArchitecture::X64
+        );
+        assert_eq!(
+            WindowsArchitecture::try_from("aarch64")?,
+            WindowsArchitecture::Arm64
+        );
+        let error = WindowsArchitecture::try_from("x86")
+            .err()
+            .ok_or_else(|| Error::other("unsupported architecture accepted"))?;
+        assert_eq!(error.kind(), ErrorKind::Unsupported);
+        Ok(())
     }
 }

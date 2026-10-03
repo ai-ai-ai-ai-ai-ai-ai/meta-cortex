@@ -50,12 +50,12 @@ struct Scenario {
 impl Scenario {
     fn new() -> anyhow::Result<Self> {
         let directory = tempfile::tempdir()?;
-        let project = directory.path().join("project");
+        let project = directory.path().join("project with spaces");
         let repository = git2::Repository::init(&project)?;
         let signature = git2::Signature::now("Fixture", "fixture@example.invalid")?;
         let tree = repository.find_tree(repository.index()?.write_tree()?)?;
         repository.commit(Some("HEAD"), &signature, &signature, "fixture", &tree, &[])?;
-        let data = DataDirectory::from(directory.path().join("data"));
+        let data = DataDirectory::from(directory.path().join("data with spaces"));
         Ok(Self {
             directory,
             project,

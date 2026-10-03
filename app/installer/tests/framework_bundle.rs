@@ -9,7 +9,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::fs;
 use std::io;
+#[cfg(unix)]
 use std::os::unix::fs::symlink;
+#[cfg(windows)]
+use std::os::windows::fs::symlink_dir as symlink;
 use std::path::PathBuf;
 use tempfile::{TempDir, tempdir};
 

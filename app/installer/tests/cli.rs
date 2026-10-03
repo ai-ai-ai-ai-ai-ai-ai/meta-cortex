@@ -8,8 +8,13 @@ use report::{
     ReportRequiredTotalAgents, ReportSchemaVersion, ReportVersion,
 };
 use serde::{Deserialize, Serialize};
+use std::env::consts::EXE_SUFFIX;
 use std::fs;
 use std::io::Write;
+#[path = "support/managed_tools.rs"]
+mod managed_tools;
+use managed_tools::ManagedTools;
+#[cfg(unix)]
 use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -92,23 +97,14 @@ impl CliScenario {
         Ok(scenario)
     }
     fn seed_tools(&self) -> anyhow::Result<()> {
-        // Fixture-only imports from the runner; production never consults PATH.
-        for name in ["mise", "bun", "vale"] {
-            let output = Command::new("sh")
-                .args(["-c", "command -v \"$1\"", "sh", name])
-                .output()?;
-            assert!(output.status.success(), "missing test tool: {name}");
-            let directory = self.data.path().join(name).join("bin");
-            fs::create_dir_all(&directory)?;
-            symlink(
-                String::from_utf8(output.stdout)?.trim(),
-                directory.join(name),
-            )?;
+        ManagedTools {
+            home: self.data.path(),
         }
+        .seed()?;
         Ok(())
     }
     fn without_tools() -> anyhow::Result<Self> {
-        let project = Builder::new().prefix("project: # \"雪\" ").tempdir()?;
+        let project = Builder::new().prefix("project # 雪 ").tempdir()?;
         git2::Repository::init(project.path())?;
         Ok(Self {
             project,
@@ -353,17 +349,20 @@ fn missing_mise_fails_before_any_project_writes_and_can_be_retried() -> anyhow::
     Ok(())
 }
 
+#[cfg(unix)]
 #[derive(Deserialize)]
 struct ToolConfiguration {
     tools: ToolVersions,
 }
 
+#[cfg(unix)]
 #[derive(Deserialize)]
 struct ToolVersions {
     bun: String,
     vale: String,
 }
 
+#[cfg(unix)]
 struct ToolScenario {
     cli: CliScenario,
     tools: TempDir,
@@ -371,6 +370,7 @@ struct ToolScenario {
     executable: PathBuf,
 }
 
+#[cfg(unix)]
 impl ToolScenario {
     fn create() -> anyhow::Result<Self> {
         let tools = Builder::new().prefix("bun tools ").tempdir()?;
@@ -539,6 +539,7 @@ printf 'mise diagnostic' >&2
     }
 }
 
+#[cfg(unix)]
 #[test]
 fn installs_missing_tools_once_and_shares_identity_when_worktree_initializes_first()
 -> anyhow::Result<()> {
@@ -646,19 +647,7 @@ fn installs_missing_tools_once_and_shares_identity_when_worktree_initializes_fir
     Ok(())
 }
 
-#[test]
-fn initialization_requires_git_before_installing_anything() -> anyhow::Result<()> {
-    let scenario = ToolScenario::create()?;
-    fs::remove_dir_all(scenario.cli.project.path().join(".git"))?;
-    let Outcome::Error(error) = scenario.call(ToolSetup::InstallMissing)? else {
-        bail!("expected missing Git repository failure")
-    };
-    assert!(error.message.contains("requires a Git repository"));
-    assert!(!scenario.tools.path().join("downloaded").exists());
-    assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 0);
-    Ok(())
-}
-
+#[cfg(unix)]
 #[test]
 fn mise_setup_failures_leave_framework_and_instructions_untouched() -> anyhow::Result<()> {
     for failing_step in ["curl", "installer.sh", "mise-fixture"] {
@@ -683,35 +672,34 @@ fn mise_setup_failures_leave_framework_and_instructions_untouched() -> anyhow::R
 #[test]
 fn global_tools_do_not_satisfy_managed_tool_requirements() -> anyhow::Result<()> {
     for missing in ["mise", "bun", "vale"] {
-        let scenario = ToolScenario::create()?;
-        for (name, source) in [
-            ("mise", scenario.tools.path().join("mise-fixture")),
-            ("bun", scenario.executable.clone()),
-            ("vale", scenario.tools.path().join("vale-fixture")),
-        ] {
-            let directory = scenario.cli.data.path().join(name).join("bin");
-            fs::create_dir_all(&directory)?;
-            symlink(&source, directory.join(name))?;
-            symlink(&source, scenario.tools.path().join(name))?;
-        }
+        let scenario = CliScenario::create()?;
         let missing_path = scenario
-            .cli
             .data
             .path()
             .join(missing)
             .join("bin")
-            .join(missing);
+            .join(format!("{missing}{}", EXE_SUFFIX));
         fs::remove_file(&missing_path)?;
-        let Outcome::Error(error) = scenario.call(ToolSetup::RequireExisting)? else {
+        let Outcome::Error(error) = scenario.call(Operation::Framework(
+            FrameworkOperation::Initialize(Initialization {
+                mise: ToolSetup::RequireExisting,
+                bun: ToolSetup::RequireExisting,
+                vale: ToolSetup::RequireExisting,
+                harness: Harness::Codex,
+                instructions: Instructions::Write,
+            }),
+        ))?
+        else {
             bail!("global {missing} must not satisfy managed installation")
         };
         assert!(error.message.contains(&missing_path.display().to_string()));
-        assert!(!scenario.tools.path().join("downloaded").exists());
-        assert_eq!(fs::read_dir(scenario.cli.project.path())?.count(), 1);
+        assert!(!missing_path.exists());
+        assert_eq!(fs::read_dir(scenario.project.path())?.count(), 1);
     }
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn automatic_setup_ignores_global_tools() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -737,6 +725,7 @@ fn automatic_setup_ignores_global_tools() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn a_broken_existing_mise_is_reported_without_reinstalling() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -756,6 +745,7 @@ fn a_broken_existing_mise_is_reported_without_reinstalling() -> anyhow::Result<(
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn managed_mise_installs_missing_runtimes_without_bootstrapping() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -770,6 +760,7 @@ fn managed_mise_installs_missing_runtimes_without_bootstrapping() -> anyhow::Res
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn missing_bun_with_existing_mise_respects_require_existing() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -783,6 +774,7 @@ fn missing_bun_with_existing_mise_respects_require_existing() -> anyhow::Result<
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn a_broken_existing_bun_is_reported_without_reinstalling() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -800,6 +792,7 @@ fn a_broken_existing_bun_is_reported_without_reinstalling() -> anyhow::Result<()
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn missing_vale_requires_existing_tools_before_writing_project_files() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -818,6 +811,7 @@ fn missing_vale_requires_existing_tools_before_writing_project_files() -> anyhow
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn a_broken_existing_vale_is_reported_without_reinstalling() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -843,6 +837,7 @@ fn a_broken_existing_vale_is_reported_without_reinstalling() -> anyhow::Result<(
     Ok(())
 }
 
+#[cfg(unix)]
 #[test]
 fn mise_runtime_failure_leaves_project_untouched_and_can_be_retried() -> anyhow::Result<()> {
     let scenario = ToolScenario::create()?;
@@ -928,5 +923,27 @@ fn cli_exposes_dashboard_discovery_and_yaml_execution() -> anyhow::Result<()> {
         assert_eq!(output.status.code(), Some(2));
         assert!(output.stdout.is_empty());
     }
+    Ok(())
+}
+
+#[test]
+fn initialization_requires_git_before_installing_anything() -> anyhow::Result<()> {
+    let scenario = CliScenario::without_tools()?;
+    fs::remove_dir_all(scenario.project.path().join(".git"))?;
+    let Outcome::Error(error) = scenario.call(Operation::Framework(
+        FrameworkOperation::Initialize(Initialization {
+            mise: ToolSetup::InstallMissing,
+            bun: ToolSetup::InstallMissing,
+            vale: ToolSetup::InstallMissing,
+            harness: Harness::Codex,
+            instructions: Instructions::Write,
+        }),
+    ))?
+    else {
+        bail!("expected missing Git repository failure")
+    };
+    assert!(error.message.contains("requires a Git repository"));
+    assert_eq!(fs::read_dir(scenario.project.path())?.count(), 0);
+    assert_eq!(fs::read_dir(scenario.data.path())?.count(), 0);
     Ok(())
 }

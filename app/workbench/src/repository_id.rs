@@ -68,11 +68,14 @@ impl RepositoryId {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::RepositoryId;
     use crate::LedgerError;
     use std::fs;
+    #[cfg(unix)]
     use std::os::unix::fs::symlink;
+    #[cfg(windows)]
+    use std::os::windows::fs::symlink_file as symlink;
     use std::path::Path;
     use std::thread;
 

@@ -1,3 +1,4 @@
+use super::database::LedgerDatabase;
 use super::relational::{EventTable, FeatureTable, RecordWriter, RelationalSchema, TaskTable};
 use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
@@ -7,8 +8,8 @@ use crate::values::FeatureId;
 use crate::versions::StorageVersion;
 use sea_query::{Expr, ExprTrait, Iden, Query, SqliteQueryBuilder, Table};
 use std::path::Path;
+use turso::Connection;
 use turso::transaction::TransactionBehavior;
-use turso::{Builder, Connection};
 
 #[derive(Iden)]
 enum LegacyFeature {
@@ -210,14 +211,11 @@ impl LegacyImport<'_> {
             }
             None => drop(rows),
         }
-        let database = Builder::new_local(
-            path.to_str()
-                .ok_or(LedgerError::Invalid("ledger path must be UTF-8"))?,
-        )
-        .experimental_multiprocess_wal(true)
-        .read_only(true)
-        .build()
-        .await?;
+        let database = LedgerDatabase { path }
+            .builder()?
+            .read_only(true)
+            .build()
+            .await?;
         let mut source = database.connect()?;
         let snapshot = source.transaction().await?;
         match LedgerSchema::version(&snapshot).await? {
@@ -250,6 +248,7 @@ impl LegacyImport<'_> {
 
 #[cfg(test)]
 pub mod tests {
+    use crate::store::database::LedgerDatabase;
     use crate::store::schema::LedgerSchema;
     use crate::store::schema::tests::LegacyFixture;
     use crate::values::{FeatureId, TaskId};
@@ -257,7 +256,6 @@ pub mod tests {
     use crate::{DataDirectory, Workbench};
     use std::fs;
     use tokio::runtime;
-    use turso::Builder;
 
     #[test]
     fn discovery_imports_old_location_once_and_preserves_the_source() -> anyhow::Result<()> {
@@ -276,11 +274,7 @@ pub mod tests {
             .enable_time()
             .build()?
             .block_on(async {
-                let source =
-                    Builder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?)
-                        .experimental_multiprocess_wal(true)
-                        .build()
-                        .await?;
+                let source = LedgerDatabase { path: &path }.builder()?.build().await?;
                 let connection = source.connect()?;
                 LegacyFixture::create(&connection).await?;
                 drop(connection);
@@ -304,12 +298,11 @@ pub mod tests {
                 );
                 drop(ledger);
                 assert_eq!(workbench.features().await?.len(), 1);
-                let source =
-                    Builder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?)
-                        .experimental_multiprocess_wal(true)
-                        .read_only(true)
-                        .build()
-                        .await?;
+                let source = LedgerDatabase { path: &path }
+                    .builder()?
+                    .read_only(true)
+                    .build()
+                    .await?;
                 assert_eq!(
                     LedgerSchema::version(&source.connect()?).await?,
                     StorageVersion::DocumentsV1
