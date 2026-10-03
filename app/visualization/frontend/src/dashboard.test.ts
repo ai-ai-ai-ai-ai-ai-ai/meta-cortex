@@ -22,6 +22,7 @@ import {
   Fixture,
   BrowserMediaQueries,
   BrowserResizeObserver,
+  renderedClientRects,
 } from "./dashboard-fixture";
 import type {
   AgentId,
@@ -180,6 +181,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   native.invoke.mockReset();
   vi.unstubAllGlobals();
 });
@@ -401,6 +403,9 @@ it("keeps the team heading and progress visible while collapsing its tasks", asy
   expect(team.getAttribute("aria-expanded")).toBe("true");
 });
 it("expands real tasks and opens a closable agent inspector", async () => {
+  vi.spyOn(Element.prototype, "getClientRects").mockImplementation(
+    renderedClientRects,
+  );
   const fixture = new Fixture();
   const select = vi.fn();
   const history = vi.fn();

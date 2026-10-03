@@ -99,3 +99,38 @@ export class BrowserResizeObserver implements ResizeObserver {
     this.targets.clear();
   }
 }
+
+// JSDOM returns no client rectangles even for rendered controls. Supply only
+// visibility geometry for Bits/tabbable; leave native focus and events intact.
+export function renderedClientRects(this: Element): DOMRectList {
+  const ancestors: Element[] = [this];
+  for (
+    let element: Element | null = this.parentElement;
+    element;
+    element = element.parentElement
+  ) {
+    ancestors.push(element);
+  }
+  const rectangles: DOMRect[] = [];
+  const hidden = ancestors.some((element) => {
+    const style = getComputedStyle(element);
+    return (
+      element.hasAttribute("hidden") ||
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      style.visibility === "collapse"
+    );
+  });
+  switch (this.isConnected && !hidden) {
+    case true:
+      rectangles.push(new DOMRect(0, 0, 1, 1));
+      break;
+    case false:
+      break;
+  }
+  return Object.assign(rectangles, {
+    item(index: number): DOMRect | null {
+      return rectangles[index] ?? null;
+    },
+  });
+}
