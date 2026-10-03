@@ -1,3 +1,4 @@
+use super::PERSISTENT_IO;
 use super::legacy::LegacyImport;
 use super::relational::FeatureTable;
 use super::schema::LedgerSchema;
@@ -101,6 +102,7 @@ impl<FeatureInput> Ledger<Located<FeatureInput>> {
             .to_str()
             .ok_or(LedgerError::Invalid("ledger path must be UTF-8"))?;
         let database = Builder::new_local(path)
+            .with_io(PERSISTENT_IO)
             .experimental_multiprocess_wal(true)
             .build()
             .await?;
@@ -249,6 +251,7 @@ impl Ledger {
 
 #[cfg(test)]
 pub mod tests {
+    use super::PERSISTENT_IO;
     use super::{InitializeLedger, Ledger, OpenLedger};
     use crate::git::Repository;
     use crate::request::InitFeature;
@@ -324,6 +327,7 @@ pub mod tests {
                         .to_str()
                         .ok_or_else(|| anyhow::anyhow!("database path"))?,
                 )
+                .with_io(PERSISTENT_IO)
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;

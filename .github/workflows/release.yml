@@ -169,6 +169,23 @@ jobs:
           # Actually do builds and make zips and whatnot
           dist build ${{ needs.plan.outputs.tag-flag }} --print=linkage --output-format=json ${{ matrix.dist_args }} > dist-manifest.json
           echo "dist ran successfully"
+      - name: Verify the native Windows archive
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: app
+        run: |
+          $archive = 'target/distrib/meta-cortex-x86_64-pc-windows-msvc.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'meta cortex release archive'
+          Expand-Archive -LiteralPath $archive -DestinationPath $destination
+          $executables = @(Get-ChildItem -LiteralPath $destination -Filter meta-cortex.exe -Recurse)
+          switch ($executables.Count) {
+            1 { & $executables[0].FullName list }
+            default { throw 'The Windows archive must contain one native meta-cortex.exe' }
+          }
+          switch ($LASTEXITCODE) {
+            0 { }
+            default { throw 'The packaged Windows executable failed command discovery' }
+          }
       - id: cargo-dist
         name: Post-build
         # We force bash here just because github makes it really hard to get values up

@@ -173,7 +173,7 @@ Read declarations as text; validation never executes their command strings.
 - CI installs sccache 0.18.0, disables incremental Rust compilation, and reports
   cache statistics in the action's post-build step. Keep the generated release
   workflow's compiler-cache setup when updating cargo-dist.
-- PRs and `main` build the four release packages without publishing them.
+- PRs and `main` build the five release packages without publishing them.
   These package builds replace the check workflow's duplicate release build.
 - Builds on `main` populate caches that later release tags can restore.
   GitHub does not share caches between different release tags.
@@ -181,13 +181,14 @@ Read declarations as text; validation never executes their command strings.
   and the remote compiler cache still compiles dependencies.
 - macOS packages use GitHub-hosted Apple Silicon and Intel macOS runners.
 - Native package jobs install and build the frontend before Cargo and local dist
-  builds. The existing four macOS/Linux targets ship the same executable with
+  builds. The five macOS, Linux, and Windows targets ship the same executable with
   embedded frontend assets. Linux runner setup includes GTK 3/WebKitGTK 4.1.
+- Windows x86-64 packages use a native Windows runner and ZIP archive.
 
 ### Distribution tooling
 
 [Cargo-dist](https://axodotdev.github.io/cargo-dist/book/) builds the platform
-archives, shell installer, and Homebrew formula.
+archives, shell and PowerShell installers, and Homebrew formula.
 
 - **Configuration:** [app/dist-workspace.toml](app/dist-workspace.toml).
 - **Release workflow:** [.github/workflows/release.yml](.github/workflows/release.yml), based on cargo-dist 0.32.0, with commands and artifact paths adjusted for `app/`.
@@ -231,3 +232,79 @@ It uses its own GitHub Actions token; no cross-repository token is required.
 9. Verify the published version installs through Homebrew.
 
 Local builds do not publish releases.
+
+### Publish the Scoop manifest
+
+Publish the Windows release before updating its Scoop manifest. The maintainer
+updates `bucket/meta-cortex.json` manually after each public release, using Scoop's
+[app manifest format](https://github.com/ScoopInstaller/Scoop/wiki/App-Manifests).
+
+1. Complete the release procedure above and verify that its Windows x86-64 ZIP
+   downloads from the versioned GitHub release URL. Keep existing tags and assets
+   intact. Do not use a local build URL or a placeholder checksum.
+2. Download that public ZIP and calculate its SHA-256 in PowerShell. In this
+   example, `$releaseZipUrl` is the verified public URL and `$releaseZipPath` is
+   the absolute local download path:
+
+   ```powershell
+   Invoke-WebRequest -Uri $releaseZipUrl -OutFile $releaseZipPath
+   Get-FileHash -Algorithm SHA256 -LiteralPath $releaseZipPath
+   ```
+
+3. Create or update `bucket/meta-cortex.json` in the source repository. Set the
+   released `version`, homepage, description, and Apache-2.0 license. Under
+   `architecture.64bit`, use that exact URL and SHA-256. Set `bin` to
+   `meta-cortex.exe`. Confirm it is at the public ZIP root; use `extract_dir` only
+   if the actual archive layout requires it. Keep the manifest limited to the
+   executable. Do not add hooks that remove framework or application data.
+4. Exercise the manifest on native Windows against the public download. Check
+   installation, `meta-cortex list`, a typed Framework request, Scoop's installed
+   package listing, update from an earlier published version when available,
+   and uninstallation. For the first published Scoop version, exercise
+   `scoop update meta-cortex --force` as a same-version reinstall and record that
+   limitation; it does not demonstrate an upgrade from an older version.
+   Record the manifest commit, release URL, checksum, command
+   results, and any lifecycle path that could not be exercised. If download,
+   hash verification, or a lifecycle check fails, correct it before publication.
+5. Review and merge the manifest through the normal pull-request process. Verify
+   the published bucket from a fresh Scoop installation. With Scoop already
+   installed, these commands add this repository as a
+   [custom bucket](https://github.com/ScoopInstaller/Scoop/wiki/Buckets) and install
+   its package; run them only after the manifest is merged:
+
+   ```powershell
+   scoop bucket add meta-cortex https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex
+   scoop install meta-cortex/meta-cortex
+   meta-cortex list
+   scoop list
+   ```
+
+6. Keep the [README Scoop instructions](README.md#scoop-windows-x86-64) aligned
+   with the published bucket. For subsequent releases,
+   repeat the URL, hash, native checks, and manifest review. Users refresh their
+   bucket and update the installed command with:
+
+   ```powershell
+   scoop update
+   scoop update meta-cortex
+   ```
+
+   [Scoop update](https://github.com/ScoopInstaller/Scoop/blob/master/libexec/scoop-update.ps1)
+   follows the bucket's manifest version. Uninstall the Scoop-managed command with:
+
+   ```powershell
+   scoop uninstall meta-cortex
+   ```
+
+   [Scoop uninstall](https://github.com/ScoopInstaller/Scoop/blob/master/libexec/scoop-uninstall.ps1)
+   removes its installation and command shim. The manifest must leave project
+   `.meta-cortex/` directories and the separate application home untouched.
+   Managed mise, Bun, Vale, and repository Workbench databases remain there.
+   Updating the command does not replace an installed framework; use the
+   [framework replacement procedure](README.md#replace-an-installed-framework).
+
+**Prohibited:** publish a manifest pointing at an unreleased ZIP, or claim that
+Scoop uninstall also removes framework and Workbench data.
+
+**Required:** publish the exact public release URL and verified hash after native
+checks pass. Preserve the separate application data when removing the command.
