@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { Deferred, Effect } from "effect";
 import App from "./App.svelte";
 import RecordedTask from "./RecordedTask.svelte";
+import Workflow from "./Workflow.svelte";
 import { Progress } from "$lib/components/ui/progress";
 import { TaskPresentation } from "./task-presentation";
 import { ProgressSummary } from "./progress-presentation";
@@ -109,6 +110,10 @@ it("keeps Git and activity provenance when identical commits appear in different
     second.contribution,
   ]);
   expect(evidence.commits).toHaveLength(4);
+  expect(evidence.changes).toHaveLength(2);
+  expect(evidence.changes.map((change) => change.events.length)).toEqual([
+    2, 2,
+  ]);
   expect(evidence.commits[0]?.flow.task.common.id).toBe("review");
   expect(
     evidence.commits.filter((entry) => entry.record.commit === "b".repeat(40)),
@@ -119,7 +124,206 @@ it("keeps Git and activity provenance when identical commits appear in different
   ]);
   expect(evidence.partial).toBe(true);
 });
-it("keeps the selected workflow view visible during refresh and opens Git task details in place", async () => {
+it("connects requirements, results, checks and a deduplicated commit without opening tabs", () => {
+  const fixture = new Fixture();
+  fixture.flow.counts = [{ state: "integrated", count: 1 }];
+  fixture.flow.tasks.end = "Complete";
+  fixture.contribution.integrations[0]!.commit = "a".repeat(40);
+  fixture.task.common.progress.findings = ["Built an expandable agent tree"];
+  fixture.task.common.progress.checks = [
+    { command: "bun run test", outcome: "passed", evidence: "42 tests pass" },
+  ];
+  fixture.contribution.milestones = [
+    {
+      kind: "checkpoint",
+      actor: { team: "Development", role: "TypescriptDev" },
+      revision: 3,
+      attempt: 1,
+      at: 1500,
+      note: "Added the agent tree and contribution inspector",
+    },
+    {
+      kind: "integrated",
+      actor: { team: "Delivery", role: "IntegrationAgent" },
+      revision: 5,
+      attempt: 1,
+      at: 2000,
+      note: "Merged validated workflow UI",
+    },
+  ];
+  render(Workflow, { flow: fixture.flow, select: vi.fn() });
+  const contribution = screen.getByRole("article", {
+    name: "Contribution implement",
+  });
+  expect(
+    within(contribution).getAllByText("TypescriptDev").length,
+  ).toBeGreaterThan(0);
+  const result = within(contribution).getByRole("region", {
+    name: "Recorded result",
+  });
+  expect(within(result).getByText("Graph completed")).toBeTruthy();
+  expect(
+    within(result).getByText("Built an expandable agent tree"),
+  ).toBeTruthy();
+  expect(
+    within(
+      within(contribution).getByRole("region", { name: "Success criteria" }),
+    ).getByText("Show recorded work"),
+  ).toBeTruthy();
+  expect(within(contribution).getByText("Checks: 1 passed")).toBeTruthy();
+  const git = within(contribution).getByRole("region", {
+    name: "Git evidence",
+  });
+  expect(within(git).getByText("1 unique commit")).toBeTruthy();
+  expect(within(git).getAllByText("aaaaaaaa")).toHaveLength(1);
+  expect(within(git).getByText("Checkpoint")).toBeTruthy();
+  expect(within(git).getByText("Integration")).toBeTruthy();
+  expect(
+    within(git).getByText(
+      "Ledger note: Added the agent tree and contribution inspector",
+    ),
+  ).toBeTruthy();
+  expect(
+    within(git).getByText("Ledger note: Merged validated workflow UI"),
+  ).toBeTruthy();
+  expect(screen.queryAllByRole("tab")).toHaveLength(0);
+});
+it("prioritizes blocked work without treating queued or cancelled work as achievements", () => {
+  const finished = new Fixture();
+  const blocked = new Fixture();
+  blocked.task.common.id = "blocked-task";
+  blocked.task.state = {
+    kind: "active",
+    assignment: {
+      agent: { team: "Development", role: "RustDev" },
+      attempt: 1,
+      expires_at: 5000,
+      phase: { kind: "blocked", reason: "Waiting for the storage contract" },
+    },
+  };
+  const queued = new Fixture();
+  queued.task.common.id = "queued-task";
+  queued.task.state = { kind: "queued" };
+  const cancelled = new Fixture();
+  cancelled.task.common.id = "cancelled-task";
+  cancelled.task.state = { kind: "cancelled", reason: "Superseded scope" };
+  finished.flow.tasks.records.push(
+    cancelled.contribution,
+    queued.contribution,
+    blocked.contribution,
+  );
+  render(Workflow, { flow: finished.flow, select: vi.fn() });
+  expect(
+    screen
+      .getAllByRole("article")
+      .map((article) => article.getAttribute("aria-label")),
+  ).toEqual([
+    "Contribution blocked-task",
+    "Contribution queued-task",
+    "Contribution implement",
+    "Contribution cancelled-task",
+  ]);
+  const attention = screen.getByRole("region", { name: "Needs attention" });
+  expect(
+    within(attention).getByText("Waiting for the storage contract"),
+  ).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole("region", { name: "What was achieved" }),
+    ).getAllByRole("article"),
+  ).toHaveLength(1);
+  expect(screen.getByText(/This page contains 4 of 101 tasks/)).toBeTruthy();
+});
+it("keeps long requirements and old next steps available without promoting them as current work", async () => {
+  const fixture = new Fixture();
+  fixture.task.common.acceptance = [
+    "First criterion",
+    "Second criterion",
+    "Third criterion",
+  ];
+  fixture.task.common.progress.findings = [
+    "First finding",
+    "Second finding",
+    "Third finding",
+  ];
+  fixture.task.common.progress.next_steps = ["Integrate and publish"];
+  fixture.task.common.progress.checks = [
+    {
+      command: "cargo test",
+      outcome: "failed",
+      evidence: "Recorded failure output",
+    },
+  ];
+  render(Workflow, { flow: fixture.flow, select: vi.fn() });
+  expect(screen.getByText("Checks: 1 failed")).toBeTruthy();
+  expect(screen.queryAllByRole("heading", { name: "Next step" })).toHaveLength(
+    0,
+  );
+  expect(
+    within(
+      screen.getByRole("region", { name: "Success criteria" }),
+    ).queryAllByText("Third criterion"),
+  ).toHaveLength(0);
+  await userEvent.click(
+    screen.getByRole("button", {
+      name: "Full requirements, findings & checks",
+    }),
+  );
+  expect(screen.getByText("Third criterion")).toBeTruthy();
+  expect(screen.getByText("Third finding")).toBeTruthy();
+  expect(screen.getByText("Last recorded next steps")).toBeTruthy();
+  expect(screen.getByText("Integrate and publish")).toBeTruthy();
+  expect(screen.getByText("Recorded failure output")).toBeTruthy();
+});
+it("expands only the requested contribution section in a large workflow", async () => {
+  const fixture = new Fixture();
+  const finished = Array.from({ length: 4 }, (_, index) => {
+    const item = new Fixture();
+    item.task.common.id = `finished-${index}`;
+    return item.contribution;
+  });
+  const queued = Array.from({ length: 4 }, (_, index) => {
+    const item = new Fixture();
+    item.task.common.id = `queued-${index}`;
+    item.task.state = { kind: "queued" };
+    return item.contribution;
+  });
+  fixture.flow.tasks.records = [...finished, ...queued];
+  render(Workflow, { flow: fixture.flow, select: vi.fn() });
+  const achieved = screen.getByRole("region", { name: "What was achieved" });
+  const upcoming = screen.getByRole("region", { name: "Up next" });
+  expect(within(achieved).getAllByRole("article")).toHaveLength(3);
+  expect(within(upcoming).getAllByRole("article")).toHaveLength(3);
+  await userEvent.click(
+    within(achieved).getByRole("button", { name: /Show more/ }),
+  );
+  expect(within(achieved).getAllByRole("article")).toHaveLength(4);
+  expect(within(upcoming).getAllByRole("article")).toHaveLength(3);
+});
+it("finds a historical worker and keeps missing commit evidence explicit", async () => {
+  const fixture = new Fixture();
+  const other = new Fixture();
+  other.task.common.id = "review";
+  fixture.task.ownership = { kind: "Unrecorded" };
+  fixture.contribution.worker = {
+    kind: "recorded",
+    agent: { team: "Development", role: "RustDev" },
+  };
+  fixture.contribution.checkpoints = [];
+  fixture.contribution.integrations = [];
+  fixture.contribution.history_end = "More";
+  fixture.flow.tasks.records.push(other.contribution);
+  render(Workflow, { flow: fixture.flow, select: vi.fn() });
+  await userEvent.type(
+    screen.getByRole("textbox", { name: "Find a contribution" }),
+    "RustDev",
+  );
+  expect(screen.getAllByRole("article")).toHaveLength(1);
+  expect(screen.getByText("No commits in this observation.")).toBeTruthy();
+  expect(screen.getByText(/Older commits may be available/)).toBeTruthy();
+  expect(screen.queryAllByText("aaaaaaaa")).toHaveLength(0);
+});
+it("keeps contribution context expanded during refresh and opens task details in place", async () => {
   const fixture = new Fixture();
   const late = Deferred.makeUnsafe<DesktopReply>();
   const transport = Effect.runPromise(Deferred.await(late));
@@ -128,31 +332,35 @@ it("keeps the selected workflow view visible during refresh and opens Git task d
     .mockResolvedValueOnce(fixture.featuresReply())
     .mockReturnValueOnce(transport);
   render(App);
-  await userEvent.click(
-    await screen.findByRole("tab", { name: "Commits (2)" }),
-  );
-  const commits = screen.getByRole("table", { name: "Workflow commits" });
-  expect(within(commits).getAllByRole("row")[1]?.textContent).toContain(
-    "Integration",
-  );
+  const contribution = await screen.findByRole("article", {
+    name: "Contribution implement",
+  });
+  const context = within(contribution).getByRole("button", {
+    name: "Full requirements, findings & checks",
+  });
+  await userEvent.click(context);
+  const commits = within(contribution).getByRole("region", {
+    name: "Git evidence",
+  });
+  expect(within(commits).getByText("Integration")).toBeTruthy();
   await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
   await screen.findByRole("status");
-  expect(screen.getByRole("table", { name: "Workflow commits" })).toBe(commits);
+  expect(
+    within(contribution).getByRole("region", { name: "Git evidence" }),
+  ).toBe(commits);
   Effect.runSync(Deferred.succeed(late, fixture.workflowReply()));
   await transport;
   await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
-  expect(
-    screen
-      .getByRole("tab", { name: "Commits (2)" })
-      .getAttribute("aria-selected"),
-  ).toBe("true");
+  expect(context.getAttribute("aria-expanded")).toBe("true");
   await userEvent.click(
-    within(commits).getAllByRole("button", { name: "implement" })[0]!,
+    within(contribution).getByRole("button", { name: "Open task implement" }),
   );
   const inspector = await screen.findByRole("dialog", { name: "implement" });
   expect(within(inspector).getByText("Graph completed")).toBeTruthy();
   await userEvent.keyboard("{Escape}");
-  expect(screen.getByRole("table", { name: "Workflow commits" })).toBe(commits);
+  expect(
+    within(contribution).getByRole("region", { name: "Git evidence" }),
+  ).toBe(commits);
 });
 it("keeps native feature totals and Git integration evidence separate from loaded activity", () => {
   const fixture = new Fixture();
@@ -188,6 +396,9 @@ it("shows full-feature quantities independently of loaded descendant progress", 
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Team & reporting structure" }),
+  );
   await screen.findByRole("table", {
     name: "Recorded reporting and activities",
   });
@@ -357,16 +568,13 @@ it("keeps cross-task history identity consistent through loading, failure and re
   );
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
-  const expandWorker = screen.getByRole("button", {
-    name: "Expand TypescriptDev",
+  const review = screen.getByRole("button", {
+    name: "Open task review",
   });
   await waitFor(() =>
-    expect(getComputedStyle(expandWorker).pointerEvents).not.toBe("none"),
+    expect(getComputedStyle(review).pointerEvents).not.toBe("none"),
   );
-  await userEvent.click(expandWorker);
-  await userEvent.click(
-    screen.getByRole("button", { name: "Open task review" }),
-  );
+  await userEvent.click(review);
   const secondSheet = await screen.findByRole("dialog", { name: "review" });
   await waitFor(() =>
     expect(secondSheet.contains(document.activeElement)).toBe(true),
@@ -638,6 +846,12 @@ it("uses library DataTable keyboard expansion and stock Sheet dismissal with foc
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Team & reporting structure" }),
+  );
+  const table = screen.getByRole("table", {
+    name: "Recorded reporting and activities",
+  });
   const team = await screen.findByRole("button", {
     name: "Collapse Team Gizmo",
   });
@@ -645,7 +859,7 @@ it("uses library DataTable keyboard expansion and stock Sheet dismissal with foc
   await userEvent.keyboard("{Enter}");
   expect(team.getAttribute("aria-expanded")).toBe("false");
   expect(
-    screen.queryByRole("button", { name: "Open task implement" }),
+    within(table).queryByRole("button", { name: "Open task implement" }),
   ).toBeNull();
   await userEvent.keyboard(" ");
   expect(team.getAttribute("aria-expanded")).toBe("true");

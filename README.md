@@ -499,18 +499,23 @@ Workbench window. The searchable left sidebar keeps workflows available while
 you inspect their agents, commits and activity. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-Each workflow opens with full-feature progress and counts for finished, working,
-ready and blocked tasks. The Agents tab shows an expandable reporting/activity
-table with own status, own and descendant activity counts, and checkpoints.
-The Commits tab combines recorded checkpoints and integrations across the loaded
-tasks, newest first, preserving the task and actor for every event. The Activity
-tab shows lifecycle events with expandable notes. Details contains the full
-workflow record, including its branch and worktree.
-Select a role's activity or task to open a closable panel on the right while
-keeping the workflow in place. Its recorded
+Each workflow opens with its requirement and full-feature progress. Contributions
+put each task's worker, requested outcome, reported result, findings, checks and
+Git evidence together. Blocked and unfinished work precedes finished and cancelled
+work. Search contributions by agent, task, result or status. Longer sections show
+three tasks initially; Show more reveals the remaining loaded tasks.
+Checkpoint and integration events sharing a commit appear under one hash, with
+both actors and event notes retained. These notes describe the recorded event;
+Git commit messages and Git authorship are not recorded. Acceptance criteria
+remain requirements, separate from recorded check outcomes.
+Expand a contribution for full criteria, findings, checks and lifecycle events.
+All evidence opens a closable panel on the right while keeping the workflow in
+place. Its recorded
 task sections expose checks, dependencies, checkpoint and integration history,
 and full raw records. Full-feature totals summarize task states and completion
-progress; table rows cover the selected task page. For tasks with
+progress; contributions cover the selected task page. Team & reporting structure
+expands the role hierarchy; Workflow record & data source exposes technical fields.
+For tasks with
 `Assigned` ownership, the hierarchy follows the assigned role's recorded
 `reports_to` target. Each coordinator's own activities are separate from
 descendant workflow progress. Rows represent roles, not host sessions.
@@ -521,8 +526,8 @@ with their recorded creator and available worker evidence from task history;
 their reporting line stays unrecorded. Task dependencies remain separate from
 reporting relationships.
 Use Refresh to reload recorded data, or enable Auto for reads every ten seconds.
-Refresh preserves the selected workflow tab and table expansion. Previous/Next
-pages native observations; these reads do not update the ledger.
+Refresh preserves contribution expansion and search. Previous/Next appears when
+there are other pages of native observations; these reads do not update the ledger.
 Each task projection includes its latest 100 events; task history can page through
 older attempts and checkpoints. Runtime parent session links and Git authorship
 remain unrecorded when absent from Turso. Detailed task records and event snapshots

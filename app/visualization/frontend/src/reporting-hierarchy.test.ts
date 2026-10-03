@@ -252,6 +252,9 @@ it("opens the prioritized coordinator record and keeps every activity selectable
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Team & reporting structure" }),
+  );
   const table = await screen.findByRole("table", {
     name: "Recorded reporting and activities",
   });
@@ -310,6 +313,9 @@ it("uses library expanding subrows without selecting absent anchors and supports
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Team & reporting structure" }),
+  );
   const table = await screen.findByRole("table", {
     name: "Recorded reporting and activities",
   });

@@ -20,7 +20,23 @@ interface TaskDisplay {
   checkpoint: string;
   integration: string;
 }
+export enum ContributionSection {
+  Attention = "Needs attention",
+  Ongoing = "In progress & handoff",
+  Upcoming = "Up next",
+  Finished = "What was achieved",
+  Cancelled = "Cancelled work",
+}
 export class TaskPresentation {
+  static readonly sections: Record<FlowState, ContributionSection> = {
+    blocked: ContributionSection.Attention,
+    working: ContributionSection.Ongoing,
+    ready: ContributionSection.Ongoing,
+    queued: ContributionSection.Upcoming,
+    integrated: ContributionSection.Finished,
+    completed: ContributionSection.Finished,
+    cancelled: ContributionSection.Cancelled,
+  };
   static readonly tones: Record<FlowState, string> = {
     integrated: "bg-emerald-50 text-emerald-800",
     completed: "bg-emerald-50 text-emerald-800",
@@ -50,6 +66,19 @@ export class TaskPresentation {
   };
   static agent(agent: AgentId): string {
     return `${agent.team} / ${agent.role}`;
+  }
+  static workerName(flow: TaskFlow): string {
+    switch (flow.worker.kind) {
+      case "recorded":
+        return this.agentName(flow.worker.agent);
+      case "unrecorded":
+        switch (flow.task.ownership.kind) {
+          case "Assigned":
+            return `Assigned to ${this.agentName(flow.task.ownership.assignment.agent)}`;
+          case "Unrecorded":
+            return "Agent unrecorded";
+        }
+    }
   }
   private static coordinator(coordinator: GizmoAgent): string {
     const names: Record<GizmoAgent, string> = {

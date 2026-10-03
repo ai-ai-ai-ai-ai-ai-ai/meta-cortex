@@ -145,29 +145,31 @@
     {@const reply = controller.reply}
     {@const page = reply.selection.page}
     {@const content = reply.content}
-    <footer
-      class="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs text-muted-foreground"
-    >
-      <span>Page {page + 1} · up to 100 records per page</span>
-      <div class="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={page === 0 || controller.state.kind === LoadKind.Loading}
-          onclick={() => controller.page(page - 1)}>Previous</Button
-        >
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={controller.state.kind === LoadKind.Loading ||
-            (content.kind === "Workflow" &&
-              content.value.tasks.end === "Complete") ||
-            ((content.kind === "Features" || content.kind === "History") &&
-              content.value.end === "Complete")}
-          onclick={() => controller.page(page + 1)}>Next</Button
-        >
-      </div>
-    </footer>
+    {#if page > 0 || (content.kind === "Workflow" && content.value.tasks.end === "More") || ((content.kind === "Features" || content.kind === "History") && content.value.end === "More")}
+      <footer
+        class="flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs text-muted-foreground"
+      >
+        <span>Page {page + 1} · up to 100 records per page</span>
+        <div class="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 0 || controller.state.kind === LoadKind.Loading}
+            onclick={() => controller.page(page - 1)}>Previous</Button
+          >
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={controller.state.kind === LoadKind.Loading ||
+              (content.kind === "Workflow" &&
+                content.value.tasks.end === "Complete") ||
+              ((content.kind === "Features" || content.kind === "History") &&
+                content.value.end === "Complete")}
+            onclick={() => controller.page(page + 1)}>Next</Button
+          >
+        </div>
+      </footer>
+    {/if}
   {/if}
 {/snippet}
 
