@@ -127,7 +127,8 @@ following from the active library and supplies them in the launch instructions:
   configuration collection.
 - The completed [host capacity preflight](gizmo-team/docs/agent-configuration.md#check-host-capacity),
   including the configured target, observed total allocation, and host evidence source.
-- Project root, library root, working directory, and relevant project instructions.
+- Project root, library root, working directory, and the scoped handoff required
+  by [consuming project context](gizmo-team/docs/project-context.md).
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.
 - The assigned agent’s team directory and team `AGENTS.md`.
 - The team’s `CIRCUIT-BREAKER.md`, when present, plus any other team rules that
@@ -147,7 +148,8 @@ file that cannot be read is a context blocker, not an absent optional file.
 The receiving agent must, before starting work:
 
 1. Read the global and applicable team circuit-breaker rules.
-2. Read its team instructions and documentation index, then the relevant team
+2. Apply [consuming project context](gizmo-team/docs/project-context.md), then
+   read its team instructions and documentation index and the relevant team
    documents and referenced subject requirements in full.
 3. Read its own role instructions and follow its linked skills.
 4. Report any required context it cannot access before doing dependent work.
