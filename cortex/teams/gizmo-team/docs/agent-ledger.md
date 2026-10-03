@@ -138,10 +138,10 @@ identifies who recorded it, not who actually authored that Git commit.
    It resolves the existing repository identity and shared database from the
    current directory, then opens the native Tauri Workbench window.
 2. Select a workflow from the searchable left sidebar to inspect its requirement
-   and progress. Each contribution combines its worker, required outcome,
-   reported result, checks and Git evidence. Blocked and unfinished work appear
-   before finished work. Expand contributions for full context and lifecycle
-   events; All evidence opens the right detail panel. Commit descriptions are
+   and progress. Compact contribution rows show the worker, status, task,
+   result preview and commit/check counts. Blocked and unfinished work appear
+   before finished work. Select a row to open full requirements, findings,
+   checks and lifecycle events in the right detail panel. Commit descriptions are
    recorded event notes, not Git commit messages. Team & reporting structure
    expands the agent hierarchy; Workflow record & data source exposes technical
    fields. Narrow windows open navigation as a drawer.

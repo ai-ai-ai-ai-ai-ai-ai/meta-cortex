@@ -124,7 +124,7 @@ it("keeps Git and activity provenance when identical commits appear in different
   ]);
   expect(evidence.partial).toBe(true);
 });
-it("connects requirements, results, checks and a deduplicated commit without opening tabs", () => {
+it("keeps the overview compact and passes complete evidence through keyboard selection", async () => {
   const fixture = new Fixture();
   fixture.flow.counts = [{ state: "integrated", count: 1 }];
   fixture.flow.tasks.end = "Complete";
@@ -133,60 +133,24 @@ it("connects requirements, results, checks and a deduplicated commit without ope
   fixture.task.common.progress.checks = [
     { command: "bun run test", outcome: "passed", evidence: "42 tests pass" },
   ];
-  fixture.contribution.milestones = [
-    {
-      kind: "checkpoint",
-      actor: { team: "Development", role: "TypescriptDev" },
-      revision: 3,
-      attempt: 1,
-      at: 1500,
-      note: "Added the agent tree and contribution inspector",
-    },
-    {
-      kind: "integrated",
-      actor: { team: "Delivery", role: "IntegrationAgent" },
-      revision: 5,
-      attempt: 1,
-      at: 2000,
-      note: "Merged validated workflow UI",
-    },
-  ];
-  render(Workflow, { flow: fixture.flow, select: vi.fn() });
+  const select = vi.fn();
+  render(Workflow, { flow: fixture.flow, select });
   const contribution = screen.getByRole("article", {
     name: "Contribution implement",
   });
+  expect(within(contribution).getByText("TypescriptDev")).toBeTruthy();
+  expect(within(contribution).getByText("Graph completed")).toBeTruthy();
+  expect(within(contribution).getByText("1 passed")).toBeTruthy();
+  expect(within(contribution).getByText("1 commit")).toBeTruthy();
   expect(
-    within(contribution).getAllByText("TypescriptDev").length,
-  ).toBeGreaterThan(0);
-  const result = within(contribution).getByRole("region", {
-    name: "Recorded result",
-  });
-  expect(within(result).getByText("Graph completed")).toBeTruthy();
-  expect(
-    within(result).getByText("Built an expandable agent tree"),
-  ).toBeTruthy();
-  expect(
-    within(
-      within(contribution).getByRole("region", { name: "Success criteria" }),
-    ).getByText("Show recorded work"),
-  ).toBeTruthy();
-  expect(within(contribution).getByText("Checks: 1 passed")).toBeTruthy();
-  const git = within(contribution).getByRole("region", {
-    name: "Git evidence",
-  });
-  expect(within(git).getByText("1 unique commit")).toBeTruthy();
-  expect(within(git).getAllByText("aaaaaaaa")).toHaveLength(1);
-  expect(within(git).getByText("Checkpoint")).toBeTruthy();
-  expect(within(git).getByText("Integration")).toBeTruthy();
-  expect(
-    within(git).getByText(
-      "Ledger note: Added the agent tree and contribution inspector",
-    ),
-  ).toBeTruthy();
-  expect(
-    within(git).getByText("Ledger note: Merged validated workflow UI"),
-  ).toBeTruthy();
-  expect(screen.queryAllByRole("tab")).toHaveLength(0);
+    within(contribution).queryByText("Built an expandable agent tree"),
+  ).toBeNull();
+  expect(within(contribution).queryByText("Show recorded work")).toBeNull();
+  expect(within(contribution).queryByText("42 tests pass")).toBeNull();
+  expect(within(contribution).getAllByRole("button")).toHaveLength(1);
+  screen.getByRole("button", { name: "Open task implement" }).focus();
+  await userEvent.keyboard("{Enter}");
+  expect(select).toHaveBeenCalledWith(fixture.contribution);
 });
 it("prioritizes blocked work without treating queued or cancelled work as achievements", () => {
   const finished = new Fixture();
@@ -234,7 +198,7 @@ it("prioritizes blocked work without treating queued or cancelled work as achiev
   ).toHaveLength(1);
   expect(screen.getByText(/This page contains 4 of 101 tasks/)).toBeTruthy();
 });
-it("keeps long requirements and old next steps available without promoting them as current work", async () => {
+it("keeps full requirements, findings and check output in the selected task inspector", async () => {
   const fixture = new Fixture();
   fixture.task.common.acceptance = [
     "First criterion",
@@ -254,26 +218,42 @@ it("keeps long requirements and old next steps available without promoting them 
       evidence: "Recorded failure output",
     },
   ];
-  render(Workflow, { flow: fixture.flow, select: vi.fn() });
-  expect(screen.getByText("Checks: 1 failed")).toBeTruthy();
-  expect(screen.queryAllByRole("heading", { name: "Next step" })).toHaveLength(
-    0,
-  );
-  expect(
-    within(
-      screen.getByRole("region", { name: "Success criteria" }),
-    ).queryAllByText("Third criterion"),
-  ).toHaveLength(0);
+  native.invoke
+    .mockResolvedValue(fixture.featuresReply())
+    .mockResolvedValueOnce(fixture.workflowReply());
+  render(App);
+  await screen.findByText("1 failed");
+  expect(screen.queryByText("Third criterion")).toBeNull();
+  expect(screen.queryByText("Third finding")).toBeNull();
+  expect(screen.queryByText("Integrate and publish")).toBeNull();
   await userEvent.click(
-    screen.getByRole("button", {
-      name: "Full requirements, findings & checks",
-    }),
+    screen.getByRole("button", { name: "Open task implement" }),
   );
-  expect(screen.getByText("Third criterion")).toBeTruthy();
-  expect(screen.getByText("Third finding")).toBeTruthy();
-  expect(screen.getByText("Last recorded next steps")).toBeTruthy();
-  expect(screen.getByText("Integrate and publish")).toBeTruthy();
-  expect(screen.getByText("Recorded failure output")).toBeTruthy();
+  const inspector = await screen.findByRole("dialog", { name: "implement" });
+  await userEvent.click(
+    within(inspector).getByRole("button", { name: "Acceptance (3)" }),
+  );
+  expect(within(inspector).getByText("Third criterion")).toBeTruthy();
+  await userEvent.click(
+    within(inspector).getByRole("button", { name: "Findings (3)" }),
+  );
+  expect(within(inspector).getByText("Third finding")).toBeTruthy();
+  await userEvent.click(
+    within(inspector).getByRole("button", { name: "Next steps (1)" }),
+  );
+  expect(within(inspector).getByText("Integrate and publish")).toBeTruthy();
+  await userEvent.click(
+    within(inspector).getByRole("tab", { name: "Checks (1)" }),
+  );
+  await userEvent.click(
+    within(inspector).getByRole("button", { name: "failed · cargo test" }),
+  );
+  expect(within(inspector).getByText("Recorded failure output")).toBeTruthy();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await waitFor(() =>
+    expect(document.body.style.pointerEvents).not.toBe("none"),
+  );
 });
 it("expands only the requested contribution section in a large workflow", async () => {
   const fixture = new Fixture();
@@ -319,11 +299,10 @@ it("finds a historical worker and keeps missing commit evidence explicit", async
     "RustDev",
   );
   expect(screen.getAllByRole("article")).toHaveLength(1);
-  expect(screen.getByText("No commits in this observation.")).toBeTruthy();
-  expect(screen.getByText(/Older commits may be available/)).toBeTruthy();
+  expect(screen.getByText("0 commits (recent)")).toBeTruthy();
   expect(screen.queryAllByText("aaaaaaaa")).toHaveLength(0);
 });
-it("keeps contribution context expanded during refresh and opens task details in place", async () => {
+it("keeps contribution rows during refresh and returns focus after inspecting a task", async () => {
   const fixture = new Fixture();
   const late = Deferred.makeUnsafe<DesktopReply>();
   const transport = Effect.runPromise(Deferred.await(late));
@@ -335,32 +314,23 @@ it("keeps contribution context expanded during refresh and opens task details in
   const contribution = await screen.findByRole("article", {
     name: "Contribution implement",
   });
-  const context = within(contribution).getByRole("button", {
-    name: "Full requirements, findings & checks",
-  });
-  await userEvent.click(context);
-  const commits = within(contribution).getByRole("region", {
-    name: "Git evidence",
-  });
-  expect(within(commits).getByText("Integration")).toBeTruthy();
   await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
   await screen.findByRole("status");
-  expect(
-    within(contribution).getByRole("region", { name: "Git evidence" }),
-  ).toBe(commits);
+  expect(screen.getByRole("article", { name: "Contribution implement" })).toBe(
+    contribution,
+  );
   Effect.runSync(Deferred.succeed(late, fixture.workflowReply()));
   await transport;
   await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
-  expect(context.getAttribute("aria-expanded")).toBe("true");
-  await userEvent.click(
-    within(contribution).getByRole("button", { name: "Open task implement" }),
-  );
+  const row = within(contribution).getByRole("button", {
+    name: "Open task implement",
+  });
+  await userEvent.click(row);
   const inspector = await screen.findByRole("dialog", { name: "implement" });
   expect(within(inspector).getByText("Graph completed")).toBeTruthy();
   await userEvent.keyboard("{Escape}");
-  expect(
-    within(contribution).getByRole("region", { name: "Git evidence" }),
-  ).toBe(commits);
+  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await waitFor(() => expect(document.activeElement).toBe(row));
 });
 it("keeps native feature totals and Git integration evidence separate from loaded activity", () => {
   const fixture = new Fixture();

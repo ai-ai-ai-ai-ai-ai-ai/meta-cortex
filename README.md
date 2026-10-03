@@ -499,17 +499,17 @@ Workbench window. The searchable left sidebar keeps workflows available while
 you inspect their agents, commits and activity. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-Each workflow opens with its requirement and full-feature progress. Contributions
-put each task's worker, requested outcome, reported result, findings, checks and
-Git evidence together. Blocked and unfinished work precedes finished and cancelled
+Each workflow opens with its requirement and full-feature progress. Compact
+contribution rows show the worker, status, task, result preview and commit/check
+counts. Blocked and unfinished work precedes finished and cancelled
 work. Search contributions by agent, task, result or status. Longer sections show
 three tasks initially; Show more reveals the remaining loaded tasks.
-Checkpoint and integration events sharing a commit appear under one hash, with
-both actors and event notes retained. These notes describe the recorded event;
+Commit counts deduplicate checkpoint and integration events sharing a hash;
+both actors and event notes remain in the inspector. These notes describe the recorded event;
 Git commit messages and Git authorship are not recorded. Acceptance criteria
 remain requirements, separate from recorded check outcomes.
-Expand a contribution for full criteria, findings, checks and lifecycle events.
-All evidence opens a closable panel on the right while keeping the workflow in
+Select a contribution to open a closable panel on the right with its full text,
+criteria, findings, checks and lifecycle events while keeping the workflow in
 place. Its recorded
 task sections expose checks, dependencies, checkpoint and integration history,
 and full raw records. Full-feature totals summarize task states and completion
