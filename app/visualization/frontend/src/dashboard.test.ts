@@ -421,8 +421,8 @@ it("expands real tasks and opens a closable agent inspector", async () => {
   };
   const task = screen.getByRole("button", taskQuery);
   await userEvent.click(task);
-  const inspector = screen.getByRole("complementary", {
-    name: "TypescriptDev details",
+  const inspector = screen.getByRole("dialog", {
+    name: "TypescriptDev",
   });
   expect(expand.closest("[inert]")).toBeNull();
   expect(expand.hasAttribute("disabled")).toBe(false);
@@ -436,9 +436,7 @@ it("expands real tasks and opens a closable agent inspector", async () => {
   );
   expect(history).toHaveBeenCalledWith(fixture.task);
   await userEvent.keyboard("{Escape}");
-  expect(
-    screen.queryByRole("complementary", { name: "TypescriptDev details" }),
-  ).toBeNull();
+  expect(screen.queryByRole("dialog", { name: "TypescriptDev" })).toBeNull();
   expect(document.activeElement).toBe(task);
 });
 it("retries a native read failure without issuing coordination commands", async () => {
@@ -485,7 +483,7 @@ it("renders completed read-only ownership and reporting without inventing Git ev
     name: "Build workflow Read only Completed",
   };
   const techWriterVerifierDetailsQuery: ByRoleOptions = {
-    name: "TechWriterVerifier details",
+    name: "TechWriterVerifier",
   };
   const fixture = new Fixture();
   const agent = {
@@ -527,10 +525,7 @@ it("renders completed read-only ownership and reporting without inventing Git ev
   await userEvent.click(
     screen.getByRole("button", buildWorkflowCompletedQuery),
   );
-  const inspector = screen.getByRole(
-    "complementary",
-    techWriterVerifierDetailsQuery,
-  );
+  const inspector = screen.getByRole("dialog", techWriterVerifierDetailsQuery);
   expect(within(inspector).getByText("Host")).toBeTruthy();
   const definitionQuery: SelectorMatcherOptions = { selector: "dt" };
   expect(
@@ -558,7 +553,7 @@ it("renders a queued assigned worker and feature workspace before any claim hist
     name: "Build workflow Shared feature workspace Queued",
   };
   const typescriptVerifierDetailsQuery: ByRoleOptions = {
-    name: "TypescriptVerifier details",
+    name: "TypescriptVerifier",
   };
   const fixture = new Fixture();
   const agent = {
@@ -601,10 +596,7 @@ it("renders a queued assigned worker and feature workspace before any claim hist
     screen.getByRole("button", expandTypescriptVerifierTasksQuery),
   );
   await userEvent.click(screen.getByRole("button", buildWorkflowQueuedQuery));
-  const inspector = screen.getByRole(
-    "complementary",
-    typescriptVerifierDetailsQuery,
-  );
+  const inspector = screen.getByRole("dialog", typescriptVerifierDetailsQuery);
   expect(within(inspector).getByText("Gizmo Prime")).toBeTruthy();
   const definitionQuery: SelectorMatcherOptions = { selector: "dt" };
   expect(
@@ -667,7 +659,7 @@ it("shows the native history worker of a migrated integrated task without invent
     name: "Build workflow Git worker Integrated",
   };
   const typescriptDevDetailsQuery: ByRoleOptions = {
-    name: "TypescriptDev details",
+    name: "TypescriptDev",
   };
   const fixture = new Fixture();
   fixture.task.ownership = { kind: "Unrecorded" };
@@ -702,10 +694,7 @@ it("shows the native history worker of a migrated integrated task without invent
   await userEvent.click(
     screen.getByRole("button", buildWorkflowIntegratedQuery),
   );
-  const inspector = screen.getByRole(
-    "complementary",
-    typescriptDevDetailsQuery,
-  );
+  const inspector = screen.getByRole("dialog", typescriptDevDetailsQuery);
   expect(
     within(inspector).getByText("Development / TypescriptDev"),
   ).toBeTruthy();
@@ -833,20 +822,20 @@ it("uses real workflow tabs for Home and End keyboard navigation", async () => {
   const taskQuery: ByRoleOptions = {
     name: "Build workflow Git worker Integrated",
   };
-  const inspectorQuery: ByRoleOptions = { name: "TypescriptDev details" };
+  const inspectorQuery: ByRoleOptions = { name: "TypescriptDev" };
   const graphQuery: ByRoleOptions = { name: "graph" };
   const gitQuery: ByRoleOptions = { name: "git" };
   await userEvent.click(screen.getByRole("button", expandQuery));
   const task = screen.getByRole("button", taskQuery);
   await userEvent.click(task);
-  expect(screen.getByRole("complementary", inspectorQuery)).toBeTruthy();
+  expect(screen.getByRole("dialog", inspectorQuery)).toBeTruthy();
   tree.focus();
   await userEvent.keyboard("{ArrowRight}");
   const graph = screen.getByRole("tab", graphQuery);
   await waitFor(() => {
     expect(graph.getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(graph);
-    expect(screen.queryByRole("complementary", inspectorQuery)).toBeNull();
+    expect(screen.queryByRole("dialog", inspectorQuery)).toBeNull();
   });
   await userEvent.keyboard("{ArrowRight}");
   const git = screen.getByRole("tab", gitQuery);
@@ -855,12 +844,12 @@ it("uses real workflow tabs for Home and End keyboard navigation", async () => {
   await userEvent.click(tree);
   await userEvent.click(screen.getByRole("button", expandQuery));
   await userEvent.click(screen.getByRole("button", taskQuery));
-  expect(screen.getByRole("complementary", inspectorQuery)).toBeTruthy();
+  expect(screen.getByRole("dialog", inspectorQuery)).toBeTruthy();
   await userEvent.click(history);
   await waitFor(() => {
     expect(history.getAttribute("aria-selected")).toBe("true");
     expect(document.activeElement).toBe(history);
-    expect(screen.queryByRole("complementary", inspectorQuery)).toBeNull();
+    expect(screen.queryByRole("dialog", inspectorQuery)).toBeNull();
   });
   await userEvent.keyboard("{ArrowLeft}");
   expect(git.getAttribute("aria-selected")).toBe("true");
