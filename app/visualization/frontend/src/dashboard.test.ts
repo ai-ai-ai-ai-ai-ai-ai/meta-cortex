@@ -1,10 +1,11 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { Effect, type Result } from "effect";
 import {
   cleanup,
   render,
   screen,
   within,
+  waitFor,
   type ByRoleOptions,
   type SelectorMatcherOptions,
 } from "@testing-library/svelte";
@@ -17,7 +18,11 @@ import { Progress } from "$lib/components/ui/progress";
 import type { ComponentProps } from "svelte";
 import { DashboardApi, ReadFailureKind, type DashboardFailure } from "./api";
 import { FlowPresentation } from "./workflow";
-import { Fixture } from "./dashboard-fixture";
+import {
+  Fixture,
+  BrowserMediaQueries,
+  BrowserResizeObserver,
+} from "./dashboard-fixture";
 import type {
   AgentId,
   DesktopSelection,
@@ -166,9 +171,17 @@ interface MalformedTaskReply extends Pick<DesktopReply, "selection"> {
 const initialRead: DesktopRead = { kind: "Initial" };
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
+beforeEach(() => {
+  const mediaQueries = new BrowserMediaQueries();
+  const matchMedia: BrowserMediaQueries["matchMedia"] =
+    mediaQueries.matchMedia.bind(mediaQueries);
+  vi.stubGlobal("matchMedia", matchMedia);
+  vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
+});
 afterEach(() => {
   cleanup();
   native.invoke.mockReset();
+  vi.unstubAllGlobals();
 });
 
 it("uses full feature totals while graph contributions remain paged", () => {
@@ -814,4 +827,42 @@ it("uses real workflow tabs for Home and End keyboard navigation", async () => {
   expect(history.getAttribute("aria-selected")).toBe("true");
   expect(document.activeElement).toBe(history);
   expect(screen.getByRole("heading", activityQuery)).toBeTruthy();
+  // Closing an inspector during real tab navigation must keep tab focus.
+  await userEvent.click(tree);
+  const expandQuery: ByRoleOptions = { name: "Expand TypescriptDev tasks" };
+  const taskQuery: ByRoleOptions = {
+    name: "Build workflow Git worker Integrated",
+  };
+  const inspectorQuery: ByRoleOptions = { name: "TypescriptDev details" };
+  const graphQuery: ByRoleOptions = { name: "graph" };
+  const gitQuery: ByRoleOptions = { name: "git" };
+  await userEvent.click(screen.getByRole("button", expandQuery));
+  const task = screen.getByRole("button", taskQuery);
+  await userEvent.click(task);
+  expect(screen.getByRole("complementary", inspectorQuery)).toBeTruthy();
+  tree.focus();
+  await userEvent.keyboard("{ArrowRight}");
+  const graph = screen.getByRole("tab", graphQuery);
+  await waitFor(() => {
+    expect(graph.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(graph);
+    expect(screen.queryByRole("complementary", inspectorQuery)).toBeNull();
+  });
+  await userEvent.keyboard("{ArrowRight}");
+  const git = screen.getByRole("tab", gitQuery);
+  expect(git.getAttribute("aria-selected")).toBe("true");
+  expect(document.activeElement).toBe(git);
+  await userEvent.click(tree);
+  await userEvent.click(screen.getByRole("button", expandQuery));
+  await userEvent.click(screen.getByRole("button", taskQuery));
+  expect(screen.getByRole("complementary", inspectorQuery)).toBeTruthy();
+  await userEvent.click(history);
+  await waitFor(() => {
+    expect(history.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(history);
+    expect(screen.queryByRole("complementary", inspectorQuery)).toBeNull();
+  });
+  await userEvent.keyboard("{ArrowLeft}");
+  expect(git.getAttribute("aria-selected")).toBe("true");
+  expect(document.activeElement).toBe(git);
 });

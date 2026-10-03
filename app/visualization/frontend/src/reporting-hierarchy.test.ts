@@ -1,10 +1,11 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import {
   cleanup,
   render,
   fireEvent,
   screen,
   within,
+  waitFor,
   type ByRoleOptions,
 } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
@@ -16,9 +17,19 @@ import type {
   FeatureFlow,
 } from "./contracts";
 import { ActivityKind, ReportingHierarchy } from "./agent-tree";
-import { Fixture } from "./dashboard-fixture";
+import {
+  Fixture,
+  BrowserMediaQueries,
+  BrowserResizeObserver,
+} from "./dashboard-fixture";
 import { FlowPresentation, NodeKind } from "./workflow";
 import Workflow from "./Workflow.svelte";
+beforeEach(() => {
+  const mediaQueries = new BrowserMediaQueries();
+  const matchMedia: BrowserMediaQueries["matchMedia"] =
+    mediaQueries.matchMedia.bind(mediaQueries);
+  vi.stubGlobal("matchMedia", matchMedia);
+});
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -330,33 +341,6 @@ it("selects compact coordinator own activity matching Working and keeps every ob
     within(inspector).getByRole("heading", workingHeadingQuery),
   ).toBeTruthy();
 });
-// JSDOM has no matchMedia. Svelte's MediaQuery uses matches/media and
-// EventTarget change listeners; keep real graph components and handlers intact.
-class BrowserMediaQuery extends EventTarget {
-  readonly matches = false;
-  constructor(readonly media: string) {
-    super();
-  }
-}
-class BrowserMediaQueries {
-  matchMedia(query: string): BrowserMediaQuery {
-    return new BrowserMediaQuery(query);
-  }
-}
-// JSDOM has no layout-driven resize notifications. Track native observer
-// lifecycles while leaving SvelteFlow rendering and selection handlers real.
-class BrowserResizeObserver implements ResizeObserver {
-  private readonly targets = new Set<Element>();
-  observe(target: Element): void {
-    this.targets.add(target);
-  }
-  unobserve(target: Element): void {
-    this.targets.delete(target);
-  }
-  disconnect(): void {
-    this.targets.clear();
-  }
-}
 it("uses the real Agents graph selection handler for prioritized own activity and leaves absent targets nonselectable", async () => {
   const fixture = new CoordinatorFixture();
   const props: ComponentProps<typeof Workflow> = {
@@ -365,10 +349,6 @@ it("uses the real Agents graph selection handler for prioritized own activity an
     history: vi.fn(),
     refresh: vi.fn(),
   };
-  const mediaQueries = new BrowserMediaQueries();
-  const matchMedia: BrowserMediaQueries["matchMedia"] =
-    mediaQueries.matchMedia.bind(mediaQueries);
-  vi.stubGlobal("matchMedia", matchMedia);
   vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
   const graphQuery: ByRoleOptions = { name: "graph" };
   const inspectorQuery: ByRoleOptions = { name: "Team Gizmo details" };
@@ -391,4 +371,55 @@ it("uses the real Agents graph selection handler for prioritized own activity an
     within(inspector).getAllByText("Shared feature workspace"),
   ).toHaveLength(2);
   expect(within(inspector).queryAllByText("Git evidence")).toHaveLength(0);
+});
+
+it("restores the second activity origin after selecting another role in the open desktop inspector", async () => {
+  const first = new Fixture();
+  const second = new Fixture();
+  const agent: AgentId = { team: "Development", role: "RustDev" };
+  second.task.common.id = "inspect-database";
+  second.task.common.objective = "Inspect database";
+  second.task.ownership = {
+    kind: "Assigned",
+    assignment: { agent, reports_to: { kind: "Gizmo", coordinator: "Gizmo" } },
+  };
+  second.contribution.worker = { kind: "recorded", agent };
+  first.flow.tasks.records = [first.contribution, second.contribution];
+  const props: ComponentProps<typeof Workflow> = {
+    flow: first.flow,
+    select: vi.fn(),
+    history: vi.fn(),
+    refresh: vi.fn(),
+  };
+  render(Workflow, props);
+  const firstExpandQuery: ByRoleOptions = {
+    name: "Expand TypescriptDev tasks",
+  };
+  const secondExpandQuery: ByRoleOptions = { name: "Expand RustDev tasks" };
+  const firstTaskQuery: ByRoleOptions = {
+    name: "Build workflow Git worker Integrated",
+  };
+  const secondTaskQuery: ByRoleOptions = {
+    name: "Inspect database Git worker Integrated",
+  };
+  const firstInspectorQuery: ByRoleOptions = { name: "TypescriptDev details" };
+  const secondInspectorQuery: ByRoleOptions = { name: "RustDev details" };
+  await userEvent.click(screen.getByRole("button", firstExpandQuery));
+  const original = screen.getByRole("button", firstTaskQuery);
+  await userEvent.click(original);
+  expect(screen.getByRole("complementary", firstInspectorQuery)).toBeTruthy();
+  const secondExpand = screen.getByRole("button", secondExpandQuery);
+  expect(secondExpand.closest("[inert]")).toBeNull();
+  await userEvent.click(secondExpand);
+  const current = screen.getByRole("button", secondTaskQuery);
+  await userEvent.click(current);
+  expect(screen.getByRole("complementary", secondInspectorQuery)).toBeTruthy();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => {
+    expect(
+      screen.queryByRole("complementary", secondInspectorQuery),
+    ).toBeNull();
+    expect(document.activeElement).toBe(current);
+  });
+  expect(document.activeElement).not.toBe(original);
 });

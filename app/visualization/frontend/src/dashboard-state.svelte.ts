@@ -1,5 +1,10 @@
 import { Effect } from "effect";
-import type { DesktopRead, DesktopReply, Feature } from "./contracts";
+import type {
+  DesktopRead,
+  DesktopReply,
+  DashboardView,
+  Feature,
+} from "./contracts";
 import { DashboardApi } from "./api";
 import type { DashboardFailure } from "./api";
 export enum LoadKind {
@@ -70,6 +75,49 @@ export class DashboardController {
       case "Task":
       case "History":
         throw new Error("Expected feature navigation");
+    }
+  }
+  private view(): DesktopRead | DashboardView {
+    switch (this.state.kind) {
+      case LoadKind.Ready:
+        return this.state.reply.selection.view;
+      case LoadKind.Loading:
+      case LoadKind.Failed:
+        return this.state.request;
+    }
+  }
+  currentFeature(): string {
+    const view = this.view();
+    switch (view.kind) {
+      case "Features":
+      case "Initial":
+        return "";
+      case "Tasks":
+      case "Workflow":
+        return view.feature;
+      case "Task":
+      case "History":
+        return view.query.feature;
+    }
+  }
+  page(page: number): void {
+    const view = this.view();
+    switch (view.kind) {
+      case "Initial":
+        this.load({ kind: "Initial" });
+        return;
+      case "Features":
+        this.load({ kind: "Features", page });
+        return;
+      case "Tasks":
+      case "Workflow":
+        this.load({ kind: "Workflow", feature: view.feature, page });
+        return;
+      case "Task":
+        this.load({ kind: "Task", query: view.query });
+        return;
+      case "History":
+        this.load({ kind: "History", query: view.query, page });
     }
   }
   stop(): void {
