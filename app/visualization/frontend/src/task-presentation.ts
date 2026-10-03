@@ -7,7 +7,7 @@ import type {
   AgentId,
   GizmoAgent,
 } from "./contracts";
-export interface TaskDisplay {
+interface TaskDisplay {
   status: FlowState;
   statusLabel: string;
   actor: string;
