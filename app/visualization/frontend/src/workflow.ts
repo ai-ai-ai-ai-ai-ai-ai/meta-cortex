@@ -1,15 +1,7 @@
 import type { Node, Edge } from "@xyflow/svelte";
 import { graphlib, layout, type GraphLabel } from "@dagrejs/dagre";
-import type {
-  FeatureFlow,
-  TaskFlow,
-  TaskV2,
-  FlowState,
-  RecordedActor,
-  Milestone,
-} from "./contracts";
+import type { FeatureFlow, TaskFlow, TaskV2, FlowState } from "./contracts";
 import { TaskPresentation } from "./task-presentation";
-import { summarizeCounts } from "./progress-presentation";
 import {
   ActivityKind,
   ReportingHierarchy,
@@ -40,9 +32,10 @@ export enum NodeKind {
 enum NodeState {
   Feature = "feature",
 }
-interface GraphNodeLabel extends Record<string, unknown> {
+interface GraphNodeLabel {
   title: string;
   subtitle: string;
+  label: string;
 }
 interface AgentNodeData extends GraphNodeLabel {
   kind: NodeKind.Agent;
@@ -51,17 +44,15 @@ interface AgentNodeData extends GraphNodeLabel {
 interface TaskNodeData extends GraphNodeLabel {
   kind: NodeKind.Task;
   state: FlowState;
-  tasks: ReadonlyArray<TaskFlow>;
-  actor: RecordedActor;
+  task: TaskFlow;
 }
 interface BranchNodeData extends GraphNodeLabel {
   kind: NodeKind.Branch;
   state: NodeState.Feature;
-  tasks: ReadonlyArray<TaskFlow>;
-  actor: RecordedActor;
 }
-type FlowNodeData = AgentNodeData | TaskNodeData | BranchNodeData;
-export type DiagramNode = Node<FlowNodeData, "record">;
+type FlowNodeData = (AgentNodeData | TaskNodeData | BranchNodeData) &
+  Record<string, unknown>;
+export type DiagramNode = Node<FlowNodeData, "default">;
 interface Diagram {
   nodes: DiagramNode[];
   edges: Edge[];
@@ -78,24 +69,6 @@ interface TaskActivity {
 }
 export class FlowPresentation {
   constructor(readonly flow: FeatureFlow) {}
-  static label(id: string): string {
-    const words = id.replaceAll("-", " ");
-    return words.charAt(0).toUpperCase() + words.slice(1);
-  }
-  actor(actor: RecordedActor): string {
-    switch (actor.kind) {
-      case "unrecorded":
-        return "Assignment unrecorded";
-      case "recorded":
-        return TaskPresentation.agent(actor.agent);
-    }
-  }
-  total(): number {
-    return summarizeCounts(this.flow.counts).total;
-  }
-  stateCount(state: FlowState): number {
-    return summarizeCounts(this.flow.counts).byState[state];
-  }
   diagram(kind: GraphKind): Diagram {
     switch (kind) {
       case GraphKind.Agents:
@@ -104,33 +77,48 @@ export class FlowPresentation {
         return this.tasks();
     }
   }
-  node(id: string, data: FlowNodeData): DiagramNode {
-    return { id, type: "record", data, position: { x: 0, y: 0 } };
+  node(
+    id: string,
+    data:
+      | Omit<AgentNodeData, "label">
+      | Omit<TaskNodeData, "label">
+      | Omit<BranchNodeData, "label">,
+  ): DiagramNode {
+    return {
+      id,
+      type: "default",
+      data: {
+        ...data,
+        label: `${data.title}
+${data.subtitle}`,
+      },
+      position: { x: 0, y: 0 },
+    };
   }
   agents(): Diagram {
     const hierarchy = new ReportingHierarchy(this.flow.tasks.records);
     const nodes = hierarchy.nodes().map((node) => this.reportingNode(node));
     const edges: Edge[] = hierarchy.edges().map((edge) => ({
-      id: `reporting:${edge.source.serialize()}->${edge.target.serialize()}`,
-      source: edge.source.serialize(),
-      target: edge.target.serialize(),
+      id: `reporting:${edge.source}->${edge.target}`,
+      source: edge.source,
+      target: edge.target,
       label: "Recorded reporting line",
       type: "smoothstep",
     }));
     for (const group of hierarchy.historical()) {
-      const parentId = `historical:creator:${this.actor(group.actor)}`;
-      const data: FlowNodeData = {
+      const parentId = `historical:creator:${TaskPresentation.actor(group.actor)}`;
+      const data: Omit<AgentNodeData, "label"> = {
         kind: NodeKind.Agent,
-        title: this.actor(group.actor),
+        title: TaskPresentation.actor(group.actor),
         subtitle: "Created by · reporting unrecorded",
         activity: { kind: ActivityKind.Absent },
       };
       nodes.push(this.node(parentId, data));
       for (const worker of group.workers.values()) {
-        const workerId = `${parentId}:worker:${this.actor(worker.actor)}`;
-        const workerData: FlowNodeData = {
+        const workerId = `${parentId}:worker:${TaskPresentation.actor(worker.actor)}`;
+        const workerData: Omit<AgentNodeData, "label"> = {
           kind: NodeKind.Agent,
-          title: this.actor(worker.actor),
+          title: TaskPresentation.actor(worker.actor),
           subtitle: `History worker · reporting unrecorded · ${worker.summary()}`,
           activity: { kind: ActivityKind.Recorded, group: worker },
         };
@@ -149,46 +137,39 @@ export class FlowPresentation {
     return this.arrange(diagram);
   }
   private reportingNode(node: ReportingNode): DiagramNode {
-    const activity = node.activity;
-    switch (activity.kind) {
-      case ActivityKind.Absent: {
-        const data: FlowNodeData = {
-          kind: NodeKind.Agent,
-          title: this.reportingTitle(node),
-          subtitle: "Recorded reporting target",
-          activity,
-        };
-        return this.node(node.id().serialize(), data);
-      }
-      case ActivityKind.Recorded: {
-        const data: FlowNodeData = {
-          kind: NodeKind.Agent,
-          title: this.reportingTitle(node),
-          subtitle: activity.group.summary(),
-          activity,
-        };
-        return this.node(node.id().serialize(), data);
-      }
-    }
-  }
-  private reportingTitle(node: ReportingNode): string {
     const actor = node.actor();
+    let title = node.name();
     switch (actor.kind) {
-      case "unrecorded":
-        return node.name();
       case "recorded":
-        return this.actor(actor);
+        title = TaskPresentation.actor(actor);
+        break;
+      case "unrecorded":
+        break;
     }
+    const activity = node.activity;
+    let subtitle = "Recorded reporting target";
+    switch (activity.kind) {
+      case ActivityKind.Recorded:
+        subtitle = activity.group.summary();
+        break;
+      case ActivityKind.Absent:
+        break;
+    }
+    return this.node(node.id(), {
+      kind: NodeKind.Agent,
+      title,
+      subtitle,
+      activity,
+    });
   }
   tasks(): Diagram {
     const nodes = this.flow.tasks.records.map((item) =>
       this.node(`task:${item.task.common.id}`, {
         kind: NodeKind.Task,
         title: item.task.common.id,
-        subtitle: this.actor(item.worker),
-        state: new TaskPresentation(item.task).status(),
-        tasks: [item],
-        actor: item.worker,
+        subtitle: TaskPresentation.actor(item.worker),
+        state: TaskPresentation.describe(item.task).status,
+        task: item,
       }),
     );
     const knownTasks = new Set(
@@ -206,8 +187,6 @@ export class FlowPresentation {
         title: this.flow.feature.branch,
         subtitle: "Feature integration",
         state: NodeState.Feature,
-        tasks: [],
-        actor: { kind: "unrecorded" },
       }),
     ];
     const edges: Edge[] = [];
@@ -221,12 +200,12 @@ export class FlowPresentation {
             this.node(`branch:${item.task.common.id}`, {
               kind: NodeKind.Task,
               title: item.task.workspace.branch,
-              subtitle: new TaskPresentation(item.task)
-                .checkpoint()
-                .slice(0, 12),
-              state: new TaskPresentation(item.task).status(),
-              tasks: [item],
-              actor: item.worker,
+              subtitle: TaskPresentation.describe(item.task).checkpoint.slice(
+                0,
+                12,
+              ),
+              state: TaskPresentation.describe(item.task).status,
+              task: item,
             }),
           );
           edges.push(...this.integrations(item));
@@ -287,31 +266,5 @@ export class FlowPresentation {
       )
       .sort((first, second) => second.event.at - first.event.at)
       .slice(0, 12);
-  }
-  static action(event: Milestone): string {
-    switch (event.kind) {
-      case "created":
-        return "Created task";
-      case "assigned":
-        return "Recorded assignment";
-      case "claimed":
-        return `Claimed attempt ${event.attempt}`;
-      case "checkpoint":
-        return "Recorded checkpoint";
-      case "ready":
-        return "Ready for handoff";
-      case "integrated":
-        return "Recorded integration";
-      case "completed":
-        return "Completed task";
-      case "requeued":
-        return "Requeued for another attempt";
-      case "cancelled":
-        return "Cancelled task";
-      case "heartbeat":
-        return "Renewed lease";
-      case "progress":
-        return "Recorded progress";
-    }
   }
 }

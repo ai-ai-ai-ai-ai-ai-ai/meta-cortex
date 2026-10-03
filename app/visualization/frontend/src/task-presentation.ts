@@ -1,12 +1,34 @@
 import type {
   TaskV2,
+  TaskFlow,
   FlowState,
-  ReportingTarget,
+  FlowCount,
+  RecordedActor,
   AgentId,
   GizmoAgent,
 } from "./contracts";
+export interface TaskDisplay {
+  status: FlowState;
+  statusLabel: string;
+  actor: string;
+  reportsTo: string;
+  workspaceLabel: string;
+  workspace: string;
+  reason: string;
+  lease: string;
+  checkpoint: string;
+  integration: string;
+}
 export class TaskPresentation {
-  constructor(readonly task: TaskV2) {}
+  private static readonly labels: Record<FlowState, string> = {
+    integrated: "Integrated",
+    completed: "Completed",
+    working: "In progress",
+    queued: "Queued",
+    ready: "Ready",
+    blocked: "Blocked",
+    cancelled: "Cancelled",
+  };
   static agent(agent: AgentId): string {
     return `${agent.team} / ${agent.role}`;
   }
@@ -20,7 +42,7 @@ export class TaskPresentation {
   static agentName(agent: AgentId): string {
     switch (agent.team) {
       case "Gizmo":
-        return TaskPresentation.coordinator(agent.role);
+        return this.coordinator(agent.role);
       case "Development":
       case "Ai":
       case "Security":
@@ -29,133 +51,111 @@ export class TaskPresentation {
         return agent.role;
     }
   }
-  status(): FlowState {
-    switch (this.task.state.kind) {
-      case "active":
-        return this.task.state.assignment.phase.kind;
-      case "queued":
-      case "ready":
-      case "integrated":
-      case "completed":
-      case "cancelled":
-        return this.task.state.kind;
-    }
-  }
-  childStatus(): string {
-    const labels: Record<FlowState, string> = {
-      integrated: "Integrated",
-      completed: "Completed",
-      working: "In progress",
-      queued: "Queued",
-      ready: "Ready",
-      blocked: "Blocked",
-      cancelled: "Cancelled",
-    };
-    return labels[this.status()];
-  }
-  actor(): string {
-    switch (this.task.ownership.kind) {
-      case "Assigned":
-        return TaskPresentation.agent(this.task.ownership.assignment.agent);
-      case "Unrecorded":
-        break;
-    }
-    switch (this.task.state.kind) {
-      case "active":
-        return TaskPresentation.agent(this.task.state.assignment.agent);
-      case "ready":
-      case "completed":
-        return TaskPresentation.agent(this.task.state.agent);
-      case "queued":
-      case "integrated":
-      case "cancelled":
-        return "Unrecorded";
-    }
-  }
-  reportsTo(): string {
-    switch (this.task.ownership.kind) {
-      case "Unrecorded":
-        return "Unrecorded";
-      case "Assigned":
-        return this.reportingTarget(this.task.ownership.assignment.reports_to);
-    }
-  }
-  private reportingTarget(target: ReportingTarget): string {
-    switch (target.kind) {
-      case "Host":
-        return "Host";
-      case "Gizmo":
-        return TaskPresentation.coordinator(target.coordinator);
-    }
-  }
-  lease(): string {
-    switch (this.task.state.kind) {
-      case "active":
-        return new Date(this.task.state.assignment.expires_at).toLocaleString();
-      case "queued":
-      case "ready":
-      case "integrated":
-      case "completed":
-      case "cancelled":
-        return "Unrecorded";
-    }
-  }
-  checkpoint(): string {
-    switch (this.task.common.checkpoint.kind) {
+  static actor(actor: RecordedActor): string {
+    switch (actor.kind) {
+      case "recorded":
+        return this.agent(actor.agent);
       case "unrecorded":
-        return "Unrecorded";
-      case "git":
-        return this.task.common.checkpoint.commit;
+        return "Assignment unrecorded";
     }
   }
-  integration(): string {
-    switch (this.task.state.kind) {
-      case "integrated":
-        return this.task.state.commit;
-      case "queued":
+  static actorKey(actor: RecordedActor): string {
+    switch (actor.kind) {
+      case "recorded":
+        return `${actor.agent.team}:${actor.agent.role}`;
+      case "unrecorded":
+        return "unrecorded";
+    }
+  }
+  static describe(task: TaskV2): TaskDisplay {
+    const display: TaskDisplay = {
+      status: "queued",
+      statusLabel: "",
+      actor: "Unrecorded",
+      reportsTo: "Unrecorded",
+      workspaceLabel: "",
+      workspace: "",
+      reason: "",
+      lease: "Unrecorded",
+      checkpoint: "Unrecorded",
+      integration: "Unrecorded",
+    };
+    switch (task.state.kind) {
       case "active":
-      case "ready":
-      case "completed":
-      case "cancelled":
-        return "Unrecorded";
-    }
-  }
-  workspaceLabel(): string {
-    switch (this.task.workspace.kind) {
-      case "read_only":
-        return "Read only";
-      case "feature":
-        return "Shared feature workspace";
-      case "git":
-        return "Git worker";
-    }
-  }
-  workspace(): string {
-    switch (this.task.workspace.kind) {
-      case "read_only":
-      case "feature":
-        return this.workspaceLabel();
-      case "git":
-        return `${this.task.workspace.branch}\n${this.task.workspace.path}`;
-    }
-  }
-  reason(): string {
-    switch (this.task.state.kind) {
-      case "active":
-        switch (this.task.state.assignment.phase.kind) {
-          case "working":
-            return "";
+        display.status = task.state.assignment.phase.kind;
+        display.actor = this.agent(task.state.assignment.agent);
+        display.lease = new Date(
+          task.state.assignment.expires_at,
+        ).toLocaleString();
+        switch (task.state.assignment.phase.kind) {
           case "blocked":
-            return this.task.state.assignment.phase.reason;
+            display.reason = task.state.assignment.phase.reason;
+            break;
+          case "working":
+            break;
         }
         break;
-      case "cancelled":
-        return this.task.state.reason;
-      case "queued":
       case "ready":
-      case "integrated":
       case "completed":
-        return "";
+        display.status = task.state.kind;
+        display.actor = this.agent(task.state.agent);
+        break;
+      case "integrated":
+        display.status = task.state.kind;
+        display.integration = task.state.commit;
+        break;
+      case "cancelled":
+        display.status = task.state.kind;
+        display.reason = task.state.reason;
+        break;
+      case "queued":
+        break;
     }
+    switch (task.ownership.kind) {
+      case "Assigned":
+        display.actor = this.agent(task.ownership.assignment.agent);
+        switch (task.ownership.assignment.reports_to.kind) {
+          case "Host":
+            display.reportsTo = "Host";
+            break;
+          case "Gizmo":
+            display.reportsTo = this.coordinator(
+              task.ownership.assignment.reports_to.coordinator,
+            );
+            break;
+        }
+        break;
+      case "Unrecorded":
+        break;
+    }
+    switch (task.common.checkpoint.kind) {
+      case "git":
+        display.checkpoint = task.common.checkpoint.commit;
+        break;
+      case "unrecorded":
+        break;
+    }
+    switch (task.workspace.kind) {
+      case "read_only":
+        display.workspaceLabel = display.workspace = "Read only";
+        break;
+      case "feature":
+        display.workspaceLabel = display.workspace = "Shared feature workspace";
+        break;
+      case "git":
+        display.workspaceLabel = "Git worker";
+        display.workspace = `${task.workspace.branch}\n${task.workspace.path}`;
+        break;
+    }
+    display.statusLabel = this.labels[display.status];
+    return display;
+  }
+  static counts(tasks: ReadonlyArray<TaskFlow>): ReadonlyArray<FlowCount> {
+    const counts = new Map<FlowState, number>();
+    for (const { task } of tasks) {
+      const state = this.describe(task).status;
+      counts.set(state, (counts.get(state) ?? 0) + 1);
+    }
+    return Array.from(counts, ([state, count]) => ({ state, count }));
   }
 }

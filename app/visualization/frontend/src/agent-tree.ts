@@ -4,53 +4,18 @@ import type {
   FlowCount,
   RecordedActor,
   TaskFlow,
+  TaskV2,
   ReportingTarget,
 } from "./contracts";
 import { TaskPresentation } from "./task-presentation";
 import { summarizeCounts } from "./progress-presentation";
-export interface AgentSelection {
-  group: AgentContribution;
-  task: TaskFlow;
-  origin: string;
+export enum SelectionKind {
+  Task = "task",
+  Activity = "activity",
 }
-enum IdentityMatch {
-  Same = "same",
-  Different = "different",
-}
-export class ReportingNodeId {
-  private constructor(private readonly value: string) {}
-  static actor(actor: RecordedActor): ReportingNodeId {
-    switch (actor.kind) {
-      case "unrecorded":
-        return new ReportingNodeId("unrecorded");
-      case "recorded":
-        return new ReportingNodeId(`${actor.agent.team}:${actor.agent.role}`);
-    }
-  }
-  static host(): ReportingNodeId {
-    return new ReportingNodeId("host");
-  }
-  match(other: ReportingNodeId): IdentityMatch {
-    switch (this.value === other.value) {
-      case true:
-        return IdentityMatch.Same;
-      case false:
-        return IdentityMatch.Different;
-    }
-  }
-  // String identity is required only at DOM and graph rendering boundaries.
-  serialize(): string {
-    return this.value;
-  }
-}
-enum VisitKind {
-  FirstVisit = "first-visit",
-  AlreadyVisited = "already-visited",
-}
-interface ReportingVisit {
-  seen: ReadonlySet<ReportingNodeId>;
-  id: ReportingNodeId;
-}
+export type TaskSelection =
+  | { kind: SelectionKind.Task; task: TaskV2 }
+  | { kind: SelectionKind.Activity; task: TaskFlow };
 export class AgentContribution {
   private static readonly priority: Record<FlowState, number> = {
     blocked: 0,
@@ -77,26 +42,21 @@ export class AgentContribution {
     return this.tasks[0];
   }
   status(): FlowState {
-    const states = this.tasks
-      .map((item) => new TaskPresentation(item.task).status())
-      .sort(
-        (left, right) =>
-          AgentContribution.priority[left] - AgentContribution.priority[right],
-      );
-    return states[0] ?? new TaskPresentation(this.first().task).status();
+    return TaskPresentation.describe(this.latest().task).status;
   }
+
   summary(): string {
     const progress = summarizeCounts(this.counts());
     return `${progress.byState.integrated} integrated · ${progress.byState.completed} completed · ${progress.byState.ready} ready · ${progress.total} tasks`;
   }
   counts(): ReadonlyArray<FlowCount> {
-    return new ContributionProgress(this.tasks).counts();
+    return TaskPresentation.counts(this.tasks);
   }
   latest(): TaskFlow {
     return (
       [...this.tasks].sort((left, right) => {
-        const leftState = new TaskPresentation(left.task).status();
-        const rightState = new TaskPresentation(right.task).status();
+        const leftState = TaskPresentation.describe(left.task).status;
+        const rightState = TaskPresentation.describe(right.task).status;
         const priority =
           AgentContribution.priority[leftState] -
           AgentContribution.priority[rightState];
@@ -109,15 +69,12 @@ export class AgentContribution {
       })[0] ?? this.first()
     );
   }
-  checkpoint(): string {
-    return new TaskPresentation(this.latest().task).checkpoint();
-  }
   adding(task: TaskFlow): AgentContribution {
     return new AgentContribution(this.actor, [...this.tasks, task]);
   }
 }
 export class Delegation {
-  readonly workers = new Map<ReportingNodeId, AgentContribution>();
+  readonly workers = new Map<string, AgentContribution>();
   constructor(readonly actor: RecordedActor) {}
   name(): string {
     switch (this.actor.kind) {
@@ -128,47 +85,15 @@ export class Delegation {
     }
   }
   add(task: TaskFlow): void {
-    const requested = ReportingNodeId.actor(task.worker);
-    // Array.find requires a boolean; the value owner retains identity meaning.
-    const key = Array.from(this.workers.keys()).find(
-      (id) => id.match(requested) === IdentityMatch.Same,
-    );
-    switch (key) {
-      case undefined:
-        this.workers.set(requested, new AgentContribution(task.worker, [task]));
-        return;
-      default:
-        break;
-    }
+    const key = TaskPresentation.actorKey(task.worker);
     const worker = this.workers.get(key);
     switch (worker) {
       case undefined:
         this.workers.set(key, new AgentContribution(task.worker, [task]));
-        return;
+        break;
       default:
         this.workers.set(key, worker.adding(task));
     }
-  }
-  tasks(): ReadonlyArray<TaskFlow> {
-    return Array.from(this.workers.values()).flatMap((worker) => worker.tasks);
-  }
-  integrated(): number {
-    return this.tasks().filter((item) => item.task.state.kind === "integrated")
-      .length;
-  }
-  counts(): ReadonlyArray<FlowCount> {
-    return new ContributionProgress(this.tasks()).counts();
-  }
-}
-class ContributionProgress {
-  constructor(private readonly tasks: ReadonlyArray<TaskFlow>) {}
-  counts(): ReadonlyArray<FlowCount> {
-    const counts = new Map<FlowState, number>();
-    for (const item of this.tasks) {
-      const state = new TaskPresentation(item.task).status();
-      counts.set(state, (counts.get(state) ?? 0) + 1);
-    }
-    return Array.from(counts, ([state, count]) => ({ state, count }));
   }
 }
 export enum ActivityKind {
@@ -179,23 +104,20 @@ export type NodeActivity =
   | { kind: ActivityKind.Recorded; group: AgentContribution }
   | { kind: ActivityKind.Absent };
 interface ReportingIdentity {
-  id: ReportingNodeId;
+  id: string;
   name: string;
   actor: RecordedActor;
 }
 interface ReportingEdge {
-  source: ReportingNodeId;
-  target: ReportingNodeId;
+  source: string;
+  target: string;
   tasks: ReadonlyArray<TaskFlow>;
 }
 export class ReportingNode {
   private ownActivity: NodeActivity = { kind: ActivityKind.Absent };
-  private readonly reportingChildren = new Map<
-    ReportingNodeId,
-    ReportingNode
-  >();
+  private readonly reportingChildren = new Map<string, ReportingNode>();
   constructor(private readonly identity: ReportingIdentity) {}
-  id(): ReportingNodeId {
+  id(): string {
     return this.identity.id;
   }
   name(): string {
@@ -238,7 +160,7 @@ export class ReportingNode {
   }
   descendantCounts(): ReadonlyArray<FlowCount> {
     const tasks = this.descendantTasks();
-    return new ContributionProgress(tasks).counts();
+    return TaskPresentation.counts(tasks);
   }
   subtreeCounts(): ReadonlyArray<FlowCount> {
     const collected: ReadonlyArray<TaskFlow> = [
@@ -246,38 +168,28 @@ export class ReportingNode {
       ...this.descendantTasks(),
     ];
     const tasks = this.uniqueTasks(collected);
-    return new ContributionProgress(tasks).counts();
+    return TaskPresentation.counts(tasks);
   }
   private descendantTasks(): ReadonlyArray<TaskFlow> {
     const pending = [...this.children];
     const reached: ReportingNode[] = [];
-    const initialIds: ReadonlyArray<ReportingNodeId> = [this.id()];
-    const seen = new Set<ReportingNodeId>(initialIds);
+    const seen = new Set<string>([this.id()]);
     for (const node of pending) {
-      const visit: ReportingVisit = { seen, id: node.id() };
-      switch (this.visit(visit)) {
-        case VisitKind.AlreadyVisited:
-          break;
-        case VisitKind.FirstVisit:
+      switch (seen.has(node.id())) {
+        case true:
+          continue;
+        case false:
           seen.add(node.id());
           reached.push(node);
           pending.push(...node.children);
-          break;
       }
     }
+
     const ownIds = new Set(this.ownTasks().map((task) => task.task.common.id));
     const tasks = reached.flatMap((node) => node.ownTasks());
     return this.uniqueTasks(tasks).filter(
       (task) => !ownIds.has(task.task.common.id),
     );
-  }
-  private visit(visit: ReportingVisit): VisitKind {
-    switch (visit.seen.has(visit.id)) {
-      case true:
-        return VisitKind.AlreadyVisited;
-      case false:
-        return VisitKind.FirstVisit;
-    }
   }
   private uniqueTasks(tasks: ReadonlyArray<TaskFlow>): ReadonlyArray<TaskFlow> {
     const unique = new Map<string, TaskFlow>();
@@ -288,9 +200,9 @@ export class ReportingNode {
   }
 }
 export class ReportingHierarchy {
-  private readonly identities = new Map<ReportingNodeId, ReportingNode>();
-  private readonly links: ReportingEdge[] = [];
-  private readonly history = new Map<ReportingNodeId, Delegation>();
+  private readonly identities = new Map<string, ReportingNode>();
+  private readonly links = new Map<string, ReportingEdge>();
+  private readonly history = new Map<string, Delegation>();
   constructor(tasks: ReadonlyArray<TaskFlow>) {
     for (const task of tasks) {
       this.record(task);
@@ -304,7 +216,7 @@ export class ReportingHierarchy {
     return Array.from(this.identities.values());
   }
   edges(): ReadonlyArray<ReportingEdge> {
-    return this.links;
+    return Array.from(this.links.values());
   }
   historical(): ReadonlyArray<Delegation> {
     return Array.from(this.history.values());
@@ -314,74 +226,43 @@ export class ReportingHierarchy {
       case "Unrecorded":
         this.recordHistory(task);
         return;
-      case "Assigned":
-        this.recordAssignment(task);
-    }
-  }
-  private recordHistory(task: TaskFlow): void {
-    const requested = ReportingNodeId.actor(task.created_by);
-    const key = Array.from(this.history.keys()).find(
-      (id) => id.match(requested) === IdentityMatch.Same,
-    );
-    switch (key) {
-      case undefined: {
-        const group = new Delegation(task.created_by);
-        group.add(task);
-        this.history.set(requested, group);
-        return;
-      }
-      default:
-        break;
-    }
-    const previous = this.history.get(key);
-    switch (previous) {
-      case undefined: {
-        const group = new Delegation(task.created_by);
-        group.add(task);
-        this.history.set(key, group);
-        return;
-      }
-      default:
-        previous.add(task);
-    }
-  }
-  private recordAssignment(task: TaskFlow): void {
-    switch (task.task.ownership.kind) {
-      case "Unrecorded":
-        return;
       case "Assigned": {
-        const parent = this.target(task.task.ownership.assignment.reports_to);
-        const worker = this.agent(task.task.ownership.assignment.agent);
+        const { agent, reports_to } = task.task.ownership.assignment;
+        const parent = this.target(reports_to);
+        const worker = this.agent(agent);
         worker.add(task);
         parent.attach(worker);
-        const edge: ReportingEdge = {
+        this.recordEdge({
           source: parent.id(),
           target: worker.id(),
           tasks: [task],
-        };
-        this.recordEdge(edge);
+        });
       }
     }
   }
+  private recordHistory(task: TaskFlow): void {
+    const key = TaskPresentation.actorKey(task.created_by);
+    const group = this.history.get(key) ?? new Delegation(task.created_by);
+    group.add(task);
+    this.history.set(key, group);
+  }
+
   private recordEdge(edge: ReportingEdge): void {
-    // Array.find requires a predicate; both endpoints retain their value owner.
-    const previous = this.links.find(
-      (link) =>
-        link.source.match(edge.source) === IdentityMatch.Same &&
-        link.target.match(edge.target) === IdentityMatch.Same,
-    );
+    const key = `${edge.source}->${edge.target}`;
+    const previous = this.links.get(key);
     switch (previous) {
       case undefined:
-        this.links.push(edge);
-        return;
+        this.links.set(key, edge);
+        break;
       default:
         previous.tasks = [...previous.tasks, ...edge.tasks];
     }
   }
+
   private agent(agent: AgentId): ReportingNode {
     const actor: RecordedActor = { kind: "recorded", agent };
     const identity: ReportingIdentity = {
-      id: ReportingNodeId.actor(actor),
+      id: TaskPresentation.actorKey(actor),
       name: TaskPresentation.agentName(agent),
       actor,
     };
@@ -392,7 +273,7 @@ export class ReportingHierarchy {
       case "Host": {
         const actor: RecordedActor = { kind: "unrecorded" };
         const identity: ReportingIdentity = {
-          id: ReportingNodeId.host(),
+          id: "host",
           name: "Host",
           actor,
         };
@@ -405,9 +286,7 @@ export class ReportingHierarchy {
     }
   }
   private obtain(identity: ReportingIdentity): ReportingNode {
-    const previous = this.nodes().find(
-      (node) => node.id().match(identity.id) === IdentityMatch.Same,
-    );
+    const previous = this.identities.get(identity.id);
     switch (previous) {
       case undefined: {
         const node = new ReportingNode(identity);

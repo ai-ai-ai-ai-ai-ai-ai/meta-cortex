@@ -5,18 +5,20 @@ import {
   fireEvent,
   screen,
   within,
-  waitFor,
-  type ByRoleOptions,
 } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
-import type { ComponentProps } from "svelte";
 import type {
   AgentId,
   ReportingTarget,
   TaskFlow,
   FeatureFlow,
 } from "./contracts";
-import { ActivityKind, ReportingHierarchy } from "./agent-tree";
+import {
+  ActivityKind,
+  ReportingHierarchy,
+  SelectionKind,
+  type TaskSelection,
+} from "./agent-tree";
 import {
   Fixture,
   BrowserMediaQueries,
@@ -230,9 +232,10 @@ it("keeps migrated creator and history worker evidence outside recorded reportin
   expect(hierarchy.historical()[0]?.actor).toEqual(
     fixture.contribution.created_by,
   );
-  expect(hierarchy.historical()[0]?.tasks()[0]?.worker).toEqual(
-    fixture.contribution.worker,
-  );
+  expect(
+    hierarchy.historical()[0]?.workers.get("Development:TypescriptDev")
+      ?.tasks[0]?.worker,
+  ).toEqual(fixture.contribution.worker);
   const graph = new FlowPresentation(fixture.flow).agents();
   const absent: AbsentActivityExpectation = { kind: ActivityKind.Absent };
   expect(graph.nodes[0]?.data.activity).toEqual(absent);
@@ -294,130 +297,49 @@ class CoordinatorFixture extends HierarchyFixture {
     return fixture.flow;
   }
 }
-it("selects compact coordinator own activity matching Working and keeps every objective selectable", async () => {
-  const fixture = new CoordinatorFixture();
-  const flow = fixture.flow();
-  const select = vi.fn();
-  const props: ComponentProps<typeof Workflow> = {
-    flow,
-    select,
-    history: vi.fn(),
-    refresh: vi.fn(),
-  };
-  const rowQuery: ByRoleOptions = {
-    name: /Team Gizmo 2 own activities Implement reporting hierarchy working/,
-  };
-  const inspectorQuery: ByRoleOptions = { name: "Team Gizmo" };
-  const workingHeadingQuery: ByRoleOptions = {
-    name: "Implement reporting hierarchy",
-  };
-  const planningQuery: ByRoleOptions = { name: /Plan reporting hierarchy/ };
-  const implementationQuery: ByRoleOptions = {
-    name: /Implement reporting hierarchy/,
-  };
-  render(Workflow, props);
-  const row = screen.getByRole("button", rowQuery);
-  expect(screen.getAllByRole("button", rowQuery)).toHaveLength(1);
-  await userEvent.click(row);
-  const inspector = screen.getByRole("dialog", inspectorQuery);
-  expect(
-    within(inspector).getByRole("heading", workingHeadingQuery),
-  ).toBeTruthy();
-  expect(
-    within(inspector).getAllByText("working")[0]?.getAttribute("data-state"),
-  ).toBe("working");
-  expect(within(inspector).queryAllByText("Git evidence")).toHaveLength(0);
-  const planning = within(inspector).getByRole("button", planningQuery);
-  const implementation = within(inspector).getByRole(
-    "button",
-    implementationQuery,
-  );
-  expect(implementation.getAttribute("data-current")).toBe("true");
-  await userEvent.click(planning);
-  expect(select).toHaveBeenLastCalledWith(flow.tasks.records[0]?.task);
-  await userEvent.click(implementation);
-  expect(select).toHaveBeenLastCalledWith(flow.tasks.records[1]?.task);
-  expect(
-    within(inspector).getByRole("heading", workingHeadingQuery),
-  ).toBeTruthy();
-});
-it("uses the real Agents graph selection handler for prioritized own activity and leaves absent targets nonselectable", async () => {
-  const fixture = new CoordinatorFixture();
-  const props: ComponentProps<typeof Workflow> = {
-    flow: fixture.flow(),
-    select: vi.fn(),
-    history: vi.fn(),
-    refresh: vi.fn(),
-  };
-  vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
-  const graphQuery: ByRoleOptions = { name: "graph" };
-  const inspectorQuery: ByRoleOptions = { name: "Team Gizmo" };
-  const objectiveQuery: ByRoleOptions = {
-    name: "Implement reporting hierarchy",
-  };
-  render(Workflow, props);
-  await userEvent.click(screen.getByRole("tab", graphQuery));
-  const prime = await screen.findByText("Gizmo / GizmoPrime");
-  await fireEvent.click(prime);
-  expect(screen.queryAllByRole("dialog")).toHaveLength(0);
-  const team = screen.getByText("Gizmo / Gizmo");
-  await fireEvent.click(team);
-  const inspector = screen.getByRole("dialog", inspectorQuery);
-  expect(within(inspector).getByRole("heading", objectiveQuery)).toBeTruthy();
-  expect(
-    within(inspector).getAllByText("working")[0]?.getAttribute("data-state"),
-  ).toBe("working");
-  expect(
-    within(inspector).getAllByText("Shared feature workspace"),
-  ).toHaveLength(2);
-  expect(within(inspector).queryAllByText("Git evidence")).toHaveLength(0);
-});
-
-it("restores the second activity origin after selecting another role in the open desktop inspector", async () => {
-  const first = new Fixture();
-  const second = new Fixture();
-  const agent: AgentId = { team: "Development", role: "RustDev" };
-  second.task.common.id = "inspect-database";
-  second.task.common.objective = "Inspect database";
-  second.task.ownership = {
-    kind: "Assigned",
-    assignment: { agent, reports_to: { kind: "Gizmo", coordinator: "Gizmo" } },
-  };
-  second.contribution.worker = { kind: "recorded", agent };
-  first.flow.tasks.records = [first.contribution, second.contribution];
-  const props: ComponentProps<typeof Workflow> = {
-    flow: first.flow,
-    select: vi.fn(),
-    history: vi.fn(),
-    refresh: vi.fn(),
-  };
-  render(Workflow, props);
-  const firstExpandQuery: ByRoleOptions = {
-    name: "Expand TypescriptDev tasks",
-  };
-  const secondExpandQuery: ByRoleOptions = { name: "Expand RustDev tasks" };
-  const firstTaskQuery: ByRoleOptions = {
-    name: "Build workflow Git worker Integrated",
-  };
-  const secondTaskQuery: ByRoleOptions = {
-    name: "Inspect database Git worker Integrated",
-  };
-  const firstInspectorQuery: ByRoleOptions = { name: "TypescriptDev" };
-  const secondInspectorQuery: ByRoleOptions = { name: "RustDev" };
-  await userEvent.click(screen.getByRole("button", firstExpandQuery));
-  const original = screen.getByRole("button", firstTaskQuery);
-  await userEvent.click(original);
-  expect(screen.getByRole("dialog", firstInspectorQuery)).toBeTruthy();
-  const secondExpand = screen.getByRole("button", secondExpandQuery);
-  expect(secondExpand.closest("[inert]")).toBeNull();
-  await userEvent.click(secondExpand);
-  const current = screen.getByRole("button", secondTaskQuery);
-  await userEvent.click(current);
-  expect(screen.getByRole("dialog", secondInspectorQuery)).toBeTruthy();
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => {
-    expect(screen.queryByRole("dialog", secondInspectorQuery)).toBeNull();
-    expect(document.activeElement).toBe(current);
+it("selects the prioritized coordinator activity and keeps all recorded activities selectable", async () => {
+  const flow = new CoordinatorFixture().flow();
+  const select = vi.fn<(selection: TaskSelection) => void>();
+  render(Workflow, { flow, select, history: vi.fn() });
+  const summary = screen.getByRole("button", {
+    name: "0 integrated · 1 completed · 0 ready · 2 tasks · own activities",
   });
-  expect(document.activeElement).not.toBe(original);
+  await userEvent.click(summary);
+  const working = flow.tasks.records.find(
+    (item) => item.task.common.objective === "Implement reporting hierarchy",
+  );
+  expect(working).toBeTruthy();
+  const expected = { kind: SelectionKind.Activity, task: working };
+  expect(select).toHaveBeenLastCalledWith(expected);
+  const table = screen.getByRole("table", { name: /Team Gizmo/ });
+  expect(within(table).getByText("In progress")).toBeTruthy();
+  await userEvent.click(
+    within(table).getByRole("button", { name: "Plan reporting hierarchy" }),
+  );
+  expect(select).toHaveBeenLastCalledWith({
+    kind: SelectionKind.Activity,
+    task: flow.tasks.records[0],
+  });
+  await userEvent.click(
+    within(table).getByRole("button", {
+      name: "Implement reporting hierarchy",
+    }),
+  );
+  expect(select).toHaveBeenLastCalledWith(expected);
+});
+it("uses default graph nodes and the real selection handler without selecting absent anchors", async () => {
+  const flow = new CoordinatorFixture().flow();
+  const select = vi.fn<(selection: TaskSelection) => void>();
+  vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
+  render(Workflow, { flow, select, history: vi.fn() });
+  await userEvent.click(screen.getByRole("tab", { name: "graph" }));
+  const prime = await screen.findByText(/Gizmo \/ GizmoPrime/);
+  await fireEvent.click(prime);
+  expect(select).not.toHaveBeenCalled();
+  const team = await screen.findByText(/Gizmo \/ Gizmo\s/);
+  await fireEvent.click(team);
+  expect(select).toHaveBeenLastCalledWith({
+    kind: SelectionKind.Activity,
+    task: flow.tasks.records[1],
+  });
 });
