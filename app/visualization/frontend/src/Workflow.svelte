@@ -22,6 +22,12 @@
     refresh: () => void;
   }
   let { flow, select, history, refresh }: WorkflowProperties = $props();
+  const views: ReadonlyArray<FlowView> = [
+    FlowView.Tree,
+    FlowView.Agents,
+    FlowView.Git,
+    FlowView.History,
+  ];
   let view = $state<FlowView>(FlowView.Tree);
   let graphKind = $state<GraphKind>(GraphKind.Agents);
   let selection = $state<Option.Option<AgentSelection>>(Option.none());
@@ -143,7 +149,7 @@
       class="workflow-tabs mb-[22px] flex justify-start gap-[7px] rounded-none border-b border-border bg-transparent p-0 max-[620px]:gap-[3px]"
       aria-label="Workflow views"
     >
-      {#each Object.values(FlowView) as item (item)}
+      {#each views as item (item)}
         <Tabs.Trigger
           value={item}
           id={`view-${item}`}
