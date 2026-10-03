@@ -50,6 +50,13 @@ Prebuilt binaries are available for macOS and Linux on ARM64 and x86-64.
 See [GitHub Releases](https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases)
 for downloadable artifacts.
 
+#### Scoop (Windows x86-64, pending bucket publication)
+
+Scoop installation is planned after the Windows release and its manifest are
+published. The repository does not yet provide `bucket/meta-cortex.json`.
+See the [Scoop maintainer procedure](CONTRIBUTING.md#publish-the-scoop-manifest)
+for publication and verification steps.
+
 ### Initialize your project
 
 Create `request.yaml` with an existing Git project directory and explicit harness choices:
