@@ -11,6 +11,12 @@ pub(super) struct WorkspaceDependencies {
 
 impl WorkspaceDependencies {
     pub fn install(self) -> Result<(), InstallError> {
+        let started = std::time::Instant::now();
+        eprintln!(
+            "FIXTURE_BUN cache_override={:?} private_install={:?}",
+            std::env::var_os("BUN_INSTALL_CACHE_DIR"),
+            self.bun.directory
+        );
         let output = Command::new(&self.bun.executable)
             .args(["install", "--frozen-lockfile", "--ignore-scripts"])
             .env("BUN_INSTALL", &self.bun.directory)
@@ -21,6 +27,13 @@ impl WorkspaceDependencies {
                 path: self.directory.clone(),
                 source,
             })?;
+        eprintln!(
+            "FIXTURE_STAGE bun {:?} status={} stdout={} stderr={}",
+            started.elapsed(),
+            output.status,
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
         match output.status.code() {
             Some(0) => Ok(()),
             Some(_) | None => Err(InstallError::Dependencies {
