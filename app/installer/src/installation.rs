@@ -216,11 +216,13 @@ impl Installation {
                 .install(configuration)?;
             }
             BundleState::Identical => {
+                let started = std::time::Instant::now();
                 Bundle {
                     directory: &Bundle::FRAMEWORK,
                     destination: destination.clone(),
                 }
                 .verify()?;
+                eprintln!("FIXTURE_STAGE framework_verify {:?}", started.elapsed());
             }
         }
         dependencies.install()?;
@@ -260,7 +262,15 @@ pub mod tests {
                 directory,
                 data: tempdir()?,
             };
+            eprintln!(
+                "FIXTURE_PATH project={:?} tools={:?} temp={:?}",
+                fixture.directory.path(),
+                fixture.data.path(),
+                std::env::temp_dir()
+            );
+            let started = std::time::Instant::now();
             fixture.seed_tools()?;
+            eprintln!("FIXTURE_STAGE tools {:?}", started.elapsed());
             Ok(fixture)
         }
         fn seed_tools(&self) -> io::Result<()> {
@@ -290,12 +300,15 @@ pub mod tests {
             Ok(())
         }
         fn install(&self) -> Result<(), InstallError> {
-            Project {
+            let started = std::time::Instant::now();
+            let prepared = Project {
                 data: DataDirectory::from(self.data.path().to_owned()),
                 ..Project::open(self.directory.path().to_path_buf())?
             }
-            .prepare()?
-            .install(InitRequest {
+            .prepare()?;
+            eprintln!("FIXTURE_STAGE prepare {:?}", started.elapsed());
+            let started = std::time::Instant::now();
+            prepared.install(InitRequest {
                 mise: ToolSetup::RequireExisting,
                 bun: ToolSetup::RequireExisting,
                 vale: ToolSetup::RequireExisting,
@@ -304,6 +317,7 @@ pub mod tests {
                     instructions: InstructionAction::Write,
                 },
             })?;
+            eprintln!("FIXTURE_STAGE install {:?}", started.elapsed());
             Ok(())
         }
         fn preserves_and_repeats(self) -> Result<(), InstallError> {
@@ -330,11 +344,19 @@ pub mod tests {
             self.install()?;
             Project::open(self.directory.path().to_path_buf())?.info()?;
             assert_eq!(fs::read_to_string(marker)?, "local dependency");
+            let started = std::time::Instant::now();
             fs::remove_dir_all(&modules)?;
+            eprintln!("FIXTURE_STAGE remove_modules {:?}", started.elapsed());
             self.install()?;
             assert!(modules.join("effect/AGENTS.md").is_file());
             fs::write(root.join("unexpected-file"), "unexpected")?;
             assert!(matches!(self.install(), Err(InstallError::Conflict(_))));
+            let started = std::time::Instant::now();
+            self.directory.close()?;
+            eprintln!("FIXTURE_STAGE cleanup_project {:?}", started.elapsed());
+            let started = std::time::Instant::now();
+            self.data.close()?;
+            eprintln!("FIXTURE_STAGE cleanup_tools {:?}", started.elapsed());
             Ok(())
         }
         fn rejects_linked_dependencies(self) -> Result<(), InstallError> {
