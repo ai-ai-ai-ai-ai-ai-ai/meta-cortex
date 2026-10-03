@@ -240,7 +240,7 @@ export enum ActivityKind {
   Recorded = "recorded",
   Absent = "absent",
 }
-export type NodeActivity =
+type NodeActivity =
   | { kind: ActivityKind.Recorded; group: AgentContribution }
   | { kind: ActivityKind.Absent };
 interface ReportingIdentity {
