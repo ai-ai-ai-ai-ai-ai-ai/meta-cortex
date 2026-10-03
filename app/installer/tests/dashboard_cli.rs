@@ -6,6 +6,7 @@ use meta_cortex_workbench::values::{BranchName, FeatureId, Note, TaskId};
 use meta_cortex_workbench::versions::ProtocolVersion;
 use meta_cortex_workbench::{DataDirectory, PageIndex, Workbench};
 use serde::{Deserialize, Serialize};
+use std::env::consts::EXE_SUFFIX;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -357,7 +358,8 @@ fn dashboard_help_and_repository_errors_need_no_request_file() -> anyhow::Result
         .output()?;
     assert!(help.status.success());
     let text = String::from_utf8(help.stdout)?;
-    assert!(text.contains("Usage: meta-cortex dashboard"));
+    let expected_usage = format!("Usage: meta-cortex{EXE_SUFFIX} dashboard");
+    assert!(text.contains(&expected_usage), "{text}");
     assert!(!text.contains("--request"));
     let outside = tempfile::tempdir()?;
     let data = outside.path().join("unused-data");
