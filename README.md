@@ -31,31 +31,40 @@ brew install ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.sh | sh
 ```
 
-**PowerShell installer (Windows x86-64, after the next release)**
+**PowerShell installer (Windows x86-64)**
 
-The next release is configured to provide a native Windows x86-64 binary and
-PowerShell installer. After that release publishes `meta-cortex-installer.ps1`,
-run this command in PowerShell:
+Run this command in PowerShell:
 
 ```powershell
 irm https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.ps1 | iex
 ```
 
-**Prohibited:** assume an older release contains the Windows installer.
-
-**Required:** check the release artifacts before running the PowerShell command.
-The command uses the installer published with that release.
-
-Prebuilt binaries are available for macOS and Linux on ARM64 and x86-64.
+Prebuilt binaries are available for macOS and Linux on ARM64 and x86-64,
+and for Windows on x86-64.
 See [GitHub Releases](https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases)
 for downloadable artifacts.
 
-#### Scoop (Windows x86-64, pending bucket publication)
+#### Scoop (Windows x86-64)
 
-Scoop installation is planned after the Windows release and its manifest are
-published. The repository does not yet provide `bucket/meta-cortex.json`.
-See the [Scoop maintainer procedure](CONTRIBUTING.md#publish-the-scoop-manifest)
-for publication and verification steps.
+Install [Scoop](https://scoop.sh/) using its official setup instructions. In
+PowerShell, install Git if it is not already available:
+
+```powershell
+scoop install git
+```
+
+Add the Meta-Cortex bucket and install its command:
+
+```powershell
+scoop bucket add meta-cortex https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex
+scoop install meta-cortex/meta-cortex
+meta-cortex list
+```
+
+The bucket installs the native Windows x86-64 executable and makes
+`meta-cortex` available on `PATH`. Initialize your Git project with the typed
+request below. Framework initialization installs the managed mise, Bun, and Vale
+tools separately from Scoop.
 
 ### Initialize your project
 
@@ -376,8 +385,8 @@ is distributed. The [framework source](cortex/) remains at the repository root.
 ## Update a project
 
 Updating the executable and updating a project's framework are separate actions.
-An existing `.meta-cortex/` directory does not change when Homebrew upgrades the
-command.
+An existing `.meta-cortex/` directory does not change when Homebrew or Scoop
+updates the command.
 
 ### Upgrade the command
 
@@ -387,8 +396,25 @@ For a Homebrew installation:
 brew upgrade ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 ```
 
-For a shell installation, rerun the shell installer above. After a Windows
-release is available, rerun its PowerShell installer to upgrade that installation.
+For a shell or PowerShell installation, rerun the corresponding installer above.
+
+For a Scoop installation, refresh the bucket and update the command:
+
+```powershell
+scoop update
+scoop update meta-cortex
+```
+
+### Remove the Scoop command
+
+```powershell
+scoop uninstall meta-cortex
+```
+
+Uninstalling removes the Scoop-managed executable and command shim. It leaves
+project `.meta-cortex/` directories and the application home intact, including
+managed mise, Bun, Vale, and Workbench databases. `META_CORTEX_HOME` selects a
+custom application home; otherwise it is `$HOME\.meta-cortex` on Windows.
 
 ### Replace an installed framework
 
