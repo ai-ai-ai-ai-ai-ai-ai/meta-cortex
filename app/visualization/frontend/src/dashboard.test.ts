@@ -428,9 +428,11 @@ it("expands real tasks and opens a closable agent inspector", async () => {
   expect(expand.hasAttribute("disabled")).toBe(false);
   expect(within(inspector).getByText("Git evidence")).toBeTruthy();
   expect(within(inspector).getByText("codex/worker")).toBeTruthy();
-  expect(document.activeElement).toBe(
-    within(inspector).getByRole("button", { name: "Close agent details" }),
-  );
+  await waitFor(() => {
+    expect(document.activeElement).toBe(
+      within(inspector).getByRole("button", { name: "Close agent details" }),
+    );
+  });
   await userEvent.click(
     within(inspector).getByRole("button", { name: "↶ Open full history" }),
   );
