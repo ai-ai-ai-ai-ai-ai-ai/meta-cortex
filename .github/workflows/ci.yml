@@ -46,6 +46,10 @@ jobs:
         shell: pwsh
         run: |
           & "$env:GITHUB_WORKSPACE\.github\scripts\windows-e2e.ps1" -Binary "$env:RUNNER_TEMP\meta cortex installed\bin\meta-cortex.exe"
+      - name: Verify native Windows Workbench durability
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cargo test --locked -p meta-cortex-workbench
       - run: cargo test --locked --workspace
       - name: Retain native Windows E2E evidence
         if: always() && runner.os == 'Windows'
