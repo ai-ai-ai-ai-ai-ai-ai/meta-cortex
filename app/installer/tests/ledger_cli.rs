@@ -4,7 +4,7 @@ use scenario::{Cli, Examples, Scenario};
 
 use anyhow::{Context, bail};
 use derive_more::From;
-use git2::StatusOptions;
+use git2::{ConfigLevel, StatusOptions};
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::{
     Assignment, Check, CheckOutcome, EventKind, LeaseHealth, Phase, Progress, Workspace,
@@ -459,6 +459,10 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     // libgit2 creates the worktree directory itself.
     fs::remove_dir(worker_dir.path())?;
     let repository = scenario.repository()?;
+    // Exact checkpoint bytes must not depend on the host's Git newline settings.
+    let mut config = repository.config()?.open_level(ConfigLevel::Local)?;
+    config.set_bool("core.autocrlf", false)?;
+    config.set_str("core.eol", "lf")?;
     let base = repository.head()?.peel_to_commit()?;
     let branch = repository.branch("codex/worker", &base, false)?;
     let mut options = git2::WorktreeAddOptions::new();
