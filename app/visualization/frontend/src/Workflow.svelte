@@ -84,19 +84,29 @@
   }
   function changeView(value: string) {
     switch (value) {
-      case FlowView.Tree:
-      case FlowView.Agents:
-      case FlowView.Git:
-      case FlowView.History:
-        view = value;
-        inspectorOpen = false;
+      case "tree":
+        view = FlowView.Tree;
+        break;
+      case "graph":
+        view = FlowView.Agents;
+        break;
+      case "git":
+        view = FlowView.Git;
+        break;
+      case "history":
+        view = FlowView.History;
+        break;
     }
+    inspectorOpen = false;
   }
   function changeGraph(value: string) {
     switch (value) {
-      case GraphKind.Agents:
-      case GraphKind.Tasks:
-        graphKind = value;
+      case "agents":
+        graphKind = GraphKind.Agents;
+        return;
+      case "dependencies":
+        graphKind = GraphKind.Tasks;
+        return;
     }
   }
 </script>
@@ -217,42 +227,57 @@
       <Dialog.Overlay
         class="drawer-backdrop fixed inset-0 z-20 hidden bg-backdrop max-[1100px]:block"
       />
-      <Dialog.Content
-        trapFocus={narrow.current}
-        preventScroll={narrow.current}
-        onInteractOutside={(event) => {
-          switch (narrow.current) {
-            case false:
-              event.preventDefault();
-          }
-        }}
-        onCloseAutoFocus={(event) => {
-          Option.map(selection, (selected) => {
-            switch (selected.origin.startsWith("view-")) {
-              case true:
+      {#key narrow.current}
+        <Dialog.Content
+          trapFocus={narrow.current}
+          preventScroll={narrow.current}
+          onInteractOutside={(event) => {
+            switch (narrow.current) {
+              case false:
                 event.preventDefault();
-                document.getElementById(selected.origin)?.focus();
+                return;
+              case true:
+                return;
             }
-          });
-        }}
-      >
-        {#snippet child({ props })}
-          <aside
-            {...props}
-            role="dialog"
-            aria-modal={narrow.current}
-            class="agent-inspector sticky top-4 flex max-h-[calc(100dvh-185px)] min-h-[360px] flex-col overflow-hidden rounded-[7px] border border-panel-border bg-panel max-[1100px]:fixed max-[1100px]:inset-y-0 max-[1100px]:right-0 max-[1100px]:z-30 max-[1100px]:h-dvh max-[1100px]:max-h-none max-[1100px]:min-h-0 max-[1100px]:w-[min(410px,90vw)] max-[1100px]:rounded-none max-[1100px]:border-y-0 max-[1100px]:shadow-[-14px_0_40px_#0005] [&>header]:flex [&>header]:items-center [&>header]:justify-between [&>header]:gap-3 [&>header]:border-b [&>header]:border-border [&>header]:px-[18px] [&>header]:py-5 [&_h2]:mt-[7px] [&_h2]:text-xl [&_h2]:[overflow-wrap:anywhere] max-[1100px]:[&>header]:p-6"
-          >
-            {#if selection._tag === "Some"}
-              <AgentInspector
-                selection={selection.value}
-                openTask={select}
-                openHistory={history}
-              />
-            {/if}
-          </aside>
-        {/snippet}
-      </Dialog.Content>
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            switch (inspectorOpen) {
+              case true:
+                return;
+              case false:
+                break;
+            }
+            switch (document.activeElement?.getAttribute("role")) {
+              case "tab":
+                return;
+            }
+            switch (selection._tag) {
+              case "None":
+                return;
+              case "Some":
+                document.getElementById(selection.value.origin)?.focus();
+            }
+          }}
+        >
+          {#snippet child({ props })}
+            <aside
+              {...props}
+              role="dialog"
+              aria-modal={narrow.current}
+              class="agent-inspector sticky top-4 flex max-h-[calc(100dvh-185px)] min-h-[360px] flex-col overflow-hidden rounded-[7px] border border-panel-border bg-panel max-[1100px]:fixed max-[1100px]:inset-y-0 max-[1100px]:right-0 max-[1100px]:z-30 max-[1100px]:h-dvh max-[1100px]:max-h-none max-[1100px]:min-h-0 max-[1100px]:w-[min(410px,90vw)] max-[1100px]:rounded-none max-[1100px]:border-y-0 max-[1100px]:shadow-[-14px_0_40px_#0005] [&>header]:flex [&>header]:items-center [&>header]:justify-between [&>header]:gap-3 [&>header]:border-b [&>header]:border-border [&>header]:px-[18px] [&>header]:py-5 [&_h2]:mt-[7px] [&_h2]:text-xl [&_h2]:[overflow-wrap:anywhere] max-[1100px]:[&>header]:p-6"
+            >
+              {#if selection._tag === "Some"}
+                <AgentInspector
+                  selection={selection.value}
+                  openTask={select}
+                  openHistory={history}
+                />
+              {/if}
+            </aside>
+          {/snippet}
+        </Dialog.Content>
+      {/key}
     </div>
     <details
       class="workflow-information mt-[14px] text-[10px] text-muted-foreground [&_summary]:cursor-pointer [&_p]:max-w-[700px] [&_p]:pt-3"
