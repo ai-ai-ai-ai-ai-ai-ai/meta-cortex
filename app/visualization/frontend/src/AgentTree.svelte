@@ -1,20 +1,18 @@
 <script lang="ts">
   import * as Card from "$lib/components/ui/card";
   import type { TaskFlow } from "./contracts";
-  import { AgentTree } from "./agent-tree";
-  import type { AgentSelection, AgentPanel } from "./agent-tree";
+  import { ReportingHierarchy } from "./agent-tree";
+  import type { AgentSelection } from "./agent-tree";
+  import type { Option } from "effect";
   import TreeDelegation from "./TreeDelegation.svelte";
   import ReportingBranch from "./ReportingBranch.svelte";
-  let {
-    tasks,
-    select,
-    panel,
-  }: {
+  interface AgentTreeProperties {
     tasks: ReadonlyArray<TaskFlow>;
     select: (selection: AgentSelection) => void;
-    panel: AgentPanel;
-  } = $props();
-  let tree = $derived(new AgentTree(tasks));
+    selection: Option.Option<AgentSelection>;
+  }
+  let { tasks, select, selection }: AgentTreeProperties = $props();
+  let tree = $derived(new ReportingHierarchy(tasks));
 </script>
 
 <Card.Root
@@ -30,8 +28,8 @@
       Descendant progress excludes each coordinator’s own activities.
     </p>
     <ul class="m-0 list-none p-0">
-      {#each tree.groups() as node (node.id().serialize())}
-        <ReportingBranch {node} {select} {panel} />
+      {#each tree.roots() as node (node.id().serialize())}
+        <ReportingBranch {node} {select} {selection} />
       {/each}
     </ul>
     {#if tree.historical().length > 0}
@@ -39,7 +37,7 @@
         Historical · reporting unrecorded
       </h3>
       {#each tree.historical() as delegation (delegation.name())}
-        <TreeDelegation {delegation} {select} {panel} />
+        <TreeDelegation {delegation} {select} {selection} />
       {/each}
     {/if}
   {/if}
