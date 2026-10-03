@@ -86,7 +86,7 @@ export function reportingRows(
     ...values(task),
     kind: ReportingRowKind.Task,
     id: `task:${task.task.common.id}`,
-    label: task.task.common.objective,
+    label: task.task.common.id,
     expandInitially: false,
     task,
     subRows: [],

@@ -531,7 +531,7 @@ it("uses library DataTable keyboard expansion and stock Sheet dismissal with foc
   expect(team.getAttribute("aria-expanded")).toBe("true");
   const worker = screen.getByRole("button", { name: "Expand TypescriptDev" });
   await userEvent.click(worker);
-  const row = screen.getByRole("row", { name: /Build workflow/ });
+  const row = screen.getByRole("row", { name: /implement/ });
   const activity = within(row).getByRole("button", {
     name: "Open task implement",
   });

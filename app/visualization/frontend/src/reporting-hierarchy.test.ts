@@ -368,7 +368,7 @@ it("opens the prioritized coordinator record and keeps every activity selectable
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
   const implementation = within(table).getByRole("row", {
-    name: /Implement reporting hierarchy/,
+    name: /coordinator-implementation/,
   });
   const reopen = within(implementation).getByRole("button", {
     name: "Open task coordinator-implementation",
@@ -414,14 +414,10 @@ it("uses library expanding subrows without selecting absent anchors and supports
   ).toBeTruthy();
   await userEvent.click(expandWorker);
   expect(expandWorker.getAttribute("aria-expanded")).toBe("true");
-  expect(
-    within(table).getByRole("row", { name: /Build workflow/ }),
-  ).toBeTruthy();
+  expect(within(table).getByRole("row", { name: /worker/ })).toBeTruthy();
   await userEvent.click(
     within(worker).getByRole("button", { name: "Collapse TypescriptDev" }),
   );
-  expect(
-    within(table).queryByRole("row", { name: /Build workflow/ }),
-  ).toBeNull();
+  expect(within(table).queryByRole("row", { name: /worker/ })).toBeNull();
   expect(screen.queryByRole("dialog")).toBeNull();
 });
