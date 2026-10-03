@@ -2,11 +2,13 @@ import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import {
   cleanup,
   render,
-  fireEvent,
   screen,
   within,
+  waitFor,
 } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
+import App from "./App.svelte";
+import { TaskPresentation } from "./task-presentation";
 import type {
   AgentId,
   ReportingTarget,
@@ -16,37 +18,32 @@ import type {
 import {
   ActivityKind,
   ReportingHierarchy,
-  SelectionKind,
-  type TaskSelection,
+  ReportingRowKind,
+  reportingRows,
 } from "./agent-tree";
 import {
   Fixture,
   BrowserMediaQueries,
-  BrowserResizeObserver,
+  renderedClientRects,
 } from "./dashboard-fixture";
-import { FlowPresentation, NodeKind } from "./workflow";
-import Workflow from "./Workflow.svelte";
+const native = vi.hoisted(() => ({ invoke: vi.fn() }));
+vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 beforeEach(() => {
   const mediaQueries = new BrowserMediaQueries();
   const matchMedia: BrowserMediaQueries["matchMedia"] =
     mediaQueries.matchMedia.bind(mediaQueries);
   vi.stubGlobal("matchMedia", matchMedia);
+  vi.spyOn(Element.prototype, "getClientRects").mockImplementation(
+    renderedClientRects,
+  );
 });
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  native.invoke.mockReset();
 });
 
-interface AbsentActivityExpectation {
-  kind: ActivityKind.Absent;
-}
-interface RecordedActivityExpectation {
-  kind: ActivityKind.Recorded;
-  group: ActivityTasksExpectation;
-}
-interface ActivityTasksExpectation {
-  tasks: ReadonlyArray<TaskFlow>;
-}
 interface HierarchyActivity {
   id: string;
   agent: AgentId;
@@ -119,30 +116,36 @@ it("does not infer Prime or Host above a missing loaded Team activity", () => {
   expect(hierarchy.roots().map((node) => node.name())).toEqual(["Team Gizmo"]);
   expect(hierarchy.roots()[0]?.activity.kind).toBe(ActivityKind.Absent);
   expect(hierarchy.nodes()).toHaveLength(2);
-  const graph = new FlowPresentation(fixture.flow).agents();
-  const absent: AbsentActivityExpectation = { kind: ActivityKind.Absent };
-  expect(graph.nodes[0]?.data.kind).toBe(NodeKind.Agent);
-  expect(graph.nodes[0]?.data.activity).toEqual(absent);
-  expect(graph.nodes[0]?.data).not.toHaveProperty("tasks");
-  expect(graph.nodes[0]?.data).not.toHaveProperty("state");
-  const workerData = graph.nodes[1]?.data;
-  expect(workerData?.kind).toBe(NodeKind.Agent);
-  switch (workerData?.kind) {
-    case NodeKind.Agent:
-      expect(workerData.activity.kind).toBe(ActivityKind.Recorded);
-      switch (workerData.activity.kind) {
-        case ActivityKind.Recorded:
-          expect(workerData.activity.group.status()).toBe("integrated");
-          expect(workerData.activity.group.tasks).toEqual(tasks);
+  const rows = reportingRows(tasks);
+  const parent = rows[0];
+  expect(parent?.kind).toBe(ReportingRowKind.Reporting);
+  switch (parent?.kind) {
+    case ReportingRowKind.Reporting: {
+      expect(parent.node.activity.kind).toBe(ActivityKind.Absent);
+      expect(parent.node.ownTasks()).toHaveLength(0);
+      const worker = parent.subRows[0];
+      expect(worker?.kind).toBe(ReportingRowKind.Reporting);
+      switch (worker?.kind) {
+        case ReportingRowKind.Reporting:
+          expect(worker.node.ownTasks()).toEqual(tasks);
+          expect(worker.subRows[0]).toMatchObject({
+            kind: ReportingRowKind.Task,
+            task: fixture.contribution,
+          });
           break;
-        case ActivityKind.Absent:
-          break;
+        case ReportingRowKind.Creator:
+        case ReportingRowKind.Worker:
+        case ReportingRowKind.Task:
+        case undefined:
+          throw Error("Expected recorded worker row");
       }
       break;
-    case NodeKind.Task:
-    case NodeKind.Branch:
+    }
+    case ReportingRowKind.Creator:
+    case ReportingRowKind.Worker:
+    case ReportingRowKind.Task:
     case undefined:
-      break;
+      throw Error("Expected missing reporting target anchor");
   }
 });
 it("counts repeated valid activities once and represents older Working before newer Completed", () => {
@@ -174,7 +177,7 @@ it("counts repeated valid activities once and represents older Working before ne
   );
   const hierarchy = new ReportingHierarchy(tasks);
   expect(hierarchy.nodes()).toHaveLength(3);
-  expect(hierarchy.edges()).toHaveLength(2);
+  expect(hierarchy.roots()[0]?.children).toHaveLength(1);
   const team = hierarchy.nodes().find((node) => node.name() === "Team Gizmo");
   const worker = hierarchy
     .nodes()
@@ -190,16 +193,17 @@ it("counts repeated valid activities once and represents older Working before ne
       ?.descendantCounts()
       .map((count) => count.count),
   ).toEqual([4]);
+  expect(team?.children).toEqual([worker]);
   expect(
     hierarchy
-      .edges()
-      .flatMap((edge) => edge.tasks)
+      .nodes()
+      .flatMap((node) => node.ownTasks())
       .map((task) => task.task.common.id),
   ).toEqual(definitions.map((definition) => definition.id));
   switch (worker?.activity.kind) {
     case ActivityKind.Recorded: {
       const group = worker.activity.group;
-      const working = group.first();
+      const working = group.tasks[0];
       const agent: AgentId = { team: "Development", role: "TypescriptDev" };
       working.task.state = {
         kind: "active",
@@ -211,7 +215,9 @@ it("counts repeated valid activities once and represents older Working before ne
         },
       };
       working.task.common.last_update = 1000;
-      expect(group.status()).toBe("working");
+      expect(TaskPresentation.describe(group.latest().task).status).toBe(
+        "working",
+      );
       expect(group.latest()).toBe(working);
       expect(group.latest().task.common.id).toBe("worker-one");
       expect(group.tasks).toHaveLength(3);
@@ -228,7 +234,7 @@ it("keeps migrated creator and history worker evidence outside recorded reportin
   const tasks: ReadonlyArray<TaskFlow> = [fixture.contribution];
   const hierarchy = new ReportingHierarchy(tasks);
   expect(hierarchy.nodes()).toHaveLength(0);
-  expect(hierarchy.edges()).toHaveLength(0);
+  expect(hierarchy.roots()).toHaveLength(0);
   expect(hierarchy.historical()[0]?.actor).toEqual(
     fixture.contribution.created_by,
   );
@@ -236,16 +242,37 @@ it("keeps migrated creator and history worker evidence outside recorded reportin
     hierarchy.historical()[0]?.workers.get("Development:TypescriptDev")
       ?.tasks[0]?.worker,
   ).toEqual(fixture.contribution.worker);
-  const graph = new FlowPresentation(fixture.flow).agents();
-  const absent: AbsentActivityExpectation = { kind: ActivityKind.Absent };
-  expect(graph.nodes[0]?.data.activity).toEqual(absent);
-  expect(graph.nodes[0]?.data).not.toHaveProperty("tasks");
-  const recorded: RecordedActivityExpectation = {
-    kind: ActivityKind.Recorded,
-    group: { tasks },
-  };
-  expect(graph.nodes[1]?.data.activity).toMatchObject(recorded);
-  expect(graph.edges[0]?.label).toBe("created by · reporting unrecorded");
+  const creator = reportingRows(tasks)[0];
+  expect(creator?.kind).toBe(ReportingRowKind.Creator);
+  switch (creator?.kind) {
+    case ReportingRowKind.Creator: {
+      expect(creator.label).toBe(
+        "Created by · Team Gizmo · reporting unrecorded",
+      );
+      const worker = creator.subRows[0];
+      expect(worker?.kind).toBe(ReportingRowKind.Worker);
+      switch (worker?.kind) {
+        case ReportingRowKind.Worker:
+          expect(worker.group.tasks).toEqual(tasks);
+          expect(worker.subRows[0]).toMatchObject({
+            kind: ReportingRowKind.Task,
+            task: fixture.contribution,
+          });
+          break;
+        case ReportingRowKind.Reporting:
+        case ReportingRowKind.Creator:
+        case ReportingRowKind.Task:
+        case undefined:
+          throw Error("Expected history worker fallback");
+      }
+      break;
+    }
+    case ReportingRowKind.Reporting:
+    case ReportingRowKind.Worker:
+    case ReportingRowKind.Task:
+    case undefined:
+      throw Error("Expected historical creator row");
+  }
 });
 
 class CoordinatorFixture extends HierarchyFixture {
@@ -297,49 +324,104 @@ class CoordinatorFixture extends HierarchyFixture {
     return fixture.flow;
   }
 }
-it("selects the prioritized coordinator activity and keeps all recorded activities selectable", async () => {
+it("opens the prioritized coordinator record and keeps every activity selectable through the real DataTable", async () => {
   const flow = new CoordinatorFixture().flow();
-  const select = vi.fn<(selection: TaskSelection) => void>();
-  render(Workflow, { flow, select, history: vi.fn() });
-  const summary = screen.getByRole("button", {
-    name: "0 integrated · 1 completed · 0 ready · 2 tasks · own activities",
+  const fixture = new Fixture();
+  fixture.flow = flow;
+  native.invoke
+    .mockResolvedValue(fixture.featuresReply())
+    .mockResolvedValueOnce(fixture.workflowReply());
+  render(App);
+  const table = await screen.findByRole("table", {
+    name: "Recorded reporting and activities",
   });
-  await userEvent.click(summary);
-  const working = flow.tasks.records.find(
-    (item) => item.task.common.objective === "Implement reporting hierarchy",
-  );
-  expect(working).toBeTruthy();
-  const expected = { kind: SelectionKind.Activity, task: working };
-  expect(select).toHaveBeenLastCalledWith(expected);
-  const table = screen.getByRole("table", { name: /Team Gizmo/ });
-  expect(within(table).getByText("In progress")).toBeTruthy();
+  const team = within(table).getByRole("row", { name: /Team Gizmo/ });
+  expect(within(team).getByText("In progress")).toBeTruthy();
   await userEvent.click(
-    within(table).getByRole("button", { name: "Plan reporting hierarchy" }),
-  );
-  expect(select).toHaveBeenLastCalledWith({
-    kind: SelectionKind.Activity,
-    task: flow.tasks.records[0],
-  });
-  await userEvent.click(
-    within(table).getByRole("button", {
-      name: "Implement reporting hierarchy",
+    within(team).getByRole("button", {
+      name: "Open task coordinator-implementation",
     }),
   );
-  expect(select).toHaveBeenLastCalledWith(expected);
-});
-it("uses default graph nodes and the real selection handler without selecting absent anchors", async () => {
-  const flow = new CoordinatorFixture().flow();
-  const select = vi.fn<(selection: TaskSelection) => void>();
-  vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
-  render(Workflow, { flow, select, history: vi.fn() });
-  await userEvent.click(screen.getByRole("tab", { name: "graph" }));
-  const prime = await screen.findByText(/Gizmo \/ GizmoPrime/);
-  await fireEvent.click(prime);
-  expect(select).not.toHaveBeenCalled();
-  const team = await screen.findByText(/Gizmo \/ Gizmo\s/);
-  await fireEvent.click(team);
-  expect(select).toHaveBeenLastCalledWith({
-    kind: SelectionKind.Activity,
-    task: flow.tasks.records[1],
+  const working = await screen.findByRole("dialog", {
+    name: "coordinator-implementation",
   });
+  expect(
+    within(working).getByText("Implement reporting hierarchy"),
+  ).toBeTruthy();
+  expect(within(working).getByText("In progress")).toBeTruthy();
+  await waitFor(() =>
+    expect(working.contains(document.activeElement)).toBe(true),
+  );
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  const completed = within(table).getByRole("button", {
+    name: "Open task coordinator-plan",
+  });
+  await waitFor(() =>
+    expect(getComputedStyle(completed).pointerEvents).not.toBe("none"),
+  );
+  await userEvent.click(completed);
+  const plan = await screen.findByRole("dialog", { name: "coordinator-plan" });
+  expect(within(plan).getByText("Plan reporting hierarchy")).toBeTruthy();
+  expect(within(plan).getByText("Completed")).toBeTruthy();
+  await waitFor(() => expect(plan.contains(document.activeElement)).toBe(true));
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  const implementation = within(table).getByRole("row", {
+    name: /Implement reporting hierarchy/,
+  });
+  const reopen = within(implementation).getByRole("button", {
+    name: "Open task coordinator-implementation",
+  });
+  await waitFor(() =>
+    expect(getComputedStyle(reopen).pointerEvents).not.toBe("none"),
+  );
+  await userEvent.click(reopen);
+  expect(
+    within(
+      await screen.findByRole("dialog", { name: "coordinator-implementation" }),
+    ).getByText("Implement reporting hierarchy"),
+  ).toBeTruthy();
+});
+it("uses library expanding subrows without selecting absent anchors and supports keyboard toggling", async () => {
+  const fixture = new Fixture();
+  fixture.flow = new CoordinatorFixture().flow();
+  native.invoke
+    .mockResolvedValue(fixture.featuresReply())
+    .mockResolvedValueOnce(fixture.workflowReply());
+  render(App);
+  const table = await screen.findByRole("table", {
+    name: "Recorded reporting and activities",
+  });
+  const prime = within(table).getByRole("row", { name: /Gizmo Prime/ });
+  expect(within(prime).getByText("No activity on this page")).toBeTruthy();
+  expect(within(prime).queryByRole("button", { name: /Open task/ })).toBeNull();
+  const collapse = within(prime).getByRole("button", {
+    name: "Collapse Gizmo Prime",
+  });
+  collapse.focus();
+  await userEvent.keyboard("{Enter}");
+  expect(collapse.getAttribute("aria-expanded")).toBe("false");
+  expect(within(table).queryByText("Team Gizmo")).toBeNull();
+  await userEvent.keyboard(" ");
+  expect(collapse.getAttribute("aria-expanded")).toBe("true");
+  const worker = within(table).getByRole("row", { name: /TypescriptDev/ });
+  const expandWorker = within(worker).getByRole("button", {
+    name: "Expand TypescriptDev",
+  });
+  expect(
+    within(table).queryByRole("button", { name: "Open task worker" }),
+  ).toBeTruthy();
+  await userEvent.click(expandWorker);
+  expect(expandWorker.getAttribute("aria-expanded")).toBe("true");
+  expect(
+    within(table).getByRole("row", { name: /Build workflow/ }),
+  ).toBeTruthy();
+  await userEvent.click(
+    within(worker).getByRole("button", { name: "Collapse TypescriptDev" }),
+  );
+  expect(
+    within(table).queryByRole("row", { name: /Build workflow/ }),
+  ).toBeNull();
+  expect(screen.queryByRole("dialog")).toBeNull();
 });

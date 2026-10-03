@@ -16,6 +16,157 @@ export enum SelectionKind {
 export type TaskSelection =
   | { kind: SelectionKind.Task; task: TaskV2 }
   | { kind: SelectionKind.Activity; task: TaskFlow };
+export enum ReportingRowKind {
+  Reporting = "reporting",
+  Creator = "creator",
+  Worker = "worker",
+  Task = "task",
+}
+interface ReportingRowValues {
+  actionLabel: string;
+  status: string;
+  ownCounts: string;
+  descendantCounts: string;
+  workspace: string;
+  checkpoint: string;
+  selection: TaskSelection | null;
+}
+interface ReportingRowBase extends ReportingRowValues {
+  id: string;
+  label: string;
+  expandInitially: boolean;
+  subRows: ReportingTableRow[];
+}
+export type ReportingTableRow = ReportingRowBase &
+  (
+    | { kind: ReportingRowKind.Reporting; node: ReportingNode }
+    | { kind: ReportingRowKind.Creator; label: string }
+    | { kind: ReportingRowKind.Worker; group: AgentContribution }
+    | { kind: ReportingRowKind.Task; task: TaskFlow }
+  );
+
+export function reportingRows(
+  tasks: ReadonlyArray<TaskFlow>,
+): ReportingTableRow[] {
+  const hierarchy = new ReportingHierarchy(tasks);
+  const counts = (items: ReadonlyArray<FlowCount>): string => {
+    const { finished, total } = summarizeCounts(items);
+    return `${finished}/${total} finished`;
+  };
+  const values = (flow: TaskFlow): ReportingRowValues => {
+    const display = TaskPresentation.describe(flow.task);
+    let checkpoint = display.checkpoint;
+    switch (flow.task.common.checkpoint.kind) {
+      case "git":
+        checkpoint = flow.task.common.checkpoint.commit.slice(0, 7);
+        break;
+      case "unrecorded":
+        break;
+    }
+    let workspace = display.workspaceLabel;
+    switch (flow.task.workspace.kind) {
+      case "git":
+        workspace += ` · ${flow.task.workspace.branch}`;
+        break;
+      case "feature":
+      case "read_only":
+        break;
+    }
+    return {
+      actionLabel: `Open task ${flow.task.common.id}`,
+      status: display.statusLabel,
+      ownCounts: "",
+      descendantCounts: "",
+      workspace,
+      checkpoint,
+      selection: { kind: SelectionKind.Activity, task: flow },
+    };
+  };
+  const taskRow = (task: TaskFlow): ReportingTableRow => ({
+    ...values(task),
+    kind: ReportingRowKind.Task,
+    id: `task:${task.task.common.id}`,
+    label: task.task.common.objective,
+    expandInitially: false,
+    task,
+    subRows: [],
+  });
+  const seen = new Set<string>();
+  const reportingRow = (node: ReportingNode): ReportingTableRow => {
+    seen.add(node.id());
+    let own: ReportingRowValues = {
+      actionLabel: "",
+      status: "No activity on this page",
+      ownCounts: "",
+      descendantCounts: "",
+      workspace: "",
+      checkpoint: "",
+      selection: null,
+    };
+    switch (node.activity.kind) {
+      case ActivityKind.Recorded:
+        own = values(node.activity.group.latest());
+        own.ownCounts = counts(node.activity.group.counts());
+        break;
+      case ActivityKind.Absent:
+        break;
+    }
+    switch (node.children.length) {
+      case 0:
+        break;
+      default:
+        own.descendantCounts = counts(node.descendantCounts());
+    }
+    const row: ReportingTableRow = {
+      ...own,
+      kind: ReportingRowKind.Reporting,
+      id: node.id(),
+      label: node.name(),
+      expandInitially: node.children.length > 0,
+      node,
+      subRows: [
+        ...node.ownTasks().map(taskRow),
+        ...node.children
+          .filter((child) => !seen.has(child.id()))
+          .map(reportingRow),
+      ],
+    };
+    seen.delete(node.id());
+    return row;
+  };
+  const recorded = hierarchy.roots().map(reportingRow);
+  const historical = hierarchy
+    .historical()
+    .map((creator): ReportingTableRow => {
+      const creatorId = `history:${TaskPresentation.actorKey(creator.actor)}`;
+      return {
+        kind: ReportingRowKind.Creator,
+        id: creatorId,
+        label: `Created by · ${creator.name()} · reporting unrecorded`,
+        expandInitially: true,
+        status: "",
+        actionLabel: "",
+        ownCounts: "",
+        descendantCounts: "",
+        workspace: "",
+        checkpoint: "",
+        selection: null,
+        subRows: Array.from(creator.workers.entries()).map(
+          ([key, group]): ReportingTableRow => ({
+            ...values(group.latest()),
+            kind: ReportingRowKind.Worker,
+            id: `${creatorId}:${key}`,
+            label: group.name(),
+            expandInitially: false,
+            ownCounts: counts(group.counts()),
+            group,
+            subRows: group.tasks.map(taskRow),
+          }),
+        ),
+      };
+    });
+  return [...recorded, ...historical];
+}
 export class AgentContribution {
   private static readonly priority: Record<FlowState, number> = {
     blocked: 0,
@@ -38,17 +189,6 @@ export class AgentContribution {
         return TaskPresentation.agentName(this.actor.agent);
     }
   }
-  first(): TaskFlow {
-    return this.tasks[0];
-  }
-  status(): FlowState {
-    return TaskPresentation.describe(this.latest().task).status;
-  }
-
-  summary(): string {
-    const progress = summarizeCounts(this.counts());
-    return `${progress.byState.integrated} integrated · ${progress.byState.completed} completed · ${progress.byState.ready} ready · ${progress.total} tasks`;
-  }
   counts(): ReadonlyArray<FlowCount> {
     return TaskPresentation.counts(this.tasks);
   }
@@ -66,7 +206,7 @@ export class AgentContribution {
           default:
             return priority;
         }
-      })[0] ?? this.first()
+      })[0] ?? this.tasks[0]
     );
   }
   adding(task: TaskFlow): AgentContribution {
@@ -107,11 +247,6 @@ interface ReportingIdentity {
   id: string;
   name: string;
   actor: RecordedActor;
-}
-interface ReportingEdge {
-  source: string;
-  target: string;
-  tasks: ReadonlyArray<TaskFlow>;
 }
 export class ReportingNode {
   private ownActivity: NodeActivity = { kind: ActivityKind.Absent };
@@ -201,7 +336,6 @@ export class ReportingNode {
 }
 export class ReportingHierarchy {
   private readonly identities = new Map<string, ReportingNode>();
-  private readonly links = new Map<string, ReportingEdge>();
   private readonly history = new Map<string, Delegation>();
   constructor(tasks: ReadonlyArray<TaskFlow>) {
     for (const task of tasks) {
@@ -209,14 +343,13 @@ export class ReportingHierarchy {
     }
   }
   roots(): ReadonlyArray<ReportingNode> {
-    const children = new Set(this.edges().map((edge) => edge.target));
+    const children = new Set(
+      this.nodes().flatMap((node) => node.children.map((child) => child.id())),
+    );
     return this.nodes().filter((node) => !children.has(node.id()));
   }
   nodes(): ReadonlyArray<ReportingNode> {
     return Array.from(this.identities.values());
-  }
-  edges(): ReadonlyArray<ReportingEdge> {
-    return Array.from(this.links.values());
   }
   historical(): ReadonlyArray<Delegation> {
     return Array.from(this.history.values());
@@ -232,11 +365,6 @@ export class ReportingHierarchy {
         const worker = this.agent(agent);
         worker.add(task);
         parent.attach(worker);
-        this.recordEdge({
-          source: parent.id(),
-          target: worker.id(),
-          tasks: [task],
-        });
       }
     }
   }
@@ -245,18 +373,6 @@ export class ReportingHierarchy {
     const group = this.history.get(key) ?? new Delegation(task.created_by);
     group.add(task);
     this.history.set(key, group);
-  }
-
-  private recordEdge(edge: ReportingEdge): void {
-    const key = `${edge.source}->${edge.target}`;
-    const previous = this.links.get(key);
-    switch (previous) {
-      case undefined:
-        this.links.set(key, edge);
-        break;
-      default:
-        previous.tasks = [...previous.tasks, ...edge.tasks];
-    }
   }
 
   private agent(agent: AgentId): ReportingNode {

@@ -120,21 +120,6 @@ export class BrowserMediaQueries {
     return new BrowserMediaQuery(query);
   }
 }
-// JSDOM has no layout-driven resize notifications. Track native observer
-// lifecycles while leaving SvelteFlow rendering and selection handlers real.
-export class BrowserResizeObserver implements ResizeObserver {
-  private readonly targets = new Set<Element>();
-  observe(target: Element): void {
-    this.targets.add(target);
-  }
-  unobserve(target: Element): void {
-    this.targets.delete(target);
-  }
-  disconnect(): void {
-    this.targets.clear();
-  }
-}
-
 // JSDOM returns no client rectangles even for rendered controls. Supply only
 // visibility geometry for Bits/tabbable; leave native focus and events intact.
 export function renderedClientRects(this: Element): DOMRectList {

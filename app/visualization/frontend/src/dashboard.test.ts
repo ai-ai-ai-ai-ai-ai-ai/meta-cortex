@@ -9,17 +9,14 @@ import {
 import userEvent from "@testing-library/user-event";
 import { Deferred, Effect } from "effect";
 import App from "./App.svelte";
-import Workflow from "./Workflow.svelte";
 import RecordedTask from "./RecordedTask.svelte";
 import { Progress } from "$lib/components/ui/progress";
-import { FlowPresentation } from "./workflow";
 import { TaskPresentation } from "./task-presentation";
 import { summarizeCounts } from "./progress-presentation";
 import type { AgentId, DesktopFailure, DesktopReply, Event } from "./contracts";
 import {
   Fixture,
   BrowserMediaQueries,
-  BrowserResizeObserver,
   renderedClientRects,
 } from "./dashboard-fixture";
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -27,7 +24,6 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 beforeEach(() => {
   const media = new BrowserMediaQueries();
   vi.stubGlobal("matchMedia", media.matchMedia.bind(media));
-  vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
   vi.spyOn(Element.prototype, "getClientRects").mockImplementation(
     renderedClientRects,
   );
@@ -38,39 +34,55 @@ afterEach(() => {
   native.invoke.mockReset();
   vi.unstubAllGlobals();
 });
-it("keeps native feature totals and graph integration provenance separate from loaded activity", () => {
+it("keeps native feature totals and Git integration evidence separate from loaded activity", () => {
   const fixture = new Fixture();
-  const graph = new FlowPresentation(fixture.flow);
   expect(summarizeCounts(fixture.flow.counts).total).toBe(101);
-  expect(graph.agents().nodes.map((node) => node.data.title)).toEqual([
-    "Gizmo / Gizmo",
-    "Development / TypescriptDev",
+  expect(TaskPresentation.counts(fixture.flow.tasks.records)).toEqual([
+    { state: "integrated", count: 1 },
   ]);
-  expect(graph.git().edges[0]?.label).toBe("integrated bbbbbbbb");
-  expect(graph.git().nodes[0]?.data.title).toBe("codex/feature");
+  expect(fixture.contribution.integrations[0]?.commit).toBe("b".repeat(40));
+  expect(fixture.contribution.integrations[0]?.actor).toEqual({
+    team: "Delivery",
+    role: "IntegrationAgent",
+  });
+  expect(TaskPresentation.describe(fixture.task).checkpoint).toBe(
+    "a".repeat(40),
+  );
+  expect(TaskPresentation.describe(fixture.task).integration).toBe(
+    "b".repeat(40),
+  );
   fixture.contribution.integrations = [];
   fixture.contribution.worker = { kind: "unrecorded" };
   fixture.task.ownership = { kind: "Unrecorded" };
-  expect(graph.git().edges).toHaveLength(0);
-  expect(graph.agents().edges[0]?.label).toBe(
-    "created by · reporting unrecorded",
-  );
+  expect(fixture.contribution.integrations).toHaveLength(0);
+  expect(TaskPresentation.describe(fixture.task).actor).toBe("Unrecorded");
 });
-it("shows full-feature quantities independently of loaded descendant progress", () => {
+it("shows full-feature quantities independently of loaded descendant progress", async () => {
   const fixture = new Fixture();
   fixture.flow.counts = [
     { state: "integrated", count: 3 },
     { state: "working", count: 1 },
     { state: "queued", count: 1 },
   ];
-  render(Workflow, { flow: fixture.flow, select: vi.fn(), history: vi.fn() });
-  const meters = screen.getAllByRole("progressbar", {
-    name: "Finished activities",
+  native.invoke
+    .mockResolvedValue(fixture.featuresReply())
+    .mockResolvedValueOnce(fixture.workflowReply());
+  render(App);
+  await screen.findByRole("table", {
+    name: "Recorded reporting and activities",
   });
-  expect(meters[0]?.getAttribute("aria-valuenow")).toBe("3");
-  expect(meters[0]?.getAttribute("aria-valuemax")).toBe("5");
-  expect(meters[1]?.getAttribute("aria-valuemax")).toBe("1");
-  expect(screen.getByText("3 finished / 5 activities")).toBeTruthy();
+  const feature = screen.getByRole("progressbar", { name: "Feature progress" });
+  expect(feature.getAttribute("aria-valuenow")).toBe("3");
+  expect(feature.getAttribute("aria-valuemax")).toBe("5");
+  const team = screen.getByRole("row", { name: /Team Gizmo/ });
+  expect(within(team).getByText("1/1 finished")).toBeTruthy();
+  expect(within(team).getByText("No activity on this page")).toBeTruthy();
+  expect(screen.getByText(/3\/5 finished/)).toBeTruthy();
+  expect(
+    screen.getByRole("columnheader", {
+      name: "Descendant activities · loaded page",
+    }),
+  ).toBeTruthy();
 });
 it("preserves stock Progress raw completion values", () => {
   render(Progress, {
@@ -102,7 +114,7 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
   const activity = await screen.findByRole("button", {
-    name: "Build workflow",
+    name: "Open task implement",
   });
   await userEvent.click(activity);
   const sheet = await screen.findByRole("dialog", { name: "implement" });
@@ -110,14 +122,25 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
     expect(sheet.contains(document.activeElement)).toBe(true),
   );
   expect(within(sheet).getByText("Graph completed")).toBeTruthy();
+  const fields = within(sheet).getByRole("table", { name: "Task fields" });
   expect(
-    within(sheet).getAllByText("Development / TypescriptDev"),
-  ).toHaveLength(2);
+    within(fields).getByRole("row", {
+      name: "Worker Development / TypescriptDev",
+    }),
+  ).toBeTruthy();
+  expect(
+    within(fields).getByRole("row", {
+      name: "Assignment Development / TypescriptDev",
+    }),
+  ).toBeTruthy();
   expect(within(sheet).getByText("Team Gizmo")).toBeTruthy();
-  expect(within(sheet).getByText("codex/worker")).toBeTruthy();
-  expect(within(sheet).getByText("/fixture")).toBeTruthy();
-  expect(within(sheet).getByText("a".repeat(40))).toBeTruthy();
-  expect(within(sheet).getByText("b".repeat(40))).toBeTruthy();
+  const workspace = within(sheet).getByRole("row", {
+    name: /Workspace detail/,
+  });
+  expect(workspace.textContent).toContain("codex/worker");
+  expect(workspace.textContent).toContain("/fixture");
+  expect(within(fields).getByText("a".repeat(40))).toBeTruthy();
+  expect(within(fields).getByText("b".repeat(40))).toBeTruthy();
   await userEvent.click(
     within(sheet).getByRole("button", { name: "Findings (1)" }),
   );
@@ -202,7 +225,7 @@ it("keeps cross-task history identity consistent through loading, failure and re
     .mockResolvedValueOnce(first.workflowReply());
   render(App);
   const activity = await screen.findByRole("button", {
-    name: "Build workflow",
+    name: "Open task implement",
   });
   await waitFor(() =>
     expect(getComputedStyle(activity).pointerEvents).not.toBe("none"),
@@ -214,24 +237,32 @@ it("keeps cross-task history identity consistent through loading, failure and re
   );
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
-  const historyTab = screen.getByRole("tab", { name: "history" });
+  const expandWorker = screen.getByRole("button", {
+    name: "Expand TypescriptDev",
+  });
   await waitFor(() =>
-    expect(getComputedStyle(historyTab).pointerEvents).not.toBe("none"),
+    expect(getComputedStyle(expandWorker).pointerEvents).not.toBe("none"),
   );
-  await userEvent.click(historyTab);
+  await userEvent.click(expandWorker);
+  await userEvent.click(
+    screen.getByRole("button", { name: "Open task review" }),
+  );
+  const secondSheet = await screen.findByRole("dialog", { name: "review" });
+  await waitFor(() =>
+    expect(secondSheet.contains(document.activeElement)).toBe(true),
+  );
+  await userEvent.click(
+    within(secondSheet).getByRole("tab", { name: "History" }),
+  );
   const historyRead = Deferred.makeUnsafe<DesktopReply, DesktopFailure>();
   native.invoke.mockReturnValueOnce(
     Effect.runPromise(Deferred.await(historyRead)),
   );
   await userEvent.click(
-    screen.getByRole("button", {
-      name: /integrated · review · IntegrationAgent/,
-    }),
+    within(secondSheet).getByRole("button", { name: "Open full history" }),
   );
   const loadingSheet = await screen.findByRole("dialog", { name: "review" });
-  expect(
-    within(loadingSheet).getByText("Reading recorded history…"),
-  ).toBeTruthy();
+  expect(within(loadingSheet).getByText("Reading recorded work…")).toBeTruthy();
   expect(screen.queryByRole("dialog", { name: "implement" })).toBeNull();
   expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
     request: {
@@ -254,9 +285,7 @@ it("keeps cross-task history identity consistent through loading, failure and re
   await userEvent.click(
     within(loadingSheet).getByRole("button", { name: "Retry" }),
   );
-  expect(
-    within(loadingSheet).getByText("Reading recorded history…"),
-  ).toBeTruthy();
+  expect(within(loadingSheet).getByText("Reading recorded work…")).toBeTruthy();
   const event: Event = {
     version: 1,
     kind: "integrated",
@@ -291,6 +320,24 @@ it("keeps cross-task history identity consistent through loading, failure and re
   expect(raw.textContent).toContain("b".repeat(40));
   expect(screen.getByRole("dialog", { name: "review" })).toBe(loadingSheet);
   expect(screen.queryByRole("dialog", { name: "implement" })).toBeNull();
+  await userEvent.click(
+    within(loadingSheet).getByRole("button", { name: "View task snapshot" }),
+  );
+  expect(screen.getByRole("dialog", { name: "review" })).toBe(loadingSheet);
+  expect(within(loadingSheet).getByText("Review workflow")).toBeTruthy();
+  const snapshot = within(loadingSheet).getByRole("table", {
+    name: "Task fields",
+  });
+  expect(within(snapshot).queryByRole("row", { name: /^Worker/ })).toBeNull();
+  expect(
+    within(snapshot).getByRole("row", {
+      name: "Assignment Development / TypescriptDev",
+    }),
+  ).toBeTruthy();
+  await userEvent.click(within(loadingSheet).getByRole("tab", { name: "Raw" }));
+  const snapshotRaw = within(loadingSheet).getByText(/review-history/);
+  expect(snapshotRaw.textContent).toContain('"id": "review"');
+  expect(snapshotRaw.textContent).not.toContain('"worker"');
 });
 it("renders Completed read-only evidence and queued feature assignments without fabricated Git", () => {
   const fixture = new Fixture();
@@ -312,11 +359,29 @@ it("renders Completed read-only evidence and queued feature assignments without 
     history: vi.fn(),
   });
   expect(screen.getByText("Completed")).toBeTruthy();
-  expect(screen.getByText("Read only")).toBeTruthy();
+  expect(
+    within(screen.getByRole("row", { name: "Workspace Read only" })).getByText(
+      "Read only",
+    ),
+  ).toBeTruthy();
   expect(screen.getByText("Host")).toBeTruthy();
-  expect(screen.queryAllByText("Checkpoint")).toHaveLength(0);
-  expect(screen.queryAllByText("Integration")).toHaveLength(0);
-  expect(new FlowPresentation(fixture.flow).git().edges).toHaveLength(0);
+  expect(
+    within(
+      screen.getByRole("row", { name: "Checkpoint Unrecorded" }),
+    ).getByText("Unrecorded"),
+  ).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole("row", { name: "Integration Unrecorded" }),
+    ).getByText("Unrecorded"),
+  ).toBeTruthy();
+  expect(screen.queryByText("a".repeat(40))).toBeNull();
+  expect(screen.queryByText("b".repeat(40))).toBeNull();
+  expect(fixture.contribution.integrations).toHaveLength(0);
+  expect(TaskPresentation.describe(fixture.task).checkpoint).toBe("Unrecorded");
+  expect(TaskPresentation.describe(fixture.task).integration).toBe(
+    "Unrecorded",
+  );
   cleanup();
   const queuedAgent: AgentId = {
     team: "Development",
@@ -338,12 +403,17 @@ it("renders Completed read-only evidence and queued feature assignments without 
     history: vi.fn(),
   });
   expect(screen.getByText("Queued")).toBeTruthy();
-  expect(screen.getByText("Shared feature workspace")).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole("row", { name: "Workspace Shared feature workspace" }),
+    ).getByText("Shared feature workspace"),
+  ).toBeTruthy();
   expect(screen.getByText("Gizmo Prime")).toBeTruthy();
   expect(screen.getAllByText("Development / TypescriptVerifier")).toHaveLength(
     2,
   );
-  expect(new FlowPresentation(fixture.flow).git().nodes).toHaveLength(1);
+  expect(fixture.contribution.checkpoints).toHaveLength(0);
+  expect(fixture.contribution.integrations).toHaveLength(0);
 });
 it("retains migrated native history worker while payload-only assignment stays unrecorded", async () => {
   const fixture = new Fixture();
@@ -375,17 +445,24 @@ it("retains migrated native history worker while payload-only assignment stays u
     flow: fixture.contribution,
     history: vi.fn(),
   });
-  expect(screen.getByText("Worker").nextElementSibling?.textContent).toBe(
-    "Development / RustDev",
-  );
-  expect(screen.getByText("Assignment").nextElementSibling?.textContent).toBe(
-    "Unrecorded",
-  );
-  expect(screen.getByText("Reports to").nextElementSibling?.textContent).toBe(
-    "Unrecorded",
-  );
-  expect(screen.getByText("a".repeat(40))).toBeTruthy();
-  expect(screen.getByText("b".repeat(40))).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole("row", { name: "Worker Development / RustDev" }),
+    ).getByText("Development / RustDev"),
+  ).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole("row", { name: "Assignment Unrecorded" }),
+    ).getByText("Unrecorded"),
+  ).toBeTruthy();
+  expect(
+    within(
+      screen.getByRole("row", { name: "Reports to Unrecorded" }),
+    ).getByText("Unrecorded"),
+  ).toBeTruthy();
+  const fields = screen.getByRole("table", { name: "Task fields" });
+  expect(within(fields).getByText("a".repeat(40))).toBeTruthy();
+  expect(within(fields).getByText("b".repeat(40))).toBeTruthy();
   await userEvent.click(screen.getByRole("tab", { name: "History" }));
   expect(screen.getByText(/claimed · Development \/ RustDev/)).toBeTruthy();
   expect(
@@ -399,9 +476,11 @@ it("retains migrated native history worker while payload-only assignment stays u
   render(RecordedTask, { task: fixture.task, history: vi.fn() });
   expect(TaskPresentation.describe(fixture.task).actor).toBe("Unrecorded");
   expect(screen.queryAllByText("Worker")).toHaveLength(0);
-  expect(screen.getByText("Assignment").nextElementSibling?.textContent).toBe(
-    "Unrecorded",
-  );
+  expect(
+    within(
+      screen.getByRole("row", { name: "Assignment Unrecorded" }),
+    ).getByText("Unrecorded"),
+  ).toBeTruthy();
 });
 it("retries failed native reads and keeps feature paging/manual refresh on native requests", async () => {
   const fixture = new Fixture();
@@ -433,28 +512,29 @@ it("retries failed native reads and keeps feature paging/manual refresh on nativ
     request: { kind: "Features", page: 1 },
   });
 });
-it("uses stock Collapsible and Tabs keyboard interactions and stock Sheet dismissal", async () => {
+it("uses library DataTable keyboard expansion and stock Sheet dismissal with focus restoration", async () => {
   const fixture = new Fixture();
   native.invoke
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
-  const team = await screen.findByRole("button", { name: "Team Gizmo" });
+  const team = await screen.findByRole("button", {
+    name: "Collapse Team Gizmo",
+  });
   team.focus();
   await userEvent.keyboard("{Enter}");
   expect(team.getAttribute("aria-expanded")).toBe("false");
+  expect(
+    screen.queryByRole("button", { name: "Open task implement" }),
+  ).toBeNull();
   await userEvent.keyboard(" ");
   expect(team.getAttribute("aria-expanded")).toBe("true");
-  const history = screen.getByRole("tab", { name: "history" });
-  await userEvent.click(history);
-  await userEvent.keyboard("{Home}");
-  expect(
-    screen.getByRole("tab", { name: "tree" }).getAttribute("aria-selected"),
-  ).toBe("true");
-  await userEvent.keyboard("{End}");
-  expect(history.getAttribute("aria-selected")).toBe("true");
-  await userEvent.click(screen.getByRole("tab", { name: "tree" }));
-  const activity = screen.getByRole("button", { name: "Build workflow" });
+  const worker = screen.getByRole("button", { name: "Expand TypescriptDev" });
+  await userEvent.click(worker);
+  const row = screen.getByRole("row", { name: /Build workflow/ });
+  const activity = within(row).getByRole("button", {
+    name: "Open task implement",
+  });
   await userEvent.click(activity);
   const sheet = await screen.findByRole("dialog", { name: "implement" });
   await waitFor(() =>
@@ -462,5 +542,5 @@ it("uses stock Collapsible and Tabs keyboard interactions and stock Sheet dismis
   );
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
-  expect(document.activeElement).toBe(activity);
+  await waitFor(() => expect(document.activeElement).toBe(activity));
 });
