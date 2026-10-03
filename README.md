@@ -193,7 +193,14 @@ operation:
 meta-cortex run --request info.yaml
 ```
 
-Use a file for an interactive Workbench request so keyboard input stays available:
+Open the native Workbench dashboard from your repository root or a subdirectory:
+
+```powershell
+meta-cortex dashboard
+```
+
+No request file or required arguments are needed. For a targeted native view,
+use an explicit project with `mode: Desktop`:
 
 ```powershell
 @'
@@ -204,18 +211,16 @@ operation:
   command:
     name: Dashboard
     arguments:
-      mode: Interactive
+      mode: Desktop
       view: {kind: Features}
       page: 0
 '@ | Set-Content -Encoding utf8 dashboard.yaml
 meta-cortex run --request dashboard.yaml
 ```
 
-**Prohibited:** pipe an Interactive Dashboard request into stdin; that consumes
-its keyboard input.
-
-**Required:** use `dashboard.yaml` in a terminal, or change `mode` to `Snapshot`
-for redirected output. Workbench observation requires an existing repository
+Use `mode: Snapshot` for headless text output. After changing the request's mode,
+run `meta-cortex run --request dashboard.yaml > dashboard-output.yaml` to save it.
+Workbench observation requires an existing repository
 identity and ledger; initialization of the framework alone does not create a ledger.
 
 ### Harness instruction files
