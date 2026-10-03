@@ -80,14 +80,43 @@ try {
   $retained += $databases[0].FullName
   $hashes = @{}
   foreach ($path in $retained) { $hashes[$path] = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash }
+  $upgradeFrom = $manifest.version
+  if ([version]$manifest.version -gt [version]'0.12.2') {
+    # Install the real published baseline from its reviewed bucket manifest,
+    # then restore the tracking branch before Scoop's ordinary update.
+    $bucket = Join-Path $env:SCOOP 'buckets\meta-cortex'
+    $bucketBranch = git -C $bucket symbolic-ref --short HEAD
+    Invoke-Scoop uninstall meta-cortex
+    git -C $bucket fetch https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex d9fc52eab4de7dee15fd421a6c45029cc0b655b1
+    git -C $bucket switch --detach FETCH_HEAD
+    $previousManifest = Get-Content (Join-Path $bucket 'bucket\meta-cortex.json') -Raw | ConvertFrom-Json
+    if ($previousManifest.version -ne '0.12.2') { throw 'Upgrade baseline manifest reports the wrong version' }
+    Copy-Item (Join-Path $bucket 'bucket\meta-cortex.json') (Join-Path $evidence 'scoop-upgrade-from.json')
+    Invoke-Scoop install meta-cortex/meta-cortex
+    $previousVersion = & $shim --version
+    if ($LASTEXITCODE -ne 0 -or $previousVersion -ne 'meta-cortex 0.12.2') { throw 'Upgrade baseline executable reports the wrong version' }
+    $upgradeFrom = $previousManifest.version
+    git -C $bucket switch $bucketBranch
+  }
   Invoke-Scoop update
   # Scoop refreshes buckets in parallel; also require Git's actual pull result.
   git -C "$env:SCOOP\buckets\meta-cortex" pull --ff-only
   $refreshedHead = git -C "$env:SCOOP\buckets\meta-cortex" rev-parse HEAD
   if ($LASTEXITCODE -ne 0 -or $refreshedHead -ne $env:GITHUB_SHA) { throw 'Bucket refresh changed the tested source' }
-  Invoke-Scoop update meta-cortex --force
+  if ($upgradeFrom -eq $manifest.version) {
+    $upgradeEvidence = "Same-version reinstall $upgradeFrom; an older-version upgrade is not demonstrated."
+    Invoke-Scoop update meta-cortex --force
+  } else {
+    $upgradeEvidence = "Published package upgrade $upgradeFrom -> $($manifest.version)."
+    Invoke-Scoop update meta-cortex
+  }
   $updatedVersion = & $shim --version
   if ($LASTEXITCODE -ne 0 -or $updatedVersion -ne "meta-cortex $($manifest.version)") { throw 'Updated Scoop shim reports the wrong executable version' }
+  $updatedListing = Invoke-Scoop list meta-cortex
+  if ($LASTEXITCODE -ne 0 -or @($updatedListing | Where-Object { $_ -match $installedRow }).Count -ne 1) { throw 'Updated Scoop listing did not report the expected package version and bucket' }
+  @($upgradeEvidence; $updatedListing) | Set-Content (Join-Path $evidence 'scoop-upgrade.txt') -Encoding utf8
+  Write-Host $upgradeEvidence
+  Write-Host ($updatedListing -join "`n")
   Invoke-Scoop uninstall meta-cortex
   if (Test-Path -LiteralPath "$env:SCOOP\apps\meta-cortex") { throw 'Uninstall retained the package registration' }
   if (Get-ChildItem "$env:SCOOP\shims" -Filter 'meta-cortex*') { throw 'Uninstall retained a package shim' }
