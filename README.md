@@ -499,12 +499,12 @@ Features window. Use the window’s navigation to inspect tasks, recorded detail
 and history. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-The desktop dashboard opens an expandable execution tree with compact agent
-summaries, status badges, checkpoint commits, and integration progress. Select
-an agent or task to open its closable detail panel; narrow windows use a drawer.
-Graph, Git, and History views offer recorded relationships, dependencies,
-integrations, and recent activity. Full-feature totals summarize task states;
-tree rows and contribution panels cover the selected task page. For tasks with
+The desktop dashboard shows one expandable reporting/activity table with own
+status, own and descendant activity counts, workspace branches, and checkpoints.
+Select a role's activity or task to open one closable details Sheet. Its recorded
+task sections expose checks, dependencies, checkpoint and integration history,
+and full raw records. Full-feature totals summarize task states and completion
+progress; table rows cover the selected task page. For tasks with
 `Assigned` ownership, the hierarchy follows the assigned role's recorded
 `reports_to` target. Each coordinator's own activities are separate from
 descendant workflow progress. Rows represent roles, not host sessions.
@@ -514,7 +514,8 @@ Historical tasks with `Unrecorded` ownership appear separately under `Created by
 with their recorded creator and available worker evidence from task history;
 their reporting line stays unrecorded. Task dependencies remain separate from
 reporting relationships.
-Framework lifecycle responsibilities are shown separately from ledger evidence.
+Use Refresh to reload recorded data and Previous/Next to page native observations;
+these reads do not update the ledger.
 Each task projection includes its latest 100 events; task history can page through
 older attempts and checkpoints. Runtime parent session links and Git authorship
 remain unrecorded when absent from Turso. Detailed task records and event snapshots
