@@ -8,19 +8,13 @@ import {
 } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import App from "./App.svelte";
-import { TaskPresentation } from "./task-presentation";
 import type {
   AgentId,
   ReportingTarget,
   TaskFlow,
   FeatureFlow,
 } from "./contracts";
-import {
-  ActivityKind,
-  ReportingHierarchy,
-  ReportingRowKind,
-  reportingRows,
-} from "./agent-tree";
+import { ReportingTable } from "./agent-tree";
 import {
   Fixture,
   BrowserMediaQueries,
@@ -66,7 +60,7 @@ class HierarchyFixture {
     return fixture.contribution;
   }
 }
-it("uses only recorded coordinator ancestry and separates own completed activity from descendants", () => {
+it("retains recorded ancestry and separates own activity from descendants", () => {
   const fixture = new HierarchyFixture();
   const definitions: ReadonlyArray<HierarchyActivity> = [
     {
@@ -90,189 +84,115 @@ it("uses only recorded coordinator ancestry and separates own completed activity
       target: { kind: "Gizmo", coordinator: "Gizmo" },
     },
   ];
-  const tasks: ReadonlyArray<TaskFlow> = definitions.map((definition) =>
-    fixture.activity(definition),
-  );
-  const hierarchy = new ReportingHierarchy(tasks);
-  expect(hierarchy.roots().map((node) => node.name())).toEqual(["Host"]);
-  const host = hierarchy.roots()[0];
-  expect(host?.activity.kind).toBe(ActivityKind.Absent);
-  expect(host?.ownTasks()).toHaveLength(0);
-  expect(host?.descendantCounts().map((count) => count.count)).toEqual([4]);
-  const team = hierarchy.nodes().find((node) => node.name() === "Team Gizmo");
-  expect(team?.ownTasks()).toHaveLength(1);
-  expect(team?.descendantCounts().map((count) => count.count)).toEqual([2]);
-  expect(team?.subtreeCounts().map((count) => count.count)).toEqual([3]);
-  const worker = hierarchy
-    .nodes()
-    .find((node) => node.name() === "TypescriptDev");
-  expect(worker?.ownTasks()).toHaveLength(2);
-  expect(worker?.descendantCounts()).toHaveLength(0);
+  // Parent activities may arrive after their children in the ledger page.
+  const tasks = definitions.map((input) => fixture.activity(input)).reverse();
+  const root = new ReportingTable(tasks).root;
+  expect(root.children?.map((node) => node.data.label)).toEqual(["Host"]);
+  const host = root.find((node) => node.data.label === "Host");
+  expect(host?.data).toMatchObject({
+    activities: [],
+    status: "No activity on this page",
+    descendantCounts: "4/4 finished",
+  });
+  const team = root.find((node) => node.data.label === "Team Gizmo");
+  expect(team?.ancestors().map((node) => node.data.label)).toEqual([
+    "Team Gizmo",
+    "Gizmo Prime",
+    "Host",
+    "",
+  ]);
+  expect(team?.data).toMatchObject({
+    ownCounts: "1/1 finished",
+    descendantCounts: "2/2 finished",
+  });
+  const worker = root.find((node) => node.data.label === "TypescriptDev");
+  expect(worker?.data).toMatchObject({
+    ownCounts: "2/2 finished",
+    descendantCounts: "",
+  });
+  expect(
+    worker
+      ?.leaves()
+      .map((node) => node.data.label)
+      .sort(),
+  ).toEqual(["worker-one", "worker-two"]);
 });
-it("does not infer Prime or Host above a missing loaded Team activity", () => {
+it("does not infer Prime or Host above an absent loaded Team activity", () => {
   const fixture = new Fixture();
-  const tasks: ReadonlyArray<TaskFlow> = [fixture.contribution];
-  const hierarchy = new ReportingHierarchy(tasks);
-  expect(hierarchy.roots().map((node) => node.name())).toEqual(["Team Gizmo"]);
-  expect(hierarchy.roots()[0]?.activity.kind).toBe(ActivityKind.Absent);
-  expect(hierarchy.nodes()).toHaveLength(2);
-  const rows = reportingRows(tasks);
-  const parent = rows[0];
-  expect(parent?.kind).toBe(ReportingRowKind.Reporting);
-  switch (parent?.kind) {
-    case ReportingRowKind.Reporting: {
-      expect(parent.node.activity.kind).toBe(ActivityKind.Absent);
-      expect(parent.node.ownTasks()).toHaveLength(0);
-      const worker = parent.subRows[0];
-      expect(worker?.kind).toBe(ReportingRowKind.Reporting);
-      switch (worker?.kind) {
-        case ReportingRowKind.Reporting:
-          expect(worker.node.ownTasks()).toEqual(tasks);
-          expect(worker.subRows[0]).toMatchObject({
-            kind: ReportingRowKind.Task,
-            task: fixture.contribution,
-          });
-          break;
-        case ReportingRowKind.Creator:
-        case ReportingRowKind.Worker:
-        case ReportingRowKind.Task:
-        case undefined:
-          throw Error("Expected recorded worker row");
-      }
-      break;
-    }
-    case ReportingRowKind.Creator:
-    case ReportingRowKind.Worker:
-    case ReportingRowKind.Task:
-    case undefined:
-      throw Error("Expected missing reporting target anchor");
-  }
+  const root = new ReportingTable([fixture.contribution]).root;
+  expect(root.children?.map((node) => node.data.label)).toEqual(["Team Gizmo"]);
+  expect(root.children?.[0]?.data).toMatchObject({
+    activities: [],
+    status: "No activity on this page",
+    ownCounts: "",
+  });
+  expect(root.leaves().map((node) => node.data.activities)).toEqual([
+    [fixture.contribution],
+  ]);
 });
-it("counts repeated valid activities once and represents older Working before newer Completed", () => {
+it("selects unfinished work before newer completed activity without changing ledger order", () => {
   const fixture = new HierarchyFixture();
-  const definitions: ReadonlyArray<HierarchyActivity> = [
-    {
-      id: "team",
-      agent: { team: "Gizmo", role: "Gizmo" },
-      target: { kind: "Gizmo", coordinator: "GizmoPrime" },
+  const agent: AgentId = { team: "Development", role: "TypescriptDev" };
+  const working = fixture.activity({
+    id: "working",
+    agent,
+    target: { kind: "Gizmo", coordinator: "Gizmo" },
+  });
+  working.task.state = {
+    kind: "active",
+    assignment: {
+      agent,
+      attempt: 1,
+      expires_at: 3000,
+      phase: { kind: "working" },
     },
-    {
-      id: "worker-one",
-      agent: { team: "Development", role: "TypescriptDev" },
-      target: { kind: "Gizmo", coordinator: "Gizmo" },
-    },
-    {
-      id: "worker-two",
-      agent: { team: "Development", role: "TypescriptDev" },
-      target: { kind: "Gizmo", coordinator: "Gizmo" },
-    },
-    {
-      id: "worker-three",
-      agent: { team: "Development", role: "TypescriptDev" },
-      target: { kind: "Gizmo", coordinator: "Gizmo" },
-    },
-  ];
-  const tasks: ReadonlyArray<TaskFlow> = definitions.map((definition) =>
-    fixture.activity(definition),
-  );
-  const hierarchy = new ReportingHierarchy(tasks);
-  expect(hierarchy.nodes()).toHaveLength(3);
-  expect(hierarchy.roots()[0]?.children).toHaveLength(1);
-  const team = hierarchy.nodes().find((node) => node.name() === "Team Gizmo");
-  const worker = hierarchy
-    .nodes()
-    .find((node) => node.name() === "TypescriptDev");
-  expect(worker?.ownTasks()).toHaveLength(3);
-  expect(worker?.subtreeCounts().map((count) => count.count)).toEqual([3]);
-  expect(team?.ownTasks()).toHaveLength(1);
-  expect(team?.descendantCounts().map((count) => count.count)).toEqual([3]);
-  expect(team?.subtreeCounts().map((count) => count.count)).toEqual([4]);
-  expect(
-    hierarchy
-      .roots()[0]
-      ?.descendantCounts()
-      .map((count) => count.count),
-  ).toEqual([4]);
-  expect(team?.children).toEqual([worker]);
-  expect(
-    hierarchy
-      .nodes()
-      .flatMap((node) => node.ownTasks())
-      .map((task) => task.task.common.id),
-  ).toEqual(definitions.map((definition) => definition.id));
-  switch (worker?.activity.kind) {
-    case ActivityKind.Recorded: {
-      const group = worker.activity.group;
-      const working = group.tasks[0];
-      const agent: AgentId = { team: "Development", role: "TypescriptDev" };
-      working.task.state = {
-        kind: "active",
-        assignment: {
-          agent,
-          attempt: 1,
-          expires_at: 3000,
-          phase: { kind: "working" },
-        },
-      };
-      working.task.common.last_update = 1000;
-      expect(TaskPresentation.describe(group.latest().task).status).toBe(
-        "working",
-      );
-      expect(group.latest()).toBe(working);
-      expect(group.latest().task.common.id).toBe("worker-one");
-      expect(group.tasks).toHaveLength(3);
-      break;
-    }
-    case ActivityKind.Absent:
-    case undefined:
-      break;
-  }
+  };
+  working.task.common.last_update = 1000;
+  const completed = fixture.activity({
+    id: "done",
+    agent,
+    target: { kind: "Gizmo", coordinator: "Gizmo" },
+  });
+  completed.task.common.last_update = 2000;
+  const tasks = [completed, working];
+  const root = new ReportingTable(tasks).root;
+  const worker = root.find((node) => node.data.label === "TypescriptDev");
+  expect(worker?.data).toMatchObject({
+    status: "In progress",
+    ownCounts: "1/2 finished",
+  });
+  expect(worker?.data.activities[0]).toBe(working);
+  expect(worker?.leaves().map((node) => node.data.label)).toEqual([
+    "done",
+    "working",
+  ]);
+  expect(root.children?.[0]?.data.descendantCounts).toBe("1/2 finished");
+  expect(tasks).toEqual([completed, working]);
 });
-it("keeps migrated creator and history worker evidence outside recorded reporting ancestry", () => {
-  const fixture = new Fixture();
-  fixture.task.ownership = { kind: "Unrecorded" };
-  const tasks: ReadonlyArray<TaskFlow> = [fixture.contribution];
-  const hierarchy = new ReportingHierarchy(tasks);
-  expect(hierarchy.nodes()).toHaveLength(0);
-  expect(hierarchy.roots()).toHaveLength(0);
-  expect(hierarchy.historical()[0]?.actor).toEqual(
-    fixture.contribution.created_by,
-  );
-  expect(
-    hierarchy.historical()[0]?.workers.get("Development:TypescriptDev")
-      ?.tasks[0]?.worker,
-  ).toEqual(fixture.contribution.worker);
-  const creator = reportingRows(tasks)[0];
-  expect(creator?.kind).toBe(ReportingRowKind.Creator);
-  switch (creator?.kind) {
-    case ReportingRowKind.Creator: {
-      expect(creator.label).toBe(
-        "Created by · Team Gizmo · reporting unrecorded",
-      );
-      const worker = creator.subRows[0];
-      expect(worker?.kind).toBe(ReportingRowKind.Worker);
-      switch (worker?.kind) {
-        case ReportingRowKind.Worker:
-          expect(worker.group.tasks).toEqual(tasks);
-          expect(worker.subRows[0]).toMatchObject({
-            kind: ReportingRowKind.Task,
-            task: fixture.contribution,
-          });
-          break;
-        case ReportingRowKind.Reporting:
-        case ReportingRowKind.Creator:
-        case ReportingRowKind.Task:
-        case undefined:
-          throw Error("Expected history worker fallback");
-      }
-      break;
-    }
-    case ReportingRowKind.Reporting:
-    case ReportingRowKind.Worker:
-    case ReportingRowKind.Task:
-    case undefined:
-      throw Error("Expected historical creator row");
-  }
+it("keeps historical creator/worker evidence outside recorded reporting ancestry", () => {
+  const recorded = new Fixture();
+  const historical = new Fixture();
+  historical.task.common.id = "historical";
+  historical.task.ownership = { kind: "Unrecorded" };
+  const root = new ReportingTable([
+    recorded.contribution,
+    historical.contribution,
+  ]).root;
+  expect(root.children?.map((node) => node.data.label)).toEqual([
+    "Team Gizmo",
+    "Created by · Team Gizmo · reporting unrecorded",
+  ]);
+  const historic = root.find((node) => node.data.label === "historical");
+  expect(historic?.data.activities).toEqual([historical.contribution]);
+  expect(historic?.ancestors().map((node) => node.data.label)).toEqual([
+    "historical",
+    "TypescriptDev",
+    "Created by · Team Gizmo · reporting unrecorded",
+    "",
+  ]);
+  expect(historic?.data.activities[0]?.task.ownership).toEqual({
+    kind: "Unrecorded",
+  });
 });
 
 class CoordinatorFixture extends HierarchyFixture {

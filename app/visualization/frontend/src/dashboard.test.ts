@@ -12,7 +12,7 @@ import App from "./App.svelte";
 import RecordedTask from "./RecordedTask.svelte";
 import { Progress } from "$lib/components/ui/progress";
 import { TaskPresentation } from "./task-presentation";
-import { summarizeCounts } from "./progress-presentation";
+import { ProgressSummary } from "./progress-presentation";
 import type { AgentId, DesktopFailure, DesktopReply, Event } from "./contracts";
 import {
   Fixture,
@@ -36,7 +36,7 @@ afterEach(() => {
 });
 it("keeps native feature totals and Git integration evidence separate from loaded activity", () => {
   const fixture = new Fixture();
-  expect(summarizeCounts(fixture.flow.counts).total).toBe(101);
+  expect(new ProgressSummary(fixture.flow.counts).total).toBe(101);
   expect(TaskPresentation.counts(fixture.flow.tasks.records)).toEqual([
     { state: "integrated", count: 1 },
   ]);

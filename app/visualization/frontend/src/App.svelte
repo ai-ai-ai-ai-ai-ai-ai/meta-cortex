@@ -7,23 +7,26 @@
   import { Button } from "$lib/components/ui/button";
   import { DashboardController, LoadKind } from "./dashboard-state.svelte";
   import { DashboardApi } from "./api";
-  import { SelectionKind, type TaskSelection } from "./agent-tree";
-  import type { TaskV2 } from "./contracts";
+  import type { TaskV2, TaskFlow } from "./contracts";
   import DataTable from "./DataTable.svelte";
-  import { reportingRows } from "./agent-tree";
+  import { ReportingTable } from "./agent-tree";
   import { Progress } from "$lib/components/ui/progress";
-  import { summarizeCounts } from "./progress-presentation";
+  import { ProgressSummary } from "./progress-presentation";
   import RecordedTask from "./RecordedTask.svelte";
   const dashboard = new DashboardController(new DashboardApi());
-  let selected = $state<TaskSelection | null>(null);
+  interface TaskRecord {
+    task: TaskV2;
+    flow?: TaskFlow;
+  }
+  let record = $state<TaskRecord | null>(null);
   let sheetOpen = $state(false);
   let showingHistory = $state(false);
   onMount(() => {
     dashboard.load({ kind: "Initial" });
     return () => dashboard.stop();
   });
-  function choose(selection: TaskSelection) {
-    selected = selection;
+  function choose(selection: TaskRecord) {
+    record = selection;
     showingHistory = false;
     sheetOpen = true;
   }
@@ -44,12 +47,7 @@
       case LoadKind.Ready:
         switch (dashboard.state.reply.content.kind) {
           case "Task":
-            selected = {
-              kind: SelectionKind.Task,
-              task: dashboard.state.reply.content.value,
-            };
-            showingHistory = false;
-            sheetOpen = true;
+            choose({ task: dashboard.state.reply.content.value });
             return;
           case "History":
             showingHistory = true;
@@ -67,16 +65,6 @@
       feature: event.currentTarget.value,
       page: 0,
     });
-  let record = $derived.by(() => {
-    switch (selected?.kind) {
-      case SelectionKind.Task:
-        return { task: selected.task, flow: undefined };
-      case SelectionKind.Activity:
-        return { task: selected.task.task, flow: selected.task };
-      case undefined:
-        return undefined;
-    }
-  });
   let pageEnd = $derived.by(() => {
     switch (dashboard.state.kind) {
       case LoadKind.Loading:
@@ -167,7 +155,7 @@
         </p>
       {:else if reply.content.kind === "Workflow"}
         {@const flow = reply.content.value}
-        {@const progress = summarizeCounts(flow.counts)}
+        {@const progress = new ProgressSummary(flow.counts)}
         <h2 class="text-xl font-semibold">{flow.feature.id}</h2>
         <p>{flow.feature.objective}</p>
         <p>
@@ -193,7 +181,10 @@
           unrecorded.
         </p>
         {#key dashboard.currentFeature()}
-          <DataTable rows={reportingRows(flow.tasks.records)} select={choose} />
+          <DataTable
+            root={new ReportingTable(flow.tasks.records).root}
+            select={(flow: TaskFlow) => choose({ task: flow.task, flow })}
+          />
         {/key}
       {:else if reply.content.kind === "Task" || reply.content.kind === "History"}
         <Button
@@ -244,8 +235,7 @@
                 </p>
                 <Button
                   variant="link"
-                  onclick={() =>
-                    choose({ kind: SelectionKind.Task, task: event.task })}
+                  onclick={() => choose({ task: event.task })}
                   >View task snapshot</Button
                 >
                 <pre class="whitespace-pre-wrap break-all">{JSON.stringify(

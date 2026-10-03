@@ -12,68 +12,62 @@
   import { ChevronDown, ChevronRight } from "@lucide/svelte";
   import * as Table from "$lib/components/ui/table";
   import { Button } from "$lib/components/ui/button";
-  import type { ReportingTableRow, TaskSelection } from "./agent-tree";
+  import type { ReportingTree } from "./agent-tree";
+  import type { TaskFlow } from "./contracts";
   interface DataTableProperties {
-    rows: ReportingTableRow[];
-    select: (selection: TaskSelection) => void;
+    root: ReportingTree;
+    select: (flow: TaskFlow) => void;
   }
-  let { rows, select }: DataTableProperties = $props();
+  let { root, select }: DataTableProperties = $props();
   const features = tableFeatures({
     rowExpandingFeature,
     expandedRowModel: createExpandedRowModel(),
   });
-  type TableRow = Row<typeof features, ReportingTableRow>;
+  type TableRow = Row<typeof features, ReportingTree>;
   function expansionLabel(row: TableRow): string {
     switch (row.getIsExpanded()) {
       case true:
-        return `Collapse ${row.original.label}`;
+        return `Collapse ${row.original.data.label}`;
       case false:
-        return `Expand ${row.original.label}`;
+        return `Expand ${row.original.data.label}`;
     }
   }
   function initialExpanded(): Record<string, boolean> {
-    const expanded: Record<string, boolean> = {};
-    const pending = [...rows];
-    for (const row of pending) {
-      switch (row.expandInitially) {
-        case true:
-          expanded[row.id] = true;
-          break;
-        case false:
-          break;
-      }
-      pending.push(...row.subRows);
-    }
-    return expanded;
+    return Object.fromEntries(
+      root
+        .descendants()
+        .filter((node) => node.data.expandInitially)
+        .map((node) => [node.data.id, true]),
+    );
   }
-  const helper = createColumnHelper<typeof features, ReportingTableRow>();
+  const helper = createColumnHelper<typeof features, ReportingTree>();
   const columns = helper.columns([
-    helper.accessor("label", {
+    helper.accessor("data.label", {
       header: "Reporting / activity",
       cell: ({ row }) => renderSnippet(identity, row),
     }),
-    helper.accessor("status", { header: "Own status" }),
-    helper.accessor("ownCounts", { header: "Own activities" }),
-    helper.accessor("descendantCounts", {
+    helper.accessor("data.status", { header: "Own status" }),
+    helper.accessor("data.ownCounts", { header: "Own activities" }),
+    helper.accessor("data.descendantCounts", {
       header: "Descendant activities · loaded page",
     }),
-    helper.accessor("workspace", { header: "Workspace / branch" }),
-    helper.accessor("checkpoint", { header: "Checkpoint" }),
+    helper.accessor("data.workspace", { header: "Workspace / branch" }),
+    helper.accessor("data.checkpoint", { header: "Checkpoint" }),
   ]);
   const table = createTable({
     features,
     get data() {
-      return rows;
+      return root.children ?? [];
     },
     columns,
     initialState: { expanded: initialExpanded() },
-    getRowId: (row) => row.id,
-    getSubRows: (row) => row.subRows,
+    getRowId: (row) => row.data.id,
+    getSubRows: (row) => row.children,
   });
 </script>
 
 {#snippet identity(row: TableRow)}
-  {@const selection = row.original.selection}
+  {@const activity = row.original.data.activities[0]}
   <div
     class="flex min-w-0 items-center gap-2"
     style:padding-inline-start={`${row.depth}rem`}
@@ -87,12 +81,12 @@
         >{#if row.getIsExpanded()}<ChevronDown />{:else}<ChevronRight
           />{/if}</Button
       >{/if}
-    {#if selection}<Button
+    {#if activity}<Button
         variant="link"
         class="h-auto min-w-0 shrink whitespace-normal text-left"
-        aria-label={row.original.actionLabel}
-        onclick={() => select(selection)}>{row.original.label}</Button
-      >{:else}{row.original.label}{/if}
+        aria-label={`Open task ${activity.task.common.id}`}
+        onclick={() => select(activity)}>{row.original.data.label}</Button
+      >{:else}{row.original.data.label}{/if}
   </div>
 {/snippet}
 <div class="rounded-md border">

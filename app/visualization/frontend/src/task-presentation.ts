@@ -6,6 +6,7 @@ import type {
   RecordedActor,
   AgentId,
   GizmoAgent,
+  ReportingTarget,
 } from "./contracts";
 interface TaskDisplay {
   status: FlowState;
@@ -20,6 +21,15 @@ interface TaskDisplay {
   integration: string;
 }
 export class TaskPresentation {
+  private static readonly priority: Record<FlowState, number> = {
+    blocked: 0,
+    working: 1,
+    ready: 2,
+    queued: 3,
+    integrated: 4,
+    completed: 5,
+    cancelled: 6,
+  };
   private static readonly labels: Record<FlowState, string> = {
     integrated: "Integrated",
     completed: "Completed",
@@ -32,7 +42,7 @@ export class TaskPresentation {
   static agent(agent: AgentId): string {
     return `${agent.team} / ${agent.role}`;
   }
-  static coordinator(coordinator: GizmoAgent): string {
+  private static coordinator(coordinator: GizmoAgent): string {
     const names: Record<GizmoAgent, string> = {
       Gizmo: "Team Gizmo",
       GizmoPrime: "Gizmo Prime",
@@ -51,14 +61,6 @@ export class TaskPresentation {
         return agent.role;
     }
   }
-  static actor(actor: RecordedActor): string {
-    switch (actor.kind) {
-      case "recorded":
-        return this.agent(actor.agent);
-      case "unrecorded":
-        return "Assignment unrecorded";
-    }
-  }
   static actorKey(actor: RecordedActor): string {
     switch (actor.kind) {
       case "recorded":
@@ -67,9 +69,43 @@ export class TaskPresentation {
         return "unrecorded";
     }
   }
+  static reporting(target: ReportingTarget): { id: string; label: string } {
+    switch (target.kind) {
+      case "Host":
+        return { id: "host", label: "Host" };
+      case "Gizmo":
+        return {
+          id: `Gizmo:${target.coordinator}`,
+          label: this.coordinator(target.coordinator),
+        };
+    }
+  }
+  static status(task: TaskV2): FlowState {
+    switch (task.state.kind) {
+      case "active":
+        return task.state.assignment.phase.kind;
+      case "ready":
+      case "completed":
+      case "integrated":
+      case "cancelled":
+      case "queued":
+        return task.state.kind;
+    }
+  }
+  static compareActivity(this: void, left: TaskFlow, right: TaskFlow): number {
+    const priority =
+      TaskPresentation.priority[TaskPresentation.status(left.task)] -
+      TaskPresentation.priority[TaskPresentation.status(right.task)];
+    switch (priority) {
+      case 0:
+        return right.task.common.last_update - left.task.common.last_update;
+      default:
+        return priority;
+    }
+  }
   static describe(task: TaskV2): TaskDisplay {
     const display: TaskDisplay = {
-      status: "queued",
+      status: this.status(task),
       statusLabel: "",
       actor: "Unrecorded",
       reportsTo: "Unrecorded",
@@ -82,7 +118,6 @@ export class TaskPresentation {
     };
     switch (task.state.kind) {
       case "active":
-        display.status = task.state.assignment.phase.kind;
         display.actor = this.agent(task.state.assignment.agent);
         display.lease = new Date(
           task.state.assignment.expires_at,
@@ -97,15 +132,12 @@ export class TaskPresentation {
         break;
       case "ready":
       case "completed":
-        display.status = task.state.kind;
         display.actor = this.agent(task.state.agent);
         break;
       case "integrated":
-        display.status = task.state.kind;
         display.integration = task.state.commit;
         break;
       case "cancelled":
-        display.status = task.state.kind;
         display.reason = task.state.reason;
         break;
       case "queued":
@@ -114,16 +146,9 @@ export class TaskPresentation {
     switch (task.ownership.kind) {
       case "Assigned":
         display.actor = this.agent(task.ownership.assignment.agent);
-        switch (task.ownership.assignment.reports_to.kind) {
-          case "Host":
-            display.reportsTo = "Host";
-            break;
-          case "Gizmo":
-            display.reportsTo = this.coordinator(
-              task.ownership.assignment.reports_to.coordinator,
-            );
-            break;
-        }
+        display.reportsTo = this.reporting(
+          task.ownership.assignment.reports_to,
+        ).label;
         break;
       case "Unrecorded":
         break;
@@ -153,7 +178,7 @@ export class TaskPresentation {
   static counts(tasks: ReadonlyArray<TaskFlow>): ReadonlyArray<FlowCount> {
     const counts = new Map<FlowState, number>();
     for (const { task } of tasks) {
-      const state = this.describe(task).status;
+      const state = this.status(task);
       counts.set(state, (counts.get(state) ?? 0) + 1);
     }
     return Array.from(counts, ([state, count]) => ({ state, count }));

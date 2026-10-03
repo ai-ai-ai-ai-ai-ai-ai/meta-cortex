@@ -43,6 +43,11 @@ Used stock icons add `@lucide/svelte@1.50.0`; the stock animation stylesheet add
 Registry-generated Button/Badge anchor and disabled handling retain the existing
 narrow ESLint exemption; authored components remain under the full policy.
 
+`d3-hierarchy@3.1.2` builds the reporting tree with `stratify` and supplies its
+nodes directly to TanStack. D3 owns traversal, ancestry and leaves; the
+application maps recorded ownership and historical actors to parent IDs and
+table fields. Historical records stay separate from recorded reporting edges.
+
 Native Select retains Svelte's externally owned `HTMLSelectAttributes.value:any`
 contract (`svelte/elements.d.ts`). Only `no-unsafe-assignment` is disabled for
 that single generated Native Select file. Application change handlers use

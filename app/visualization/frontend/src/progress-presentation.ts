@@ -1,44 +1,30 @@
 import type { FlowCount, FlowState } from "./contracts";
-type FlowCounts = ReadonlyArray<FlowCount>;
-interface FlowProgress {
-  total: number;
-  finished: number;
-  percent: number;
-  visible: FlowCounts;
-  byState: Record<FlowState, number>;
-}
-export function summarizeCounts(counts: FlowCounts): FlowProgress {
-  const byState: Record<FlowState, number> = {
-    integrated: 0,
-    completed: 0,
-    working: 0,
-    blocked: 0,
-    ready: 0,
-    queued: 0,
-    cancelled: 0,
-  };
-  let total = 0;
-  for (const item of counts) {
-    total += item.count;
-    byState[item.state] += item.count;
+
+export class ProgressSummary {
+  readonly total: number;
+  readonly finished: number;
+  readonly visible: ReadonlyArray<FlowCount>;
+  constructor(counts: ReadonlyArray<FlowCount>) {
+    const order: ReadonlyArray<FlowState> = [
+      "integrated",
+      "completed",
+      "working",
+      "blocked",
+      "ready",
+      "queued",
+      "cancelled",
+    ];
+    this.total = counts.reduce((sum, item) => sum + item.count, 0);
+    this.finished = counts
+      .filter(
+        (item) => item.state === "integrated" || item.state === "completed",
+      )
+      .reduce((sum, item) => sum + item.count, 0);
+    this.visible = counts
+      .filter((item) => item.count > 0)
+      .sort((a, b) => order.indexOf(a.state) - order.indexOf(b.state));
   }
-  const finished = byState.integrated + byState.completed;
-  const order: ReadonlyArray<FlowState> = [
-    "integrated",
-    "completed",
-    "working",
-    "blocked",
-    "ready",
-    "queued",
-    "cancelled",
-  ];
-  return {
-    total,
-    finished,
-    percent: Math.round((finished / Math.max(1, total)) * 100),
-    visible: order.flatMap((state) =>
-      counts.filter((item) => item.state === state && item.count > 0),
-    ),
-    byState,
-  };
+  get label(): string {
+    return `${this.finished}/${this.total} finished`;
+  }
 }
