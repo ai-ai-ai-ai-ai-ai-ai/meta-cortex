@@ -84,19 +84,29 @@
   }
   function changeView(value: string) {
     switch (value) {
-      case FlowView.Tree:
-      case FlowView.Agents:
-      case FlowView.Git:
-      case FlowView.History:
-        view = value;
-        inspectorOpen = false;
+      case "tree":
+        view = FlowView.Tree;
+        break;
+      case "graph":
+        view = FlowView.Agents;
+        break;
+      case "git":
+        view = FlowView.Git;
+        break;
+      case "history":
+        view = FlowView.History;
+        break;
     }
+    inspectorOpen = false;
   }
   function changeGraph(value: string) {
     switch (value) {
-      case GraphKind.Agents:
-      case GraphKind.Tasks:
-        graphKind = value;
+      case "agents":
+        graphKind = GraphKind.Agents;
+        return;
+      case "dependencies":
+        graphKind = GraphKind.Tasks;
+        return;
     }
   }
 </script>
@@ -224,16 +234,19 @@
           switch (narrow.current) {
             case false:
               event.preventDefault();
+              return;
+            case true:
+              return;
           }
         }}
         onCloseAutoFocus={(event) => {
-          Option.map(selection, (selected) => {
-            switch (selected.origin.startsWith("view-")) {
-              case true:
-                event.preventDefault();
-                document.getElementById(selected.origin)?.focus();
-            }
-          });
+          switch (selection._tag) {
+            case "None":
+              return;
+            case "Some":
+              event.preventDefault();
+              document.getElementById(selection.value.origin)?.focus();
+          }
         }}
       >
         {#snippet child({ props })}
