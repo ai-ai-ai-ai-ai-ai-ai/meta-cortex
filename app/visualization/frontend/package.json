@@ -15,9 +15,7 @@
     "generate:contracts": "bun tools/generate-contracts.ts && prettier --write contracts.schema.json src/contracts.ts"
   },
   "dependencies": {
-    "@dagrejs/dagre": "3.1.1",
     "@tauri-apps/api": "2.8.0",
-    "@xyflow/svelte": "1.7.0",
     "effect": "4.0.0-rc.117",
     "svelte": "5.57.1"
   },
@@ -27,6 +25,7 @@
     "@lucide/svelte": "1.50.0",
     "@sveltejs/vite-plugin-svelte": "6.2.4",
     "@tailwindcss/vite": "4.3.3",
+    "@tanstack/svelte-table": "9.2.4",
     "@testing-library/svelte": "5.4.2",
     "@testing-library/user-event": "14.6.1",
     "ajv": "8.17.1",

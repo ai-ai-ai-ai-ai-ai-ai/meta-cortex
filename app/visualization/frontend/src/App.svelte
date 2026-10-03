@@ -9,7 +9,10 @@
   import { DashboardApi } from "./api";
   import { SelectionKind, type TaskSelection } from "./agent-tree";
   import type { TaskV2 } from "./contracts";
-  import Workflow from "./Workflow.svelte";
+  import DataTable from "./DataTable.svelte";
+  import { reportingRows } from "./agent-tree";
+  import { Progress } from "$lib/components/ui/progress";
+  import { summarizeCounts } from "./progress-presentation";
   import RecordedTask from "./RecordedTask.svelte";
   const dashboard = new DashboardController(new DashboardApi());
   let selected = $state<TaskSelection | null>(null);
@@ -64,26 +67,6 @@
       feature: event.currentTarget.value,
       page: 0,
     });
-  function latestTask() {
-    switch (dashboard.state.kind) {
-      case LoadKind.Loading:
-      case LoadKind.Failed:
-        return;
-      case LoadKind.Ready:
-        switch (dashboard.state.reply.selection.view.kind) {
-          case "History":
-            dashboard.load({
-              kind: "Task",
-              query: dashboard.state.reply.selection.view.query,
-            });
-            return;
-          case "Features":
-          case "Tasks":
-          case "Task":
-            return;
-        }
-    }
-  }
   let record = $derived.by(() => {
     switch (selected?.kind) {
       case SelectionKind.Task:
@@ -112,6 +95,16 @@
     }
   });
 </script>
+
+{#snippet loadStatus()}
+  {#if dashboard.state.kind === LoadKind.Loading}<p>Reading recorded work…</p>
+  {:else if dashboard.state.kind === LoadKind.Failed}<p>
+      {dashboard.state.failure.message}
+    </p>
+    <Button onclick={() => dashboard.load(dashboard.state.request)}
+      >Retry</Button
+    >{/if}
+{/snippet}
 
 {#snippet paging()}
   {#if dashboard.state.kind === LoadKind.Ready}
@@ -145,7 +138,9 @@
           >Choose a feature</NativeSelect.Option
         >
         {#each dashboard.features as feature (feature.id)}<NativeSelect.Option
-            value={feature.id}>{feature.id}</NativeSelect.Option
+            value={feature.id}
+            title={`${feature.objective} · Branch ${feature.branch}`}
+            >{feature.id}</NativeSelect.Option
           >{/each}
       </NativeSelect.Root>
       <Button
@@ -161,43 +156,45 @@
     <p class="text-sm text-muted-foreground">
       Read only · Turso · refresh to observe changes
     </p>
-    {#if dashboard.state.kind === LoadKind.Loading}<p>Reading recorded work…</p>
-    {:else if dashboard.state.kind === LoadKind.Failed}<p>
-        {dashboard.state.failure.message}
-      </p>
-      <Button onclick={() => dashboard.load(dashboard.state.request)}
-        >Retry</Button
-      >
-    {:else if dashboard.state.kind === LoadKind.Ready}
+    {#if !sheetOpen}{@render loadStatus()}{/if}
+    {#if dashboard.state.kind === LoadKind.Ready}
       {@const reply = dashboard.state.reply}
       {#if reply.content.kind === "Features"}
         <h2 class="text-xl font-semibold">Choose a feature</h2>
-        <Accordion.Root type="multiple">
-          {#each reply.content.value.records as feature (feature.id)}
-            <Accordion.Item value={feature.id}
-              ><Accordion.Trigger>{feature.id}</Accordion.Trigger
-              ><Accordion.Content
-                ><p>{feature.objective}</p>
-                <p>Branch · {feature.branch}</p>
-                <Button
-                  variant="outline"
-                  onclick={() =>
-                    dashboard.load({
-                      kind: "Workflow",
-                      feature: feature.id,
-                      page: 0,
-                    })}>Open workflow</Button
-                ></Accordion.Content
-              ></Accordion.Item
-            >
-          {/each}
-        </Accordion.Root>
+        <p>
+          Choose a recorded feature above to view its objective, branch and
+          activities.
+        </p>
       {:else if reply.content.kind === "Workflow"}
-        {#key dashboard.currentFeature()}<Workflow
-            flow={reply.content.value}
-            select={choose}
-            {history}
-          />{/key}
+        {@const flow = reply.content.value}
+        {@const progress = summarizeCounts(flow.counts)}
+        <h2 class="text-xl font-semibold">{flow.feature.id}</h2>
+        <p>{flow.feature.objective}</p>
+        <p>
+          Branch · {flow.feature.branch} · Worktree · {flow.feature.worktree} · version
+          {flow.feature.version}
+        </p>
+        <p class="text-sm text-muted-foreground">
+          Observed · {new Date(flow.observed_at).toLocaleString()}
+        </p>
+        <p>
+          Feature total · {progress.finished}/{progress.total} finished · {progress.visible
+            .map((item) => `${item.count} ${item.state}`)
+            .join(" · ")}
+        </p>
+        <Progress
+          value={progress.finished}
+          max={Math.max(1, progress.total)}
+          aria-label="Feature progress"
+        />
+        <p class="text-sm text-muted-foreground">
+          Recorded reporting links · own and descendant activities on this
+          loaded page. Historical activities use Created by when reporting is
+          unrecorded.
+        </p>
+        {#key dashboard.currentFeature()}
+          <DataTable rows={reportingRows(flow.tasks.records)} select={choose} />
+        {/key}
       {:else if reply.content.kind === "Task" || reply.content.kind === "History"}
         <Button
           variant="outline"
@@ -229,16 +226,8 @@
       >
     </Sheet.Header>
     <div class="space-y-4 px-4 pb-4">
-      {#if showingHistory && dashboard.state.kind === LoadKind.Loading}<p>
-          Reading recorded history…
-        </p>
-      {:else if showingHistory && dashboard.state.kind === LoadKind.Failed}<p>
-          {dashboard.state.failure.message}
-        </p>
-        <Button onclick={() => dashboard.load(dashboard.state.request)}
-          >Retry</Button
-        >
-      {:else if showingHistory && dashboard.state.kind === LoadKind.Ready && dashboard.state.reply.content.kind === "History"}
+      {@render loadStatus()}
+      {#if showingHistory && dashboard.state.kind === LoadKind.Ready && dashboard.state.reply.content.kind === "History"}
         <h2 class="font-semibold">Recorded history</h2>
         {@render paging()}
         <Accordion.Root type="multiple">
@@ -268,10 +257,15 @@
             >
           {/each}
         </Accordion.Root>
-        <Button variant="outline" onclick={latestTask}
-          >Latest task record</Button
-        >
-      {:else if record}<RecordedTask
+        {#if dashboard.state.request.kind === "History"}
+          {@const query = dashboard.state.request.query}
+          <Button
+            variant="outline"
+            onclick={() => dashboard.load({ kind: "Task", query })}
+            >Latest task record</Button
+          >
+        {/if}
+      {:else if record && !showingHistory}<RecordedTask
           task={record.task}
           flow={record.flow}
           {history}

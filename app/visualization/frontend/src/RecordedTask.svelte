@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Tabs from "$lib/components/ui/tabs";
+  import * as Table from "$lib/components/ui/table";
   import * as Accordion from "$lib/components/ui/accordion";
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
@@ -34,30 +35,24 @@
     <h3 class="font-semibold">Latest contribution</h3>
     <p>{task.common.progress.summary || "No progress summary recorded."}</p>
     {#if display.reason}<p>{display.reason}</p>{/if}
-    <dl class="grid grid-cols-2 gap-2 text-sm">
-      {#if flow}<dt>Worker</dt>
-        <dd>
-          {#if flow.worker.kind === "recorded"}{TaskPresentation.agent(
-              flow.worker.agent,
-            )}{:else}Unrecorded{/if}
-        </dd>{/if}
-      <dt>Assignment</dt>
-      <dd>{display.actor}</dd>
-      <dt>Reports to</dt>
-      <dd>{display.reportsTo}</dd>
-      <dt>Workspace</dt>
-      <dd>{display.workspaceLabel}</dd>
-      {#if task.workspace.kind === "git"}<dt>Branch</dt>
-        <dd class="break-all">{task.workspace.branch}</dd>
-        <dt>Path</dt>
-        <dd class="break-all">{task.workspace.path}</dd>{/if}
-      <dt>Lease</dt>
-      <dd>{display.lease}</dd>
-      {#if task.common.checkpoint.kind === "git"}<dt>Checkpoint</dt>
-        <dd class="break-all">{task.common.checkpoint.commit}</dd>{/if}
-      {#if task.state.kind === "integrated"}<dt>Integration</dt>
-        <dd class="break-all">{task.state.commit}</dd>{/if}
-    </dl>
+    <Table.Root aria-label="Task fields">
+      <Table.Body>
+        {#if flow}<Table.Row
+            ><Table.Head>Worker</Table.Head><Table.Cell
+              >{#if flow.worker.kind === "recorded"}{TaskPresentation.agent(
+                  flow.worker.agent,
+                )}{:else}Unrecorded{/if}</Table.Cell
+            ></Table.Row
+          >{/if}
+        {#each [{ label: "Assignment", value: display.actor }, { label: "Reports to", value: display.reportsTo }, { label: "Workspace", value: display.workspaceLabel }, { label: "Workspace detail", value: display.workspace }, { label: "Lease", value: display.lease }, { label: "Checkpoint", value: display.checkpoint }, { label: "Integration", value: display.integration }] as field (field.label)}
+          <Table.Row
+            ><Table.Head>{field.label}</Table.Head><Table.Cell
+              class="whitespace-normal break-all">{field.value}</Table.Cell
+            ></Table.Row
+          >
+        {/each}
+      </Table.Body>
+    </Table.Root>
     <Accordion.Root type="multiple">
       {#each [{ label: "Findings", values: task.common.progress.findings }, { label: "Next steps", values: task.common.progress.next_steps }, { label: "Acceptance", values: task.common.acceptance }, { label: "Dependencies", values: task.common.dependencies }] as section (section.label)}
         <Accordion.Item value={section.label}>
@@ -95,17 +90,38 @@
   </Tabs.Content>
   <Tabs.Content value="history" class="space-y-4">
     {#if flow}
-      {#each [...flow.checkpoints, ...flow.integrations] as commit (`${commit.revision}:${commit.commit}`)}<p
-          class="text-sm break-all"
+      <Table.Root aria-label="Commit history">
+        <Table.Header
+          ><Table.Row
+            ><Table.Head>Commit</Table.Head><Table.Head>Actor</Table.Head
+            ><Table.Head>Revision / date</Table.Head></Table.Row
+          ></Table.Header
         >
-          {commit.commit} · {TaskPresentation.agent(commit.actor)} · revision {commit.revision}
-          · {new Date(commit.at).toLocaleString()}
-        </p>{/each}
-      {#each flow.milestones as event (event.revision)}<p class="text-sm">
-          {event.kind} · {TaskPresentation.agent(event.actor)} · attempt {event.attempt}
-          · revision {event.revision} · {new Date(event.at).toLocaleString()}<br
-          />{event.note}
-        </p>{/each}
+        <Table.Body
+          >{#each [...flow.checkpoints, ...flow.integrations] as commit (`${commit.revision}:${commit.commit}`)}<Table.Row
+              ><Table.Cell class="whitespace-normal break-all"
+                >{commit.commit}</Table.Cell
+              ><Table.Cell>{TaskPresentation.agent(commit.actor)}</Table.Cell
+              ><Table.Cell
+                >{commit.revision} · {new Date(
+                  commit.at,
+                ).toLocaleString()}</Table.Cell
+              ></Table.Row
+            >{/each}</Table.Body
+        >
+      </Table.Root>
+      <Accordion.Root type="multiple">
+        {#each flow.milestones as event (event.revision)}<Accordion.Item
+            value={String(event.revision)}
+            ><Accordion.Trigger
+              >{event.kind} · {TaskPresentation.agent(event.actor)} · attempt {event.attempt}
+              · revision {event.revision}</Accordion.Trigger
+            ><Accordion.Content
+              ><p>{new Date(event.at).toLocaleString()}</p>
+              <p>{event.note}</p></Accordion.Content
+            ></Accordion.Item
+          >{/each}
+      </Accordion.Root>
       {#if flow.history_end === "More"}<p>
           Older events are available in full history.
         </p>{/if}

@@ -1,8 +1,8 @@
 # Upstream UI components
 
 The dashboard imports the official shadcn-svelte Vega Button, Badge, Progress,
-Tabs, Collapsible, Sheet, Table, Accordion and Native Select components directly.
-Original Button/Badge/Progress/Tabs/Collapsible generation used
+Tabs, Sheet, Table, Accordion and Native Select components directly.
+Original Button/Badge/Progress/Tabs generation used
 `shadcn-svelte@1.7.0`; the stock redesign restores Button/Badge and adds the other
 used components from the official registry on 2026-10-02:
 
@@ -15,7 +15,7 @@ No application wrapper replaces a library interaction. All Bits imports stay
 inside these generated UI files. Stock neutral CSS variables come from the
 [official neutral theme](https://www.shadcn-svelte.com/registry/colors/neutral.json).
 The application has no custom palette, dashboard button variant or status badge
-variant. Svelte Flow uses its default nodes and stylesheet.
+variant. The graph modes and their Svelte Flow/Dagre dependencies were removed.
 
 ## Pinned Bits compatibility
 
@@ -39,7 +39,7 @@ remain checked.
 
 `package.json` and `bun.lock` pin existing Svelte, Bits and Tailwind releases.
 Used stock icons add `@lucide/svelte@1.50.0`; the stock animation stylesheet adds
-`tw-animate-css@1.4.0`, imported by `styles.css`. No other library was added.
+`tw-animate-css@1.4.0`, imported by `styles.css`. The expandable application DataTable uses `@tanstack/svelte-table@9.2.4`, following the official [Data Table recipe](https://www.shadcn-svelte.com/docs/components/data-table) and installed v9 row-expansion APIs. It uses only row expansion, stable native row IDs and subRows; paging remains native. Its composition and columns live in authored `src/DataTable.svelte`, outside generated UI, and are counted as application code. Unused Collapsible files and their public barrel were removed after deleting recursive tree consumers.
 Registry-generated Button/Badge anchor and disabled handling retain the existing
 narrow ESLint exemption; authored components remain under the full policy.
 

@@ -14,11 +14,6 @@ export default {
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        manualChunks: { graph: ["@xyflow/svelte", "@dagrejs/dagre"] },
-      },
-    },
   },
   test: { environment: "jsdom", clearMocks: true },
 } satisfies UserConfig;
