@@ -137,14 +137,15 @@ identifies who recorded it, not who actually authored that Git commit.
 
    It resolves the existing repository identity and shared database from the
    current directory, then opens the native Tauri Workbench window.
-2. Select a workflow from the searchable left sidebar to inspect its requirement
-   and progress. Compact contribution rows show the worker, status, task,
-   result preview and commit/check counts. Blocked and unfinished work appear
-   before finished work. Select a row to open full requirements, findings,
+2. Select a workflow from the searchable left sidebar to inspect its requirement,
+   progress, recorded work dates and agent execution tree. Expand agents into tasks
+   and attempts, with progress and linked commit counts. Earlier workers remain
+   visible after reassignment. Browse contributions by status opens compact
+   outcome rows. Select a task to open each attempt's own results, requirements, findings,
    checks and lifecycle events in the main content area. The left sidebar stays
    available; Back to workflow restores the filter and expanded rows. Commit
-   descriptions are recorded event notes, not Git commit messages. Team & reporting structure
-   expands the agent hierarchy; Workflow record & data source exposes technical
+   descriptions are recorded event notes, not Git commit messages.
+   Workflow record & data source exposes technical
    fields. Narrow windows open navigation as a drawer.
    Full task records and individual event snapshots retain all ledger fields,
    including task-specific extensions.
@@ -232,6 +233,12 @@ are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
 current views refresh. Full-feature state counts and a percentage of tasks completed or integrated
 summarize recorded task states. Group progress covers its loaded task page.
+Feature work dates use the earliest task creation and latest task update across
+all pages. Completion is derived only when all tasks are terminal; cancelled work
+is labelled separately. Elapsed spans include waiting, not just active execution.
+Feature creation and completion events are not stored. Attempt summaries use
+updates recorded during that claim; inherited progress is not a new contribution.
+Attempt and linked commit counts cover loaded history, with truncation indicated.
 Recorded ownership identifies the assigned role and reporting target. Task
 creators, claimed workers, and event actors remain separate recorded facts; none
 of them establishes an unrecorded reporting line or host session ancestry.

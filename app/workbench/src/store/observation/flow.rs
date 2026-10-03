@@ -2,11 +2,13 @@ use super::{Observation, Page, PageEnd, PageIndex, TaskPage};
 use crate::agents::AgentId;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Checkpoint, Event, EventKind, Feature, Task, TaskState};
+mod attempts;
 use crate::request::TaskQuery;
 use crate::store::relational::{EventTable, FeatureTable, JsonFunction, TaskTable};
 use crate::store::sql::SqlStatement;
 use crate::values::{Attempt, CommitId, FeatureId, Note, Revision, Timestamp};
 use crate::{HistoryPage, LedgerError};
+pub use attempts::{AttemptFlow, AttemptProgress, AttemptStart};
 use schemars::JsonSchema;
 use sea_query::{Expr, ExprTrait, Func, Order, Query, SimpleExpr};
 use serde::Serialize;
@@ -66,7 +68,7 @@ pub struct FlowCount {
     pub state: FlowState,
     pub count: TaskCount,
 }
-#[derive(Debug, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum RecordedActor {
     Unrecorded,
@@ -78,6 +80,7 @@ pub struct RecordedCommit {
     pub actor: AgentId,
     pub at: Timestamp,
     pub revision: Revision,
+    pub attempt: Attempt,
 }
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct Milestone {
@@ -96,17 +99,32 @@ pub struct TaskFlow {
     pub checkpoints: Vec<RecordedCommit>,
     pub integrations: Vec<RecordedCommit>,
     pub milestones: Vec<Milestone>,
+    pub attempts: Vec<AttemptFlow>,
     pub history_end: PageEnd,
+}
+/// Task activity bounds, not feature lifecycle events (which are not stored).
+#[derive(Debug, PartialEq, Eq, Serialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum FeatureActivity {
+    Empty,
+    Recorded {
+        first_task_at: Timestamp,
+        last_activity_at: Timestamp,
+    },
 }
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeatureFlow {
     pub feature: Feature,
     pub counts: Vec<FlowCount>,
+    pub activity: FeatureActivity,
     pub tasks: Page<TaskFlow>,
     pub observed_at: Timestamp,
 }
 impl Observation {
-    async fn flow_counts(&self, feature: FeatureId) -> Result<Vec<FlowCount>, LedgerError> {
+    async fn flow_totals(
+        &self,
+        feature: FeatureId,
+    ) -> Result<(Vec<FlowCount>, FeatureActivity), LedgerError> {
         let connection = self.connect().await?;
         let mut query = Query::select();
         query
@@ -115,6 +133,14 @@ impl Observation {
         for state in FlowState::ALL {
             query.expr(Func::count(Expr::case(state.predicate(), Expr::val(1))));
         }
+        query.expr(Func::min(Func::cust(JsonFunction::JsonExtract).args([
+            Expr::col(TaskTable::Document),
+            Expr::val("$.common.created_at"),
+        ])));
+        query.expr(Func::max(Func::cust(JsonFunction::JsonExtract).args([
+            Expr::col(TaskTable::Document),
+            Expr::val("$.common.last_update"),
+        ])));
         let mut rows = SqlStatement::build(query)?.query(&connection).await?;
         let row = rows
             .next()
@@ -127,11 +153,18 @@ impl Observation {
                 count: TaskCount::try_from(row.get::<i64>(index)?)?,
             });
         }
-        Ok(counts)
+        let activity = match counts.iter().any(|count| count.count.0 > 0) {
+            true => FeatureActivity::Recorded {
+                first_task_at: Timestamp::try_from(row.get::<i64>(7)?)?,
+                last_activity_at: Timestamp::try_from(row.get::<i64>(8)?)?,
+            },
+            false => FeatureActivity::Empty,
+        };
+        Ok((counts, activity))
     }
     pub async fn flow(&self, request: TaskPage) -> Result<FeatureFlow, LedgerError> {
         let feature = self.flow_feature(request.feature.clone()).await?;
-        let counts = self.flow_counts(request.feature.clone()).await?;
+        let (counts, activity) = self.flow_totals(request.feature.clone()).await?;
         let page = self.tasks(request).await?;
         let mut records = Vec::new();
         for task in page.records {
@@ -140,6 +173,7 @@ impl Observation {
         Ok(FeatureFlow {
             feature,
             counts,
+            activity,
             tasks: Page {
                 records,
                 end: page.end,
@@ -183,6 +217,7 @@ impl Observation {
             checkpoints: Vec::new(),
             integrations: Vec::new(),
             milestones: Vec::new(),
+            attempts: Vec::new(),
             history_end: history.end,
         };
         Ok(history.records.into_iter().fold(flow, TaskFlow::recording))
@@ -257,6 +292,7 @@ impl RecordedActor {
 impl TaskFlow {
     #[must_use]
     fn recording(mut self, event: Event) -> Self {
+        self = self.recording_attempt(&event);
         match &self.task.ownership {
             TaskOwnership::Assigned { .. } => {}
             TaskOwnership::Unrecorded => self.worker = self.worker.observing(&event.task.state),
@@ -268,6 +304,7 @@ impl TaskFlow {
                     actor: event.actor,
                     at: event.task.common.last_update,
                     revision: event.task.common.revision,
+                    attempt: event.task.common.attempt,
                 }),
                 Checkpoint::Unrecorded => {}
             },
@@ -277,6 +314,7 @@ impl TaskFlow {
                     actor: event.actor,
                     at: event.task.common.last_update,
                     revision: event.task.common.revision,
+                    attempt: event.task.common.attempt,
                 }),
                 TaskState::Queued
                 | TaskState::Active { .. }

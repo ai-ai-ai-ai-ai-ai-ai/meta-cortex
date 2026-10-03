@@ -136,6 +136,9 @@ it("keeps the overview compact and passes complete evidence through keyboard sel
   ];
   const select = vi.fn();
   render(Workflow, { flow: fixture.flow, select });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Browse contributions by status" }),
+  );
   const contribution = screen.getByRole("article", {
     name: "Contribution implement",
   });
@@ -149,11 +152,13 @@ it("keeps the overview compact and passes complete evidence through keyboard sel
   expect(within(contribution).queryByText("Show recorded work")).toBeNull();
   expect(within(contribution).queryByText("42 tests pass")).toBeNull();
   expect(within(contribution).getAllByRole("button")).toHaveLength(1);
-  screen.getByRole("button", { name: "Open task implement" }).focus();
+  within(contribution)
+    .getByRole("button", { name: "Open task implement" })
+    .focus();
   await userEvent.keyboard("{Enter}");
   expect(select).toHaveBeenCalledWith(fixture.contribution);
 });
-it("prioritizes blocked work without treating queued or cancelled work as achievements", () => {
+it("prioritizes blocked work without treating queued or cancelled work as achievements", async () => {
   const finished = new Fixture();
   const blocked = new Fixture();
   blocked.task.common.id = "blocked-task";
@@ -178,6 +183,9 @@ it("prioritizes blocked work without treating queued or cancelled work as achiev
     blocked.contribution,
   );
   render(Workflow, { flow: finished.flow, select: vi.fn() });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Browse contributions by status" }),
+  );
   expect(
     screen
       .getAllByRole("article")
@@ -223,12 +231,17 @@ it("keeps full requirements, findings and check output in the selected main-area
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: "Browse contributions by status",
+    }),
+  );
   await screen.findByText("1 failed");
   expect(screen.queryByText("Third criterion")).toBeNull();
   expect(screen.queryByText("Third finding")).toBeNull();
   expect(screen.queryByText("Integrate and publish")).toBeNull();
   await userEvent.click(
-    screen.getByRole("button", { name: "Open task implement" }),
+    screen.getAllByRole("button", { name: "Open task implement" })[0]!,
   );
   const inspector = await screen.findByRole("region", { name: "implement" });
   await userEvent.click(
@@ -277,6 +290,9 @@ it("expands only the requested contribution section in a large workflow", async 
   });
   fixture.flow.tasks.records = [...finished, ...queued];
   render(Workflow, { flow: fixture.flow, select: vi.fn() });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Browse contributions by status" }),
+  );
   const achieved = screen.getByRole("region", { name: "What was achieved" });
   const upcoming = screen.getByRole("region", { name: "Up next" });
   expect(within(achieved).getAllByRole("article")).toHaveLength(3);
@@ -301,6 +317,9 @@ it("finds a historical worker and keeps missing commit evidence explicit", async
   fixture.contribution.history_end = "More";
   fixture.flow.tasks.records.push(other.contribution);
   render(Workflow, { flow: fixture.flow, select: vi.fn() });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Browse contributions by status" }),
+  );
   await userEvent.type(
     screen.getByRole("textbox", { name: "Find a contribution" }),
     "RustDev",
@@ -318,6 +337,11 @@ it("keeps contribution rows during refresh and returns focus after inspecting a 
     .mockResolvedValueOnce(fixture.featuresReply())
     .mockReturnValueOnce(transport);
   render(App);
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: "Browse contributions by status",
+    }),
+  );
   const contribution = await screen.findByRole("article", {
     name: "Contribution implement",
   });
@@ -379,9 +403,6 @@ it("shows full-feature quantities independently of loaded descendant progress", 
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
-  await userEvent.click(
-    await screen.findByRole("button", { name: "Team & reporting structure" }),
-  );
   await screen.findByRole("table", {
     name: "Recorded reporting and activities",
   });
@@ -560,6 +581,9 @@ it("keeps cross-task history identity consistent through loading, failure and re
     expect(
       screen.queryByRole("button", { name: "Back to workflow" }),
     ).toBeNull(),
+  );
+  await userEvent.click(
+    screen.getByRole("button", { name: "Expand TypescriptDev" }),
   );
   const review = screen.getByRole("button", {
     name: "Open task review",
@@ -842,13 +866,15 @@ it("uses library DataTable keyboard expansion and main-area Back navigation with
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: "Browse contributions by status",
+    }),
+  );
   const filter = await screen.findByRole("textbox", {
     name: "Find a contribution",
   });
   await userEvent.type(filter, "implement");
-  await userEvent.click(
-    await screen.findByRole("button", { name: "Team & reporting structure" }),
-  );
   const table = screen.getByRole("table", {
     name: "Recorded reporting and activities",
   });

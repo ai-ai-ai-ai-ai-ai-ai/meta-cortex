@@ -6,6 +6,7 @@
   import { Button } from "$lib/components/ui/button";
   import type { TaskV2, TaskFlow } from "./contracts";
   import { TaskPresentation } from "./task-presentation";
+  import Attempts from "./Attempts.svelte";
   interface RecordedTaskProperties {
     task: TaskV2;
     flow?: TaskFlow;
@@ -40,6 +41,7 @@
     <Tabs.Trigger value="raw">Raw</Tabs.Trigger>
   </Tabs.List>
   <Tabs.Content value="record" class="grid gap-8 pt-4 lg:grid-cols-2">
+    {#if flow}<div class="lg:col-span-2"><Attempts {flow} /></div>{/if}
     <section class="min-w-0 space-y-4" aria-label="Result and requirements">
       <h3 class="font-semibold">Latest contribution</h3>
       <p class="leading-relaxed break-words">

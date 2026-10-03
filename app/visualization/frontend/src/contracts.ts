@@ -44,6 +44,20 @@ export type DesktopContent =
       [k: string]: unknown;
     };
 export type PageEnd = "Complete" | "More";
+/**
+ * Task activity bounds, not feature lifecycle events (which are not stored).
+ */
+export type FeatureActivity =
+  | {
+      kind: "empty";
+      [k: string]: unknown;
+    }
+  | {
+      first_task_at: number;
+      kind: "recorded";
+      last_activity_at: number;
+      [k: string]: unknown;
+    };
 export type FlowState =
   | "queued"
   | "working"
@@ -52,6 +66,29 @@ export type FlowState =
   | "integrated"
   | "completed"
   | "cancelled";
+export type EventKind =
+  | "created"
+  | "claimed"
+  | "assigned"
+  | "heartbeat"
+  | "progress"
+  | "checkpoint"
+  | "ready"
+  | "integrated"
+  | "completed"
+  | "requeued"
+  | "cancelled";
+/**
+ * V1 tasks did not record an intended owner or reporting line.
+ */
+export type TaskOwnership =
+  | {
+      kind: "Unrecorded";
+    }
+  | {
+      assignment: TaskAssignment;
+      kind: "Assigned";
+    };
 /**
  * An agent role scoped to its owning Cortex team.
  */
@@ -95,6 +132,35 @@ export type SreAgent =
   | "DockerSpecialist"
   | "KubernetesSpecialist";
 export type DeliveryAgent = "IntegrationAgent" | "PrAgent";
+export type ReportingTarget =
+  | {
+      kind: "Host";
+    }
+  | {
+      coordinator: GizmoAgent;
+      kind: "Gizmo";
+    };
+export type AttemptProgress =
+  | {
+      kind: "unrecorded";
+      [k: string]: unknown;
+    }
+  | {
+      kind: "recorded";
+      progress: Progress;
+      [k: string]: unknown;
+    };
+export type CheckOutcome = "passed" | "failed" | "not_run";
+export type AttemptStart =
+  | {
+      kind: "unrecorded";
+      [k: string]: unknown;
+    }
+  | {
+      at: number;
+      kind: "recorded";
+      [k: string]: unknown;
+    };
 export type RecordedActor =
   | {
       kind: "unrecorded";
@@ -105,18 +171,6 @@ export type RecordedActor =
       kind: "recorded";
       [k: string]: unknown;
     };
-export type EventKind =
-  | "created"
-  | "claimed"
-  | "assigned"
-  | "heartbeat"
-  | "progress"
-  | "checkpoint"
-  | "ready"
-  | "integrated"
-  | "completed"
-  | "requeued"
-  | "cancelled";
 export type Checkpoint =
   | {
       kind: "unrecorded";
@@ -124,26 +178,6 @@ export type Checkpoint =
   | {
       commit: string;
       kind: "git";
-    };
-export type CheckOutcome = "passed" | "failed" | "not_run";
-/**
- * V1 tasks did not record an intended owner or reporting line.
- */
-export type TaskOwnership =
-  | {
-      kind: "Unrecorded";
-    }
-  | {
-      assignment: TaskAssignment;
-      kind: "Assigned";
-    };
-export type ReportingTarget =
-  | {
-      kind: "Host";
-    }
-  | {
-      coordinator: GizmoAgent;
-      kind: "Gizmo";
     };
 export type TaskState =
   | {
@@ -261,6 +295,7 @@ export interface Feature {
   worktree: string;
 }
 export interface FeatureFlow {
+  activity: FeatureActivity;
   counts: FlowCount[];
   feature: Feature;
   observed_at: number;
@@ -281,6 +316,7 @@ export interface Page2 {
   [k: string]: unknown;
 }
 export interface TaskFlow {
+  attempts: AttemptFlow[];
   checkpoints: RecordedCommit[];
   created_by: RecordedActor;
   history_end: PageEnd;
@@ -290,9 +326,47 @@ export interface TaskFlow {
   worker: RecordedActor;
   [k: string]: unknown;
 }
+/**
+ * One claim and its own contributions within the bounded event history.
+ */
+export interface AttemptFlow {
+  attempt: number;
+  last_event: EventKind;
+  ownership: TaskOwnership;
+  progress: AttemptProgress;
+  started: AttemptStart;
+  updated_at: number;
+  worker: RecordedActor;
+  [k: string]: unknown;
+}
+/**
+ * The intended owner and reporting line survive every task state and attempt.
+ */
+export interface TaskAssignment {
+  agent: AgentId;
+  reports_to: ReportingTarget;
+}
+export interface Progress {
+  checks: Check[];
+  /**
+   * Task-specific data only. Coordination never interprets these keys.
+   */
+  extensions?: {
+    [k: string]: unknown;
+  };
+  findings: Note[];
+  next_steps: Note[];
+  summary: Note;
+}
+export interface Check {
+  command: Note;
+  evidence: Note;
+  outcome: CheckOutcome;
+}
 export interface RecordedCommit {
   actor: AgentId;
   at: number;
+  attempt: number;
   commit: string;
   revision: number;
   [k: string]: unknown;
@@ -330,30 +404,6 @@ export interface TaskCommon {
   objective: Note;
   progress: Progress;
   revision: number;
-}
-export interface Progress {
-  checks: Check[];
-  /**
-   * Task-specific data only. Coordination never interprets these keys.
-   */
-  extensions?: {
-    [k: string]: unknown;
-  };
-  findings: Note[];
-  next_steps: Note[];
-  summary: Note;
-}
-export interface Check {
-  command: Note;
-  evidence: Note;
-  outcome: CheckOutcome;
-}
-/**
- * The intended owner and reporting line survive every task state and attempt.
- */
-export interface TaskAssignment {
-  agent: AgentId;
-  reports_to: ReportingTarget;
 }
 export interface Assignment {
   agent: AgentId;

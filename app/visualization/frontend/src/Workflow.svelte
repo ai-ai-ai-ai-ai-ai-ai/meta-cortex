@@ -9,6 +9,7 @@
   import Contribution from "./Contribution.svelte";
   import DataTable from "./DataTable.svelte";
   import { ReportingTable } from "./agent-tree";
+  import { WorkTiming } from "./execution-presentation";
   import { ProgressSummary } from "./progress-presentation";
   import { ContributionSection, TaskPresentation } from "./task-presentation";
   import type { FeatureFlow, TaskFlow } from "./contracts";
@@ -87,64 +88,85 @@
     </div>
   </header>
 
-  {#if flow.tasks.records.length > 1 || query}
-    <div class="flex flex-wrap items-end justify-between gap-4">
-      <h2 class="font-semibold">Agent contributions</h2>
-      <div class="w-full space-y-1.5 sm:w-64">
-        <label for="contribution-filter" class="text-xs text-muted-foreground"
-          >Find a contribution</label
-        >
-        <Input
-          id="contribution-filter"
-          placeholder="Agent, task, result or status…"
-          bind:value={query}
-        />
-      </div>
-    </div>
-  {/if}
-  {#if flow.tasks.records.length < progress.total}<p
-      class="text-sm text-muted-foreground"
-    >
-      This page contains {flow.tasks.records.length} of {progress.total} tasks. Progress
-      above covers the entire workflow.
-    </p>{/if}
-  {#each sections as section (section.label)}
-    <section class="space-y-4" aria-label={section.label}>
-      <h3 class="flex items-center gap-2 font-semibold">
-        {section.label}<Badge variant="secondary">{section.tasks.length}</Badge>
-      </h3>
-      {#each section.tasks.slice(0, visible[section.label]) as task (task.task.common.id)}<Contribution
-          flow={task}
-          {select}
-        />{/each}
-      {#if section.tasks.length > visible[section.label]}<Button
-          variant="outline"
-          onclick={() => (visible[section.label] += 3)}
-          >Show more · {section.tasks.length - visible[section.label]} remaining
-          in {section.label.toLowerCase()}</Button
-        >{/if}
-    </section>
-  {:else}<p class="py-8 text-sm text-muted-foreground">
-      {#if query}No contributions match your search.{:else}No tasks recorded
-        yet.{/if}
-    </p>{/each}
-
-  <Accordion.Root type="multiple" class="border-t">
-    <Accordion.Item value="team">
-      <Accordion.Trigger
-        ><span class="flex items-center gap-2"
-          ><Users class="size-4" />Team &amp; reporting structure</span
-        ></Accordion.Trigger
+  <dl
+    class="grid gap-4 border-y py-4 sm:grid-cols-3"
+    aria-label="Feature work dates"
+  >
+    {#each WorkTiming.feature(flow) as field (field.label)}<div
+        class="space-y-1"
       >
-      <Accordion.Content class="space-y-3">
-        <DataTable
-          root={new ReportingTable(flow.tasks.records).root}
-          {select}
-        />
-        <p class="text-xs text-muted-foreground">
-          Reporting links use recorded assignments. Older work is grouped by its
-          recorded creator. Own and team progress cover the tasks on this page.
-        </p>
+        <dt class="text-xs text-muted-foreground">{field.label}</dt>
+        <dd class="text-sm font-semibold">{field.value}</dd>
+      </div>{/each}
+  </dl>
+  <p class="text-xs text-muted-foreground">
+    Dates describe recorded task activity; elapsed time includes waiting.
+  </p>
+
+  <section class="space-y-3" aria-label="Agent execution tree">
+    <h2 class="flex items-center gap-2 font-semibold">
+      <Users class="size-4" />Agent execution tree
+    </h2>
+    <p class="text-xs text-muted-foreground">
+      Expand an agent for tasks and attempts. Select a task for its
+      requirements, delivered work and evidence.
+    </p>
+    {#if flow.tasks.records.length < progress.total}<p
+        class="text-sm text-muted-foreground"
+      >
+        This page contains {flow.tasks.records.length} of {progress.total} tasks.
+        Progress above covers the entire workflow.
+      </p>{/if}
+    <DataTable root={new ReportingTable(flow.tasks.records).root} {select} />
+    <p class="text-xs text-muted-foreground">
+      Reporting links use recorded assignments. Older work is grouped by its
+      recorded creator. Own and team progress cover this page; attempt and
+      commit counts cover loaded history.
+    </p>
+  </section>
+
+  <Accordion.Root type="multiple">
+    <Accordion.Item value="contributions">
+      <Accordion.Trigger>Browse contributions by status</Accordion.Trigger>
+      <Accordion.Content class="space-y-5">
+        {#if flow.tasks.records.length > 1 || query}
+          <div class="flex flex-wrap items-end justify-between gap-4">
+            <h2 class="font-semibold">Agent contributions</h2>
+            <div class="w-full space-y-1.5 sm:w-64">
+              <label
+                for="contribution-filter"
+                class="text-xs text-muted-foreground">Find a contribution</label
+              >
+              <Input
+                id="contribution-filter"
+                placeholder="Agent, task, result or status…"
+                bind:value={query}
+              />
+            </div>
+          </div>
+        {/if}
+        {#each sections as section (section.label)}
+          <section class="space-y-4" aria-label={section.label}>
+            <h3 class="flex items-center gap-2 font-semibold">
+              {section.label}<Badge variant="secondary"
+                >{section.tasks.length}</Badge
+              >
+            </h3>
+            {#each section.tasks.slice(0, visible[section.label]) as task (task.task.common.id)}<Contribution
+                flow={task}
+                {select}
+              />{/each}
+            {#if section.tasks.length > visible[section.label]}<Button
+                variant="outline"
+                onclick={() => (visible[section.label] += 3)}
+                >Show more · {section.tasks.length - visible[section.label]} remaining
+                in {section.label.toLowerCase()}</Button
+              >{/if}
+          </section>
+        {:else}<p class="py-8 text-sm text-muted-foreground">
+            {#if query}No contributions match your search.{:else}No tasks
+              recorded yet.{/if}
+          </p>{/each}
       </Accordion.Content>
     </Accordion.Item>
     <Accordion.Item value="record">
@@ -152,6 +174,11 @@
       <Accordion.Content>
         <Table.Root aria-label="Workflow fields"
           ><Table.Body>
+            {#if flow.activity.kind === "recorded"}<Table.Row
+                ><Table.Head>Last activity</Table.Head><Table.Cell
+                  >{WorkTiming.date(flow.activity.last_activity_at)}</Table.Cell
+                ></Table.Row
+              >{/if}
             {#each [{ name: "Feature", value: flow.feature.id }, { name: "Branch", value: flow.feature.branch }, { name: "Worktree", value: flow.feature.worktree }, { name: "Version", value: flow.feature.version }, { name: "Observed", value: new Date(flow.observed_at).toLocaleString() }] as field (field.name)}
               <Table.Row
                 ><Table.Head>{field.name}</Table.Head><Table.Cell
@@ -165,7 +192,8 @@
           Read-only Turso records. Commit descriptions are ledger event notes;
           Git commit messages and Git authorship are not recorded. Acceptance
           criteria describe requirements; check results are the recorded
-          verification evidence.
+          verification evidence. Feature creation and completion events are not
+          recorded; work dates are derived from task activity.
         </p>
       </Accordion.Content>
     </Accordion.Item>

@@ -10,8 +10,8 @@ use crate::values::{FeatureId, TaskId};
 use crate::versions::StorageVersion;
 use derive_more::Display;
 pub use flow::{
-    FeatureFlow, FlowCount, FlowState, Milestone, RecordedActor, RecordedCommit, TaskCount,
-    TaskFlow,
+    AttemptFlow, AttemptProgress, AttemptStart, FeatureActivity, FeatureFlow, FlowCount, FlowState,
+    Milestone, RecordedActor, RecordedCommit, TaskCount, TaskFlow,
 };
 use schemars::JsonSchema;
 use sea_query::{Expr, ExprTrait, Iden, Order, Query};

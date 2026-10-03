@@ -74,6 +74,62 @@
       "required": ["agent", "attempt", "expires_at", "phase"],
       "type": "object"
     },
+    "AttemptFlow": {
+      "description": "One claim and its own contributions within the bounded event history.",
+      "properties": {
+        "attempt": { "format": "int64", "type": "integer" },
+        "last_event": { "$ref": "#/$defs/EventKind" },
+        "ownership": { "$ref": "#/$defs/TaskOwnership" },
+        "progress": { "$ref": "#/$defs/AttemptProgress" },
+        "started": { "$ref": "#/$defs/AttemptStart" },
+        "updated_at": { "format": "int64", "type": "integer" },
+        "worker": { "$ref": "#/$defs/RecordedActor" }
+      },
+      "required": [
+        "attempt",
+        "worker",
+        "ownership",
+        "started",
+        "updated_at",
+        "last_event",
+        "progress"
+      ],
+      "type": "object"
+    },
+    "AttemptProgress": {
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "recorded", "type": "string" },
+            "progress": { "$ref": "#/$defs/Progress" }
+          },
+          "required": ["kind", "progress"],
+          "type": "object"
+        }
+      ]
+    },
+    "AttemptStart": {
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "at": { "format": "int64", "type": "integer" },
+            "kind": { "const": "recorded", "type": "string" }
+          },
+          "required": ["kind", "at"],
+          "type": "object"
+        }
+      ]
+    },
     "Check": {
       "additionalProperties": false,
       "properties": {
@@ -327,14 +383,34 @@
       "required": ["version", "id", "objective", "branch", "worktree"],
       "type": "object"
     },
+    "FeatureActivity": {
+      "description": "Task activity bounds, not feature lifecycle events (which are not stored).",
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "empty", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "first_task_at": { "format": "int64", "type": "integer" },
+            "kind": { "const": "recorded", "type": "string" },
+            "last_activity_at": { "format": "int64", "type": "integer" }
+          },
+          "required": ["kind", "first_task_at", "last_activity_at"],
+          "type": "object"
+        }
+      ]
+    },
     "FeatureFlow": {
       "properties": {
+        "activity": { "$ref": "#/$defs/FeatureActivity" },
         "counts": { "items": { "$ref": "#/$defs/FlowCount" }, "type": "array" },
         "feature": { "$ref": "#/$defs/Feature" },
         "observed_at": { "format": "int64", "type": "integer" },
         "tasks": { "$ref": "#/$defs/Page2" }
       },
-      "required": ["feature", "counts", "tasks", "observed_at"],
+      "required": ["feature", "counts", "activity", "tasks", "observed_at"],
       "type": "object"
     },
     "FlowCount": {
@@ -456,10 +532,11 @@
       "properties": {
         "actor": { "$ref": "#/$defs/AgentId" },
         "at": { "format": "int64", "type": "integer" },
+        "attempt": { "format": "int64", "type": "integer" },
         "commit": { "type": "string" },
         "revision": { "format": "int64", "type": "integer" }
       },
-      "required": ["commit", "actor", "at", "revision"],
+      "required": ["commit", "actor", "at", "revision", "attempt"],
       "type": "object"
     },
     "ReportingTarget": {
@@ -531,6 +608,10 @@
     },
     "TaskFlow": {
       "properties": {
+        "attempts": {
+          "items": { "$ref": "#/$defs/AttemptFlow" },
+          "type": "array"
+        },
         "checkpoints": {
           "items": { "$ref": "#/$defs/RecordedCommit" },
           "type": "array"
@@ -555,6 +636,7 @@
         "checkpoints",
         "integrations",
         "milestones",
+        "attempts",
         "history_end"
       ],
       "type": "object"

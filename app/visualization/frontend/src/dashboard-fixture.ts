@@ -41,6 +41,7 @@ export class Fixture {
     },
     checkpoints: [
       {
+        attempt: 1,
         commit: "a".repeat(40),
         actor: { team: "Development", role: "TypescriptDev" },
         at: 1500,
@@ -49,6 +50,7 @@ export class Fixture {
     ],
     integrations: [
       {
+        attempt: 1,
         commit: "b".repeat(40),
         actor: { team: "Delivery", role: "IntegrationAgent" },
         at: 2000,
@@ -56,6 +58,7 @@ export class Fixture {
       },
     ],
     milestones: [],
+    attempts: [],
     history_end: "Complete",
   };
   flow: FeatureFlow = {
@@ -67,6 +70,7 @@ export class Fixture {
       worktree: "/feature",
     },
     counts: [{ state: "integrated", count: 101 }],
+    activity: { kind: "recorded", first_task_at: 1000, last_activity_at: 2000 },
     tasks: { end: "More", records: [this.contribution] },
     observed_at: 2000,
   };

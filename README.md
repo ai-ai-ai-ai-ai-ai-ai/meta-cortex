@@ -499,11 +499,18 @@ Workbench window. The searchable left sidebar keeps workflows available while
 you inspect their agents, commits and activity. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-Each workflow opens with its requirement and full-feature progress. Compact
-contribution rows show the worker, status, task, result preview and commit/check
-counts. Blocked and unfinished work precedes finished and cancelled
-work. Search contributions by agent, task, result or status. Longer sections show
-three tasks initially; Show more reveals the remaining loaded tasks.
+Each workflow opens with its requirement, full-feature progress, recorded work
+dates and agent execution tree. Dates show the first task's creation, last activity
+and elapsed span, including waiting. Once all tasks finish, the latest task update
+marks completed work; cancellation is labelled as closed work instead. Feature
+creation and completion events are not stored, so these are task activity bounds.
+Dates and feature progress cover every task, independently of the loaded page.
+Expand agents into tasks and attempts to inspect their progress and linked commit
+counts. Earlier workers remain visible after reassignment. Select a task for
+each attempt's own result, findings, checks, dates and commit recording actors;
+a fresh claim does not inherit credit for the previous attempt's contribution.
+Browse contributions by status expands compact outcome rows. Search by agent,
+task, result or status; Show more reveals additional loaded tasks.
 Commit counts deduplicate checkpoint and integration events sharing a hash;
 both actors and event notes remain in task details. These notes describe the
 recorded event; Git commit messages and Git authorship are not recorded. Acceptance criteria
@@ -513,8 +520,8 @@ sidebar stays available; Back to workflow restores your filter and expanded rows
 The task page shows the full result, requirements and assignment alongside Git
 evidence. Its sections expose checks, dependencies, checkpoint and integration
 history, lifecycle events and full raw records. Full-feature totals summarize
-task states and completion progress; contributions cover the selected task page. Team & reporting structure
-expands the role hierarchy; Workflow record & data source exposes technical fields.
+task states and completion progress; contributions cover the selected task page.
+Workflow record & data source exposes technical fields.
 For tasks with
 `Assigned` ownership, the hierarchy follows the assigned role's recorded
 `reports_to` target. Each coordinator's own activities are separate from
@@ -528,7 +535,8 @@ reporting relationships.
 Use Refresh to reload recorded data, or enable Auto for reads every ten seconds.
 Refresh preserves contribution expansion and search. Previous/Next appears when
 there are other pages of native observations; these reads do not update the ledger.
-Each task projection includes its latest 100 events; task history can page through
+Attempt and linked commit counts cover the loaded history. Each task projection
+includes its latest 100 events; task history can page through
 older attempts and checkpoints. Runtime parent session links and Git authorship
 remain unrecorded when absent from Turso. Detailed task records and event snapshots
 retain all ledger fields, including task-specific extensions.
