@@ -7,6 +7,7 @@ import {
   waitFor,
 } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
+import { Deferred, Effect } from "effect";
 import App from "./App.svelte";
 import Workflow from "./Workflow.svelte";
 import RecordedTask from "./RecordedTask.svelte";
@@ -14,7 +15,7 @@ import { Progress } from "$lib/components/ui/progress";
 import { FlowPresentation } from "./workflow";
 import { TaskPresentation } from "./task-presentation";
 import { summarizeCounts } from "./progress-presentation";
-import type { AgentId, DesktopReply, Event } from "./contracts";
+import type { AgentId, DesktopFailure, DesktopReply, Event } from "./contracts";
 import {
   Fixture,
   BrowserMediaQueries,
@@ -178,6 +179,114 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
   });
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+});
+it("keeps cross-task history identity consistent through loading, failure and recorded event fields", async () => {
+  const first = new Fixture();
+  const second = new Fixture();
+  second.task.common.id = "review";
+  second.task.common.objective = "Review workflow";
+  second.task.common.progress.extensions = { artifact: "review-history" };
+  second.contribution.milestones = [
+    {
+      kind: "integrated",
+      actor: { team: "Delivery", role: "IntegrationAgent" },
+      attempt: 1,
+      revision: 5,
+      at: 2000,
+      note: "Review integration recorded",
+    },
+  ];
+  first.flow.tasks.records.push(second.contribution);
+  native.invoke
+    .mockResolvedValue(first.featuresReply())
+    .mockResolvedValueOnce(first.workflowReply());
+  render(App);
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Build workflow" }),
+  );
+  const initialSheet = await screen.findByRole("dialog", { name: "implement" });
+  await waitFor(() =>
+    expect(initialSheet.contains(document.activeElement)).toBe(true),
+  );
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  const historyTab = screen.getByRole("tab", { name: "history" });
+  await waitFor(() =>
+    expect(getComputedStyle(historyTab).pointerEvents).not.toBe("none"),
+  );
+  await userEvent.click(historyTab);
+  const historyRead = Deferred.makeUnsafe<DesktopReply, DesktopFailure>();
+  native.invoke.mockReturnValueOnce(
+    Effect.runPromise(Deferred.await(historyRead)),
+  );
+  await userEvent.click(
+    screen.getByRole("button", {
+      name: /integrated · review · IntegrationAgent/,
+    }),
+  );
+  const loadingSheet = await screen.findByRole("dialog", { name: "review" });
+  expect(
+    within(loadingSheet).getByText("Reading recorded history…"),
+  ).toBeTruthy();
+  expect(screen.queryByRole("dialog", { name: "implement" })).toBeNull();
+  expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
+    request: {
+      kind: "History",
+      query: { feature: "dashboard", task: "review" },
+      page: 0,
+    },
+  });
+  const failure: DesktopFailure = {
+    kind: "Ledger",
+    message: "Review history unavailable",
+  };
+  Effect.runSync(Deferred.fail(historyRead, failure));
+  expect(
+    await within(loadingSheet).findByText("Review history unavailable"),
+  ).toBeTruthy();
+  expect(screen.getByRole("dialog", { name: "review" })).toBe(loadingSheet);
+  const retry = Deferred.makeUnsafe<DesktopReply>();
+  native.invoke.mockReturnValueOnce(Effect.runPromise(Deferred.await(retry)));
+  await userEvent.click(
+    within(loadingSheet).getByRole("button", { name: "Retry" }),
+  );
+  expect(
+    within(loadingSheet).getByText("Reading recorded history…"),
+  ).toBeTruthy();
+  const event: Event = {
+    version: 1,
+    kind: "integrated",
+    actor: { team: "Delivery", role: "IntegrationAgent" },
+    note: "Full review history evidence",
+    task: second.task,
+  };
+  const reply: DesktopReply = {
+    selection: {
+      view: {
+        kind: "History",
+        query: { feature: "dashboard", task: "review" },
+      },
+      page: 0,
+    },
+    content: { kind: "History", value: { records: [event], end: "Complete" } },
+  };
+  Effect.runSync(Deferred.succeed(retry, reply));
+  const eventButton = await within(loadingSheet).findByRole("button", {
+    name: /integrated · Delivery \/ IntegrationAgent · attempt 1 · revision 5/,
+  });
+  await userEvent.click(eventButton);
+  expect(
+    within(loadingSheet).getByText("Full review history evidence"),
+  ).toBeTruthy();
+  const raw = within(loadingSheet).getByText(/review-history/);
+  expect(raw.textContent).toContain('"id": "review"');
+  expect(raw.textContent).toContain('"objective": "Review workflow"');
+  expect(raw.textContent).toContain('"ownership"');
+  expect(raw.textContent).toContain('"workspace"');
+  expect(raw.textContent).toContain("a".repeat(40));
+  expect(raw.textContent).toContain("b".repeat(40));
+  expect(screen.getByRole("dialog", { name: "review" })).toBe(loadingSheet);
+  expect(screen.queryByRole("dialog", { name: "implement" })).toBeNull();
 });
 it("renders Completed read-only evidence and queued feature assignments without fabricated Git", () => {
   const fixture = new Fixture();
