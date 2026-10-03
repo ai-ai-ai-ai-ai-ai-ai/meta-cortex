@@ -6,15 +6,20 @@
     Radio,
     Workflow as WorkflowIcon,
     ArrowRight,
+    ArrowLeft,
     GitBranch,
   } from "@lucide/svelte";
   import * as Sidebar from "$lib/components/ui/sidebar";
-  import * as Sheet from "$lib/components/ui/sheet";
   import * as Accordion from "$lib/components/ui/accordion";
   import * as Table from "$lib/components/ui/table";
   import { Separator } from "$lib/components/ui/separator";
   import { Button } from "$lib/components/ui/button";
-  import { DashboardController, LoadKind } from "./dashboard-state.svelte";
+  import {
+    DashboardController,
+    DetailView,
+    LoadKind,
+    type DetailSelection,
+  } from "./dashboard-state.svelte";
   import { DashboardApi } from "./api";
   import type { TaskV2, TaskFlow } from "./contracts";
   import Navigation from "./Navigation.svelte";
@@ -23,9 +28,9 @@
 
   const dashboard = new DashboardController(new DashboardApi());
   const inspector = new DashboardController(new DashboardApi());
-  let record = $state<{ task: TaskV2; flow?: TaskFlow } | null>(null);
-  let sheetOpen = $state(false);
-  let showingHistory = $state(false);
+  let detail = $state<DetailSelection>({ kind: DetailView.Workflow });
+  let detailHeading = $state<HTMLHeadingElement>();
+  let returnFocus: HTMLElement | null = null;
   let autoRefresh = $state(false);
   const refresh = Effect.sync(() => dashboard.refresh());
   onMount(() => {
@@ -36,25 +41,35 @@
     };
   });
   function navigate(feature: string) {
-    sheetOpen = false;
+    returnFocus = null;
+    back();
     dashboard.load({ kind: "Workflow", feature, page: 0 });
+  }
+  function overview() {
+    returnFocus = null;
+    back();
+    dashboard.load({ kind: "Features", page: 0 });
+  }
+  function back() {
+    inspector.stop();
+    detail = { kind: DetailView.Workflow };
+  }
+  function select(flow: TaskFlow) {
+    returnFocus = document.querySelector<HTMLElement>(":focus");
+    choose({ task: flow.task, flow });
   }
   function choose(selection: { task: TaskV2; flow?: TaskFlow }) {
     inspector.stop();
-    record = selection;
-    showingHistory = false;
-    sheetOpen = true;
+    detail = { kind: DetailView.Task, ...selection };
   }
   function history(task: TaskV2) {
-    record = { task };
     inspector.features = dashboard.features;
     inspector.load({
       kind: "History",
       query: { feature: task.common.feature, task: task.common.id },
       page: 0,
     });
-    showingHistory = true;
-    sheetOpen = true;
+    detail = { kind: DetailView.History };
   }
   $effect(() => {
     switch (dashboard.state.kind) {
@@ -76,8 +91,7 @@
             inspector.features = dashboard.features;
             inspector.state = dashboard.state;
             inspector.reply = reply;
-            showingHistory = true;
-            sheetOpen = true;
+            detail = { kind: DetailView.History };
             dashboard.load({
               kind: "Workflow",
               feature: dashboard.currentFeature(),
@@ -106,6 +120,17 @@
           case "Workflow":
             return;
         }
+    }
+  });
+  $effect(() => {
+    switch (detail.kind) {
+      case DetailView.Workflow:
+        returnFocus?.focus();
+        return;
+      case DetailView.Task:
+      case DetailView.History:
+        detailHeading?.focus({ preventScroll: true });
+        window.scrollTo(0, 0);
     }
   });
   $effect(() => {
@@ -178,7 +203,7 @@
     features={dashboard.features}
     selected={dashboard.currentFeature()}
     {navigate}
-    overview={() => dashboard.load({ kind: "Features", page: 0 })}
+    {overview}
   />
   <Sidebar.Inset class="min-w-0">
     <header
@@ -188,27 +213,32 @@
       <span class="mr-auto truncate text-sm text-muted-foreground"
         >Workbench / {dashboard.currentFeature() || "All workflows"}</span
       >
-      <Button
-        variant="ghost"
-        size="sm"
-        aria-pressed={autoRefresh}
-        aria-label="Auto-refresh every 10 seconds"
-        onclick={() => (autoRefresh = !autoRefresh)}
-        ><Radio />Auto {#if autoRefresh}on{:else}off{/if}</Button
-      >
-      <Button
-        variant="outline"
-        size="sm"
-        aria-label="Refresh"
-        disabled={dashboard.state.kind === LoadKind.Loading}
-        onclick={() => dashboard.refresh()}
-        ><RefreshCw
-        />{#if dashboard.reply && dashboard.state.kind === LoadKind.Loading}<span
-            role="status">Reading…</span
-          >{:else}Refresh{/if}</Button
-      >
+      {#if detail.kind === DetailView.Workflow}
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-pressed={autoRefresh}
+          aria-label="Auto-refresh every 10 seconds"
+          onclick={() => (autoRefresh = !autoRefresh)}
+          ><Radio />Auto {#if autoRefresh}on{:else}off{/if}</Button
+        >
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="Refresh"
+          disabled={dashboard.state.kind === LoadKind.Loading}
+          onclick={() => dashboard.refresh()}
+          ><RefreshCw
+          />{#if dashboard.reply && dashboard.state.kind === LoadKind.Loading}<span
+              role="status">Reading…</span
+            >{:else}Refresh{/if}</Button
+        >
+      {/if}
     </header>
-    <div class="space-y-6 p-4 md:p-6">
+    <div
+      hidden={detail.kind !== DetailView.Workflow}
+      class="space-y-6 p-4 md:p-6"
+    >
       {#if !dashboard.reply || dashboard.state.kind === LoadKind.Failed}{@render loadStatus(
           dashboard,
         )}{/if}
@@ -278,7 +308,7 @@
         {:else if reply.content.kind === "Workflow"}
           {#key reply.content.value.feature.id}<Workflow
               flow={reply.content.value}
-              select={(flow: TaskFlow) => choose({ task: flow.task, flow })}
+              {select}
             />{/key}
           {@render paging(dashboard)}
           <p class="text-xs text-muted-foreground">
@@ -289,68 +319,75 @@
         {/if}
       {/if}
     </div>
+    {#if detail.kind !== DetailView.Workflow}
+      <section
+        class="min-w-0 space-y-6 p-4 md:p-6"
+        aria-labelledby="task-title"
+      >
+        <header class="space-y-3">
+          <Button variant="ghost" size="sm" onclick={back}>
+            <ArrowLeft />Back to workflow
+          </Button>
+          <h1
+            id="task-title"
+            bind:this={detailHeading}
+            tabindex="-1"
+            class="scroll-mt-20 break-words text-2xl font-semibold tracking-tight"
+          >
+            {#if detail.kind === DetailView.Task}{detail.task.common
+                .id}{:else if inspector.state.request.kind === "History" || inspector.state.request.kind === "Task"}{inspector
+                .state.request.query
+                .task}{:else if inspector.reply?.selection.view.kind === "History"}{inspector
+                .reply.selection.view.query.task}{:else}Recorded history{/if}
+          </h1>
+        </header>
+        {#if detail.kind === DetailView.History}
+          {@render loadStatus(inspector)}
+          {#if inspector.state.kind === LoadKind.Ready && inspector.state.reply.content.kind === "History"}
+            <h2 class="font-semibold">Recorded history</h2>
+            {@render paging(inspector)}
+            <Accordion.Root type="multiple">
+              {#each inspector.state.reply.content.value.records as event (event.task.common.revision)}
+                <Accordion.Item value={String(event.task.common.revision)}
+                  ><Accordion.Trigger
+                    >{event.kind} · {event.actor.team} / {event.actor.role} · attempt
+                    {event.task.common.attempt} · revision {event.task.common
+                      .revision}</Accordion.Trigger
+                  ><Accordion.Content>
+                    <p>{event.note}</p>
+                    <p class="my-2 text-xs text-muted-foreground">
+                      {new Date(event.task.common.last_update).toLocaleString()}
+                    </p>
+                    <Button
+                      variant="link"
+                      onclick={() => choose({ task: event.task })}
+                      >View task snapshot</Button
+                    >
+                    <pre
+                      class="whitespace-pre-wrap break-all text-xs">{JSON.stringify(
+                        event,
+                        null,
+                        2,
+                      )}</pre>
+                  </Accordion.Content></Accordion.Item
+                >
+              {/each}
+            </Accordion.Root>
+            {#if inspector.state.reply.selection.view.kind === "History"}
+              {@const query = inspector.state.reply.selection.view.query}
+              <Button
+                variant="outline"
+                onclick={() => inspector.load({ kind: "Task", query })}
+                >Latest task record</Button
+              >
+            {/if}
+          {/if}
+        {:else if detail.kind === DetailView.Task}<RecordedTask
+            task={detail.task}
+            flow={detail.flow}
+            {history}
+          />{/if}
+      </section>
+    {/if}
   </Sidebar.Inset>
 </Sidebar.Provider>
-
-<Sheet.Root bind:open={sheetOpen}>
-  <Sheet.Content class="overflow-y-auto data-[side=right]:sm:max-w-xl">
-    <Sheet.Header>
-      <Sheet.Title
-        >{#if showingHistory && (inspector.state.request.kind === "History" || inspector.state.request.kind === "Task")}{inspector
-            .state.request.query.task}{:else}{record?.task.common.id ??
-            "Recorded history"}{/if}</Sheet.Title
-      >
-      <Sheet.Description
-        >Task lifecycle, contributions and recorded evidence.</Sheet.Description
-      >
-    </Sheet.Header>
-    <div class="space-y-4 px-4 pb-4">
-      {#if showingHistory}
-        {@render loadStatus(inspector)}
-        {#if inspector.state.kind === LoadKind.Ready && inspector.state.reply.content.kind === "History"}
-          <h2 class="font-semibold">Recorded history</h2>
-          {@render paging(inspector)}
-          <Accordion.Root type="multiple">
-            {#each inspector.state.reply.content.value.records as event (event.task.common.revision)}
-              <Accordion.Item value={String(event.task.common.revision)}
-                ><Accordion.Trigger
-                  >{event.kind} · {event.actor.team} / {event.actor.role} · attempt
-                  {event.task.common.attempt} · revision {event.task.common
-                    .revision}</Accordion.Trigger
-                ><Accordion.Content>
-                  <p>{event.note}</p>
-                  <p class="my-2 text-xs text-muted-foreground">
-                    {new Date(event.task.common.last_update).toLocaleString()}
-                  </p>
-                  <Button
-                    variant="link"
-                    onclick={() => choose({ task: event.task })}
-                    >View task snapshot</Button
-                  >
-                  <pre
-                    class="whitespace-pre-wrap break-all text-xs">{JSON.stringify(
-                      event,
-                      null,
-                      2,
-                    )}</pre>
-                </Accordion.Content></Accordion.Item
-              >
-            {/each}
-          </Accordion.Root>
-          {#if inspector.state.reply.selection.view.kind === "History"}
-            {@const query = inspector.state.reply.selection.view.query}
-            <Button
-              variant="outline"
-              onclick={() => inspector.load({ kind: "Task", query })}
-              >Latest task record</Button
-            >
-          {/if}
-        {/if}
-      {:else if record}<RecordedTask
-          task={record.task}
-          flow={record.flow}
-          {history}
-        />{/if}
-    </div>
-  </Sheet.Content>
-</Sheet.Root>

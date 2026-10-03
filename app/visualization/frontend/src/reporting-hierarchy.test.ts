@@ -23,6 +23,7 @@ import {
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 beforeEach(() => {
+  vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   const mediaQueries = new BrowserMediaQueries();
   const matchMedia: BrowserMediaQueries["matchMedia"] =
     mediaQueries.matchMedia.bind(mediaQueries);
@@ -265,7 +266,7 @@ it("opens the prioritized coordinator record and keeps every activity selectable
       name: "Open task coordinator-implementation",
     }),
   );
-  const working = await screen.findByRole("dialog", {
+  const working = await screen.findByRole("region", {
     name: "coordinator-implementation",
   });
   expect(
@@ -275,8 +276,14 @@ it("opens the prioritized coordinator record and keeps every activity selectable
   await waitFor(() =>
     expect(working.contains(document.activeElement)).toBe(true),
   );
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Back to workflow" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Back to workflow" }),
+    ).toBeNull(),
+  );
   const completed = within(table).getByRole("button", {
     name: "Open task coordinator-plan",
   });
@@ -284,12 +291,18 @@ it("opens the prioritized coordinator record and keeps every activity selectable
     expect(getComputedStyle(completed).pointerEvents).not.toBe("none"),
   );
   await userEvent.click(completed);
-  const plan = await screen.findByRole("dialog", { name: "coordinator-plan" });
+  const plan = await screen.findByRole("region", { name: "coordinator-plan" });
   expect(within(plan).getByText("Plan reporting hierarchy")).toBeTruthy();
   expect(within(plan).getByText("Completed")).toBeTruthy();
   await waitFor(() => expect(plan.contains(document.activeElement)).toBe(true));
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Back to workflow" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Back to workflow" }),
+    ).toBeNull(),
+  );
   const implementation = within(table).getByRole("row", {
     name: /coordinator-implementation/,
   });
@@ -302,7 +315,7 @@ it("opens the prioritized coordinator record and keeps every activity selectable
   await userEvent.click(reopen);
   expect(
     within(
-      await screen.findByRole("dialog", { name: "coordinator-implementation" }),
+      await screen.findByRole("region", { name: "coordinator-implementation" }),
     ).getByText("Implement reporting hierarchy"),
   ).toBeTruthy();
 });

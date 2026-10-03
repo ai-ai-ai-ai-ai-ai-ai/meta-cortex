@@ -4,6 +4,8 @@ import type {
   DesktopReply,
   DashboardView,
   Feature,
+  TaskV2,
+  TaskFlow,
 } from "./contracts";
 import { DashboardApi } from "./api";
 import type { DashboardFailure } from "./api";
@@ -12,6 +14,15 @@ export enum LoadKind {
   Ready = "ready",
   Failed = "failed",
 }
+export enum DetailView {
+  Workflow = "workflow",
+  Task = "task",
+  History = "history",
+}
+export type DetailSelection =
+  | { kind: DetailView.Workflow }
+  | { kind: DetailView.Task; task: TaskV2; flow?: TaskFlow }
+  | { kind: DetailView.History };
 type Load =
   | { kind: LoadKind.Loading; request: DesktopRead }
   | { kind: LoadKind.Ready; reply: DesktopReply; request: DesktopRead }

@@ -141,8 +141,9 @@ identifies who recorded it, not who actually authored that Git commit.
    and progress. Compact contribution rows show the worker, status, task,
    result preview and commit/check counts. Blocked and unfinished work appear
    before finished work. Select a row to open full requirements, findings,
-   checks and lifecycle events in the right detail panel. Commit descriptions are
-   recorded event notes, not Git commit messages. Team & reporting structure
+   checks and lifecycle events in the main content area. The left sidebar stays
+   available; Back to workflow restores the filter and expanded rows. Commit
+   descriptions are recorded event notes, not Git commit messages. Team & reporting structure
    expands the agent hierarchy; Workflow record & data source exposes technical
    fields. Narrow windows open navigation as a drawer.
    Full task records and individual event snapshots retain all ledger fields,

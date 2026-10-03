@@ -24,6 +24,7 @@ import {
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 beforeEach(() => {
+  vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   const media = new BrowserMediaQueries();
   vi.stubGlobal("matchMedia", media.matchMedia.bind(media));
   vi.spyOn(Element.prototype, "getClientRects").mockImplementation(
@@ -198,7 +199,7 @@ it("prioritizes blocked work without treating queued or cancelled work as achiev
   ).toHaveLength(1);
   expect(screen.getByText(/This page contains 4 of 101 tasks/)).toBeTruthy();
 });
-it("keeps full requirements, findings and check output in the selected task inspector", async () => {
+it("keeps full requirements, findings and check output in the selected main-area task page", async () => {
   const fixture = new Fixture();
   fixture.task.common.acceptance = [
     "First criterion",
@@ -229,7 +230,7 @@ it("keeps full requirements, findings and check output in the selected task insp
   await userEvent.click(
     screen.getByRole("button", { name: "Open task implement" }),
   );
-  const inspector = await screen.findByRole("dialog", { name: "implement" });
+  const inspector = await screen.findByRole("region", { name: "implement" });
   await userEvent.click(
     within(inspector).getByRole("button", { name: "Acceptance (3)" }),
   );
@@ -249,8 +250,14 @@ it("keeps full requirements, findings and check output in the selected task insp
     within(inspector).getByRole("button", { name: "failed · cargo test" }),
   );
   expect(within(inspector).getByText("Recorded failure output")).toBeTruthy();
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Back to workflow" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Back to workflow" }),
+    ).toBeNull(),
+  );
   await waitFor(() =>
     expect(document.body.style.pointerEvents).not.toBe("none"),
   );
@@ -326,10 +333,16 @@ it("keeps contribution rows during refresh and returns focus after inspecting a 
     name: "Open task implement",
   });
   await userEvent.click(row);
-  const inspector = await screen.findByRole("dialog", { name: "implement" });
+  const inspector = await screen.findByRole("region", { name: "implement" });
   expect(within(inspector).getByText("Graph completed")).toBeTruthy();
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Back to workflow" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Back to workflow" }),
+    ).toBeNull(),
+  );
   await waitFor(() => expect(document.activeElement).toBe(row));
 });
 it("keeps native feature totals and Git integration evidence separate from loaded activity", () => {
@@ -399,7 +412,7 @@ it("preserves stock Progress raw completion values", () => {
   expect(meter.getAttribute("aria-valuemin")).toBe("0");
   expect(meter.innerHTML).toContain("translateX(-40%)");
 });
-it("opens one stock Sheet with recorded fields, checks, raw extensions and full history", async () => {
+it("opens a full-width task page with recorded fields, checks, raw extensions and full history", async () => {
   const fixture = new Fixture();
   fixture.task.common.progress.findings = ["Native findings"];
   fixture.task.common.progress.next_steps = ["Next recorded step"];
@@ -418,12 +431,10 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
     name: "Open task implement",
   });
   await userEvent.click(activity);
-  const sheet = await screen.findByRole("dialog", { name: "implement" });
-  await waitFor(() =>
-    expect(sheet.contains(document.activeElement)).toBe(true),
-  );
-  expect(within(sheet).getByText("Graph completed")).toBeTruthy();
-  const fields = within(sheet).getByRole("table", { name: "Task fields" });
+  const page = await screen.findByRole("region", { name: "implement" });
+  await waitFor(() => expect(page.contains(document.activeElement)).toBe(true));
+  expect(within(page).getByText("Graph completed")).toBeTruthy();
+  const fields = within(page).getByRole("table", { name: "Task fields" });
   expect(
     within(fields).getByRole("row", {
       name: "Worker Development / TypescriptDev",
@@ -434,8 +445,8 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
       name: "Assignment Development / TypescriptDev",
     }),
   ).toBeTruthy();
-  expect(within(sheet).getByText("Team Gizmo")).toBeTruthy();
-  const workspace = within(sheet).getByRole("row", {
+  expect(within(page).getByText("Team Gizmo")).toBeTruthy();
+  const workspace = within(page).getByRole("row", {
     name: /Workspace detail/,
   });
   expect(workspace.textContent).toContain("codex/worker");
@@ -443,29 +454,29 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
   expect(within(fields).getByText("a".repeat(40))).toBeTruthy();
   expect(within(fields).getByText("b".repeat(40))).toBeTruthy();
   await userEvent.click(
-    within(sheet).getByRole("button", { name: "Findings (1)" }),
+    within(page).getByRole("button", { name: "Findings (1)" }),
   );
-  expect(within(sheet).getByText("Native findings")).toBeTruthy();
+  expect(within(page).getByText("Native findings")).toBeTruthy();
   await userEvent.click(
-    within(sheet).getByRole("button", { name: "Next steps (1)" }),
+    within(page).getByRole("button", { name: "Next steps (1)" }),
   );
-  expect(within(sheet).getByText("Next recorded step")).toBeTruthy();
+  expect(within(page).getByText("Next recorded step")).toBeTruthy();
   await userEvent.click(
-    within(sheet).getByRole("button", { name: "Acceptance (1)" }),
+    within(page).getByRole("button", { name: "Acceptance (1)" }),
   );
-  expect(within(sheet).getByText("Show recorded work")).toBeTruthy();
-  await userEvent.click(within(sheet).getByRole("tab", { name: "Checks (1)" }));
+  expect(within(page).getByText("Show recorded work")).toBeTruthy();
+  await userEvent.click(within(page).getByRole("tab", { name: "Checks (1)" }));
   await userEvent.click(
-    within(sheet).getByRole("button", { name: "passed · bun run test" }),
+    within(page).getByRole("button", { name: "passed · bun run test" }),
   );
-  expect(within(sheet).getByText("Recorded check evidence")).toBeTruthy();
-  await userEvent.click(within(sheet).getByRole("tab", { name: "Raw" }));
-  const raw = within(sheet).getByText(/native-contract-v2/);
+  expect(within(page).getByText("Recorded check evidence")).toBeTruthy();
+  await userEvent.click(within(page).getByRole("tab", { name: "Raw" }));
+  const raw = within(page).getByText(/native-contract-v2/);
   expect(raw.textContent).toContain('"ownership"');
   expect(raw.textContent).toContain('"extensions"');
   expect(raw.textContent).toContain('"revision": 5');
-  await userEvent.click(within(sheet).getByRole("tab", { name: "History" }));
-  const historyPanel = within(sheet).getByRole("tabpanel", { name: "History" });
+  await userEvent.click(within(page).getByRole("tab", { name: "History" }));
+  const historyPanel = within(page).getByRole("tabpanel", { name: "History" });
   expect(within(historyPanel).getByText(/a{40}/)).toBeTruthy();
   expect(within(historyPanel).getByText(/b{40}/)).toBeTruthy();
   const event: Event = {
@@ -487,13 +498,13 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
   };
   native.invoke.mockResolvedValueOnce(history);
   await userEvent.click(
-    within(sheet).getByRole("button", { name: "Open full history" }),
+    within(page).getByRole("button", { name: "Open full history" }),
   );
-  const checkpoint = await within(sheet).findByRole("button", {
+  const checkpoint = await within(page).findByRole("button", {
     name: /checkpoint · Development \/ RustDev · attempt 1 · revision 5/,
   });
   await userEvent.click(checkpoint);
-  expect(within(sheet).getByText("Native history details")).toBeTruthy();
+  expect(within(page).getByText("Native history details")).toBeTruthy();
   expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
     request: {
       kind: "History",
@@ -501,8 +512,14 @@ it("opens one stock Sheet with recorded fields, checks, raw extensions and full 
       page: 0,
     },
   });
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Back to workflow" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Back to workflow" }),
+    ).toBeNull(),
+  );
 });
 it("keeps cross-task history identity consistent through loading, failure and recorded event fields", async () => {
   const first = new Fixture();
@@ -532,12 +549,18 @@ it("keeps cross-task history identity consistent through loading, failure and re
     expect(getComputedStyle(activity).pointerEvents).not.toBe("none"),
   );
   await userEvent.click(activity);
-  const initialSheet = await screen.findByRole("dialog", { name: "implement" });
+  const initialPage = await screen.findByRole("region", { name: "implement" });
   await waitFor(() =>
-    expect(initialSheet.contains(document.activeElement)).toBe(true),
+    expect(initialPage.contains(document.activeElement)).toBe(true),
   );
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Back to workflow" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Back to workflow" }),
+    ).toBeNull(),
+  );
   const review = screen.getByRole("button", {
     name: "Open task review",
   });
@@ -545,23 +568,23 @@ it("keeps cross-task history identity consistent through loading, failure and re
     expect(getComputedStyle(review).pointerEvents).not.toBe("none"),
   );
   await userEvent.click(review);
-  const secondSheet = await screen.findByRole("dialog", { name: "review" });
+  const secondPage = await screen.findByRole("region", { name: "review" });
   await waitFor(() =>
-    expect(secondSheet.contains(document.activeElement)).toBe(true),
+    expect(secondPage.contains(document.activeElement)).toBe(true),
   );
   await userEvent.click(
-    within(secondSheet).getByRole("tab", { name: "History" }),
+    within(secondPage).getByRole("tab", { name: "History" }),
   );
   const historyRead = Deferred.makeUnsafe<DesktopReply, DesktopFailure>();
   native.invoke.mockReturnValueOnce(
     Effect.runPromise(Deferred.await(historyRead)),
   );
   await userEvent.click(
-    within(secondSheet).getByRole("button", { name: "Open full history" }),
+    within(secondPage).getByRole("button", { name: "Open full history" }),
   );
-  const loadingSheet = await screen.findByRole("dialog", { name: "review" });
-  expect(within(loadingSheet).getByText("Reading recorded work…")).toBeTruthy();
-  expect(screen.queryByRole("dialog", { name: "implement" })).toBeNull();
+  const loadingPage = await screen.findByRole("region", { name: "review" });
+  expect(within(loadingPage).getByText("Reading recorded work…")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "implement" })).toBeNull();
   expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
     request: {
       kind: "History",
@@ -575,15 +598,15 @@ it("keeps cross-task history identity consistent through loading, failure and re
   };
   Effect.runSync(Deferred.fail(historyRead, failure));
   expect(
-    await within(loadingSheet).findByText("Review history unavailable"),
+    await within(loadingPage).findByText("Review history unavailable"),
   ).toBeTruthy();
-  expect(screen.getByRole("dialog", { name: "review" })).toBe(loadingSheet);
+  expect(screen.getByRole("region", { name: "review" })).toBe(loadingPage);
   const retry = Deferred.makeUnsafe<DesktopReply>();
   native.invoke.mockReturnValueOnce(Effect.runPromise(Deferred.await(retry)));
   await userEvent.click(
-    within(loadingSheet).getByRole("button", { name: "Retry" }),
+    within(loadingPage).getByRole("button", { name: "Retry" }),
   );
-  expect(within(loadingSheet).getByText("Reading recorded work…")).toBeTruthy();
+  expect(within(loadingPage).getByText("Reading recorded work…")).toBeTruthy();
   const event: Event = {
     version: 1,
     kind: "integrated",
@@ -602,28 +625,28 @@ it("keeps cross-task history identity consistent through loading, failure and re
     content: { kind: "History", value: { records: [event], end: "Complete" } },
   };
   Effect.runSync(Deferred.succeed(retry, reply));
-  const eventButton = await within(loadingSheet).findByRole("button", {
+  const eventButton = await within(loadingPage).findByRole("button", {
     name: /integrated · Delivery \/ IntegrationAgent · attempt 1 · revision 5/,
   });
   await userEvent.click(eventButton);
   expect(
-    within(loadingSheet).getByText("Full review history evidence"),
+    within(loadingPage).getByText("Full review history evidence"),
   ).toBeTruthy();
-  const raw = within(loadingSheet).getByText(/review-history/);
+  const raw = within(loadingPage).getByText(/review-history/);
   expect(raw.textContent).toContain('"id": "review"');
   expect(raw.textContent).toContain('"objective": "Review workflow"');
   expect(raw.textContent).toContain('"ownership"');
   expect(raw.textContent).toContain('"workspace"');
   expect(raw.textContent).toContain("a".repeat(40));
   expect(raw.textContent).toContain("b".repeat(40));
-  expect(screen.getByRole("dialog", { name: "review" })).toBe(loadingSheet);
-  expect(screen.queryByRole("dialog", { name: "implement" })).toBeNull();
+  expect(screen.getByRole("region", { name: "review" })).toBe(loadingPage);
+  expect(screen.queryByRole("region", { name: "implement" })).toBeNull();
   await userEvent.click(
-    within(loadingSheet).getByRole("button", { name: "View task snapshot" }),
+    within(loadingPage).getByRole("button", { name: "View task snapshot" }),
   );
-  expect(screen.getByRole("dialog", { name: "review" })).toBe(loadingSheet);
-  expect(within(loadingSheet).getByText("Review workflow")).toBeTruthy();
-  const snapshot = within(loadingSheet).getByRole("table", {
+  expect(screen.getByRole("region", { name: "review" })).toBe(loadingPage);
+  expect(within(loadingPage).getByText("Review workflow")).toBeTruthy();
+  const snapshot = within(loadingPage).getByRole("table", {
     name: "Task fields",
   });
   expect(within(snapshot).queryByRole("row", { name: /^Worker/ })).toBeNull();
@@ -632,8 +655,8 @@ it("keeps cross-task history identity consistent through loading, failure and re
       name: "Assignment Development / TypescriptDev",
     }),
   ).toBeTruthy();
-  await userEvent.click(within(loadingSheet).getByRole("tab", { name: "Raw" }));
-  const snapshotRaw = within(loadingSheet).getByText(/review-history/);
+  await userEvent.click(within(loadingPage).getByRole("tab", { name: "Raw" }));
+  const snapshotRaw = within(loadingPage).getByText(/review-history/);
   expect(snapshotRaw.textContent).toContain('"id": "review"');
   expect(snapshotRaw.textContent).not.toContain('"worker"');
 });
@@ -810,12 +833,19 @@ it("retries failed native reads and keeps feature paging/manual refresh on nativ
     request: { kind: "Features", page: 1 },
   });
 });
-it("uses library DataTable keyboard expansion and stock Sheet dismissal with focus restoration", async () => {
+it("uses library DataTable keyboard expansion and main-area Back navigation with focus restoration", async () => {
   const fixture = new Fixture();
+  const other = new Fixture();
+  other.task.common.id = "review";
+  fixture.flow.tasks.records.push(other.contribution);
   native.invoke
     .mockResolvedValue(fixture.featuresReply())
     .mockResolvedValueOnce(fixture.workflowReply());
   render(App);
+  const filter = await screen.findByRole("textbox", {
+    name: "Find a contribution",
+  });
+  await userEvent.type(filter, "implement");
   await userEvent.click(
     await screen.findByRole("button", { name: "Team & reporting structure" }),
   );
@@ -840,11 +870,95 @@ it("uses library DataTable keyboard expansion and stock Sheet dismissal with foc
     name: "Open task implement",
   });
   await userEvent.click(activity);
-  const sheet = await screen.findByRole("dialog", { name: "implement" });
-  await waitFor(() =>
-    expect(sheet.contains(document.activeElement)).toBe(true),
+  const page = await screen.findByRole("region", { name: "implement" });
+  expect(screen.queryAllByRole("dialog")).toHaveLength(0);
+  expect(
+    screen.queryAllByRole("region", { name: "Workflow overview" }),
+  ).toHaveLength(0);
+  expect(
+    screen.getByRole("navigation", { name: "Workflow navigation" }),
+  ).toBeTruthy();
+  await waitFor(() => expect(page.contains(document.activeElement)).toBe(true));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Back to workflow" }),
   );
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryAllByRole("dialog")).toHaveLength(0));
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Back to workflow" }),
+    ).toBeNull(),
+  );
   await waitFor(() => expect(document.activeElement).toBe(activity));
+  expect(screen.getByRole("textbox", { name: "Find a contribution" })).toBe(
+    filter,
+  );
+  expect(filter).toHaveProperty("value", "implement");
+  expect(team.getAttribute("aria-expanded")).toBe("true");
+  expect(worker.getAttribute("aria-expanded")).toBe("true");
+});
+it.each(["Task", "History"] as const)(
+  "opens a native %s target in the main area and returns to its workflow",
+  async (kind) => {
+    const fixture = new Fixture();
+    const query = { feature: "dashboard", task: "implement" };
+    const initial: DesktopReply = fixture.taskReply();
+    switch (kind) {
+      case "Task":
+        break;
+      case "History":
+        initial.selection.view = { kind, query };
+        initial.content = { kind, value: { records: [], end: "Complete" } };
+        break;
+    }
+    native.invoke
+      .mockResolvedValueOnce(initial)
+      .mockResolvedValueOnce(fixture.featuresReply())
+      .mockResolvedValue(fixture.workflowReply());
+    render(App);
+    const page = await screen.findByRole("region", { name: "implement" });
+    expect(page.closest("main")).toBeTruthy();
+    expect(screen.queryAllByRole("dialog")).toHaveLength(0);
+    await userEvent.click(
+      within(page).getByRole("button", { name: "Back to workflow" }),
+    );
+    expect(
+      await screen.findByRole("region", { name: "Workflow overview" }),
+    ).toBeTruthy();
+    expect(screen.queryAllByRole("region", { name: "implement" })).toHaveLength(
+      0,
+    );
+    expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
+      request: { kind: "Workflow", feature: "dashboard", page: 0 },
+    });
+  },
+);
+it("allows sidebar navigation during a history read and ignores the old reply", async () => {
+  const fixture = new Fixture();
+  native.invoke
+    .mockResolvedValue(fixture.featuresReply())
+    .mockResolvedValueOnce(fixture.workflowReply());
+  render(App);
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Open task implement" }),
+  );
+  await userEvent.click(screen.getByRole("tab", { name: "History" }));
+  const read = Deferred.makeUnsafe<DesktopReply>();
+  native.invoke.mockReturnValueOnce(Effect.runPromise(Deferred.await(read)));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Open full history" }),
+  );
+  expect(await screen.findByRole("status")).toHaveProperty(
+    "textContent",
+    "Reading recorded work…",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "All workflows" }));
+  expect(
+    await screen.findByRole("heading", { name: "All workflows" }),
+  ).toBeTruthy();
+  Effect.runSync(Deferred.succeed(read, fixture.taskReply()));
+  await waitFor(() =>
+    expect(screen.queryAllByRole("region", { name: "implement" })).toHaveLength(
+      0,
+    ),
+  );
+  expect(screen.getByRole("heading", { name: "All workflows" })).toBeTruthy();
 });

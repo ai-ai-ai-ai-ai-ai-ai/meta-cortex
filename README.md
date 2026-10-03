@@ -505,15 +505,15 @@ counts. Blocked and unfinished work precedes finished and cancelled
 work. Search contributions by agent, task, result or status. Longer sections show
 three tasks initially; Show more reveals the remaining loaded tasks.
 Commit counts deduplicate checkpoint and integration events sharing a hash;
-both actors and event notes remain in the inspector. These notes describe the recorded event;
-Git commit messages and Git authorship are not recorded. Acceptance criteria
+both actors and event notes remain in task details. These notes describe the
+recorded event; Git commit messages and Git authorship are not recorded. Acceptance criteria
 remain requirements, separate from recorded check outcomes.
-Select a contribution to open a closable panel on the right with its full text,
-criteria, findings, checks and lifecycle events while keeping the workflow in
-place. Its recorded
-task sections expose checks, dependencies, checkpoint and integration history,
-and full raw records. Full-feature totals summarize task states and completion
-progress; contributions cover the selected task page. Team & reporting structure
+Select a contribution to open its details in the main content area. The left
+sidebar stays available; Back to workflow restores your filter and expanded rows.
+The task page shows the full result, requirements and assignment alongside Git
+evidence. Its sections expose checks, dependencies, checkpoint and integration
+history, lifecycle events and full raw records. Full-feature totals summarize
+task states and completion progress; contributions cover the selected task page. Team & reporting structure
 expands the role hierarchy; Workflow record & data source exposes technical fields.
 For tasks with
 `Assigned` ownership, the hierarchy follows the assigned role's recorded

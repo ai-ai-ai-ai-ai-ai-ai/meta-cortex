@@ -15,15 +15,21 @@
   let display = $derived(TaskPresentation.describe(task));
 </script>
 
-<Badge variant="secondary" class={TaskPresentation.tones[display.status]}
-  >{display.statusLabel}</Badge
->
-<p>{task.common.objective}</p>
-<p class="text-sm text-muted-foreground">
-  Attempt {task.common.attempt} · revision {task.common.revision} · {new Date(
-    task.common.last_update,
-  ).toLocaleString()}
-</p>
+<div class="space-y-3">
+  <div class="flex flex-wrap items-center gap-3">
+    <Badge variant="secondary" class={TaskPresentation.tones[display.status]}
+      >{display.statusLabel}</Badge
+    >
+    <p class="text-sm text-muted-foreground">
+      Attempt {task.common.attempt} · revision {task.common.revision} · {new Date(
+        task.common.last_update,
+      ).toLocaleString()}
+    </p>
+  </div>
+  <p class="max-w-5xl text-lg leading-relaxed break-words">
+    {task.common.objective}
+  </p>
+</div>
 <Tabs.Root value="record">
   <Tabs.List aria-label="Recorded task sections">
     <Tabs.Trigger value="record">Record</Tabs.Trigger>
@@ -33,44 +39,56 @@
     <Tabs.Trigger value="history">History</Tabs.Trigger>
     <Tabs.Trigger value="raw">Raw</Tabs.Trigger>
   </Tabs.List>
-  <Tabs.Content value="record" class="space-y-4">
-    <h3 class="font-semibold">Latest contribution</h3>
-    <p>{task.common.progress.summary || "No progress summary recorded."}</p>
-    {#if display.reason}<p>{display.reason}</p>{/if}
-    <Table.Root aria-label="Task fields">
-      <Table.Body>
-        {#if flow}<Table.Row
-            ><Table.Head>Worker</Table.Head><Table.Cell
-              >{#if flow.worker.kind === "recorded"}{TaskPresentation.agent(
-                  flow.worker.agent,
-                )}{:else}Unrecorded{/if}</Table.Cell
-            ></Table.Row
-          >{/if}
-        {#each [{ label: "Assignment", value: display.actor }, { label: "Reports to", value: display.reportsTo }, { label: "Workspace", value: display.workspaceLabel }, { label: "Workspace detail", value: display.workspace }, { label: "Lease", value: display.lease }, { label: "Checkpoint", value: display.checkpoint }, { label: "Integration", value: display.integration }, { label: "Created", value: new Date(task.common.created_at).toLocaleString() }, { label: "Progress updated", value: new Date(task.common.last_progress).toLocaleString() }] as field (field.label)}
-          <Table.Row
-            ><Table.Head>{field.label}</Table.Head><Table.Cell
-              class="whitespace-normal break-all">{field.value}</Table.Cell
-            ></Table.Row
-          >
+  <Tabs.Content value="record" class="grid gap-8 pt-4 lg:grid-cols-2">
+    <section class="min-w-0 space-y-4" aria-label="Result and requirements">
+      <h3 class="font-semibold">Latest contribution</h3>
+      <p class="leading-relaxed break-words">
+        {task.common.progress.summary || "No progress summary recorded."}
+      </p>
+      {#if display.reason}<p
+          class="border-l-2 pl-4 text-sm leading-relaxed break-words"
+        >
+          {display.reason}
+        </p>{/if}
+
+      <Accordion.Root type="multiple">
+        {#each [{ label: "Findings", values: task.common.progress.findings }, { label: "Next steps", values: task.common.progress.next_steps }, { label: "Acceptance", values: task.common.acceptance }, { label: "Dependencies", values: task.common.dependencies }] as section (section.label)}
+          <Accordion.Item value={section.label}>
+            <Accordion.Trigger
+              >{section.label} ({section.values.length})</Accordion.Trigger
+            >
+            <Accordion.Content
+              ><ul class="space-y-2">
+                {#each section.values as value, index (index)}<li>
+                    {value}
+                  </li>{/each}
+              </ul></Accordion.Content
+            >
+          </Accordion.Item>
         {/each}
-      </Table.Body>
-    </Table.Root>
-    <Accordion.Root type="multiple">
-      {#each [{ label: "Findings", values: task.common.progress.findings }, { label: "Next steps", values: task.common.progress.next_steps }, { label: "Acceptance", values: task.common.acceptance }, { label: "Dependencies", values: task.common.dependencies }] as section (section.label)}
-        <Accordion.Item value={section.label}>
-          <Accordion.Trigger
-            >{section.label} ({section.values.length})</Accordion.Trigger
-          >
-          <Accordion.Content
-            ><ul class="space-y-2">
-              {#each section.values as value, index (index)}<li>
-                  {value}
-                </li>{/each}
-            </ul></Accordion.Content
-          >
-        </Accordion.Item>
-      {/each}
-    </Accordion.Root>
+      </Accordion.Root>
+    </section>
+    <section class="min-w-0 space-y-4" aria-label="Assignment and Git evidence">
+      <h3 class="font-semibold">Assignment &amp; Git evidence</h3>
+      <Table.Root aria-label="Task fields">
+        <Table.Body>
+          {#if flow}<Table.Row
+              ><Table.Head>Worker</Table.Head><Table.Cell
+                >{#if flow.worker.kind === "recorded"}{TaskPresentation.agent(
+                    flow.worker.agent,
+                  )}{:else}Unrecorded{/if}</Table.Cell
+              ></Table.Row
+            >{/if}
+          {#each [{ label: "Assignment", value: display.actor }, { label: "Reports to", value: display.reportsTo }, { label: "Workspace", value: display.workspaceLabel }, { label: "Workspace detail", value: display.workspace }, { label: "Lease", value: display.lease }, { label: "Checkpoint", value: display.checkpoint }, { label: "Integration", value: display.integration }, { label: "Created", value: new Date(task.common.created_at).toLocaleString() }, { label: "Progress updated", value: new Date(task.common.last_progress).toLocaleString() }] as field (field.label)}
+            <Table.Row
+              ><Table.Head>{field.label}</Table.Head><Table.Cell
+                class="whitespace-normal break-all">{field.value}</Table.Cell
+              ></Table.Row
+            >
+          {/each}
+        </Table.Body>
+      </Table.Root>
+    </section>
   </Tabs.Content>
   <Tabs.Content value="checks">
     {#if task.common.progress.checks.length === 0}<p>
