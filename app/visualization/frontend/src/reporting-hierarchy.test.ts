@@ -307,7 +307,7 @@ it("selects compact coordinator own activity matching Working and keeps every ob
   const rowQuery: ByRoleOptions = {
     name: /Team Gizmo 2 own activities Implement reporting hierarchy working/,
   };
-  const inspectorQuery: ByRoleOptions = { name: "Team Gizmo details" };
+  const inspectorQuery: ByRoleOptions = { name: "Team Gizmo" };
   const workingHeadingQuery: ByRoleOptions = {
     name: "Implement reporting hierarchy",
   };
@@ -319,7 +319,7 @@ it("selects compact coordinator own activity matching Working and keeps every ob
   const row = screen.getByRole("button", rowQuery);
   expect(screen.getAllByRole("button", rowQuery)).toHaveLength(1);
   await userEvent.click(row);
-  const inspector = screen.getByRole("complementary", inspectorQuery);
+  const inspector = screen.getByRole("dialog", inspectorQuery);
   expect(
     within(inspector).getByRole("heading", workingHeadingQuery),
   ).toBeTruthy();
@@ -351,7 +351,7 @@ it("uses the real Agents graph selection handler for prioritized own activity an
   };
   vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
   const graphQuery: ByRoleOptions = { name: "graph" };
-  const inspectorQuery: ByRoleOptions = { name: "Team Gizmo details" };
+  const inspectorQuery: ByRoleOptions = { name: "Team Gizmo" };
   const objectiveQuery: ByRoleOptions = {
     name: "Implement reporting hierarchy",
   };
@@ -359,10 +359,10 @@ it("uses the real Agents graph selection handler for prioritized own activity an
   await userEvent.click(screen.getByRole("tab", graphQuery));
   const prime = await screen.findByText("Gizmo / GizmoPrime");
   await fireEvent.click(prime);
-  expect(screen.queryAllByRole("complementary")).toHaveLength(0);
+  expect(screen.queryAllByRole("dialog")).toHaveLength(0);
   const team = screen.getByText("Gizmo / Gizmo");
   await fireEvent.click(team);
-  const inspector = screen.getByRole("complementary", inspectorQuery);
+  const inspector = screen.getByRole("dialog", inspectorQuery);
   expect(within(inspector).getByRole("heading", objectiveQuery)).toBeTruthy();
   expect(
     within(inspector).getAllByText("working")[0]?.getAttribute("data-state"),
@@ -402,23 +402,21 @@ it("restores the second activity origin after selecting another role in the open
   const secondTaskQuery: ByRoleOptions = {
     name: "Inspect database Git worker Integrated",
   };
-  const firstInspectorQuery: ByRoleOptions = { name: "TypescriptDev details" };
-  const secondInspectorQuery: ByRoleOptions = { name: "RustDev details" };
+  const firstInspectorQuery: ByRoleOptions = { name: "TypescriptDev" };
+  const secondInspectorQuery: ByRoleOptions = { name: "RustDev" };
   await userEvent.click(screen.getByRole("button", firstExpandQuery));
   const original = screen.getByRole("button", firstTaskQuery);
   await userEvent.click(original);
-  expect(screen.getByRole("complementary", firstInspectorQuery)).toBeTruthy();
+  expect(screen.getByRole("dialog", firstInspectorQuery)).toBeTruthy();
   const secondExpand = screen.getByRole("button", secondExpandQuery);
   expect(secondExpand.closest("[inert]")).toBeNull();
   await userEvent.click(secondExpand);
   const current = screen.getByRole("button", secondTaskQuery);
   await userEvent.click(current);
-  expect(screen.getByRole("complementary", secondInspectorQuery)).toBeTruthy();
+  expect(screen.getByRole("dialog", secondInspectorQuery)).toBeTruthy();
   await userEvent.keyboard("{Escape}");
   await waitFor(() => {
-    expect(
-      screen.queryByRole("complementary", secondInspectorQuery),
-    ).toBeNull();
+    expect(screen.queryByRole("dialog", secondInspectorQuery)).toBeNull();
     expect(document.activeElement).toBe(current);
   });
   expect(document.activeElement).not.toBe(original);
