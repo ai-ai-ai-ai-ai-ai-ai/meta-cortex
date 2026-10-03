@@ -1,57 +1,50 @@
 # Upstream UI components
 
-Button, Badge, Card, Progress, and `utils.ts` were generated with
-`shadcn-svelte@1.7.0 add button badge card progress utils --yes --no-deps-install`
-from the official [Vega registry](https://www.shadcn-svelte.com/registry/styles/vega/index.json).
-Collapsible and Tabs were subsequently generated with the same pinned CLI and
-Vega registry using `add collapsible tabs --yes --no-deps-install`. Their
-exports, bindable state, child snippets, and prop contracts retain upstream
-ownership. The dashboard uses their real Trigger/Content/List primitives.
-Only these six primitives are installed. Card retains its upstream component
-parts and every primitive retains its public exports and prop contracts.
+The dashboard imports the official shadcn-svelte Vega Button, Badge, Progress,
+Tabs, Collapsible, Sheet, Table, Accordion and Native Select components directly.
+Original Button/Badge/Progress/Tabs/Collapsible generation used
+`shadcn-svelte@1.7.0`; the stock redesign restores Button/Badge and adds the other
+used components from the official registry on 2026-10-02:
 
-The generated source is formatted with the project's Prettier configuration.
-Badge adds one project-owned `status` variant: Tailwind data attributes select
-the existing dashboard state colors and density without interpreting domain
-state in code. Button adds a `dashboard` variant for the repeated bordered
-dashboard control appearance. Its default size restores the original automatic
-height and padding after upstream size merging; consumer class overrides remain
-last. All upstream variants and sizes remain available.
+`https://www.shadcn-svelte.com/registry/styles/vega/{component}.json`
 
-The exact dependency pins are in `package.json` and `bun.lock`. Tailwind uses its
-official Vite plugin and the existing stylesheet; `$lib` resolves in TypeScript
-and Vite. No runtime theme mechanism or extra component library is added.
+Sources are copied with the registry's standard `$UI$`/`$UTILS$` alias and Lucide
+icon substitutions, then formatted with the project configuration. Component
+bodies, variants, bindable state and prop signatures remain upstream owned.
+No application wrapper replaces a library interaction. All Bits imports stay
+inside these generated UI files. Stock neutral CSS variables come from the
+[official neutral theme](https://www.shadcn-svelte.com/registry/colors/neutral.json).
+The application has no custom palette, dashboard button variant or status badge
+variant. Svelte Flow uses its default nodes and stylesheet.
 
-The button and badge registry templates contain ternary expressions in their
-externally owned anchor/disabled rendering. ESLint excludes only these two
-generated files from the authored-code branching prohibition, preserving all
-other lint checks. Authored configuration, tests, and dashboard components
-remain under the full policy. Generated utility conditional types and bindable
-element refs keep the upstream signatures rather than replacing their APIs.
+## Pinned Bits compatibility
 
-Knip treats exactly the six generated public `index.ts` barrels and generated
-`utils.ts` API as entrypoints, preserving their upstream aliases, types, and Card
-parts. The dashboard consumes Button, Badge, Card, and Progress directly.
-No directory or issue category is
-excluded; authored application files, exports, members, and dependencies remain
-checked. The graph renderer and layout engine share a separate vendor build
-chunk so the integrated dashboard remains within the existing warning threshold.
+The installed Bits UI 2.19.4 source exposes `data-orientation="horizontal"` or
+`"vertical"` and `data-state="active"`, `"open"` or `"closed"`. The current Vega
+registry's shorthand selectors require attributes that this pinned release does
+not emit. Generated class strings therefore substitute only these selectors:
+`data-horizontal:`/`data-vertical:` become
+`data-[orientation=horizontal]:`/`data-[orientation=vertical]:`, and
+`data-active:`/`data-open:`/`data-closed:` become their matching
+`data-[state=...]:` selectors, including their named group variants. This preserves stock appearance and interactions
+without an application layout or focus workaround. Evidence is in the installed
+`bits-ui/dist/bits/{tabs,dialog,accordion}` source and declarations.
 
-Progress forwards `value` and `max` to Bits UI, which exposes them as
-`aria-valuenow` and `aria-valuemax` on a progressbar. Its indicator divides the
-value by the supplied maximum, so task totals do not need to become percentages.
-Button's bindable `ref` is its native button when no `href` is supplied.
+Unused Card scaffold was removed after checking every application consumer.
+Unused Sheet/Table footers, standalone Sheet Close and Native Select opt-group
+files and exports were also removed. Sheet's portal and overlay remain because
+Content uses them internally; Content owns its standard close button. The remaining generated public barrels retain their
+upstream aliases and are explicit Knip entrypoints; authored runtime exports
+remain checked.
 
-Dependency adoption was checked on 2026-10-02 through the
-[npm downloads API](https://api.npmjs.org/downloads/point/last-week/tailwindcss)
-and each repository's GitHub API. Weekly downloads cover 2026-09-24–2026-09-30.
-Every dependency exceeds 10,000 weekly downloads and 100 stars.
+`package.json` and `bun.lock` pin existing Svelte, Bits and Tailwind releases.
+Used stock icons add `@lucide/svelte@1.50.0`; the stock animation stylesheet adds
+`tw-animate-css@1.4.0`, imported by `styles.css`. No other library was added.
+Registry-generated Button/Badge anchor and disabled handling retain the existing
+narrow ESLint exemption; authored components remain under the full policy.
 
-| Package                 | Weekly downloads |                                         Repository stars |
-| ----------------------- | ---------------: | -------------------------------------------------------: |
-| tailwindcss             |      156,238,200 |    [97,748](https://github.com/tailwindlabs/tailwindcss) |
-| @tailwindcss/vite       |       58,215,290 |    [97,748](https://github.com/tailwindlabs/tailwindcss) |
-| tailwind-variants       |        4,810,914 | [3,314](https://github.com/heroui-inc/tailwind-variants) |
-| bits-ui                 |        1,260,067 |            [3,589](https://github.com/huntabyte/bits-ui) |
-| @internationalized/date |       19,040,557 |        [15,906](https://github.com/adobe/react-spectrum) |
-| cn                      |        7,904,565 |                 [1,622](https://github.com/shadcn-ui/cn) |
+Native Select retains Svelte's externally owned `HTMLSelectAttributes.value:any`
+contract (`svelte/elements.d.ts`). Only `no-unsafe-assignment` is disabled for
+that single generated Native Select file. Application change handlers use
+Svelte's typed `ChangeEventHandler<HTMLSelectElement>`; all their lint rules
+remain enabled.

@@ -1,50 +1,35 @@
 <script lang="ts">
-  import * as Card from "$lib/components/ui/card";
   import type { TaskFlow } from "./contracts";
   import { ReportingHierarchy } from "./agent-tree";
-  import type { AgentSelection } from "./agent-tree";
-  import type { Option } from "effect";
-  import TreeDelegation from "./TreeDelegation.svelte";
+  import type { TaskSelection } from "./agent-tree";
   import ReportingBranch from "./ReportingBranch.svelte";
+  import TreeAgent from "./TreeAgent.svelte";
   interface AgentTreeProperties {
     tasks: ReadonlyArray<TaskFlow>;
-    select: (selection: AgentSelection) => void;
-    selection: Option.Option<AgentSelection>;
+    select: (selection: TaskSelection) => void;
   }
-  let { tasks, select, selection }: AgentTreeProperties = $props();
+  let { tasks, select }: AgentTreeProperties = $props();
   let tree = $derived(new ReportingHierarchy(tasks));
 </script>
 
-<Card.Root
-  class="execution-tree @container gap-0 overflow-hidden rounded-[7px] border border-border bg-tree bg-linear-[140deg] from-tree to-sidebar py-0 shadow-none ring-0"
-  role="region"
-  aria-label="Agent execution tree"
->
-  {#if tasks.length > 0}
-    <p
-      class="border-b border-border px-4 py-3 text-[10px] leading-relaxed text-muted-foreground"
-    >
-      Recorded reporting relationships and activity on this loaded page.
-      Descendant progress excludes each coordinator’s own activities.
-    </p>
-    <ul class="m-0 list-none p-0">
-      {#each tree.roots() as node (node.id().serialize())}
-        <ReportingBranch {node} {select} {selection} />
-      {/each}
-    </ul>
-    {#if tree.historical().length > 0}
-      <h3 class="border-y border-border px-4 py-3 text-xs font-semibold">
-        Historical · reporting unrecorded
-      </h3>
-      {#each tree.historical() as delegation (delegation.name())}
-        <TreeDelegation {delegation} {select} {selection} />
-      {/each}
-    {/if}
+<section aria-label="Recorded reporting hierarchy" class="space-y-4">
+  <p class="text-sm text-muted-foreground">
+    Reporting and activity on this loaded page. Descendant counts exclude each
+    coordinator’s own activities.
+  </p>
+  {#each tree.roots() as node (node.id())}<ReportingBranch
+      {node}
+      {select}
+    />{/each}
+  {#if tree.historical().length > 0}
+    <h3 class="font-semibold">Historical · reporting unrecorded</h3>
+    {#each tree.historical() as delegation (delegation.name())}
+      <p>Created by · {delegation.name()}</p>
+      {#each Array.from(delegation.workers.values()) as group (group.name())}<TreeAgent
+          {group}
+          {select}
+        />{/each}
+    {/each}
   {/if}
-  {#if tasks.length === 0}<div
-      class="empty-state px-6 py-[60px] text-center [&_h2]:text-xl [&_p]:my-[15px] [&_p]:text-xs [&_p]:text-muted-foreground"
-    >
-      <h2 class="font-bold">No tasks on this page</h2>
-      <p>Tasks will appear here after they are recorded in Turso.</p>
-    </div>{/if}
-</Card.Root>
+  {#if tasks.length === 0}<p>No tasks on this page.</p>{/if}
+</section>

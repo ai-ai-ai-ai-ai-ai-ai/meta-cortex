@@ -1,172 +1,57 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "@xyflow/svelte/dist/style.css";
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--foreground);
-  --color-popover: var(--panel);
-  --color-popover-foreground: var(--foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-destructive: var(--blocked);
-  --color-destructive-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
   --color-border: var(--border);
-  --color-input: var(--control);
-  --color-ring: var(--primary);
-  --color-working: var(--working);
-  --color-ready: var(--ready);
-  --color-blocked: var(--blocked);
-  --color-cancelled: var(--cancelled);
-  --color-surface: var(--surface);
-  --color-sidebar: var(--sidebar);
-  --color-panel: var(--panel);
-  --color-panel-border: var(--panel-border);
-  --color-tree: var(--tree);
-  --color-delegation: var(--delegation);
-  --color-tree-line: var(--tree-line);
-  --color-row: var(--row);
-  --color-selection: var(--selection);
-  --color-control: var(--control);
-  --color-secondary-hover: var(--secondary-hover);
-  --color-team: var(--team);
-  --color-commit: var(--commit);
-  --color-progress: var(--progress);
-  --color-activity: var(--activity);
-  --color-meter: var(--meter);
-  --color-code: var(--code);
-  --color-canvas: var(--canvas);
-  --color-node: var(--node);
-  --color-node-border: var(--node-border);
-  --color-backdrop: var(--backdrop);
-  --color-status-queued: #1d292d;
-  --color-status-queued-border: #3b4f56;
-  --color-status-integrated: #15342a;
-  --color-status-integrated-border: #45605d;
-  --color-status-working: #16343f;
-  --color-status-working-border: #315665;
-  --color-status-ready: #343223;
-  --color-status-ready-border: #625d3a;
-  --color-status-cancelled: #202a2c;
-  --color-status-cancelled-border: #39494d;
-  --color-status-blocked: #3d2822;
-  --color-status-blocked-border: #6d4a3e;
-  --radius-sm: 3px;
-  --radius-md: 5px;
-  --radius-lg: 7px;
-  --radius-xl: 7px;
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
 }
 
 @layer base {
-  :root {
-    color-scheme: dark;
-    font-family:
-      Inter,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
-    font-synthesis: none;
-    font-size: 16px;
-    --background: #0d1517;
-    --foreground: #e4ebea;
-    --card: #142226;
-    --primary: #79edc1;
-    --primary-foreground: #102b24;
-    --secondary: #17262a;
-    --secondary-hover: #23383b;
-    --muted: #1d292d;
-    --muted-foreground: #a0b2c1;
-    --border: #2b383c;
-    --working: #61c9ed;
-    --ready: #d9c78c;
-    --blocked: #eea184;
-    --cancelled: #92a0a3;
-    --surface: #111b1e;
-    --sidebar: #10191c;
-    --panel: #122025;
-    --panel-border: #34494f;
-    --tree: #101b1e;
-    --delegation: #121f23;
-    --tree-line: #3b5055;
-    --row: #25353a;
-    --selection: #162b29;
-    --control: #374e54;
-    --team: #a9b9cd;
-    --commit: #c1d1d4;
-    --progress: #dbe4e4;
-    --activity: #b5c6d0;
-    --meter: #35464b;
-    --code: #0b171b;
-    --canvas: #101b1f;
-    --node: #16262c;
-    --node-border: #405c62;
-    --backdrop: #07101490;
+  * {
+    @apply border-border outline-ring/50;
   }
   body {
-    font-size: 14px;
-    margin: 0;
-    color: var(--foreground);
-    background: var(--background);
+    @apply bg-background text-foreground;
   }
-  button,
-  a,
-  input {
-    font: inherit;
-  }
-  button {
-    cursor: pointer;
-  }
-  button:disabled {
-    cursor: default;
-  }
-  button:focus-visible,
-  a:focus-visible,
-  summary:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 3px;
-  }
-  p {
-    line-height: 1.6;
-  }
-  small {
-    color: var(--muted-foreground);
-  }
-  code {
-    font-family: ui-monospace, SFMono-Regular, monospace;
-    font-size: 12px;
-    overflow-wrap: anywhere;
-  }
-}
-
-/* Svelte Flow owns these elements; its stylesheet requires targeted overrides. */
-.svelte-flow__edge-text {
-  fill: #a4c0c4;
-  font-size: 10px;
-}
-.svelte-flow__edge-textbg {
-  fill: #122229;
-}
-.svelte-flow__edge-path {
-  stroke: #527278;
-  stroke-width: 1.6;
-}
-.svelte-flow__handle {
-  opacity: 0;
-  pointer-events: none;
-}
-.svelte-flow__minimap {
-  background: #182d33 !important;
-  border: 1px solid #385b62;
-  border-radius: 4px;
-}
-.svelte-flow__controls-button {
-  background: #20373d;
-  border-color: #44656b;
-  fill: #cfe7e5;
 }

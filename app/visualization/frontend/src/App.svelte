@@ -1,18 +1,98 @@
 <script lang="ts">
-  import { Badge } from "$lib/components/ui/badge";
-  import { Button } from "$lib/components/ui/button";
-  import type { TaskV2 } from "./contracts";
   import { onMount } from "svelte";
+  import type { ChangeEventHandler } from "svelte/elements";
+  import * as Sheet from "$lib/components/ui/sheet";
+  import * as NativeSelect from "$lib/components/ui/native-select";
+  import * as Accordion from "$lib/components/ui/accordion";
+  import { Button } from "$lib/components/ui/button";
   import { DashboardController, LoadKind } from "./dashboard-state.svelte";
   import { DashboardApi } from "./api";
+  import { SelectionKind, type TaskSelection } from "./agent-tree";
+  import type { TaskV2 } from "./contracts";
   import Workflow from "./Workflow.svelte";
-  import TaskDetail from "./TaskDetail.svelte";
-  import { FlowPresentation } from "./workflow";
-  import ActivityBar from "./ActivityBar.svelte";
+  import RecordedTask from "./RecordedTask.svelte";
   const dashboard = new DashboardController(new DashboardApi());
+  let selected = $state<TaskSelection | null>(null);
+  let sheetOpen = $state(false);
+  let showingHistory = $state(false);
   onMount(() => {
     dashboard.load({ kind: "Initial" });
     return () => dashboard.stop();
+  });
+  function choose(selection: TaskSelection) {
+    selected = selection;
+    showingHistory = false;
+    sheetOpen = true;
+  }
+  function history(task: TaskV2) {
+    dashboard.load({
+      kind: "History",
+      query: { feature: task.common.feature, task: task.common.id },
+      page: 0,
+    });
+    showingHistory = true;
+    sheetOpen = true;
+  }
+  $effect(() => {
+    switch (dashboard.state.kind) {
+      case LoadKind.Loading:
+      case LoadKind.Failed:
+        return;
+      case LoadKind.Ready:
+        switch (dashboard.state.reply.content.kind) {
+          case "Task":
+            selected = {
+              kind: SelectionKind.Task,
+              task: dashboard.state.reply.content.value,
+            };
+            showingHistory = false;
+            sheetOpen = true;
+            return;
+          case "History":
+            showingHistory = true;
+            sheetOpen = true;
+            return;
+          case "Features":
+          case "Workflow":
+            return;
+        }
+    }
+  });
+  const changeFeature: ChangeEventHandler<HTMLSelectElement> = (event) =>
+    dashboard.load({
+      kind: "Workflow",
+      feature: event.currentTarget.value,
+      page: 0,
+    });
+  function latestTask() {
+    switch (dashboard.state.kind) {
+      case LoadKind.Loading:
+      case LoadKind.Failed:
+        return;
+      case LoadKind.Ready:
+        switch (dashboard.state.reply.selection.view.kind) {
+          case "History":
+            dashboard.load({
+              kind: "Task",
+              query: dashboard.state.reply.selection.view.query,
+            });
+            return;
+          case "Features":
+          case "Tasks":
+          case "Task":
+            return;
+        }
+    }
+  }
+  let record = $derived.by(() => {
+    switch (selected?.kind) {
+      case SelectionKind.Task:
+        return { task: selected.task, flow: undefined };
+      case SelectionKind.Activity:
+        return { task: selected.task.task, flow: selected.task };
+      case undefined:
+        return undefined;
+    }
   });
   let pageEnd = $derived.by(() => {
     switch (dashboard.state.kind) {
@@ -31,267 +111,167 @@
         }
     }
   });
-  function openTask(task: TaskV2) {
-    dashboard.load({
-      kind: "Task",
-      query: { feature: task.common.feature, task: task.common.id },
-    });
-  }
-  function openHistory(task: TaskV2) {
-    dashboard.load({
-      kind: "History",
-      query: { feature: task.common.feature, task: task.common.id },
-      page: 0,
-    });
-  }
 </script>
 
-<div
-  class="app-shell grid h-dvh grid-cols-[200px_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_38px] max-[800px]:grid-cols-[175px_minmax(0,1fr)] max-[620px]:grid-cols-[65px_minmax(0,1fr)]"
->
-  <aside
-    class="sidebar row-span-2 flex min-h-0 flex-col border-r border-border bg-sidebar px-3 py-[26px] max-[620px]:px-2 max-[620px]:py-5"
-  >
-    <Button
-      variant="ghost"
-      class="brand h-auto min-h-[70px] justify-start gap-2.5 rounded-none bg-transparent px-2.5 pb-7 text-left text-[17px] font-semibold whitespace-normal hover:bg-transparent max-[800px]:gap-[7px] max-[800px]:pl-[3px] max-[800px]:text-sm max-[620px]:min-h-[50px] max-[620px]:px-[7px] max-[620px]:pb-[15px] [&_small]:mt-1 [&_small]:block [&_small]:text-[10px] [&_small]:font-normal [&_small]:tracking-[1.5px] [&_small]:uppercase max-[620px]:[&>div]:hidden"
-      onclick={() => dashboard.load({ kind: "Features", page: 0 })}
-      ><span
-        class="brand-mark grid size-[33px] shrink-0 place-items-center text-primary [&_svg]:size-[30px]"
-        ><svg
-          class="size-[30px]"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          aria-hidden="true"
-          ><path
-            d="M12 2 22 8v8l-10 6-10-6V8zM2 8l10 6 10-6M12 14v8M7 5l10 6v8M17 5 7 11v8"
-          /></svg
-        ></span
+{#snippet paging()}
+  {#if dashboard.state.kind === LoadKind.Ready}
+    {@const page = dashboard.state.reply.selection.page}
+    <footer class="flex items-center gap-3">
+      <span>Page {page + 1}</span>
+      <Button
+        variant="outline"
+        disabled={page === 0}
+        onclick={() => dashboard.page(page - 1)}>Previous</Button
       >
-      <div>Meta-Cortex<small>Workbench</small></div></Button
-    >
-    <div
-      class="sidebar-label flex justify-between px-3 pb-4 text-[11px] text-muted-foreground max-[620px]:hidden"
-    >
-      Features <span>{dashboard.features.length}</span>
-    </div>
-    <nav aria-label="Features" class="min-h-0 flex-1 overflow-auto">
-      {#each dashboard.features as feature (feature.id)}<Button
-          variant="ghost"
-          class="group mb-1 h-auto min-h-11 w-full justify-start gap-[9px] rounded-[5px] bg-transparent px-3 py-[11px] text-left font-normal text-muted-foreground hover:bg-secondary data-[selected=true]:bg-selection data-[selected=true]:text-primary data-[selected=true]:shadow-[inset_3px_0_var(--primary)] max-[620px]:justify-center max-[620px]:p-[9px] [&_strong]:truncate [&_strong]:text-xs [&_strong]:font-medium max-[620px]:[&_strong]:hidden"
-          data-selected={dashboard.currentFeature() === feature.id}
-          aria-label={feature.id}
-          title={feature.id}
-          onclick={() =>
-            dashboard.load({
-              kind: "Workflow",
-              feature: feature.id,
-              page: 0,
-            })}
-          ><svg
-            class="feature-dot size-[19px] shrink-0 group-data-[selected=true]:text-primary max-[620px]:hidden"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.7"
-            aria-hidden="true"><path d="M3 5h7l2 3h9v11H3z" /></svg
-          ><strong>{FlowPresentation.label(feature.id)}</strong><span
-            class="feature-short hidden text-[10px] uppercase max-[620px]:inline-block"
-            aria-hidden="true">{feature.id.slice(0, 2)}</span
-          ></Button
-        >{/each}
-    </nav>
-    <div
-      class="sidebar-note border-t border-border px-2.5 pt-[17px] text-[11px] text-primary max-[620px]:hidden [&_small]:mt-1.5 [&_small]:block [&_small]:text-[10px] [&_small]:leading-[1.8]"
-    >
-      Recorded in Turso<small>Read only · refresh to observe changes</small>
-    </div>
-  </aside>
-  <main class="min-w-0 overflow-auto">
-    {#if dashboard.state.kind !== LoadKind.Ready || dashboard.state.reply.content.kind !== "Workflow"}<header
-        class="app-header flex items-center justify-between gap-6 px-[25px] pt-[25px] pb-[18px] max-[800px]:px-[22px] max-[800px]:pt-6 max-[620px]:gap-2.5 max-[620px]:px-4 max-[620px]:pt-[23px] max-[620px]:pb-[17px] [&_h1]:text-[28px] [&_h1]:tracking-[-.65px] max-[800px]:[&_h1]:text-[23px] max-[620px]:[&_h1]:text-xl"
+      <Button
+        variant="outline"
+        disabled={pageEnd === "Complete"}
+        onclick={() => dashboard.page(page + 1)}>Next</Button
       >
-        <div>
-          <h1 class="font-bold">
-            {FlowPresentation.label(dashboard.currentFeature()) || "Workbench"}
-          </h1>
-          <p class="mt-[7px] text-[13px] text-muted-foreground">
-            Recorded work · Turso
-          </p>
-        </div>
-        <Button
-          variant="dashboard"
-          class="button"
-          onclick={() => dashboard.load(dashboard.state.request)}
-          >Refresh</Button
+    </footer>
+  {/if}
+{/snippet}
+
+<Sheet.Root bind:open={sheetOpen}>
+  <main class="mx-auto max-w-6xl space-y-6 p-6">
+    <header class="flex flex-wrap items-center gap-3">
+      <h1 class="mr-auto text-2xl font-semibold">Workbench</h1>
+      <NativeSelect.Root
+        aria-label="Features"
+        value={dashboard.currentFeature()}
+        onchange={changeFeature}
+      >
+        <NativeSelect.Option value="" disabled
+          >Choose a feature</NativeSelect.Option
         >
-      </header>{/if}
-    {#if dashboard.state.kind === LoadKind.Loading}<div
-        class="empty-state px-6 py-[60px] text-center [&_h2]:text-xl [&_p]:my-[15px] [&_p]:text-xs [&_p]:text-muted-foreground"
+        {#each dashboard.features as feature (feature.id)}<NativeSelect.Option
+            value={feature.id}>{feature.id}</NativeSelect.Option
+          >{/each}
+      </NativeSelect.Root>
+      <Button
+        variant="outline"
+        onclick={() => dashboard.load({ kind: "Features", page: 0 })}
+        >Features</Button
       >
-        <span class="mb-5 inline-block size-2.5 rounded-full bg-primary"></span>
-        <h2 class="font-bold">Reading recorded work…</h2>
-      </div>
-    {:else if dashboard.state.kind === LoadKind.Failed}<div
-        class="empty-state px-6 py-[60px] text-center [&_h2]:text-xl [&_p]:my-[15px] [&_p]:text-xs [&_p]:text-muted-foreground"
+      <Button
+        variant="outline"
+        onclick={() => dashboard.load(dashboard.state.request)}>Refresh</Button
       >
-        <h2 class="font-bold">Unable to read the ledger</h2>
-        <p>{dashboard.state.failure.message}</p>
-        <Button
-          variant="dashboard"
-          class="button"
-          onclick={() => dashboard.load(dashboard.state.request)}>Retry</Button
-        >
-      </div>
+    </header>
+    <p class="text-sm text-muted-foreground">
+      Read only · Turso · refresh to observe changes
+    </p>
+    {#if dashboard.state.kind === LoadKind.Loading}<p>Reading recorded work…</p>
+    {:else if dashboard.state.kind === LoadKind.Failed}<p>
+        {dashboard.state.failure.message}
+      </p>
+      <Button onclick={() => dashboard.load(dashboard.state.request)}
+        >Retry</Button
+      >
     {:else if dashboard.state.kind === LoadKind.Ready}
-      {#key JSON.stringify(dashboard.state.reply.selection)}
-        {@const reply = dashboard.state.reply}
-        {#if reply.content.kind === "Features"}
-          <section
-            class="feature-catalog px-8 py-[15px] max-[800px]:px-[22px] max-[620px]:px-4"
-          >
-            <div
-              class="section-heading [&_h2]:text-xl [&_p]:mt-2.5 [&_p]:mb-[25px] [&_p]:text-xs [&_p]:text-muted-foreground"
-            >
-              <h2 class="font-bold">Choose a feature</h2>
-              <p>
-                Explore its agents, task dependencies, and recorded Git
-                integrations.
-              </p>
-            </div>
-            <div class="feature-grid flex flex-col gap-2.5">
-              {#each reply.content.value.records as feature (feature.id)}<Button
-                  variant="ghost"
-                  class="block h-auto w-full rounded-[6px] border border-border bg-card px-[22px] py-[18px] text-left font-normal whitespace-normal hover:border-primary/60 hover:bg-card [&_h3]:mt-[7px] [&_h3]:mb-2 [&_h3]:text-base [&_p]:max-w-[780px] [&_p]:line-clamp-2 [&_p]:text-xs [&_p]:text-muted-foreground [&_code]:mt-3 [&_code]:block [&_code]:text-[10px] [&_code]:text-muted-foreground"
+      {@const reply = dashboard.state.reply}
+      {#if reply.content.kind === "Features"}
+        <h2 class="text-xl font-semibold">Choose a feature</h2>
+        <Accordion.Root type="multiple">
+          {#each reply.content.value.records as feature (feature.id)}
+            <Accordion.Item value={feature.id}
+              ><Accordion.Trigger>{feature.id}</Accordion.Trigger
+              ><Accordion.Content
+                ><p>{feature.objective}</p>
+                <p>Branch · {feature.branch}</p>
+                <Button
+                  variant="outline"
                   onclick={() =>
                     dashboard.load({
                       kind: "Workflow",
                       feature: feature.id,
                       page: 0,
-                    })}
-                  ><span
-                    class="eyebrow text-[10px] tracking-[1.3px] text-muted-foreground"
-                    >FEATURE</span
-                  >
-                  <h3 class="font-bold">{feature.id}</h3>
-                  <p>{feature.objective}</p>
-                  <code>{feature.branch}</code><span
-                    class="open-feature mt-[13px] block text-[11px] text-primary"
-                    >Open workflow →</span
-                  ></Button
-                >{/each}
-            </div>
-          </section>
-        {:else if reply.content.kind === "Workflow"}
-          <Workflow
+                    })}>Open workflow</Button
+                ></Accordion.Content
+              ></Accordion.Item
+            >
+          {/each}
+        </Accordion.Root>
+      {:else if reply.content.kind === "Workflow"}
+        {#key dashboard.currentFeature()}<Workflow
             flow={reply.content.value}
-            select={openTask}
-            history={openHistory}
-            refresh={() => dashboard.load(dashboard.state.request)}
-          />
-        {:else if reply.content.kind === "Task"}
-          {@const task = reply.content.value}
-          <TaskDetail
-            {task}
-            back={() =>
-              dashboard.load({
-                kind: "Workflow",
-                feature: task.common.feature,
-                page: 0,
-              })}
-            history={() => openHistory(task)}
-          />
-        {:else if reply.content.kind === "History"}
-          <section
-            class="task-detail px-8 py-6 max-[800px]:px-[22px] max-[620px]:px-4 [&>h2]:mt-6 [&>h2]:text-[23px]"
-          >
-            <Button
-              variant="dashboard"
-              class="button"
-              onclick={() => {
-                switch (reply.selection.view.kind) {
-                  case "History":
-                    dashboard.load({
-                      kind: "Task",
-                      query: reply.selection.view.query,
-                    });
-                    return;
-                  case "Features":
-                  case "Tasks":
-                  case "Task":
-                    return;
-                }
-              }}>← Task</Button
-            >
-            <h2 class="font-bold">Recorded history</h2>
-            <div
-              class="history-feed mt-6 [&_h3]:mb-2 [&_h3]:text-xs [&_p]:mb-2.5 [&_p]:text-xs [&_p]:text-muted-foreground [&_small]:text-[10px]"
-            >
-              {#each reply.content.value.records as event (event.task.common.revision)}<article
-                  class="mb-[5px] flex flex-wrap gap-5 border-l-2 border-primary/60 bg-card p-5 max-[620px]:gap-2.5 max-[620px]:p-[14px]"
-                >
-                  <Badge variant="status" class="status">{event.kind}</Badge>
-                  <div>
-                    <h3 class="font-bold">
-                      {event.actor.team} / {event.actor.role}
-                    </h3>
-                    <p>{event.note}</p>
-                    <small
-                      >Attempt {event.task.common.attempt} · revision {event
-                        .task.common.revision} · {new Date(
-                        event.task.common.last_update,
-                      ).toLocaleString()}</small
-                    >
-                  </div>
-                  <details
-                    class="recorded-snapshot w-full mt-[18px] text-[11px] [&_summary]:cursor-pointer [&_summary]:text-muted-foreground [&_pre]:max-h-[400px] [&_pre]:overflow-auto [&_pre]:bg-code [&_pre]:p-[14px] [&_pre]:text-[11px] [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]"
-                  >
-                    <summary
-                      >Event snapshot · revision {event.task.common
-                        .revision}</summary
-                    >
-                    <pre>{JSON.stringify(event, null, 2)}</pre>
-                  </details>
-                </article>{/each}
-            </div>
-          </section>
-        {/if}
-        {#if reply.selection.view.kind !== "Task"}
-          <footer
-            class="page-controls flex items-center justify-between gap-[15px] px-8 pb-6 text-[10px] text-muted-foreground max-[800px]:px-[22px] max-[620px]:flex-wrap max-[620px]:gap-3 max-[620px]:px-4 max-[620px]:pb-[22px] [&>div]:flex [&>div]:gap-[7px]"
-          >
-            <span
-              >Page {reply.selection.page + 1} · recorded tasks and history are paged</span
-            >
-            <div>
-              <Button
-                variant="dashboard"
-                class="button min-h-9 px-2.5 py-1.5 text-[11px]"
-                disabled={reply.selection.page === 0}
-                onclick={() => dashboard.page(reply.selection.page - 1)}
-                >Previous</Button
-              ><Button
-                variant="dashboard"
-                class="button min-h-9 px-2.5 py-1.5 text-[11px]"
-                disabled={pageEnd === "Complete"}
-                onclick={() => dashboard.page(reply.selection.page + 1)}
-                >Next</Button
-              >
-            </div>
-          </footer>
-        {/if}
-      {/key}
+            select={choose}
+            {history}
+          />{/key}
+      {:else if reply.content.kind === "Task" || reply.content.kind === "History"}
+        <Button
+          variant="outline"
+          onclick={() =>
+            dashboard.load({
+              kind: "Workflow",
+              feature: dashboard.currentFeature(),
+              page: 0,
+            })}>Back to workflow</Button
+        >
+        <Sheet.Trigger>
+          {#snippet child({ props })}<Button variant="outline" {...props}
+              >Open recorded details</Button
+            >{/snippet}
+        </Sheet.Trigger>
+      {/if}
+      {#if reply.content.kind !== "Task" && reply.content.kind !== "History"}{@render paging()}{/if}
     {/if}
   </main>
-  {#if dashboard.state.kind === LoadKind.Ready && dashboard.state.reply.content.kind === "Workflow"}<ActivityBar
-      flow={dashboard.state.reply.content.value}
-    />{:else}<footer
-      class="activity-bar col-start-2 flex min-w-0 items-center gap-3 border-t border-border bg-tree px-[25px] text-[11px] text-activity max-[620px]:px-4"
-    >
-      <span class="read-only ml-auto flex items-center gap-2 whitespace-nowrap"
-        >Read only · Turso</span
+  <Sheet.Content class="overflow-y-auto">
+    <Sheet.Header>
+      <Sheet.Title>{record?.task.common.id ?? "Recorded history"}</Sheet.Title>
+      <Sheet.Description
+        >Recorded task fields and ledger evidence.</Sheet.Description
       >
-    </footer>{/if}
-</div>
+    </Sheet.Header>
+    <div class="space-y-4 px-4 pb-4">
+      {#if showingHistory && dashboard.state.kind === LoadKind.Loading}<p>
+          Reading recorded history…
+        </p>
+      {:else if showingHistory && dashboard.state.kind === LoadKind.Failed}<p>
+          {dashboard.state.failure.message}
+        </p>
+        <Button onclick={() => dashboard.load(dashboard.state.request)}
+          >Retry</Button
+        >
+      {:else if showingHistory && dashboard.state.kind === LoadKind.Ready && dashboard.state.reply.content.kind === "History"}
+        <h2 class="font-semibold">Recorded history</h2>
+        {@render paging()}
+        <Accordion.Root type="multiple">
+          {#each dashboard.state.reply.content.value.records as event (event.task.common.revision)}
+            <Accordion.Item value={String(event.task.common.revision)}
+              ><Accordion.Trigger
+                >{event.kind} · {event.actor.team} / {event.actor.role} · attempt
+                {event.task.common.attempt} · revision {event.task.common
+                  .revision}</Accordion.Trigger
+              ><Accordion.Content
+                ><p>{event.note}</p>
+                <p>
+                  {new Date(event.task.common.last_update).toLocaleString()}
+                </p>
+                <Button
+                  variant="link"
+                  onclick={() =>
+                    choose({ kind: SelectionKind.Task, task: event.task })}
+                  >View task snapshot</Button
+                >
+                <pre class="whitespace-pre-wrap break-all">{JSON.stringify(
+                    event,
+                    null,
+                    2,
+                  )}</pre></Accordion.Content
+              ></Accordion.Item
+            >
+          {/each}
+        </Accordion.Root>
+        <Button variant="outline" onclick={latestTask}
+          >Latest task record</Button
+        >
+      {:else if record}<RecordedTask
+          task={record.task}
+          flow={record.flow}
+          {history}
+        />{/if}
+    </div>
+  </Sheet.Content>
+</Sheet.Root>

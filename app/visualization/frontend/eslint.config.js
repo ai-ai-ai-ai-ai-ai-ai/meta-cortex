@@ -50,4 +50,10 @@ export default tseslint.config(
     ],
     rules: { "no-restricted-syntax": "off" },
   },
+  {
+    // Upstream NativeSelect inherits HTMLSelectAttributes.value:any from Svelte.
+    // Preserve that generated contract; authored change handlers remain typed.
+    files: ["src/lib/components/ui/native-select/native-select.svelte"],
+    rules: { "@typescript-eslint/no-unsafe-assignment": "off" },
+  },
 );

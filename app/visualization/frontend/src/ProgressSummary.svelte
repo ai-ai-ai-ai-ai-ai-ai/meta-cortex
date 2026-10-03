@@ -1,41 +1,23 @@
 <script lang="ts">
   import { Progress } from "$lib/components/ui/progress";
-  import { summarizeCounts } from "./progress-presentation";
-  import { cn } from "$lib/utils";
   import type { FlowCount } from "./contracts";
+  import { summarizeCounts } from "./progress-presentation";
   interface ProgressSummaryProperties {
     counts: ReadonlyArray<FlowCount>;
-    class?: string;
   }
-  let { counts, class: className = "" }: ProgressSummaryProperties = $props();
+  let { counts }: ProgressSummaryProperties = $props();
   let progress = $derived(summarizeCounts(counts));
 </script>
 
-<div
-  class={cn(
-    "progress-overview min-w-0 w-[270px] max-w-full shrink-0",
-    className,
-  )}
->
-  <div
-    class="progress-states flex flex-wrap gap-x-[5px] gap-y-1 text-[11px] leading-[1.4] text-progress [&>span:not(:last-child)]:after:text-muted-foreground [&>span:not(:last-child)]:after:content-['·'] [&>span:not(:last-child)]:after:ml-1"
-  >
-    {#each progress.visible as item (item.state)}<span data-state={item.state}
-        >{item.count} {item.state}</span
-      >{/each}
-  </div>
-  <div
-    class="progress-meter mt-[7px] flex items-center gap-2.5 [&>span]:min-w-7 [&>span]:text-right [&>span]:text-[11px] [&>span]:text-progress"
-  >
-    <Progress
-      class="h-1.5 flex-1 rounded-[3px] bg-meter [&>[data-slot=progress-indicator]]:rounded-[3px]"
-      aria-label="Finished tasks"
-      value={progress.finished}
-      max={Math.max(1, progress.total)}
-    />
-    <span
-      title={`${progress.finished} / ${progress.total} integrated or completed`}
-      >{progress.percent}%</span
-    >
-  </div>
+<div class="space-y-2 text-sm">
+  <p>{progress.finished} finished / {progress.total} activities</p>
+  <Progress
+    value={progress.finished}
+    max={Math.max(1, progress.total)}
+    aria-label="Finished activities"
+  />
+  <p class="text-muted-foreground">
+    {#each progress.visible as count (count.state)}{count.state}: {count.count} ·
+    {/each}
+  </p>
 </div>

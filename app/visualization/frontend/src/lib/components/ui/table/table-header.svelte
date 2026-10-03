@@ -7,14 +7,14 @@
     class: className,
     children,
     ...restProps
-  }: WithElementRef<HTMLAttributes<HTMLParagraphElement>> = $props();
+  }: WithElementRef<HTMLAttributes<HTMLTableSectionElement>> = $props();
 </script>
 
-<p
+<thead
   bind:this={ref}
-  data-slot="card-description"
-  class={cn("text-muted-foreground text-sm", className)}
+  data-slot="table-header"
+  class={cn("[&_tr]:border-b", className)}
   {...restProps}
 >
   {@render children?.()}
-</p>
+</thead>

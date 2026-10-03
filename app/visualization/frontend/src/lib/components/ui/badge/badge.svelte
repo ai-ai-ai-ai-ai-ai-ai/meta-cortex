@@ -5,8 +5,6 @@
     base: "h-5 gap-1 rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium transition-all has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&>svg]:size-3! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none",
     variants: {
       variant: {
-        status:
-          "h-auto gap-1.5 rounded-[4px] capitalize border-status-integrated-border bg-status-integrated px-2 py-[5px] text-[11px] text-primary data-[state=queued]:border-status-queued-border data-[state=queued]:bg-status-queued data-[state=queued]:text-muted-foreground data-[state=not_run]:border-status-queued-border data-[state=not_run]:bg-status-queued data-[state=not_run]:text-muted-foreground data-[state=working]:border-status-working-border data-[state=working]:bg-status-working data-[state=working]:text-working data-[state=ready]:border-status-ready-border data-[state=ready]:bg-status-ready data-[state=ready]:text-ready data-[state=blocked]:border-status-blocked-border data-[state=blocked]:bg-status-blocked data-[state=blocked]:text-blocked data-[state=cancelled]:border-status-cancelled-border data-[state=cancelled]:bg-status-cancelled data-[state=cancelled]:text-cancelled data-[state=failed]:border-status-blocked-border data-[state=failed]:bg-status-blocked data-[state=failed]:text-blocked",
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
         secondary:
           "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
