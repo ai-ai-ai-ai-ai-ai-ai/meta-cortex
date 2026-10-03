@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{Context, bail};
 use meta_cortex_visualization::{DashboardMode, DashboardRequest, DashboardView};
 use meta_cortex_workbench::PageIndex;
 use meta_cortex_workbench::agents::{
@@ -164,7 +164,9 @@ impl Scenario {
             .arg(request)
             .env("META_CORTEX_HOME", &self.data)
             .output()?;
-        let response: Response = serde_saphyr::from_str(&String::from_utf8(output.stdout)?)?;
+        let stdout = String::from_utf8(output.stdout)?;
+        let response: Response = serde_saphyr::from_str(&stdout)
+            .with_context(|| format!("decode CLI response:\n{stdout}"))?;
         assert_eq!(response.version, ProtocolVersion::CURRENT);
         match &response.result {
             Outcome::Success(_) => assert!(

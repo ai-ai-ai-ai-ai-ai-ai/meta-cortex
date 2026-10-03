@@ -21,8 +21,14 @@ use serde::Serialize;
 use sql::SqlStatement;
 use std::collections::BTreeSet;
 use std::path::PathBuf;
-use turso::Connection;
 use turso::transaction::TransactionBehavior;
+use turso::{Connection, IoBackend};
+
+// Windows multiprocess WAL requires Turso's IOCP backend.
+#[cfg(windows)]
+const PERSISTENT_IO: IoBackend = IoBackend::IOCP;
+#[cfg(not(windows))]
+const PERSISTENT_IO: IoBackend = IoBackend::Default;
 
 /// A feature ledger whose task operations require a loaded feature.
 ///

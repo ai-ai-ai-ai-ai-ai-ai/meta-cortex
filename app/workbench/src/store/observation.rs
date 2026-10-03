@@ -1,3 +1,4 @@
+use super::PERSISTENT_IO;
 use super::relational::{EventTable, FeatureTable, TaskTable};
 use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
@@ -119,6 +120,7 @@ impl Observation {
                 .ok_or(LedgerError::Invalid("database path is not UTF-8"))?,
         )
         .read_only(true)
+        .with_io(PERSISTENT_IO)
         .experimental_multiprocess_wal(true)
         .build()
         .await?;
@@ -217,6 +219,7 @@ impl Observation {
 
 #[cfg(test)]
 pub mod tests {
+    use super::PERSISTENT_IO;
     use super::{Observation, Page, PageEnd, PageIndex, RecordCount};
     use crate::LedgerError;
     use crate::versions::StorageVersion;
@@ -254,7 +257,7 @@ pub mod tests {
             assert!(matches!(Observation::open(directory.path().to_owned()).await, Err(LedgerError::Invalid(_))));
             for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2, StorageVersion::RelationalV3] {
                 let path = directory.path().join(format!("version-{version}.db"));
-                let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).build().await?;
+                let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).with_io(PERSISTENT_IO).build().await?;
                 let connection = database.connect()?;
                 connection.pragma_update(&Pragma::UserVersion.to_string(), i64::from(version)).await?;
                 drop(connection); drop(database);
@@ -263,7 +266,7 @@ pub mod tests {
                 assert_eq!(bytes, fs::read(path)?);
             }
             let path = directory.path().join("future.db");
-            let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).build().await?;
+            let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).with_io(PERSISTENT_IO).build().await?;
             let connection = database.connect()?;
             connection.pragma_update(&Pragma::UserVersion.to_string(), 99).await?;
             drop(connection); drop(database);

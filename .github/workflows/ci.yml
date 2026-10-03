@@ -11,8 +11,9 @@ defaults:
 jobs:
   rust:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +37,26 @@ jobs:
       - run: cargo check --locked --workspace --all-targets
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - run: cargo test --locked --workspace
+        if: runner.os != 'Windows'
+      - name: Install the native Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cargo install --locked --path installer --root "$env:RUNNER_TEMP\meta cortex installed"
+      - name: Verify native Windows installation and durable ledger
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE\.github\scripts\windows-e2e.ps1" -Binary "$env:RUNNER_TEMP\meta cortex installed\bin\meta-cortex.exe"
+      - name: Run the native Windows workspace tests
+        if: ${{ !cancelled() && runner.os == 'Windows' }}
+        run: cargo test --locked --workspace --no-fail-fast
+      - name: Retain native Windows E2E evidence
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-windows-e2e
+          path: ${{ runner.temp }}/meta cortex Windows E2E/evidence
+          if-no-files-found: ignore
   coverage:
     runs-on: ubuntu-latest
     steps:

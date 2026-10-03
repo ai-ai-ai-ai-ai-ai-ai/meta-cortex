@@ -25,15 +25,37 @@ brew tap ai-ai-ai-ai-ai-ai-ai/tap
 brew install ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 ```
 
-**Shell installer**
+**Shell installer (macOS and Linux)**
 
 ```sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.sh | sh
 ```
 
+**PowerShell installer (Windows x86-64, after the next release)**
+
+The next release is configured to provide a native Windows x86-64 binary and
+PowerShell installer. After that release publishes `meta-cortex-installer.ps1`,
+run this command in PowerShell:
+
+```powershell
+irm https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/latest/download/meta-cortex-installer.ps1 | iex
+```
+
+**Prohibited:** assume an older release contains the Windows installer.
+
+**Required:** check the release artifacts before running the PowerShell command.
+The command uses the installer published with that release.
+
 Prebuilt binaries are available for macOS and Linux on ARM64 and x86-64.
 See [GitHub Releases](https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases)
 for downloadable artifacts.
+
+#### Scoop (Windows x86-64, pending bucket publication)
+
+Scoop installation is planned after the Windows release and its manifest are
+published. The repository does not yet provide `bucket/meta-cortex.json`.
+See the [Scoop maintainer procedure](CONTRIBUTING.md#publish-the-scoop-manifest)
+for publication and verification steps.
 
 ### Initialize your project
 
@@ -64,11 +86,13 @@ host needs different models or reasoning efforts. Repeating the request preserve
 settings and does not replace a modified framework.
 
 Initialization requires a Git repository. It uses its own tools under
-`~/.meta-cortex` and ignores copies on the user's `PATH`.
+`~/.meta-cortex` (`$HOME\.meta-cortex` in PowerShell) and ignores copies on the user's `PATH`.
 It installs missing tools in this order:
 
 1. Install mise through its [official installer](https://mise.jdx.dev/installing-mise.html#https-mise-run)
-   into `~/.meta-cortex/mise/bin/mise`.
+   into `~/.meta-cortex/mise/bin/mise` on macOS and Linux. Windows uses the
+   official standalone mise release executable at
+   `$HOME\.meta-cortex\mise\bin\mise.exe`.
 2. Use mise's `install-into` command to install Bun into `~/.meta-cortex/bun`
    and Vale into `~/.meta-cortex/vale/bin`.
 3. Use Bun to install the shared framework dependencies.
@@ -80,7 +104,10 @@ It installs missing tools in this order:
   installation or shell activation is performed.
 - Mise's data, cache, configuration, and state directories stay under `~/.meta-cortex/mise`.
 - `META_CORTEX_HOME` overrides the application directory.
-- Bootstrapping mise uses `curl`, `sh`, and the official installer's platform requirements.
+- On macOS and Linux, bootstrapping mise uses `curl`, `sh`, and the official installer's platform requirements.
+- Windows bootstrapping downloads the pinned official mise executable with `curl`.
+  Bun and Vale use managed `bin\bun.exe` and `bin\vale.exe` paths.
+  Initialization does not require WSL or Git Bash.
 - Setup leaves shell configuration unchanged and ignores the user's `BUN_INSTALL`.
 
 For framework script commands in a new shell:
@@ -88,6 +115,17 @@ For framework script commands in a new shell:
 ```sh
 export PATH="${META_CORTEX_HOME:-$HOME/.meta-cortex}/mise/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/bun/bin:${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH"
 ```
+
+In PowerShell, use the managed tool directories with Windows path separators:
+
+```powershell
+$metaCortexHome = if ($env:META_CORTEX_HOME) { $env:META_CORTEX_HOME } else { Join-Path $HOME '.meta-cortex' }
+$env:PATH = "$metaCortexHome\mise\bin;$metaCortexHome\bun\bin;$metaCortexHome\vale\bin;$env:PATH"
+```
+
+**Prohibited:** paste the shell's `export PATH=...` command into PowerShell.
+
+**Required:** assign `$env:PATH` as above so PowerShell can find the managed tools.
 
 - The request's `mise`, `bun`, and `vale` arguments each default to `InstallMissing`.
 - Set a tool's argument to `RequireExisting` to require an existing copy in the
@@ -109,6 +147,67 @@ Dependency installation requires network access or a populated Bun cache.
 Installing or initializing Meta-Cortex does not start agents. Run `meta-cortex list`
 to discover every operation, its typed schema, and a complete request example.
 `meta-cortex run --request -` reads a request from stdin.
+
+### PowerShell typed requests
+
+Use the same YAML command schema on Windows. Set `project` to an absolute Git
+repository path such as `'C:\projects\my-app'`. Single-quoted PowerShell
+here-strings preserve the YAML literally:
+
+```powershell
+meta-cortex list
+@'
+version: 1
+project: 'C:\projects\my-app'
+operation:
+  group: Framework
+  command:
+    name: Initialize
+    arguments:
+      harness: codex
+      instructions: write
+'@ | meta-cortex run --request -
+```
+
+To inspect the project through a request file:
+
+```powershell
+@'
+version: 1
+project: 'C:\projects\my-app'
+operation:
+  group: Framework
+  command:
+    name: Info
+    arguments: {}
+'@ | Set-Content -Encoding utf8 info.yaml
+meta-cortex run --request info.yaml
+```
+
+Use a file for an interactive Workbench request so keyboard input stays available:
+
+```powershell
+@'
+version: 1
+project: 'C:\projects\my-app'
+operation:
+  group: Workbench
+  command:
+    name: Dashboard
+    arguments:
+      mode: Interactive
+      view: {kind: Features}
+      page: 0
+'@ | Set-Content -Encoding utf8 dashboard.yaml
+meta-cortex run --request dashboard.yaml
+```
+
+**Prohibited:** pipe an Interactive Dashboard request into stdin; that consumes
+its keyboard input.
+
+**Required:** use `dashboard.yaml` in a terminal, or change `mode` to `Snapshot`
+for redirected output. Workbench observation requires an existing repository
+identity and ledger; initialization of the framework alone does not create a ledger.
 
 ### Harness instruction files
 
@@ -269,7 +368,8 @@ cargo build --release --locked --workspace
 ```
 
 Run `cargo run -p meta-cortex -- list` from `app/` to inspect agent commands.
-The binary is built at `app/target/release/meta-cortex`. Release configuration
+The binary is built at `app/target/release/meta-cortex`
+(`app\target\release\meta-cortex.exe` on Windows). Release configuration
 lives in [app/dist-workspace.toml](app/dist-workspace.toml); only the executable
 is distributed. The [framework source](cortex/) remains at the repository root.
 
@@ -287,7 +387,8 @@ For a Homebrew installation:
 brew upgrade ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
 ```
 
-For a shell installation, rerun the shell installer above.
+For a shell installation, rerun the shell installer above. After a Windows
+release is available, rerun its PowerShell installer to upgrade that installation.
 
 ### Replace an installed framework
 

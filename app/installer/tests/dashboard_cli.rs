@@ -6,6 +6,7 @@ use meta_cortex_workbench::values::{BranchName, FeatureId, Note, TaskId};
 use meta_cortex_workbench::versions::ProtocolVersion;
 use meta_cortex_workbench::{DataDirectory, PageIndex, Workbench};
 use serde::{Deserialize, Serialize};
+use std::env::consts::EXE_SUFFIX;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -187,20 +188,24 @@ fn snapshots_use_typed_transport_and_recorded_content() -> anyhow::Result<()> {
     assert!(failure.message.to_string().contains("requires a terminal"));
     Ok(())
 }
+#[cfg(unix)]
 enum TerminalInvocation {
     Typed,
     Direct { directory: PathBuf },
 }
+#[cfg(unix)]
 #[derive(Debug, PartialEq, Eq)]
 struct StorageSnapshot {
     identity: Vec<u8>,
     files: Vec<FileSnapshot>,
 }
+#[cfg(unix)]
 #[derive(Debug, PartialEq, Eq)]
 struct FileSnapshot {
     path: PathBuf,
     bytes: Vec<u8>,
 }
+#[cfg(unix)]
 impl Scenario {
     fn storage_snapshot(&self) -> anyhow::Result<StorageSnapshot> {
         let mut files = Vec::new();
@@ -231,7 +236,6 @@ impl Scenario {
         repository.worktree("linked", &directory, Some(&options))?;
         Ok(directory)
     }
-    #[cfg(unix)]
     fn terminal(&self, invocation: TerminalInvocation) -> anyhow::Result<()> {
         let script = r#"
 import os, pty, subprocess, sys, termios, time, select, fcntl, struct
@@ -353,7 +357,10 @@ fn dashboard_help_and_repository_errors_need_no_request_file() -> anyhow::Result
         .output()?;
     assert!(help.status.success());
     let text = String::from_utf8(help.stdout)?;
-    assert!(text.contains("Usage: meta-cortex dashboard"));
+    assert!(
+        text.contains(&format!("Usage: meta-cortex{EXE_SUFFIX} dashboard")),
+        "{text}"
+    );
     assert!(!text.contains("--request"));
     let outside = tempfile::tempdir()?;
     let data = outside.path().join("unused-data");
