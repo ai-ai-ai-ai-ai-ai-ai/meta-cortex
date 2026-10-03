@@ -217,7 +217,7 @@
   <Sheet.Content class="overflow-y-auto">
     <Sheet.Header>
       <Sheet.Title
-        >{#if showingHistory && dashboard.state.request.kind === "History"}{dashboard
+        >{#if showingHistory && (dashboard.state.request.kind === "History" || dashboard.state.request.kind === "Task")}{dashboard
             .state.request.query.task}{:else}{record?.task.common.id ??
             "Recorded history"}{/if}</Sheet.Title
       >
