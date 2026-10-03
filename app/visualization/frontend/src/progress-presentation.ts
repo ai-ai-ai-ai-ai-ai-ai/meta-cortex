@@ -1,6 +1,6 @@
 import type { FlowCount, FlowState } from "./contracts";
-export type FlowCounts = ReadonlyArray<FlowCount>;
-export interface FlowProgress {
+type FlowCounts = ReadonlyArray<FlowCount>;
+interface FlowProgress {
   total: number;
   finished: number;
   percent: number;

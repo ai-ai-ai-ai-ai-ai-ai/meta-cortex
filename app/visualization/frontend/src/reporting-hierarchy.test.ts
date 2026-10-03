@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import {
   cleanup,
   render,
@@ -17,9 +17,19 @@ import type {
   FeatureFlow,
 } from "./contracts";
 import { ActivityKind, ReportingHierarchy } from "./agent-tree";
-import { Fixture } from "./dashboard-fixture";
+import {
+  Fixture,
+  BrowserMediaQueries,
+  BrowserResizeObserver,
+} from "./dashboard-fixture";
 import { FlowPresentation, NodeKind } from "./workflow";
 import Workflow from "./Workflow.svelte";
+beforeEach(() => {
+  const mediaQueries = new BrowserMediaQueries();
+  const matchMedia: BrowserMediaQueries["matchMedia"] =
+    mediaQueries.matchMedia.bind(mediaQueries);
+  vi.stubGlobal("matchMedia", matchMedia);
+});
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -331,33 +341,6 @@ it("selects compact coordinator own activity matching Working and keeps every ob
     within(inspector).getByRole("heading", workingHeadingQuery),
   ).toBeTruthy();
 });
-// JSDOM has no matchMedia. Svelte's MediaQuery uses matches/media and
-// EventTarget change listeners; keep real graph components and handlers intact.
-class BrowserMediaQuery extends EventTarget {
-  readonly matches = false;
-  constructor(readonly media: string) {
-    super();
-  }
-}
-class BrowserMediaQueries {
-  matchMedia(query: string): BrowserMediaQuery {
-    return new BrowserMediaQuery(query);
-  }
-}
-// JSDOM has no layout-driven resize notifications. Track native observer
-// lifecycles while leaving SvelteFlow rendering and selection handlers real.
-class BrowserResizeObserver implements ResizeObserver {
-  private readonly targets = new Set<Element>();
-  observe(target: Element): void {
-    this.targets.add(target);
-  }
-  unobserve(target: Element): void {
-    this.targets.delete(target);
-  }
-  disconnect(): void {
-    this.targets.clear();
-  }
-}
 it("uses the real Agents graph selection handler for prioritized own activity and leaves absent targets nonselectable", async () => {
   const fixture = new CoordinatorFixture();
   const props: ComponentProps<typeof Workflow> = {
@@ -366,10 +349,6 @@ it("uses the real Agents graph selection handler for prioritized own activity an
     history: vi.fn(),
     refresh: vi.fn(),
   };
-  const mediaQueries = new BrowserMediaQueries();
-  const matchMedia: BrowserMediaQueries["matchMedia"] =
-    mediaQueries.matchMedia.bind(mediaQueries);
-  vi.stubGlobal("matchMedia", matchMedia);
   vi.stubGlobal("ResizeObserver", BrowserResizeObserver);
   const graphQuery: ByRoleOptions = { name: "graph" };
   const inspectorQuery: ByRoleOptions = { name: "Team Gizmo details" };
@@ -395,10 +374,6 @@ it("uses the real Agents graph selection handler for prioritized own activity an
 });
 
 it("restores the second activity origin after selecting another role in the open desktop inspector", async () => {
-  const mediaQueries = new BrowserMediaQueries();
-  const matchMedia: BrowserMediaQueries["matchMedia"] =
-    mediaQueries.matchMedia.bind(mediaQueries);
-  vi.stubGlobal("matchMedia", matchMedia);
   const first = new Fixture();
   const second = new Fixture();
   const agent: AgentId = { team: "Development", role: "RustDev" };

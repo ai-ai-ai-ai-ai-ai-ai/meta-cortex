@@ -71,3 +71,31 @@ export class Fixture {
     observed_at: 2000,
   };
 }
+
+// JSDOM has no matchMedia. Svelte's MediaQuery uses matches/media and
+// EventTarget change listeners; keep real graph components and handlers intact.
+class BrowserMediaQuery extends EventTarget {
+  readonly matches = false;
+  constructor(readonly media: string) {
+    super();
+  }
+}
+export class BrowserMediaQueries {
+  matchMedia(query: string): BrowserMediaQuery {
+    return new BrowserMediaQuery(query);
+  }
+}
+// JSDOM has no layout-driven resize notifications. Track native observer
+// lifecycles while leaving SvelteFlow rendering and selection handlers real.
+export class BrowserResizeObserver implements ResizeObserver {
+  private readonly targets = new Set<Element>();
+  observe(target: Element): void {
+    this.targets.add(target);
+  }
+  unobserve(target: Element): void {
+    this.targets.delete(target);
+  }
+  disconnect(): void {
+    this.targets.clear();
+  }
+}
