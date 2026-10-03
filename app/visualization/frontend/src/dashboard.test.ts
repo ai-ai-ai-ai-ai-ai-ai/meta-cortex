@@ -201,9 +201,13 @@ it("keeps cross-task history identity consistent through loading, failure and re
     .mockResolvedValue(first.featuresReply())
     .mockResolvedValueOnce(first.workflowReply());
   render(App);
-  await userEvent.click(
-    await screen.findByRole("button", { name: "Build workflow" }),
+  const activity = await screen.findByRole("button", {
+    name: "Build workflow",
+  });
+  await waitFor(() =>
+    expect(getComputedStyle(activity).pointerEvents).not.toBe("none"),
   );
+  await userEvent.click(activity);
   const initialSheet = await screen.findByRole("dialog", { name: "implement" });
   await waitFor(() =>
     expect(initialSheet.contains(document.activeElement)).toBe(true),
