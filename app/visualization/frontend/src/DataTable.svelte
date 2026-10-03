@@ -75,7 +75,7 @@
 {#snippet identity(row: TableRow)}
   {@const selection = row.original.selection}
   <div
-    class="flex items-center gap-2"
+    class="flex min-w-0 items-center gap-2"
     style:padding-inline-start={`${row.depth}rem`}
   >
     {#if row.getCanExpand()}<Button
@@ -89,7 +89,7 @@
       >{/if}
     {#if selection}<Button
         variant="link"
-        class="whitespace-normal text-left"
+        class="h-auto min-w-0 shrink whitespace-normal text-left"
         aria-label={row.original.actionLabel}
         onclick={() => select(selection)}>{row.original.label}</Button
       >{:else}{row.original.label}{/if}
