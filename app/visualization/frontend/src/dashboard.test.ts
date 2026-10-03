@@ -835,7 +835,10 @@ it("uses real workflow tabs for Home and End keyboard navigation", async () => {
   await userEvent.click(screen.getByRole("button", expandQuery));
   const task = screen.getByRole("button", taskQuery);
   await userEvent.click(task);
-  expect(screen.getByRole("dialog", inspectorQuery)).toBeTruthy();
+  const inspector = screen.getByRole("dialog", inspectorQuery);
+  await waitFor(() => {
+    expect(inspector.contains(document.activeElement)).toBe(true);
+  });
   tree.focus();
   await userEvent.keyboard("{ArrowRight}");
   const graph = screen.getByRole("tab", graphQuery);
@@ -851,7 +854,10 @@ it("uses real workflow tabs for Home and End keyboard navigation", async () => {
   await userEvent.click(tree);
   await userEvent.click(screen.getByRole("button", expandQuery));
   await userEvent.click(screen.getByRole("button", taskQuery));
-  expect(screen.getByRole("dialog", inspectorQuery)).toBeTruthy();
+  const reopenedInspector = screen.getByRole("dialog", inspectorQuery);
+  await waitFor(() => {
+    expect(reopenedInspector.contains(document.activeElement)).toBe(true);
+  });
   await userEvent.click(history);
   await waitFor(() => {
     expect(history.getAttribute("aria-selected")).toBe("true");
