@@ -14,5 +14,6 @@
     "src/lib/components/ui/native-select/index.ts"
   ],
   "project": ["src/**/*.{ts,svelte}", "tools/**/*.ts"],
-  "ignore": ["src/contracts.ts"]
+  "ignore": ["src/contracts.ts"],
+  "ignoreDependencies": ["tw-animate-css"]
 }

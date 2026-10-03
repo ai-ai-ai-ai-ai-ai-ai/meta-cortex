@@ -219,7 +219,11 @@
   </main>
   <Sheet.Content class="overflow-y-auto">
     <Sheet.Header>
-      <Sheet.Title>{record?.task.common.id ?? "Recorded history"}</Sheet.Title>
+      <Sheet.Title
+        >{#if showingHistory && dashboard.state.request.kind === "History"}{dashboard
+            .state.request.query.task}{:else}{record?.task.common.id ??
+            "Recorded history"}{/if}</Sheet.Title
+      >
       <Sheet.Description
         >Recorded task fields and ledger evidence.</Sheet.Description
       >

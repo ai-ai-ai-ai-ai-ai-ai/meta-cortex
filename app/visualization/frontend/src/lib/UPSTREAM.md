@@ -48,3 +48,9 @@ contract (`svelte/elements.d.ts`). Only `no-unsafe-assignment` is disabled for
 that single generated Native Select file. Application change handlers use
 Svelte's typed `ChangeEventHandler<HTMLSelectElement>`; all their lint rules
 remain enabled.
+
+Knip 5.63.1 does not analyze stylesheet imports. Its sole dependency declaration
+is `tw-animate-css`, which is actually imported by `src/styles.css` for stock
+component animations. `knip.json` lists exactly that CSS-only dependency under
+`ignoreDependencies`; authored source, exports and every other dependency remain
+checked. No custom CSS compiler or detection plugin is introduced.
