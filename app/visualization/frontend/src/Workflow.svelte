@@ -142,7 +142,7 @@
   <Tabs.Root
     value={view}
     onValueChange={changeView}
-    class="workflow-overview px-[25px] pb-5 max-[800px]:px-[22px] max-[800px]:pt-1 max-[620px]:px-4"
+    class="workflow-overview flex-col px-[25px] pb-5 max-[800px]:px-[22px] max-[800px]:pt-1 max-[620px]:px-4"
     aria-label="Feature workflow"
   >
     <Tabs.List
@@ -193,7 +193,11 @@
               >{/each}
           </Card.Root>
         {:else}
-          <Tabs.Root value={graphKind} onValueChange={changeGraph}>
+          <Tabs.Root
+            value={graphKind}
+            onValueChange={changeGraph}
+            class="flex-col"
+          >
             {#if view === FlowView.Agents}<div
                 class="graph-toolbar flex items-center justify-between rounded-t-[6px] border border-border p-3 text-[11px] text-muted-foreground max-[620px]:flex-wrap max-[620px]:gap-2.5 [&>div]:flex [&>div]:gap-2"
               >
