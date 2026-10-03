@@ -241,11 +241,21 @@
             }
           }}
           onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            switch (inspectorOpen) {
+              case true:
+                return;
+              case false:
+                break;
+            }
+            switch (document.activeElement?.getAttribute("role")) {
+              case "tab":
+                return;
+            }
             switch (selection._tag) {
               case "None":
                 return;
               case "Some":
-                event.preventDefault();
                 document.getElementById(selection.value.origin)?.focus();
             }
           }}
