@@ -212,7 +212,7 @@
               </div>{/if}
             <Tabs.Content
               value={graphKind}
-              class="flow-canvas mt-0 h-[540px] min-w-0 overflow-hidden rounded-[6px] border border-border bg-canvas max-[620px]:h-[420px]"
+              class="flow-canvas flex-none mt-0 h-[540px] min-w-0 overflow-hidden rounded-[6px] border border-border bg-canvas max-[620px]:h-[420px]"
             >
               {#key `${view}:${graphKind}`}<SvelteFlow
                   nodes={diagram.nodes}
