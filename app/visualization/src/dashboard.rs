@@ -1,26 +1,27 @@
-mod navigation;
+mod desktop;
 mod presentation;
-mod terminal;
+mod snapshot;
 
+use derive_more::{Display, From};
 use meta_cortex_workbench::request::TaskQuery;
 use meta_cortex_workbench::values::{FeatureId, Note};
-use meta_cortex_workbench::{
-    HistoryPage, LedgerError, Observation, PageIndex, TaskPage, Workbench,
-};
-use navigation::{Navigation, Route};
-use presentation::Content;
+use meta_cortex_workbench::{LedgerError, PageIndex, Workbench};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::io;
-use terminal::TerminalSession;
 use thiserror::Error;
+
+pub use desktop::{
+    DesktopContent, DesktopContract, DesktopFailure, DesktopLaunch, DesktopRead, DesktopReply,
+    DesktopSelection,
+};
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 pub enum DashboardMode {
-    Interactive,
+    Desktop,
     Snapshot,
 }
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum DashboardView {
     Features,
@@ -43,105 +44,49 @@ pub struct DashboardReport {
 pub enum DashboardError {
     #[error(transparent)]
     Ledger(#[from] LedgerError),
-    #[error("terminal operation failed: {0}")]
-    Terminal(#[from] io::Error),
-    #[error(
-        "Interactive dashboard requires a terminal on stdin and stdout; use mode: Snapshot for redirected output"
-    )]
-    TerminalRequired,
+    #[error("native dashboard failed: {0}")]
+    Native(#[from] tauri::Error),
+    #[error("dashboard runtime failed: {0}")]
+    Runtime(#[from] io::Error),
+    #[error("native dashboard exited with status {0}")]
+    Exit(NativeExitCode),
 }
+#[derive(Debug, Display, From)]
+pub struct NativeExitCode(i32);
 
+pub enum DashboardExecution {
+    Snapshot(DashboardReport),
+    Desktop(DesktopLaunch),
+}
 pub struct Dashboard {
     workbench: Workbench,
-    navigation: Navigation,
 }
 impl From<Workbench> for Dashboard {
     fn from(workbench: Workbench) -> Self {
-        Self {
-            workbench,
-            navigation: Navigation::default(),
-        }
+        Self { workbench }
     }
 }
 impl Dashboard {
     pub async fn execute(
-        mut self,
+        self,
         request: DashboardRequest,
-    ) -> Result<DashboardReport, DashboardError> {
-        tracing::debug!(mode = ?request.mode, "Workbench dashboard started");
-        self.navigation = Navigation::from(request.view).with_page(request.page);
+    ) -> Result<DashboardExecution, DashboardError> {
         match request.mode {
             DashboardMode::Snapshot => {
-                let content = self.load().await?;
-                Ok(DashboardReport {
-                    content: content.text(&self.navigation),
-                })
+                let route = snapshot::Route::from(request.view).with_page(request.page);
+                let content = route.load(&self.workbench.observe().await?).await?;
+                Ok(DashboardExecution::Snapshot(DashboardReport {
+                    content: content.text(&snapshot::SnapshotContext { route }),
+                }))
             }
-            DashboardMode::Interactive => self.run().await,
-        }
-    }
-    async fn load(&self) -> Result<Content, LedgerError> {
-        self.navigation
-            .route()
-            .load(&self.workbench.observe().await?)
-            .await
-    }
-    async fn run(mut self) -> Result<DashboardReport, DashboardError> {
-        let mut session = TerminalSession::open()?;
-        loop {
-            let content = match self.load().await {
-                Ok(content) => content,
-                Err(error) => Content::Error(error),
-            };
-            session.draw(terminal::TerminalFrame {
-                text: content.text(&self.navigation),
-                scroll: self.navigation.scroll(),
-            })?;
-            let action = session.action()?;
-            match self.navigation.apply(navigation::NavigationInput {
-                action,
-                content: &content,
-            }) {
-                navigation::NavigationOutcome::Continue(navigation) => self.navigation = navigation,
-                navigation::NavigationOutcome::Exit => break,
+            DashboardMode::Desktop => {
+                self.workbench.observe().await?;
+                Ok(DashboardExecution::Desktop(DesktopLaunch {
+                    workbench: self.workbench,
+                    view: request.view,
+                    page: request.page,
+                }))
             }
-        }
-        session.close()?;
-        Ok(DashboardReport {
-            content: Note::from("Workbench dashboard closed".to_owned()),
-        })
-    }
-}
-impl Route {
-    async fn load(&self, observation: &Observation) -> Result<Content, LedgerError> {
-        match self {
-            Self::Features { page } => Ok(Content::Features(observation.features(*page).await?)),
-            Self::Tasks { feature, page } => Ok(Content::Tasks(
-                observation
-                    .tasks(TaskPage {
-                        feature: feature.clone(),
-                        page: *page,
-                    })
-                    .await?,
-            )),
-            Self::Task { query } => Ok(Content::Task(
-                observation
-                    .task(TaskQuery {
-                        feature: query.feature.clone(),
-                        task: query.task.clone(),
-                    })
-                    .await?,
-            )),
-            Self::History { query, page } => Ok(Content::History(
-                observation
-                    .history(HistoryPage {
-                        feature: query.feature.clone(),
-                        task: query.task.clone(),
-                        page: *page,
-                    })
-                    .await?,
-            )),
-            Self::Event { event, .. } => Ok(Content::Event(*event.clone())),
         }
     }
 }

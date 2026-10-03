@@ -93,10 +93,10 @@ impl Catalog {
         let examples = [
             CommandExample {
                 description: CommandSummary::from(
-                    "Observe recorded Workbench data in a terminal dashboard. Interactive requires stdin/stdout terminals; Snapshot returns text. Arrow keys select, Enter opens details, h opens task history, Esc goes back, n/p change bounded pages, J/K scroll, r refreshes and q or Ctrl-C exits. Observation never initializes, migrates, imports or updates the ledger.",
+                    "Observe recorded Workbench data in a native desktop window. Desktop opens the current or requested view; Snapshot returns text without creating a window. Feature, task and history reads use bounded pages; events retain their recorded task snapshots. Observation never initializes, migrates, imports or updates the ledger.",
                 ),
                 operation: Operation::Workbench(WorkbenchOperation::Dashboard(DashboardRequest {
-                    mode: DashboardMode::Interactive,
+                    mode: DashboardMode::Desktop,
                     view: DashboardView::Features,
                     page: PageIndex::FIRST,
                 })),

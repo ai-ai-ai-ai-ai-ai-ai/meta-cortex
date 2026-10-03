@@ -6,7 +6,8 @@ use crate::installation::InstallError;
 use catalog::Catalog;
 use derive_more::{Display, From};
 use meta_cortex_visualization::{
-    Dashboard, DashboardError, DashboardMode, DashboardRequest, DashboardView,
+    Dashboard, DashboardError, DashboardExecution, DashboardMode, DashboardRequest, DashboardView,
+    DesktopLaunch,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use meta_cortex_workbench::{LedgerError, PageIndex, Workbench};
@@ -51,6 +52,7 @@ pub enum ErrorCode {
     Io,
     Installation,
     Response,
+    Native,
 }
 
 #[derive(Serialize, From)]
@@ -66,8 +68,10 @@ pub struct Failure {
 impl From<&AgentError> for Failure {
     fn from(error: &AgentError) -> Self {
         let code = match error {
-            AgentError::Dashboard(DashboardError::Terminal(_)) => ErrorCode::Io,
-            AgentError::Dashboard(DashboardError::TerminalRequired) => ErrorCode::InvalidRequest,
+            AgentError::Dashboard(DashboardError::Runtime(_)) => ErrorCode::Io,
+            AgentError::Dashboard(DashboardError::Native(_) | DashboardError::Exit(_)) => {
+                ErrorCode::Native
+            }
             AgentError::Request(_) => ErrorCode::InvalidRequest,
             AgentError::Response(_) => ErrorCode::Response,
             AgentError::Io(_) => ErrorCode::Io,
@@ -196,6 +200,32 @@ impl RequestSource {
     }
 }
 
+pub(super) enum Execution {
+    Reply(Box<Reply>),
+    Desktop(DesktopLaunch),
+}
+impl From<Reply> for Execution {
+    fn from(reply: Reply) -> Self {
+        Self::Reply(Box::new(reply))
+    }
+}
+impl From<DashboardExecution> for Execution {
+    fn from(execution: DashboardExecution) -> Self {
+        match execution {
+            DashboardExecution::Snapshot(report) => Self::from(Reply::Dashboard(report)),
+            DashboardExecution::Desktop(launch) => Self::Desktop(launch),
+        }
+    }
+}
+impl Execution {
+    fn finish(self) -> Result<Reply, AgentError> {
+        match self {
+            Self::Reply(reply) => Ok(*reply),
+            Self::Desktop(launch) => Ok(Reply::Dashboard(launch.run()?)),
+        }
+    }
+}
+
 pub struct AgentCli;
 
 impl AgentCli {
@@ -217,15 +247,13 @@ impl AgentCli {
         let project = env::current_dir()?;
         let workbench = Workbench::discover(&project)?;
         let runtime = Builder::new_current_thread().enable_time().build()?;
-        // Observe existing storage before entering the terminal so discovery failures
-        // retain the CLI's existing structured error transport.
-        runtime.block_on(workbench.observe())?;
-        let report = runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest {
-            mode: DashboardMode::Interactive,
+        let execution = runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest {
+            mode: DashboardMode::Desktop,
             view: DashboardView::Features,
             page: PageIndex::FIRST,
         }))?;
-        Ok(Reply::Dashboard(report))
+        drop(runtime);
+        Execution::from(execution).finish()
     }
 
     pub fn run(path: PathBuf) -> ExitCode {
@@ -236,7 +264,9 @@ impl AgentCli {
         let source = RequestSource::from(path);
         let request = Request::decode(&source.read()?)?;
         let runtime = Builder::new_current_thread().enable_time().build()?;
-        runtime.block_on(request.execute())
+        let execution = runtime.block_on(request.execute())?;
+        drop(runtime);
+        execution.finish()
     }
 
     fn report(result: Result<Reply, AgentError>) -> ExitCode {

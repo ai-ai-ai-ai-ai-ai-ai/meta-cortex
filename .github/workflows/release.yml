@@ -143,6 +143,14 @@ jobs:
       - name: Install dependencies
         run: |
           ${{ matrix.packages_install }}
+      - uses: jdx/mise-action@v4
+        with:
+          working_directory: cortex
+      - name: Build embedded desktop frontend
+        working-directory: app/visualization/frontend
+        run: |
+          bun install --frozen-lockfile
+          bun run build
       - name: Set up compiler cache
         uses: ./.github/actions/rust-sccache
         with:

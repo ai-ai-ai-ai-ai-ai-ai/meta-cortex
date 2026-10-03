@@ -193,7 +193,14 @@ operation:
 meta-cortex run --request info.yaml
 ```
 
-Use a file for an interactive Workbench request so keyboard input stays available:
+Open the native Workbench dashboard from your repository root or a subdirectory:
+
+```powershell
+meta-cortex dashboard
+```
+
+No request file or required arguments are needed. For a targeted native view,
+use an explicit project with `mode: Desktop`:
 
 ```powershell
 @'
@@ -204,18 +211,16 @@ operation:
   command:
     name: Dashboard
     arguments:
-      mode: Interactive
+      mode: Desktop
       view: {kind: Features}
       page: 0
 '@ | Set-Content -Encoding utf8 dashboard.yaml
 meta-cortex run --request dashboard.yaml
 ```
 
-**Prohibited:** pipe an Interactive Dashboard request into stdin; that consumes
-its keyboard input.
-
-**Required:** use `dashboard.yaml` in a terminal, or change `mode` to `Snapshot`
-for redirected output. Workbench observation requires an existing repository
+Use `mode: Snapshot` for headless text output. After changing the request's mode,
+run `meta-cortex run --request dashboard.yaml > dashboard-output.yaml` to save it.
+Workbench observation requires an existing repository
 identity and ledger; initialization of the framework alone does not create a ledger.
 
 ### Harness instruction files
@@ -364,10 +369,22 @@ The [Rust workspace](app/Cargo.toml) contains three crates:
   tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
 - [visualization](app/visualization): the `meta-cortex-visualization` library for
-  the terminal dashboard, using Workbench’s read-only observation API.
+  the native Tauri dashboard with embedded Svelte/TypeScript assets, using
+  Workbench’s read-only observation API.
+
+Install the dashboard’s package-local dependencies once before Cargo builds:
 
 ```sh
-cd app
+cd app/visualization/frontend
+bun install --frozen-lockfile
+cd ../..
+```
+
+Ordinary Cargo builds run the frontend TypeScript/Vite build and embed its assets.
+See [native build prerequisites](CONTRIBUTING.md#native-dashboard-prerequisites).
+From `app/`, run:
+
+```sh
 cargo fmt --all --check
 cargo check --locked --workspace --all-targets
 cargo clippy --locked --workspace --all-targets -- -D warnings
@@ -477,15 +494,49 @@ meta-cortex dashboard
 ```
 
 No request file or required arguments are needed. The command resolves the
-existing repository identity and shared database, then opens the interactive
-Features view. Terminal stdin and stdout are required. Select with Up/Down or
-`j`/`k`, press Enter for details, press `h` for task history, and exit with `q`
-or Ctrl-C.
+existing repository identity and shared database, then opens the native Tauri
+Workbench window. The searchable left sidebar keeps workflows available while
+you inspect their agents, commits and activity. Close the window to exit. The executable embeds the dashboard
+assets and reads through native IPC; no HTTP server is required.
+
+Each workflow opens with its requirement and full-feature progress. Compact
+contribution rows show the worker, status, task, result preview and commit/check
+counts. Blocked and unfinished work precedes finished and cancelled
+work. Search contributions by agent, task, result or status. Longer sections show
+three tasks initially; Show more reveals the remaining loaded tasks.
+Commit counts deduplicate checkpoint and integration events sharing a hash;
+both actors and event notes remain in task details. These notes describe the
+recorded event; Git commit messages and Git authorship are not recorded. Acceptance criteria
+remain requirements, separate from recorded check outcomes.
+Select a contribution to open its details in the main content area. The left
+sidebar stays available; Back to workflow restores your filter and expanded rows.
+The task page shows the full result, requirements and assignment alongside Git
+evidence. Its sections expose checks, dependencies, checkpoint and integration
+history, lifecycle events and full raw records. Full-feature totals summarize
+task states and completion progress; contributions cover the selected task page. Team & reporting structure
+expands the role hierarchy; Workflow record & data source exposes technical fields.
+For tasks with
+`Assigned` ownership, the hierarchy follows the assigned role's recorded
+`reports_to` target. Each coordinator's own activities are separate from
+descendant workflow progress. Rows represent roles, not host sessions.
+A recorded reporting target without its own activity on this page shows
+`Reporting only`; it has no inferred status or upstream reporting line.
+Historical tasks with `Unrecorded` ownership appear separately under `Created by`
+with their recorded creator and available worker evidence from task history;
+their reporting line stays unrecorded. Task dependencies remain separate from
+reporting relationships.
+Use Refresh to reload recorded data, or enable Auto for reads every ten seconds.
+Refresh preserves contribution expansion and search. Previous/Next appears when
+there are other pages of native observations; these reads do not update the ledger.
+Each task projection includes its latest 100 events; task history can page through
+older attempts and checkpoints. Runtime parent session links and Git authorship
+remain unrecorded when absent from Turso. Detailed task records and event snapshots
+retain all ledger fields, including task-specific extensions.
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
-an explicit project, initial view, and page. Typed Interactive requests use a
-request file to preserve keyboard stdin. Typed Snapshot requests support
-redirected output through `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
+an explicit project, initial view, and page. Use `mode: Desktop` for the native
+window or `mode: Snapshot` for headless text output through
+`meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)

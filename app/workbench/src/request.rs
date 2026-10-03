@@ -23,7 +23,7 @@ pub struct FeatureQuery {
     pub feature: FeatureId,
 }
 
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct TaskQuery {
     pub feature: FeatureId,
