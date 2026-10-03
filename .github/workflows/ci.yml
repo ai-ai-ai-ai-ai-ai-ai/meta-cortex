@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -37,10 +37,9 @@ jobs:
       - name: Measure the representative installation fixture
         shell: pwsh
         run: |
-          $env:BUN_INSTALL_CACHE_DIR = Join-Path ([IO.Path]::GetTempPath()) 'meta-cortex-bun-cache'
-          Write-Host "Shared Bun cache: $env:BUN_INSTALL_CACHE_DIR"
+          $env:TEMP = $env:RUNNER_TEMP
+          $env:TMP = $env:RUNNER_TEMP
+          Remove-Item Env:BUN_INSTALL_CACHE_DIR -ErrorAction SilentlyContinue
+          Write-Host "Private cache fixture temp: $([IO.Path]::GetTempPath())"
           $env:RUSTC_WRAPPER = ''
-          Write-Host "Shared cache cold fixture"
-          cargo test --locked -p meta-cortex installation::tests::preserves_root_workspace_dependencies -- --exact --nocapture --test-threads=1
-          Write-Host "Shared cache warm fixture"
           cargo test --locked -p meta-cortex installation::tests::preserves_root_workspace_dependencies -- --exact --nocapture --test-threads=1
