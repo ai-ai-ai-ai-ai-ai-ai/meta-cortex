@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import type { TaskV2 } from "./contracts";
+  import type { TaskV2, DesktopRead } from "./contracts";
   import { onMount } from "svelte";
   import { DashboardController, LoadKind } from "./dashboard-state.svelte";
   import { DashboardApi } from "./api";
@@ -11,9 +11,91 @@
   import ActivityBar from "./ActivityBar.svelte";
   const dashboard = new DashboardController(new DashboardApi());
   onMount(() => {
-    dashboard.load({ kind: "Initial" });
+    const request: DesktopRead = { kind: "Initial" };
+    dashboard.load(request);
     return () => dashboard.stop();
   });
+  let currentFeature = $derived.by(() => {
+    switch (dashboard.state.kind) {
+      case LoadKind.Ready:
+        switch (dashboard.state.reply.selection.view.kind) {
+          case "Features":
+            return "";
+          case "Tasks":
+            return dashboard.state.reply.selection.view.feature;
+          case "Task":
+          case "History":
+            return dashboard.state.reply.selection.view.query.feature;
+        }
+        break;
+      case LoadKind.Loading:
+      case LoadKind.Failed:
+        switch (dashboard.state.request.kind) {
+          case "Workflow":
+            return dashboard.state.request.feature;
+          case "Task":
+          case "History":
+            return dashboard.state.request.query.feature;
+          case "Initial":
+          case "Features":
+            return "";
+        }
+    }
+  });
+  let pageEnd = $derived.by(() => {
+    switch (dashboard.state.kind) {
+      case LoadKind.Loading:
+      case LoadKind.Failed:
+        return "Complete";
+      case LoadKind.Ready:
+        switch (dashboard.state.reply.content.kind) {
+          case "Task":
+            return "Complete";
+          case "Workflow":
+            return dashboard.state.reply.content.value.tasks.end;
+          case "Features":
+          case "History":
+            return dashboard.state.reply.content.value.end;
+        }
+    }
+  });
+  function loadPage(page: number) {
+    switch (dashboard.state.kind) {
+      case LoadKind.Loading:
+      case LoadKind.Failed:
+        return;
+      case LoadKind.Ready: {
+        const view = dashboard.state.reply.selection.view;
+        switch (view.kind) {
+          case "Features": {
+            const request: DesktopRead = { kind: "Features", page };
+            dashboard.load(request);
+            return;
+          }
+          case "Tasks": {
+            const request: DesktopRead = {
+              kind: "Workflow",
+              feature: view.feature,
+              page,
+            };
+            dashboard.load(request);
+            return;
+          }
+          case "History": {
+            const request: DesktopRead = {
+              kind: "History",
+              query: view.query,
+              page,
+            };
+            dashboard.load(request);
+            return;
+          }
+          case "Task":
+            return;
+        }
+      }
+    }
+  }
 </script>
 
 <div
@@ -25,7 +107,10 @@
     <Button
       variant="ghost"
       class="brand h-auto min-h-[70px] justify-start gap-2.5 rounded-none bg-transparent px-2.5 pb-7 text-left text-[17px] font-semibold whitespace-normal hover:bg-transparent max-[800px]:gap-[7px] max-[800px]:pl-[3px] max-[800px]:text-sm max-[620px]:min-h-[50px] max-[620px]:px-[7px] max-[620px]:pb-[15px] [&_small]:mt-1 [&_small]:block [&_small]:text-[10px] [&_small]:font-normal [&_small]:tracking-[1.5px] [&_small]:uppercase max-[620px]:[&>div]:hidden"
-      onclick={() => dashboard.load({ kind: "Features", page: 0 })}
+      onclick={() => {
+        const request: DesktopRead = { kind: "Features", page: 0 };
+        dashboard.load(request);
+      }}
       ><span
         class="brand-mark grid size-[33px] shrink-0 place-items-center text-primary [&_svg]:size-[30px]"
         ><svg
@@ -51,10 +136,17 @@
       {#each dashboard.features as feature (feature.id)}<Button
           variant="ghost"
           class="group mb-1 h-auto min-h-11 w-full justify-start gap-[9px] rounded-[5px] bg-transparent px-3 py-[11px] text-left font-normal text-muted-foreground hover:bg-secondary data-[selected=true]:bg-selection data-[selected=true]:text-primary data-[selected=true]:shadow-[inset_3px_0_var(--primary)] max-[620px]:justify-center max-[620px]:p-[9px] [&_strong]:truncate [&_strong]:text-xs [&_strong]:font-medium max-[620px]:[&_strong]:hidden"
-          data-selected={dashboard.currentFeature() === feature.id}
+          data-selected={currentFeature === feature.id}
           aria-label={feature.id}
           title={feature.id}
-          onclick={() => dashboard.feature(feature)}
+          onclick={() => {
+            const request: DesktopRead = {
+              kind: "Workflow",
+              feature: feature.id,
+              page: 0,
+            };
+            dashboard.load(request);
+          }}
           ><svg
             class="feature-dot size-[19px] shrink-0 group-data-[selected=true]:text-primary max-[620px]:hidden"
             viewBox="0 0 24 24"
@@ -80,7 +172,7 @@
       >
         <div>
           <h1 class="font-bold">
-            {FlowPresentation.label(dashboard.currentFeature()) || "Workbench"}
+            {FlowPresentation.label(currentFeature) || "Workbench"}
           </h1>
           <p class="mt-[7px] text-[13px] text-muted-foreground">
             Recorded work · Turso
@@ -130,7 +222,14 @@
               {#each reply.content.value.records as feature (feature.id)}<Button
                   variant="ghost"
                   class="block h-auto w-full rounded-[6px] border border-border bg-card px-[22px] py-[18px] text-left font-normal whitespace-normal hover:border-primary/60 hover:bg-card [&_h3]:mt-[7px] [&_h3]:mb-2 [&_h3]:text-base [&_p]:max-w-[780px] [&_p]:line-clamp-2 [&_p]:text-xs [&_p]:text-muted-foreground [&_code]:mt-3 [&_code]:block [&_code]:text-[10px] [&_code]:text-muted-foreground"
-                  onclick={() => dashboard.feature(feature)}
+                  onclick={() => {
+                    const request: DesktopRead = {
+                      kind: "Workflow",
+                      feature: feature.id,
+                      page: 0,
+                    };
+                    dashboard.load(request);
+                  }}
                   ><span
                     class="eyebrow text-[10px] tracking-[1.3px] text-muted-foreground"
                     >FEATURE</span
@@ -147,26 +246,43 @@
         {:else if reply.content.kind === "Workflow"}
           <Workflow
             flow={reply.content.value}
-            select={(task: TaskV2) => dashboard.task(task)}
-            history={(task: TaskV2) => dashboard.history(task)}
+            select={(task: TaskV2) => {
+              const request: DesktopRead = {
+                kind: "Task",
+                query: { feature: task.common.feature, task: task.common.id },
+              };
+              dashboard.load(request);
+            }}
+            history={(task: TaskV2) => {
+              const request: DesktopRead = {
+                kind: "History",
+                query: { feature: task.common.feature, task: task.common.id },
+                page: 0,
+              };
+              dashboard.load(request);
+            }}
             refresh={() => dashboard.load(dashboard.state.request)}
           />
         {:else if reply.content.kind === "Task"}
           {@const task = reply.content.value}
           <TaskDetail
             {task}
-            back={() =>
-              dashboard.load({
+            back={() => {
+              const request: DesktopRead = {
                 kind: "Workflow",
                 feature: task.common.feature,
                 page: 0,
-              })}
-            history={() =>
-              dashboard.load({
+              };
+              dashboard.load(request);
+            }}
+            history={() => {
+              const request: DesktopRead = {
                 kind: "History",
                 query: { feature: task.common.feature, task: task.common.id },
                 page: 0,
-              })}
+              };
+              dashboard.load(request);
+            }}
           />
         {:else if reply.content.kind === "History"}
           <section
@@ -175,11 +291,17 @@
             <Button
               variant="dashboard"
               class="button"
-              onclick={() =>
-                dashboard.load({
-                  kind: "Task",
-                  query: dashboard.historyQuery(reply),
-                })}>← Task</Button
+              onclick={() => {
+                switch (reply.selection.view.kind) {
+                  case "History": {
+                    const request: DesktopRead = {
+                      kind: "Task",
+                      query: reply.selection.view.query,
+                    };
+                    dashboard.load(request);
+                  }
+                }
+              }}>← Task</Button
             >
             <h2 class="font-bold">Recorded history</h2>
             <div
@@ -226,18 +348,13 @@
                 variant="dashboard"
                 class="button min-h-9 px-2.5 py-1.5 text-[11px]"
                 disabled={reply.selection.page === 0}
-                onclick={() =>
-                  dashboard.load(
-                    dashboard.pageRequest(reply, reply.selection.page - 1),
-                  )}>Previous</Button
+                onclick={() => loadPage(reply.selection.page - 1)}
+                >Previous</Button
               ><Button
                 variant="dashboard"
                 class="button min-h-9 px-2.5 py-1.5 text-[11px]"
-                disabled={dashboard.pageEnd(reply) === "Complete"}
-                onclick={() =>
-                  dashboard.load(
-                    dashboard.pageRequest(reply, reply.selection.page + 1),
-                  )}>Next</Button
+                disabled={pageEnd === "Complete"}
+                onclick={() => loadPage(reply.selection.page + 1)}>Next</Button
               >
             </div>
           </footer>
