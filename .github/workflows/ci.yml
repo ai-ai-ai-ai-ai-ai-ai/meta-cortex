@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -33,13 +33,87 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app -> target
-      # Temporary focused draft measurement; restore all gates before delivery.
-      - name: Measure the representative installation fixture
+      - run: cargo fmt --all --check
+      - run: cargo check --locked --workspace --all-targets
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --locked --workspace
+        if: runner.os != 'Windows'
+      - name: Install the native Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cargo install --locked --path installer --root "$env:RUNNER_TEMP\meta cortex installed"
+      - name: Verify native Windows installation and durable ledger
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $env:TEMP = $env:RUNNER_TEMP
-          $env:TMP = $env:RUNNER_TEMP
-          Remove-Item Env:BUN_INSTALL_CACHE_DIR -ErrorAction SilentlyContinue
-          Write-Host "Private cache fixture temp: $([IO.Path]::GetTempPath())"
-          $env:RUSTC_WRAPPER = ''
-          cargo test --locked -p meta-cortex installation::tests::preserves_root_workspace_dependencies -- --exact --nocapture --test-threads=1
+          & "$env:GITHUB_WORKSPACE\.github\scripts\windows-e2e.ps1" -Binary "$env:RUNNER_TEMP\meta cortex installed\bin\meta-cortex.exe"
+      - name: Verify the published Scoop package
+        if: runner.os == 'Windows' && hashFiles('bucket/meta-cortex.json') != ''
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE\.github\scripts\scoop-e2e.ps1"
+      - name: Verify the published Homebrew package
+        if: runner.os == 'macOS' && hashFiles('bucket/meta-cortex.json') != ''
+        run: |
+          brew tap ai-ai-ai-ai-ai-ai-ai/tap
+          brew install ai-ai-ai-ai-ai-ai-ai/tap/meta-cortex
+          binary="$(brew --prefix meta-cortex)/bin/meta-cortex"
+          expected="$(python3 -c 'import json; print(json.load(open("../bucket/meta-cortex.json"))["version"])')"
+          test "$("$binary" --version)" = "meta-cortex $expected"
+          export META_CORTEX_HOME="$RUNNER_TEMP/Homebrew managed home"
+          "$binary" list
+      - name: Run the native Windows workspace tests
+        if: ${{ !cancelled() && runner.os == 'Windows' }}
+        # Keep fixture projects and their private tool caches on the workspace drive.
+        env:
+          TEMP: ${{ runner.temp }}
+          TMP: ${{ runner.temp }}
+        run: cargo test --locked --workspace --no-fail-fast
+      - name: Retain native Windows E2E evidence
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-windows-e2e
+          path: ${{ runner.temp }}/meta cortex Windows E2E/evidence
+          if-no-files-found: ignore
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+        with:
+          working_directory: cortex
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: Set up compiler cache
+        uses: ./.github/actions/rust-sccache
+        with:
+          endpoint: ${{ vars.SCCACHE_ENDPOINT }}
+          bucket: ${{ vars.SCCACHE_BUCKET }}
+          access-key: ${{ secrets.SCCACHE_ACCESS_KEY_ID }}
+          secret-key: ${{ secrets.SCCACHE_SECRET_ACCESS_KEY }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app -> target/llvm-cov-target
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - run: cargo llvm-cov --locked --workspace --fail-under-lines 90
+
+  skill-scripts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v4
+        with:
+          working_directory: cortex
+      - name: Verify framework and skill scripts
+        run: |
+          cd cortex
+          bun install --frozen-lockfile --ignore-scripts
+          test -z "$(find lace scripts teams -name node_modules -print -quit)"
+          test -z "$(find lace scripts teams -name bun.lock -print -quit)"
+          bun run verify
+          bun run docs:check
