@@ -3,7 +3,7 @@ members = ["installer", "workbench", "visualization"]
 resolver = "3"
 
 [workspace.package]
-version = "0.12.1"
+version = "0.12.2"
 edition = "2024"
 license = "Apache-2.0"
 repository = "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex"
