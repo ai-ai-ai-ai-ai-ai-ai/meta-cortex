@@ -144,8 +144,8 @@ Identify both roots before planning development work:
 
 Apply the consuming project's context throughout the task:
 
-- Read its `AGENTS.md` and applicable directory instructions, requirements,
-  and architecture before planning.
+- Apply [consuming project context](teams/gizmo-team/docs/project-context.md)
+  before planning or work, including repository and nested `.cortex/` scopes.
 - Resolve Markdown links and YAML catalog paths relative to their containing file.
 - Follow [catalog loading](teams/ai-team/agents/tech-writer/skills/context-engineering/practices/knowledge-graphs.md#load-only-selected-branches)
   to select focused index branches and process their rule entries in order.

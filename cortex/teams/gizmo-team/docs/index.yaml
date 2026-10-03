@@ -10,3 +10,6 @@ entries:
   - title: Agent verification handoff
     path: agent-verification.md
     summary: Cataloged verifier selection, committed review, repair routing, and integration readiness.
+  - title: Consuming project context
+    path: project-context.md
+    summary: Repository and module discovery, focused loading, and scoped handoffs.
