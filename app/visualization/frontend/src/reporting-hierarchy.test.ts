@@ -314,7 +314,7 @@ it("uses library expanding subrows without selecting absent anchors and supports
     name: "Recorded reporting and activities",
   });
   const prime = within(table).getByRole("row", { name: /Gizmo Prime/ });
-  expect(within(prime).getByText("No activity on this page")).toBeTruthy();
+  expect(within(prime).getByText("Reporting only")).toBeTruthy();
   expect(within(prime).queryByRole("button", { name: /Open task/ })).toBeNull();
   const collapse = within(prime).getByRole("button", {
     name: "Collapse Gizmo Prime",

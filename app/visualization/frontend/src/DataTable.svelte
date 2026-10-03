@@ -9,9 +9,11 @@
     renderSnippet,
     type Row,
   } from "@tanstack/svelte-table";
-  import { ChevronDown, ChevronRight } from "@lucide/svelte";
+  import { ChevronDown, ChevronRight, Bot, ListTodo } from "@lucide/svelte";
   import * as Table from "$lib/components/ui/table";
   import { Button } from "$lib/components/ui/button";
+  import { Badge } from "$lib/components/ui/badge";
+  import { TaskPresentation } from "./task-presentation";
   import type { ReportingTree } from "./agent-tree";
   import type { TaskFlow } from "./contracts";
   interface DataTableProperties {
@@ -46,13 +48,18 @@
       header: "Reporting / activity",
       cell: ({ row }) => renderSnippet(identity, row),
     }),
-    helper.accessor("data.status", { header: "Own status" }),
-    helper.accessor("data.ownCounts", { header: "Own activities" }),
-    helper.accessor("data.descendantCounts", {
-      header: "Descendant activities · loaded page",
+    helper.accessor("data.status", {
+      header: "Status",
+      cell: ({ row }) => renderSnippet(status, row),
     }),
-    helper.accessor("data.workspace", { header: "Workspace / branch" }),
-    helper.accessor("data.checkpoint", { header: "Checkpoint" }),
+    helper.accessor("data.ownCounts", {
+      header: "Progress",
+      cell: ({ row }) => renderSnippet(progress, row),
+    }),
+    helper.accessor("data.checkpoint", {
+      header: "Checkpoint",
+      cell: ({ getValue }) => renderSnippet(checkpoint, getValue()),
+    }),
   ]);
   const table = createTable({
     features,
@@ -74,21 +81,60 @@
   >
     {#if row.getCanExpand()}<Button
         variant="ghost"
-        size="icon"
+        size="icon-sm"
         aria-label={expansionLabel(row)}
         aria-expanded={row.getIsExpanded()}
         onclick={row.getToggleExpandedHandler()}
         >{#if row.getIsExpanded()}<ChevronDown />{:else}<ChevronRight
           />{/if}</Button
       >{/if}
-    {#if activity}<Button
-        variant="link"
-        class="h-auto min-w-0 shrink whitespace-normal text-left"
-        aria-label={`Open task ${activity.task.common.id}`}
-        onclick={() => select(activity)}>{row.original.data.label}</Button
-      >{:else}{row.original.data.label}{/if}
+    {#if row.getCanExpand()}<Bot
+        class="size-4 shrink-0 text-muted-foreground"
+      />{:else}<ListTodo class="size-4 shrink-0 text-muted-foreground" />{/if}
+    <div class="min-w-0">
+      {#if activity}<Button
+          variant="link"
+          class="h-auto max-w-full justify-start p-0 text-left"
+          aria-label={`Open task ${activity.task.common.id}`}
+          onclick={() => select(activity)}
+        >
+          <span class="truncate">{row.original.data.label}</span>
+        </Button>
+        <p
+          class="max-w-sm truncate text-xs text-muted-foreground"
+          title={activity.task.common.objective}
+        >
+          {activity.task.common.objective}
+        </p>
+      {:else}<span class="font-medium">{row.original.data.label}</span>{/if}
+    </div>
   </div>
 {/snippet}
+{#snippet status(row: TableRow)}
+  {@const activity = row.original.data.activities[0]}
+  {#if activity}<Badge
+      variant="secondary"
+      class={TaskPresentation.tones[TaskPresentation.status(activity.task)]}
+      >{row.original.data.status}</Badge
+    >
+  {:else if row.original.data.status}<span
+      class="text-xs text-muted-foreground"
+      title={row.original.data.status}>Reporting only</span
+    >{/if}
+{/snippet}
+{#snippet progress(row: TableRow)}
+  <div class="text-xs">
+    {#if row.original.data.ownCounts}<p>
+        Own · {row.original.data.ownCounts}
+      </p>{/if}
+    {#if row.original.data.descendantCounts}<p class="text-muted-foreground">
+        Team · {row.original.data.descendantCounts}
+      </p>{/if}
+  </div>
+{/snippet}
+{#snippet checkpoint(value: string)}<span
+    class="font-mono text-xs text-muted-foreground">{value}</span
+  >{/snippet}
 <div class="rounded-md border">
   <Table.Root aria-label="Recorded reporting and activities">
     <Table.Header

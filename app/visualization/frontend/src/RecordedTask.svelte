@@ -15,7 +15,9 @@
   let display = $derived(TaskPresentation.describe(task));
 </script>
 
-<Badge variant="secondary">{display.statusLabel}</Badge>
+<Badge variant="secondary" class={TaskPresentation.tones[display.status]}
+  >{display.statusLabel}</Badge
+>
 <p>{task.common.objective}</p>
 <p class="text-sm text-muted-foreground">
   Attempt {task.common.attempt} · revision {task.common.revision} · {new Date(
@@ -44,7 +46,7 @@
                 )}{:else}Unrecorded{/if}</Table.Cell
             ></Table.Row
           >{/if}
-        {#each [{ label: "Assignment", value: display.actor }, { label: "Reports to", value: display.reportsTo }, { label: "Workspace", value: display.workspaceLabel }, { label: "Workspace detail", value: display.workspace }, { label: "Lease", value: display.lease }, { label: "Checkpoint", value: display.checkpoint }, { label: "Integration", value: display.integration }] as field (field.label)}
+        {#each [{ label: "Assignment", value: display.actor }, { label: "Reports to", value: display.reportsTo }, { label: "Workspace", value: display.workspaceLabel }, { label: "Workspace detail", value: display.workspace }, { label: "Lease", value: display.lease }, { label: "Checkpoint", value: display.checkpoint }, { label: "Integration", value: display.integration }, { label: "Created", value: new Date(task.common.created_at).toLocaleString() }, { label: "Progress updated", value: new Date(task.common.last_progress).toLocaleString() }] as field (field.label)}
           <Table.Row
             ><Table.Head>{field.label}</Table.Head><Table.Cell
               class="whitespace-normal break-all">{field.value}</Table.Cell

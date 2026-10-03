@@ -47,13 +47,27 @@ export default tseslint.config(
     files: [
       "src/lib/components/ui/button/button.svelte",
       "src/lib/components/ui/badge/badge.svelte",
+      "src/lib/components/ui/sidebar/sidebar.svelte",
+      "src/lib/components/ui/sidebar/context.svelte.ts",
     ],
     rules: { "no-restricted-syntax": "off" },
   },
   {
-    // Upstream NativeSelect inherits HTMLSelectAttributes.value:any from Svelte.
-    // Preserve that generated contract; authored change handlers remain typed.
-    files: ["src/lib/components/ui/native-select/native-select.svelte"],
+    // Registry Input retains HTMLInputAttributes.value:any; Sidebar retains
+    // upstream mergeProps. All authored components keep strict type linting.
+    files: [
+      "src/lib/components/ui/input/input.svelte",
+      "src/lib/components/ui/sidebar/sidebar-menu-button.svelte",
+    ],
     rules: { "@typescript-eslint/no-unsafe-assignment": "off" },
+  },
+  {
+    // Registry Sidebar's component props and bind callback cross Svelte's
+    // generated prop inference boundary. Keep its stock implementation.
+    files: [
+      "src/lib/components/ui/sidebar/sidebar.svelte",
+      "src/lib/components/ui/sidebar/sidebar-trigger.svelte",
+    ],
+    rules: { "@typescript-eslint/no-unsafe-argument": "off" },
   },
 );

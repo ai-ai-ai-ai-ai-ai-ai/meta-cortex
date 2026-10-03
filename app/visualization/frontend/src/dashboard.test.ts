@@ -13,6 +13,7 @@ import RecordedTask from "./RecordedTask.svelte";
 import { Progress } from "$lib/components/ui/progress";
 import { TaskPresentation } from "./task-presentation";
 import { ProgressSummary } from "./progress-presentation";
+import { WorkflowEvidence } from "./workflow-evidence";
 import type { AgentId, DesktopFailure, DesktopReply, Event } from "./contracts";
 import {
   Fixture,
@@ -33,6 +34,125 @@ afterEach(() => {
   vi.restoreAllMocks();
   native.invoke.mockReset();
   vi.unstubAllGlobals();
+});
+it("navigates from the searchable sidebar and keeps the selected workflow explicit", async () => {
+  const fixture = new Fixture();
+  const other = new Fixture();
+  other.flow.feature.id = "storage-review";
+  const features = fixture.featuresReply();
+  switch (features.content.kind) {
+    case "Features":
+      features.content.value.records.push(other.flow.feature);
+      break;
+    case "History":
+    case "Task":
+    case "Workflow":
+      throw new Error("Expected features fixture");
+  }
+  native.invoke
+    .mockResolvedValueOnce(features)
+    .mockResolvedValueOnce(fixture.workflowReply());
+  render(App);
+  const navigation = await screen.findByRole("navigation", {
+    name: "Workflow navigation",
+  });
+  await within(navigation).findByRole("button", { name: "storage-review" });
+  await userEvent.type(
+    screen.getByRole("textbox", { name: "Search workflows" }),
+    "dashboard",
+  );
+  expect(
+    within(navigation).queryByRole("button", { name: "storage-review" }),
+  ).toBeNull();
+  await userEvent.click(
+    within(navigation).getByRole("button", { name: "dashboard" }),
+  );
+  await screen.findByRole("region", { name: "Workflow overview" });
+  expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
+    request: { kind: "Workflow", feature: "dashboard", page: 0 },
+  });
+  expect(
+    within(navigation)
+      .getByRole("button", { name: "dashboard" })
+      .getAttribute("data-active"),
+  ).toBe("true");
+  expect(screen.queryByRole("combobox", { name: "Features" })).toBeNull();
+});
+it("keeps Git and activity provenance when identical commits appear in different tasks", () => {
+  const first = new Fixture();
+  const second = new Fixture();
+  second.task.common.id = "review";
+  second.contribution.history_end = "More";
+  second.contribution.integrations[0]!.at = 3000;
+  first.contribution.milestones = [
+    {
+      actor: { team: "Development", role: "TypescriptDev" },
+      kind: "claimed",
+      attempt: 1,
+      revision: 1,
+      note: "Started implementation",
+      at: 1000,
+    },
+  ];
+  second.contribution.milestones = [
+    {
+      actor: { team: "Development", role: "TypescriptVerifier" },
+      kind: "completed",
+      attempt: 2,
+      revision: 7,
+      note: "Review completed",
+      at: 2500,
+    },
+  ];
+  const evidence = new WorkflowEvidence([
+    first.contribution,
+    second.contribution,
+  ]);
+  expect(evidence.commits).toHaveLength(4);
+  expect(evidence.commits[0]?.flow.task.common.id).toBe("review");
+  expect(
+    evidence.commits.filter((entry) => entry.record.commit === "b".repeat(40)),
+  ).toHaveLength(2);
+  expect(evidence.activity.map((entry) => entry.record.note)).toEqual([
+    "Review completed",
+    "Started implementation",
+  ]);
+  expect(evidence.partial).toBe(true);
+});
+it("keeps the selected workflow view visible during refresh and opens Git task details in place", async () => {
+  const fixture = new Fixture();
+  const late = Deferred.makeUnsafe<DesktopReply>();
+  const transport = Effect.runPromise(Deferred.await(late));
+  native.invoke
+    .mockResolvedValueOnce(fixture.workflowReply())
+    .mockResolvedValueOnce(fixture.featuresReply())
+    .mockReturnValueOnce(transport);
+  render(App);
+  await userEvent.click(
+    await screen.findByRole("tab", { name: "Commits (2)" }),
+  );
+  const commits = screen.getByRole("table", { name: "Workflow commits" });
+  expect(within(commits).getAllByRole("row")[1]?.textContent).toContain(
+    "Integration",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
+  await screen.findByRole("status");
+  expect(screen.getByRole("table", { name: "Workflow commits" })).toBe(commits);
+  Effect.runSync(Deferred.succeed(late, fixture.workflowReply()));
+  await transport;
+  await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+  expect(
+    screen
+      .getByRole("tab", { name: "Commits (2)" })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  await userEvent.click(
+    within(commits).getAllByRole("button", { name: "implement" })[0]!,
+  );
+  const inspector = await screen.findByRole("dialog", { name: "implement" });
+  expect(within(inspector).getByText("Graph completed")).toBeTruthy();
+  await userEvent.keyboard("{Escape}");
+  expect(screen.getByRole("table", { name: "Workflow commits" })).toBe(commits);
 });
 it("keeps native feature totals and Git integration evidence separate from loaded activity", () => {
   const fixture = new Fixture();
@@ -75,12 +195,12 @@ it("shows full-feature quantities independently of loaded descendant progress", 
   expect(feature.getAttribute("aria-valuenow")).toBe("3");
   expect(feature.getAttribute("aria-valuemax")).toBe("5");
   const team = screen.getByRole("row", { name: /Team Gizmo/ });
-  expect(within(team).getByText("1/1 finished")).toBeTruthy();
-  expect(within(team).getByText("No activity on this page")).toBeTruthy();
+  expect(within(team).getByText("Team · 1/1 finished")).toBeTruthy();
+  expect(within(team).getByText("Reporting only")).toBeTruthy();
   expect(screen.getByText(/3\/5 finished/)).toBeTruthy();
   expect(
     screen.getByRole("columnheader", {
-      name: "Descendant activities · loaded page",
+      name: "Progress",
     }),
   ).toBeTruthy();
 });
@@ -499,14 +619,14 @@ it("retries failed native reads and keeps feature paging/manual refresh on nativ
     .mockResolvedValue(features);
   render(App);
   await userEvent.click(await screen.findByRole("button", { name: "Retry" }));
-  await screen.findByRole("heading", { name: "Choose a feature" });
+  await screen.findByRole("heading", { name: "All workflows" });
   await userEvent.click(screen.getByRole("button", { name: "Next" }));
   await waitFor(() =>
     expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
       request: { kind: "Features", page: 1 },
     }),
   );
-  await screen.findByRole("heading", { name: "Choose a feature" });
+  await screen.findByRole("heading", { name: "All workflows" });
   await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
   expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read", {
     request: { kind: "Features", page: 1 },

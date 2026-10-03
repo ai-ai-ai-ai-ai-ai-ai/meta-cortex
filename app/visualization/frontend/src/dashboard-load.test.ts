@@ -10,6 +10,31 @@ const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 afterEach(() => native.invoke.mockReset());
 
+it("skips overlapping refreshes and retains the last observation if a refresh fails", async () => {
+  const fixture = new Fixture();
+  const current = fixture.featuresReply();
+  const late = Deferred.makeUnsafe<DesktopReply, DesktopFailure>();
+  const transport = Effect.runPromise(Deferred.await(late));
+  native.invoke.mockResolvedValueOnce(current).mockReturnValueOnce(transport);
+  const dashboard = new DashboardController(new DashboardApi());
+  dashboard.load({ kind: "Features", page: 0 });
+  await waitFor(() => expect(dashboard.state.kind).toBe(LoadKind.Ready));
+  dashboard.refresh();
+  await waitFor(() => expect(native.invoke).toHaveBeenCalledTimes(2));
+  dashboard.refresh();
+  expect(native.invoke).toHaveBeenCalledTimes(2);
+  expect(dashboard.reply).toEqual(current);
+  const failure: DesktopFailure = {
+    kind: "Ledger",
+    message: "Refresh unavailable",
+  };
+  Effect.runSync(Deferred.fail(late, failure));
+  await waitFor(() => expect(dashboard.state.kind).toBe(LoadKind.Failed));
+  expect(dashboard.reply).toEqual(current);
+  expect(dashboard.features).toEqual([fixture.flow.feature]);
+  dashboard.stop();
+});
+
 it("keeps the newer page and sidebar when an interrupted main reply arrives late", async () => {
   const fixture = new Fixture();
   const first: DesktopRead = { kind: "Features", page: 0 };

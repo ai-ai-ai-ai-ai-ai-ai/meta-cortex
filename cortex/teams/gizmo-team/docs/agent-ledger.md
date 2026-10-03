@@ -136,11 +136,12 @@ identifies who recorded it, not who actually authored that Git commit.
    ```
 
    It resolves the existing repository identity and shared database from the
-   current directory, then opens the native Tauri Features window.
-2. Select a feature to open its execution tree. Expand an agent to see its
-   recorded tasks, or select an agent or task to open a closable right detail
-   panel. Narrow windows show the panel as a drawer. Use Graph, Git, and History
-   for recorded relationships, dependencies, integrations, and recent activity.
+   current directory, then opens the native Tauri Workbench window.
+2. Select a workflow from the searchable left sidebar to inspect its progress.
+   Expand an agent in Agents to see its recorded tasks, or select an activity
+   to open the right detail panel. Commits shows recorded checkpoints and
+   integrations; Activity shows lifecycle events with expandable notes.
+   Details contains the workflow record. Narrow windows open navigation as a drawer.
    Full task records and individual event snapshots retain all ledger fields,
    including task-specific extensions.
 3. Close the window to exit.
@@ -256,7 +257,10 @@ roles and activities when continuing the feature.
 Use the native window’s controls to navigate between features, tasks, detail,
 history, and event snapshots. Scroll the window’s content to read long objectives,
 notes, findings, checks, and extensions. Use Refresh to read current evidence or
-Retry after an observation failure; the window does not refresh on a timer.
+Retry after an observation failure. Auto enables reads every ten seconds and is
+off by default. Refresh preserves the selected workflow tab and table expansion.
+Commit and activity lists cover the loaded task page; full task history provides
+access to older events.
 
 Feature, task, and history queries return at most 100 records per page. Typed
 request page indexes and Snapshot text remain zero-based. Previous and Next

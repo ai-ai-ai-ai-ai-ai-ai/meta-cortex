@@ -21,6 +21,15 @@ interface TaskDisplay {
   integration: string;
 }
 export class TaskPresentation {
+  static readonly tones: Record<FlowState, string> = {
+    integrated: "bg-emerald-50 text-emerald-800",
+    completed: "bg-emerald-50 text-emerald-800",
+    working: "bg-sky-50 text-sky-800",
+    blocked: "bg-red-50 text-red-800",
+    ready: "bg-amber-50 text-amber-800",
+    queued: "bg-muted text-muted-foreground",
+    cancelled: "bg-muted text-muted-foreground",
+  };
   private static readonly priority: Record<FlowState, number> = {
     blocked: 0,
     working: 1,

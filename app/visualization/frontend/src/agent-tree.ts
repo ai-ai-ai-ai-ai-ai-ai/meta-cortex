@@ -50,7 +50,7 @@ export class ReportingTable {
         expandInitially: false,
       })),
     );
-    this.root = stratify<ReportingRow>()([...leaves, ...groups]);
+    this.root = stratify<ReportingRow>()([...groups, ...leaves]);
     this.root.eachAfter((node) => this.present(node));
   }
 

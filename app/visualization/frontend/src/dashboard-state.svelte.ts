@@ -17,6 +17,7 @@ type Load =
   | { kind: LoadKind.Ready; reply: DesktopReply; request: DesktopRead }
   | { kind: LoadKind.Failed; failure: DashboardFailure; request: DesktopRead };
 export class DashboardController {
+  reply = $state<DesktopReply | null>(null);
   state = $state<Load>({
     kind: LoadKind.Loading,
     request: { kind: "Initial" },
@@ -34,6 +35,7 @@ export class DashboardController {
           this.state = { kind: LoadKind.Failed, failure, request };
         },
         onSuccess: (reply) => {
+          this.reply = reply;
           this.state = { kind: LoadKind.Ready, reply, request };
         },
       }),
@@ -122,5 +124,15 @@ export class DashboardController {
   }
   stop(): void {
     this.interrupt();
+  }
+  refresh(): void {
+    switch (this.state.kind) {
+      case LoadKind.Ready:
+      case LoadKind.Failed:
+        this.load(this.state.request);
+        return;
+      case LoadKind.Loading:
+        return;
+    }
   }
 }

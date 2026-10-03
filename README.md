@@ -495,13 +495,19 @@ meta-cortex dashboard
 
 No request file or required arguments are needed. The command resolves the
 existing repository identity and shared database, then opens the native Tauri
-Features window. Use the window’s navigation to inspect tasks, recorded detail,
-and history. Close the window to exit. The executable embeds the dashboard
+Workbench window. The searchable left sidebar keeps workflows available while
+you inspect their agents, commits and activity. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-The desktop dashboard shows one expandable reporting/activity table with own
-status, own and descendant activity counts, workspace branches, and checkpoints.
-Select a role's activity or task to open one closable details Sheet. Its recorded
+Each workflow opens with full-feature progress and counts for finished, working,
+ready and blocked tasks. The Agents tab shows an expandable reporting/activity
+table with own status, own and descendant activity counts, and checkpoints.
+The Commits tab combines recorded checkpoints and integrations across the loaded
+tasks, newest first, preserving the task and actor for every event. The Activity
+tab shows lifecycle events with expandable notes. Details contains the full
+workflow record, including its branch and worktree.
+Select a role's activity or task to open a closable panel on the right while
+keeping the workflow in place. Its recorded
 task sections expose checks, dependencies, checkpoint and integration history,
 and full raw records. Full-feature totals summarize task states and completion
 progress; table rows cover the selected task page. For tasks with
@@ -509,13 +515,14 @@ progress; table rows cover the selected task page. For tasks with
 `reports_to` target. Each coordinator's own activities are separate from
 descendant workflow progress. Rows represent roles, not host sessions.
 A recorded reporting target without its own activity on this page shows
-`No activity on this page`; it has no inferred status or upstream reporting line.
+`Reporting only`; it has no inferred status or upstream reporting line.
 Historical tasks with `Unrecorded` ownership appear separately under `Created by`
 with their recorded creator and available worker evidence from task history;
 their reporting line stays unrecorded. Task dependencies remain separate from
 reporting relationships.
-Use Refresh to reload recorded data and Previous/Next to page native observations;
-these reads do not update the ledger.
+Use Refresh to reload recorded data, or enable Auto for reads every ten seconds.
+Refresh preserves the selected workflow tab and table expansion. Previous/Next
+pages native observations; these reads do not update the ledger.
 Each task projection includes its latest 100 events; task history can page through
 older attempts and checkpoints. Runtime parent session links and Git authorship
 remain unrecorded when absent from Turso. Detailed task records and event snapshots
