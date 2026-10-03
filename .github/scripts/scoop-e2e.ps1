@@ -31,6 +31,17 @@ try {
   if (-not $shim.StartsWith("$env:SCOOP\shims\", [StringComparison]::OrdinalIgnoreCase)) { throw 'Command discovery did not select the Scoop shim' }
   $version = & $shim --version
   if ($LASTEXITCODE -ne 0 -or $version -ne "meta-cortex $($manifest.version)") { throw 'Scoop shim reports the wrong executable version' }
+  $evidence = Join-Path $env:RUNNER_TEMP 'meta cortex Windows E2E\evidence'
+  $listing = Invoke-Scoop list meta-cortex
+  if ($LASTEXITCODE -ne 0) { throw 'Scoop installed-package listing failed' }
+  $listing | Set-Content (Join-Path $evidence 'scoop-list.txt') -Encoding utf8
+  Write-Host ($listing -join "`n")
+  $installedRow = '^\s*meta-cortex\s+' + [Regex]::Escape($manifest.version) + '\s+meta-cortex(?:\s|$)'
+  if (@($listing | Where-Object { $_ -match $installedRow }).Count -ne 1) { throw 'Scoop listing did not report the expected package version and bucket' }
+  $catalog = & $shim list
+  if ($LASTEXITCODE -ne 0) { throw 'Published Scoop executable command discovery failed' }
+  $catalog | Set-Content (Join-Path $evidence 'scoop-catalog.yaml') -Encoding utf8
+  Write-Host ($catalog -join "`n")
   $prefix = Invoke-Scoop prefix meta-cortex
   $binary = Join-Path ($prefix | Select-Object -Last 1) 'meta-cortex.exe'
   $candidateRoot = Join-Path $env:RUNNER_TEMP 'meta cortex Windows E2E'
