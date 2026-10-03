@@ -31,7 +31,7 @@ it("keeps the newer page and sidebar when an interrupted main reply arrives late
   const dashboard = new DashboardController(new DashboardApi());
   dashboard.load(first);
   await waitFor(() => expect(native.invoke).toHaveBeenCalledTimes(1));
-  dashboard.load(next);
+  dashboard.page(1);
   await waitFor(() => expect(dashboard.state.kind).toBe(LoadKind.Ready));
   Effect.runSync(Deferred.succeed(late, obsolete));
   await transport;
@@ -116,7 +116,8 @@ it("keeps the refreshed workflow and navigation when its cancelled sidebar arriv
   dashboard.load(first);
   await waitFor(() => expect(native.invoke).toHaveBeenCalledTimes(2));
   expect(dashboard.state.kind).toBe(LoadKind.Loading);
-  dashboard.load(next);
+  expect(dashboard.currentFeature()).toBe("dashboard");
+  dashboard.page(1);
   await waitFor(() => expect(dashboard.state.kind).toBe(LoadKind.Ready));
   Effect.runSync(Deferred.succeed(late, obsoleteSidebar));
   await transport;

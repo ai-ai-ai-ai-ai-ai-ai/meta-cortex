@@ -7,6 +7,7 @@ import type {
   ReportingTarget,
 } from "./contracts";
 import { TaskPresentation } from "./task-presentation";
+import { summarizeCounts } from "./progress-presentation";
 export interface AgentSelection {
   group: AgentContribution;
   task: TaskFlow;
@@ -85,16 +86,8 @@ export class AgentContribution {
     return states[0] ?? new TaskPresentation(this.first().task).status();
   }
   summary(): string {
-    const integrated = this.tasks.filter(
-      (item) => item.task.state.kind === "integrated",
-    ).length;
-    const completed = this.tasks.filter(
-      (item) => item.task.state.kind === "completed",
-    ).length;
-    const ready = this.tasks.filter(
-      (item) => item.task.state.kind === "ready",
-    ).length;
-    return `${integrated} integrated · ${completed} completed · ${ready} ready · ${this.tasks.length} tasks`;
+    const progress = summarizeCounts(this.counts());
+    return `${progress.byState.integrated} integrated · ${progress.byState.completed} completed · ${progress.byState.ready} ready · ${progress.total} tasks`;
   }
   counts(): ReadonlyArray<FlowCount> {
     return new ContributionProgress(this.tasks).counts();

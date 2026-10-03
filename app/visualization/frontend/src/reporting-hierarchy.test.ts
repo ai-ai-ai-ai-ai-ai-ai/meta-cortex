@@ -5,6 +5,7 @@ import {
   fireEvent,
   screen,
   within,
+  waitFor,
   type ByRoleOptions,
 } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
@@ -391,4 +392,59 @@ it("uses the real Agents graph selection handler for prioritized own activity an
     within(inspector).getAllByText("Shared feature workspace"),
   ).toHaveLength(2);
   expect(within(inspector).queryAllByText("Git evidence")).toHaveLength(0);
+});
+
+it("restores the second activity origin after selecting another role in the open desktop inspector", async () => {
+  const mediaQueries = new BrowserMediaQueries();
+  const matchMedia: BrowserMediaQueries["matchMedia"] =
+    mediaQueries.matchMedia.bind(mediaQueries);
+  vi.stubGlobal("matchMedia", matchMedia);
+  const first = new Fixture();
+  const second = new Fixture();
+  const agent: AgentId = { team: "Development", role: "RustDev" };
+  second.task.common.id = "inspect-database";
+  second.task.common.objective = "Inspect database";
+  second.task.ownership = {
+    kind: "Assigned",
+    assignment: { agent, reports_to: { kind: "Gizmo", coordinator: "Gizmo" } },
+  };
+  second.contribution.worker = { kind: "recorded", agent };
+  first.flow.tasks.records = [first.contribution, second.contribution];
+  const props: ComponentProps<typeof Workflow> = {
+    flow: first.flow,
+    select: vi.fn(),
+    history: vi.fn(),
+    refresh: vi.fn(),
+  };
+  render(Workflow, props);
+  const firstExpandQuery: ByRoleOptions = {
+    name: "Expand TypescriptDev tasks",
+  };
+  const secondExpandQuery: ByRoleOptions = { name: "Expand RustDev tasks" };
+  const firstTaskQuery: ByRoleOptions = {
+    name: "Build workflow Git worker Integrated",
+  };
+  const secondTaskQuery: ByRoleOptions = {
+    name: "Inspect database Git worker Integrated",
+  };
+  const firstInspectorQuery: ByRoleOptions = { name: "TypescriptDev details" };
+  const secondInspectorQuery: ByRoleOptions = { name: "RustDev details" };
+  await userEvent.click(screen.getByRole("button", firstExpandQuery));
+  const original = screen.getByRole("button", firstTaskQuery);
+  await userEvent.click(original);
+  expect(screen.getByRole("complementary", firstInspectorQuery)).toBeTruthy();
+  const secondExpand = screen.getByRole("button", secondExpandQuery);
+  expect(secondExpand.closest("[inert]")).toBeNull();
+  await userEvent.click(secondExpand);
+  const current = screen.getByRole("button", secondTaskQuery);
+  await userEvent.click(current);
+  expect(screen.getByRole("complementary", secondInspectorQuery)).toBeTruthy();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => {
+    expect(
+      screen.queryByRole("complementary", secondInspectorQuery),
+    ).toBeNull();
+    expect(document.activeElement).toBe(current);
+  });
+  expect(document.activeElement).not.toBe(original);
 });

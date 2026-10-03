@@ -9,6 +9,7 @@ import type {
   Milestone,
 } from "./contracts";
 import { TaskPresentation } from "./task-presentation";
+import { summarizeCounts } from "./progress-presentation";
 import {
   ActivityKind,
   ReportingHierarchy,
@@ -84,12 +85,10 @@ export class FlowPresentation {
     }
   }
   total(): number {
-    return this.flow.counts.reduce((sum, item) => sum + item.count, 0);
+    return summarizeCounts(this.flow.counts).total;
   }
   stateCount(state: FlowState): number {
-    return this.flow.counts
-      .filter((item) => item.state === state)
-      .reduce((sum, item) => sum + item.count, 0);
+    return summarizeCounts(this.flow.counts).byState[state];
   }
   diagram(kind: GraphKind): Diagram {
     switch (kind) {
