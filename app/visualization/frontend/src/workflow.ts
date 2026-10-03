@@ -22,6 +22,12 @@ export enum FlowView {
   Git = "git",
   History = "history",
 }
+export const workflowViews: ReadonlyArray<FlowView> = [
+  FlowView.Tree,
+  FlowView.Agents,
+  FlowView.Git,
+  FlowView.History,
+];
 export enum GraphKind {
   Agents = "agents",
   Tasks = "dependencies",
