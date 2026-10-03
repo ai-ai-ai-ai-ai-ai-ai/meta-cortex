@@ -80,7 +80,7 @@ export class FlowPresentation {
       case "unrecorded":
         return "Assignment unrecorded";
       case "recorded":
-        return `${actor.agent.team} / ${actor.agent.role}`;
+        return TaskPresentation.agent(actor.agent);
     }
   }
   total(): number {
@@ -90,24 +90,6 @@ export class FlowPresentation {
     return this.flow.counts
       .filter((item) => item.state === state)
       .reduce((sum, item) => sum + item.count, 0);
-  }
-  agentSummary(tasks: ReadonlyArray<TaskFlow>): string {
-    const integrated = tasks.filter(
-      (item) => item.task.state.kind === "integrated",
-    ).length;
-    const ready = tasks.filter(
-      (item) => item.task.state.kind === "ready",
-    ).length;
-    const completed = tasks.filter(
-      (item) => item.task.state.kind === "completed",
-    ).length;
-    return `${integrated} integrated · ${completed} completed · ${ready} ready · ${tasks.length} tasks`;
-  }
-  views(): FlowView[] {
-    return [FlowView.Tree, FlowView.Agents, FlowView.Git, FlowView.History];
-  }
-  graphKinds(): GraphKind[] {
-    return [GraphKind.Agents, GraphKind.Tasks];
   }
   diagram(kind: GraphKind): Diagram {
     switch (kind) {
@@ -144,7 +126,7 @@ export class FlowPresentation {
         const workerData: FlowNodeData = {
           kind: NodeKind.Agent,
           title: this.actor(worker.actor),
-          subtitle: `History worker · reporting unrecorded · ${this.agentSummary(worker.tasks)}`,
+          subtitle: `History worker · reporting unrecorded · ${worker.summary()}`,
           activity: { kind: ActivityKind.Recorded, group: worker },
         };
         nodes.push(this.node(workerId, workerData));
@@ -177,7 +159,7 @@ export class FlowPresentation {
         const data: FlowNodeData = {
           kind: NodeKind.Agent,
           title: this.reportingTitle(node),
-          subtitle: this.agentSummary(activity.group.tasks),
+          subtitle: activity.group.summary(),
           activity,
         };
         return this.node(node.id().serialize(), data);

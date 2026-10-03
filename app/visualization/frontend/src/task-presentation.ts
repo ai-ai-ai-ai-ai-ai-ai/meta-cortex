@@ -1,6 +1,34 @@
-import type { TaskV2, FlowState, ReportingTarget } from "./contracts";
+import type {
+  TaskV2,
+  FlowState,
+  ReportingTarget,
+  AgentId,
+  GizmoAgent,
+} from "./contracts";
 export class TaskPresentation {
   constructor(readonly task: TaskV2) {}
+  static agent(agent: AgentId): string {
+    return `${agent.team} / ${agent.role}`;
+  }
+  static coordinator(coordinator: GizmoAgent): string {
+    const names: Record<GizmoAgent, string> = {
+      Gizmo: "Team Gizmo",
+      GizmoPrime: "Gizmo Prime",
+    };
+    return names[coordinator];
+  }
+  static agentName(agent: AgentId): string {
+    switch (agent.team) {
+      case "Gizmo":
+        return TaskPresentation.coordinator(agent.role);
+      case "Development":
+      case "Ai":
+      case "Security":
+      case "Sre":
+      case "Delivery":
+        return agent.role;
+    }
+  }
   status(): FlowState {
     switch (this.task.state.kind) {
       case "active":
@@ -14,36 +42,30 @@ export class TaskPresentation {
     }
   }
   childStatus(): string {
-    switch (this.status()) {
-      case "integrated":
-        return "Integrated";
-      case "completed":
-        return "Completed";
-      case "working":
-        return "In progress";
-      case "queued":
-        return "Queued";
-      case "ready":
-        return "Ready";
-      case "blocked":
-        return "Blocked";
-      case "cancelled":
-        return "Cancelled";
-    }
+    const labels: Record<FlowState, string> = {
+      integrated: "Integrated",
+      completed: "Completed",
+      working: "In progress",
+      queued: "Queued",
+      ready: "Ready",
+      blocked: "Blocked",
+      cancelled: "Cancelled",
+    };
+    return labels[this.status()];
   }
   actor(): string {
     switch (this.task.ownership.kind) {
       case "Assigned":
-        return `${this.task.ownership.assignment.agent.team} / ${this.task.ownership.assignment.agent.role}`;
+        return TaskPresentation.agent(this.task.ownership.assignment.agent);
       case "Unrecorded":
         break;
     }
     switch (this.task.state.kind) {
       case "active":
-        return `${this.task.state.assignment.agent.team} / ${this.task.state.assignment.agent.role}`;
+        return TaskPresentation.agent(this.task.state.assignment.agent);
       case "ready":
       case "completed":
-        return `${this.task.state.agent.team} / ${this.task.state.agent.role}`;
+        return TaskPresentation.agent(this.task.state.agent);
       case "queued":
       case "integrated":
       case "cancelled":
@@ -63,12 +85,7 @@ export class TaskPresentation {
       case "Host":
         return "Host";
       case "Gizmo":
-        switch (target.coordinator) {
-          case "Gizmo":
-            return "Team Gizmo";
-          case "GizmoPrime":
-            return "Gizmo Prime";
-        }
+        return TaskPresentation.coordinator(target.coordinator);
     }
   }
   lease(): string {
@@ -116,9 +133,8 @@ export class TaskPresentation {
   workspace(): string {
     switch (this.task.workspace.kind) {
       case "read_only":
-        return "Read only";
       case "feature":
-        return "Shared feature workspace";
+        return this.workspaceLabel();
       case "git":
         return `${this.task.workspace.branch}\n${this.task.workspace.path}`;
     }

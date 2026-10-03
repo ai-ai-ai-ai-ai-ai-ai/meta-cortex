@@ -376,7 +376,7 @@ it("uses the real Agents graph selection handler for prioritized own activity an
     name: "Implement reporting hierarchy",
   };
   render(Workflow, props);
-  await userEvent.click(screen.getByRole("button", graphQuery));
+  await userEvent.click(screen.getByRole("tab", graphQuery));
   const prime = await screen.findByText("Gizmo / GizmoPrime");
   await fireEvent.click(prime);
   expect(screen.queryAllByRole("complementary")).toHaveLength(0);

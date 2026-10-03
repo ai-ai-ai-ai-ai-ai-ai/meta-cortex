@@ -7,42 +7,6 @@ import type {
   ReportingTarget,
 } from "./contracts";
 import { TaskPresentation } from "./task-presentation";
-enum Expansion {
-  Collapsed = "collapsed",
-  Expanded = "expanded",
-}
-export class TreeExpansion {
-  constructor(private readonly state: Expansion = Expansion.Collapsed) {}
-  toggle(): TreeExpansion {
-    switch (this.state) {
-      case Expansion.Collapsed:
-        return new TreeExpansion(Expansion.Expanded);
-      case Expansion.Expanded:
-        return new TreeExpansion(Expansion.Collapsed);
-    }
-  }
-  // Boolean belongs to the HTML aria-expanded contract; state stays an enum.
-  ariaExpanded(): boolean {
-    switch (this.state) {
-      case Expansion.Collapsed:
-        return false;
-      case Expansion.Expanded:
-        return true;
-    }
-  }
-}
-export enum PanelKind {
-  Closed = "closed",
-  Agent = "agent",
-}
-export type AgentPanel =
-  | { kind: PanelKind.Closed }
-  | {
-      kind: PanelKind.Agent;
-      group: AgentContribution;
-      task: TaskFlow;
-      origin: string;
-    };
 export interface AgentSelection {
   group: AgentContribution;
   task: TaskFlow;
@@ -86,38 +50,6 @@ interface ReportingVisit {
   seen: ReadonlySet<ReportingNodeId>;
   id: ReportingNodeId;
 }
-class AgentLabel {
-  constructor(private readonly actor: RecordedActor) {}
-  id(): ReportingNodeId {
-    return ReportingNodeId.actor(this.actor);
-  }
-  name(): string {
-    switch (this.actor.kind) {
-      case "unrecorded":
-        return "Assignment unrecorded";
-      case "recorded":
-        return this.role(this.actor.agent);
-    }
-  }
-  private role(agent: AgentId): string {
-    switch (agent.team) {
-      case "Gizmo":
-        switch (agent.role) {
-          case "Gizmo":
-            return "Team Gizmo";
-          case "GizmoPrime":
-            return "Gizmo Prime";
-        }
-        break;
-      case "Development":
-      case "Ai":
-      case "Security":
-      case "Sre":
-      case "Delivery":
-        return agent.role;
-    }
-  }
-}
 export class AgentContribution {
   private static readonly priority: Record<FlowState, number> = {
     blocked: 0,
@@ -133,7 +65,12 @@ export class AgentContribution {
     readonly tasks: readonly [TaskFlow, ...TaskFlow[]],
   ) {}
   name(): string {
-    return new AgentLabel(this.actor).name();
+    switch (this.actor.kind) {
+      case "unrecorded":
+        return "Assignment unrecorded";
+      case "recorded":
+        return TaskPresentation.agentName(this.actor.agent);
+    }
   }
   first(): TaskFlow {
     return this.tasks[0];
@@ -154,7 +91,10 @@ export class AgentContribution {
     const completed = this.tasks.filter(
       (item) => item.task.state.kind === "completed",
     ).length;
-    return `${integrated} integrated · ${completed} completed / ${this.tasks.length} tasks`;
+    const ready = this.tasks.filter(
+      (item) => item.task.state.kind === "ready",
+    ).length;
+    return `${integrated} integrated · ${completed} completed · ${ready} ready · ${this.tasks.length} tasks`;
   }
   counts(): ReadonlyArray<FlowCount> {
     return new ContributionProgress(this.tasks).counts();
@@ -189,13 +129,13 @@ export class Delegation {
   name(): string {
     switch (this.actor.kind) {
       case "recorded":
-        return new AgentLabel(this.actor).name();
+        return TaskPresentation.agentName(this.actor.agent);
       case "unrecorded":
         return "Task creator unrecorded";
     }
   }
   add(task: TaskFlow): void {
-    const requested = new AgentLabel(task.worker).id();
+    const requested = ReportingNodeId.actor(task.worker);
     // Array.find requires a boolean; the value owner retains identity meaning.
     const key = Array.from(this.workers.keys()).find(
       (id) => id.match(requested) === IdentityMatch.Same,
@@ -386,7 +326,7 @@ export class ReportingHierarchy {
     }
   }
   private recordHistory(task: TaskFlow): void {
-    const requested = new AgentLabel(task.created_by).id();
+    const requested = ReportingNodeId.actor(task.created_by);
     const key = Array.from(this.history.keys()).find(
       (id) => id.match(requested) === IdentityMatch.Same,
     );
@@ -417,12 +357,8 @@ export class ReportingHierarchy {
       case "Unrecorded":
         return;
       case "Assigned": {
-        const actor: RecordedActor = {
-          kind: "recorded",
-          agent: task.task.ownership.assignment.agent,
-        };
         const parent = this.target(task.task.ownership.assignment.reports_to);
-        const worker = this.agent(actor);
+        const worker = this.agent(task.task.ownership.assignment.agent);
         worker.add(task);
         parent.attach(worker);
         const edge: ReportingEdge = {
@@ -449,11 +385,11 @@ export class ReportingHierarchy {
         previous.tasks = [...previous.tasks, ...edge.tasks];
     }
   }
-  private agent(actor: RecordedActor): ReportingNode {
-    const label = new AgentLabel(actor);
+  private agent(agent: AgentId): ReportingNode {
+    const actor: RecordedActor = { kind: "recorded", agent };
     const identity: ReportingIdentity = {
-      id: label.id(),
-      name: label.name(),
+      id: ReportingNodeId.actor(actor),
+      name: TaskPresentation.agentName(agent),
       actor,
     };
     return this.obtain(identity);
@@ -470,11 +406,8 @@ export class ReportingHierarchy {
         return this.obtain(identity);
       }
       case "Gizmo": {
-        const actor: RecordedActor = {
-          kind: "recorded",
-          agent: { team: "Gizmo", role: target.coordinator },
-        };
-        return this.agent(actor);
+        const agent: AgentId = { team: "Gizmo", role: target.coordinator };
+        return this.agent(agent);
       }
     }
   }
@@ -491,17 +424,5 @@ export class ReportingHierarchy {
       default:
         return previous;
     }
-  }
-}
-export class AgentTree {
-  private readonly hierarchy: ReportingHierarchy;
-  constructor(tasks: ReadonlyArray<TaskFlow>) {
-    this.hierarchy = new ReportingHierarchy(tasks);
-  }
-  groups(): ReadonlyArray<ReportingNode> {
-    return this.hierarchy.roots();
-  }
-  historical(): ReadonlyArray<Delegation> {
-    return this.hierarchy.historical();
   }
 }

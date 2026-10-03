@@ -6,6 +6,8 @@
     "src/lib/components/ui/badge/index.ts",
     "src/lib/components/ui/card/index.ts",
     "src/lib/components/ui/progress/index.ts",
+    "src/lib/components/ui/collapsible/index.ts",
+    "src/lib/components/ui/tabs/index.ts",
     "src/lib/utils.ts"
   ],
   "project": ["src/**/*.{ts,svelte}", "tools/**/*.ts"],

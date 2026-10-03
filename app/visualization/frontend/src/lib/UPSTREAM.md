@@ -3,7 +3,11 @@
 Button, Badge, Card, Progress, and `utils.ts` were generated with
 `shadcn-svelte@1.7.0 add button badge card progress utils --yes --no-deps-install`
 from the official [Vega registry](https://www.shadcn-svelte.com/registry/styles/vega/index.json).
-Only these four primitives are installed. Card retains its upstream component
+Collapsible and Tabs were subsequently generated with the same pinned CLI and
+Vega registry using `add collapsible tabs --yes --no-deps-install`. Their
+exports, bindable state, child snippets, and prop contracts retain upstream
+ownership. The dashboard uses their real Trigger/Content/List primitives.
+Only these six primitives are installed. Card retains its upstream component
 parts and every primitive retains its public exports and prop contracts.
 
 The generated source is formatted with the project's Prettier configuration.
@@ -25,7 +29,7 @@ other lint checks. Authored configuration, tests, and dashboard components
 remain under the full policy. Generated utility conditional types and bindable
 element refs keep the upstream signatures rather than replacing their APIs.
 
-Knip treats exactly the four generated public `index.ts` barrels and generated
+Knip treats exactly the six generated public `index.ts` barrels and generated
 `utils.ts` API as entrypoints, preserving their upstream aliases, types, and Card
 parts. The dashboard consumes Button, Badge, Card, and Progress directly.
 No directory or issue category is

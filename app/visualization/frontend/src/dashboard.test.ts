@@ -382,6 +382,10 @@ it("keeps the team heading and progress visible while collapsing its tasks", asy
   expect(
     screen.getByRole("button", { name: "Expand TypescriptDev tasks" }),
   ).toBeTruthy();
+  await userEvent.keyboard(" ");
+  expect(team.getAttribute("aria-expanded")).toBe("false");
+  await userEvent.keyboard(" ");
+  expect(team.getAttribute("aria-expanded")).toBe("true");
 });
 it("expands real tasks and opens a closable agent inspector", async () => {
   const fixture = new Fixture();
@@ -407,6 +411,8 @@ it("expands real tasks and opens a closable agent inspector", async () => {
   const inspector = screen.getByRole("complementary", {
     name: "TypescriptDev details",
   });
+  expect(expand.closest("[inert]")).toBeNull();
+  expect(expand.hasAttribute("disabled")).toBe(false);
   expect(within(inspector).getByText("Git evidence")).toBeTruthy();
   expect(within(inspector).getByText("codex/worker")).toBeTruthy();
   expect(document.activeElement).toBe(
@@ -780,4 +786,32 @@ it("rejects legacy, future, flattened, and malformed ownership TaskV2 replies", 
         break;
     }
   }
+});
+
+it("uses real workflow tabs for Home and End keyboard navigation", async () => {
+  const fixture = new Fixture();
+  const props: ComponentProps<typeof Workflow> = {
+    flow: fixture.flow,
+    select: vi.fn(),
+    history: vi.fn(),
+    refresh: vi.fn(),
+  };
+  render(Workflow, props);
+  const treeQuery: ByRoleOptions = { name: "tree" };
+  const historyQuery: ByRoleOptions = { name: "history" };
+  const activityQuery: ByRoleOptions = { name: "Recent activity" };
+  const tree = screen.getByRole("tab", treeQuery);
+  const history = screen.getByRole("tab", historyQuery);
+  expect(tree.getAttribute("aria-selected")).toBe("true");
+  await userEvent.click(history);
+  expect(history.getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByRole("heading", activityQuery)).toBeTruthy();
+  await userEvent.keyboard("{Home}");
+  expect(tree.getAttribute("aria-selected")).toBe("true");
+  expect(document.activeElement).toBe(tree);
+  expect(screen.getByText("Team Gizmo")).toBeTruthy();
+  await userEvent.keyboard("{End}");
+  expect(history.getAttribute("aria-selected")).toBe("true");
+  expect(document.activeElement).toBe(history);
+  expect(screen.getByRole("heading", activityQuery)).toBeTruthy();
 });
