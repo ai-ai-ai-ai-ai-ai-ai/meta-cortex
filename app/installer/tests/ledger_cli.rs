@@ -459,6 +459,8 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     // libgit2 creates the worktree directory itself.
     fs::remove_dir(worker_dir.path())?;
     let repository = scenario.repository()?;
+    // Preserve the fixture's LF checkpoint bytes regardless of host checkout settings.
+    repository.config()?.set_str("core.autocrlf", "input")?;
     let base = repository.head()?.peel_to_commit()?;
     let branch = repository.branch("codex/worker", &base, false)?;
     let mut options = git2::WorktreeAddOptions::new();
