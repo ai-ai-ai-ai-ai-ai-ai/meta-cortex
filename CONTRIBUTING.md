@@ -193,9 +193,8 @@ Local builds do not publish releases.
 
 ### Publish the Scoop manifest
 
-Publish the Windows release before adding its Scoop manifest. The initial
-`v0.12.2` release and `bucket/meta-cortex.json` are pending. The maintainer updates
-this repository's manifest manually after each public release, using Scoop's
+Publish the Windows release before updating its Scoop manifest. The maintainer
+updates `bucket/meta-cortex.json` manually after each public release, using Scoop's
 [app manifest format](https://github.com/ScoopInstaller/Scoop/wiki/App-Manifests).
 
 1. Complete the release procedure above and verify that its Windows x86-64 ZIP
@@ -238,7 +237,8 @@ this repository's manifest manually after each public release, using Scoop's
    scoop list
    ```
 
-6. Publish the verified user instructions in the README. For subsequent releases,
+6. Keep the [README Scoop instructions](README.md#scoop-windows-x86-64) aligned
+   with the published bucket. For subsequent releases,
    repeat the URL, hash, native checks, and manifest review. Users refresh their
    bucket and update the installed command with:
 
