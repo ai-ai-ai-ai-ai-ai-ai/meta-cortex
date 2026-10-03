@@ -251,6 +251,9 @@
             switch (document.activeElement?.getAttribute("role")) {
               case "tab":
                 return;
+              case null:
+              case undefined:
+                break;
             }
             switch (selection._tag) {
               case "None":
