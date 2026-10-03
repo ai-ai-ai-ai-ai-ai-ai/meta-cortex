@@ -1,6 +1,12 @@
 import type { Node, Edge } from "@xyflow/svelte";
 import { graphlib, layout, type GraphLabel } from "@dagrejs/dagre";
-import type { FeatureFlow, TaskFlow, TaskV2, FlowState } from "./contracts";
+import type {
+  FeatureFlow,
+  TaskFlow,
+  TaskV2,
+  FlowState,
+  Milestone,
+} from "./contracts";
 import { TaskPresentation } from "./task-presentation";
 import {
   ActivityKind,
