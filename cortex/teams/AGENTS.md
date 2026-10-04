@@ -40,6 +40,9 @@ Follow-ups stay with the existing coordinator.
 
 ## Communication and decisions
 
+Apply the [coordination state machine](gizmo-team/docs/coordination-state-machine.md)
+for operation boundaries and [human messages](gizmo-team/docs/coordination-state-machine.md#write-useful-human-messages).
+
 In multi-agent mode, team agents report results, blockers, questions, repair
 needs, and recommendations only to their assigning Team Gizmo. They do not
 contact peers, request work from another agent, launch subagents, or assign work.
@@ -111,7 +114,9 @@ Before launching an agent, the host agent or Gizmo coordinator resolves the
 following from the active library and supplies them in the launch instructions:
 
 - Objective, target scope, permitted changes, dependencies, acceptance criteria,
-  expected evidence, and stopping condition. State whether the task is review
+  expected evidence, and stopping condition. Use the
+  [transition narrative](gizmo-team/docs/coordination-state-machine.md#describe-each-transition-with-an-observable-outcome)
+  to state the operation, output, and next owner. State whether the task is review
   or verification only, implementation, or an explicitly requested workflow exercise.
 - For task workers after feature initialization: stable feature ID, task ID,
   ledger location, and the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).

@@ -357,6 +357,8 @@ questions and the library's Bun helper; see the
 [setup and configuration instructions](cortex/README.md#execution-configuration).
 Read the [framework guide](cortex/README.md) for project context, agent
 coordination, model configuration, and agent skills.
+The [coordination state machine](cortex/teams/gizmo-team/docs/coordination-state-machine.md)
+is the evolving framework architecture and human handoff specification.
 
 ## Develop the application
 
