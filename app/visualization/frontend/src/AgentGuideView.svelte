@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import type { AgentGuide } from "./contracts";
   import { GuideLook } from "./agent-guide";
   import { AgentLook } from "./presentation";
@@ -9,6 +10,11 @@
   let { guide }: Props = $props();
   let selected = $state("GizmoPrime");
   let look = $derived(new GuideLook(guide));
+  async function select(role: string): Promise<void> {
+    selected = role;
+    await tick();
+    look.reveal();
+  }
 </script>
 
 <section class="agent-guide">
@@ -19,35 +25,51 @@
   </div>
   <div class="guide-layout">
     <div class="guide-graph" aria-label={GuideLook.TEXT.structure}>
-      <div class="guide-host">{GuideLook.TEXT.host}</div>
-      {#each look.agents("Gizmo") as agent (agent.agent.role)}
-        <p class="guide-direction">{GuideLook.TEXT.reportsUp}</p>
-        <button
-          class="guide-node guide-coordinator"
-          class:selected={selected === agent.agent.role}
-          aria-pressed={selected === agent.agent.role}
-          onclick={() => (selected = agent.agent.role)}>{agent.label}</button
-        >
-      {/each}
-      <p class="guide-direction">{GuideLook.TEXT.reportsUp}</p>
+      <div class="guide-hierarchy">
+        <div class="guide-host">{GuideLook.TEXT.host}</div>
+        {#each look.agents("Gizmo") as agent (agent.agent.role)}
+          <p class="guide-direction">
+            ↑ {GuideLook.TEXT.reportsTo}
+            {look.target(agent.reports_to)}
+          </p>
+          <button
+            class="guide-node guide-coordinator"
+            class:selected={selected === agent.agent.role}
+            aria-pressed={selected === agent.agent.role}
+            onclick={() => select(agent.agent.role)}>{agent.label}</button
+          >
+        {/each}
+      </div>
       <div class="guide-teams">
         {#each guide.teams.filter((team) => team.team !== "Gizmo") as team (team.team)}
           <section class="guide-team" aria-label={GuideLook.TEAMS[team.team]}>
-            <h2>{GuideLook.TEAMS[team.team]}</h2>
+            <p class="guide-group-reports">
+              ↑ {GuideLook.TEXT.reportsTo}
+              {look.teamTargets(team.team).join(", ")}
+            </p>
+            <h2>
+              {GuideLook.TEAMS[team.team]}<small
+                >{GuideLook.TEXT.membership}</small
+              >
+            </h2>
             {#each look.agents(team.team) as agent (agent.agent.role)}
               <button
                 class="guide-node"
                 class:selected={selected === agent.agent.role}
                 aria-pressed={selected === agent.agent.role}
-                onclick={() => (selected = agent.agent.role)}
-                >{agent.label}</button
+                onclick={() => select(agent.agent.role)}>{agent.label}</button
               >
             {/each}
           </section>
         {/each}
       </div>
     </div>
-    <aside class="guide-detail" aria-live="polite">
+    <aside
+      id="guide-detail"
+      class="guide-detail"
+      tabindex="-1"
+      aria-live="polite"
+    >
       {#each look.selected(selected) as agent (agent.agent.role)}
         <p class="eyebrow">{GuideLook.TEAMS[agent.agent.team]}</p>
         <h2>{agent.label}</h2>

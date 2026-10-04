@@ -170,3 +170,104 @@
     position: static;
   }
 }
+
+.guide-graph {
+  display: contents;
+}
+.guide-hierarchy {
+  grid-column: 1;
+  grid-row: 1;
+  text-align: center;
+  padding: 22px 22px 0;
+}
+.guide-direction {
+  position: relative;
+  padding: 18px 0;
+  margin: 0;
+}
+.guide-direction::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 13px;
+  border-left: 1px solid var(--muted);
+  opacity: 0.65;
+}
+.guide-teams {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 10px;
+  border-top: 1px solid var(--muted);
+  position: relative;
+}
+.guide-teams::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -34px;
+  height: 34px;
+  border-left: 1px solid var(--muted);
+}
+.guide-team {
+  position: relative;
+  background: var(--surface);
+  margin-top: 14px;
+}
+.guide-team::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -30px;
+  height: 30px;
+  border-left: 1px solid var(--muted);
+}
+.guide-group-reports {
+  font-size: 9px;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+.guide-team h2 small {
+  display: block;
+  font-size: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 3px 0 6px;
+}
+.guide-detail {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+@media (max-width: 700px) {
+  .guide-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .guide-hierarchy {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 0;
+  }
+  .guide-detail {
+    grid-column: 1;
+    grid-row: 2;
+    scroll-margin-top: 70px;
+  }
+  .guide-teams {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .guide-teams::before {
+    display: none;
+  }
+}
+
+.guide-direction::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 13px;
+  border-left: 1px solid var(--muted);
+  opacity: 0.65;
+}

@@ -2,11 +2,12 @@
   import Dashboard from "./Dashboard.svelte";
   import AgentGuidePage from "./AgentGuidePage.svelte";
   import { GuideRoute } from "./agent-guide";
-  let route = $state(GuideRoute.Dashboard);
+  import { GuideNavigation } from "./guide-state.svelte";
+  const navigation = new GuideNavigation();
 </script>
 
-{#if route === GuideRoute.Guide}
-  <AgentGuidePage onback={() => (route = GuideRoute.Dashboard)} />
+{#if navigation.route === GuideRoute.Guide}
+  <AgentGuidePage onback={() => navigation.dashboard()} />
 {:else}
-  <Dashboard onguide={() => (route = GuideRoute.Guide)} />
+  <Dashboard onguide={() => navigation.guide()} />
 {/if}

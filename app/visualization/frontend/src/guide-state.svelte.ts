@@ -1,3 +1,4 @@
+import { GuideRoute } from "./agent-guide";
 import { Effect } from "effect";
 import type { AgentGuide } from "./contracts";
 import type { DashboardApi, DashboardFailure } from "./api";
@@ -34,5 +35,15 @@ export class GuideController {
   }
   stop(): void {
     this.interrupt();
+  }
+}
+
+export class GuideNavigation {
+  route = $state(GuideRoute.Dashboard);
+  guide(): void {
+    this.route = GuideRoute.Guide;
+  }
+  dashboard(): void {
+    this.route = GuideRoute.Dashboard;
   }
 }
