@@ -22,6 +22,11 @@ export class TimelineScale {
     scrollRegion: "Recorded state timeline",
     to: "to",
     legend: "Recorded state legend",
+    meanings: "State meanings",
+    state: "State",
+    meaning: "Meaning",
+    evidence: "Evidence",
+    nextStep: "Next step",
     note: "Color shows the recorded task state from a claim or update through the next state or last evidence. Queued intervals stay empty. A recorded claim is caller-supplied ledger evidence, not a measured execution start or proof of a host agent launch. Notes, checkpoints and recording actors remain in the Log.",
   };
   static readonly FRACTIONS = [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 1];

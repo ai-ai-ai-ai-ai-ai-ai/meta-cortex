@@ -2,6 +2,7 @@
   import type { FeatureWorkflow } from "./contracts";
   import { Elapsed } from "./observability";
   import { TimelineScale, RecordedStateLook } from "./timeline";
+  import StateMeanings from "./StateMeanings.svelte";
   import TimelineTaskCard from "./TimelineTaskCard.svelte";
   import { WorkerTimeline } from "./worker-timeline";
   interface Props {
@@ -84,6 +85,7 @@
         ></i>{RecordedStateLook.LABELS[tone]}</span
       >{/each}
   </div>
+  <StateMeanings meanings={workflow.state_meanings} />
   <p class="window-map-note">
     {TimelineScale.TEXT.note}
     {WorkerTimeline.TEXT.note}
