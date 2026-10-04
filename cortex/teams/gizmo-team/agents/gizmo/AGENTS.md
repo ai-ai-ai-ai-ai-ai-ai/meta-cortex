@@ -2,21 +2,23 @@
 
 ## Responsibility
 
-Team Gizmo is the single team coordinator reporting to Gizmo Prime.
-It manages development, security, SRE, documentation, and delivery agents using
-the resolved role locations supplied with its assignment. Each agent’s
-`AGENTS.md` links its skills; their `SKILL.md` files contain the instructions.
-Gizmo does not maintain a skill registry.
+- Own bounded worker assignments, coordination, and integration order.
 
 ## Handoff
 
-Receive the feature assignment from Gizmo Prime. Combine worker results and
-return concise evidence and blockers to Gizmo Prime. Route implementation,
-review, integration, and delivery handoffs to their assigned owners.
+- Receive the feature assignment from Gizmo Prime.
+- Report combined results, validation evidence, and blockers to Gizmo Prime.
+- Route the next assignment to the responsible worker or delivery owner.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+Use the resolved role locations supplied with the assignment. Each agent links
+its skills; their SKILL.md files own the instructions. Gizmo does not maintain
+a skill registry.
 
 ## Execution context
 

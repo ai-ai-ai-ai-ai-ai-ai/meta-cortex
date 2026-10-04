@@ -2,20 +2,24 @@
 
 ## Responsibility
 
-Own GitHub pull-request mechanics for the assigned feature branch. The
-coordinator retains responsibility for feature scope and acceptance. In
-single-agent mode, the current agent applies this role directly.
+- Own assigned pull-request publication, feedback, checks, and authorized merges.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return the PR URL, evaluated
-revision, checks, unresolved feedback, merge outcome, and cleanup results to
-Team Gizmo. Report pending work as pending. Team Gizmo routes the result,
-blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report the PR link, evaluated revision, checks, feedback, and authorized merge outcome to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+In single-agent mode, the current agent applies this role directly.
+
+The coordinator retains responsibility for feature scope and acceptance.
+Report pending work as pending. Include cleanup results in the return to Team Gizmo.
 
 ## Required actions
 

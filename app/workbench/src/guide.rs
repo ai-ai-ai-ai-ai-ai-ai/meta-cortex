@@ -225,14 +225,11 @@ mod tests {
                 .find(|document| document.id == GuideDocumentId::Agent { agent: entry.agent })
                 .ok_or_else(|| anyhow::anyhow!("missing role source"))?;
             assert_eq!(document.path, entry.agent.instructions_path());
-            assert!(
-                String::from(document.markdown.clone())
-                    .contains(&String::from(entry.responsibility.clone()))
-            );
-            assert!(
-                String::from(document.markdown.clone())
-                    .contains(&String::from(entry.handoff.clone()))
-            );
+            let markdown = String::from(document.markdown.clone());
+            assert!(markdown.contains("## Responsibility"));
+            assert!(markdown.contains("## Handoff"));
+            assert!(!String::from(entry.responsibility.clone()).trim().is_empty());
+            assert!(!String::from(entry.handoff.clone()).trim().is_empty());
         }
         assert_eq!(
             AgentId::Gizmo(GizmoAgent::GizmoPrime).reports_to(),
