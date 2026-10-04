@@ -42,6 +42,22 @@ feature is delivered.” This confuses three independent outcomes.
 launch implementation. The integration activity still awaits the verified worker
 revision and combined checks; PR delivery remains later work.”
 
+### Distinguish event order from task progress
+
+The [ledger's event order](agent-ledger.md#revision-log-and-event-order) places
+committed events from all repository writers in one database-wide sequence.
+It does not replace a task's optimistic revision, claim attempt, or worker UUID.
+A feature's Revision log preserves global positions and their provenance even
+when other features' events are hidden. Older entries describe legacy storage
+order, not recovered commit chronology.
+
+**Prohibited:** treat a larger global `R` as a newer attempt of the same task,
+or fill filtered gaps by renumbering the feature's events.
+
+**Required:** cite global `R` when locating a ledger event, and the task's own
+revision and attempt when describing update preconditions. Keep legacy ordering
+limitations visible without changing the recorded history.
+
 ### Describe each transition with an observable outcome
 
 For every bounded operation, identify its preconditions and inputs, its owner
