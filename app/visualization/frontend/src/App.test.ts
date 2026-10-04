@@ -69,7 +69,7 @@ it("keeps the agent index across Log and Time windows, with revision metadata an
     await screen.findByRole("button", { name: "Open workflow" }),
   );
   const index = screen.getByRole("navigation", { name: "Agent index" });
-  expect(within(index).getByText("1. Rust Dev")).toBeTruthy();
+  expect(within(index).getByText("1. Rust Dev history")).toBeTruthy();
   expect(screen.getByText("· r2")).toBeTruthy();
   expect(screen.getByText("cargo test -p workbench")).toBeTruthy();
   await fireEvent.click(screen.getByRole("tab", { name: "Time windows" }));

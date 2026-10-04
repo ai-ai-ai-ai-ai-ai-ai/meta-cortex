@@ -196,3 +196,55 @@ it("labels recorded boxes with elapsed duration and keeps exact state evidence a
   );
   expect(box.getAttribute("aria-label")).toBe(box.getAttribute("title"));
 });
+it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens the selected original task", async () => {
+  const scrollBoundary: PropertyDescriptor = {
+    configurable: true,
+    value: () => {},
+  };
+  Object.defineProperty(
+    HTMLElement.prototype,
+    "scrollIntoView",
+    scrollBoundary,
+  );
+  const fixture = new Fixture();
+  const workflow = fixture.workflow();
+  const chapters = workflow.chapters.slice();
+  workflow.chapters = [];
+  for (const original of chapters) {
+    for (const task of [
+      "overlap-one",
+      "overlap-two",
+      "overlap-three",
+      "overlap-four",
+    ]) {
+      const chapter = structuredClone(original);
+      chapter.task.common.id = task;
+      workflow.chapters.push(chapter);
+    }
+  }
+  for (const entry of workflow.chapters.flatMap((chapter) => chapter.entries))
+    entry.worker = {
+      kind: "Recorded",
+      worker_id: "11111111-1111-4111-8111-111111111111",
+    };
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow,
+    initialTask: "",
+    back: () => {},
+  };
+  const tabQuery: RoleQueryOptions = { name: "Time windows" };
+  const markerQuery: RoleQueryOptions = { name: /Completed · overlap-three/ };
+  render(WorkflowPage, props);
+  await fireEvent.click(screen.getByRole("tab", tabQuery));
+  const lanes = document.querySelectorAll(".worker-lanes");
+  expect(lanes).toHaveLength(1);
+  for (const lane of lanes) {
+    expect(lane.getAttribute("style")).toBe("height: 72px;");
+    expect(lane.querySelectorAll(".duration-track")).toHaveLength(4);
+    expect(lane.querySelectorAll("button")).toHaveLength(4);
+  }
+  expect(screen.getAllByText("Worker …11111111")).toHaveLength(2);
+  await fireEvent.click(screen.getByRole("button", markerQuery));
+  expect(document.activeElement?.id).toBe("heading-overlap-three");
+});

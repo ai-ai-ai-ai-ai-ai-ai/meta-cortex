@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { FeatureWorkflow, TaskChapter } from "./contracts";
-  import { ChapterLook, Elapsed } from "./observability";
+  import { Elapsed } from "./observability";
   import { TimelineScale, RecordedStateLook } from "./timeline";
+  import { WorkerTimeline } from "./worker-timeline";
   interface Props {
     workflow: FeatureWorkflow;
     selected: string;
@@ -9,6 +10,7 @@
   }
   let { workflow, selected, onselect }: Props = $props();
   let scale = $derived(new TimelineScale(workflow));
+  let workers = $derived(new WorkerTimeline(workflow));
 </script>
 
 <div
@@ -38,32 +40,50 @@
             title={tick.full()}>{tick.clock()}</time
           >{/each}
       </div>
-      {#each scale.chapters() as chapter (chapter.task.common.id)}{@const row =
-          scale.row(chapter)}
+      {#each workers.rows() as row (row.look.key())}{@const lanes = row.lanes()}
         <div
-          class="duration-row"
-          id={`task-${chapter.task.common.id}`}
-          class:selected={selected === chapter.task.common.id}
+          class="duration-row worker-row"
+          id={row.look.key()}
+          class:selected={row
+            .chapters()
+            .some((chapter) => chapter.task.common.id === selected)}
         >
-          <div class="duration-label-group">
-            <button class="duration-label" onclick={() => onselect(chapter)}
-              ><strong>{new ChapterLook(chapter).agent()}</strong><small
-                >{chapter.task.common.id}</small
-              ></button
+          <details class="worker-task-menu duration-label-group">
+            <summary class="duration-label"
+              ><strong>{row.look.title()}</strong><small
+                title={row.look.detail()}
+                aria-label={row.look.detail()}>{row.look.shortDetail()}</small
+              ></summary
             >
-          </div>
-          <div class="duration-track" style:height={row.height}>
-            {#each row.pieces as piece (piece.entry.revision)}
-              <button
-                class={`timeline-piece state-${piece.look.tone()}`}
-                class:endpoint={piece.entry.at === piece.end}
-                style:left={piece.left}
-                style:width={piece.width()}
-                aria-label={piece.label(chapter)}
-                title={piece.label(chapter)}
-                onclick={() => onselect(chapter)}
-                ><span>{piece.duration()}</span></button
-              >
+            <div class="worker-task-options">
+              {#each row.chapters() as chapter (chapter.task.common.id)}
+                <button onclick={() => onselect(chapter)}
+                  >{chapter.task.common.id}</button
+                >
+              {/each}
+            </div>
+          </details>
+          <div
+            class="worker-lanes"
+            role="region"
+            aria-label={row.laneLabel(lanes.length)}
+            style:height={`${Math.max(36, Math.min(2, lanes.length) * 36)}px`}
+          >
+            {#each lanes as lane, index (index)}
+              <div class="duration-track">
+                {#each lane.pieces as piece (`${piece.chapter.task.common.id}-${piece.entry.revision}`)}
+                  <button
+                    class={`timeline-piece state-${piece.look.tone()}`}
+                    class:endpoint={piece.entry.at === piece.end}
+                    style:left={piece.left}
+                    style:width={piece.width()}
+                    aria-label={piece.label()}
+                    title={piece.label()}
+                    onclick={() => onselect(piece.chapter)}
+                    ><span>{piece.duration()}</span></button
+                  >
+                {/each}
+              </div>
             {/each}
           </div>
         </div>
@@ -76,5 +96,8 @@
         ></i>{RecordedStateLook.LABELS[tone]}</span
       >{/each}
   </div>
-  <p class="window-map-note">{TimelineScale.TEXT.note}</p>
+  <p class="window-map-note">
+    {TimelineScale.TEXT.note}
+    {WorkerTimeline.TEXT.note}
+  </p>
 </div>

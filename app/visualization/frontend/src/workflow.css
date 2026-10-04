@@ -881,3 +881,84 @@ ul.evidence-body li + li {
   border: 0;
   background: var(--state-color);
 }
+
+.worker-row {
+  height: auto;
+  min-height: 50px;
+  padding: 7px 0;
+}
+.worker-lanes {
+  max-height: 72px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+.worker-lanes:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.worker-lanes .duration-track {
+  height: 36px;
+  min-height: 36px;
+}
+.worker-task-menu {
+  position: relative;
+}
+.worker-task-menu summary {
+  cursor: pointer;
+}
+.worker-task-menu small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.worker-task-options {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 5;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow: 0 4px 16px #0003;
+}
+.worker-task-options button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  min-height: 32px;
+  padding: 4px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.worker-task-options button:hover,
+.worker-task-options button:focus-visible {
+  background: var(--subtle);
+}
+.worker-index-group {
+  margin: 6px 0;
+}
+.worker-index-group summary {
+  position: relative;
+  cursor: pointer;
+  padding: 8px 5px;
+  font-size: 11px;
+}
+.worker-index-group summary strong,
+.worker-index-group summary small {
+  display: block;
+  padding-right: 28px;
+}
+.worker-index-group summary small {
+  font-size: 9px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.worker-index-group summary > span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+}

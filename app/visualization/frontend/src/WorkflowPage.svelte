@@ -15,6 +15,7 @@
   } from "./observability";
   import Timeline from "./Timeline.svelte";
   import { TimelineScale } from "./timeline";
+  import { WorkerTimeline } from "./worker-timeline";
   import { StatusLook } from "./presentation";
   import FeedCard from "./FeedCard.svelte";
   import PullRequests from "./PullRequests.svelte";
@@ -29,7 +30,9 @@
   let selected = $derived(initialTask);
   let look = $derived(new WorkflowLook(workflow));
   let chapters = $derived(new TimelineScale(workflow).chapters());
+  let workers = $derived(new WorkerTimeline(workflow));
   function jump(chapter: TaskChapter): void {
+    view = WorkflowView.Log;
     selected = chapter.task.common.id;
     new ChapterNavigation(selected).jump();
   }
@@ -64,18 +67,29 @@
 </div>
 <div class="workspace-layout">
   <nav class="agent-index" aria-label="Agent index">
-    <h2 class="eyebrow">Agents & tasks</h2>
-    {#each chapters as chapter, index (chapter.task.common.id)}{@const item =
-        new ChapterLook(chapter)}<button
-        class="task-link"
-        class:selected={selected === chapter.task.common.id}
-        onclick={() => jump(chapter)}
-        ><span class="avatar">{item.mark()}</span><span class="copy"
-          ><strong>{index + 1}. {item.agent()}</strong><small
-            >{chapter.task.common.id}</small
-          ></span
-        ><span class="count">{chapter.entries.length}</span></button
-      >{/each}
+    <h2 class="eyebrow">{WorkerTimeline.TEXT.title}</h2>
+    {#each workers.rows() as row, index (row.look.key())}
+      <details class="worker-index-group">
+        <summary
+          ><strong>{index + 1}. {row.look.title()}</strong><small
+            title={row.look.detail()}
+            aria-label={row.look.detail()}>{row.look.shortDetail()}</small
+          ><span>{row.taskCount()}</span></summary
+        >
+        {#each row.chapters() as chapter (chapter.task.common.id)}
+          <button
+            class="task-link"
+            class:selected={selected === chapter.task.common.id}
+            onclick={() => jump(chapter)}
+            ><span class="copy"
+              ><strong>{chapter.task.common.id}</strong><small
+                >{chapter.task.common.objective}</small
+              ></span
+            ><span class="count">{chapter.entries.length}</span></button
+          >
+        {/each}
+      </details>
+    {/each}
   </nav>
   <div class="content-panel">
     <div class="view-tabs" role="tablist" aria-label="Workflow view">

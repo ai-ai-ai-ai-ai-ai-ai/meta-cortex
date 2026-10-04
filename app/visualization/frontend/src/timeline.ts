@@ -4,6 +4,7 @@ import type {
   FeedEntry,
   TaskState,
   Phase,
+  WorkerIdentity,
 } from "./contracts";
 import {
   ActionLook,
@@ -186,17 +187,38 @@ interface TimelineRowRequest {
 interface TimelinePieceRequest {
   readonly entry: FeedEntry;
   readonly scale: TimelineScale;
+  readonly chapter: TaskChapter;
 }
-class TimelinePiece {
+export class TimelinePiece {
+  readonly chapter: TaskChapter;
   readonly entry: FeedEntry;
   readonly look: RecordedStateLook;
   readonly left: string;
   end: number;
   constructor(private readonly request: TimelinePieceRequest) {
+    this.chapter = request.chapter;
     this.entry = request.entry;
     this.look = new RecordedStateLook(this.entry.state);
     this.left = request.scale.position(this.entry.at);
     this.end = this.entry.at;
+  }
+  continuation(entry: FeedEntry): StateContinuation {
+    switch (
+      this.workerKey(this.entry.worker) === this.workerKey(entry.worker)
+    ) {
+      case true:
+        return this.look.continuation(entry.state);
+      case false:
+        return StateContinuation.NewState;
+    }
+  }
+  private workerKey(worker: WorkerIdentity): string {
+    switch (worker.kind) {
+      case "Recorded":
+        return worker.worker_id;
+      case "Unrecorded":
+        return "unrecorded";
+    }
   }
   extend(at: number): void {
     switch (this.entry.state.kind) {
@@ -216,8 +238,8 @@ class TimelinePiece {
   duration(): string {
     return new Elapsed(this.end - this.entry.at).compact();
   }
-  label(chapter: TaskChapter): string {
-    return `${this.look.label()} · ${chapter.task.common.id} · ${new RecordedTime(this.entry.at).iso()} ${TimelineScale.TEXT.to} ${new RecordedTime(this.end).iso()} · ${new Elapsed(this.end - this.entry.at).exact()} · ${ActionLook.TEXT.revision} ${this.entry.revision} · ${this.look.detail()} · ${this.entry.note}`;
+  label(): string {
+    return `${this.look.label()} · ${this.chapter.task.common.id} · ${new RecordedTime(this.entry.at).iso()} ${TimelineScale.TEXT.to} ${new RecordedTime(this.end).iso()} · ${new Elapsed(this.end - this.entry.at).exact()} · ${ActionLook.TEXT.revision} ${this.entry.revision} · ${this.look.detail()} · ${this.entry.note}`;
   }
 }
 export class TimelineRow {
@@ -233,7 +255,7 @@ export class TimelineRow {
       let continuation = StateContinuation.NewState;
       for (const piece of previous) {
         piece.extend(entry.at);
-        continuation = piece.look.continuation(entry.state);
+        continuation = piece.continuation(entry);
       }
       switch (continuation) {
         case StateContinuation.SameState:
@@ -242,6 +264,7 @@ export class TimelineRow {
           const pieceRequest: TimelinePieceRequest = {
             entry,
             scale: request.scale,
+            chapter: request.chapter,
           };
           spans.push(new TimelinePiece(pieceRequest));
         }
