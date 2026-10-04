@@ -70,6 +70,8 @@ pub(super) enum ReportVersion {
     V0_12_3,
     #[serde(rename = "0.13.0")]
     V0_13_0,
+    #[serde(rename = "0.14.0")]
+    V0_14_0,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
