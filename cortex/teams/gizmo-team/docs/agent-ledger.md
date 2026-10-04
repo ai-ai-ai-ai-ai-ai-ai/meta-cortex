@@ -689,6 +689,21 @@ sequence came from a committed append or preserved legacy storage order.
 - **Required:** assign the event sequence in the existing mutation transaction and
   leave task revision checks and history content intact.
 
+### Invalid legacy data during migration
+
+A version `5` migration must fail atomically when legacy rows violate its
+constraints. Leave the prior schema and committed history intact and report the
+failure. Diagnose and resolve the integrity problem separately before rollout;
+an upgrade must not silently remap sequence values, deduplicate rows, or rewrite
+recorded history to make invalid data pass.
+
+**Prohibited:** migration finds conflicting legacy identities, renumbers or
+drops their events, and reports that the upgrade succeeded.
+
+**Required:** abort the migration transaction, preserve the source, and report
+the constraint failure. Keep rollout blocked until the integrity problem is
+resolved through separately authorized work and the isolated migration succeeds.
+
 ### Storage migration and supported readers
 
 Version `1`, `2`, `3`, and `4` databases migrate transactionally, retaining records
