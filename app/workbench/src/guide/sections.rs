@@ -87,7 +87,15 @@ fn prose(markdown: &str) -> Note {
             Event::Text(value) | Event::Code(value) => text.push_str(&value),
             Event::SoftBreak | Event::HardBreak => text.push(' '),
             Event::End(TagEnd::Paragraph | TagEnd::Heading(_) | TagEnd::Item) => text.push('\n'),
-            _ => {}
+            Event::Start(_)
+            | Event::End(_)
+            | Event::InlineMath(_)
+            | Event::DisplayMath(_)
+            | Event::Html(_)
+            | Event::InlineHtml(_)
+            | Event::FootnoteReference(_)
+            | Event::Rule
+            | Event::TaskListMarker(_) => {}
         }
     }
     Note::from(text.trim().to_owned())
