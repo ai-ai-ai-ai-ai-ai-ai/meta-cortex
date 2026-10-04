@@ -144,8 +144,9 @@ identifies who recorded it, not who actually authored that Git commit.
    progress, recorded roles, and PR links. The selected briefing adds the task
    inventory, latest update, start/finish times, elapsed duration, and branch.
    Open a task block or **Open workflow** to see task chapters. One shared index
-   navigates both **Log** and **Time windows** in the right panel. Log actions
-   show recording actors, time, revision, and expandable evidence. Time windows
+   navigates both **Log** and **Time windows** in the right panel. The
+   [Revision log](#revision-log-and-event-order) shows database-wide order,
+   task revisions, recording actors, time, and expandable evidence. Time windows
    show task creation through last update, including concurrent task lifetimes.
    PR links open in the system browser.
 3. Close the window to exit.
@@ -244,6 +245,40 @@ result, not a new test execution by the dashboard.
 **Prohibited:** treat a historical passed check as a fresh validation run.
 
 **Required:** inspect its event revision and recorded evidence before reporting it.
+
+### Revision log and event order
+
+The selected feature's **Revision log** orders events by their database-wide
+`EventSequence`. All writers sharing that repository database use the same
+sequence. The log displays this as `R`; `Task r` remains the task-local
+`TaskRevision` used for optimistic updates. Its numeric wire format is unchanged.
+An attempt identifies a task claim, not an event's position in the repository's history. `FeatureWorkflow.revision_log` exposes
+entries with `feature`, `task`, `sequence`, `provenance`, and the recorded
+`FeedEntry` in `entry`. The existing Event JSON stays unchanged; sequence and
+provenance belong to the storage envelope and observation result.
+
+- A successful mutation appends its event in the same `IMMEDIATE` transaction
+  as its task change. Database schema version `5` assigns its sequence through
+  `AUTOINCREMENT`; no separate counter service or read-side increment exists.
+- New entries have `CommittedAppend` provenance. Their sequence orders committed
+  appends in this database, independent of worker clocks and task revision values.
+- Migrated entries have `LegacyStorageOrder` provenance. The shared database
+  migration copies each actual old event `rowid`, retaining holes and storage order. Those values cannot
+  recover original commit chronology; do not describe them as historical commit
+  timestamps or newly observed append order.
+- Filtering to one feature retains global sequence values. Gaps can belong to
+  other features; neither filtering nor display renumbers entries. Sequence
+  values are not promised to be gapless. A rolled-back allocation can be reused.
+- Reading the log does not change event order, task revisions, attempts, or stored
+  snapshots. Use the current task revision, never global `R`, in `expected_revision`.
+
+**Prohibited:** relabel a feature's `R41` and `R44` as `R1` and `R2`, infer that
+the gap is missing feature history, or send `expected_revision: 44` when the
+selected task is at revision `7`.
+
+**Required:** retain `R41` and `R44`, show their task revisions separately, and
+use that task's observed revision `7` for its next update. Label migrated entries
+as legacy storage order rather than claiming their original commit chronology.
 
 ### Historical ownership
 
@@ -587,7 +622,7 @@ the recorded task plus any newer Git changes.
 
 Command protocol, persisted record, and physical database versions are distinct.
 This release writes command, feature, and event-envelope version `1`, task
-record version `3`, and database version `4`. `Task / Claim` and `Task / Update`
+record version `3`, and database version `5`. `Task / Claim` and `Task / Update`
 require `worker_id`; discover their current request shapes with `meta-cortex list`.
 Task readers explicitly convert supported version `1` and `2` records into the
 current model with unrecorded worker identity. Version `1` ownership also remains
@@ -606,8 +641,9 @@ Version `3` adds `worker` beside `common`, `ownership`, `workspace`, and `state`
 It is either `{kind: Unrecorded}` or
 `{kind: Recorded, worker_id: <UUID>}`. Claim records the worker; readiness,
 integration, completion, and cancellation retain it. Requeue clears the current
-binding while preserving prior snapshots. The SQL layout remains version `4`;
-reading older records does not rewrite them or backfill their history.
+binding while preserving prior snapshots. Worker identity belongs to the task
+record, independently of database event ordering. Reading older task records
+does not rewrite them or invent historical worker identities.
 
 - **Prohibited:** derive UUIDs from old roles or event actors while reading
   version `1` or `2` records.
@@ -632,26 +668,30 @@ update. A replacement follows recovery and makes a new claim with its own UUID.
 
 ### Database constraints
 
-Database version `4` moves JSON key constraints to `common`, including nested
-task snapshots in events. Feature discovery and task commands migrate older
-storage transactionally, preserving historical actors and all task evidence.
-Observation requires the current database schema and reports when migration is
-needed; it never rewrites old storage itself. Executables without task version
-`3` support cannot read newly written tasks even though the database version
-remains `4`; stop older writers before upgrading.
+Database version `5` adds database-wide event order while retaining the JSON
+constraints introduced in version `4`. Event sequences use an `AUTOINCREMENT`
+primary key; `(feature_id, task_id, revision)` remains unique. Feature and task
+keys, foreign keys, and JSON identity/revision checks retain their existing
+meaning. Each task requires its feature and each event requires its task;
+parent deletion and key changes remain restricted while children exist.
+Required columns reject nulls, task revisions must be positive, and JSON IDs
+and revisions must match their relational columns. Every Workbench connection
+enables foreign keys.
 
-Version `4` uses a feature primary key, a `(feature_id, id)` task primary key,
-and a `(feature_id, task_id, revision)` event primary key. Foreign keys require
-each task's feature and each event's task to exist; parent deletion and key
-changes are restricted while children exist. The primary-key indexes cover
-feature status and ordered task history without redundant indexes. Required
-columns reject nulls, revisions must be positive, and JSON IDs and revisions
-must match their relational columns. Every Workbench connection enables foreign
-keys. JSON retains progress, findings, checks, and task snapshots.
+Feature discovery and task commands migrate older storage transactionally.
+Observation requires the current schema and reports when migration is needed;
+it never migrates storage. JSON retains actors, task snapshots, findings, checks,
+and evidence. [Event order](#revision-log-and-event-order) records whether its
+sequence came from a committed append or preserved legacy storage order.
+
+- **Prohibited:** advance a counter while reading history or change a task revision
+  to give an event its global position.
+- **Required:** assign the event sequence in the existing mutation transaction and
+  leave task revision checks and history content intact.
 
 ### Storage migration and supported readers
 
-Version `1`, `2`, and `3` databases migrate transactionally, retaining records
+Version `1`, `2`, `3`, and `4` databases migrate transactionally, retaining records
 and history across every feature. On first access, Workbench imports the old
 `~/.meta-cortex/<repo_id>/features/<feature-id>.db` files into the shared database.
 Each feature imports atomically and only once; an invalid source leaves its
@@ -669,6 +709,11 @@ current domain model and fixture tests before advancing the writer. Do not
 reinterpret older JSON through a generic map or silently add defaults that change
 its meaning. Adding extension keys does not change a known schema version.
 
+- Rebuild or install the current executable before using the new schema and
+  request contract. Stop older writers before upgrading; do not mix executable
+  versions against upgraded storage.
+- Validate migration using an isolated cloned ledger. Do not upgrade a shared
+  live ledger merely to obtain test evidence while older writers still use it.
 - Migrations move forward; older executables reject newer storage versions.
 - Before an upgrade that changes record shapes, preserve a consistent backup
   with all writers stopped.
