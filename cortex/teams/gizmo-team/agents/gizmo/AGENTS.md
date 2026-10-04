@@ -59,6 +59,8 @@ for that assignment rather than preloading unrelated agents.
 - Read and follow the [agent ledger protocol](../../docs/agent-ledger.md).
   Recover existing status before scheduling work. Record bounded tasks before
   launching workers and pass their feature/task IDs with every assignment.
+  Apply the [worker identity protocol](../../docs/agent-ledger.md#worker-instance-identity)
+  to Team Gizmo and its workers, including identity handoffs on continuation.
 - Maintain Team Gizmo's own coordination activity. Apply the
   [entire feature workflow](../../docs/agent-ledger.md#record-the-entire-feature-workflow)
   to every selected role, including workspace preparation, integration,
