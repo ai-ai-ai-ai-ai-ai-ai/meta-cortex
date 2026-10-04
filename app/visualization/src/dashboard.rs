@@ -21,7 +21,7 @@ pub enum DashboardView {
     Task { query: TaskQuery },
     History { query: TaskQuery },
 }
-/// `Desktop` opens the native feature journal; `Snapshot` returns one view as text.
+/// `Desktop` opens the native Workbench dashboard; `Snapshot` returns one view as text.
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "mode", deny_unknown_fields)]
 pub enum DashboardRequest {

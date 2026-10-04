@@ -7,8 +7,8 @@ most recently on 2026-10-03. The file uses the registry's standard `$UI$`/`$UTIL
 alias substitutions, formatted with the project configuration.
 Prop signatures, variants and interactions remain upstream owned.
 
-Only used component families are retained. The feature journal composes its
-cards, chips and progress bars from Tailwind utilities, so no other registry
+Only used component families are retained. The dashboard composes its
+cards, chips and progress bars from application CSS and Tailwind utilities, so no other registry
 components are installed. The public barrel retains the registry's aliases and
 is an explicit Knip entrypoint. Authored exports remain checked for unused code.
 

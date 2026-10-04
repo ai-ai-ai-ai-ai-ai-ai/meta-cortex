@@ -106,7 +106,7 @@
       </div>
     {/each}
 
-    {#each dashboard.journals() as summaries, index (index)}
+    {#each dashboard.featurePages() as summaries, index (index)}
       <FeaturePage {summaries} truncated={dashboard.truncated()} />
     {:else}
       {#if dashboard.failures().length === 0}

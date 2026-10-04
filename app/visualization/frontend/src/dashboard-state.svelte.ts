@@ -24,7 +24,7 @@ type Reply =
     };
 
 /**
- * The ledger read behind the journal. A refresh keeps the last reply on
+ * The ledger read behind the feature list. A refresh keeps the last reply on
  * screen, so live updates never blank the view and failures mark it stale.
  */
 export class ReadController {
@@ -60,8 +60,8 @@ export class ReadController {
   stop(): void {
     this.interrupt();
   }
-  /** Empty until the first reply; a loaded journal may itself hold no features. */
-  journals(): ReadonlyArray<ReadonlyArray<FeatureSummary>> {
+  /** Empty until the first reply; a loaded page may itself hold no features. */
+  featurePages(): ReadonlyArray<ReadonlyArray<FeatureSummary>> {
     switch (this.reply.kind) {
       case ReplyKind.Empty:
         return [];
