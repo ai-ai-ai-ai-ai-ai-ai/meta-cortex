@@ -1,21 +1,284 @@
 {
+  "revision_log": [
+    {
+      "feature": "release-0-12-3",
+      "task": "rust-release",
+      "sequence": 1,
+      "provenance": "CommittedAppend",
+      "entry": {
+        "objective": "Implement the release",
+        "worker": {
+          "kind": "Unrecorded"
+        },
+        "kind": "created",
+        "actor": {
+          "team": "Gizmo",
+          "role": "GizmoPrime"
+        },
+        "ownership": {
+          "kind": "Unrecorded"
+        },
+        "state": {
+          "kind": "queued"
+        },
+        "note": "Implement the release",
+        "summary": "",
+        "at": 1791147143543,
+        "revision": 1,
+        "evidence": [
+          {
+            "summary": "",
+            "findings": [],
+            "next_steps": [],
+            "checks": [],
+            "extensions": {}
+          }
+        ],
+        "checkpoint": {
+          "kind": "unrecorded"
+        }
+      }
+    },
+    {
+      "feature": "release-0-12-3",
+      "task": "rust-release",
+      "sequence": 2,
+      "provenance": "CommittedAppend",
+      "entry": {
+        "objective": "Implement the release",
+        "worker": {
+          "kind": "Unrecorded"
+        },
+        "kind": "assigned",
+        "actor": {
+          "team": "Gizmo",
+          "role": "GizmoPrime"
+        },
+        "ownership": {
+          "kind": "Assigned",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "reports_to": {
+              "kind": "Gizmo",
+              "coordinator": "Gizmo"
+            }
+          }
+        },
+        "state": {
+          "kind": "queued"
+        },
+        "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
+        "summary": "",
+        "at": 1791147143544,
+        "revision": 2,
+        "evidence": [
+          {
+            "summary": "",
+            "findings": [],
+            "next_steps": [],
+            "checks": [],
+            "extensions": {}
+          }
+        ],
+        "checkpoint": {
+          "kind": "unrecorded"
+        }
+      }
+    },
+    {
+      "feature": "release-0-12-3",
+      "task": "rust-release",
+      "sequence": 3,
+      "provenance": "CommittedAppend",
+      "entry": {
+        "objective": "Implement the release",
+        "worker": {
+          "kind": "Recorded",
+          "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+        },
+        "kind": "claimed",
+        "actor": {
+          "team": "Development",
+          "role": "RustDev"
+        },
+        "ownership": {
+          "kind": "Assigned",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "reports_to": {
+              "kind": "Gizmo",
+              "coordinator": "Gizmo"
+            }
+          }
+        },
+        "state": {
+          "kind": "active",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "attempt": 1,
+            "expires_at": 1791147743545,
+            "phase": {
+              "kind": "working"
+            }
+          }
+        },
+        "note": "Assignment claimed",
+        "summary": "",
+        "at": 1791147143545,
+        "revision": 3,
+        "evidence": [
+          {
+            "summary": "",
+            "findings": [],
+            "next_steps": [],
+            "checks": [],
+            "extensions": {}
+          }
+        ],
+        "checkpoint": {
+          "kind": "unrecorded"
+        }
+      }
+    },
+    {
+      "feature": "release-0-12-3",
+      "task": "rust-release",
+      "sequence": 4,
+      "provenance": "CommittedAppend",
+      "entry": {
+        "objective": "Implement the release",
+        "worker": {
+          "kind": "Recorded",
+          "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+        },
+        "kind": "ready",
+        "actor": {
+          "team": "Development",
+          "role": "RustDev"
+        },
+        "ownership": {
+          "kind": "Assigned",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "reports_to": {
+              "kind": "Gizmo",
+              "coordinator": "Gizmo"
+            }
+          }
+        },
+        "state": {
+          "kind": "ready",
+          "agent": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "attempt": 1
+        },
+        "note": "Release implemented",
+        "summary": "Release implemented",
+        "at": 1791147143546,
+        "revision": 4,
+        "evidence": [
+          {
+            "summary": "Release implemented",
+            "findings": ["Checked the manifest"],
+            "next_steps": [],
+            "checks": [
+              {
+                "command": "cargo test -p workbench",
+                "outcome": "passed",
+                "evidence": "34 passed"
+              }
+            ],
+            "extensions": {
+              "review_report": "All checks passed"
+            }
+          }
+        ],
+        "checkpoint": {
+          "kind": "unrecorded"
+        }
+      }
+    },
+    {
+      "feature": "release-0-12-3",
+      "task": "rust-release",
+      "sequence": 5,
+      "provenance": "CommittedAppend",
+      "entry": {
+        "objective": "Implement the release",
+        "worker": {
+          "kind": "Recorded",
+          "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+        },
+        "kind": "completed",
+        "actor": {
+          "team": "Gizmo",
+          "role": "GizmoPrime"
+        },
+        "ownership": {
+          "kind": "Assigned",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "reports_to": {
+              "kind": "Gizmo",
+              "coordinator": "Gizmo"
+            }
+          }
+        },
+        "state": {
+          "kind": "completed",
+          "agent": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "attempt": 1
+        },
+        "note": "Activity accepted by its coordinator",
+        "summary": "Release implemented",
+        "at": 1791147143547,
+        "revision": 5,
+        "evidence": [
+          {
+            "summary": "",
+            "findings": [],
+            "next_steps": [],
+            "checks": [],
+            "extensions": {}
+          }
+        ],
+        "checkpoint": {
+          "kind": "unrecorded"
+        }
+      }
+    }
+  ],
   "timeline": {
     "extent": {
       "kind": "Recorded",
-      "started": 1791053400000,
-      "finished": 1791053400000
+      "started": 1791147143545,
+      "finished": 1791147143547
     },
     "groups": [
       {
         "identity": {
-          "kind": "RoleHistory",
-          "role": {
-            "kind": "Recorded",
-            "agent": {
-              "team": "Development",
-              "role": "RustDev"
-            }
-          }
+          "kind": "RecordedWorker",
+          "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
         },
         "roles": [
           {
@@ -31,10 +294,76 @@
           {
             "task": "rust-release",
             "objective": "Implement the release",
-            "revision": 2,
-            "summary_revision": 2,
-            "start": 1791053400000,
-            "end": 1791053400000,
+            "revision": 3,
+            "summary_revision": 3,
+            "start": 1791147143545,
+            "end": 1791147143546,
+            "duration_ms": 1,
+            "state": {
+              "kind": "active",
+              "assignment": {
+                "agent": {
+                  "team": "Development",
+                  "role": "RustDev"
+                },
+                "attempt": 1,
+                "expires_at": 1791147743545,
+                "phase": {
+                  "kind": "working"
+                }
+              }
+            },
+            "status": "working",
+            "worker": {
+              "kind": "Recorded",
+              "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+            },
+            "role": {
+              "kind": "Recorded",
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              }
+            },
+            "summary": ""
+          },
+          {
+            "task": "rust-release",
+            "objective": "Implement the release",
+            "revision": 4,
+            "summary_revision": 4,
+            "start": 1791147143546,
+            "end": 1791147143547,
+            "duration_ms": 1,
+            "state": {
+              "kind": "ready",
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "attempt": 1
+            },
+            "status": "ready",
+            "worker": {
+              "kind": "Recorded",
+              "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+            },
+            "role": {
+              "kind": "Recorded",
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              }
+            },
+            "summary": "Release implemented"
+          },
+          {
+            "task": "rust-release",
+            "objective": "Implement the release",
+            "revision": 5,
+            "summary_revision": 5,
+            "start": 1791147143547,
+            "end": 1791147143547,
             "duration_ms": 0,
             "state": {
               "kind": "completed",
@@ -46,7 +375,8 @@
             },
             "status": "completed",
             "worker": {
-              "kind": "Unrecorded"
+              "kind": "Recorded",
+              "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
             },
             "role": {
               "kind": "Recorded",
@@ -60,7 +390,7 @@
         ],
         "order": {
           "kind": "Recorded",
-          "at": 1791053400000
+          "at": 1791147143545
         }
       }
     ],
@@ -71,7 +401,8 @@
     {
       "task": {
         "worker": {
-          "kind": "Unrecorded"
+          "kind": "Recorded",
+          "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
         },
         "version": 3,
         "common": {
@@ -80,24 +411,42 @@
           "objective": "Implement the release",
           "acceptance": ["Tests pass"],
           "dependencies": [],
-          "revision": 2,
+          "revision": 5,
           "attempt": 1,
-          "created_at": 1791052200000,
-          "last_update": 1791053400000,
-          "last_progress": 1791053400000,
+          "created_at": 1791147143543,
+          "last_update": 1791147143547,
+          "last_progress": 1791147143546,
           "checkpoint": {
             "kind": "unrecorded"
           },
           "progress": {
             "summary": "Release implemented",
-            "findings": [],
+            "findings": ["Checked the manifest"],
             "next_steps": [],
-            "checks": [],
-            "extensions": {}
+            "checks": [
+              {
+                "command": "cargo test -p workbench",
+                "outcome": "passed",
+                "evidence": "34 passed"
+              }
+            ],
+            "extensions": {
+              "review_report": "All checks passed"
+            }
           }
         },
         "ownership": {
-          "kind": "Unrecorded"
+          "kind": "Assigned",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "reports_to": {
+              "kind": "Gizmo",
+              "coordinator": "Gizmo"
+            }
+          }
         },
         "workspace": {
           "kind": "read_only"
@@ -138,9 +487,17 @@
           },
           "note": "Implement the release",
           "summary": "",
-          "at": 1791052200000,
+          "at": 1791147143543,
           "revision": 1,
-          "evidence": [],
+          "evidence": [
+            {
+              "summary": "",
+              "findings": [],
+              "next_steps": [],
+              "checks": [],
+              "extensions": {}
+            }
+          ],
           "checkpoint": {
             "kind": "unrecorded"
           }
@@ -150,26 +507,135 @@
           "worker": {
             "kind": "Unrecorded"
           },
-          "kind": "completed",
+          "kind": "assigned",
           "actor": {
             "team": "Gizmo",
             "role": "GizmoPrime"
           },
           "ownership": {
-            "kind": "Unrecorded"
+            "kind": "Assigned",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "reports_to": {
+                "kind": "Gizmo",
+                "coordinator": "Gizmo"
+              }
+            }
           },
           "state": {
-            "kind": "completed",
+            "kind": "queued"
+          },
+          "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
+          "summary": "",
+          "at": 1791147143544,
+          "revision": 2,
+          "evidence": [
+            {
+              "summary": "",
+              "findings": [],
+              "next_steps": [],
+              "checks": [],
+              "extensions": {}
+            }
+          ],
+          "checkpoint": {
+            "kind": "unrecorded"
+          }
+        },
+        {
+          "objective": "Implement the release",
+          "worker": {
+            "kind": "Recorded",
+            "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+          },
+          "kind": "claimed",
+          "actor": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "ownership": {
+            "kind": "Assigned",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "reports_to": {
+                "kind": "Gizmo",
+                "coordinator": "Gizmo"
+              }
+            }
+          },
+          "state": {
+            "kind": "active",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "attempt": 1,
+              "expires_at": 1791147743545,
+              "phase": {
+                "kind": "working"
+              }
+            }
+          },
+          "note": "Assignment claimed",
+          "summary": "",
+          "at": 1791147143545,
+          "revision": 3,
+          "evidence": [
+            {
+              "summary": "",
+              "findings": [],
+              "next_steps": [],
+              "checks": [],
+              "extensions": {}
+            }
+          ],
+          "checkpoint": {
+            "kind": "unrecorded"
+          }
+        },
+        {
+          "objective": "Implement the release",
+          "worker": {
+            "kind": "Recorded",
+            "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+          },
+          "kind": "ready",
+          "actor": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "ownership": {
+            "kind": "Assigned",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "reports_to": {
+                "kind": "Gizmo",
+                "coordinator": "Gizmo"
+              }
+            }
+          },
+          "state": {
+            "kind": "ready",
             "agent": {
               "team": "Development",
               "role": "RustDev"
             },
             "attempt": 1
           },
-          "note": "Activity accepted",
+          "note": "Release implemented",
           "summary": "Release implemented",
-          "at": 1791053400000,
-          "revision": 2,
+          "at": 1791147143546,
+          "revision": 4,
           "evidence": [
             {
               "summary": "Release implemented",
@@ -182,6 +648,57 @@
                   "evidence": "34 passed"
                 }
               ],
+              "extensions": {
+                "review_report": "All checks passed"
+              }
+            }
+          ],
+          "checkpoint": {
+            "kind": "unrecorded"
+          }
+        },
+        {
+          "objective": "Implement the release",
+          "worker": {
+            "kind": "Recorded",
+            "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+          },
+          "kind": "completed",
+          "actor": {
+            "team": "Gizmo",
+            "role": "GizmoPrime"
+          },
+          "ownership": {
+            "kind": "Assigned",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "reports_to": {
+                "kind": "Gizmo",
+                "coordinator": "Gizmo"
+              }
+            }
+          },
+          "state": {
+            "kind": "completed",
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "attempt": 1
+          },
+          "note": "Activity accepted by its coordinator",
+          "summary": "Release implemented",
+          "at": 1791147143547,
+          "revision": 5,
+          "evidence": [
+            {
+              "summary": "",
+              "findings": [],
+              "next_steps": [],
+              "checks": [],
               "extensions": {}
             }
           ],
@@ -194,7 +711,7 @@
   ],
   "timing": {
     "kind": "Finished",
-    "started": 1791052200000,
-    "finished": 1791053400000
+    "started": 1791147143543,
+    "finished": 1791147143547
   }
 }
