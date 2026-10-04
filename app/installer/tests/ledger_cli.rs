@@ -848,7 +848,7 @@ fn scenario_setup_requires_successful_effects() -> anyhow::Result<()> {
 fn independent_processes_share_global_order_without_changing_task_revisions() -> anyhow::Result<()>
 {
     use meta_cortex_workbench::values::EventSequence;
-    use meta_cortex_workbench::{DataDirectory, Workbench};
+    use meta_cortex_workbench::{DataDirectory, SequenceProvenance, Workbench};
     use std::collections::BTreeSet;
     use tokio::runtime::Builder;
     let scenario = Scenario::create()?;
@@ -903,10 +903,7 @@ fn independent_processes_share_global_order_without_changing_task_revisions() ->
     );
     for record in first.revision_log.iter().chain(&second.revision_log) {
         assert_eq!(record.entry.revision, TaskRevision::INITIAL);
-        assert_eq!(
-            record.provenance,
-            meta_cortex_workbench::SequenceProvenance::CommittedAppend
-        );
+        assert_eq!(record.provenance, SequenceProvenance::CommittedAppend);
         assert_eq!(
             record.entry.evidence[0].summary.to_string(),
             "Same summary on independent tasks"
