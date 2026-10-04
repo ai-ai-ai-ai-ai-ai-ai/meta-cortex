@@ -612,7 +612,10 @@ mod tests {
                     assert_eq!(entry.worker, event.task.worker);
                 }
                 assert_eq!(chapter.entries.len(), history.len());
-                assert_eq!(ledger.info().storage_version, StorageVersion::CommonTasksV4);
+                assert_eq!(
+                    ledger.info().storage_version,
+                    StorageVersion::SequencedEventsV5
+                );
                 Ok(())
             })
     }

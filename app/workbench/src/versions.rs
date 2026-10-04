@@ -255,6 +255,7 @@ mod tests {
             StorageVersion::IndexedV2,
             StorageVersion::RelationalV3,
             StorageVersion::CommonTasksV4,
+            StorageVersion::SequencedEventsV5,
         ] {
             let encoded = serde_json::to_string(&version)?;
             assert_eq!(encoded, i64::from(version).to_string());
@@ -270,7 +271,7 @@ mod tests {
             assert!(serde_json::from_str::<ProtocolVersion>(input).is_err());
             assert!(serde_json::from_str::<RecordVersion>(input).is_err());
         }
-        for input in ["-1", "5", "99", "1.5", "\"IndexedV2\""] {
+        for input in ["-1", "6", "99", "1.5", "\"IndexedV2\""] {
             assert!(serde_json::from_str::<StorageVersion>(input).is_err());
         }
     }

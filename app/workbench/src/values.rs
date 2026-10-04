@@ -396,7 +396,8 @@ pub enum WorkerIdParseError {
 pub struct EventSequence(i64);
 impl From<EventSequence> for i64 {
     fn from(sequence: EventSequence) -> Self {
-        sequence.0
+        let EventSequence(value) = sequence;
+        value
     }
 }
 

@@ -669,7 +669,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::CommonTasksV4
+                    StorageVersion::SequencedEventsV5
                 );
                 assert_eq!(RepositorySnapshot::read(&connection).await?, expected);
                 LedgerSchema::migrate(&mut connection).await?;
@@ -740,7 +740,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::CommonTasksV4
+                    StorageVersion::SequencedEventsV5
                 );
                 assert_eq!(RepositorySnapshot::read(&connection).await?, original);
                 anyhow::Ok(())
@@ -777,7 +777,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::CommonTasksV4
+                    StorageVersion::SequencedEventsV5
                 );
                 LedgerSchema::migrate(&mut connection).await?;
                 let mut rows = SqlStatement::build(
@@ -851,7 +851,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::CommonTasksV4
+                    StorageVersion::SequencedEventsV5
                 );
                 anyhow::Ok(())
             })

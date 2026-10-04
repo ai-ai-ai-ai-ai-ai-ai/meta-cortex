@@ -285,7 +285,7 @@ mod tests {
         Builder::new_current_thread().enable_time().build()?.block_on(async {
             assert!(matches!(Observation::open(directory.path().join("missing")).await, Err(LedgerError::Uninitialized)));
             assert!(matches!(Observation::open(directory.path().to_owned()).await, Err(LedgerError::Invalid(_))));
-            for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2, StorageVersion::RelationalV3] {
+            for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2, StorageVersion::RelationalV3, StorageVersion::CommonTasksV4] {
                 let path = directory.path().join(format!("version-{version}.db"));
                 let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).with_io(PERSISTENT_IO).build().await?;
                 let connection = database.connect()?;

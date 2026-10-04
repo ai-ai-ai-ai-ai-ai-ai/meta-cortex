@@ -10,6 +10,7 @@ use meta_cortex_workbench::values::{
     BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, WorkerId,
 };
 use meta_cortex_workbench::{DataDirectory, Workbench};
+use serde_json::Value;
 use std::collections::BTreeMap;
 use tokio::runtime::Builder;
 
@@ -50,7 +51,7 @@ fn main() -> anyhow::Result<()> {
                 }],
                 extensions: Extensions(BTreeMap::from([(
                     "review_report".to_owned(),
-                    serde_json::Value::String("All checks passed".to_owned()),
+                    Value::String("All checks passed".to_owned()),
                 )])),
             };
             let task = ledger

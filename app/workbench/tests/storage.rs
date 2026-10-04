@@ -151,7 +151,7 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
                 let conn = db.connect()?;
                 assert_eq!(
                     Scenario::version(&conn).await?,
-                    VersionNumber::from(i64::from(StorageVersion::CommonTasksV4))
+                    VersionNumber::from(i64::from(StorageVersion::SequencedEventsV5))
                 );
                 conn.pragma_update(
                     &DatabasePragma::UserVersion.to_string(),

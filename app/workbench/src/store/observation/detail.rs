@@ -8,7 +8,7 @@ use crate::agents::AgentId;
 use crate::model::worker::WorkerIdentity;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Checkpoint, Event, EventKind, Progress, Task, TaskState};
-use crate::values::{FeatureId, Note, TaskRevision, Timestamp};
+use crate::values::{EventSequence, FeatureId, Note, TaskRevision, Timestamp};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -139,7 +139,7 @@ impl Observation {
     }
 }
 struct EventOrder {
-    sequence: crate::values::EventSequence,
+    sequence: EventSequence,
     provenance: super::SequenceProvenance,
 }
 struct ChapterSource {

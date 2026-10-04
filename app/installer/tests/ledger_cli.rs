@@ -32,7 +32,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     let scenario = scenario.initialize(Examples::feature()?.feature)?;
     assert_eq!(
         scenario.ledger().storage_version,
-        StorageVersion::CommonTasksV4
+        StorageVersion::SequencedEventsV5
     );
     let Reply::Ledger(reopened) = scenario
         .client()
@@ -840,6 +840,146 @@ fn scenario_setup_requires_successful_effects() -> anyhow::Result<()> {
                 ..Examples::task()?
             })
             .is_err()
+    );
+    Ok(())
+}
+
+#[test]
+fn independent_processes_share_global_order_without_changing_task_revisions() -> anyhow::Result<()>
+{
+    use meta_cortex_workbench::values::EventSequence;
+    use meta_cortex_workbench::{DataDirectory, Workbench};
+    use std::collections::BTreeSet;
+    use tokio::runtime::Builder;
+    let scenario = Scenario::create()?;
+    let other_id = FeatureId::try_from("other-feature".to_owned())?;
+    let other = scenario.initialization(other_id.clone())?;
+    let scenario = scenario.initialize(Examples::feature()?.feature)?;
+    scenario
+        .client()
+        .run(Operation::Feature(FeatureOperation::Initialize(other)))?;
+    let mut children = Vec::new();
+    for index in 0..6 {
+        for feature in [Examples::feature()?.feature, other_id.clone()] {
+            let mut task = Examples::task()?;
+            task.feature = feature;
+            task.task = TaskId::try_from(format!("parallel-{index}"))?;
+            task.progress =
+                Examples::progress(Note::from("Same summary on independent tasks".to_owned()));
+            children.push(
+                scenario
+                    .client()
+                    .start(Operation::Task(TaskOperation::Create(task)))?,
+            );
+        }
+    }
+    for child in children {
+        let response = Cli::collect(child)?;
+        let Outcome::Success(Reply::Task(task)) = response.result else {
+            bail!("independent write failed: {response:?}")
+        };
+        assert_eq!(task.common.revision, TaskRevision::INITIAL);
+    }
+    let runtime = Builder::new_current_thread().enable_time().build()?;
+    let workbench = Workbench::discover(scenario.path())?
+        .with_data_directory(DataDirectory::from(scenario.data_directory().to_owned()));
+    let observation = runtime.block_on(workbench.observe())?;
+    let first = runtime.block_on(observation.workflow(Examples::feature()?.feature))?;
+    let second = runtime.block_on(observation.workflow(other_id.clone()))?;
+    let identities: BTreeSet<EventSequence> = first
+        .revision_log
+        .iter()
+        .chain(&second.revision_log)
+        .map(|record| record.sequence)
+        .collect();
+    assert_eq!(identities.len(), 12);
+    assert_eq!(first.revision_log.len(), 6);
+    assert_eq!(second.revision_log.len(), 6);
+    assert!(
+        first
+            .revision_log
+            .windows(2)
+            .all(|pair| pair[0].sequence < pair[1].sequence)
+    );
+    for record in first.revision_log.iter().chain(&second.revision_log) {
+        assert_eq!(record.entry.revision, TaskRevision::INITIAL);
+        assert_eq!(
+            record.provenance,
+            meta_cortex_workbench::SequenceProvenance::CommittedAppend
+        );
+        assert_eq!(
+            record.entry.evidence[0].summary.to_string(),
+            "Same summary on independent tasks"
+        );
+    }
+    let before = serde_json::to_value(&first)?;
+    assert_eq!(
+        before,
+        serde_json::to_value(
+            runtime.block_on(observation.workflow(Examples::feature()?.feature))?
+        )?
+    );
+    let failed = ClaimTask {
+        task: TaskId::try_from("parallel-0".to_owned())?,
+        expected_revision: TaskRevision::try_from(999)?,
+        ..Examples::claim()?
+    };
+    assert!(
+        scenario
+            .client()
+            .run(Operation::Task(TaskOperation::Claim(failed)))
+            .is_err()
+    );
+    assert_eq!(
+        before,
+        serde_json::to_value(
+            runtime.block_on(observation.workflow(Examples::feature()?.feature))?
+        )?
+    );
+    // Each CLI invocation starts a new process; other-feature appends remain gaps
+    // in a selected feature, without renumbering its visible records.
+    let mut other = Examples::task()?;
+    other.feature = other_id.clone();
+    other.task = TaskId::try_from("restart-other".to_owned())?;
+    scenario
+        .client()
+        .run(Operation::Task(TaskOperation::Create(other)))?;
+    let other_log = runtime.block_on(observation.workflow(other_id))?;
+    let other_sequence = other_log
+        .revision_log
+        .last()
+        .context("other append")?
+        .sequence;
+    let mut resumed = Examples::task()?;
+    resumed.task = TaskId::try_from("restart-selected".to_owned())?;
+    scenario
+        .client()
+        .run(Operation::Task(TaskOperation::Create(resumed)))?;
+    let after = runtime.block_on(observation.workflow(Examples::feature()?.feature))?;
+    assert!(
+        after
+            .revision_log
+            .last()
+            .context("restart append")?
+            .sequence
+            > other_sequence
+    );
+    assert!(
+        after
+            .revision_log
+            .iter()
+            .all(|record| record.sequence != other_sequence)
+    );
+    assert_eq!(
+        after.revision_log[..6]
+            .iter()
+            .map(|record| record.sequence)
+            .collect::<Vec<_>>(),
+        first
+            .revision_log
+            .iter()
+            .map(|record| record.sequence)
+            .collect::<Vec<_>>()
     );
     Ok(())
 }
