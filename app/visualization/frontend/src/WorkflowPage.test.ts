@@ -6,6 +6,7 @@ import {
   screen,
   within,
 } from "@testing-library/svelte";
+import type { RevisionLogEntry } from "./contracts";
 import type { ComponentProps } from "svelte";
 import WorkflowPage from "./WorkflowPage.svelte";
 import { Fixture } from "./dashboard-fixture";
@@ -40,9 +41,21 @@ it("shows a terminal timestamp without inventing an unrecorded active range", as
     name: /Completed · rust-release/,
   };
   const fixture = new Fixture();
+  const workflow = fixture.workflow();
+  for (const group of workflow.timeline.groups) {
+    group.windows = group.windows.filter(
+      (window) => window.status === "completed",
+    );
+    for (const window of group.windows)
+      workflow.timeline.extent = {
+        kind: "Recorded",
+        started: window.start,
+        finished: window.end,
+      };
+  }
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
-    workflow: fixture.workflow(),
+    workflow,
     initialTask: "",
     back: () => {},
   };
@@ -88,8 +101,8 @@ it("preserves per-event ownership after a chapter is reassigned", () => {
   };
   render(WorkflowPage, workflowProps);
   expect(screen.getByRole("heading", verifierHeadingQuery)).toBeTruthy();
-  expect(screen.getAllByText("Assigned to Rust Dev")).toHaveLength(2);
-  expect(screen.getAllByText("Reports to Host")).toHaveLength(2);
+  expect(screen.getAllByText("Assigned to Rust Dev")).toHaveLength(5);
+  expect(screen.getAllByText("Reports to Host")).toHaveLength(5);
 });
 it("keeps same-time milestones separately reachable for zero-duration tasks", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
@@ -119,8 +132,10 @@ it("keeps same-time milestones separately reachable for zero-duration tasks", as
   const markers = screen
     .getByRole("tabpanel", windowPanelQuery)
     .querySelectorAll(".timeline-piece");
-  expect(markers).toHaveLength(1);
+  expect(markers).toHaveLength(3);
   expect([...markers].map((marker) => marker.getAttribute("style"))).toEqual([
+    "left: 0%; width: 0%;",
+    "left: 0%; width: 0%;",
     "left: 0%; width: 0%;",
   ]);
 });
@@ -180,6 +195,8 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
 it("labels recorded boxes with elapsed duration and presents human task context on focus", async () => {
   const fixture = new Fixture();
   const workflow = fixture.workflow();
+  for (const group of workflow.timeline.groups)
+    group.windows = group.windows.slice(0, 1);
   for (const window of workflow.timeline.groups.flatMap(
     (group) => group.windows,
   )) {
@@ -228,7 +245,7 @@ it("labels recorded boxes with elapsed duration and presents human task context 
   expect(card?.textContent).not.toContain("Later completion");
   expect(card?.textContent).not.toContain("Later task objective");
   expect(card?.textContent).toContain("Recorded state · Working");
-  expect(card?.textContent).toContain("Worker ID unrecorded");
+  expect(card?.textContent).toMatch(/Worker …[a-f\d]{8}/);
   expect(card?.textContent).not.toContain("1200s");
 });
 it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens the selected original task", async () => {
@@ -286,7 +303,7 @@ it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens
     back: () => {},
   };
   const tabQuery: RoleQueryOptions = { name: "Time windows" };
-  const markerQuery: RoleQueryOptions = { name: /Completed · overlap-three/ };
+  const markerQuery: RoleQueryOptions = { name: /Working · overlap-three/ };
   render(WorkflowPage, props);
   await fireEvent.click(screen.getByRole("tab", tabQuery));
   const lanes = document.querySelectorAll(".worker-lanes");
@@ -330,4 +347,98 @@ it("keeps a focused trigger card open after pointer leave until focus also leave
   await vi.advanceTimersByTimeAsync(200);
   expect(card?.hasAttribute("data-open")).toBe(false);
   vi.useRealTimers();
+});
+
+it("renders supplied global revisions without sorting or renumbering and retains selection on refresh", async () => {
+  const fixture = new Fixture();
+  const workflow = fixture.workflow();
+  const records: RevisionLogEntry[] = [];
+  for (const record of workflow.revision_log.slice(0, 1)) {
+    const committed: RevisionLogEntry = {
+      ...record,
+      sequence: 90,
+      provenance: "CommittedAppend",
+      entry: { ...record.entry, revision: 7, note: "First supplied record" },
+    };
+    const legacy: RevisionLogEntry = {
+      ...record,
+      sequence: 41,
+      provenance: "LegacyStorageOrder",
+      entry: { ...record.entry, revision: 2, note: "Second supplied record" },
+    };
+    records.push(committed, legacy);
+  }
+  workflow.revision_log = records;
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow,
+    initialTask: "",
+    back: () => {},
+  };
+  const tabQuery: RoleQueryOptions = { name: "Revision log" };
+  const panelQuery: RoleQueryOptions = { name: "Revision log" };
+  const rendered = render(WorkflowPage, props);
+  await fireEvent.click(screen.getByRole("tab", tabQuery));
+  const panel = screen.getByRole("tabpanel", panelQuery);
+  expect(
+    [...panel.querySelectorAll("article")].map((article) =>
+      article.getAttribute("aria-label"),
+    ),
+  ).toEqual(["Global R90", "Global R41"]);
+  expect(panel.textContent).toContain("Task r7");
+  expect(panel.textContent).toContain("Task r2");
+  expect(panel.textContent).toContain("Legacy storage order");
+  expect(panel.textContent).toContain("Committed append");
+  const refreshed: WorkflowProps = {
+    ...props,
+    workflow: structuredClone(workflow),
+  };
+  await rendered.rerender(refreshed);
+  expect(screen.getByRole("tab", tabQuery).getAttribute("aria-selected")).toBe(
+    "true",
+  );
+  expect(
+    screen.getByRole("tabpanel", panelQuery).querySelectorAll("article"),
+  ).toHaveLength(2);
+});
+it("supports arrow and boundary keys for workflow tabs and opens the original revision task", async () => {
+  const scrollBoundary: PropertyDescriptor = {
+    configurable: true,
+    value: () => {},
+  };
+  Object.defineProperty(
+    HTMLElement.prototype,
+    "scrollIntoView",
+    scrollBoundary,
+  );
+  const fixture = new Fixture();
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow: fixture.workflow(),
+    initialTask: "rust-release",
+    back: () => {},
+  };
+  const logQuery: RoleQueryOptions = { name: "Log" };
+  const revisionQuery: RoleQueryOptions = { name: "Revision log" };
+  const openQuery: RoleQueryOptions = { name: "Open task log" };
+  const endKey: KeyboardEventInit = { key: "End" };
+  const homeKey: KeyboardEventInit = { key: "Home" };
+  const previousKey: KeyboardEventInit = { key: "ArrowLeft" };
+  render(WorkflowPage, props);
+  const log = screen.getByRole("tab", logQuery);
+  log.focus();
+  await fireEvent.keyDown(log, endKey);
+  const revisions = screen.getByRole("tab", revisionQuery);
+  expect(document.activeElement).toBe(revisions);
+  expect(revisions.getAttribute("tabindex")).toBe("0");
+  await fireEvent.keyDown(revisions, homeKey);
+  expect(document.activeElement).toBe(log);
+  await fireEvent.keyDown(log, previousKey);
+  expect(document.activeElement).toBe(revisions);
+  const panel = screen.getByRole("tabpanel", revisionQuery);
+  for (const button of within(panel)
+    .getAllByRole("button", openQuery)
+    .slice(0, 1))
+    await fireEvent.click(button);
+  expect(document.activeElement?.id).toBe("heading-rust-release");
 });

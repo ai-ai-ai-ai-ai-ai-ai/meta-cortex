@@ -29,6 +29,50 @@ export enum Screen {
 export enum WorkflowView {
   Log = "Log",
   Windows = "Time windows",
+  Revisions = "Revision log",
+}
+export class WorkflowTabs {
+  static readonly VIEWS = [
+    WorkflowView.Log,
+    WorkflowView.Windows,
+    WorkflowView.Revisions,
+  ];
+  static id(view: WorkflowView): string {
+    return `workflow-tab-${view.replaceAll(" ", "-")}`;
+  }
+  constructor(readonly selected: WorkflowView) {}
+  next(key: string): ReadonlyArray<WorkflowView> {
+    const tabs = WorkflowTabs.VIEWS;
+    const index = tabs.indexOf(this.selected);
+    switch (key) {
+      case "ArrowRight":
+        return tabs.concat(tabs).slice(index + 1, index + 2);
+      case "ArrowLeft":
+        return tabs
+          .concat(tabs)
+          .slice(index + tabs.length - 1, index + tabs.length);
+      case "Home":
+        return tabs.slice(0, 1);
+      case "End":
+        return tabs.slice(-1);
+      default:
+        return [];
+    }
+  }
+  focus(): void {
+    Match.value(document.getElementById(WorkflowTabs.id(this.selected))).pipe(
+      Match.when(Match.instanceOf(HTMLElement), (tab) => tab.focus()),
+      Match.orElse(() => {}),
+    );
+  }
+  tabIndex(tab: WorkflowView): number {
+    switch (tab === this.selected) {
+      case true:
+        return 0;
+      case false:
+        return -1;
+    }
+  }
 }
 export enum FeatureFilter {
   All = "All",
@@ -316,6 +360,7 @@ export class ActionLook {
     unrecorded: "Unrecorded",
     host: "Host",
     revision: "revision",
+    taskRevision: "Task r",
   };
   static readonly LOOKS: Record<EventKind, ActionAppearance> = {
     created: { kind: "created", label: "Task created", icon: FilePlus },
