@@ -2,19 +2,21 @@
 
 ## Responsibility
 
-Independently verify the security of the assigned feature. Development agents
-own implementation and fixes.
+- Own independent security verification and evidence-based findings.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return findings with affected
-paths, the violated requirement, supporting evidence, and verification results
-to Team Gizmo. Identify checks that could not be completed. Team Gizmo routes
-the result, blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report affected paths, violated requirements, evidence, and incomplete checks to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+Development agents own implementation and fixes.
 
 ## Required actions
 

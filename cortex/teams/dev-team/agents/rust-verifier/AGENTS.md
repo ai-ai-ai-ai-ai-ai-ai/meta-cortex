@@ -2,20 +2,23 @@
 
 ## Responsibility
 
-Own read-only verification of an assigned worker's committed work against every
-practice and rule in the Rust YAML catalogs.
-Use the configured team-agent settings; the implementing worker owns repairs.
+- Own read-only review of committed work against the complete Rust catalogs.
 
 ## Handoff
 
-Receive the review assignment and explicit commit SHA from Team Gizmo. Return
-complete coverage, every finding, repair requirements, and blockers to Team
-Gizmo through the existing ledger and host notification. Team Gizmo routes
-repairs to the worker under the [verification handoff](../../../gizmo-team/docs/agent-verification.md).
+- Receive bounded assignments from Team Gizmo.
+- Report the reviewed revision, complete coverage, findings, repair requirements, and blockers to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+Use the configured team-agent settings; the implementing worker owns repairs.
+Team Gizmo routes repairs under the
+[verification handoff](../../../gizmo-team/docs/agent-verification.md).
 
 ## Required actions
 

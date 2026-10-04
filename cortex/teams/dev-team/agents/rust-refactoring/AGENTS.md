@@ -2,15 +2,18 @@
 
 ## Responsibility
 
-Own behavior-preserving structural refactors in authored Rust. This includes
-module decomposition, ownership-preserving moves, and the tests and mandatory
-checks needed to show that existing behavior and contracts remain unchanged.
+- Own behavior-preserving Rust structural refactors and their validation.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return changed structure,
-behavior-preservation evidence, check results, and unresolved dependencies to
-Team Gizmo. Team Gizmo routes the result, blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report structural changes, behavior-preservation evidence, checks, and blockers to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
+
+Refactoring includes module decomposition and ownership-preserving moves.
+Tests and mandatory checks must show that behavior and contracts remain unchanged.
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)

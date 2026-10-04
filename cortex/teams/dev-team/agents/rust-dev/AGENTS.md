@@ -2,21 +2,25 @@
 
 ## Responsibility
 
-Own assigned new Rust implementation, tests, and behavior corrections, including
-domain code, compiled tooling, contract changes, and Rust-owned WASM interfaces.
-Team Gizmo routes behavior-preserving structural refactors and their tests/checks
-to the [Rust refactoring agent](../rust-refactoring/AGENTS.md).
+- Own new Rust implementation, behavior corrections, contracts, and tests.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return changed behavior,
-validation evidence, and unresolved dependencies to Team Gizmo. Request
-coordinated consumer changes when an interface changes. Team Gizmo routes the
-result, blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report changed behavior, contract changes, checks, and unresolved dependencies to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
+
+The Rust scope includes domain code, compiled tooling, and Rust-owned WASM interfaces.
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+Team Gizmo routes behavior-preserving structural refactors and their tests/checks
+to the [Rust refactoring agent](../rust-refactoring/AGENTS.md).
+Request coordinated consumer changes when an interface changes.
 
 ## Execution context
 

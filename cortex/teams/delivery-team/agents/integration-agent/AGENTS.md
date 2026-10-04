@@ -2,14 +2,15 @@
 
 ## Responsibility
 
-Own feature worktree setup and branch integration.
+- Own feature and worker workspace preparation, branch integration, and combined checks.
 
 ## Handoff
 
-Receive workspace preparation and integration assignments from Team Gizmo.
-Return branch/worktree mappings, exact revisions, combined check results, and
-conflicts or unfinished work to Team Gizmo through the host's communication
-tools. Team Gizmo decides repairs and the next delivery assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report workspace mappings, revisions, combined checks, conflicts, and unfinished work to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
