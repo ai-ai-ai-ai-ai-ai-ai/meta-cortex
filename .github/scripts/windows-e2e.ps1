@@ -177,13 +177,14 @@ class WindowsInstallationScenario {
             actor = @{ team = 'Gizmo'; role = 'Gizmo' }
             assignment = @{ agent = @{ team = 'Sre'; role = 'CicdAgent' }; reports_to = @{ kind = 'Gizmo'; coordinator = 'Gizmo' } }
         } } })
+        $workerId = [guid]::NewGuid().ToString()
         $claimed = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Claim'; arguments = @{
             feature = 'native-windows'; task = 'persisted-task'; expected_revision = $assigned.value.common.revision
-            agent = @{ team = 'Sre'; role = 'CicdAgent' }; ttl_seconds = 600
+            worker_id = $workerId; agent = @{ team = 'Sre'; role = 'CicdAgent' }; ttl_seconds = 600
         } } })
         $updated = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Update'; arguments = @{
             feature = 'native-windows'; task = 'persisted-task'; expected_revision = $claimed.value.common.revision
-            agent = @{ team = 'Sre'; role = 'CicdAgent' }; attempt = $claimed.value.common.attempt
+            worker_id = $workerId; agent = @{ team = 'Sre'; role = 'CicdAgent' }; attempt = $claimed.value.common.attempt
             action = @{ kind = 'progress'; ttl_seconds = 600; phase = @{ kind = 'working' }; progress = @{
                 summary = 'Windows durable progress retained'; findings = @('Native PowerShell and spaced paths')
                 next_steps = @('Read from linked worktree'); checks = @(); extensions = @{}
