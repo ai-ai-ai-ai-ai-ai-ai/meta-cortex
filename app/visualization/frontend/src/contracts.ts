@@ -424,6 +424,7 @@ export interface FeatureWorkflow {
   chapters: TaskChapter[];
   feature: string;
   revision_log: RevisionLogEntry[];
+  state_meanings: StateMeaning[];
   timeline: RecordedTimeline;
   timing: WorkflowTiming;
   [k: string]: unknown;
@@ -563,6 +564,14 @@ export interface RevisionLogEntry {
   provenance: SequenceProvenance;
   sequence: EventSequence;
   task: string;
+  [k: string]: unknown;
+}
+export interface StateMeaning {
+  evidence: Note;
+  meaning: Note;
+  next_step: Note;
+  qualification: Note;
+  state: FlowState;
   [k: string]: unknown;
 }
 export interface RecordedTimeline {

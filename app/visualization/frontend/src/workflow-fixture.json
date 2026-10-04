@@ -1,4 +1,55 @@
 {
+  "state_meanings": [
+    {
+      "state": "queued",
+      "meaning": "The task is queued and eligible for a worker claim.",
+      "evidence": "The recorded task state is Queued; there is no active claim.",
+      "next_step": "The assigned worker claims the task when its prerequisites are satisfied.",
+      "qualification": "Assignment and queueing do not prove that a worker has started execution."
+    },
+    {
+      "state": "working",
+      "meaning": "The active assignment has its Working phase recorded.",
+      "evidence": "A worker claim exists and its recorded phase is Working.",
+      "next_step": "The worker records progress, a blocking reason, or a ready handoff.",
+      "qualification": "This is recorded coordination state, not a measurement of execution or liveness."
+    },
+    {
+      "state": "blocked",
+      "meaning": "The active assignment has a blocking reason recorded.",
+      "evidence": "The task snapshot contains the Blocked phase and its reason.",
+      "next_step": "Resolve the recorded blocker; the worker can then record further progress.",
+      "qualification": "The reason describes the recorded obstacle; this state does not identify an enforced resolver."
+    },
+    {
+      "state": "ready",
+      "meaning": "The worker has handed the task off for acceptance or integration.",
+      "evidence": "A valid worker update recorded Ready. Git workspaces require a checkpoint and readiness checks.",
+      "next_step": "The coordinator reviews the handoff and selects the supported integration or completion transition.",
+      "qualification": "Ready is a handoff, not final acceptance. Framework policy assigns review responsibilities; the state alone does not prove review occurred."
+    },
+    {
+      "state": "integrated",
+      "meaning": "A Ready task in a Git or ReadOnly workspace was accepted against the feature branch HEAD.",
+      "evidence": "The feature worktree was clean on its recorded branch, the supplied commit equaled HEAD, and a recorded Git checkpoint was an ancestor when present. An Unrecorded checkpoint is allowed.",
+      "next_step": "This task is terminal. Continue any remaining feature review or delivery work through its own tasks.",
+      "qualification": "Recording Integrated does not perform a merge. Framework policy names IntegrationAgent, but the API does not enforce that specific role. It does not prove CI, PR merge, deployment, or feature acceptance; Integrated cannot transition to Completed."
+    },
+    {
+      "state": "completed",
+      "meaning": "The coordinator accepted a Ready task in a ReadOnly or Feature workspace.",
+      "evidence": "The completion transition requires Ready and a non-Git workspace.",
+      "next_step": "This task is terminal. Continue any remaining feature work through its own tasks.",
+      "qualification": "Completed is an alternative terminal outcome to Integrated, not a stage after it. Git write tasks must use integration; task completion alone does not prove feature acceptance or deployment."
+    },
+    {
+      "state": "cancelled",
+      "meaning": "The task was stopped with a cancellation reason.",
+      "evidence": "A queued, active, or ready task was cancelled and its reason was recorded.",
+      "next_step": "This task is terminal. The coordinator decides whether separate replacement work is needed.",
+      "qualification": "Cancellation is not successful completion or integration."
+    }
+  ],
   "revision_log": [
     {
       "feature": "release-0-12-3",
@@ -23,7 +74,7 @@
         },
         "note": "Implement the release",
         "summary": "",
-        "at": 1791147143543,
+        "at": 1791148549600,
         "revision": 1,
         "evidence": [
           {
@@ -72,7 +123,7 @@
         },
         "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
         "summary": "",
-        "at": 1791147143544,
+        "at": 1791148549601,
         "revision": 2,
         "evidence": [
           {
@@ -125,7 +176,7 @@
               "role": "RustDev"
             },
             "attempt": 1,
-            "expires_at": 1791147743545,
+            "expires_at": 1791149149602,
             "phase": {
               "kind": "working"
             }
@@ -133,7 +184,7 @@
         },
         "note": "Assignment claimed",
         "summary": "",
-        "at": 1791147143545,
+        "at": 1791148549602,
         "revision": 3,
         "evidence": [
           {
@@ -188,7 +239,7 @@
         },
         "note": "Release implemented",
         "summary": "Release implemented",
-        "at": 1791147143546,
+        "at": 1791148549603,
         "revision": 4,
         "evidence": [
           {
@@ -251,7 +302,7 @@
         },
         "note": "Activity accepted by its coordinator",
         "summary": "Release implemented",
-        "at": 1791147143547,
+        "at": 1791148549604,
         "revision": 5,
         "evidence": [
           {
@@ -271,8 +322,8 @@
   "timeline": {
     "extent": {
       "kind": "Recorded",
-      "started": 1791147143545,
-      "finished": 1791147143547
+      "started": 1791148549602,
+      "finished": 1791148549604
     },
     "groups": [
       {
@@ -296,8 +347,8 @@
             "objective": "Implement the release",
             "revision": 3,
             "summary_revision": 3,
-            "start": 1791147143545,
-            "end": 1791147143546,
+            "start": 1791148549602,
+            "end": 1791148549603,
             "duration_ms": 1,
             "state": {
               "kind": "active",
@@ -307,7 +358,7 @@
                   "role": "RustDev"
                 },
                 "attempt": 1,
-                "expires_at": 1791147743545,
+                "expires_at": 1791149149602,
                 "phase": {
                   "kind": "working"
                 }
@@ -332,8 +383,8 @@
             "objective": "Implement the release",
             "revision": 4,
             "summary_revision": 4,
-            "start": 1791147143546,
-            "end": 1791147143547,
+            "start": 1791148549603,
+            "end": 1791148549604,
             "duration_ms": 1,
             "state": {
               "kind": "ready",
@@ -362,8 +413,8 @@
             "objective": "Implement the release",
             "revision": 5,
             "summary_revision": 5,
-            "start": 1791147143547,
-            "end": 1791147143547,
+            "start": 1791148549604,
+            "end": 1791148549604,
             "duration_ms": 0,
             "state": {
               "kind": "completed",
@@ -390,7 +441,7 @@
         ],
         "order": {
           "kind": "Recorded",
-          "at": 1791147143545
+          "at": 1791148549602
         }
       }
     ],
@@ -413,9 +464,9 @@
           "dependencies": [],
           "revision": 5,
           "attempt": 1,
-          "created_at": 1791147143543,
-          "last_update": 1791147143547,
-          "last_progress": 1791147143546,
+          "created_at": 1791148549600,
+          "last_update": 1791148549604,
+          "last_progress": 1791148549603,
           "checkpoint": {
             "kind": "unrecorded"
           },
@@ -487,7 +538,7 @@
           },
           "note": "Implement the release",
           "summary": "",
-          "at": 1791147143543,
+          "at": 1791148549600,
           "revision": 1,
           "evidence": [
             {
@@ -530,7 +581,7 @@
           },
           "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
           "summary": "",
-          "at": 1791147143544,
+          "at": 1791148549601,
           "revision": 2,
           "evidence": [
             {
@@ -577,7 +628,7 @@
                 "role": "RustDev"
               },
               "attempt": 1,
-              "expires_at": 1791147743545,
+              "expires_at": 1791149149602,
               "phase": {
                 "kind": "working"
               }
@@ -585,7 +636,7 @@
           },
           "note": "Assignment claimed",
           "summary": "",
-          "at": 1791147143545,
+          "at": 1791148549602,
           "revision": 3,
           "evidence": [
             {
@@ -634,7 +685,7 @@
           },
           "note": "Release implemented",
           "summary": "Release implemented",
-          "at": 1791147143546,
+          "at": 1791148549603,
           "revision": 4,
           "evidence": [
             {
@@ -691,7 +742,7 @@
           },
           "note": "Activity accepted by its coordinator",
           "summary": "Release implemented",
-          "at": 1791147143547,
+          "at": 1791148549604,
           "revision": 5,
           "evidence": [
             {
@@ -711,7 +762,7 @@
   ],
   "timing": {
     "kind": "Finished",
-    "started": 1791147143543,
-    "finished": 1791147143547
+    "started": 1791148549600,
+    "finished": 1791148549604
   }
 }

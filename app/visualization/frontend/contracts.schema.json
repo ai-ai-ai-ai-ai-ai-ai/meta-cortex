@@ -320,10 +320,21 @@
           "items": { "$ref": "#/$defs/RevisionLogEntry" },
           "type": "array"
         },
+        "state_meanings": {
+          "items": { "$ref": "#/$defs/StateMeaning" },
+          "type": "array"
+        },
         "timeline": { "$ref": "#/$defs/RecordedTimeline" },
         "timing": { "$ref": "#/$defs/WorkflowTiming" }
       },
-      "required": ["revision_log", "timeline", "feature", "chapters", "timing"],
+      "required": [
+        "state_meanings",
+        "revision_log",
+        "timeline",
+        "feature",
+        "chapters",
+        "timing"
+      ],
       "type": "object"
     },
     "FeedEntry": {
@@ -590,6 +601,23 @@
     "SreAgent": {
       "enum": ["CicdAgent", "DockerSpecialist", "KubernetesSpecialist"],
       "type": "string"
+    },
+    "StateMeaning": {
+      "properties": {
+        "evidence": { "$ref": "#/$defs/Note" },
+        "meaning": { "$ref": "#/$defs/Note" },
+        "next_step": { "$ref": "#/$defs/Note" },
+        "qualification": { "$ref": "#/$defs/Note" },
+        "state": { "$ref": "#/$defs/FlowState" }
+      },
+      "required": [
+        "state",
+        "meaning",
+        "evidence",
+        "next_step",
+        "qualification"
+      ],
+      "type": "object"
     },
     "TaskAssignment": {
       "additionalProperties": false,
