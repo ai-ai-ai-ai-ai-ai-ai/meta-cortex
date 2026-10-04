@@ -2,6 +2,7 @@
   import type { FeatureWorkflow, TaskChapter } from "./contracts";
   import { Elapsed } from "./observability";
   import { TimelineScale, RecordedStateLook } from "./timeline";
+  import TimelineTaskCard from "./TimelineTaskCard.svelte";
   import { WorkerTimeline } from "./worker-timeline";
   interface Props {
     workflow: FeatureWorkflow;
@@ -72,16 +73,7 @@
             {#each lanes as lane, index (index)}
               <div class="duration-track">
                 {#each lane.pieces as piece (`${piece.chapter.task.common.id}-${piece.entry.revision}`)}
-                  <button
-                    class={`timeline-piece state-${piece.look.tone()}`}
-                    class:endpoint={piece.entry.at === piece.end}
-                    style:left={piece.left}
-                    style:width={piece.width()}
-                    aria-label={piece.label()}
-                    title={piece.label()}
-                    onclick={() => onselect(piece.chapter)}
-                    ><span>{piece.duration()}</span></button
-                  >
+                  <TimelineTaskCard {piece} {onselect} />
                 {/each}
               </div>
             {/each}

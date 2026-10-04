@@ -229,3 +229,41 @@ it("puts compact elapsed durations in timeline boxes while retaining precise dur
   expect(new Elapsed(12450).compact()).toBe("12s");
   expect(new Elapsed(12450).exact()).toBe("12.45s");
 });
+
+it("keeps coalesced progress within its historical state and excludes later completion summaries", () => {
+  const workflow = new Fixture().workflow();
+  for (const chapter of workflow.chapters) {
+    const fixture = new TimelineFixture(chapter);
+    const records: ReadonlyArray<StateRecord> = [
+      { at: 100, kind: "claimed", state: fixture.working(1) },
+      { at: 200, kind: "progress", state: fixture.working(1) },
+      {
+        at: 300,
+        kind: "completed",
+        state: { kind: "completed", agent: Fixture.RUST, attempt: 1 },
+      },
+    ];
+    for (const record of records) fixture.record(record);
+    const summaries = [
+      "Starting implementation",
+      "Implementation in progress",
+      "All work accepted",
+    ];
+    chapter.entries.forEach((entry, index) => {
+      entry.summary = summaries[index] ?? "";
+    });
+    const pieces = new TimelineScale(workflow).row(chapter).pieces;
+    expect(pieces.map((piece) => piece.summary())).toEqual([
+      "Implementation in progress",
+      "All work accepted",
+    ]);
+    expect(pieces.map((piece) => piece.look.label())).toEqual([
+      "Working",
+      "Completed",
+    ]);
+    expect(pieces.map((piece) => [piece.entry.at, piece.end])).toEqual([
+      [100, 300],
+      [300, 300],
+    ]);
+  }
+});

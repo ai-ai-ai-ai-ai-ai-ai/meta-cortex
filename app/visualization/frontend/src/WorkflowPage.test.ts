@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   cleanup,
   fireEvent,
@@ -11,8 +11,26 @@ import WorkflowPage from "./WorkflowPage.svelte";
 import { Fixture } from "./dashboard-fixture";
 type WorkflowProps = ComponentProps<typeof WorkflowPage>;
 type RoleQueryOptions = NonNullable<Parameters<typeof screen.getByRole>[1]>;
+beforeEach(() => {
+  const show: PropertyDescriptor = {
+    configurable: true,
+    value(this: HTMLElement) {
+      this.setAttribute("data-open", "true");
+    },
+  };
+  const hide: PropertyDescriptor = {
+    configurable: true,
+    value(this: HTMLElement) {
+      this.removeAttribute("data-open");
+    },
+  };
+  Object.defineProperty(HTMLElement.prototype, "showPopover", show);
+  Object.defineProperty(HTMLElement.prototype, "hidePopover", hide);
+});
 afterEach(() => {
   cleanup();
+  Reflect.deleteProperty(HTMLElement.prototype, "showPopover");
+  Reflect.deleteProperty(HTMLElement.prototype, "hidePopover");
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 it("shows a terminal timestamp without inventing an unrecorded active range", async () => {
@@ -148,7 +166,7 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
     screen.getByRole("heading", developerHeadingQuery),
   );
 });
-it("labels recorded boxes with elapsed duration and keeps exact state evidence accessible", async () => {
+it("labels recorded boxes with elapsed duration and presents human task context on focus", async () => {
   const fixture = new Fixture();
   const workflow = fixture.workflow();
   for (const entry of workflow.chapters.flatMap((chapter) => chapter.entries)) {
@@ -190,11 +208,16 @@ it("labels recorded boxes with elapsed duration and keeps exact state evidence a
   await fireEvent.click(screen.getByRole("tab", tabQuery));
   const box = screen.getByRole("button", stateQuery);
   expect(box.textContent).toBe("20m");
-  expect(box.getAttribute("title")).toContain("1200s");
-  expect(box.getAttribute("title")).toContain(
-    new Date(fixture.ago(150)).toISOString(),
+  expect(box.hasAttribute("title")).toBe(false);
+  await fireEvent.focus(box);
+  const card = document.getElementById(
+    box.getAttribute("aria-describedby") ?? "",
   );
-  expect(box.getAttribute("aria-label")).toBe(box.getAttribute("title"));
+  expect(card?.getAttribute("data-open")).toBe("true");
+  expect(card?.textContent).toContain("Implement the release");
+  expect(card?.textContent).toContain("Recorded state · Working");
+  expect(card?.textContent).toContain("Worker ID unrecorded");
+  expect(card?.textContent).not.toContain("1200s");
 });
 it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens the selected original task", async () => {
   const scrollBoundary: PropertyDescriptor = {
@@ -242,9 +265,40 @@ it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens
   for (const lane of lanes) {
     expect(lane.getAttribute("style")).toBe("height: 72px;");
     expect(lane.querySelectorAll(".duration-track")).toHaveLength(4);
-    expect(lane.querySelectorAll("button")).toHaveLength(4);
+    expect(lane.querySelectorAll(".timeline-piece")).toHaveLength(4);
   }
-  expect(screen.getAllByText("Worker …11111111")).toHaveLength(2);
+  expect(
+    document.querySelectorAll(
+      'summary small[aria-label="11111111-1111-4111-8111-111111111111"]',
+    ),
+  ).toHaveLength(2);
   await fireEvent.click(screen.getByRole("button", markerQuery));
   expect(document.activeElement?.id).toBe("heading-overlap-three");
+});
+
+it("keeps a focused trigger card open after pointer leave until focus also leaves", async () => {
+  vi.useFakeTimers();
+  const fixture = new Fixture();
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow: fixture.workflow(),
+    initialTask: "",
+    back: () => {},
+  };
+  const tabQuery: RoleQueryOptions = { name: "Time windows" };
+  const markerQuery: RoleQueryOptions = { name: /Completed · rust-release/ };
+  render(WorkflowPage, props);
+  await fireEvent.click(screen.getByRole("tab", tabQuery));
+  const marker = screen.getByRole("button", markerQuery);
+  marker.focus();
+  await fireEvent.pointerLeave(marker);
+  await vi.advanceTimersByTimeAsync(200);
+  const card = document.getElementById(
+    marker.getAttribute("aria-describedby") ?? "",
+  );
+  expect(card?.getAttribute("data-open")).toBe("true");
+  marker.blur();
+  await vi.advanceTimersByTimeAsync(200);
+  expect(card?.hasAttribute("data-open")).toBe(false);
+  vi.useRealTimers();
 });

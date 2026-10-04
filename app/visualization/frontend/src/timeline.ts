@@ -1,3 +1,4 @@
+import { AgentLook } from "./presentation";
 import type {
   FeatureWorkflow,
   TaskChapter,
@@ -6,13 +7,8 @@ import type {
   Phase,
   WorkerIdentity,
 } from "./contracts";
-import {
-  ActionLook,
-  RecordedTime,
-  WorkflowView,
-  Elapsed,
-} from "./observability";
-enum StateTone {
+import { RecordedTime, WorkflowView, Elapsed } from "./observability";
+export enum StateTone {
   Queued = "queued",
   Working = "working",
   Blocked = "blocked",
@@ -195,9 +191,11 @@ export class TimelinePiece {
   readonly look: RecordedStateLook;
   readonly left: string;
   end: number;
+  private latest: FeedEntry;
   constructor(private readonly request: TimelinePieceRequest) {
     this.chapter = request.chapter;
     this.entry = request.entry;
+    this.latest = request.entry;
     this.look = new RecordedStateLook(this.entry.state);
     this.left = request.scale.position(this.entry.at);
     this.end = this.entry.at;
@@ -238,9 +236,70 @@ export class TimelinePiece {
   duration(): string {
     return new Elapsed(this.end - this.entry.at).compact();
   }
-  label(): string {
-    return `${this.look.label()} · ${this.chapter.task.common.id} · ${new RecordedTime(this.entry.at).iso()} ${TimelineScale.TEXT.to} ${new RecordedTime(this.end).iso()} · ${new Elapsed(this.end - this.entry.at).exact()} · ${ActionLook.TEXT.revision} ${this.entry.revision} · ${this.look.detail()} · ${this.entry.note}`;
+  record(entry: FeedEntry): void {
+    switch (entry.summary.trim()) {
+      case "":
+        break;
+      default:
+        this.latest = entry;
+    }
   }
+  summary(): string {
+    switch (this.latest.summary.trim()) {
+      case "":
+        return TimelinePiece.TEXT.noSummary;
+      default:
+        return this.latest.summary;
+    }
+  }
+  assignment(): string {
+    return `${this.role()} · ${this.chapter.task.common.id}`;
+  }
+  private role(): string {
+    switch (this.entry.state.kind) {
+      case "active":
+        return new AgentLook(this.entry.state.assignment.agent).name();
+      case "ready":
+      case "completed":
+        return new AgentLook(this.entry.state.agent).name();
+      case "queued":
+      case "integrated":
+      case "cancelled":
+        return this.assignedRole();
+    }
+  }
+  private assignedRole(): string {
+    switch (this.entry.ownership.kind) {
+      case "Assigned":
+        return new AgentLook(this.entry.ownership.assignment.agent).name();
+      case "Unrecorded":
+        return TimelinePiece.TEXT.roleUnrecorded;
+    }
+  }
+  worker(): string {
+    switch (this.entry.worker.kind) {
+      case "Recorded":
+        return `${TimelinePiece.TEXT.worker} …${this.entry.worker.worker_id.slice(-8)}`;
+      case "Unrecorded":
+        return TimelinePiece.TEXT.unrecorded;
+    }
+  }
+  times(): string {
+    return `${new RecordedTime(this.entry.at).clock()}–${new RecordedTime(this.end).clock()} · ${RecordedTime.ZONE_LABEL}`;
+  }
+  label(): string {
+    return `${this.look.label()} · ${this.chapter.task.common.id} · ${this.chapter.task.common.objective}`;
+  }
+  static readonly TEXT = {
+    worker: "Worker",
+    roleUnrecorded: "Role unrecorded",
+    unrecorded: "Worker ID unrecorded",
+    recorded: "Recorded state",
+    progress: "Recorded progress",
+    blocked: "Blocked reason",
+    noSummary: "No progress summary recorded for this state.",
+    open: "Open task log",
+  };
 }
 export class TimelineRow {
   readonly pieces: ReadonlyArray<TimelinePiece>;
@@ -259,6 +318,7 @@ export class TimelineRow {
       }
       switch (continuation) {
         case StateContinuation.SameState:
+          previous.forEach((piece) => piece.record(entry));
           break;
         case StateContinuation.NewState: {
           const pieceRequest: TimelinePieceRequest = {

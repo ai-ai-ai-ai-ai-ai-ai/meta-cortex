@@ -962,3 +962,75 @@ ul.evidence-body li + li {
   color: var(--muted);
   font-size: 9px;
 }
+.timeline-task-card {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(340px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 10px 35px #0005;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.timeline-task-card::backdrop {
+  background: transparent;
+}
+.task-card-objective {
+  font-size: 13px;
+  font-weight: 600;
+}
+.task-card-worker {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.task-card-state {
+  margin-top: 12px;
+  font-size: 11px;
+}
+.task-card-state strong {
+  color: var(--state-color);
+}
+.task-card-summary,
+.task-card-blocker {
+  margin-top: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.task-card-summary span,
+.task-card-blocker strong {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+.timeline-task-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+.timeline-task-card time {
+  font-size: 10px;
+  color: var(--muted);
+}
+.timeline-task-card footer button {
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.task-card-assignment {
+  margin-top: 8px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
