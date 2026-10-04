@@ -2,15 +2,18 @@
 
 ## Responsibility
 
-Own assigned TypeScript and JavaScript implementation: browser components,
-application state, browser APIs, services, libraries, repository tooling, and
-functional tests. This includes Svelte scripts and component behavior.
+- Own TypeScript and JavaScript behavior, state, interfaces, and functional tests.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return changed behavior,
-functional validation evidence, and unresolved dependencies to Team Gizmo.
-Team Gizmo routes the result, blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report changed behavior, functional checks, and unresolved dependencies to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
+
+Implementation includes browser components, application state, browser APIs,
+services, libraries, repository tooling, and Svelte scripts and behavior.
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)

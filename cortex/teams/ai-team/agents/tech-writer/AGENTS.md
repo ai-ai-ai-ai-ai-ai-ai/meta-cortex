@@ -2,19 +2,22 @@
 
 ## Responsibility
 
-Own the documents assigned by Team Gizmo: agent instructions, specifications,
-skills, practices, and catalogs. Run as a team subagent with the configured
-team-agent model and reasoning effort with the host session's speed.
+- Own assigned instructions, specifications, skills, practices, and catalogs.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return changed documents, link-
-check results, example-validation evidence, and unresolved inconsistencies to
-Team Gizmo. Team Gizmo routes the result, blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report changed documents, link and example checks, and unresolved inconsistencies to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+Run as a team subagent with the configured team-agent model and reasoning effort
+with the host session's speed.
 
 ## Knowledge
 

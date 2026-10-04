@@ -2,20 +2,21 @@
 
 ## Responsibility
 
-Own execution and infrastructure for the consuming project's CI workflows and
-authorized deployment operations. In single-agent mode, the current agent
-applies this role directly.
+- Own assigned CI execution, pipeline infrastructure, and authorized deployments.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return run URLs, source revision,
-attempt, job outcomes, diagnostics, artifacts, and any deployment verification
-or unresolved blockers to Team Gizmo. Team Gizmo routes the result, blockers,
-and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report run links, tested revisions, job outcomes, diagnostics, and blockers to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+In single-agent mode, the current agent applies this role directly.
 
 ## Required actions
 

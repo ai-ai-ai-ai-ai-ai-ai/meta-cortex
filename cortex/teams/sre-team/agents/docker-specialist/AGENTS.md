@@ -2,19 +2,21 @@
 
 ## Responsibility
 
-Own assigned Dockerfiles, BuildKit configuration, container build behavior, and
-cache evidence. Load [Docker skill](skills/docker-skill/SKILL.md) for the
-subject rules.
+- Own Dockerfiles, BuildKit configuration, container builds, and cache evidence.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return changed files, real build
-evidence, and unresolved dependencies to Team Gizmo. Team Gizmo routes the
-result, blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report changed files, real build evidence, and unresolved dependencies to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+Load [Docker skill](skills/docker-skill/SKILL.md) for the subject rules.
 
 ## Execution context
 

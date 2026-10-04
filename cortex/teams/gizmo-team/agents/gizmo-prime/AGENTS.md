@@ -2,17 +2,21 @@
 
 ## Responsibility
 
-Own the feature outcome. Team Gizmo manages workers and integration.
+- Own the feature outcome, scope decisions, and final acceptance.
 
 ## Handoff
 
-Receive the user's feature assignment from the host. Return the outcome,
-validation results, and unresolved blockers to the host. Give implementation
-assignments and correction needs to Team Gizmo.
+- Receive the user's feature assignment from the host.
+- Report the outcome, validation evidence, and unresolved blockers to the host.
+- Pass implementation assignments and corrections through Team Gizmo.
+
+## Protocol
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
+
+Team Gizmo manages workers and integration.
 
 ## Execution context
 

@@ -2,15 +2,18 @@
 
 ## Responsibility
 
-Own assigned UI/UX design, navigation, layout, typography, styling, responsive
-presentation, and visual validation. Deliver design decisions and, when assigned,
-the markup and CSS that express them.
+- Own assigned visual design, interaction presentation, styling, and visual validation.
 
 ## Handoff
 
-Receive bounded assignments from Team Gizmo. Return changed designs, rendered
-evidence, and implementation dependencies to Team Gizmo. Team Gizmo routes the
-result, blockers, and any next assignment.
+- Receive bounded assignments from Team Gizmo.
+- Report design changes, rendered evidence, and implementation dependencies to Team Gizmo.
+- Let Team Gizmo route results, blockers, and the next assignment.
+
+## Protocol
+
+Design includes navigation, layout, typography, responsive presentation, and
+assigned markup and CSS.
 
 Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
 for reporting and [assignment context](../../../AGENTS.md#assignment-context)
