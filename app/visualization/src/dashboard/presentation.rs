@@ -252,6 +252,7 @@ mod tests {
     use super::super::snapshot::SnapshotContext;
     use super::{Content, TaskPresentation};
     use meta_cortex_workbench::agents::{AgentId, DeliveryAgent, DevelopmentAgent, GizmoAgent};
+    use meta_cortex_workbench::model::worker::WorkerIdentity;
     use meta_cortex_workbench::model::workflow::{TaskAssignment, TaskOwnership};
     use meta_cortex_workbench::model::{
         Assignment, Check, CheckOutcome, Checkpoint, Event, EventKind, Phase, Progress, Task,
@@ -271,6 +272,7 @@ mod tests {
         fn try_from(now: Timestamp) -> Result<Self, Self::Error> {
             Ok(Self {
                 task: Task {
+                    worker: WorkerIdentity::Unrecorded,
                     version: TaskRecordVersion::CURRENT,
                     common: TaskCommon {
                         id: TaskId::try_from("task".to_owned())?,

@@ -9,6 +9,7 @@ use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
     TaskQuery, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
     Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
@@ -304,6 +305,7 @@ impl Examples {
     pub(super) fn claim() -> anyhow::Result<ClaimTask> {
         let TaskQuery { feature, task } = Self::query()?;
         Ok(ClaimTask {
+            worker_id: WorkerId::EXAMPLE,
             feature,
             task,
             expected_revision: Revision::INITIAL,
@@ -314,6 +316,7 @@ impl Examples {
     pub(super) fn heartbeat() -> anyhow::Result<WorkerUpdate> {
         let TaskQuery { feature, task } = Self::query()?;
         Ok(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             feature,
             task,
             expected_revision: Revision::INITIAL.advance()?,

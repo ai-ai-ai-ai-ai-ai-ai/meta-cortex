@@ -166,6 +166,10 @@ export type Phase =
       kind: "blocked";
       reason: Note;
     };
+/**
+ * Stable identity chosen once by the host worker, then reused across its tasks.
+ */
+export type WorkerId = string;
 export type RecordedRole =
   | {
       kind: "Unrecorded";
@@ -216,7 +220,18 @@ export type TaskState =
 /**
  * Current task shape. V1 payloads are decoded by the separate legacy task record.
  */
-export type TaskRecordVersion = 2;
+export type TaskRecordVersion = 3;
+/**
+ * Recorded host worker identity; legacy snapshots never invent one from a role.
+ */
+export type WorkerIdentity =
+  | {
+      kind: "Unrecorded";
+    }
+  | {
+      kind: "Recorded";
+      worker_id: WorkerId;
+    };
 export type Workspace =
   | {
       kind: "read_only";
@@ -373,7 +388,7 @@ export interface TaskChapter {
   entries: FeedEntry[];
   role: RecordedRole;
   status: FlowState;
-  task: TaskV2;
+  task: TaskV3;
   [k: string]: unknown;
 }
 export interface FeedEntry {
@@ -428,6 +443,17 @@ export interface FeedEntry {
         reason: Note;
       };
   summary: Note;
+  /**
+   * Worker identity from this event snapshot, never inferred from its actor.
+   */
+  worker:
+    | {
+        kind: "Unrecorded";
+      }
+    | {
+        kind: "Recorded";
+        worker_id: WorkerId;
+      };
   [k: string]: unknown;
 }
 export interface Progress {
@@ -460,11 +486,12 @@ export interface Assignment {
   expires_at: number;
   phase: Phase;
 }
-export interface TaskV2 {
+export interface TaskV3 {
   common: TaskCommon;
   ownership: TaskOwnership;
   state: TaskState;
   version: TaskRecordVersion;
+  worker: WorkerIdentity;
   workspace: Workspace;
 }
 /**

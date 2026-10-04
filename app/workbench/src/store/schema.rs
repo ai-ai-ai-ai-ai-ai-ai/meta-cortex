@@ -191,6 +191,7 @@ pub mod tests {
         TaskTable as RepositoryTaskTable,
     };
     use crate::store::sql::SqlStatement;
+    use crate::values::WorkerId;
     use crate::values::{Attempt, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp};
     use crate::versions::{RecordVersion, TaskRecordVersion};
     use sea_query::{
@@ -520,6 +521,7 @@ pub mod tests {
                 };
                 let now = task.common.created_at;
                 task = task.claim(ClaimAt {
+                    worker_id: WorkerId::EXAMPLE,
                     agent,
                     ttl: LeaseSeconds::TEN_MINUTES,
                     now,
@@ -787,7 +789,7 @@ pub mod tests {
                 let migrated = row.get::<String>(0)?;
                 assert_eq!(migrated, serde_json::to_string(&expected)?);
                 assert_eq!(serde_json::from_str::<Event>(&migrated)?, expected);
-                assert_eq!(expected.task.version, TaskRecordVersion::V2);
+                assert_eq!(expected.task.version, TaskRecordVersion::V3);
                 drop(rows);
                 connection
                     .pragma_update(&DatabasePragma::UserVersion.to_string(), 99)

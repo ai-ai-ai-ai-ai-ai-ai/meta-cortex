@@ -235,6 +235,7 @@ impl RecordWriter<'_> {
 pub mod tests {
     use super::{EventTable, FeatureTable, RecordWriter, TaskTable};
     use crate::agents::{AgentId, GizmoAgent};
+    use crate::model::worker::WorkerIdentity;
     use crate::model::workflow::TaskOwnership;
     use crate::model::{
         Checkpoint, Event, EventKind, Feature, Progress, Task, TaskCommon, TaskState, Workspace,
@@ -266,6 +267,7 @@ pub mod tests {
             };
             let now = Timestamp::now()?;
             let task = Task {
+                worker: WorkerIdentity::Unrecorded,
                 version: TaskRecordVersion::CURRENT,
                 common: TaskCommon {
                     id: TaskId::try_from("task".to_owned())?,

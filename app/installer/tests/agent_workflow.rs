@@ -12,6 +12,7 @@ use meta_cortex_workbench::request::{
     AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery,
     InitFeature, TaskQuery, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
     BranchName, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
@@ -219,6 +220,7 @@ impl Scenario {
         };
         let agent = assignment.agent;
         self.task(TaskOperation::Claim(ClaimTask {
+            worker_id: WorkerId::EXAMPLE,
             feature: task.common.feature,
             task: task.common.id,
             expected_revision: task.common.revision,
@@ -232,6 +234,7 @@ impl Scenario {
         };
         let agent = assignment.agent;
         self.task(TaskOperation::Update(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             feature: input.task.common.feature,
             task: input.task.common.id,
             expected_revision: input.task.common.revision,
@@ -509,6 +512,7 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
     assert_eq!(failure.code, FailureCode::Conflict);
     let Outcome::Error(failure) =
         scenario.call(Operation::Task(TaskOperation::Claim(ClaimTask {
+            worker_id: WorkerId::EXAMPLE,
             feature: task.common.feature.clone(),
             task: task.common.id.clone(),
             expected_revision: task.common.revision,
@@ -538,6 +542,7 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
     )?;
     let Outcome::Error(failure) =
         scenario.call(Operation::Task(TaskOperation::Update(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             feature: claimed.common.feature.clone(),
             task: claimed.common.id.clone(),
             expected_revision: claimed.common.revision,

@@ -332,9 +332,14 @@
           "$ref": "#/$defs/TaskState",
           "description": "Task state recorded in this event snapshot, independent of later revisions."
         },
-        "summary": { "$ref": "#/$defs/Note" }
+        "summary": { "$ref": "#/$defs/Note" },
+        "worker": {
+          "$ref": "#/$defs/WorkerIdentity",
+          "description": "Worker identity from this event snapshot, never inferred from its actor."
+        }
       },
       "required": [
+        "worker",
         "kind",
         "actor",
         "ownership",
@@ -529,7 +534,7 @@
         },
         "role": { "$ref": "#/$defs/RecordedRole" },
         "status": { "$ref": "#/$defs/FlowState" },
-        "task": { "$ref": "#/$defs/TaskV2" }
+        "task": { "$ref": "#/$defs/TaskV3" }
       },
       "required": ["task", "role", "status", "entries"],
       "type": "object"
@@ -588,7 +593,7 @@
       ]
     },
     "TaskRecordVersion": {
-      "const": 2,
+      "const": 3,
       "description": "Current task shape. V1 payloads are decoded by the separate legacy task record.",
       "format": "int64",
       "type": "integer"
@@ -650,17 +655,50 @@
         }
       ]
     },
-    "TaskV2": {
+    "TaskV3": {
       "additionalProperties": false,
       "properties": {
         "common": { "$ref": "#/$defs/TaskCommon" },
         "ownership": { "$ref": "#/$defs/TaskOwnership" },
         "state": { "$ref": "#/$defs/TaskState" },
         "version": { "$ref": "#/$defs/TaskRecordVersion" },
+        "worker": { "$ref": "#/$defs/WorkerIdentity" },
         "workspace": { "$ref": "#/$defs/Workspace" }
       },
-      "required": ["version", "common", "ownership", "workspace", "state"],
+      "required": [
+        "version",
+        "worker",
+        "common",
+        "ownership",
+        "workspace",
+        "state"
+      ],
       "type": "object"
+    },
+    "WorkerId": {
+      "description": "Stable identity chosen once by the host worker, then reused across its tasks.",
+      "format": "uuid",
+      "type": "string"
+    },
+    "WorkerIdentity": {
+      "description": "Recorded host worker identity; legacy snapshots never invent one from a role.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "Unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "Recorded", "type": "string" },
+            "worker_id": { "$ref": "#/$defs/WorkerId" }
+          },
+          "required": ["kind", "worker_id"],
+          "type": "object"
+        }
+      ]
     },
     "WorkflowCondition": {
       "description": "The single headline an observer needs first; attention outranks progress.",

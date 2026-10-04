@@ -1,193 +1,28 @@
+use meta_cortex_workbench::values::WorkerId;
+#[path = "ledger_cli/protocol.rs"]
+mod protocol;
 #[path = "ledger_cli/scenario.rs"]
 mod scenario;
+use protocol::*;
 use scenario::{Cli, Examples, Scenario};
 
 use anyhow::{Context, bail};
 use derive_more::From;
 use git2::StatusOptions;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
-use meta_cortex_workbench::model::{
-    Assignment, Check, CheckOutcome, EventKind, LeaseHealth, Phase, Progress, Workspace,
-};
+use meta_cortex_workbench::model::{Check, CheckOutcome, EventKind, LeaseHealth, Phase, Workspace};
 use meta_cortex_workbench::request::{
-    AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery,
-    InitFeature, StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
+    ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
+    StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
+    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-
-// Independent CLI envelope; Workbench owns the shared domain arguments.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Request {
-    version: ProtocolVersion,
-    project: PathBuf,
-    operation: Operation,
-}
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "group", content = "command", deny_unknown_fields)]
-enum Operation {
-    Framework(FrameworkOperation),
-    Feature(FeatureOperation),
-    Task(TaskOperation),
-    Workbench(WorkbenchOperation),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
-enum WorkbenchOperation {
-    Dashboard(meta_cortex_visualization::DashboardRequest),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
-enum FrameworkOperation {
-    Initialize(FrameworkInit),
-    Info(EmptyArguments),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
-enum FeatureOperation {
-    Initialize(InitFeature),
-    List(EmptyArguments),
-    Status(FeatureQuery),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "name", content = "arguments", deny_unknown_fields)]
-enum TaskOperation {
-    Create(CreateTask),
-    Assign(AssignTask),
-    Get(TaskQuery),
-    History(TaskQuery),
-    Claim(ClaimTask),
-    Update(WorkerUpdate),
-    Coordinate(CoordinatorUpdate),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct EmptyArguments {}
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct FrameworkInit {
-    harness: Harness,
-    instructions: Instructions,
-    mise: ToolSetup,
-    bun: ToolSetup,
-    vale: ToolSetup,
-}
-#[derive(Debug, Serialize, Deserialize)]
-enum ToolSetup {
-    InstallMissing,
-    RequireExisting,
-}
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum Harness {
-    None,
-    Codex,
-    Claude,
-    Cursor,
-}
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum Instructions {
-    Skip,
-    Write,
-}
-
-#[derive(From)]
-struct RequestYaml(String);
-
-// An independent consumer of the CLI's versioned YAML response.
-#[derive(Debug, Deserialize)]
-struct Response {
-    version: ProtocolVersion,
-    result: Outcome,
-}
-#[derive(Debug, Deserialize)]
-#[serde(tag = "status", content = "data", rename_all = "snake_case")]
-enum Outcome {
-    Success(Reply),
-    Error(Failure),
-}
-#[derive(Debug, Deserialize)]
-struct Failure {
-    code: String,
-    message: String,
-}
-#[derive(Debug, Deserialize)]
-#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
-enum Reply {
-    Ledger(LedgerInfo),
-    Features(Vec<LedgerInfo>),
-    FrameworkInitialized {
-        project: PathBuf,
-    },
-    FrameworkInfo {
-        paths: InfoPaths,
-    },
-    Task(Task),
-    TaskView(TaskView),
-    Status {
-        ledger: LedgerInfo,
-        tasks: Vec<TaskView>,
-    },
-    History(Vec<Event>),
-}
-#[derive(Debug, Deserialize)]
-struct InfoPaths {
-    project: PathBuf,
-    framework: PathBuf,
-}
-#[derive(Debug, Deserialize)]
-struct LedgerInfo {
-    path: PathBuf,
-    storage_version: StorageVersion,
-}
-#[derive(Debug, Deserialize)]
-struct Task {
-    common: TaskCommon,
-    state: State,
-}
-#[derive(Debug, Deserialize)]
-struct TaskCommon {
-    id: TaskId,
-    revision: Revision,
-    attempt: Attempt,
-    last_update: Timestamp,
-    last_progress: Timestamp,
-    progress: Progress,
-}
-#[derive(Debug, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-enum State {
-    Queued,
-    Active { assignment: Assignment },
-    Ready,
-    Integrated,
-    Cancelled,
-}
-#[derive(Debug, Deserialize)]
-struct TaskView {
-    task: Task,
-    lease: LeaseHealth,
-}
-#[derive(Debug, Deserialize)]
-struct Event {
-    actor: AgentId,
-    kind: EventKind,
-    note: Note,
-    task: Task,
-}
 
 #[test]
 fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
@@ -391,6 +226,7 @@ fn typescript_verifier_requeue_rejects_old_attempt_and_finishes_read_only() -> a
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Claim(ClaimTask {
+            worker_id: WorkerId::EXAMPLE,
             agent,
             ..Examples::claim()?
         })))?;
@@ -406,12 +242,14 @@ fn typescript_verifier_requeue_rejects_old_attempt_and_finishes_read_only() -> a
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Claim(ClaimTask {
+            worker_id: WorkerId::EXAMPLE,
             agent,
             expected_revision: requeued_revision,
             ..Examples::claim()?
         })))?;
     let reclaimed_revision = scenario.status()?.remove(0).task.common.revision;
     let stale = WorkerUpdate {
+        worker_id: WorkerId::EXAMPLE,
         agent,
         expected_revision: reclaimed_revision,
         ..Examples::heartbeat()?
@@ -426,6 +264,7 @@ fn typescript_verifier_requeue_rejects_old_attempt_and_finishes_read_only() -> a
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Update(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             agent,
             expected_revision: reclaimed_revision,
             attempt: Attempt::UNCLAIMED.advance()?.advance()?,
@@ -516,6 +355,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     worker
         .client()
         .run(Operation::Task(TaskOperation::Update(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             action: WorkerAction::Checkpoint {
                 ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 commit: commit.clone(),
@@ -526,6 +366,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
     let checkpoint_revision = worker.status()?.remove(0).task.common.revision;
     let ready = || -> anyhow::Result<Operation> {
         Ok(Operation::Task(TaskOperation::Update(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             expected_revision: checkpoint_revision,
             action: WorkerAction::Ready {
                 progress: Examples::progress(Note::from("Ready".to_owned())),
@@ -725,6 +566,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Update(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             action: WorkerAction::Progress {
                 ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 phase: Phase::Blocked {
@@ -745,6 +587,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         scenario
             .client()
             .failure(Operation::Task(TaskOperation::Claim(ClaimTask {
+                worker_id: WorkerId::EXAMPLE,
                 expected_revision: view.task.common.revision,
                 ..Examples::claim()?
             })))?
@@ -765,6 +608,7 @@ fn progress_dependencies_cancellation_and_invalid_assignments() -> anyhow::Resul
         scenario
             .client()
             .failure(Operation::Task(TaskOperation::Claim(ClaimTask {
+                worker_id: WorkerId::EXAMPLE,
                 task: TaskId::try_from("dependent".to_owned())?,
                 ..Examples::claim()?
             })))?
@@ -939,6 +783,7 @@ fn empty_notes_survive_cli_storage_and_history() -> anyhow::Result<()> {
     scenario
         .client()
         .run(Operation::Task(TaskOperation::Update(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             action: WorkerAction::Progress {
                 ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 phase: Phase::Blocked {

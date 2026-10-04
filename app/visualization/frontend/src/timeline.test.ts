@@ -16,6 +16,7 @@ class TimelineFixture {
     const entry: FeedEntry = {
       ...record,
       actor: Fixture.RUST,
+      worker: this.chapter.task.worker,
       ownership: this.chapter.task.ownership,
       revision: this.chapter.entries.length + 1,
       summary: "",

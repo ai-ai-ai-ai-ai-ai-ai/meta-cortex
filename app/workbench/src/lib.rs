@@ -107,7 +107,7 @@ pub enum LedgerError {
     NotFound,
     #[error("operation is not valid in the current task state")]
     InvalidTransition,
-    #[error("owner or attempt no longer matches this assignment")]
+    #[error("role, worker, or attempt no longer matches this assignment")]
     AssignmentChanged,
     #[error("assignment expired; ask Gizmo to inspect and reassign it")]
     Expired,

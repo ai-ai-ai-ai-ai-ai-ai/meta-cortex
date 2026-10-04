@@ -1,4 +1,6 @@
+use crate::values::WorkerId;
 mod task_record;
+pub mod worker;
 pub mod workflow;
 
 use super::LedgerError;
@@ -128,8 +130,9 @@ pub struct TaskCommon {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(try_from = "task_record::TaskRecord")]
-#[schemars(with = "task_record::TaskV2")]
+#[schemars(with = "task_record::TaskV3")]
 pub struct Task {
+    pub worker: worker::WorkerIdentity,
     pub version: TaskRecordVersion,
     pub common: TaskCommon,
     pub ownership: TaskOwnership,
@@ -138,12 +141,14 @@ pub struct Task {
 }
 
 pub struct ClaimAt {
+    pub worker_id: WorkerId,
     pub agent: AgentId,
     pub ttl: LeaseSeconds,
     pub now: Timestamp,
 }
 
 pub struct WorkerAt<'a> {
+    pub worker_id: WorkerId,
     pub agent: &'a AgentId,
     pub attempt: Attempt,
     pub now: Timestamp,
@@ -225,6 +230,9 @@ impl Task {
             | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
         self.common.attempt = self.common.attempt.advance()?;
+        self.worker = worker::WorkerIdentity::Recorded {
+            worker_id: input.worker_id,
+        };
         self.state = TaskState::Active {
             assignment: Assignment {
                 agent: input.agent,
@@ -243,6 +251,7 @@ impl Task {
                     true => {}
                     false => return Err(LedgerError::AssignmentChanged),
                 }
+                self.worker.require(input.worker_id)?;
                 match assignment.expires_at <= input.now {
                     true => Err(LedgerError::Expired),
                     false => Ok(assignment),
@@ -259,6 +268,7 @@ impl Task {
     #[must_use = "Save the task returned by this transition"]
     pub fn ready(mut self, input: WorkerAt<'_>) -> Result<Self, LedgerError> {
         self.worker(WorkerAt {
+            worker_id: input.worker_id,
             agent: input.agent,
             attempt: input.attempt,
             now: input.now,
@@ -274,6 +284,9 @@ impl Task {
             },
             Workspace::ReadOnly | Workspace::Feature => {}
         }
+        self.worker = worker::WorkerIdentity::Recorded {
+            worker_id: input.worker_id,
+        };
         self.state = TaskState::Ready {
             agent: *input.agent,
             attempt: input.attempt,
@@ -334,6 +347,7 @@ impl Task {
             | TaskState::Completed { .. }
             | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
+        self.worker = worker::WorkerIdentity::Unrecorded;
         Ok(self)
     }
 
@@ -382,6 +396,8 @@ pub mod tests {
     };
     use crate::LedgerError;
     use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+    use crate::model::worker::WorkerIdentity;
+    use crate::values::WorkerId;
     use crate::values::{
         Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
         Timestamp,
@@ -400,6 +416,7 @@ pub mod tests {
             let mut extensions = BTreeMap::new();
             extensions.insert("custom".to_owned(), serde_json::json!([1, "note"]));
             Ok(Task {
+                worker: WorkerIdentity::Unrecorded,
                 version: TaskRecordVersion::CURRENT,
                 common: TaskCommon {
                     id,
@@ -429,11 +446,80 @@ pub mod tests {
 
         fn claim() -> anyhow::Result<ClaimAt> {
             Ok(ClaimAt {
+                worker_id: WorkerId::EXAMPLE,
                 agent: AgentId::Development(DevelopmentAgent::RustDev),
                 ttl: LeaseSeconds::try_from(10)?,
                 now: Timestamp::try_from(1000)?,
             })
         }
+    }
+
+    #[test]
+    fn worker_instances_are_stable_across_tasks_and_distinct_across_reclaims() -> anyhow::Result<()>
+    {
+        let original_id = WorkerId::generate();
+        let replacement_id = WorkerId::generate();
+        let claimed = Scenario::task()?.claim(ClaimAt {
+            worker_id: original_id,
+            ..Scenario::claim()?
+        })?;
+        let recorded = WorkerIdentity::Recorded {
+            worker_id: original_id,
+        };
+        assert_eq!(claimed.worker, recorded);
+        let mut other_task = Scenario::task()?;
+        other_task.common.id = TaskId::try_from("second-task".to_owned())?;
+        let other = other_task.claim(ClaimAt {
+            worker_id: original_id,
+            ..Scenario::claim()?
+        })?;
+        assert_eq!(other.worker, recorded);
+        let agent = Scenario::claim()?.agent;
+        assert!(matches!(
+            claimed.worker(WorkerAt {
+                worker_id: replacement_id,
+                agent: &agent,
+                attempt: claimed.common.attempt,
+                now: Scenario::claim()?.now,
+            }),
+            Err(LedgerError::AssignmentChanged)
+        ));
+        let requeued = claimed.clone().requeue()?;
+        assert_eq!(requeued.worker, WorkerIdentity::Unrecorded);
+        let replacement = requeued.claim(ClaimAt {
+            worker_id: replacement_id,
+            ..Scenario::claim()?
+        })?;
+        assert_eq!(
+            replacement.worker,
+            WorkerIdentity::Recorded {
+                worker_id: replacement_id
+            }
+        );
+        assert_eq!(claimed.worker, recorded);
+        assert!(matches!(
+            replacement.worker(WorkerAt {
+                worker_id: original_id,
+                agent: &agent,
+                attempt: replacement.common.attempt,
+                now: Scenario::claim()?.now,
+            }),
+            Err(LedgerError::AssignmentChanged)
+        ));
+        let ready = claimed.clone().ready(WorkerAt {
+            worker_id: original_id,
+            agent: &agent,
+            attempt: claimed.common.attempt,
+            now: Scenario::claim()?.now,
+        })?;
+        assert_eq!(ready.worker, recorded);
+        assert_eq!(ready.clone().complete()?.worker, recorded);
+        assert_eq!(
+            ready.integrate(CommitId::try_from("a".repeat(40))?)?.worker,
+            recorded
+        );
+        assert_eq!(claimed.cancel(Note::Empty)?.worker, recorded);
+        Ok(())
     }
 
     #[test]
@@ -457,6 +543,7 @@ pub mod tests {
         ));
         let agent = AgentId::Development(DevelopmentAgent::RustDev);
         task = task.ready(WorkerAt {
+            worker_id: WorkerId::EXAMPLE,
             agent: &agent,
             attempt: Attempt::UNCLAIMED.advance()?,
             now: Timestamp::try_from(2000)?,
@@ -494,6 +581,7 @@ pub mod tests {
         );
         assert!(matches!(
             task.worker(WorkerAt {
+                worker_id: WorkerId::EXAMPLE,
                 agent: &agent,
                 attempt: Attempt::UNCLAIMED.advance()?,
                 now: Timestamp::try_from(11000)?
@@ -504,6 +592,7 @@ pub mod tests {
         task = task.claim(Scenario::claim()?)?;
         assert!(matches!(
             task.worker(WorkerAt {
+                worker_id: WorkerId::EXAMPLE,
                 agent: &agent,
                 attempt: Attempt::UNCLAIMED.advance()?,
                 now: Timestamp::try_from(2000)?
@@ -513,6 +602,7 @@ pub mod tests {
         let stranger = AgentId::Development(DevelopmentAgent::TypescriptDev);
         assert!(matches!(
             task.worker(WorkerAt {
+                worker_id: WorkerId::EXAMPLE,
                 agent: &stranger,
                 attempt: Attempt::UNCLAIMED.advance()?.advance()?,
                 now: Timestamp::try_from(2000)?
@@ -544,11 +634,13 @@ pub mod tests {
                 Err(LedgerError::AssignmentChanged)
             ));
             let task = task.claim(ClaimAt {
+                worker_id: WorkerId::EXAMPLE,
                 agent,
                 ..Scenario::claim()?
             })?;
             let attempt = task.common.attempt;
             let task = task.ready(WorkerAt {
+                worker_id: WorkerId::EXAMPLE,
                 agent: &agent,
                 attempt,
                 now: Timestamp::try_from(2000)?,
@@ -592,7 +684,7 @@ pub mod tests {
     fn rejects_invalid_known_fields_and_versions() -> anyhow::Result<()> {
         let document = serde_json::to_string(&Scenario::task()?)?;
         for invalid in [
-            document.replace("\"version\":2", "\"version\":99"),
+            document.replace("\"version\":3", "\"version\":99"),
             document.replace("\"id\":\"task\"", "\"id\":\"../task\""),
             document.replace("\"kind\":\"queued\"", "\"kind\":\"invented\""),
             document.replace("\"revision\":1", "\"revision\":0"),

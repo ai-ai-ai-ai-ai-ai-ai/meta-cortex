@@ -1,3 +1,4 @@
+use crate::model::worker::WorkerIdentity;
 mod legacy;
 mod lifecycle;
 mod mutations;
@@ -130,6 +131,7 @@ impl Ledger {
         }
         let now = Timestamp::now()?;
         let task = Task {
+            worker: WorkerIdentity::Unrecorded,
             version: TaskRecordVersion::CURRENT,
             common: TaskCommon {
                 id: input.task,

@@ -4,6 +4,7 @@ use meta_cortex_workbench::model::{Event, EventKind, Progress, Task, Workspace};
 use meta_cortex_workbench::request::{
     ClaimTask, CreateTask, InitFeature, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
     BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
@@ -277,6 +278,7 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             let queued = ledger.status().await?.remove(0).task;
             let claimed = ledger
                 .claim(ClaimTask {
+                    worker_id: WorkerId::EXAMPLE,
                     feature: queued.common.feature,
                     task: queued.common.id,
                     expected_revision: Revision::INITIAL,
@@ -310,6 +312,7 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             );
             assert_eq!(ledger.history(&claimed.common.id).await?.len(), 2);
             let heartbeat = WorkerUpdate {
+                worker_id: WorkerId::EXAMPLE,
                 feature: claimed.common.feature,
                 task: claimed.common.id,
                 expected_revision: claimed.common.revision,

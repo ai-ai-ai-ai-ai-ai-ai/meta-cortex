@@ -1,6 +1,7 @@
 use super::{Documents, Ledger};
 use crate::LedgerError;
 use crate::git::{CheckpointCheck, IntegrationCheck, ReadyCheck, Repository, TaskWorkspaceCheck};
+use crate::model::worker::WorkerIdentity;
 use crate::model::{
     Checkpoint, ClaimAt, Event, EventKind, Feature, Phase, Task, TaskState, WorkerAt,
 };
@@ -81,6 +82,7 @@ impl Ledger {
         })?;
         let now = Timestamp::now()?;
         task = task.claim(ClaimAt {
+            worker_id: input.worker_id,
             agent: input.agent,
             ttl: input.ttl_seconds,
             now,
@@ -159,6 +161,7 @@ impl TaskChange<'_> {
         let mut assignment = self
             .task
             .worker(WorkerAt {
+                worker_id: input.worker_id,
                 agent: &input.agent,
                 attempt: input.attempt,
                 now: self.now,
@@ -206,6 +209,7 @@ impl TaskChange<'_> {
                     feature: self.feature,
                 })?;
                 self.task = self.task.ready(WorkerAt {
+                    worker_id: input.worker_id,
                     agent: &input.agent,
                     attempt: input.attempt,
                     now: self.now,
@@ -214,6 +218,9 @@ impl TaskChange<'_> {
                 self.task.common.last_progress = self.now;
                 EventKind::Ready
             }
+        };
+        self.task.worker = WorkerIdentity::Recorded {
+            worker_id: input.worker_id,
         };
         self.task.common.last_update = self.now;
         Ok(Event {

@@ -3,6 +3,7 @@
 use super::{FlowState, HistoryPage, Observation, PageEnd, PageIndex, TaskPage};
 use crate::LedgerError;
 use crate::agents::AgentId;
+use crate::model::worker::WorkerIdentity;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Checkpoint, Event, EventKind, Progress, Task, TaskState};
 use crate::values::{FeatureId, Note, Revision, Timestamp};
@@ -42,6 +43,8 @@ pub struct TaskChapter {
 }
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeedEntry {
+    /// Worker identity from this event snapshot, never inferred from its actor.
+    pub worker: WorkerIdentity,
     pub kind: EventKind,
     pub actor: AgentId,
     /// Ownership recorded in this event snapshot, independent of its actor.
@@ -173,6 +176,7 @@ impl From<ChapterSource> for TaskChapter {
             };
             checkpoint = event.task.common.checkpoint;
             entries.push(FeedEntry {
+                worker: event.task.worker,
                 kind: event.kind,
                 actor: event.actor,
                 ownership: event.task.ownership,
@@ -232,6 +236,7 @@ impl From<&[TaskChapter]> for WorkflowTiming {
 mod tests {
     use super::{ChapterSource, RecordedRole, TaskChapter, WorkflowTiming};
     use crate::agents::{AgentId, DevelopmentAgent};
+    use crate::model::worker::WorkerIdentity;
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{
         Assignment, Check, CheckOutcome, Checkpoint, Event, EventKind, Phase, Progress, Task,
@@ -250,6 +255,7 @@ mod tests {
         }
         fn task() -> anyhow::Result<Task> {
             Ok(Task {
+                worker: WorkerIdentity::Unrecorded,
                 version: TaskRecordVersion::CURRENT,
                 common: TaskCommon {
                     id: TaskId::try_from("task".to_owned())?,

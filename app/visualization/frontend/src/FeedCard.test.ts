@@ -21,6 +21,7 @@ class FeedScenario {
   entry(ownership: TaskOwnership): FeedEntry {
     return {
       actor: Fixture.PRIME,
+      worker: { kind: "Unrecorded" },
       ownership,
       kind: "assigned",
       state: { kind: "queued" },

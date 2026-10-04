@@ -2,7 +2,7 @@ import type {
   AgentId,
   DesktopReply,
   FeatureWorkflow,
-  TaskV2,
+  TaskV3,
   FeatureOutcome,
   FeatureSummary,
 } from "./contracts";
@@ -86,8 +86,8 @@ export class Fixture {
     },
   };
   workflow(): FeatureWorkflow {
-    const task: TaskV2 = {
-      version: 2,
+    const task: TaskV3 = {
+      version: 3,
       common: {
         id: "rust-release",
         feature: this.summary.feature.id,
@@ -108,6 +108,7 @@ export class Fixture {
           extensions: {},
         },
       },
+      worker: { kind: "Unrecorded" },
       ownership: { kind: "Unrecorded" },
       workspace: { kind: "read_only" },
       state: { kind: "completed", agent: Fixture.RUST, attempt: 1 },
@@ -129,7 +130,8 @@ export class Fixture {
               kind: "created",
               state: { kind: "queued" },
               actor: Fixture.PRIME,
-              ownership: { kind: "Unrecorded" },
+              worker: { kind: "Unrecorded" },
+      ownership: { kind: "Unrecorded" },
               note: "Implement the release",
               summary: "",
               at: this.ago(150),
@@ -141,7 +143,8 @@ export class Fixture {
               kind: "completed",
               state: task.state,
               actor: Fixture.PRIME,
-              ownership: { kind: "Unrecorded" },
+              worker: { kind: "Unrecorded" },
+      ownership: { kind: "Unrecorded" },
               note: "Activity accepted",
               summary: "Release implemented",
               at: this.ago(130),

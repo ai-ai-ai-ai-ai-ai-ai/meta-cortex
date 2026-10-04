@@ -15,6 +15,7 @@ use meta_cortex_workbench::request::{
     AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery,
     InitFeature, StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
     Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
 };
@@ -196,6 +197,7 @@ impl Catalog {
                     "Claim a queued task atomically. Dependencies must be integrated or completed, and the agent must match the recorded assignment.",
                 ),
                 operation: Operation::Task(TaskOperation::Claim(ClaimTask {
+                    worker_id: WorkerId::EXAMPLE,
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: assigned_revision,
@@ -208,6 +210,7 @@ impl Catalog {
                     "Worker operation: heartbeat, progress, checkpoint, or ready. The schema below describes each action. Timestamps are Unix milliseconds; TTL is 1–86400 seconds.",
                 ),
                 operation: Operation::Task(TaskOperation::Update(WorkerUpdate {
+                    worker_id: WorkerId::EXAMPLE,
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: claimed_revision,

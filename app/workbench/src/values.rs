@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
@@ -323,6 +324,49 @@ pub enum LeaseSecondsParseError {
     TooLong,
 }
 
+/// Stable identity chosen once by the host worker, then reused across its tasks.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
+#[serde(try_from = "String", into = "String")]
+#[schemars(with = "String", extend("format" = "uuid"))]
+pub struct WorkerId(Uuid);
+
+impl WorkerId {
+    /// Fixed illustrative identity for discovery examples and their fixtures.
+    pub const EXAMPLE: Self = Self(Uuid::from_u128(0x7ce4e2a5_e306_46ad_9180_c5d459180ee1));
+
+    pub fn generate() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl TryFrom<String> for WorkerId {
+    type Error = WorkerIdParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let uuid = Uuid::parse_str(&value)?;
+        match uuid.is_nil() {
+            true => Err(WorkerIdParseError::Nil),
+            false => Ok(Self(uuid)),
+        }
+    }
+}
+
+impl From<WorkerId> for String {
+    fn from(value: WorkerId) -> Self {
+        let WorkerId(uuid) = value;
+        uuid.to_string()
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum WorkerIdParseError {
+    #[error("invalid worker UUID: {0}")]
+    Invalid(#[from] uuid::Error),
+    #[error("worker UUID must not be nil")]
+    Nil,
+}
 #[cfg(test)]
 pub mod tests {
     use super::{
@@ -333,6 +377,28 @@ pub mod tests {
     use schemars::schema_for;
     use serde::Deserialize;
 
+    #[test]
+    fn worker_ids_validate_uuid_identity_and_preserve_round_trips() -> anyhow::Result<()> {
+        let worker = super::WorkerId::generate();
+        let encoded = serde_json::to_string(&worker)?;
+        assert_eq!(serde_json::from_str::<super::WorkerId>(&encoded)?, worker);
+        assert_eq!(
+            super::WorkerId::try_from(worker.to_string().to_uppercase())?,
+            worker
+        );
+        for invalid in [
+            "",
+            "RustDev",
+            "not-a-uuid",
+            "00000000-0000-0000-0000-000000000000",
+        ] {
+            assert!(super::WorkerId::try_from(invalid.to_owned()).is_err());
+            assert!(
+                serde_json::from_str::<super::WorkerId>(&serde_json::to_string(invalid)?).is_err()
+            );
+        }
+        Ok(())
+    }
     #[test]
     fn named_lease_preserves_duration_and_external_validation() -> serde_json::Result<()> {
         let encoded = serde_json::to_string(&LeaseSeconds::TEN_MINUTES)?;
