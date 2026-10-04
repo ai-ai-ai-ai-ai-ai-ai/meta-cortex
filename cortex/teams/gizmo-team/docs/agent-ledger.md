@@ -137,18 +137,13 @@ identifies who recorded it, not who actually authored that Git commit.
 
    It resolves the existing repository identity and shared database from the
    current directory, then opens the native Tauri Workbench window.
-2. Select a workflow from the searchable left sidebar to inspect its requirement,
-   progress, recorded work dates and agent execution tree. Expand agents into tasks
-   and attempts, with progress and linked commit counts. Earlier workers remain
-   visible after reassignment. Browse contributions by status opens compact
-   outcome rows. Select a task to open each attempt's own results, requirements, findings,
-   checks and lifecycle events in the main content area. The left sidebar stays
-   available; Back to workflow restores the filter and expanded rows. Commit
-   descriptions are recorded event notes, not Git commit messages.
-   Workflow record & data source exposes technical
-   fields. Narrow windows open navigation as a drawer.
-   Full task records and individual event snapshots retain all ledger fields,
-   including task-specific extensions.
+2. The window opens on a feature journal grouped by the day each feature was
+   last active, newest first. Each card shows the feature's objective, status,
+   recorded pull request, ID, completed task count, elapsed span, latest
+   delivery, and how long open work has been quiet. Recorded blocked reasons and
+   expired claims appear as attention reasons. A progress bar splits tasks by
+   state, and Delivers lists the deliverables. The window refreshes every five
+   seconds until paused.
 3. Close the window to exit.
 
 The shipped executable embeds its Svelte/TypeScript frontend assets. Native IPC
@@ -174,22 +169,19 @@ repository’s Features view.
      command:
        name: Dashboard
        arguments:
-         mode: Desktop
+         mode: Snapshot
          view: {kind: Features}
          page: 0
    ```
 
-3. Run the request to open the native window at the selected view:
+3. Run the request to read the selected view once as text:
 
    ```sh
-   meta-cortex run --request dashboard.yaml
+   meta-cortex run --request dashboard.yaml > dashboard-output.yaml
    ```
 
-For headless observation, change the request to `mode: Snapshot`:
-
-```sh
-meta-cortex run --request dashboard.yaml > dashboard-output.yaml
-```
+4. To open the native window for that project instead, replace the arguments
+   with only `mode: Desktop`; Desktop accepts no `view` or `page`.
 
 Both modes accept file or stdin requests. Snapshot reads once and returns the
 normal versioned YAML response with `data.kind: dashboard` and
@@ -201,18 +193,15 @@ normal versioned YAML response with `data.kind: dashboard` and
 
 ### Views and recorded fields
 
-Typed requests require `mode`, `view`, and `page`. Modes and view kinds are
+Snapshot requests require `mode`, `view`, and `page`. Modes and view kinds are
 case-sensitive. `page` is a zero-based unsigned 32-bit integer; use `0` for task
-detail, where paging does not apply. Initial views are:
+detail, where paging does not apply. Snapshot views are:
 
 - **Features:** `view: {kind: Features}` lists feature IDs, recorded branches,
   and objectives in ID order.
 - **Tasks:** `view: {kind: Tasks, feature: example-feature}` lists tasks in ID
   order with ID, state, revision, progress summary, assigned agent, and reporting
-  coordinator in Snapshot mode. Desktop mode opens the expandable execution tree
-  with agent work summaries, status badges, task children, and checkpoint commits.
-  Recorded reporting lines identify Gizmo Prime reporting to the host, Team Gizmo
-  reporting to Prime, and specialists reporting to Team Gizmo.
+  coordinator.
 - **Task:** `view: {kind: Task, query: {feature: example-feature, task: example-task}}`
   shows objective, assigned agent and reporting line, revision, attempt,
   created/updated/progress timestamps,
@@ -231,19 +220,19 @@ coordinator acceptance of a read-only or feature activity.
 Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
-current views refresh. Full-feature state counts and a percentage of tasks completed or integrated
-summarize recorded task states. Group progress covers its loaded task page.
-Feature work dates use the earliest task creation and latest task update across
-all pages. Completion is derived only when all tasks are terminal; cancelled work
-is labelled separately. Elapsed spans include waiting, not just active execution.
-Feature creation and completion events are not stored. Attempt summaries use
-updates recorded during that claim; inherited progress is not a new contribution.
-Attempt and linked commit counts cover loaded history, with truncation indicated.
+current views refresh. Full-feature state counts summarize recorded task states
+in the journal. A feature's deliverables are its non-cancelled tasks that no
+other recorded task depends on, excluding Gizmo coordination tasks; its latest
+delivery is the most recently updated integrated or completed task. A feature's
+pull requests are GitHub pull request URLs found in its tasks' current progress
+extensions, most often recorded first; no pull request field is stored. Feature
+work dates use the earliest task creation and latest task update across all
+pages. Elapsed spans include waiting, not just active execution.
+Feature creation and completion events are not stored.
 Recorded ownership identifies the assigned role and reporting target. Task
 creators, claimed workers, and event actors remain separate recorded facts; none
 of them establishes an unrecorded reporting line or host session ancestry.
-Each task contributes its latest 100 events to the overview; full history can page through older records. No live execution status or agent
-conversation is inferred. For example, a passed check is a worker’s recorded
+No live execution status or agent conversation is inferred. For example, a passed check is a worker’s recorded
 result, not a new test execution by the dashboard.
 
 **Prohibited:** treat a historical passed check as a fresh validation run.
@@ -263,22 +252,16 @@ or integration activity existed.
 **Required:** show the old reporting line as unrecorded and record the actual
 roles and activities when continuing the feature.
 
-### Navigation, refresh, and pages
+### Refresh and pages
 
-Use the native window’s controls to navigate between features, tasks, detail,
-history, and event snapshots. Scroll the window’s content to read long objectives,
-notes, findings, checks, and extensions. Use Refresh to read current evidence or
-Retry after an observation failure. Auto enables reads every ten seconds and is
-off by default. Refresh preserves the selected workflow tab and table expansion.
-Commit and activity lists cover the loaded task page; full task history provides
-access to older events.
+The native journal reads the first 100 features by ID and notes when more
+exist. It refreshes every five seconds; Pause stops automatic reads, Refresh
+reads at once, and Retry follows an observation failure.
 
-Feature, task, and history queries return at most 100 records per page. Typed
-request page indexes and Snapshot text remain zero-based. Previous and Next
-move between bounded pages. The native indicator starts at `Page 1`; its
-`More`/`Complete` value describes whether another record page exists, not feature
-or task completion. Snapshot retains
-`Page end: More` or `Complete` to indicate whether another page exists.
+Feature, task, and history queries return at most 100 records per page. Snapshot
+request page indexes and text remain zero-based. Snapshot retains
+`Page end: More` or `Complete` to indicate whether another page exists, not
+feature or task completion.
 Each query releases its connection after reading. Pages use live offsets, so
 concurrent writes can shift records between pages. For example, a new history
 event can push an older event onto the next page.

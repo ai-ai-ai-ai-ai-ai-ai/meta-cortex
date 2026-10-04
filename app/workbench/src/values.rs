@@ -201,6 +201,7 @@ impl TryFrom<i64> for Attempt {
 pub struct Timestamp(i64);
 
 impl Timestamp {
+    pub const EPOCH: Self = Self(0);
     pub fn now() -> Result<Self, LedgerError> {
         let value = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
         Ok(Self(

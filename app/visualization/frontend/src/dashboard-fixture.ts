@@ -1,160 +1,105 @@
-import type { TaskV2, TaskFlow, FeatureFlow, DesktopReply } from "./contracts";
+import { expect } from "vitest";
+import type {
+  AgentId,
+  DesktopReply,
+  FeatureOutcome,
+  FeatureSummary,
+} from "./contracts";
+
+/**
+ * A recorded release: the version bump is integrated, review is blocked on
+ * its SHA format, and the pull request task is the only remaining outcome.
+ */
 export class Fixture {
-  task: TaskV2 = {
-    version: 2,
-    ownership: {
-      kind: "Assigned",
-      assignment: {
-        agent: { team: "Development", role: "TypescriptDev" },
-        reports_to: { kind: "Gizmo", coordinator: "Gizmo" },
-      },
-    },
-    workspace: { kind: "git", branch: "codex/worker", path: "/fixture" },
-    state: { kind: "integrated", commit: "b".repeat(40) },
-    common: {
-      id: "implement",
-      feature: "dashboard",
-      attempt: 1,
-      revision: 5,
-      objective: "Build workflow",
-      acceptance: ["Show recorded work"],
-      dependencies: [],
-      created_at: 1000,
-      last_update: 2000,
-      last_progress: 1500,
-      checkpoint: { kind: "git", commit: "a".repeat(40) },
-      progress: {
-        summary: "Graph completed",
-        findings: [],
-        next_steps: [],
-        checks: [],
-        extensions: { artifact: "native-contract-v2" },
-      },
-    },
+  static readonly NOW = new Date(2026, 9, 3, 12).getTime();
+  static readonly MINUTE = 60_000;
+  static readonly PRIME: AgentId = { team: "Gizmo", role: "GizmoPrime" };
+  static readonly RUST: AgentId = { team: "Development", role: "RustDev" };
+  static readonly VERIFIER: AgentId = {
+    team: "Development",
+    role: "RustVerifier",
   };
-  contribution: TaskFlow = {
-    task: this.task,
-    created_by: { kind: "recorded", agent: { team: "Gizmo", role: "Gizmo" } },
-    worker: {
-      kind: "recorded",
-      agent: { team: "Development", role: "TypescriptDev" },
-    },
-    checkpoints: [
-      {
-        attempt: 1,
-        commit: "a".repeat(40),
-        actor: { team: "Development", role: "TypescriptDev" },
-        at: 1500,
-        revision: 3,
-      },
-    ],
-    integrations: [
-      {
-        attempt: 1,
-        commit: "b".repeat(40),
-        actor: { team: "Delivery", role: "IntegrationAgent" },
-        at: 2000,
-        revision: 5,
-      },
-    ],
-    milestones: [],
-    attempts: [],
-    history_end: "Complete",
-  };
-  flow: FeatureFlow = {
+  summary: FeatureSummary = {
     feature: {
-      id: "dashboard",
-      branch: "codex/feature",
-      objective: "Build workflow",
       version: 1,
-      worktree: "/feature",
+      id: "release-0-12-3",
+      objective: "Ship the 0.12.3 release with a reviewed Scoop manifest.",
+      branch: "codex/release-0-12-3",
+      worktree: "/work/release",
     },
-    counts: [{ state: "integrated", count: 101 }],
-    activity: { kind: "recorded", first_task_at: 1000, last_activity_at: 2000 },
-    tasks: { end: "More", records: [this.contribution] },
-    observed_at: 2000,
+    totals: {
+      counts: [
+        { state: "queued", count: 1 },
+        { state: "working", count: 2 },
+        { state: "blocked", count: 1 },
+        { state: "ready", count: 1 },
+        { state: "integrated", count: 1 },
+        { state: "completed", count: 0 },
+        { state: "cancelled", count: 0 },
+      ],
+      completion: { finished: 1, cancelled: 0, total: 6 },
+      stalled: 0,
+      activity: {
+        kind: "recorded",
+        first_task_at: this.ago(150),
+        last_activity_at: this.ago(100),
+      },
+      condition: "attention",
+    },
+    active: [
+      {
+        task: "prime",
+        agent: Fixture.PRIME,
+        status: "working",
+        lease: "current",
+        blocker: { kind: "unblocked" },
+        summary: "",
+        last_update: this.ago(100),
+      },
+      {
+        task: "rust-review",
+        agent: Fixture.VERIFIER,
+        status: "blocked",
+        lease: "current",
+        blocker: { kind: "blocked", reason: "Release SHA formatting fails" },
+        summary: "Release SHA formatting fails",
+        last_update: this.ago(110),
+      },
+    ],
+    pull_requests: [
+      {
+        url: "https://github.com/acme/release/pull/41",
+        repository: "acme/release",
+        number: 41,
+        tasks: ["prep-pr"],
+        recorded_at: this.ago(100),
+      },
+    ],
+    outcomes: [this.outcome("prep-pr")],
+    latest_delivery: {
+      kind: "delivered",
+      task: "rust-release",
+      status: "integrated",
+      at: this.ago(130),
+    },
   };
-  workflowReply(): DesktopReply {
-    return {
-      content: { kind: "Workflow", value: this.flow },
-      selection: {
-        view: { kind: "Tasks", feature: this.flow.feature.id },
-        feature: this.flow.feature.id,
-        page: 0,
-      },
-    };
+  reply(): DesktopReply {
+    return { features: { records: [this.summary], end: "Complete" } };
   }
-  featuresReply(): DesktopReply {
-    return {
-      content: {
-        kind: "Features",
-        value: { records: [this.flow.feature], end: "Complete" },
-      },
-      selection: { view: { kind: "Features" }, page: 0 },
-    };
+  /** A timestamp the given number of minutes before `Fixture.NOW`. */
+  ago(minutes: number): number {
+    return Fixture.NOW - minutes * Fixture.MINUTE;
   }
-  taskReply(): DesktopReply {
-    return {
-      content: { kind: "Task", value: this.task },
-      selection: {
-        view: {
-          kind: "Task",
-          query: {
-            feature: this.task.common.feature,
-            task: this.task.common.id,
-          },
-        },
-        feature: this.task.common.feature,
-        page: 0,
-      },
-    };
+  outcome(task: string): FeatureOutcome {
+    return { task, status: "queued", last_update: this.ago(100) };
   }
 }
 
-// JSDOM has no matchMedia. Svelte's MediaQuery uses matches/media and
-// EventTarget change listeners; keep real graph components and handlers intact.
-class BrowserMediaQuery extends EventTarget {
-  readonly matches = false;
-  constructor(readonly media: string) {
-    super();
+/** The first item a test expects; an empty list fails the test. */
+export class First<T> {
+  constructor(private readonly items: ReadonlyArray<T>) {}
+  item(): T {
+    expect(this.items.length).toBeGreaterThan(0);
+    return this.items[0] as T;
   }
-}
-export class BrowserMediaQueries {
-  matchMedia(query: string): BrowserMediaQuery {
-    return new BrowserMediaQuery(query);
-  }
-}
-// JSDOM returns no client rectangles even for rendered controls. Supply only
-// visibility geometry for Bits/tabbable; leave native focus and events intact.
-export function renderedClientRects(this: Element): DOMRectList {
-  const ancestors: Element[] = [this];
-  for (
-    let element: Element | null = this.parentElement;
-    element;
-    element = element.parentElement
-  ) {
-    ancestors.push(element);
-  }
-  const rectangles: DOMRect[] = [];
-  const hidden = ancestors.some((element) => {
-    const style = getComputedStyle(element);
-    return (
-      element.hasAttribute("hidden") ||
-      style.display === "none" ||
-      style.visibility === "hidden" ||
-      style.visibility === "collapse"
-    );
-  });
-  switch (this.isConnected && !hidden) {
-    case true:
-      rectangles.push(new DOMRect(0, 0, 1, 1));
-      break;
-    case false:
-      break;
-  }
-  return Object.assign(rectangles, {
-    item(index: number): DOMRect | null {
-      return rectangles[index] ?? null;
-    },
-  });
 }

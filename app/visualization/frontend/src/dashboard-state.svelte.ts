@@ -1,149 +1,152 @@
 import { Effect } from "effect";
-import type {
-  DesktopRead,
-  DesktopReply,
-  DashboardView,
-  Feature,
-  TaskV2,
-  TaskFlow,
-} from "./contracts";
-import { DashboardApi } from "./api";
-import type { DashboardFailure } from "./api";
-export enum LoadKind {
+import type { DesktopReply, FeatureSummary } from "./contracts";
+import type { DashboardApi, DashboardFailure } from "./api";
+
+enum LoadKind {
   Loading = "loading",
   Ready = "ready",
   Failed = "failed",
 }
-export enum DetailView {
-  Workflow = "workflow",
-  Task = "task",
-  History = "history",
-}
-export type DetailSelection =
-  | { kind: DetailView.Workflow }
-  | { kind: DetailView.Task; task: TaskV2; flow?: TaskFlow }
-  | { kind: DetailView.History };
 type Load =
-  | { kind: LoadKind.Loading; request: DesktopRead }
-  | { kind: LoadKind.Ready; reply: DesktopReply; request: DesktopRead }
-  | { kind: LoadKind.Failed; failure: DashboardFailure; request: DesktopRead };
-export class DashboardController {
-  reply = $state<DesktopReply | null>(null);
-  state = $state<Load>({
-    kind: LoadKind.Loading,
-    request: { kind: "Initial" },
-  });
-  features = $state<Feature[]>([]);
+  | { readonly kind: LoadKind.Loading }
+  | { readonly kind: LoadKind.Ready }
+  | { readonly kind: LoadKind.Failed; readonly failure: DashboardFailure };
+enum ReplyKind {
+  Empty = "empty",
+  Loaded = "loaded",
+}
+type Reply =
+  | { readonly kind: ReplyKind.Empty }
+  | {
+      readonly kind: ReplyKind.Loaded;
+      readonly reply: DesktopReply;
+      readonly received: number;
+    };
+
+/**
+ * The ledger read behind the journal. A refresh keeps the last reply on
+ * screen, so live updates never blank the view and failures mark it stale.
+ */
+export class ReadController {
+  load = $state<Load>({ kind: LoadKind.Loading });
+  reply = $state<Reply>({ kind: ReplyKind.Empty });
   private interrupt: () => void = () => {};
   constructor(private readonly api: DashboardApi) {}
-  load(request: DesktopRead): void {
+  read(): void {
     this.stop();
-    this.state = { kind: LoadKind.Loading, request };
-    const reading = this.api.read(request).pipe(
-      Effect.flatMap((reply) => this.withFeatures(reply)),
+    this.load = { kind: LoadKind.Loading };
+    const reading = this.api.read().pipe(
       Effect.match({
         onFailure: (failure) => {
-          this.state = { kind: LoadKind.Failed, failure, request };
+          this.load = { kind: LoadKind.Failed, failure };
         },
         onSuccess: (reply) => {
-          this.reply = reply;
-          this.state = { kind: LoadKind.Ready, reply, request };
+          this.reply = { kind: ReplyKind.Loaded, reply, received: Date.now() };
+          this.load = { kind: LoadKind.Ready };
         },
       }),
     );
     this.interrupt = Effect.runCallback(reading);
   }
-  private withFeatures(
-    reply: DesktopReply,
-  ): Effect.Effect<DesktopReply, DashboardFailure> {
-    switch (reply.content.kind) {
-      case "Features":
-        this.features = reply.content.value.records;
-        return Effect.succeed(reply);
-      case "Workflow":
-      case "Task":
-      case "History":
-        break;
-    }
-    switch (this.features.length) {
-      case 0: {
-        const request: DesktopRead = { kind: "Features", page: 0 };
-        return this.api.read(request).pipe(
-          Effect.map((sidebar) => {
-            this.sidebar(sidebar);
-            return reply;
-          }),
-        );
-      }
-      default:
-        return Effect.succeed(reply);
-    }
-  }
-  private sidebar(reply: DesktopReply): void {
-    switch (reply.content.kind) {
-      case "Features":
-        this.features = reply.content.value.records;
-        return;
-      case "Workflow":
-      case "Task":
-      case "History":
-        throw new Error("Expected feature navigation");
-    }
-  }
-  private view(): DesktopRead | DashboardView {
-    switch (this.state.kind) {
-      case LoadKind.Ready:
-        return this.state.reply.selection.view;
+  refresh(): void {
+    switch (this.load.kind) {
       case LoadKind.Loading:
+        return;
+      case LoadKind.Ready:
       case LoadKind.Failed:
-        return this.state.request;
-    }
-  }
-  currentFeature(): string {
-    const view = this.view();
-    switch (view.kind) {
-      case "Features":
-      case "Initial":
-        return "";
-      case "Tasks":
-      case "Workflow":
-        return view.feature;
-      case "Task":
-      case "History":
-        return view.query.feature;
-    }
-  }
-  page(page: number): void {
-    const view = this.view();
-    switch (view.kind) {
-      case "Initial":
-        this.load({ kind: "Initial" });
-        return;
-      case "Features":
-        this.load({ kind: "Features", page });
-        return;
-      case "Tasks":
-      case "Workflow":
-        this.load({ kind: "Workflow", feature: view.feature, page });
-        return;
-      case "Task":
-        this.load({ kind: "Task", query: view.query });
-        return;
-      case "History":
-        this.load({ kind: "History", query: view.query, page });
+        this.read();
     }
   }
   stop(): void {
     this.interrupt();
   }
-  refresh(): void {
-    switch (this.state.kind) {
-      case LoadKind.Ready:
-      case LoadKind.Failed:
-        this.load(this.state.request);
-        return;
-      case LoadKind.Loading:
-        return;
+  /** Empty until the first reply; a loaded journal may itself hold no features. */
+  journals(): ReadonlyArray<ReadonlyArray<FeatureSummary>> {
+    switch (this.reply.kind) {
+      case ReplyKind.Empty:
+        return [];
+      case ReplyKind.Loaded:
+        return [this.reply.reply.features.records];
     }
+  }
+  truncated(): boolean {
+    switch (this.reply.kind) {
+      case ReplyKind.Empty:
+        return false;
+      case ReplyKind.Loaded:
+        return this.reply.reply.features.end === "More";
+    }
+  }
+  failures(): ReadonlyArray<DashboardFailure> {
+    switch (this.load.kind) {
+      case LoadKind.Loading:
+      case LoadKind.Ready:
+        return [];
+      case LoadKind.Failed:
+        return [this.load.failure];
+    }
+  }
+  received(): ReadonlyArray<number> {
+    switch (this.reply.kind) {
+      case ReplyKind.Empty:
+        return [];
+      case ReplyKind.Loaded:
+        return [this.reply.received];
+    }
+  }
+  busy(): boolean {
+    return this.load.kind === LoadKind.Loading;
+  }
+}
+
+export enum LiveMode {
+  Live = "live",
+  Paused = "paused",
+}
+/** Periodic refresh while live; pausing interrupts the schedule. */
+export class LiveRefresh {
+  static readonly INTERVAL = "5 seconds";
+  mode = $state<LiveMode>(LiveMode.Live);
+  toggle(): void {
+    switch (this.mode) {
+      case LiveMode.Live:
+        this.mode = LiveMode.Paused;
+        return;
+      case LiveMode.Paused:
+        this.mode = LiveMode.Live;
+    }
+  }
+  label(): string {
+    switch (this.mode) {
+      case LiveMode.Live:
+        return "Pause live updates";
+      case LiveMode.Paused:
+        return "Resume live updates";
+    }
+  }
+  run(tick: Effect.Effect<void>): () => void {
+    switch (this.mode) {
+      case LiveMode.Paused:
+        return () => {};
+      case LiveMode.Live:
+        return Effect.runCallback(
+          Effect.forever(
+            Effect.sleep(LiveRefresh.INTERVAL).pipe(Effect.andThen(tick)),
+          ),
+        );
+    }
+  }
+}
+/** Wall time for relative labels; it advances independently of ledger reads. */
+export class Clock {
+  now = $state(Date.now());
+  run(): () => void {
+    return Effect.runCallback(
+      Effect.forever(
+        Effect.sleep("1 second").pipe(
+          Effect.andThen(Effect.sync(() => (this.now = Date.now()))),
+        ),
+      ),
+    );
   }
 }

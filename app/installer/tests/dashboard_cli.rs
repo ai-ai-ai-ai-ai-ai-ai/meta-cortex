@@ -1,4 +1,4 @@
-use meta_cortex_visualization::{DashboardMode, DashboardRequest, DashboardView};
+use meta_cortex_visualization::{DashboardRequest, DashboardView};
 use meta_cortex_workbench::agents::{AgentId, GizmoAgent};
 use meta_cortex_workbench::model::{Progress, Workspace};
 use meta_cortex_workbench::request::{CreateTask, InitFeature, TaskQuery};
@@ -161,8 +161,7 @@ fn snapshots_use_typed_transport_and_recorded_content() -> anyhow::Result<()> {
             query: Scenario::query()?,
         },
     ] {
-        let outcome = scenario.run(DashboardRequest {
-            mode: DashboardMode::Snapshot,
+        let outcome = scenario.run(DashboardRequest::Snapshot {
             view,
             page: PageIndex::FIRST,
         })?;
@@ -177,7 +176,12 @@ fn snapshots_use_typed_transport_and_recorded_content() -> anyhow::Result<()> {
             "Git commit author leaked into dashboard"
         );
     }
-    assert!(serde_saphyr::from_str::<DashboardMode>("Interactive").is_err());
+    assert!(serde_saphyr::from_str::<DashboardRequest>("mode: Interactive").is_err());
+    assert!(
+        serde_saphyr::from_str::<DashboardRequest>("mode: Desktop\nview: {kind: Features}")
+            .is_err()
+    );
+    assert!(serde_saphyr::from_str::<DashboardRequest>("mode: Desktop").is_ok());
 
     Ok(())
 }

@@ -199,8 +199,8 @@ Open the native Workbench dashboard from your repository root or a subdirectory:
 meta-cortex dashboard
 ```
 
-No request file or required arguments are needed. For a targeted native view,
-use an explicit project with `mode: Desktop`:
+No request file or required arguments are needed. For headless text output,
+use an explicit project with `mode: Snapshot`:
 
 ```powershell
 @'
@@ -211,15 +211,14 @@ operation:
   command:
     name: Dashboard
     arguments:
-      mode: Desktop
+      mode: Snapshot
       view: {kind: Features}
       page: 0
 '@ | Set-Content -Encoding utf8 dashboard.yaml
-meta-cortex run --request dashboard.yaml
+meta-cortex run --request dashboard.yaml > dashboard-output.yaml
 ```
 
-Use `mode: Snapshot` for headless text output. After changing the request's mode,
-run `meta-cortex run --request dashboard.yaml > dashboard-output.yaml` to save it.
+Use `mode: Desktop` without `view` or `page` to open the native window for that project.
 Workbench observation requires an existing repository
 identity and ledger; initialization of the framework alone does not create a ledger.
 
@@ -495,55 +494,27 @@ meta-cortex dashboard
 
 No request file or required arguments are needed. The command resolves the
 existing repository identity and shared database, then opens the native Tauri
-Workbench window. The searchable left sidebar keeps workflows available while
-you inspect their agents, commits and activity. Close the window to exit. The executable embeds the dashboard
+Workbench window. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-Each workflow opens with its requirement, full-feature progress, recorded work
-dates and agent execution tree. Dates show the first task's creation, last activity
-and elapsed span, including waiting. Once all tasks finish, the latest task update
-marks completed work; cancellation is labelled as closed work instead. Feature
-creation and completion events are not stored, so these are task activity bounds.
-Dates and feature progress cover every task, independently of the loaded page.
-Expand agents into tasks and attempts to inspect their progress and linked commit
-counts. Earlier workers remain visible after reassignment. Select a task for
-each attempt's own result, findings, checks, dates and commit recording actors;
-a fresh claim does not inherit credit for the previous attempt's contribution.
-Browse contributions by status expands compact outcome rows. Search by agent,
-task, result or status; Show more reveals additional loaded tasks.
-Commit counts deduplicate checkpoint and integration events sharing a hash;
-both actors and event notes remain in task details. These notes describe the
-recorded event; Git commit messages and Git authorship are not recorded. Acceptance criteria
-remain requirements, separate from recorded check outcomes.
-Select a contribution to open its details in the main content area. The left
-sidebar stays available; Back to workflow restores your filter and expanded rows.
-The task page shows the full result, requirements and assignment alongside Git
-evidence. Its sections expose checks, dependencies, checkpoint and integration
-history, lifecycle events and full raw records. Full-feature totals summarize
-task states and completion progress; contributions cover the selected task page.
-Workflow record & data source exposes technical fields.
-For tasks with
-`Assigned` ownership, the hierarchy follows the assigned role's recorded
-`reports_to` target. Each coordinator's own activities are separate from
-descendant workflow progress. Rows represent roles, not host sessions.
-A recorded reporting target without its own activity on this page shows
-`Reporting only`; it has no inferred status or upstream reporting line.
-Historical tasks with `Unrecorded` ownership appear separately under `Created by`
-with their recorded creator and available worker evidence from task history;
-their reporting line stays unrecorded. Task dependencies remain separate from
-reporting relationships.
-Use Refresh to reload recorded data, or enable Auto for reads every ten seconds.
-Refresh preserves contribution expansion and search. Previous/Next appears when
-there are other pages of native observations; these reads do not update the ledger.
-Attempt and linked commit counts cover the loaded history. Each task projection
-includes its latest 100 events; task history can page through
-older attempts and checkpoints. Runtime parent session links and Git authorship
-remain unrecorded when absent from Turso. Detailed task records and event snapshots
-retain all ledger fields, including task-specific extensions.
+The window opens on a feature journal: a timeline grouped by the day each
+feature was last active, newest first. Each card leads with what the feature is
+for, then its status, pull request and ID, a sentence such as
+`12 of 12 tasks done in 53m · last task integrated 5h ago`, and how long open
+work has been quiet. Blocked tasks and workers that stopped reporting are
+listed in red. A progress bar splits the tasks by state, and Delivers lists the
+specialist tasks no other task depends on, which are the feature's deliverables.
+The dashboard refreshes every five seconds; Pause stops it and Refresh reads at
+once. These reads never update the ledger.
+
+Pull requests come from GitHub pull request URLs that tasks record in their
+progress extensions, such as `pr_url`; click one to copy its link. Feature
+creation and completion events are not stored, so dates are task activity bounds.
+The journal covers the first 100 features by ID.
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
-an explicit project, initial view, and page. Use `mode: Desktop` for the native
-window or `mode: Snapshot` for headless text output through
+an explicit project. `mode: Desktop` opens the native window; `mode: Snapshot`
+with a `view` and `page` returns headless text through
 `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical

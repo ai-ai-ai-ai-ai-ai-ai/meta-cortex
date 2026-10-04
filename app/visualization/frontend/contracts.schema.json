@@ -1,5 +1,27 @@
 {
   "$defs": {
+    "ActiveWork": {
+      "description": "Work currently held by an agent, extracted without loading full task documents.",
+      "properties": {
+        "agent": { "$ref": "#/$defs/AgentId" },
+        "blocker": { "$ref": "#/$defs/Blocker" },
+        "last_update": { "format": "int64", "type": "integer" },
+        "lease": { "$ref": "#/$defs/LeaseHealth" },
+        "status": { "$ref": "#/$defs/FlowState" },
+        "summary": { "$ref": "#/$defs/Note" },
+        "task": { "type": "string" }
+      },
+      "required": [
+        "task",
+        "agent",
+        "status",
+        "lease",
+        "blocker",
+        "summary",
+        "last_update"
+      ],
+      "type": "object"
+    },
     "AgentId": {
       "description": "An agent role scoped to its owning Cortex team.",
       "oneOf": [
@@ -63,182 +85,37 @@
       "enum": ["TechWriter", "TechWriterVerifier"],
       "type": "string"
     },
-    "Assignment": {
-      "additionalProperties": false,
+    "Blocker": {
+      "description": "Why held work cannot proceed, as its worker recorded it.",
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "unblocked", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "blocked", "type": "string" },
+            "reason": { "$ref": "#/$defs/Note" }
+          },
+          "required": ["kind", "reason"],
+          "type": "object"
+        }
+      ]
+    },
+    "Completion": {
+      "description": "Finished work over all recorded work; cancelled tasks are closed but not finished.",
       "properties": {
-        "agent": { "$ref": "#/$defs/AgentId" },
-        "attempt": { "format": "int64", "type": "integer" },
-        "expires_at": { "format": "int64", "type": "integer" },
-        "phase": { "$ref": "#/$defs/Phase" }
+        "cancelled": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "finished": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "total": { "format": "uint64", "minimum": 0, "type": "integer" }
       },
-      "required": ["agent", "attempt", "expires_at", "phase"],
+      "required": ["finished", "cancelled", "total"],
       "type": "object"
-    },
-    "AttemptFlow": {
-      "description": "One claim and its own contributions within the bounded event history.",
-      "properties": {
-        "attempt": { "format": "int64", "type": "integer" },
-        "last_event": { "$ref": "#/$defs/EventKind" },
-        "ownership": { "$ref": "#/$defs/TaskOwnership" },
-        "progress": { "$ref": "#/$defs/AttemptProgress" },
-        "started": { "$ref": "#/$defs/AttemptStart" },
-        "updated_at": { "format": "int64", "type": "integer" },
-        "worker": { "$ref": "#/$defs/RecordedActor" }
-      },
-      "required": [
-        "attempt",
-        "worker",
-        "ownership",
-        "started",
-        "updated_at",
-        "last_event",
-        "progress"
-      ],
-      "type": "object"
-    },
-    "AttemptProgress": {
-      "oneOf": [
-        {
-          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "properties": {
-            "kind": { "const": "recorded", "type": "string" },
-            "progress": { "$ref": "#/$defs/Progress" }
-          },
-          "required": ["kind", "progress"],
-          "type": "object"
-        }
-      ]
-    },
-    "AttemptStart": {
-      "oneOf": [
-        {
-          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "properties": {
-            "at": { "format": "int64", "type": "integer" },
-            "kind": { "const": "recorded", "type": "string" }
-          },
-          "required": ["kind", "at"],
-          "type": "object"
-        }
-      ]
-    },
-    "Check": {
-      "additionalProperties": false,
-      "properties": {
-        "command": { "$ref": "#/$defs/Note" },
-        "evidence": { "$ref": "#/$defs/Note" },
-        "outcome": { "$ref": "#/$defs/CheckOutcome" }
-      },
-      "required": ["command", "outcome", "evidence"],
-      "type": "object"
-    },
-    "CheckOutcome": {
-      "enum": ["passed", "failed", "not_run"],
-      "type": "string"
-    },
-    "Checkpoint": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "commit": { "type": "string" },
-            "kind": { "const": "git", "type": "string" }
-          },
-          "required": ["kind", "commit"],
-          "type": "object"
-        }
-      ]
-    },
-    "DashboardView": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "Features", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "feature": { "type": "string" },
-            "kind": { "const": "Tasks", "type": "string" }
-          },
-          "required": ["kind", "feature"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": { "const": "Task", "type": "string" },
-            "query": { "$ref": "#/$defs/TaskQuery" }
-          },
-          "required": ["kind", "query"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": { "const": "History", "type": "string" },
-            "query": { "$ref": "#/$defs/TaskQuery" }
-          },
-          "required": ["kind", "query"],
-          "type": "object"
-        }
-      ]
     },
     "DeliveryAgent": {
       "enum": ["IntegrationAgent", "PrAgent"],
       "type": "string"
-    },
-    "DesktopContent": {
-      "oneOf": [
-        {
-          "properties": {
-            "kind": { "const": "Features", "type": "string" },
-            "value": { "$ref": "#/$defs/Page" }
-          },
-          "required": ["kind", "value"],
-          "type": "object"
-        },
-        {
-          "properties": {
-            "kind": { "const": "Workflow", "type": "string" },
-            "value": { "$ref": "#/$defs/FeatureFlow" }
-          },
-          "required": ["kind", "value"],
-          "type": "object"
-        },
-        {
-          "properties": {
-            "kind": { "const": "Task", "type": "string" },
-            "value": { "$ref": "#/$defs/TaskV2" }
-          },
-          "required": ["kind", "value"],
-          "type": "object"
-        },
-        {
-          "properties": {
-            "kind": { "const": "History", "type": "string" },
-            "value": { "$ref": "#/$defs/Page3" }
-          },
-          "required": ["kind", "value"],
-          "type": "object"
-        }
-      ]
     },
     "DesktopFailure": {
       "oneOf": [
@@ -268,68 +145,10 @@
         }
       ]
     },
-    "DesktopRead": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "Initial", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": { "const": "Features", "type": "string" },
-            "page": { "format": "uint32", "minimum": 0, "type": "integer" }
-          },
-          "required": ["kind", "page"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "feature": { "type": "string" },
-            "kind": { "const": "Workflow", "type": "string" },
-            "page": { "format": "uint32", "minimum": 0, "type": "integer" }
-          },
-          "required": ["kind", "feature", "page"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": { "const": "Task", "type": "string" },
-            "query": { "$ref": "#/$defs/TaskQuery" }
-          },
-          "required": ["kind", "query"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": { "const": "History", "type": "string" },
-            "page": { "format": "uint32", "minimum": 0, "type": "integer" },
-            "query": { "$ref": "#/$defs/TaskQuery" }
-          },
-          "required": ["kind", "query", "page"],
-          "type": "object"
-        }
-      ]
-    },
     "DesktopReply": {
-      "properties": {
-        "content": { "$ref": "#/$defs/DesktopContent" },
-        "selection": { "$ref": "#/$defs/DesktopSelection" }
-      },
-      "required": ["selection", "content"],
-      "type": "object"
-    },
-    "DesktopSelection": {
-      "properties": {
-        "page": { "format": "uint32", "minimum": 0, "type": "integer" },
-        "view": { "$ref": "#/$defs/DashboardView" }
-      },
-      "required": ["view", "page"],
+      "description": "Every recorded feature with its totals, held work, outcomes and pull requests.",
+      "properties": { "features": { "$ref": "#/$defs/Page" } },
+      "required": ["features"],
       "type": "object"
     },
     "DevelopmentAgent": {
@@ -340,34 +159,6 @@
         "TypescriptDev",
         "TypescriptVerifier",
         "WebDesigner"
-      ],
-      "type": "string"
-    },
-    "Event": {
-      "additionalProperties": false,
-      "properties": {
-        "actor": { "$ref": "#/$defs/AgentId" },
-        "kind": { "$ref": "#/$defs/EventKind" },
-        "note": { "$ref": "#/$defs/Note" },
-        "task": { "$ref": "#/$defs/TaskV2" },
-        "version": { "format": "int64", "type": "integer" }
-      },
-      "required": ["version", "kind", "actor", "note", "task"],
-      "type": "object"
-    },
-    "EventKind": {
-      "enum": [
-        "created",
-        "claimed",
-        "assigned",
-        "heartbeat",
-        "progress",
-        "checkpoint",
-        "ready",
-        "integrated",
-        "completed",
-        "requeued",
-        "cancelled"
       ],
       "type": "string"
     },
@@ -402,15 +193,44 @@
         }
       ]
     },
-    "FeatureFlow": {
+    "FeatureOutcome": {
+      "description": "A task no other recorded task depends on: something the feature delivers.",
       "properties": {
-        "activity": { "$ref": "#/$defs/FeatureActivity" },
-        "counts": { "items": { "$ref": "#/$defs/FlowCount" }, "type": "array" },
-        "feature": { "$ref": "#/$defs/Feature" },
-        "observed_at": { "format": "int64", "type": "integer" },
-        "tasks": { "$ref": "#/$defs/Page2" }
+        "last_update": { "format": "int64", "type": "integer" },
+        "status": { "$ref": "#/$defs/FlowState" },
+        "task": { "type": "string" }
       },
-      "required": ["feature", "counts", "activity", "tasks", "observed_at"],
+      "required": ["task", "status", "last_update"],
+      "type": "object"
+    },
+    "FeatureSummary": {
+      "properties": {
+        "active": {
+          "items": { "$ref": "#/$defs/ActiveWork" },
+          "type": "array"
+        },
+        "feature": { "$ref": "#/$defs/Feature" },
+        "latest_delivery": { "$ref": "#/$defs/LatestDelivery" },
+        "outcomes": {
+          "description": "Live tasks no other task depends on, most recently updated first.",
+          "items": { "$ref": "#/$defs/FeatureOutcome" },
+          "type": "array"
+        },
+        "pull_requests": {
+          "description": "Pull requests recorded in task progress extensions, most often recorded first.",
+          "items": { "$ref": "#/$defs/PullRequest" },
+          "type": "array"
+        },
+        "totals": { "$ref": "#/$defs/WorkflowTotals" }
+      },
+      "required": [
+        "feature",
+        "totals",
+        "active",
+        "pull_requests",
+        "outcomes",
+        "latest_delivery"
+      ],
       "type": "object"
     },
     "FlowCount": {
@@ -422,6 +242,7 @@
       "type": "object"
     },
     "FlowState": {
+      "description": "One observable workflow state; `Working` and `Blocked` split the active assignment phase.",
       "enum": [
         "queued",
         "working",
@@ -434,352 +255,103 @@
       "type": "string"
     },
     "GizmoAgent": { "enum": ["GizmoPrime", "Gizmo"], "type": "string" },
-    "Milestone": {
-      "properties": {
-        "actor": { "$ref": "#/$defs/AgentId" },
-        "at": { "format": "int64", "type": "integer" },
-        "attempt": { "format": "int64", "type": "integer" },
-        "kind": { "$ref": "#/$defs/EventKind" },
-        "note": { "$ref": "#/$defs/Note" },
-        "revision": { "format": "int64", "type": "integer" }
-      },
-      "required": ["kind", "actor", "at", "revision", "attempt", "note"],
-      "type": "object"
+    "LatestDelivery": {
+      "description": "The task a coordinator most recently integrated or completed.",
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "nothing", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "at": { "format": "int64", "type": "integer" },
+            "kind": { "const": "delivered", "type": "string" },
+            "status": { "$ref": "#/$defs/FlowState" },
+            "task": { "type": "string" }
+          },
+          "required": ["kind", "task", "status", "at"],
+          "type": "object"
+        }
+      ]
+    },
+    "LeaseHealth": {
+      "enum": ["current", "expired", "not_running"],
+      "type": "string"
     },
     "Note": { "type": "string" },
     "Page": {
-      "description": "A page of at most 100 records. Each operation releases its connection before returning.",
+      "description": "A page of bounded records. Each operation releases its connection before returning.",
       "properties": {
         "end": { "$ref": "#/$defs/PageEnd" },
-        "records": { "items": { "$ref": "#/$defs/Feature" }, "type": "array" }
-      },
-      "required": ["records", "end"],
-      "type": "object"
-    },
-    "Page2": {
-      "description": "A page of at most 100 records. Each operation releases its connection before returning.",
-      "properties": {
-        "end": { "$ref": "#/$defs/PageEnd" },
-        "records": { "items": { "$ref": "#/$defs/TaskFlow" }, "type": "array" }
-      },
-      "required": ["records", "end"],
-      "type": "object"
-    },
-    "Page3": {
-      "description": "A page of at most 100 records. Each operation releases its connection before returning.",
-      "properties": {
-        "end": { "$ref": "#/$defs/PageEnd" },
-        "records": { "items": { "$ref": "#/$defs/Event" }, "type": "array" }
+        "records": {
+          "items": { "$ref": "#/$defs/FeatureSummary" },
+          "type": "array"
+        }
       },
       "required": ["records", "end"],
       "type": "object"
     },
     "PageEnd": { "enum": ["Complete", "More"], "type": "string" },
-    "Phase": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "working", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": { "const": "blocked", "type": "string" },
-            "reason": { "$ref": "#/$defs/Note" }
-          },
-          "required": ["kind", "reason"],
-          "type": "object"
-        }
-      ]
-    },
-    "Progress": {
-      "additionalProperties": false,
+    "PullRequest": {
+      "description": "A pull request recorded by at least one task, with the tasks that recorded it.",
       "properties": {
-        "checks": { "items": { "$ref": "#/$defs/Check" }, "type": "array" },
-        "extensions": {
-          "additionalProperties": true,
-          "default": {},
-          "description": "Task-specific data only. Coordination never interprets these keys.",
-          "type": "object"
+        "number": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "recorded_at": {
+          "description": "Latest update of a task that records this pull request.",
+          "format": "int64",
+          "type": "integer"
         },
-        "findings": { "items": { "$ref": "#/$defs/Note" }, "type": "array" },
-        "next_steps": { "items": { "$ref": "#/$defs/Note" }, "type": "array" },
-        "summary": { "$ref": "#/$defs/Note" }
-      },
-      "required": ["summary", "findings", "next_steps", "checks"],
-      "type": "object"
-    },
-    "RecordedActor": {
-      "oneOf": [
-        {
-          "properties": { "kind": { "const": "unrecorded", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
+        "repository": {
+          "description": "`owner/repository` as written in the link.",
+          "type": "string"
         },
-        {
-          "properties": {
-            "agent": { "$ref": "#/$defs/AgentId" },
-            "kind": { "const": "recorded", "type": "string" }
-          },
-          "required": ["kind", "agent"],
-          "type": "object"
+        "tasks": {
+          "description": "Tasks whose current progress records this pull request, most recent first.",
+          "items": { "type": "string" },
+          "type": "array"
+        },
+        "url": {
+          "description": "Canonical `https://host/owner/repository/pull/number` link.",
+          "type": "string"
         }
-      ]
-    },
-    "RecordedCommit": {
-      "properties": {
-        "actor": { "$ref": "#/$defs/AgentId" },
-        "at": { "format": "int64", "type": "integer" },
-        "attempt": { "format": "int64", "type": "integer" },
-        "commit": { "type": "string" },
-        "revision": { "format": "int64", "type": "integer" }
       },
-      "required": ["commit", "actor", "at", "revision", "attempt"],
+      "required": ["url", "repository", "number", "tasks", "recorded_at"],
       "type": "object"
-    },
-    "ReportingTarget": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "Host", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "coordinator": { "$ref": "#/$defs/GizmoAgent" },
-            "kind": { "const": "Gizmo", "type": "string" }
-          },
-          "required": ["kind", "coordinator"],
-          "type": "object"
-        }
-      ]
     },
     "SecurityAgent": { "enum": ["SecurityAgent"], "type": "string" },
     "SreAgent": {
       "enum": ["CicdAgent", "DockerSpecialist", "KubernetesSpecialist"],
       "type": "string"
     },
-    "TaskAssignment": {
-      "additionalProperties": false,
-      "description": "The intended owner and reporting line survive every task state and attempt.",
-      "properties": {
-        "agent": { "$ref": "#/$defs/AgentId" },
-        "reports_to": { "$ref": "#/$defs/ReportingTarget" }
-      },
-      "required": ["agent", "reports_to"],
-      "type": "object"
+    "WorkflowCondition": {
+      "description": "The single headline an observer needs first; attention outranks progress.",
+      "enum": ["empty", "attention", "active", "waiting", "finished"],
+      "type": "string"
     },
-    "TaskCommon": {
-      "additionalProperties": false,
-      "description": "Shared task fields in V2 and later records.\nKeep this shape stable for retained readers; changed field meanings need a new type.",
+    "WorkflowTotals": {
       "properties": {
-        "acceptance": { "items": { "$ref": "#/$defs/Note" }, "type": "array" },
-        "attempt": { "format": "int64", "type": "integer" },
-        "checkpoint": { "$ref": "#/$defs/Checkpoint" },
-        "created_at": { "format": "int64", "type": "integer" },
-        "dependencies": { "items": { "type": "string" }, "type": "array" },
-        "feature": { "type": "string" },
-        "id": { "type": "string" },
-        "last_progress": { "format": "int64", "type": "integer" },
-        "last_update": { "format": "int64", "type": "integer" },
-        "objective": { "$ref": "#/$defs/Note" },
-        "progress": { "$ref": "#/$defs/Progress" },
-        "revision": { "format": "int64", "type": "integer" }
-      },
-      "required": [
-        "id",
-        "feature",
-        "objective",
-        "acceptance",
-        "dependencies",
-        "revision",
-        "attempt",
-        "created_at",
-        "last_update",
-        "last_progress",
-        "checkpoint",
-        "progress"
-      ],
-      "type": "object"
-    },
-    "TaskFlow": {
-      "properties": {
-        "attempts": {
-          "items": { "$ref": "#/$defs/AttemptFlow" },
-          "type": "array"
-        },
-        "checkpoints": {
-          "items": { "$ref": "#/$defs/RecordedCommit" },
-          "type": "array"
-        },
-        "created_by": { "$ref": "#/$defs/RecordedActor" },
-        "history_end": { "$ref": "#/$defs/PageEnd" },
-        "integrations": {
-          "items": { "$ref": "#/$defs/RecordedCommit" },
-          "type": "array"
-        },
-        "milestones": {
-          "items": { "$ref": "#/$defs/Milestone" },
-          "type": "array"
-        },
-        "task": { "$ref": "#/$defs/TaskV2" },
-        "worker": { "$ref": "#/$defs/RecordedActor" }
-      },
-      "required": [
-        "task",
-        "created_by",
-        "worker",
-        "checkpoints",
-        "integrations",
-        "milestones",
-        "attempts",
-        "history_end"
-      ],
-      "type": "object"
-    },
-    "TaskOwnership": {
-      "description": "V1 tasks did not record an intended owner or reporting line.",
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "Unrecorded", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "assignment": { "$ref": "#/$defs/TaskAssignment" },
-            "kind": { "const": "Assigned", "type": "string" }
-          },
-          "required": ["kind", "assignment"],
-          "type": "object"
+        "activity": { "$ref": "#/$defs/FeatureActivity" },
+        "completion": { "$ref": "#/$defs/Completion" },
+        "condition": { "$ref": "#/$defs/WorkflowCondition" },
+        "counts": { "items": { "$ref": "#/$defs/FlowCount" }, "type": "array" },
+        "stalled": {
+          "description": "Active tasks whose lease expired before the observation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
         }
-      ]
-    },
-    "TaskQuery": {
-      "additionalProperties": false,
-      "properties": {
-        "feature": { "type": "string" },
-        "task": { "type": "string" }
       },
-      "required": ["feature", "task"],
+      "required": ["counts", "completion", "stalled", "activity", "condition"],
       "type": "object"
-    },
-    "TaskRecordVersion": {
-      "const": 2,
-      "description": "Current task shape. V1 payloads are decoded by the separate legacy task record.",
-      "format": "int64",
-      "type": "integer"
-    },
-    "TaskState": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "queued", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "assignment": { "$ref": "#/$defs/Assignment" },
-            "kind": { "const": "active", "type": "string" }
-          },
-          "required": ["kind", "assignment"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "agent": { "$ref": "#/$defs/AgentId" },
-            "attempt": { "format": "int64", "type": "integer" },
-            "kind": { "const": "ready", "type": "string" }
-          },
-          "required": ["kind", "agent", "attempt"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "commit": { "type": "string" },
-            "kind": { "const": "integrated", "type": "string" }
-          },
-          "required": ["kind", "commit"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "agent": { "$ref": "#/$defs/AgentId" },
-            "attempt": { "format": "int64", "type": "integer" },
-            "kind": { "const": "completed", "type": "string" }
-          },
-          "required": ["kind", "agent", "attempt"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "kind": { "const": "cancelled", "type": "string" },
-            "reason": { "$ref": "#/$defs/Note" }
-          },
-          "required": ["kind", "reason"],
-          "type": "object"
-        }
-      ]
-    },
-    "TaskV2": {
-      "additionalProperties": false,
-      "properties": {
-        "common": { "$ref": "#/$defs/TaskCommon" },
-        "ownership": { "$ref": "#/$defs/TaskOwnership" },
-        "state": { "$ref": "#/$defs/TaskState" },
-        "version": { "$ref": "#/$defs/TaskRecordVersion" },
-        "workspace": { "$ref": "#/$defs/Workspace" }
-      },
-      "required": ["version", "common", "ownership", "workspace", "state"],
-      "type": "object"
-    },
-    "Workspace": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "read_only", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "description": "Operate on the feature's existing worktree, without a worker checkpoint.",
-          "properties": { "kind": { "const": "feature", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "branch": { "type": "string" },
-            "kind": { "const": "git", "type": "string" },
-            "path": { "type": "string" }
-          },
-          "required": ["kind", "branch", "path"],
-          "type": "object"
-        }
-      ]
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
     "failure": { "$ref": "#/$defs/DesktopFailure" },
-    "reply": { "$ref": "#/$defs/DesktopReply" },
-    "request": { "$ref": "#/$defs/DesktopRead" }
+    "reply": { "$ref": "#/$defs/DesktopReply" }
   },
-  "required": ["request", "reply", "failure"],
+  "required": ["reply", "failure"],
   "title": "DesktopContract",
   "type": "object"
 }

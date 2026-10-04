@@ -6,11 +6,10 @@ use crate::installation::InstallError;
 use catalog::Catalog;
 use derive_more::{Display, From};
 use meta_cortex_visualization::{
-    Dashboard, DashboardError, DashboardExecution, DashboardMode, DashboardRequest, DashboardView,
-    DesktopLaunch,
+    Dashboard, DashboardError, DashboardExecution, DashboardRequest, DesktopLaunch,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
-use meta_cortex_workbench::{LedgerError, PageIndex, Workbench};
+use meta_cortex_workbench::{LedgerError, Workbench};
 use protocol::{Reply, Request};
 use serde::Serialize;
 use std::io::{self, Read};
@@ -247,11 +246,8 @@ impl AgentCli {
         let project = env::current_dir()?;
         let workbench = Workbench::discover(&project)?;
         let runtime = Builder::new_current_thread().enable_time().build()?;
-        let execution = runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest {
-            mode: DashboardMode::Desktop,
-            view: DashboardView::Features,
-            page: PageIndex::FIRST,
-        }))?;
+        let execution =
+            runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest::Desktop {}))?;
         drop(runtime);
         Execution::from(execution).finish()
     }

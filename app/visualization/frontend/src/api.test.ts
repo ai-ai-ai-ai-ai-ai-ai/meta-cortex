@@ -1,101 +1,79 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { Effect } from "effect";
 import { DashboardApi, ReadFailureKind } from "./api";
-import type { DesktopRead, DesktopReply, DesktopFailure } from "./contracts";
+import type { DesktopFailure, DesktopReply } from "./contracts";
 import { Fixture } from "./dashboard-fixture";
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 afterEach(() => native.invoke.mockReset());
-const initial: DesktopRead = { kind: "Initial" };
-const reply: DesktopReply = {
-  content: { kind: "Features", value: { records: [], end: "Complete" } },
-  selection: { view: { kind: "Features" }, page: 0 },
-};
-const task = new Fixture().task;
 interface InvalidInput {
   name: string;
   raw: unknown;
 }
+const reply = new Fixture().reply();
+const summary = new Fixture().summary;
 const invalidReplies: ReadonlyArray<InvalidInput> = [
-  { name: "invalid content scalar", raw: { content: "invalid" } },
+  { name: "scalar reply", raw: "invalid" },
+  { name: "null features", raw: { features: null } },
   {
-    name: "unknown content enum",
+    name: "unknown page end",
+    raw: { features: { records: [], end: "Unknown" } },
+  },
+  {
+    name: "unknown condition",
     raw: {
-      ...reply,
-      content: { kind: "Unknown", value: { records: [], end: "Complete" } },
-    },
-  },
-  {
-    name: "unknown page enum",
-    raw: {
-      ...reply,
-      content: { kind: "Features", value: { records: [], end: "Unknown" } },
-    },
-  },
-  {
-    name: "forbidden view field",
-    raw: {
-      ...reply,
-      selection: { view: { kind: "Features", unexpected: true }, page: 0 },
-    },
-  },
-  { name: "null content", raw: { ...reply, content: null } },
-  {
-    name: "string page scalar",
-    raw: { ...reply, selection: { ...reply.selection, page: "0" } },
-  },
-  ...[
-    { name: "legacy task version", raw: { ...task, version: 1 } },
-    { name: "future task version", raw: { ...task, version: 3 } },
-    {
-      name: "flattened TaskV2",
-      raw: {
-        ...task.common,
-        version: 2,
-        ownership: task.ownership,
-        workspace: task.workspace,
-        state: task.state,
+      features: {
+        records: [
+          { ...summary, totals: { ...summary.totals, condition: "dreaming" } },
+        ],
+        end: "Complete",
       },
     },
-    {
-      name: "forbidden common field",
-      raw: { ...task, common: { ...task.common, unexpected: true } },
-    },
-    {
-      name: "role in wrong team",
-      raw: {
-        ...task,
-        ownership: {
-          kind: "Assigned",
-          assignment: {
-            agent: { team: "Ai", role: "TypescriptVerifier" },
-            reports_to: { kind: "Host" },
+  },
+  {
+    name: "unknown outcome state",
+    raw: {
+      features: {
+        records: [
+          {
+            ...summary,
+            outcomes: [{ task: "x", status: "dreaming", last_update: 1 }],
           },
-        },
+        ],
+        end: "Complete",
       },
     },
-    {
-      name: "missing reporting coordinator",
-      raw: {
-        ...task,
-        ownership: {
-          kind: "Assigned",
-          assignment: {
-            agent: { team: "Development", role: "TypescriptDev" },
-            reports_to: { kind: "Gizmo" },
+  },
+  {
+    name: "blocked work without a reason",
+    raw: {
+      features: {
+        records: [
+          {
+            ...summary,
+            active: [{ ...summary.active[0], blocker: { kind: "blocked" } }],
           },
-        },
+        ],
+        end: "Complete",
       },
     },
-  ].map(({ name, raw }) => ({
-    name,
-    raw: { content: { kind: "Task", value: raw }, selection: reply.selection },
-  })),
+  },
+  {
+    name: "forbidden feature field",
+    raw: {
+      features: {
+        records: [
+          { ...summary, feature: { ...summary.feature, unexpected: true } },
+        ],
+        end: "Complete",
+      },
+    },
+  },
 ];
 it.each(invalidReplies)("rejects native $name", async ({ raw }) => {
   native.invoke.mockResolvedValueOnce(raw);
   const result = await Effect.runPromise(
-    Effect.result(new DashboardApi().read(initial)),
+    Effect.result(new DashboardApi().read()),
   );
   expect(result).toMatchObject({
     _tag: "Failure",
@@ -115,7 +93,7 @@ it.each(invalidFailures)(
   async ({ raw }) => {
     native.invoke.mockRejectedValueOnce(raw);
     const result = await Effect.runPromise(
-      Effect.result(new DashboardApi().read(initial)),
+      Effect.result(new DashboardApi().read()),
     );
     expect(result).toMatchObject({
       _tag: "Failure",
@@ -131,47 +109,19 @@ const failures: DesktopFailure[] = [
 it.each(failures)("preserves native $kind failure", async (failure) => {
   native.invoke.mockRejectedValueOnce(failure);
   expect(
-    await Effect.runPromise(Effect.result(new DashboardApi().read(initial))),
+    await Effect.runPromise(Effect.result(new DashboardApi().read())),
   ).toMatchObject({ _tag: "Failure", failure });
 });
-it("validates native replies and preserves Unicode, empty prose and permitted extensions", async () => {
-  native.invoke.mockResolvedValueOnce(reply);
-  expect(await Effect.runPromise(new DashboardApi().read(initial))).toEqual(
-    reply,
-  );
-  expect(native.invoke).toHaveBeenCalledWith("dashboard_read", {
-    request: initial,
-  });
+it("validates native replies and preserves Unicode and permitted extensions", async () => {
   const fixture = new Fixture();
-  fixture.task.common.objective = "🚀 日本語 e\u0301";
-  fixture.task.common.progress.summary = "";
+  fixture.summary.feature.objective = "🚀 日本語 e\u0301";
   const extended: DesktopReply = {
-    content: { kind: "Task", value: fixture.task, extra: "allowed by schema" },
-    selection: reply.selection,
+    ...fixture.reply(),
     extra: "allowed by schema",
   };
   native.invoke.mockResolvedValueOnce(extended);
-  expect(await Effect.runPromise(new DashboardApi().read(initial))).toEqual(
-    extended,
-  );
-});
-
-it("accepts completed feature activity with native historical worker and no fabricated Git", async () => {
-  const fixture = new Fixture();
-  fixture.task.workspace = { kind: "feature" };
-  fixture.task.state = {
-    kind: "completed",
-    agent: { team: "Development", role: "TypescriptDev" },
-    attempt: 1,
-  };
-  fixture.task.ownership = { kind: "Unrecorded" };
-  fixture.task.common.checkpoint = { kind: "unrecorded" };
-  fixture.contribution.checkpoints = [];
-  fixture.contribution.integrations = [];
-  fixture.flow.counts = [{ state: "completed", count: 1 }];
-  const reply = fixture.workflowReply();
+  expect(await Effect.runPromise(new DashboardApi().read())).toEqual(extended);
+  expect(native.invoke).toHaveBeenCalledWith("dashboard_read");
   native.invoke.mockResolvedValueOnce(reply);
-  expect(await Effect.runPromise(new DashboardApi().read(initial))).toEqual(
-    reply,
-  );
+  expect(await Effect.runPromise(new DashboardApi().read())).toEqual(reply);
 });

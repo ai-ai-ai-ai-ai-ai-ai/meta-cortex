@@ -1,7 +1,6 @@
 use meta_cortex_workbench::agents::DeliveryAgent;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::workflow::TaskAssignment;
-use meta_cortex_workbench::model::{Checkpoint, EventKind, TaskState};
 use meta_cortex_workbench::model::{Phase, Progress, Workspace};
 use meta_cortex_workbench::request::{AssignTask, CoordinatorAction, CoordinatorUpdate};
 use meta_cortex_workbench::request::{
@@ -10,9 +9,11 @@ use meta_cortex_workbench::request::{
 use meta_cortex_workbench::values::Extensions;
 use meta_cortex_workbench::values::{BranchName, FeatureId, LeaseSeconds, Note, Revision, TaskId};
 use meta_cortex_workbench::{
+    Blocker, FeatureActivity, FeatureSummary, FlowState, LatestDelivery, WorkflowCondition,
+};
+use meta_cortex_workbench::{
     DataDirectory, HistoryPage, LedgerError, Observation, PageEnd, PageIndex, TaskPage, Workbench,
 };
-use meta_cortex_workbench::{FlowState, RecordedActor};
 use std::collections::HashSet;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -124,6 +125,17 @@ impl Scenario {
     async fn observe(&self) -> anyhow::Result<Observation> {
         Ok(self.workbench()?.observe().await?)
     }
+    async fn summary(&self) -> anyhow::Result<FeatureSummary> {
+        let feature = Self::feature()?;
+        self.observe()
+            .await?
+            .summaries(PageIndex::FIRST)
+            .await?
+            .records
+            .into_iter()
+            .find(|summary| summary.feature.id == feature)
+            .ok_or_else(|| anyhow::anyhow!("fixture summary missing"))
+    }
     fn files(directory: &Path) -> anyhow::Result<Vec<FileSnapshot>> {
         let mut files = Vec::new();
         for entry in fs::read_dir(directory)? {
@@ -177,24 +189,19 @@ fn read_only_observation_preserves_records_history_schema_and_files() -> anyhow:
                 })
                 .await?;
             assert_eq!(tasks.records.len(), 1);
-            let flow = observation
-                .flow(TaskPage {
-                    feature: Scenario::feature()?,
-                    page: PageIndex::FIRST,
-                })
-                .await?;
-            assert_eq!(flow.tasks.records.len(), 1);
-            assert!(matches!(
-                flow.tasks.records[0].created_by,
-                meta_cortex_workbench::RecordedActor::Recorded {
-                    agent: AgentId::Gizmo(GizmoAgent::Gizmo)
-                }
-            ));
-            assert!(matches!(
-                flow.tasks.records[0].worker,
-                meta_cortex_workbench::RecordedActor::Unrecorded
-            ));
-            assert_eq!(serde_json::to_value(&flow.counts)?[0]["count"], 1);
+            let summaries = observation.summaries(PageIndex::FIRST).await?;
+            assert_eq!(summaries.records.len(), 1);
+            let summary = &summaries.records[0];
+            assert_eq!(serde_json::to_value(&summary.totals.counts)?[0]["count"], 1);
+            assert_eq!(summary.totals.condition, WorkflowCondition::Waiting);
+            assert!(summary.active.is_empty());
+            let outcomes = summary
+                .outcomes
+                .iter()
+                .map(|outcome| (outcome.task.clone(), outcome.status))
+                .collect::<Vec<_>>();
+            assert_eq!(outcomes, [(Scenario::task()?, FlowState::Queued)]);
+            assert_eq!(summary.latest_delivery, LatestDelivery::Nothing);
 
             let history = observation
                 .history(HistoryPage {
@@ -275,12 +282,7 @@ fn observer_and_writer_run_in_distinct_processes() -> anyhow::Result<()> {
             }
             let task = observation.task(Scenario::query()?).await?;
             revisions.insert(task.common.revision);
-            observation
-                .flow(TaskPage {
-                    feature: Scenario::feature()?,
-                    page: PageIndex::FIRST,
-                })
-                .await?;
+            observation.summaries(PageIndex::FIRST).await?;
             observation.features(PageIndex::FIRST).await?;
             observation
                 .history(HistoryPage {
@@ -484,41 +486,34 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(second.end, PageEnd::Complete);
         assert_eq!(first.records[0].task, task);
         assert_eq!(second.records[1].task.common.revision, Revision::INITIAL);
-        let flow = observation
-            .flow(TaskPage {
-                feature: Scenario::feature()?,
-                page: PageIndex::FIRST,
-            })
-            .await?;
-        assert_eq!(flow.tasks.records.len(), 100);
-        assert_eq!(flow.tasks.end, PageEnd::More);
-        let counts = serde_json::to_value(&flow.counts)?;
+        let summaries = observation.summaries(PageIndex::FIRST).await?;
+        assert_eq!(summaries.records.len(), 100);
+        assert_eq!(summaries.end, PageEnd::More);
+        let summaries = observation.summaries(PageIndex::FIRST.next()).await?;
+        let summary = &summaries.records[0];
+        assert_eq!(summary.feature.id, Scenario::feature()?);
+        let totals = &summary.totals;
+        let counts = serde_json::to_value(&totals.counts)?;
         assert_eq!(counts[0]["count"], 100);
         assert_eq!(counts[1]["count"], 1);
-        assert_eq!(flow.tasks.records[0].history_end, PageEnd::More);
-        assert!(matches!(flow.tasks.records[0].attempts[0].started, meta_cortex_workbench::AttemptStart::Unrecorded));
-        let next_flow = observation.flow(TaskPage {
-            feature: Scenario::feature()?, page: PageIndex::FIRST.next(),
-        }).await?;
-        assert_eq!(flow.activity, next_flow.activity);
-        assert!(matches!(flow.activity, meta_cortex_workbench::FeatureActivity::Recorded { first_task_at, last_activity_at }
+        assert_eq!(totals.condition, WorkflowCondition::Active);
+        assert!(matches!(totals.activity, FeatureActivity::Recorded { first_task_at, last_activity_at }
             if first_task_at == task.common.created_at && last_activity_at == task.common.last_update));
-        assert!(matches!(
-            flow.tasks.records[0].created_by,
-            meta_cortex_workbench::RecordedActor::Recorded {
-                agent: AgentId::Gizmo(GizmoAgent::Gizmo)
-            }
-        ));
-
+        let active = &summary.active;
+        assert_eq!(active.len(), 1);
+        assert_eq!(active[0].agent, agent);
+        assert_eq!(active[0].status, FlowState::Working);
+        assert_eq!(active[0].blocker, Blocker::Unblocked);
+        assert_eq!(summary.outcomes.len(), 101);
+        assert_eq!(summary.outcomes[0].task, Scenario::task()?);
+        assert_eq!(summary.outcomes[0].status, FlowState::Working);
         Ok::<_, anyhow::Error>(())
     })
 }
 
 #[test]
-fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Result<()> {
-    use meta_cortex_workbench::RecordedActor;
-    use meta_cortex_workbench::agents::DeliveryAgent;
-    use meta_cortex_workbench::request::{CoordinatorAction, CoordinatorUpdate};
+fn integrated_work_is_the_latest_delivery_and_replaces_its_inputs_as_outcome() -> anyhow::Result<()>
+{
     use meta_cortex_workbench::values::CommitId;
     let scenario = Scenario::new()?;
     scenario.initialize()?;
@@ -591,7 +586,7 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
                 },
             })
             .await?;
-        ledger
+        let integrated = ledger
             .coordinate(CoordinatorUpdate {
                 feature: Scenario::feature()?,
                 task: id.clone(),
@@ -602,34 +597,35 @@ fn workflow_recovers_completed_worker_and_recorded_git_actors() -> anyhow::Resul
                 },
             })
             .await?;
-        let flow = scenario
-            .observe()
-            .await?
-            .flow(TaskPage {
+        let release = TaskId::try_from("release".to_owned())?;
+        ledger
+            .create(CreateTask {
                 feature: Scenario::feature()?,
-                page: PageIndex::FIRST,
+                task: release.clone(),
+                actor: creator,
+                objective: Note::from("Release the integrated code".to_owned()),
+                acceptance: vec![Note::from("Ship".to_owned())],
+                dependencies: vec![id.clone()],
+                workspace: Workspace::ReadOnly,
+                progress: Scenario::progress(),
             })
             .await?;
-        let completed = flow
-            .tasks
-            .records
+        let summary = scenario.summary().await?;
+        assert_eq!(
+            summary.latest_delivery,
+            LatestDelivery::Delivered {
+                task: id,
+                status: FlowState::Integrated,
+                at: integrated.common.last_update,
+            }
+        );
+        let outcomes = summary
+            .outcomes
             .iter()
-            .find(|item| item.task.common.id == id)
-            .ok_or_else(|| anyhow::anyhow!("missing completed task"))?;
-        assert!(matches!(completed.created_by,RecordedActor::Recorded {agent} if agent==creator));
-        assert!(matches!(completed.worker,RecordedActor::Recorded {agent} if agent==worker));
-        assert_eq!(completed.checkpoints[0].actor, worker);
-        assert_eq!(completed.integrations[0].actor, integrator);
-        assert_eq!(completed.integrations[0].commit, commit);
-        assert_eq!(completed.checkpoints[0].attempt, task.common.attempt);
-        assert_eq!(completed.integrations[0].attempt, task.common.attempt);
-        assert_eq!(completed.attempts.len(), 1);
-        assert!(matches!(
-            completed.attempts[0].last_event,
-            EventKind::Integrated
-        ));
-        assert_eq!(completed.milestones.len(), 5);
-        assert_eq!(serde_json::to_value(&flow.counts)?[4]["count"], 1);
+            .map(|outcome| outcome.task.clone())
+            .collect::<Vec<_>>();
+        assert_eq!(outcomes, [release, Scenario::task()?]);
+        assert_eq!(serde_json::to_value(&summary.totals.counts)?[4]["count"], 1);
         Ok::<_, anyhow::Error>(())
     })
 }
@@ -646,7 +642,7 @@ impl Scenario {
         let worker = AgentId::Delivery(DeliveryAgent::PrAgent);
         let progress = Progress {
             extensions: Extensions(serde_json::from_str(
-                r#"{"recorded-evidence":{"revision":"kept"}}"#,
+                r#"{"recorded-evidence":{"revision":"kept"},"pr_url":"https://github.com/acme/tool/pull/41"}"#,
             )?),
             ..Scenario::progress()
         };
@@ -671,25 +667,12 @@ impl Scenario {
                 assignment: TaskAssignment::from(worker),
             })
             .await?;
-        let queued = self
-            .observe()
-            .await?
-            .flow(TaskPage {
-                feature: Scenario::feature()?,
-                page: PageIndex::FIRST,
-            })
-            .await?;
-        let queued = queued
-            .tasks
-            .records
-            .iter()
-            .find(|item| item.task.common.id == id)
-            .ok_or_else(|| anyhow::anyhow!("queued assignment missing"))?;
-        assert!(matches!(queued.created_by, RecordedActor::Recorded {agent} if agent == creator));
-        assert!(matches!(queued.worker, RecordedActor::Recorded {agent} if agent == worker));
-        assert_eq!(queued.task.ownership, assigned.ownership);
-        assert!(queued.checkpoints.is_empty());
-        assert!(queued.integrations.is_empty());
+        let pull_requests = self.summary().await?.pull_requests;
+        assert_eq!(pull_requests.len(), 1);
+        assert_eq!(pull_requests[0].url, "https://github.com/acme/tool/pull/41");
+        assert_eq!(pull_requests[0].repository, "acme/tool");
+        assert_eq!(pull_requests[0].number, 41);
+        assert_eq!(pull_requests[0].tasks.first(), Some(&id));
         let claimed = ledger
             .claim(ClaimTask {
                 feature: Scenario::feature()?,
@@ -720,33 +703,14 @@ impl Scenario {
                 action: CoordinatorAction::Complete,
             })
             .await?;
-        let flow = self
-            .observe()
-            .await?
-            .flow(TaskPage {
-                feature: Scenario::feature()?,
-                page: PageIndex::FIRST,
-            })
-            .await?;
-        let observed = flow
-            .tasks
-            .records
-            .iter()
-            .find(|item| item.task.common.id == id)
-            .ok_or_else(|| anyhow::anyhow!("completed activity missing"))?;
-        assert_eq!(observed.task, completed);
-        assert!(matches!(observed.task.state, TaskState::Completed {agent, ..} if agent == worker));
-        assert_eq!(observed.task.workspace, workspace);
-        assert_eq!(observed.task.common.progress, progress);
-        assert_eq!(observed.task.common.checkpoint, Checkpoint::Unrecorded);
-        assert!(matches!(observed.worker, RecordedActor::Recorded {agent} if agent == worker));
-        assert!(observed.checkpoints.is_empty());
-        assert!(observed.integrations.is_empty());
-        assert!(
-            observed
-                .milestones
-                .iter()
-                .any(|event| matches!(event.kind, EventKind::Completed))
+        let summary = self.summary().await?;
+        assert_eq!(
+            summary.latest_delivery,
+            LatestDelivery::Delivered {
+                task: id,
+                status: FlowState::Completed,
+                at: completed.common.last_update,
+            }
         );
         Ok(())
     }
@@ -769,15 +733,9 @@ fn assigned_and_completed_observations_preserve_owners_without_git_evidence() ->
         ] {
             scenario.completed_activity(activity).await?;
         }
-        let flow = scenario
-            .observe()
-            .await?
-            .flow(TaskPage {
-                feature: Scenario::feature()?,
-                page: PageIndex::FIRST,
-            })
-            .await?;
-        let count = flow
+        let summary = scenario.summary().await?;
+        let count = summary
+            .totals
             .counts
             .iter()
             .find(|count| matches!(count.state, FlowState::Completed))
@@ -788,9 +746,8 @@ fn assigned_and_completed_observations_preserve_owners_without_git_evidence() ->
 }
 
 #[test]
-fn attempts_keep_previous_worker_results_separate_from_a_fresh_claim() -> anyhow::Result<()> {
+fn a_fresh_claim_reports_its_worker_blocker_and_full_activity_bounds() -> anyhow::Result<()> {
     use meta_cortex_workbench::request::StoppedExecution;
-    use meta_cortex_workbench::{AttemptProgress, AttemptStart, FeatureActivity};
     let scenario = Scenario::new()?;
     scenario.initialize()?;
     scenario.runtime.block_on(async {
@@ -830,23 +787,25 @@ fn attempts_keep_previous_worker_results_separate_from_a_fresh_claim() -> anyhow
             expected_revision: assigned.common.revision, agent: next_worker,
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
         }).await?;
-        let flow = scenario.observe().await?.flow(TaskPage {
-            feature: Scenario::feature()?, page: PageIndex::FIRST,
+        let reason = Note::from("Waiting for the storage review".to_owned());
+        let blocked = ledger.update(WorkerUpdate {
+            feature: Scenario::feature()?, task: Scenario::task()?,
+            expected_revision: second.common.revision, agent: next_worker,
+            attempt: second.common.attempt,
+            action: WorkerAction::Progress {
+                ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                phase: Phase::Blocked { reason: reason.clone() },
+                progress: Scenario::progress(),
+            },
         }).await?;
-        let attempts = &flow.tasks.records[0].attempts;
-        assert_eq!(attempts.len(), 2);
-        assert_eq!(attempts[0].attempt, second.common.attempt);
-        assert_eq!(attempts[1].attempt, first.common.attempt);
-        assert!(matches!(attempts[0].worker, RecordedActor::Recorded { agent } if agent == next_worker));
-        assert!(matches!(attempts[1].worker, RecordedActor::Recorded { agent } if agent == first_worker));
-        assert!(matches!(attempts[0].progress, AttemptProgress::Unrecorded));
-        assert!(matches!(&attempts[1].progress, AttemptProgress::Recorded { progress } if progress.summary == Note::from("Storage reads delivered".to_owned())));
-        assert!(matches!(attempts[0].started, AttemptStart::Recorded { at } if at == second.common.last_update));
-        assert!(matches!(attempts[1].started, AttemptStart::Recorded { at } if at == first.common.last_update));
-        assert!(matches!(attempts[1].last_event, EventKind::Requeued));
-        assert_eq!(attempts[1].updated_at, requeued.common.last_update);
-        assert!(matches!(flow.activity, FeatureActivity::Recorded { first_task_at, last_activity_at }
-            if first_task_at == first.common.created_at && last_activity_at == second.common.last_update));
+        let summary = scenario.summary().await?;
+        assert_eq!(summary.active.len(), 1);
+        assert_eq!(summary.active[0].agent, next_worker);
+        assert_eq!(summary.active[0].status, FlowState::Blocked);
+        assert_eq!(summary.active[0].blocker, Blocker::Blocked { reason });
+        assert_eq!(summary.totals.condition, WorkflowCondition::Attention);
+        assert!(matches!(summary.totals.activity, FeatureActivity::Recorded { first_task_at, last_activity_at }
+            if first_task_at == first.common.created_at && last_activity_at == blocked.common.last_update));
         Ok::<_, anyhow::Error>(())
     })
 }
@@ -865,16 +824,11 @@ fn empty_feature_has_no_invented_activity_dates() -> anyhow::Result<()> {
                 worktree: scenario.project.clone(),
             })
             .await?;
-        let flow = scenario
-            .observe()
-            .await?
-            .flow(TaskPage {
-                feature: Scenario::feature()?,
-                page: PageIndex::FIRST,
-            })
-            .await?;
-        assert_eq!(flow.activity, meta_cortex_workbench::FeatureActivity::Empty);
-        assert!(flow.tasks.records.is_empty());
+        let summary = scenario.summary().await?;
+        assert_eq!(summary.totals.activity, FeatureActivity::Empty);
+        assert_eq!(summary.totals.condition, WorkflowCondition::Empty);
+        assert!(summary.outcomes.is_empty());
+        assert_eq!(summary.latest_delivery, LatestDelivery::Nothing);
         Ok::<_, anyhow::Error>(())
     })
 }

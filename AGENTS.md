@@ -52,7 +52,7 @@ old instruction formats for hypothetical compatibility. `list` discovers command
 `run` executes typed YAML requests, including framework initialization and inspection.
 `dashboard` opens the native Tauri Workbench dashboard for the current repository
 without a request file or required arguments. It observes existing ledger data;
-typed `Workbench / Dashboard` requests use `Desktop` for targeted native views
+typed `Workbench / Dashboard` requests use `Desktop` for the native feature journal
 and `Snapshot` for headless text output.
 Remove superseded paths and update their callers, tests, and documentation together.
 Keep the explicitly required Workbench schema-version and migration support;

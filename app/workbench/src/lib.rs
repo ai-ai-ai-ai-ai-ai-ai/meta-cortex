@@ -20,9 +20,9 @@ use sea_query::error;
 use std::path::Path;
 use std::{io, time::SystemTimeError};
 pub use store::observation::{
-    AttemptFlow, AttemptProgress, AttemptStart, FeatureActivity, FeatureFlow, FlowCount, FlowState,
-    HistoryPage, Milestone, Observation, Page, PageEnd, PageIndex, RecordedActor, RecordedCommit,
-    TaskCount, TaskFlow, TaskPage,
+    ActiveWork, Blocker, Completion, FeatureActivity, FeatureOutcome, FeatureSummary, FlowCount,
+    FlowState, HistoryPage, LatestDelivery, Observation, Page, PageEnd, PageIndex, PullRequest,
+    TaskCount, TaskPage, WorkflowCondition, WorkflowTotals,
 };
 pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};

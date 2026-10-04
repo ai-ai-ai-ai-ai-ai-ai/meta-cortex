@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Effect, Match } from "effect";
 import { reply, failure } from "virtual:dashboard-validators";
-import type { DesktopRead, DesktopReply, DesktopFailure } from "./contracts";
+import type { DesktopReply, DesktopFailure } from "./contracts";
 export enum ReadFailureKind {
   InvalidReply = "InvalidReply",
   Transport = "Transport",
@@ -10,9 +10,9 @@ export type DashboardFailure =
   | DesktopFailure
   | { kind: ReadFailureKind; message: string; cause: unknown };
 export class DashboardApi {
-  read(request: DesktopRead): Effect.Effect<DesktopReply, DashboardFailure> {
+  read(): Effect.Effect<DesktopReply, DashboardFailure> {
     return Effect.tryPromise({
-      try: () => invoke<unknown>("dashboard_read", { request }),
+      try: () => invoke<unknown>("dashboard_read"),
       catch: (cause) =>
         Match.value(cause).pipe(
           Match.when(failure, (value) => value),

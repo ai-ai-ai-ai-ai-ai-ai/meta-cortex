@@ -44,30 +44,7 @@ export default tseslint.config(
   {
     // Registry-generated shadcn APIs retain their upstream anchor/disabled handling.
     // See src/lib/UPSTREAM.md; all other rules and authored dashboard files remain checked.
-    files: [
-      "src/lib/components/ui/button/button.svelte",
-      "src/lib/components/ui/badge/badge.svelte",
-      "src/lib/components/ui/sidebar/sidebar.svelte",
-      "src/lib/components/ui/sidebar/context.svelte.ts",
-    ],
+    files: ["src/lib/components/ui/button/button.svelte"],
     rules: { "no-restricted-syntax": "off" },
-  },
-  {
-    // Registry Input retains HTMLInputAttributes.value:any; Sidebar retains
-    // upstream mergeProps. All authored components keep strict type linting.
-    files: [
-      "src/lib/components/ui/input/input.svelte",
-      "src/lib/components/ui/sidebar/sidebar-menu-button.svelte",
-    ],
-    rules: { "@typescript-eslint/no-unsafe-assignment": "off" },
-  },
-  {
-    // Registry Sidebar's component props and bind callback cross Svelte's
-    // generated prop inference boundary. Keep its stock implementation.
-    files: [
-      "src/lib/components/ui/sidebar/sidebar.svelte",
-      "src/lib/components/ui/sidebar/sidebar-trigger.svelte",
-    ],
-    rules: { "@typescript-eslint/no-unsafe-argument": "off" },
   },
 );

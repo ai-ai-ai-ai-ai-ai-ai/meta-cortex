@@ -14,7 +14,11 @@ export default {
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    rollupOptions: { output: { manualChunks: { effect: ["effect"] } } },
+    rollupOptions: {
+      output: {
+        manualChunks: { effect: ["effect"] },
+      },
+    },
   },
   test: { environment: "jsdom", clearMocks: true },
 } satisfies UserConfig;

@@ -11,16 +11,8 @@ use serde::{Deserialize, Serialize};
 use std::io;
 use thiserror::Error;
 
-pub use desktop::{
-    DesktopContent, DesktopContract, DesktopFailure, DesktopLaunch, DesktopRead, DesktopReply,
-    DesktopSelection,
-};
+pub use desktop::{DesktopContract, DesktopFailure, DesktopLaunch, DesktopReply};
 
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-pub enum DashboardMode {
-    Desktop,
-    Snapshot,
-}
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum DashboardView {
@@ -29,12 +21,15 @@ pub enum DashboardView {
     Task { query: TaskQuery },
     History { query: TaskQuery },
 }
+/// `Desktop` opens the native feature journal; `Snapshot` returns one view as text.
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct DashboardRequest {
-    pub mode: DashboardMode,
-    pub view: DashboardView,
-    pub page: PageIndex,
+#[serde(tag = "mode", deny_unknown_fields)]
+pub enum DashboardRequest {
+    Desktop {},
+    Snapshot {
+        view: DashboardView,
+        page: PageIndex,
+    },
 }
 #[derive(Serialize)]
 pub struct DashboardReport {
@@ -71,20 +66,18 @@ impl Dashboard {
         self,
         request: DashboardRequest,
     ) -> Result<DashboardExecution, DashboardError> {
-        match request.mode {
-            DashboardMode::Snapshot => {
-                let route = snapshot::Route::from(request.view).with_page(request.page);
+        match request {
+            DashboardRequest::Snapshot { view, page } => {
+                let route = snapshot::Route::from(view).with_page(page);
                 let content = route.load(&self.workbench.observe().await?).await?;
                 Ok(DashboardExecution::Snapshot(DashboardReport {
                     content: content.text(&snapshot::SnapshotContext { route }),
                 }))
             }
-            DashboardMode::Desktop => {
+            DashboardRequest::Desktop {} => {
                 self.workbench.observe().await?;
                 Ok(DashboardExecution::Desktop(DesktopLaunch {
                     workbench: self.workbench,
-                    view: request.view,
-                    page: request.page,
                 }))
             }
         }

@@ -22,73 +22,7 @@ export type DesktopFailure =
       [k: string]: unknown;
     };
 export type Note = string;
-export type DesktopContent =
-  | {
-      kind: "Features";
-      value: Page;
-      [k: string]: unknown;
-    }
-  | {
-      kind: "Workflow";
-      value: FeatureFlow;
-      [k: string]: unknown;
-    }
-  | {
-      kind: "Task";
-      value: TaskV2;
-      [k: string]: unknown;
-    }
-  | {
-      kind: "History";
-      value: Page3;
-      [k: string]: unknown;
-    };
 export type PageEnd = "Complete" | "More";
-/**
- * Task activity bounds, not feature lifecycle events (which are not stored).
- */
-export type FeatureActivity =
-  | {
-      kind: "empty";
-      [k: string]: unknown;
-    }
-  | {
-      first_task_at: number;
-      kind: "recorded";
-      last_activity_at: number;
-      [k: string]: unknown;
-    };
-export type FlowState =
-  | "queued"
-  | "working"
-  | "blocked"
-  | "ready"
-  | "integrated"
-  | "completed"
-  | "cancelled";
-export type EventKind =
-  | "created"
-  | "claimed"
-  | "assigned"
-  | "heartbeat"
-  | "progress"
-  | "checkpoint"
-  | "ready"
-  | "integrated"
-  | "completed"
-  | "requeued"
-  | "cancelled";
-/**
- * V1 tasks did not record an intended owner or reporting line.
- */
-export type TaskOwnership =
-  | {
-      kind: "Unrecorded";
-    }
-  | {
-      assignment: TaskAssignment;
-      kind: "Assigned";
-    };
 /**
  * An agent role scoped to its owning Cortex team.
  */
@@ -132,159 +66,116 @@ export type SreAgent =
   | "DockerSpecialist"
   | "KubernetesSpecialist";
 export type DeliveryAgent = "IntegrationAgent" | "PrAgent";
-export type ReportingTarget =
+/**
+ * Why held work cannot proceed, as its worker recorded it.
+ */
+export type Blocker =
   | {
-      kind: "Host";
-    }
-  | {
-      coordinator: GizmoAgent;
-      kind: "Gizmo";
-    };
-export type AttemptProgress =
-  | {
-      kind: "unrecorded";
+      kind: "unblocked";
       [k: string]: unknown;
-    }
-  | {
-      kind: "recorded";
-      progress: Progress;
-      [k: string]: unknown;
-    };
-export type CheckOutcome = "passed" | "failed" | "not_run";
-export type AttemptStart =
-  | {
-      kind: "unrecorded";
-      [k: string]: unknown;
-    }
-  | {
-      at: number;
-      kind: "recorded";
-      [k: string]: unknown;
-    };
-export type RecordedActor =
-  | {
-      kind: "unrecorded";
-      [k: string]: unknown;
-    }
-  | {
-      agent: AgentId;
-      kind: "recorded";
-      [k: string]: unknown;
-    };
-export type Checkpoint =
-  | {
-      kind: "unrecorded";
-    }
-  | {
-      commit: string;
-      kind: "git";
-    };
-export type TaskState =
-  | {
-      kind: "queued";
-    }
-  | {
-      assignment: Assignment;
-      kind: "active";
-    }
-  | {
-      agent: AgentId;
-      attempt: number;
-      kind: "ready";
-    }
-  | {
-      commit: string;
-      kind: "integrated";
-    }
-  | {
-      agent: AgentId;
-      attempt: number;
-      kind: "completed";
-    }
-  | {
-      kind: "cancelled";
-      reason: Note;
-    };
-export type Phase =
-  | {
-      kind: "working";
     }
   | {
       kind: "blocked";
       reason: Note;
+      [k: string]: unknown;
+    };
+export type LeaseHealth = "current" | "expired" | "not_running";
+/**
+ * One observable workflow state; `Working` and `Blocked` split the active assignment phase.
+ */
+export type FlowState =
+  | "queued"
+  | "working"
+  | "blocked"
+  | "ready"
+  | "integrated"
+  | "completed"
+  | "cancelled";
+/**
+ * The task a coordinator most recently integrated or completed.
+ */
+export type LatestDelivery =
+  | {
+      kind: "nothing";
+      [k: string]: unknown;
+    }
+  | {
+      at: number;
+      kind: "delivered";
+      status: FlowState;
+      task: string;
+      [k: string]: unknown;
     };
 /**
- * Current task shape. V1 payloads are decoded by the separate legacy task record.
+ * Task activity bounds, not feature lifecycle events (which are not stored).
  */
-export type TaskRecordVersion = 2;
-export type Workspace =
+export type FeatureActivity =
   | {
-      kind: "read_only";
+      kind: "empty";
+      [k: string]: unknown;
     }
   | {
-      kind: "feature";
-    }
-  | {
-      branch: string;
-      kind: "git";
-      path: string;
+      first_task_at: number;
+      kind: "recorded";
+      last_activity_at: number;
+      [k: string]: unknown;
     };
-export type DashboardView =
-  | {
-      kind: "Features";
-    }
-  | {
-      feature: string;
-      kind: "Tasks";
-    }
-  | {
-      kind: "Task";
-      query: TaskQuery;
-    }
-  | {
-      kind: "History";
-      query: TaskQuery;
-    };
-export type DesktopRead =
-  | {
-      kind: "Initial";
-    }
-  | {
-      kind: "Features";
-      page: number;
-    }
-  | {
-      feature: string;
-      kind: "Workflow";
-      page: number;
-    }
-  | {
-      kind: "Task";
-      query: TaskQuery;
-    }
-  | {
-      kind: "History";
-      page: number;
-      query: TaskQuery;
-    };
+/**
+ * The single headline an observer needs first; attention outranks progress.
+ */
+export type WorkflowCondition =
+  | "empty"
+  | "attention"
+  | "active"
+  | "waiting"
+  | "finished";
 
 export interface DesktopContract {
   failure: DesktopFailure;
   reply: DesktopReply;
-  request: DesktopRead;
-  [k: string]: unknown;
-}
-export interface DesktopReply {
-  content: DesktopContent;
-  selection: DesktopSelection;
   [k: string]: unknown;
 }
 /**
- * A page of at most 100 records. Each operation releases its connection before returning.
+ * Every recorded feature with its totals, held work, outcomes and pull requests.
+ */
+export interface DesktopReply {
+  features: Page;
+  [k: string]: unknown;
+}
+/**
+ * A page of bounded records. Each operation releases its connection before returning.
  */
 export interface Page {
   end: PageEnd;
-  records: Feature[];
+  records: FeatureSummary[];
+  [k: string]: unknown;
+}
+export interface FeatureSummary {
+  active: ActiveWork[];
+  feature: Feature;
+  latest_delivery: LatestDelivery;
+  /**
+   * Live tasks no other task depends on, most recently updated first.
+   */
+  outcomes: FeatureOutcome[];
+  /**
+   * Pull requests recorded in task progress extensions, most often recorded first.
+   */
+  pull_requests: PullRequest[];
+  totals: WorkflowTotals;
+  [k: string]: unknown;
+}
+/**
+ * Work currently held by an agent, extracted without loading full task documents.
+ */
+export interface ActiveWork {
+  agent: AgentId;
+  blocker: Blocker;
+  last_update: number;
+  lease: LeaseHealth;
+  status: FlowState;
+  summary: Note;
+  task: string;
   [k: string]: unknown;
 }
 export interface Feature {
@@ -294,144 +185,60 @@ export interface Feature {
   version: number;
   worktree: string;
 }
-export interface FeatureFlow {
+/**
+ * A task no other recorded task depends on: something the feature delivers.
+ */
+export interface FeatureOutcome {
+  last_update: number;
+  status: FlowState;
+  task: string;
+  [k: string]: unknown;
+}
+/**
+ * A pull request recorded by at least one task, with the tasks that recorded it.
+ */
+export interface PullRequest {
+  number: number;
+  /**
+   * Latest update of a task that records this pull request.
+   */
+  recorded_at: number;
+  /**
+   * `owner/repository` as written in the link.
+   */
+  repository: string;
+  /**
+   * Tasks whose current progress records this pull request, most recent first.
+   */
+  tasks: string[];
+  /**
+   * Canonical `https://host/owner/repository/pull/number` link.
+   */
+  url: string;
+  [k: string]: unknown;
+}
+export interface WorkflowTotals {
   activity: FeatureActivity;
+  completion: Completion;
+  condition: WorkflowCondition;
   counts: FlowCount[];
-  feature: Feature;
-  observed_at: number;
-  tasks: Page2;
+  /**
+   * Active tasks whose lease expired before the observation.
+   */
+  stalled: number;
+  [k: string]: unknown;
+}
+/**
+ * Finished work over all recorded work; cancelled tasks are closed but not finished.
+ */
+export interface Completion {
+  cancelled: number;
+  finished: number;
+  total: number;
   [k: string]: unknown;
 }
 export interface FlowCount {
   count: number;
   state: FlowState;
   [k: string]: unknown;
-}
-/**
- * A page of at most 100 records. Each operation releases its connection before returning.
- */
-export interface Page2 {
-  end: PageEnd;
-  records: TaskFlow[];
-  [k: string]: unknown;
-}
-export interface TaskFlow {
-  attempts: AttemptFlow[];
-  checkpoints: RecordedCommit[];
-  created_by: RecordedActor;
-  history_end: PageEnd;
-  integrations: RecordedCommit[];
-  milestones: Milestone[];
-  task: TaskV2;
-  worker: RecordedActor;
-  [k: string]: unknown;
-}
-/**
- * One claim and its own contributions within the bounded event history.
- */
-export interface AttemptFlow {
-  attempt: number;
-  last_event: EventKind;
-  ownership: TaskOwnership;
-  progress: AttemptProgress;
-  started: AttemptStart;
-  updated_at: number;
-  worker: RecordedActor;
-  [k: string]: unknown;
-}
-/**
- * The intended owner and reporting line survive every task state and attempt.
- */
-export interface TaskAssignment {
-  agent: AgentId;
-  reports_to: ReportingTarget;
-}
-export interface Progress {
-  checks: Check[];
-  /**
-   * Task-specific data only. Coordination never interprets these keys.
-   */
-  extensions?: {
-    [k: string]: unknown;
-  };
-  findings: Note[];
-  next_steps: Note[];
-  summary: Note;
-}
-export interface Check {
-  command: Note;
-  evidence: Note;
-  outcome: CheckOutcome;
-}
-export interface RecordedCommit {
-  actor: AgentId;
-  at: number;
-  attempt: number;
-  commit: string;
-  revision: number;
-  [k: string]: unknown;
-}
-export interface Milestone {
-  actor: AgentId;
-  at: number;
-  attempt: number;
-  kind: EventKind;
-  note: Note;
-  revision: number;
-  [k: string]: unknown;
-}
-export interface TaskV2 {
-  common: TaskCommon;
-  ownership: TaskOwnership;
-  state: TaskState;
-  version: TaskRecordVersion;
-  workspace: Workspace;
-}
-/**
- * Shared task fields in V2 and later records.
- * Keep this shape stable for retained readers; changed field meanings need a new type.
- */
-export interface TaskCommon {
-  acceptance: Note[];
-  attempt: number;
-  checkpoint: Checkpoint;
-  created_at: number;
-  dependencies: string[];
-  feature: string;
-  id: string;
-  last_progress: number;
-  last_update: number;
-  objective: Note;
-  progress: Progress;
-  revision: number;
-}
-export interface Assignment {
-  agent: AgentId;
-  attempt: number;
-  expires_at: number;
-  phase: Phase;
-}
-/**
- * A page of at most 100 records. Each operation releases its connection before returning.
- */
-export interface Page3 {
-  end: PageEnd;
-  records: Event[];
-  [k: string]: unknown;
-}
-export interface Event {
-  actor: AgentId;
-  kind: EventKind;
-  note: Note;
-  task: TaskV2;
-  version: number;
-}
-export interface DesktopSelection {
-  page: number;
-  view: DashboardView;
-  [k: string]: unknown;
-}
-export interface TaskQuery {
-  feature: string;
-  task: string;
 }
