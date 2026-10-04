@@ -14,11 +14,10 @@ pub enum WorkerIdentity {
 impl WorkerIdentity {
     pub(super) fn require(self, expected: WorkerId) -> Result<(), LedgerError> {
         match self {
-            Self::Unrecorded => Ok(()),
-            Self::Recorded { worker_id } => match worker_id == expected {
-                true => Ok(()),
-                false => Err(LedgerError::AssignmentChanged),
-            },
+            Self::Recorded { worker_id } if worker_id != expected => {
+                Err(LedgerError::AssignmentChanged)
+            }
+            Self::Recorded { .. } | Self::Unrecorded => Ok(()),
         }
     }
 }

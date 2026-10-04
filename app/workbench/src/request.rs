@@ -150,6 +150,13 @@ mod tests {
         };
         let encoded = serde_json::to_value(claim)?;
         assert!(encoded.get("worker_id").is_some());
+        let decoded: ClaimTask = serde_json::from_value(encoded.clone())?;
+        assert_eq!(decoded.worker_id, WorkerId::EXAMPLE);
+        let serde_json::Value::Object(mut fields) = encoded else {
+            anyhow::bail!("claim must serialize as an object");
+        };
+        assert!(fields.remove("worker_id").is_some());
+        assert!(serde_json::from_value::<ClaimTask>(serde_json::Value::Object(fields)).is_err());
         Ok(())
     }
 }

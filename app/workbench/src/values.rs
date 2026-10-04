@@ -346,9 +346,9 @@ impl TryFrom<String> for WorkerId {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let uuid = Uuid::parse_str(&value)?;
-        match uuid.is_nil() {
-            true => Err(WorkerIdParseError::Nil),
-            false => Ok(Self(uuid)),
+        match uuid {
+            uuid if uuid.is_nil() => Err(WorkerIdParseError::Nil),
+            uuid => Ok(Self(uuid)),
         }
     }
 }
