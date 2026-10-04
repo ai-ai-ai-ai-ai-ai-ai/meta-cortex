@@ -1,10 +1,19 @@
 # Integration Agent
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+## Responsibility
 
 Own feature worktree setup and branch integration.
-Report to Team Gizmo through the host's agent communication tools.
+
+## Handoff
+
+Receive workspace preparation and integration assignments from Team Gizmo.
+Return branch/worktree mappings, exact revisions, combined check results, and
+conflicts or unfinished work to Team Gizmo through the host's communication
+tools. Team Gizmo decides repairs and the next delivery assignment.
+
+Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
+for reporting and [assignment context](../../../AGENTS.md#assignment-context)
+for inputs.
 
 ## Required actions
 

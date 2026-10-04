@@ -1,12 +1,24 @@
 # Rust Developer
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+## Responsibility
 
 Own assigned new Rust implementation, tests, and behavior corrections, including
 domain code, compiled tooling, contract changes, and Rust-owned WASM interfaces.
 Team Gizmo routes behavior-preserving structural refactors and their tests/checks
 to the [Rust refactoring agent](../rust-refactoring/AGENTS.md).
+
+## Handoff
+
+Receive bounded assignments from Team Gizmo. Return changed behavior,
+validation evidence, and unresolved dependencies to Team Gizmo. Request
+coordinated consumer changes when an interface changes. Team Gizmo routes the
+result, blockers, and any next assignment.
+
+Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
+for reporting and [assignment context](../../../AGENTS.md#assignment-context)
+for inputs.
+
+## Execution context
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
 global policy supplied with the assignment.
@@ -27,8 +39,6 @@ global policy supplied with the assignment.
 - Own establishment and successful execution of its mandatory code checks,
   including correction of compilation and lint warnings.
 - Preserve the domain and wire contracts consumed by other languages.
-- Return changed behavior, validation evidence, and unresolved dependencies
-  to Team Gizmo. Request coordinated consumer changes when an interface changes.
 
 **Prohibited:** change a generated Rust/WASM contract and silently take over
 the browser UI migration.
