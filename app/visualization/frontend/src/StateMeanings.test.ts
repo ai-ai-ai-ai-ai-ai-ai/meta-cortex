@@ -12,7 +12,7 @@ afterEach(cleanup);
 it("keeps state help collapsed and consumes supplied descriptor prose in order", () => {
   const meanings = new Fixture().workflow().state_meanings;
   const supplied: StateMeaning = {
-    ...meanings[0],
+    state: "queued",
     meaning: "Supplied meaning from the workbench",
     qualification: "Supplied qualification",
     evidence: "Supplied evidence",
