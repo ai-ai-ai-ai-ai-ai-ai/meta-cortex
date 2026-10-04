@@ -214,7 +214,16 @@ impl TryFrom<i64> for Attempt {
 #[schemars(with = "i64")]
 pub struct Timestamp(i64);
 
+/// Nonnegative recorded elapsed milliseconds, independent of display rounding.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, JsonSchema)]
+#[serde(transparent)]
+pub struct ElapsedMillis(i64);
+
 impl Timestamp {
+    pub fn elapsed_since(self, started: Self) -> ElapsedMillis {
+        ElapsedMillis(self.0.saturating_sub(started.0).max(0))
+    }
+
     pub const EPOCH: Self = Self(0);
     pub fn now() -> Result<Self, LedgerError> {
         let value = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();

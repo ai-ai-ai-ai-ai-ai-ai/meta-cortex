@@ -1,5 +1,6 @@
 //! Complete, read-only task chapters for a selected feature. Pagination is consumed
 //! between short-lived WAL reads; no transaction is held while the UI is open.
+use super::timeline::RecordedTimeline;
 use super::{FlowState, HistoryPage, Observation, PageEnd, PageIndex, TaskPage};
 use crate::LedgerError;
 use crate::agents::AgentId;
@@ -12,6 +13,7 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeatureWorkflow {
+    pub timeline: RecordedTimeline,
     pub feature: FeatureId,
     pub chapters: Vec<TaskChapter>,
     pub timing: WorkflowTiming,
@@ -28,7 +30,7 @@ pub enum WorkflowTiming {
         finished: Timestamp,
     },
 }
-#[derive(Debug, Serialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, JsonSchema)]
 #[serde(tag = "kind")]
 pub enum RecordedRole {
     Unrecorded,
@@ -43,6 +45,7 @@ pub struct TaskChapter {
 }
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeedEntry {
+    pub objective: Note,
     /// Worker identity from this event snapshot, never inferred from its actor.
     pub worker: WorkerIdentity,
     pub kind: EventKind,
@@ -104,6 +107,7 @@ impl Observation {
         }
         let timing = WorkflowTiming::from(chapters.as_slice());
         Ok(FeatureWorkflow {
+            timeline: RecordedTimeline::from(chapters.as_slice()),
             feature,
             chapters,
             timing,
@@ -176,6 +180,7 @@ impl From<ChapterSource> for TaskChapter {
             };
             checkpoint = event.task.common.checkpoint;
             entries.push(FeedEntry {
+                objective: event.task.common.objective,
                 worker: event.task.worker,
                 kind: event.kind,
                 actor: event.actor,
@@ -234,7 +239,7 @@ impl From<&[TaskChapter]> for WorkflowTiming {
 
 #[cfg(test)]
 mod tests {
-    use super::{ChapterSource, RecordedRole, TaskChapter, WorkflowTiming};
+    use super::{ChapterSource, FeatureWorkflow, RecordedRole, TaskChapter, WorkflowTiming};
     use crate::agents::{AgentId, DevelopmentAgent};
     use crate::model::worker::WorkerIdentity;
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
@@ -247,6 +252,23 @@ mod tests {
     };
     use crate::versions::{RecordVersion, TaskRecordVersion};
     use std::collections::BTreeMap;
+
+    #[test]
+    fn empty_workflow_exposes_an_explicit_empty_recorded_timeline() -> anyhow::Result<()> {
+        let workflow = FeatureWorkflow {
+            timeline: super::RecordedTimeline::from([].as_slice()),
+            feature: FeatureId::try_from("feature".to_owned())?,
+            chapters: Vec::new(),
+            timing: WorkflowTiming::Empty,
+        };
+        let serialized = serde_json::to_value(workflow)?;
+        assert_eq!(serialized["timeline"]["extent"]["kind"], "Empty");
+        assert_eq!(
+            serialized["timeline"]["groups"],
+            serde_json::to_value(Vec::<TaskId>::new())?
+        );
+        Ok(())
+    }
 
     struct Scenario;
     impl Scenario {

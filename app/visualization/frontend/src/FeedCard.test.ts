@@ -20,6 +20,7 @@ class FeedScenario {
 
   entry(ownership: TaskOwnership): FeedEntry {
     return {
+      objective: "Historical task",
       actor: Fixture.PRIME,
       worker: { kind: "Unrecorded" },
       ownership,

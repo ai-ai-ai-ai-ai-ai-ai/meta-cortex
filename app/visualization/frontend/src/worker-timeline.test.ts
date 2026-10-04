@@ -39,6 +39,7 @@ class WorkerFixture {
     chapter.task.common.id = request.task;
     chapter.task.common.last_update = request.end;
     const entry: FeedEntry = {
+      objective: "Historical test task",
       ...chapter.entries[0],
       at: request.start,
       worker: request.worker,

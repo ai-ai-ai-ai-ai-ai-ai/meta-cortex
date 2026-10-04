@@ -14,6 +14,7 @@ class TimelineFixture {
   }
   record(record: StateRecord): void {
     const entry: FeedEntry = {
+      objective: "Historical test task",
       ...record,
       actor: Fixture.RUST,
       worker: this.chapter.task.worker,

@@ -244,6 +244,42 @@ export type Workspace =
       kind: "git";
       path: string;
     };
+export type TimelineExtent =
+  | {
+      kind: "Empty";
+      [k: string]: unknown;
+    }
+  | {
+      finished: number;
+      kind: "Recorded";
+      started: number;
+      [k: string]: unknown;
+    };
+export type TimelineGroupIdentity =
+  | {
+      kind: "RecordedWorker";
+      worker_id: WorkerId;
+      [k: string]: unknown;
+    }
+  | {
+      kind: "RoleHistory";
+      role: RecordedRole;
+      [k: string]: unknown;
+    };
+export type TimelineOrder =
+  | {
+      at: number;
+      kind: "Recorded";
+      [k: string]: unknown;
+    }
+  | {
+      kind: "Unrecorded";
+      [k: string]: unknown;
+    };
+/**
+ * Nonnegative recorded elapsed milliseconds, independent of display rounding.
+ */
+export type ElapsedMillis = number;
 export type WorkflowTiming =
   | {
       kind: "Empty";
@@ -381,6 +417,7 @@ export interface FlowCount {
 export interface FeatureWorkflow {
   chapters: TaskChapter[];
   feature: string;
+  timeline: RecordedTimeline;
   timing: WorkflowTiming;
   [k: string]: unknown;
 }
@@ -401,6 +438,7 @@ export interface FeedEntry {
   evidence: Progress[];
   kind: EventKind;
   note: Note;
+  objective: Note;
   /**
    * Ownership recorded in this event snapshot, independent of its actor.
    */
@@ -511,4 +549,33 @@ export interface TaskCommon {
   objective: Note;
   progress: Progress;
   revision: number;
+}
+export interface RecordedTimeline {
+  chapter_order: string[];
+  extent: TimelineExtent;
+  groups: TimelineGroup[];
+  [k: string]: unknown;
+}
+export interface TimelineGroup {
+  identity: TimelineGroupIdentity;
+  order: TimelineOrder;
+  roles: RecordedRole[];
+  tasks: string[];
+  windows: RecordedWindow[];
+  [k: string]: unknown;
+}
+export interface RecordedWindow {
+  duration_ms: ElapsedMillis;
+  end: number;
+  objective: Note;
+  revision: number;
+  role: RecordedRole;
+  start: number;
+  state: TaskState;
+  status: FlowState;
+  summary: Note;
+  summary_revision: number;
+  task: string;
+  worker: WorkerIdentity;
+  [k: string]: unknown;
 }

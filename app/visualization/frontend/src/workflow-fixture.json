@@ -1,0 +1,208 @@
+{
+  "timeline": {
+    "extent": {
+      "kind": "Recorded",
+      "started": 1791053400000,
+      "finished": 1791053400000
+    },
+    "groups": [
+      {
+        "identity": {
+          "kind": "RoleHistory",
+          "role": {
+            "kind": "Recorded",
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            }
+          }
+        },
+        "roles": [
+          {
+            "kind": "Recorded",
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            }
+          }
+        ],
+        "tasks": [
+          "rust-release"
+        ],
+        "windows": [
+          {
+            "task": "rust-release",
+            "objective": "Implement the release",
+            "revision": 2,
+            "summary_revision": 2,
+            "start": 1791053400000,
+            "end": 1791053400000,
+            "duration_ms": 0,
+            "state": {
+              "kind": "completed",
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "attempt": 1
+            },
+            "status": "completed",
+            "worker": {
+              "kind": "Unrecorded"
+            },
+            "role": {
+              "kind": "Recorded",
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              }
+            },
+            "summary": "Release implemented"
+          }
+        ],
+        "order": {
+          "kind": "Recorded",
+          "at": 1791053400000
+        }
+      }
+    ],
+    "chapter_order": [
+      "rust-release"
+    ]
+  },
+  "feature": "release-0-12-3",
+  "chapters": [
+    {
+      "task": {
+        "worker": {
+          "kind": "Unrecorded"
+        },
+        "version": 3,
+        "common": {
+          "id": "rust-release",
+          "feature": "release-0-12-3",
+          "objective": "Implement the release",
+          "acceptance": [
+            "Tests pass"
+          ],
+          "dependencies": [],
+          "revision": 2,
+          "attempt": 1,
+          "created_at": 1791052200000,
+          "last_update": 1791053400000,
+          "last_progress": 1791053400000,
+          "checkpoint": {
+            "kind": "unrecorded"
+          },
+          "progress": {
+            "summary": "Release implemented",
+            "findings": [],
+            "next_steps": [],
+            "checks": [],
+            "extensions": {}
+          }
+        },
+        "ownership": {
+          "kind": "Unrecorded"
+        },
+        "workspace": {
+          "kind": "read_only"
+        },
+        "state": {
+          "kind": "completed",
+          "agent": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "attempt": 1
+        }
+      },
+      "role": {
+        "kind": "Recorded",
+        "agent": {
+          "team": "Development",
+          "role": "RustDev"
+        }
+      },
+      "status": "completed",
+      "entries": [
+        {
+          "objective": "Implement the release",
+          "worker": {
+            "kind": "Unrecorded"
+          },
+          "kind": "created",
+          "actor": {
+            "team": "Gizmo",
+            "role": "GizmoPrime"
+          },
+          "ownership": {
+            "kind": "Unrecorded"
+          },
+          "state": {
+            "kind": "queued"
+          },
+          "note": "Implement the release",
+          "summary": "",
+          "at": 1791052200000,
+          "revision": 1,
+          "evidence": [],
+          "checkpoint": {
+            "kind": "unrecorded"
+          }
+        },
+        {
+          "objective": "Implement the release",
+          "worker": {
+            "kind": "Unrecorded"
+          },
+          "kind": "completed",
+          "actor": {
+            "team": "Gizmo",
+            "role": "GizmoPrime"
+          },
+          "ownership": {
+            "kind": "Unrecorded"
+          },
+          "state": {
+            "kind": "completed",
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "attempt": 1
+          },
+          "note": "Activity accepted",
+          "summary": "Release implemented",
+          "at": 1791053400000,
+          "revision": 2,
+          "evidence": [
+            {
+              "summary": "Release implemented",
+              "findings": [
+                "Checked the manifest"
+              ],
+              "next_steps": [],
+              "checks": [
+                {
+                  "command": "cargo test -p workbench",
+                  "outcome": "passed",
+                  "evidence": "34 passed"
+                }
+              ],
+              "extensions": {}
+            }
+          ],
+          "checkpoint": {
+            "kind": "unrecorded"
+          }
+        }
+      ]
+    }
+  ],
+  "timing": {
+    "kind": "Finished",
+    "started": 1791052200000,
+    "finished": 1791053400000
+  }
+}

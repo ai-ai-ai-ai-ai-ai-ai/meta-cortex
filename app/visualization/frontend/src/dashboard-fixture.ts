@@ -1,8 +1,9 @@
+import fixtureWorkflow from "./workflow-fixture.json";
+import { workflow } from "virtual:dashboard-validators";
 import type {
   AgentId,
   DesktopReply,
   FeatureWorkflow,
-  TaskV3,
   FeatureOutcome,
   FeatureSummary,
 } from "./contracts";
@@ -86,90 +87,8 @@ export class Fixture {
     },
   };
   workflow(): FeatureWorkflow {
-    const task: TaskV3 = {
-      version: 3,
-      common: {
-        id: "rust-release",
-        feature: this.summary.feature.id,
-        objective: "Implement the release",
-        acceptance: ["Tests pass"],
-        dependencies: [],
-        revision: 2,
-        attempt: 1,
-        created_at: this.ago(150),
-        last_update: this.ago(130),
-        last_progress: this.ago(130),
-        checkpoint: { kind: "unrecorded" },
-        progress: {
-          summary: "Release implemented",
-          findings: [],
-          next_steps: [],
-          checks: [],
-          extensions: {},
-        },
-      },
-      worker: { kind: "Unrecorded" },
-      ownership: { kind: "Unrecorded" },
-      workspace: { kind: "read_only" },
-      state: { kind: "completed", agent: Fixture.RUST, attempt: 1 },
-    };
-    return {
-      feature: this.summary.feature.id,
-      timing: {
-        kind: "Finished",
-        started: this.ago(150),
-        finished: this.ago(130),
-      },
-      chapters: [
-        {
-          task,
-          role: { kind: "Recorded", agent: Fixture.RUST },
-          status: "completed",
-          entries: [
-            {
-              kind: "created",
-              state: { kind: "queued" },
-              actor: Fixture.PRIME,
-              worker: { kind: "Unrecorded" },
-              ownership: { kind: "Unrecorded" },
-              note: "Implement the release",
-              summary: "",
-              at: this.ago(150),
-              revision: 1,
-              checkpoint: { kind: "unrecorded" },
-              evidence: [],
-            },
-            {
-              kind: "completed",
-              state: task.state,
-              actor: Fixture.PRIME,
-              worker: { kind: "Unrecorded" },
-              ownership: { kind: "Unrecorded" },
-              note: "Activity accepted",
-              summary: "Release implemented",
-              at: this.ago(130),
-              revision: 2,
-              checkpoint: { kind: "unrecorded" },
-              evidence: [
-                {
-                  summary: "Release implemented",
-                  findings: ["Checked the manifest"],
-                  next_steps: [],
-                  checks: [
-                    {
-                      command: "cargo test -p workbench",
-                      outcome: "passed",
-                      evidence: "34 passed",
-                    },
-                  ],
-                  extensions: { review_report: "All checks passed" },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
+    if (workflow(fixtureWorkflow)) return structuredClone(fixtureWorkflow);
+    throw new Error("Regenerate the Rust workflow fixture");
   }
   reply(): DesktopReply {
     return { features: { records: [this.summary], end: "Complete" } };

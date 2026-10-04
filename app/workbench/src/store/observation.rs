@@ -1,3 +1,8 @@
+mod timeline;
+pub use timeline::{
+    RecordedTimeline, RecordedWindow, TimelineExtent, TimelineGroup, TimelineGroupIdentity,
+    TimelineOrder,
+};
 mod detail;
 mod workflow;
 use super::PERSISTENT_IO;
