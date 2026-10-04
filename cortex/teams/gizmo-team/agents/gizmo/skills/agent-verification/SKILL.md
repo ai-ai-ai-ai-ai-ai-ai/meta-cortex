@@ -6,7 +6,9 @@ description: Apply the shared review protocol using the assigned verifier's comp
 # Agent Verification
 
 Use this entry point for every cataloged verifier. Its own skill declares the
-canonical subject catalog roots.
+canonical subject catalog roots. The
+[review transition](../../../../docs/coordination-state-machine.md#review-the-committed-result)
+relates the exact-revision report to Team Gizmo's next operation.
 
 ## Required actions
 

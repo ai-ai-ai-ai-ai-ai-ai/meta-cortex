@@ -3,7 +3,9 @@
 The ledger is the durable record of the entire feature workflow: coordination,
 assignments, implementation, verification, integration, and delivery.
 Host messages notify coordinators; the ledger lets a replacement
-coordinator or worker recover without the final message.
+coordinator or worker recover without the final message. The
+[coordination state machine](coordination-state-machine.md) explains how ledger
+states relate to workspace output, review, delivery, and the next responsible owner.
 
 ## Storage and ownership
 

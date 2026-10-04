@@ -16,6 +16,9 @@ global policy supplied with the assignment.
 
 ## Required actions
 
+- Apply the [coordination state machine](../../docs/coordination-state-machine.md)
+  when defining the feature outcome and accepting the delivery result.
+
 - Launch one Team Gizmo using its resolved role location from the supplied agent directory
   and the shared [agent configuration rules](../../docs/agent-configuration.md).
 - Supply the [assignment context](../../../AGENTS.md#assignment-context) when launching Team Gizmo,

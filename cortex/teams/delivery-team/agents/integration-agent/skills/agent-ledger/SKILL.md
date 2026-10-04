@@ -8,6 +8,8 @@ description: Initialize a feature's embedded Turso ledger and record verified lo
 Apply the shared [agent ledger protocol](../../../../../gizmo-team/docs/agent-ledger.md).
 Team Gizmo owns assignment and recovery decisions. This skill owns the delivery
 agent's use of the ledger alongside its existing Git workspace procedure.
+Use the [coordination transitions](../../../../../gizmo-team/docs/coordination-state-machine.md)
+to distinguish a setup milestone from task readiness and delivery.
 
 ## Required actions
 

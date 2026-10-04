@@ -56,6 +56,9 @@ for that assignment rather than preloading unrelated agents.
 
 ## Coordinate assignments
 
+- Apply the [coordination state machine](../../docs/coordination-state-machine.md)
+  to assignment stages, concrete outputs, and the next responsible owner.
+
 - Read and follow the [agent ledger protocol](../../docs/agent-ledger.md).
   Recover existing status before scheduling work. Record bounded tasks before
   launching workers and pass their feature/task IDs with every assignment.
