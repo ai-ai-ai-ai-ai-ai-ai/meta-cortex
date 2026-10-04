@@ -14,6 +14,7 @@
     RecordedTime,
   } from "./observability";
   import Timeline from "./Timeline.svelte";
+  import { TimelineScale } from "./timeline";
   import { StatusLook } from "./presentation";
   import FeedCard from "./FeedCard.svelte";
   import PullRequests from "./PullRequests.svelte";
@@ -27,6 +28,7 @@
   let view = $state(WorkflowView.Log);
   let selected = $derived(initialTask);
   let look = $derived(new WorkflowLook(workflow));
+  let chapters = $derived(new TimelineScale(workflow).chapters());
   function jump(chapter: TaskChapter): void {
     selected = chapter.task.common.id;
     new ChapterNavigation(selected).jump();
@@ -63,7 +65,7 @@
 <div class="workspace-layout">
   <nav class="agent-index" aria-label="Agent index">
     <h2 class="eyebrow">Agents & tasks</h2>
-    {#each workflow.chapters as chapter, index (chapter.task.common.id)}{@const item =
+    {#each chapters as chapter, index (chapter.task.common.id)}{@const item =
         new ChapterLook(chapter)}<button
         class="task-link"
         class:selected={selected === chapter.task.common.id}
@@ -88,7 +90,7 @@
         role="tabpanel"
         aria-label="Log"
       >
-        {#each workflow.chapters as chapter (chapter.task.common.id)}{@const item =
+        {#each chapters as chapter (chapter.task.common.id)}{@const item =
             new ChapterLook(chapter)}
           <section class="task-chapter" id={`task-${chapter.task.common.id}`}>
             <div class="chapter-heading">

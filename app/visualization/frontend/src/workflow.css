@@ -738,3 +738,68 @@ ul.evidence-body li + li {
   background: currentColor;
   border-radius: 1px;
 }
+
+/* Recorded state colors are independent of event provenance in the Log. */
+.state-working {
+  --state-color: light-dark(#176bc1, #4c9cf0);
+}
+.state-blocked {
+  --state-color: light-dark(#9d6000, #e5a42e);
+}
+.state-ready {
+  --state-color: light-dark(#8441c1, #b277e5);
+}
+.state-integrated {
+  --state-color: light-dark(#007d80, #2dbbbc);
+}
+.state-completed {
+  --state-color: light-dark(#33833e, #63c470);
+}
+.state-cancelled {
+  --state-color: light-dark(#b33c48, #ed7884);
+}
+.timeline-piece {
+  top: 3px;
+  height: 22px;
+  min-width: 0;
+  border-right: 4px solid var(--surface);
+  border-radius: 0;
+  box-sizing: border-box;
+  background: var(--state-color);
+  color: light-dark(#fff, #111);
+  overflow: hidden;
+  container-type: inline-size;
+}
+.timeline-piece span {
+  display: none;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 650;
+}
+@container (min-width: 60px) {
+  .timeline-piece span {
+    display: block;
+  }
+}
+.timeline-piece.state-blocked {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 5px, #0002 5px 8px),
+    var(--state-color);
+}
+.timeline-piece.endpoint {
+  min-width: 4px;
+  border: 0;
+  transform: translateX(-50%);
+}
+.phase-swatch {
+  background: var(--state-color);
+}
+.phase-swatch.state-blocked {
+  background:
+    repeating-linear-gradient(135deg, transparent 0 3px, #0003 3px 5px),
+    var(--state-color);
+}
+
+.task-bounds {
+  font-size: 8px;
+}

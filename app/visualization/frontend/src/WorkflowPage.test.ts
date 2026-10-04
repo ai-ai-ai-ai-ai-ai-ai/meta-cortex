@@ -15,11 +15,11 @@ afterEach(() => {
   cleanup();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
-it("shows readable tick guides, visible task bounds and recorded milestones", async () => {
+it("shows a terminal timestamp without inventing an unrecorded active range", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
   const windowPanelQuery: RoleQueryOptions = { name: "Time windows" };
   const acceptedEventQuery: RoleQueryOptions = {
-    name: /Activity accepted · rust-release/,
+    name: /Completed · rust-release/,
   };
   const fixture = new Fixture();
   const workflowProps: WorkflowProps = {
@@ -31,16 +31,17 @@ it("shows readable tick guides, visible task bounds and recorded milestones", as
   render(WorkflowPage, workflowProps);
   await fireEvent.click(screen.getByRole("tab", windowTabQuery));
   const panel = screen.getByRole("tabpanel", windowPanelQuery);
-  expect(panel.querySelectorAll(".time-axis time")).toHaveLength(7);
+  expect(panel.querySelectorAll(".time-axis time")).toHaveLength(1);
   const inlineTimes = panel.querySelectorAll(".task-bounds time");
-  expect(inlineTimes).toHaveLength(2);
+  expect(inlineTimes).toHaveLength(0);
   for (const time of inlineTimes) {
     expect(time.getAttribute("datetime")).toMatch(/^\d{4}-\d{2}-\d{2}T.*Z$/);
   }
-  expect(within(panel).getAllByText("Created")).toHaveLength(1);
-  expect(within(panel).getAllByText(/Last update/)).toHaveLength(1);
+  expect(within(panel).getByText("No recorded active state")).toBeTruthy();
   expect(within(panel).getByRole("button", acceptedEventQuery)).toBeTruthy();
-  expect(panel.textContent).toContain("Recorded task lifetimes and events");
+  expect(panel.textContent).toContain(
+    "Recorded task states, aligned to their actual timestamps.",
+  );
 });
 it("preserves per-event ownership after a chapter is reassigned", () => {
   const verifierHeadingQuery: RoleQueryOptions = { name: "Rust Verifier" };
@@ -139,7 +140,7 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
   render(WorkflowPage, workflowProps);
   await fireEvent.click(screen.getByRole("tab", windowTabQuery));
   const acceptedEventQuery: RoleQueryOptions = {
-    name: /Activity accepted · rust-release/,
+    name: /Completed · rust-release/,
   };
   const marker = screen.getByRole("button", acceptedEventQuery);
   marker.focus();

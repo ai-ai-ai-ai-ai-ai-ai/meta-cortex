@@ -1,12 +1,7 @@
 <script lang="ts">
   import type { FeatureWorkflow, TaskChapter } from "./contracts";
-  import {
-    ActionLook,
-    ChapterLook,
-    RecordedTime,
-    Elapsed,
-  } from "./observability";
-  import { TimelineScale, MilestoneLook } from "./timeline";
+  import { ChapterLook, RecordedTime, Elapsed } from "./observability";
+  import { TimelineScale, RecordedStateLook } from "./timeline";
   interface Props {
     workflow: FeatureWorkflow;
     selected: string;
@@ -43,7 +38,7 @@
             title={tick.full()}>{tick.clock()}</time
           >{/each}
       </div>
-      {#each workflow.chapters as chapter (chapter.task.common.id)}{@const row =
+      {#each scale.chapters() as chapter (chapter.task.common.id)}{@const row =
           scale.row(chapter)}
         <div
           class="duration-row"
@@ -57,46 +52,37 @@
               ></button
             >
             <div class="task-bounds">
-              <span
-                >{TimelineScale.TEXT.created}
-                <time
-                  datetime={new RecordedTime(
-                    chapter.task.common.created_at,
-                  ).iso()}
-                  >{new RecordedTime(
-                    chapter.task.common.created_at,
-                  ).clock()}</time
-                ></span
-              ><span>
-                · {TimelineScale.TEXT.lastUpdate}
-                <time
-                  datetime={new RecordedTime(
-                    chapter.task.common.last_update,
-                  ).iso()}
-                  >{new RecordedTime(
-                    chapter.task.common.last_update,
-                  ).clock()}</time
-                ></span
-              >
+              {#each row.firstActive() as first (first.at)}
+                <span
+                  >{TimelineScale.TEXT.firstActive}
+                  <time datetime={first.iso()}>{first.clock()}</time>
+                  · {TimelineScale.TEXT.lastRecorded}
+                  <time
+                    datetime={new RecordedTime(
+                      chapter.task.common.last_update,
+                    ).iso()}
+                    >{new RecordedTime(
+                      chapter.task.common.last_update,
+                    ).clock()}</time
+                  ></span
+                >
+              {:else}
+                <span>{TimelineScale.TEXT.noActive}</span>
+              {/each}
             </div>
           </div>
           <div class="duration-track" style:height={row.height}>
-            <span
-              class="duration-guide"
-              aria-hidden="true"
-              style:left={scale.position(chapter.task.common.created_at)}
-              style:width={`${(100 * (chapter.task.common.last_update - chapter.task.common.created_at)) / Math.max(1, scale.last() - scale.first())}%`}
-            ></span>
-            {#each row.pieces as piece (piece.entry.revision)}{@const look =
-                new MilestoneLook(piece.entry)}
+            {#each row.pieces as piece (piece.entry.revision)}
               <button
-                class={`timeline-piece milestone-${look.tone()}`}
+                class={`timeline-piece state-${piece.look.tone()}`}
+                class:endpoint={piece.entry.at === piece.end}
                 style:left={piece.left}
-                style:width={piece.width}
-                aria-label={`${look.label(chapter)} ${TimelineScale.TEXT.to} ${new RecordedTime(piece.end).full()}`}
-                title={`${look.label(chapter)} ${TimelineScale.TEXT.to} ${new RecordedTime(piece.end).full()}`}
+                style:width={piece.width()}
+                aria-label={piece.label(chapter)}
+                title={piece.label(chapter)}
                 onclick={() => onselect(chapter)}
-              ></button>
+                ><span>{piece.look.label()}</span></button
+              >
             {/each}
           </div>
         </div>
@@ -104,11 +90,9 @@
     </div>
   </div>
   <div class="timeline-legend" aria-label={TimelineScale.TEXT.legend}>
-    {#each MilestoneLook.PHASES as kind (kind)}<span
-        ><i
-          class={`phase-swatch milestone-${MilestoneLook.TONES[kind]}`}
-          aria-hidden="true"
-        ></i>{ActionLook.LOOKS[kind].label}</span
+    {#each RecordedStateLook.LEGEND as tone (tone)}<span
+        ><i class={`phase-swatch state-${tone}`} aria-hidden="true"
+        ></i>{RecordedStateLook.LABELS[tone]}</span
       >{/each}
   </div>
   <p class="window-map-note">{TimelineScale.TEXT.note}</p>
