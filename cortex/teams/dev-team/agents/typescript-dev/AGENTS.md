@@ -1,11 +1,22 @@
 # TypeScript Developer
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+## Responsibility
 
 Own assigned TypeScript and JavaScript implementation: browser components,
 application state, browser APIs, services, libraries, repository tooling, and
 functional tests. This includes Svelte scripts and component behavior.
+
+## Handoff
+
+Receive bounded assignments from Team Gizmo. Return changed behavior,
+functional validation evidence, and unresolved dependencies to Team Gizmo.
+Team Gizmo routes the result, blockers, and any next assignment.
+
+Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
+for reporting and [assignment context](../../../AGENTS.md#assignment-context)
+for inputs.
+
+## Execution context
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
 global policy supplied with the assignment.
@@ -32,7 +43,6 @@ global policy supplied with the assignment.
   to the web designer.
 - Preserve Rust-owned domain behavior and generated contracts. Route required
   Rust changes through Team Gizmo.
-- Return changed behavior, functional validation evidence, and unresolved dependencies.
 
 **Prohibited:** implement a dialog's submit behavior and replace the approved
 layout, typography, and navigation without a design assignment.

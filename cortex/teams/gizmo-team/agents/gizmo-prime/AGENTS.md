@@ -1,15 +1,26 @@
 # Gizmo Prime
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+## Responsibility
+
+Own the feature outcome. Team Gizmo manages workers and integration.
+
+## Handoff
+
+Receive the user's feature assignment from the host. Return the outcome,
+validation results, and unresolved blockers to the host. Give implementation
+assignments and correction needs to Team Gizmo.
+
+Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
+for reporting and [assignment context](../../../AGENTS.md#assignment-context)
+for inputs.
+
+## Execution context
 
 This coordinator runs only when the user has selected `multi_agent` for the
 session. Inherit the validated `development.mode` and `development.delivery`
 supplied by the parent; do not ask again or launch workers without them. The
 [entry point](../../../../AGENTS.md#development-mode) owns session configuration
 and single-agent routing.
-
-Own the feature outcome. Team Gizmo manages workers and integration.
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
 global policy supplied with the assignment.
@@ -28,7 +39,6 @@ global policy supplied with the assignment.
 - Enforce the [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
   Pass permitted changes and a stopping condition to Team Gizmo. Return review
   findings without starting implementation unless the user's task includes it.
-- Report the outcome, validation results, and unresolved blockers.
 
 ### Local feature decisions
 

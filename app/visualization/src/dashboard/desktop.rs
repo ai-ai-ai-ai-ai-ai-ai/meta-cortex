@@ -1,4 +1,5 @@
 use super::{DashboardError, DashboardReport, NativeExitCode};
+use meta_cortex_workbench::guide::AgentGuide;
 use meta_cortex_workbench::values::{FeatureId, Note};
 use meta_cortex_workbench::{FeatureSummary, FeatureWorkflow, Page, PageIndex, Workbench};
 use schemars::JsonSchema;
@@ -33,6 +34,7 @@ impl From<DashboardError> for DesktopFailure {
 }
 #[derive(JsonSchema)]
 pub struct DesktopContract {
+    pub guide: AgentGuide,
     pub reply: DesktopReply,
     pub workflow: FeatureWorkflow,
     pub failure: DesktopFailure,
@@ -46,7 +48,11 @@ impl DesktopLaunch {
         let app = tauri::Builder::default()
             .plugin(init())
             .manage(Arc::new(self))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
+            .invoke_handler(tauri::generate_handler![
+                dashboard_read,
+                dashboard_workflow,
+                dashboard_guide
+            ])
             .build(tauri::generate_context!())?;
         match app.run_return(|_handle, _event| {}) {
             0 => {}
@@ -106,6 +112,11 @@ fn dashboard_workflow(
     }
 }
 
+#[tauri::command]
+fn dashboard_guide() -> Result<AgentGuide, Note> {
+    AgentGuide::embedded().map_err(|error| Note::from(error.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::DesktopContract;
@@ -114,7 +125,7 @@ mod tests {
     #[test]
     #[ignore = "requires explicit real repository, feature, ledger and output paths"]
     fn actual_workflow_ipc_reads_existing_turso_without_writes() -> anyhow::Result<()> {
-        use super::{DesktopLaunch, dashboard_read, dashboard_workflow};
+        use super::{DesktopLaunch, dashboard_guide, dashboard_read, dashboard_workflow};
         use meta_cortex_workbench::Workbench;
         use meta_cortex_workbench::values::FeatureId;
         use std::io::ErrorKind;
@@ -155,7 +166,11 @@ mod tests {
         let expected = serde_json::to_value(launch.blocking_workflow(feature.clone())?)?;
         let app = mock_builder()
             .manage(Arc::new(launch))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
+            .invoke_handler(tauri::generate_handler![
+                dashboard_read,
+                dashboard_workflow,
+                dashboard_guide
+            ])
             .build(mock_context(noop_assets()))?;
         let webview = WebviewWindowBuilder::new(&app, "main", Default::default()).build()?;
         let response = get_ipc_response(

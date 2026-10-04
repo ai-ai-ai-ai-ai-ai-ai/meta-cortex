@@ -1,0 +1,60 @@
+kind: navigation
+title: Agent Guide Sources
+entries:
+  - title: Gizmo/GizmoPrime
+    path: ../../../gizmo-team/agents/gizmo-prime/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Gizmo/Gizmo
+    path: ../../../gizmo-team/agents/gizmo/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Development/RustDev
+    path: ../../../dev-team/agents/rust-dev/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Development/RustRefactoring
+    path: ../../../dev-team/agents/rust-refactoring/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Development/RustVerifier
+    path: ../../../dev-team/agents/rust-verifier/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Development/TypescriptDev
+    path: ../../../dev-team/agents/typescript-dev/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Development/TypescriptVerifier
+    path: ../../../dev-team/agents/typescript-verifier/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Development/WebDesigner
+    path: ../../../dev-team/agents/web-designer/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Ai/TechWriter
+    path: ../../../ai-team/agents/tech-writer/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Ai/TechWriterVerifier
+    path: ../../../ai-team/agents/tech-writer-verifier/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Security/SecurityAgent
+    path: ../../../security-team/agents/security-agent/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Sre/CicdAgent
+    path: ../../../sre-team/agents/cicd-agent/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Sre/DockerSpecialist
+    path: ../../../sre-team/agents/docker-specialist/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Sre/KubernetesSpecialist
+    path: ../../../sre-team/agents/kubernetes-specialist/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Delivery/IntegrationAgent
+    path: ../../../delivery-team/agents/integration-agent/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Delivery/PrAgent
+    path: ../../../delivery-team/agents/pr-agent/AGENTS.md#responsibility
+    summary: Responsibility and coordinator handoff.
+  - title: Communication and assignment context
+    path: ../../../AGENTS.md#communication-and-decisions
+    summary: Reporting hierarchy and assignment inputs.
+  - title: Coordination state machine
+    path: ../coordination-state-machine.md
+    summary: State domains and observable handoff outcomes.
+  - title: Verification handoff
+    path: ../agent-verification.md
+    summary: Coordinator-routed review, repairs, and integration gates.

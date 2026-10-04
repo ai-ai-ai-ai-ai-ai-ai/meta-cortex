@@ -22,6 +22,25 @@
       ],
       "type": "object"
     },
+    "AgentGuide": {
+      "properties": {
+        "agents": {
+          "items": { "$ref": "#/$defs/GuideAgent" },
+          "type": "array"
+        },
+        "documents": {
+          "items": { "$ref": "#/$defs/GuideDocument" },
+          "type": "array"
+        },
+        "reviews": {
+          "items": { "$ref": "#/$defs/ReviewViaGizmo" },
+          "type": "array"
+        },
+        "teams": { "items": { "$ref": "#/$defs/GuideTeam" }, "type": "array" }
+      },
+      "required": ["teams", "agents", "reviews", "documents"],
+      "type": "object"
+    },
     "AgentId": {
       "description": "An agent role scoped to its owning Cortex team.",
       "oneOf": [
@@ -403,6 +422,82 @@
       "type": "string"
     },
     "GizmoAgent": { "enum": ["GizmoPrime", "Gizmo"], "type": "string" },
+    "GuideAgent": {
+      "properties": {
+        "agent": { "$ref": "#/$defs/AgentId" },
+        "handoff": { "$ref": "#/$defs/Note" },
+        "label": { "$ref": "#/$defs/Note" },
+        "reports_to": { "$ref": "#/$defs/ReportingTarget" },
+        "responsibility": { "$ref": "#/$defs/Note" },
+        "source": { "$ref": "#/$defs/GuideSource" }
+      },
+      "required": [
+        "label",
+        "agent",
+        "reports_to",
+        "responsibility",
+        "handoff",
+        "source"
+      ],
+      "type": "object"
+    },
+    "GuideDocument": {
+      "properties": {
+        "id": { "$ref": "#/$defs/GuideDocumentId" },
+        "markdown": { "$ref": "#/$defs/Note" },
+        "path": { "type": "string" }
+      },
+      "required": ["id", "path", "markdown"],
+      "type": "object"
+    },
+    "GuideDocumentId": {
+      "oneOf": [
+        {
+          "properties": {
+            "agent": { "$ref": "#/$defs/AgentId" },
+            "kind": { "const": "Agent", "type": "string" }
+          },
+          "required": ["kind", "agent"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "Protocol", "type": "string" },
+            "protocol": { "$ref": "#/$defs/GuideProtocol" }
+          },
+          "required": ["kind", "protocol"],
+          "type": "object"
+        }
+      ]
+    },
+    "GuideProtocol": {
+      "enum": ["Communication", "Coordination", "Verification"],
+      "type": "string"
+    },
+    "GuideSection": {
+      "enum": ["Whole", "Responsibility", "Handoff"],
+      "type": "string"
+    },
+    "GuideSource": {
+      "properties": {
+        "document": { "$ref": "#/$defs/GuideDocumentId" },
+        "section": { "$ref": "#/$defs/GuideSection" }
+      },
+      "required": ["document", "section"],
+      "type": "object"
+    },
+    "GuideTeam": {
+      "properties": {
+        "agents": { "items": { "$ref": "#/$defs/AgentId" }, "type": "array" },
+        "team": { "$ref": "#/$defs/GuideTeamId" }
+      },
+      "required": ["team", "agents"],
+      "type": "object"
+    },
+    "GuideTeamId": {
+      "enum": ["Gizmo", "Development", "Ai", "Security", "Sre", "Delivery"],
+      "type": "string"
+    },
     "LatestDelivery": {
       "description": "The task a coordinator most recently integrated or completed.",
       "oneOf": [
@@ -581,6 +676,15 @@
           "type": "object"
         }
       ]
+    },
+    "ReviewViaGizmo": {
+      "properties": {
+        "author": { "$ref": "#/$defs/AgentId" },
+        "coordinator": { "$ref": "#/$defs/GizmoAgent" },
+        "reviewer": { "$ref": "#/$defs/AgentId" }
+      },
+      "required": ["author", "reviewer", "coordinator"],
+      "type": "object"
     },
     "RevisionLogEntry": {
       "properties": {
@@ -953,10 +1057,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
     "failure": { "$ref": "#/$defs/DesktopFailure" },
+    "guide": { "$ref": "#/$defs/AgentGuide" },
     "reply": { "$ref": "#/$defs/DesktopReply" },
     "workflow": { "$ref": "#/$defs/FeatureWorkflow" }
   },
-  "required": ["reply", "workflow", "failure"],
+  "required": ["guide", "reply", "workflow", "failure"],
   "title": "DesktopContract",
   "type": "object"
 }
