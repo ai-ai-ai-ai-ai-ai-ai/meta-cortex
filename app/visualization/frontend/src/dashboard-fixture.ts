@@ -90,7 +90,9 @@ export class Fixture {
   workflow(): FeatureWorkflow {
     return Match.value(fixtureWorkflow).pipe(
       Match.when(workflow, (value) => structuredClone(value)),
-      Match.orElse(() => { throw new Error("Regenerate the Rust workflow fixture"); }),
+      Match.orElse(() => {
+        throw new Error("Regenerate the Rust workflow fixture");
+      }),
     );
   }
   reply(): DesktopReply {

@@ -96,11 +96,17 @@ it("keeps same-time milestones separately reachable for zero-duration tasks", as
   const windowPanelQuery: RoleQueryOptions = { name: "Time windows" };
   const fixture = new Fixture();
   const workflow = fixture.workflow();
-  for (const chapter of workflow.chapters) {
-    chapter.task.common.last_update = chapter.task.common.created_at;
-    for (const entry of chapter.entries) {
-      entry.at = chapter.task.common.created_at;
-    }
+  workflow.timeline.extent = {
+    kind: "Recorded",
+    started: Fixture.NOW,
+    finished: Fixture.NOW,
+  };
+  for (const window of workflow.timeline.groups.flatMap(
+    (group) => group.windows,
+  )) {
+    window.start = Fixture.NOW;
+    window.end = Fixture.NOW;
+    window.duration_ms = 0;
   }
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
@@ -123,6 +129,11 @@ it("shows a truthful empty timeline", async () => {
   const fixture = new Fixture();
   const workflow = fixture.workflow();
   workflow.chapters = [];
+  workflow.timeline = {
+    extent: { kind: "Empty" },
+    groups: [],
+    chapter_order: [],
+  };
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
     workflow,
@@ -169,32 +180,30 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
 it("labels recorded boxes with elapsed duration and presents human task context on focus", async () => {
   const fixture = new Fixture();
   const workflow = fixture.workflow();
-  for (const entry of workflow.chapters.flatMap((chapter) => chapter.entries)) {
-    switch (entry.kind) {
-      case "created":
-        entry.kind = "claimed";
-        entry.state = {
-          kind: "active",
-          assignment: {
-            agent: Fixture.RUST,
-            attempt: 1,
-            expires_at: Fixture.NOW,
-            phase: { kind: "working" },
-          },
-        };
-        break;
-      case "assigned":
-      case "claimed":
-      case "heartbeat":
-      case "progress":
-      case "checkpoint":
-      case "ready":
-      case "integrated":
-      case "requeued":
-      case "completed":
-      case "cancelled":
-        break;
-    }
+  for (const window of workflow.timeline.groups.flatMap(
+    (group) => group.windows,
+  )) {
+    window.status = "working";
+    window.state = {
+      kind: "active",
+      assignment: {
+        agent: Fixture.RUST,
+        attempt: 1,
+        expires_at: Fixture.NOW,
+        phase: { kind: "working" },
+      },
+    };
+    window.objective = "Historical projected objective";
+    window.summary = "Historical projected progress";
+    window.start = fixture.ago(150);
+    window.end = fixture.ago(130);
+    window.duration_ms = 20 * Fixture.MINUTE;
+  }
+  for (const chapter of workflow.chapters) {
+    chapter.task.common.objective =
+      "Later task objective must not replace card";
+    chapter.task.common.progress.summary =
+      "Later completion must not replace card";
   }
   const props: WorkflowProps = {
     summary: fixture.summary,
@@ -214,7 +223,10 @@ it("labels recorded boxes with elapsed duration and presents human task context 
     box.getAttribute("aria-describedby") ?? "",
   );
   expect(card?.getAttribute("data-open")).toBe("true");
-  expect(card?.textContent).toContain("Implement the release");
+  expect(card?.textContent).toContain("Historical projected objective");
+  expect(card?.textContent).toContain("Historical projected progress");
+  expect(card?.textContent).not.toContain("Later completion");
+  expect(card?.textContent).not.toContain("Later task objective");
   expect(card?.textContent).toContain("Recorded state · Working");
   expect(card?.textContent).toContain("Worker ID unrecorded");
   expect(card?.textContent).not.toContain("1200s");
@@ -245,11 +257,28 @@ it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens
       workflow.chapters.push(chapter);
     }
   }
-  for (const entry of workflow.chapters.flatMap((chapter) => chapter.entries))
-    entry.worker = {
-      kind: "Recorded",
+  workflow.timeline.chapter_order = workflow.chapters.map(
+    (chapter) => chapter.task.common.id,
+  );
+  for (const group of workflow.timeline.groups) {
+    group.identity = {
+      kind: "RecordedWorker",
       worker_id: "11111111-1111-4111-8111-111111111111",
     };
+    group.tasks = workflow.timeline.chapter_order;
+    const templates = group.windows.slice(0, 1);
+    group.windows = [];
+    for (const template of templates) {
+      group.windows = group.tasks.map((task) => ({
+        ...template,
+        task,
+        worker: {
+          kind: "Recorded",
+          worker_id: "11111111-1111-4111-8111-111111111111",
+        },
+      }));
+    }
+  }
   const props: WorkflowProps = {
     summary: fixture.summary,
     workflow,

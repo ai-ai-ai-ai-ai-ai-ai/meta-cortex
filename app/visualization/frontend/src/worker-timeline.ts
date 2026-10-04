@@ -1,107 +1,70 @@
 import type {
-  FeedEntry,
   FeatureWorkflow,
   RecordedRole,
   TaskChapter,
-  WorkerIdentity,
+  TimelineGroup,
 } from "./contracts";
 import { AgentLook } from "./presentation";
-import { TimelineScale, type TimelinePiece } from "./timeline";
-
+import {
+  TimelineScale,
+  TimelinePiece,
+  type TimelinePieceRequest,
+} from "./timeline";
 enum LaneFit {
   Available = "available",
   Overlapping = "overlapping",
 }
-interface WorkerGroupRequest {
-  readonly identity: WorkerIdentity;
-  readonly role: RecordedRole;
-}
 class WorkerLook {
-  private readonly roles = new Set<string>();
-  constructor(readonly request: WorkerGroupRequest) {
-    this.record(request);
-  }
-  record(request: WorkerGroupRequest): void {
-    switch (request.role.kind) {
-      case "Recorded":
-        this.roles.add(new AgentLook(request.role.agent).name());
-        break;
-      case "Unrecorded":
-        this.roles.add(WorkerTimeline.TEXT.roleUnrecorded);
-        break;
-    }
-  }
+  constructor(readonly group: TimelineGroup) {}
   key(): string {
-    switch (this.request.identity.kind) {
-      case "Recorded":
-        return `worker-${this.request.identity.worker_id}`;
-      case "Unrecorded":
-        return `history-${this.roleKey()}`;
+    switch (this.group.identity.kind) {
+      case "RecordedWorker":
+        return `worker-${this.group.identity.worker_id}`;
+      case "RoleHistory":
+        return `history-${this.roleKey(this.group.identity.role)}`;
     }
   }
-  private roleKey(): string {
-    switch (this.request.role.kind) {
+  private roleKey(role: RecordedRole): string {
+    switch (role.kind) {
       case "Recorded":
-        return `${this.request.role.agent.team}-${this.request.role.agent.role}`;
+        return `${role.agent.team}-${role.agent.role}`;
       case "Unrecorded":
         return "unrecorded";
     }
   }
+  private roleName(role: RecordedRole): string {
+    switch (role.kind) {
+      case "Recorded":
+        return new AgentLook(role.agent).name();
+      case "Unrecorded":
+        return WorkerTimeline.TEXT.roleUnrecorded;
+    }
+  }
   role(): string {
-    return [...this.roles].join(" / ");
+    return this.group.roles.map((role) => this.roleName(role)).join(" / ");
   }
   shortDetail(): string {
-    switch (this.request.identity.kind) {
-      case "Recorded":
-        return `${WorkerTimeline.TEXT.workerPrefix} …${this.request.identity.worker_id.slice(-8)}`;
-      case "Unrecorded":
+    switch (this.group.identity.kind) {
+      case "RecordedWorker":
+        return `${WorkerTimeline.TEXT.workerPrefix} …${this.group.identity.worker_id.slice(-8)}`;
+      case "RoleHistory":
         return this.detail();
     }
   }
   title(): string {
-    switch (this.request.identity.kind) {
-      case "Recorded":
+    switch (this.group.identity.kind) {
+      case "RecordedWorker":
         return this.role();
-      case "Unrecorded":
+      case "RoleHistory":
         return `${this.role()} ${WorkerTimeline.TEXT.history}`;
     }
   }
   detail(): string {
-    switch (this.request.identity.kind) {
-      case "Recorded":
-        return this.request.identity.worker_id;
-      case "Unrecorded":
+    switch (this.group.identity.kind) {
+      case "RecordedWorker":
+        return this.group.identity.worker_id;
+      case "RoleHistory":
         return WorkerTimeline.TEXT.unrecorded;
-    }
-  }
-}
-class HistoricalWorker {
-  constructor(readonly entry: FeedEntry) {}
-  group(): WorkerGroupRequest {
-    return { identity: this.entry.worker, role: this.role() };
-  }
-  private role(): RecordedRole {
-    switch (this.entry.state.kind) {
-      case "active":
-        return { kind: "Recorded", agent: this.entry.state.assignment.agent };
-      case "ready":
-      case "completed":
-        return { kind: "Recorded", agent: this.entry.state.agent };
-      case "queued":
-      case "integrated":
-      case "cancelled":
-        return this.assignedRole();
-    }
-  }
-  private assignedRole(): RecordedRole {
-    switch (this.entry.ownership.kind) {
-      case "Assigned":
-        return {
-          kind: "Recorded",
-          agent: this.entry.ownership.assignment.agent,
-        };
-      case "Unrecorded":
-        return { kind: "Unrecorded" };
     }
   }
 }
@@ -119,11 +82,11 @@ class WorkerLane {
     return LaneFit.Available;
   }
   private compare(request: LaneComparison): LaneFit {
-    switch (request.piece.entry.at - request.previous.end) {
+    switch (request.piece.window.start - request.previous.end) {
       case 0:
         return this.boundaryFit(request);
       default:
-        switch (request.piece.entry.at > request.previous.end) {
+        switch (request.piece.window.start > request.previous.end) {
           case true:
             return LaneFit.Available;
           case false:
@@ -132,10 +95,7 @@ class WorkerLane {
     }
   }
   private boundaryFit(request: LaneComparison): LaneFit {
-    switch (
-      request.piece.chapter.task.common.id ===
-      request.previous.chapter.task.common.id
-    ) {
+    switch (request.piece.window.task === request.previous.window.task) {
       case true:
         return LaneFit.Available;
       case false:
@@ -146,42 +106,47 @@ class WorkerLane {
     this.pieces.push(piece);
   }
 }
+interface WorkerGroupRequest {
+  readonly group: TimelineGroup;
+  readonly workflow: FeatureWorkflow;
+  readonly scale: TimelineScale;
+}
 class WorkerGroup {
   readonly look: WorkerLook;
-  readonly pieces: TimelinePiece[] = [];
-  private readonly tasks = new Map<string, TaskChapter>();
-  constructor(request: WorkerGroupRequest) {
-    this.look = new WorkerLook(request);
-  }
-  include(chapter: TaskChapter): void {
-    this.tasks.set(chapter.task.common.id, chapter);
-  }
-  add(piece: TimelinePiece): void {
-    this.pieces.push(piece);
-    this.include(piece.chapter);
+  readonly pieces: ReadonlyArray<TimelinePiece>;
+  constructor(readonly request: WorkerGroupRequest) {
+    this.look = new WorkerLook(request.group);
+    this.pieces = request.group.windows.map((window) => {
+      const pieceRequest: TimelinePieceRequest = {
+        window,
+        scale: request.scale,
+      };
+      return new TimelinePiece(pieceRequest);
+    });
   }
   taskCount(): string {
-    switch (this.tasks.size) {
+    switch (this.request.group.tasks.length) {
       case 1:
         return `1 ${WorkerTimeline.TEXT.task}`;
       default:
-        return `${this.tasks.size} ${WorkerTimeline.TEXT.tasks}`;
+        return `${this.request.group.tasks.length} ${WorkerTimeline.TEXT.tasks}`;
     }
   }
   laneLabel(count: number): string {
     return `${this.look.title()} · ${count} ${WorkerTimeline.TEXT.lanes}`;
   }
   chapters(): ReadonlyArray<TaskChapter> {
-    return [...this.tasks.values()];
-  }
-  first(): number {
-    return Math.min(...this.pieces.map((piece) => piece.entry.at));
+    return this.request.group.tasks.flatMap((task) =>
+      this.request.workflow.chapters.filter(
+        (chapter) => chapter.task.common.id === task,
+      ),
+    );
   }
   lanes(): ReadonlyArray<WorkerLane> {
     const lanes: WorkerLane[] = [];
     for (const piece of this.pieces
       .slice()
-      .sort((left, right) => left.entry.at - right.entry.at)) {
+      .sort((left, right) => left.window.start - right.window.start)) {
       const request: LaneRequest = { piece, lanes };
       this.place(request);
     }
@@ -219,50 +184,15 @@ export class WorkerTimeline {
     unrecorded: "Worker ID unrecorded",
     note: "Recorded worker IDs group one worker across tasks. Role histories have no recorded worker ID and do not establish a single worker. Overlapping records use scrollable lanes; every box opens its original task.",
   };
-  private readonly groups: WorkerGroup[] = [];
+  private readonly groups: ReadonlyArray<WorkerGroup>;
   constructor(workflow: FeatureWorkflow) {
     const scale = new TimelineScale(workflow);
-    for (const chapter of scale.chapters()) {
-      const request: ChapterRequest = { chapter, scale };
-      this.addChapter(request);
-    }
-  }
-  private addChapter(request: ChapterRequest): void {
-    const pieces = request.scale.row(request.chapter).pieces;
-    for (const piece of pieces)
-      this.group(new HistoricalWorker(piece.entry).group()).add(piece);
-    switch (pieces.length) {
-      case 0: {
-        const requestGroup: WorkerGroupRequest = {
-          identity: request.chapter.task.worker,
-          role: request.chapter.role,
-        };
-        this.group(requestGroup).include(request.chapter);
-        break;
-      }
-      default:
-        break;
-    }
-  }
-  private group(request: WorkerGroupRequest): WorkerGroup {
-    const look = new WorkerLook(request);
-    for (const group of this.groups.filter(
-      (group) => group.look.key() === look.key(),
-    )) {
-      group.look.record(request);
-      return group;
-    }
-    const group = new WorkerGroup(request);
-    this.groups.push(group);
-    return group;
+    this.groups = workflow.timeline.groups.map((group) => {
+      const request: WorkerGroupRequest = { group, workflow, scale };
+      return new WorkerGroup(request);
+    });
   }
   rows(): ReadonlyArray<WorkerGroup> {
-    return this.groups
-      .slice()
-      .sort((left, right) => left.first() - right.first());
+    return this.groups;
   }
-}
-interface ChapterRequest {
-  readonly chapter: TaskChapter;
-  readonly scale: TimelineScale;
 }

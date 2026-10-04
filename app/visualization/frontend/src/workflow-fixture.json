@@ -26,9 +26,7 @@
             }
           }
         ],
-        "tasks": [
-          "rust-release"
-        ],
+        "tasks": ["rust-release"],
         "windows": [
           {
             "task": "rust-release",
@@ -66,9 +64,7 @@
         }
       }
     ],
-    "chapter_order": [
-      "rust-release"
-    ]
+    "chapter_order": ["rust-release"]
   },
   "feature": "release-0-12-3",
   "chapters": [
@@ -82,9 +78,7 @@
           "id": "rust-release",
           "feature": "release-0-12-3",
           "objective": "Implement the release",
-          "acceptance": [
-            "Tests pass"
-          ],
+          "acceptance": ["Tests pass"],
           "dependencies": [],
           "revision": 2,
           "attempt": 1,
@@ -179,9 +173,7 @@
           "evidence": [
             {
               "summary": "Release implemented",
-              "findings": [
-                "Checked the manifest"
-              ],
+              "findings": ["Checked the manifest"],
               "next_steps": [],
               "checks": [
                 {

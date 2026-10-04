@@ -1,9 +1,5 @@
 <script lang="ts">
-  import type {
-    FeatureSummary,
-    FeatureWorkflow,
-    TaskChapter,
-  } from "./contracts";
+  import type { FeatureSummary, FeatureWorkflow } from "./contracts";
   import { ArrowLeft } from "@lucide/svelte";
   import {
     ChapterNavigation,
@@ -31,9 +27,9 @@
   let look = $derived(new WorkflowLook(workflow));
   let chapters = $derived(new TimelineScale(workflow).chapters());
   let workers = $derived(new WorkerTimeline(workflow));
-  function jump(chapter: TaskChapter): void {
+  function jump(task: string): void {
     view = WorkflowView.Log;
-    selected = chapter.task.common.id;
+    selected = task;
     new ChapterNavigation(selected).jump();
   }
   $effect(() => {
@@ -80,7 +76,7 @@
           <button
             class="task-link"
             class:selected={selected === chapter.task.common.id}
-            onclick={() => jump(chapter)}
+            onclick={() => jump(chapter.task.common.id)}
             ><span class="copy"
               ><strong>{chapter.task.common.id}</strong><small
                 >{chapter.task.common.objective}</small
@@ -140,8 +136,8 @@
     {:else if workflow.chapters.length}<Timeline
         {workflow}
         {selected}
-        onselect={(chapter: TaskChapter) => {
-          selected = chapter.task.common.id;
+        onselect={(task: string) => {
+          selected = task;
           view = WorkflowView.Log;
           new ChapterNavigation(selected).jump();
         }}

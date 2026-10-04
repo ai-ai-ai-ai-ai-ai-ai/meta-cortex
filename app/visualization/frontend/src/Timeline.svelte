@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { FeatureWorkflow, TaskChapter } from "./contracts";
+  import type { FeatureWorkflow } from "./contracts";
   import { Elapsed } from "./observability";
   import { TimelineScale, RecordedStateLook } from "./timeline";
   import TimelineTaskCard from "./TimelineTaskCard.svelte";
@@ -7,7 +7,7 @@
   interface Props {
     workflow: FeatureWorkflow;
     selected: string;
-    onselect: (chapter: TaskChapter) => void;
+    onselect: (task: string) => void;
   }
   let { workflow, selected, onselect }: Props = $props();
   let scale = $derived(new TimelineScale(workflow));
@@ -58,7 +58,7 @@
             >
             <div class="worker-task-options">
               {#each row.chapters() as chapter (chapter.task.common.id)}
-                <button onclick={() => onselect(chapter)}
+                <button onclick={() => onselect(chapter.task.common.id)}
                   >{chapter.task.common.id}</button
                 >
               {/each}
@@ -72,7 +72,7 @@
           >
             {#each lanes as lane, index (index)}
               <div class="duration-track">
-                {#each lane.pieces as piece (`${piece.chapter.task.common.id}-${piece.entry.revision}`)}
+                {#each lane.pieces as piece (`${piece.window.task}-${piece.window.revision}`)}
                   <TimelineTaskCard {piece} {onselect} />
                 {/each}
               </div>
