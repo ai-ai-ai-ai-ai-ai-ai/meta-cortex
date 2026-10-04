@@ -1,5 +1,6 @@
 //! Complete, read-only task chapters for a selected feature. Pagination is consumed
 //! between short-lived WAL reads; no transaction is held while the UI is open.
+use super::StateMeaning;
 use super::revision_log::{RevisionLogEntry, SequencedEvent};
 use super::timeline::RecordedTimeline;
 use super::{FlowState, HistoryPage, Observation, PageEnd, PageIndex, TaskPage};
@@ -14,6 +15,7 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeatureWorkflow {
+    pub state_meanings: Vec<StateMeaning>,
     pub revision_log: Vec<RevisionLogEntry>,
     pub timeline: RecordedTimeline,
     pub feature: FeatureId,
@@ -130,6 +132,7 @@ impl Observation {
         revision_log.sort_by_key(|record| record.sequence);
         let timing = WorkflowTiming::from(chapters.as_slice());
         Ok(FeatureWorkflow {
+            state_meanings: StateMeaning::all(),
             revision_log,
             timeline: RecordedTimeline::from(chapters.as_slice()),
             feature,
@@ -284,6 +287,7 @@ mod tests {
     #[test]
     fn empty_workflow_exposes_an_explicit_empty_recorded_timeline() -> anyhow::Result<()> {
         let workflow = FeatureWorkflow {
+            state_meanings: super::StateMeaning::all(),
             revision_log: Vec::new(),
             timeline: super::RecordedTimeline::from([].as_slice()),
             feature: FeatureId::try_from("feature".to_owned())?,
@@ -292,6 +296,8 @@ mod tests {
         };
         let serialized = serde_json::to_value(workflow)?;
         assert_eq!(serialized["timeline"]["extent"]["kind"], "Empty");
+        assert_eq!(serialized["state_meanings"][0]["state"], "queued");
+        assert_eq!(serialized["state_meanings"][6]["state"], "cancelled");
         assert_eq!(
             serialized["timeline"]["groups"],
             serde_json::to_value(Vec::<TaskId>::new())?

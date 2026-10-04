@@ -1,3 +1,5 @@
+mod state_meaning;
+pub use state_meaning::StateMeaning;
 mod timeline;
 pub use timeline::{
     RecordedTimeline, RecordedWindow, TimelineExtent, TimelineGroup, TimelineGroupIdentity,

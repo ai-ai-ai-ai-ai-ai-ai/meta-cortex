@@ -29,7 +29,7 @@ pub enum FlowState {
     Cancelled,
 }
 impl FlowState {
-    const ALL: [Self; 7] = [
+    pub(super) const ALL: [Self; 7] = [
         Self::Queued,
         Self::Working,
         Self::Blocked,
