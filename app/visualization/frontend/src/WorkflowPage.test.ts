@@ -399,10 +399,10 @@ it("supports arrow and boundary keys for workflow tabs and opens the original re
   const props: WorkflowProps = {
     summary: fixture.summary,
     workflow: fixture.workflow(),
-    initialTask: "",
+    initialTask: "rust-release",
     back: () => {},
   };
-  const logQuery: RoleQueryOptions = { name: "Log", exact: true };
+  const logQuery: RoleQueryOptions = { name: "Log" };
   const revisionQuery: RoleQueryOptions = { name: "Revision log" };
   const openQuery: RoleQueryOptions = { name: "Open task log" };
   const endKey: KeyboardEventInit = { key: "End" };

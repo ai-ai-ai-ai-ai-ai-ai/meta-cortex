@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte";
   import type { FeatureSummary, FeatureWorkflow } from "./contracts";
   import { ArrowLeft } from "@lucide/svelte";
   import {
@@ -34,11 +35,15 @@
     selected = task;
     new ChapterNavigation(selected).jump();
   }
-  function navigateTab(event: KeyboardEvent): void {
+  async function selectTab(tab: WorkflowView): Promise<void> {
+    view = tab;
+    await tick();
+    new WorkflowTabs(tab).focus();
+  }
+  async function navigateTab(event: KeyboardEvent): Promise<void> {
     for (const tab of new WorkflowTabs(view).next(event.key)) {
       event.preventDefault();
-      view = tab;
-      new WorkflowTabs(tab).focus();
+      await selectTab(tab);
     }
   }
   $effect(() => {
@@ -99,14 +104,14 @@
   </nav>
   <div class="content-panel">
     <div class="view-tabs" role="tablist" aria-label="Workflow view">
-      {#each Object.values(WorkflowView) as tab (tab)}<button
+      {#each WorkflowTabs.VIEWS as tab (tab)}<button
           role="tab"
           id={WorkflowTabs.id(tab)}
           aria-controls="workflow-panel"
           tabindex={new WorkflowTabs(view).tabIndex(tab)}
           onkeydown={navigateTab}
           aria-selected={view === tab}
-          onclick={() => (view = tab)}>{tab}</button
+          onclick={() => selectTab(tab)}>{tab}</button
         >{/each}
     </div>
     <div

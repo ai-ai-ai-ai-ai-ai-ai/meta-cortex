@@ -32,12 +32,17 @@ export enum WorkflowView {
   Revisions = "Revision log",
 }
 export class WorkflowTabs {
+  static readonly VIEWS = [
+    WorkflowView.Log,
+    WorkflowView.Windows,
+    WorkflowView.Revisions,
+  ];
   static id(view: WorkflowView): string {
     return `workflow-tab-${view.replaceAll(" ", "-")}`;
   }
   constructor(readonly selected: WorkflowView) {}
   next(key: string): ReadonlyArray<WorkflowView> {
-    const tabs = Object.values(WorkflowView);
+    const tabs = WorkflowTabs.VIEWS;
     const index = tabs.indexOf(this.selected);
     switch (key) {
       case "ArrowRight":
