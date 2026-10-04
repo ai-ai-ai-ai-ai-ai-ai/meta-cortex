@@ -76,8 +76,21 @@ fn content(source: Content<'_>) -> Result<Note, GuideError> {
             agent: source.input.agent,
             section: source.input.section,
         }),
-        text => Ok(Note::from(text.to_owned())),
+        text => Ok(prose(text)),
     }
+}
+
+fn prose(markdown: &str) -> Note {
+    let mut text = String::new();
+    for event in Parser::new(markdown) {
+        match event {
+            Event::Text(value) | Event::Code(value) => text.push_str(&value),
+            Event::SoftBreak | Event::HardBreak => text.push(' '),
+            Event::End(TagEnd::Paragraph | TagEnd::Heading(_) | TagEnd::Item) => text.push('\n'),
+            _ => {}
+        }
+    }
+    Note::from(text.trim().to_owned())
 }
 
 pub(super) fn label(input: Selection<'_>) -> Result<Note, GuideError> {
@@ -117,7 +130,7 @@ mod tests {
     use crate::agents::{AgentId, GizmoAgent};
     use crate::values::Note;
     #[test]
-    fn named_sections_preserve_markdown_and_stop_at_peer_headings() -> anyhow::Result<()> {
+    fn named_sections_render_link_labels_and_stop_at_peer_headings() -> anyhow::Result<()> {
         let markdown = "# **Coordinator**\n\n## Responsibility\nOwn [work](work.md).\n\n### Details\nKeep this.\n\n## Handoff\nReturn evidence.\n\n## Skills\nExclude this.";
         let agent = AgentId::Gizmo(GizmoAgent::Gizmo);
         assert_eq!(
@@ -134,7 +147,7 @@ mod tests {
                 markdown,
                 section: GuideSection::Responsibility
             })?,
-            Note::from("Own [work](work.md).\n\n### Details\nKeep this.".to_owned())
+            Note::from("Own work.\nDetails\nKeep this.".to_owned())
         );
         assert_eq!(
             extract(Selection {
