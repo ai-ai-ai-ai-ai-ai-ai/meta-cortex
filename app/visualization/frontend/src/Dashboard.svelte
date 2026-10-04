@@ -12,6 +12,7 @@
   } from "./dashboard-state.svelte";
   import { TimeLook } from "./presentation";
   import FeaturePage from "./FeaturePage.svelte";
+  import { GuideLook } from "./agent-guide";
 
   interface Props {
     onguide: () => void;
@@ -41,7 +42,9 @@
       aria-hidden="true"><Network class="size-4" /></span
     >
     <span class="mr-auto text-sm font-semibold">Workbench</span>
-    <Button variant="ghost" size="sm" onclick={onguide}>Agent guide</Button>
+    <Button variant="ghost" size="sm" onclick={onguide}
+      >{GuideLook.TEXT.title}</Button
+    >
     <p
       class="hidden items-center gap-2 text-xs text-muted-foreground sm:flex"
       role="status"
