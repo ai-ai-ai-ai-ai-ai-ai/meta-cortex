@@ -213,6 +213,18 @@ export class WorkflowLook {
 }
 export class Elapsed {
   constructor(private readonly ms: number) {}
+  compact(): string {
+    const seconds = Math.round(Math.max(0, this.ms) / 1000);
+    switch (Math.floor(seconds / 60)) {
+      case 0:
+        return `${seconds}s`;
+      default:
+        return `${Math.round(seconds / 60)}m`;
+    }
+  }
+  exact(): string {
+    return `${Math.max(0, this.ms) / 1000}s`;
+  }
   label(): string {
     const minutes = Math.round(Math.max(0, this.ms) / 60000);
     switch (this.ms < 60000) {

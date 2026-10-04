@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { FeatureWorkflow, TaskChapter } from "./contracts";
-  import { ChapterLook, RecordedTime, Elapsed } from "./observability";
+  import { ChapterLook, Elapsed } from "./observability";
   import { TimelineScale, RecordedStateLook } from "./timeline";
   interface Props {
     workflow: FeatureWorkflow;
@@ -51,25 +51,6 @@
                 >{chapter.task.common.id}</small
               ></button
             >
-            <div class="task-bounds">
-              {#each row.firstActive() as first (first.at)}
-                <span
-                  >{TimelineScale.TEXT.firstActive}
-                  <time datetime={first.iso()}>{first.clock()}</time>
-                  · {TimelineScale.TEXT.lastRecorded}
-                  <time
-                    datetime={new RecordedTime(
-                      chapter.task.common.last_update,
-                    ).iso()}
-                    >{new RecordedTime(
-                      chapter.task.common.last_update,
-                    ).clock()}</time
-                  ></span
-                >
-              {:else}
-                <span>{TimelineScale.TEXT.noActive}</span>
-              {/each}
-            </div>
           </div>
           <div class="duration-track" style:height={row.height}>
             {#each row.pieces as piece (piece.entry.revision)}
@@ -81,7 +62,7 @@
                 aria-label={piece.label(chapter)}
                 title={piece.label(chapter)}
                 onclick={() => onselect(chapter)}
-                ><span>{piece.look.label()}</span></button
+                ><span>{piece.duration()}</span></button
               >
             {/each}
           </div>

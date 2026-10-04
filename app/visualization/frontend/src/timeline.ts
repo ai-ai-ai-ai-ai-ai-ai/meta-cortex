@@ -5,7 +5,12 @@ import type {
   TaskState,
   Phase,
 } from "./contracts";
-import { ActionLook, RecordedTime, WorkflowView } from "./observability";
+import {
+  ActionLook,
+  RecordedTime,
+  WorkflowView,
+  Elapsed,
+} from "./observability";
 enum StateTone {
   Queued = "queued",
   Working = "working",
@@ -24,9 +29,6 @@ export class TimelineScale {
     title: WorkflowView.Windows,
     description: "Recorded task states, aligned to their actual timestamps.",
     scrollRegion: "Recorded state timeline",
-    firstActive: "First active",
-    lastRecorded: "Last recorded",
-    noActive: "No recorded active state",
     to: "to",
     legend: "Recorded state legend",
     note: "Color shows the recorded task state from a claim or update through the next state or last evidence. Queued intervals stay empty. A recorded claim is caller-supplied ledger evidence, not a measured execution start or proof of a host agent launch. Notes, checkpoints and recording actors remain in the Log.",
@@ -211,14 +213,17 @@ class TimelinePiece {
   width(): string {
     return this.request.scale.width(this.end - this.entry.at);
   }
+  duration(): string {
+    return new Elapsed(this.end - this.entry.at).compact();
+  }
   label(chapter: TaskChapter): string {
-    return `${this.look.label()} · ${chapter.task.common.id} · ${new RecordedTime(this.entry.at).full()} ${TimelineScale.TEXT.to} ${new RecordedTime(this.end).full()} · ${ActionLook.TEXT.revision} ${this.entry.revision} · ${this.look.detail()} · ${this.entry.note}`;
+    return `${this.look.label()} · ${chapter.task.common.id} · ${new RecordedTime(this.entry.at).iso()} ${TimelineScale.TEXT.to} ${new RecordedTime(this.end).iso()} · ${new Elapsed(this.end - this.entry.at).exact()} · ${ActionLook.TEXT.revision} ${this.entry.revision} · ${this.look.detail()} · ${this.entry.note}`;
   }
 }
 export class TimelineRow {
   readonly pieces: ReadonlyArray<TimelinePiece>;
-  readonly height = "28px";
-  constructor(readonly request: TimelineRowRequest) {
+  readonly height = "36px";
+  constructor(request: TimelineRowRequest) {
     const spans: TimelinePiece[] = [];
     const entries = request.chapter.entries.filter((entry, index, all) =>
       all.slice(index + 1).every((later) => later.at !== entry.at),
@@ -247,11 +252,5 @@ export class TimelineRow {
     this.pieces = spans.filter(
       (piece) => piece.look.tone() !== StateTone.Queued,
     );
-  }
-  firstActive(): ReadonlyArray<RecordedTime> {
-    return this.request.chapter.entries
-      .filter((entry) => entry.state.kind === "active")
-      .slice(0, 1)
-      .map((entry) => new RecordedTime(entry.at));
   }
 }

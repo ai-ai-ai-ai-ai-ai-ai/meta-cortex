@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { Fixture } from "./dashboard-fixture";
 import { TimelineScale } from "./timeline";
+import { Elapsed } from "./observability";
 import type { EventKind, FeedEntry, TaskState, TaskChapter } from "./contracts";
 interface StateRecord {
   readonly at: number;
@@ -65,7 +66,7 @@ it("starts at recorded claim, retains Working despite waiting prose, and leaves 
       100, 600, 800, 900,
     ]);
     expect(row.pieces.map((piece) => piece.end)).toEqual([400, 800, 900, 900]);
-    expect(row.height).toBe("28px");
+    expect(row.height).toBe("36px");
   }
 });
 it("renders recorded Blocked, Ready, Integrated and terminal states without deriving them from event kind", () => {
@@ -149,7 +150,6 @@ it("renders recorded Blocked, Ready, Integrated and terminal states without deri
       "14.285714285714286%",
       "0%",
     ]);
-    expect(row.firstActive().map((time) => time.at)).toEqual([100]);
   }
 });
 it("leaves unclaimed tasks empty and keeps only the final state at simultaneous timestamps", () => {
@@ -163,9 +163,6 @@ it("leaves unclaimed tasks empty and keeps only the final state at simultaneous 
     };
     fixture.record(queued);
     expect(new TimelineScale(workflow).row(chapter).pieces).toHaveLength(0);
-    expect(new TimelineScale(workflow).row(chapter).firstActive()).toHaveLength(
-      0,
-    );
     const records: ReadonlyArray<StateRecord> = [
       { at: 100, kind: "claimed", state: fixture.working(1) },
       {
@@ -222,4 +219,12 @@ it("orders both timeline and index chapters by first recorded active state with 
         .map((chapter) => chapter.task.common.id),
     ).toEqual(["early", "late", "queued"]);
   }
+});
+
+it("puts compact elapsed durations in timeline boxes while retaining precise duration evidence", () => {
+  expect(new Elapsed(11 * 60000).compact()).toBe("11m");
+  expect(new Elapsed(27 * 60000).compact()).toBe("27m");
+  expect(new Elapsed(2 * 60000).compact()).toBe("2m");
+  expect(new Elapsed(12450).compact()).toBe("12s");
+  expect(new Elapsed(12450).exact()).toBe("12.45s");
 });

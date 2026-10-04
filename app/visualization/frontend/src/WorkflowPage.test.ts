@@ -37,7 +37,6 @@ it("shows a terminal timestamp without inventing an unrecorded active range", as
   for (const time of inlineTimes) {
     expect(time.getAttribute("datetime")).toMatch(/^\d{4}-\d{2}-\d{2}T.*Z$/);
   }
-  expect(within(panel).getByText("No recorded active state")).toBeTruthy();
   expect(within(panel).getByRole("button", acceptedEventQuery)).toBeTruthy();
   expect(panel.textContent).toContain(
     "Recorded task states, aligned to their actual timestamps.",
@@ -148,4 +147,52 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
   expect(document.activeElement).toBe(
     screen.getByRole("heading", developerHeadingQuery),
   );
+});
+it("labels recorded boxes with elapsed duration and keeps exact state evidence accessible", async () => {
+  const fixture = new Fixture();
+  const workflow = fixture.workflow();
+  for (const entry of workflow.chapters.flatMap((chapter) => chapter.entries)) {
+    switch (entry.kind) {
+      case "created":
+        entry.kind = "claimed";
+        entry.state = {
+          kind: "active",
+          assignment: {
+            agent: Fixture.RUST,
+            attempt: 1,
+            expires_at: Fixture.NOW,
+            phase: { kind: "working" },
+          },
+        };
+        break;
+      case "assigned":
+      case "claimed":
+      case "heartbeat":
+      case "progress":
+      case "checkpoint":
+      case "ready":
+      case "integrated":
+      case "requeued":
+      case "completed":
+      case "cancelled":
+        break;
+    }
+  }
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow,
+    initialTask: "",
+    back: () => {},
+  };
+  const tabQuery: RoleQueryOptions = { name: "Time windows" };
+  const stateQuery: RoleQueryOptions = { name: /Working · rust-release/ };
+  render(WorkflowPage, props);
+  await fireEvent.click(screen.getByRole("tab", tabQuery));
+  const box = screen.getByRole("button", stateQuery);
+  expect(box.textContent).toBe("20m");
+  expect(box.getAttribute("title")).toContain("1200s");
+  expect(box.getAttribute("title")).toContain(
+    new Date(fixture.ago(150)).toISOString(),
+  );
+  expect(box.getAttribute("aria-label")).toBe(box.getAttribute("title"));
 });

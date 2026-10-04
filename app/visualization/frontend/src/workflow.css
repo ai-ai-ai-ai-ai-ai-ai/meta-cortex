@@ -803,3 +803,81 @@ ul.evidence-body li + li {
 .task-bounds {
   font-size: 8px;
 }
+
+/* Duration is the primary timeline label; state remains in its border and tint. */
+.execution-map {
+  border-radius: 12px;
+}
+.duration-row {
+  height: 50px;
+  min-height: 50px;
+}
+.duration-label strong {
+  font-size: 11px;
+}
+.duration-label small {
+  font-size: 10px;
+}
+.duration-track {
+  height: 36px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(16.6667% - 1px),
+      var(--line) calc(16.6667% - 1px),
+      var(--line) 16.6667%
+    ),
+    color-mix(in srgb, var(--ink) 3%, transparent);
+}
+.timeline-piece {
+  top: 3px;
+  height: 30px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+}
+.timeline-piece::before {
+  content: "";
+  position: absolute;
+  inset: 0 3px 0 0;
+  border: 1px solid color-mix(in srgb, var(--state-color) 60%, var(--line));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--state-color) 12%, var(--surface));
+}
+.timeline-piece span {
+  position: relative;
+  margin-right: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+@container (min-width: 30px) {
+  .timeline-piece span {
+    display: block;
+  }
+}
+.timeline-piece.state-blocked {
+  background: transparent;
+}
+.timeline-piece.state-blocked::before {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 6px,
+      color-mix(in srgb, var(--state-color) 9%, transparent) 6px 9px
+    ),
+    color-mix(in srgb, var(--state-color) 12%, var(--surface));
+}
+.timeline-piece.endpoint {
+  background: transparent;
+}
+.timeline-piece.endpoint::before {
+  inset: 0;
+  border: 0;
+  background: var(--state-color);
+}
