@@ -18,9 +18,6 @@ afterEach(() => {
 it("shows readable tick guides, visible task bounds and recorded milestones", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
   const windowPanelQuery: RoleQueryOptions = { name: "Time windows" };
-  const createdEventQuery: RoleQueryOptions = {
-    name: /Task created · rust-release/,
-  };
   const acceptedEventQuery: RoleQueryOptions = {
     name: /Activity accepted · rust-release/,
   };
@@ -35,16 +32,13 @@ it("shows readable tick guides, visible task bounds and recorded milestones", as
   await fireEvent.click(screen.getByRole("tab", windowTabQuery));
   const panel = screen.getByRole("tabpanel", windowPanelQuery);
   expect(panel.querySelectorAll(".time-axis time")).toHaveLength(7);
-  const inlineTimes = panel.querySelectorAll(
-    ".duration-bar .inline-task-bounds time",
-  );
+  const inlineTimes = panel.querySelectorAll(".task-bounds time");
   expect(inlineTimes).toHaveLength(2);
   for (const time of inlineTimes) {
     expect(time.getAttribute("datetime")).toMatch(/^\d{4}-\d{2}-\d{2}T.*Z$/);
   }
-  expect(within(panel).getAllByText("Created")).toHaveLength(2);
-  expect(within(panel).getAllByText("Last update")).toHaveLength(2);
-  expect(within(panel).getByRole("button", createdEventQuery)).toBeTruthy();
+  expect(within(panel).getAllByText("Created")).toHaveLength(1);
+  expect(within(panel).getAllByText(/Last update/)).toHaveLength(1);
   expect(within(panel).getByRole("button", acceptedEventQuery)).toBeTruthy();
   expect(panel.textContent).toContain("Recorded task lifetimes and events");
 });
@@ -100,15 +94,11 @@ it("keeps same-time milestones separately reachable for zero-duration tasks", as
   await fireEvent.click(screen.getByRole("tab", windowTabQuery));
   const markers = screen
     .getByRole("tabpanel", windowPanelQuery)
-    .querySelectorAll(".timeline-milestone");
-  expect(markers).toHaveLength(2);
-  const expectedPositions: ReadonlyArray<string> = [
-    "left: 0%; top: 4px;",
-    "left: 0%; top: 32px;",
-  ];
-  expect([...markers].map((marker) => marker.getAttribute("style"))).toEqual(
-    expectedPositions,
-  );
+    .querySelectorAll(".timeline-piece");
+  expect(markers).toHaveLength(1);
+  expect([...markers].map((marker) => marker.getAttribute("style"))).toEqual([
+    "left: 0%; width: 0%;",
+  ]);
 });
 it("shows a truthful empty timeline", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
@@ -129,9 +119,6 @@ it("shows a truthful empty timeline", async () => {
 });
 it("preserves keyboard focus when a timeline event opens its task log", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
-  const createdEventQuery: RoleQueryOptions = {
-    name: /Task created · rust-release/,
-  };
   const developerHeadingQuery: RoleQueryOptions = { name: "Rust Dev" };
   const scrollBoundary: PropertyDescriptor = {
     configurable: true,
@@ -151,7 +138,10 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
   };
   render(WorkflowPage, workflowProps);
   await fireEvent.click(screen.getByRole("tab", windowTabQuery));
-  const marker = screen.getByRole("button", createdEventQuery);
+  const acceptedEventQuery: RoleQueryOptions = {
+    name: /Activity accepted · rust-release/,
+  };
+  const marker = screen.getByRole("button", acceptedEventQuery);
   marker.focus();
   await fireEvent.click(marker);
   expect(document.activeElement).toBe(

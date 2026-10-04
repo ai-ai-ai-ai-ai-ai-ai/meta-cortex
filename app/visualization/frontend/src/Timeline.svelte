@@ -50,12 +50,12 @@
           id={`task-${chapter.task.common.id}`}
           class:selected={selected === chapter.task.common.id}
         >
-          <button class="duration-label" onclick={() => onselect(chapter)}
-            ><strong>{new ChapterLook(chapter).agent()}</strong><small
-              >{chapter.task.common.id}</small
-            ></button
-          >
-          <div class="duration-detail">
+          <div class="duration-label-group">
+            <button class="duration-label" onclick={() => onselect(chapter)}
+              ><strong>{new ChapterLook(chapter).agent()}</strong><small
+                >{chapter.task.common.id}</small
+              ></button
+            >
             <div class="task-bounds">
               <span
                 >{TimelineScale.TEXT.created}
@@ -67,8 +67,8 @@
                     chapter.task.common.created_at,
                   ).clock()}</time
                 ></span
-              ><span
-                >{TimelineScale.TEXT.lastUpdate}
+              ><span>
+                · {TimelineScale.TEXT.lastUpdate}
                 <time
                   datetime={new RecordedTime(
                     chapter.task.common.last_update,
@@ -79,61 +79,36 @@
                 ></span
               >
             </div>
-            <div class="duration-track" style:min-height={row.height}>
+          </div>
+          <div class="duration-track" style:height={row.height}>
+            <span
+              class="duration-guide"
+              aria-hidden="true"
+              style:left={scale.position(chapter.task.common.created_at)}
+              style:width={`${(100 * (chapter.task.common.last_update - chapter.task.common.created_at)) / Math.max(1, scale.last() - scale.first())}%`}
+            ></span>
+            {#each row.pieces as piece (piece.entry.revision)}{@const look =
+                new MilestoneLook(piece.entry)}
               <button
-                class="duration-bar"
-                style:left={scale.position(chapter.task.common.created_at)}
-                style:width={`${(100 * (chapter.task.common.last_update - chapter.task.common.created_at)) / Math.max(1, scale.last() - scale.first())}%`}
-                aria-label={`${TimelineScale.TEXT.read} ${chapter.task.common.id} ${TimelineScale.TEXT.recordedLifetime}`}
+                class={`timeline-piece milestone-${look.tone()}`}
+                style:left={piece.left}
+                style:width={piece.width}
+                aria-label={`${look.label(chapter)} ${TimelineScale.TEXT.to} ${new RecordedTime(piece.end).full()}`}
+                title={`${look.label(chapter)} ${TimelineScale.TEXT.to} ${new RecordedTime(piece.end).full()}`}
                 onclick={() => onselect(chapter)}
-                ><span class="inline-task-bounds"
-                  ><span
-                    >{TimelineScale.TEXT.created}
-                    <time
-                      datetime={new RecordedTime(
-                        chapter.task.common.created_at,
-                      ).iso()}
-                      >{new RecordedTime(
-                        chapter.task.common.created_at,
-                      ).clock()}</time
-                    ></span
-                  ><span
-                    >{TimelineScale.TEXT.lastUpdate}
-                    <time
-                      datetime={new RecordedTime(
-                        chapter.task.common.last_update,
-                      ).iso()}
-                      >{new RecordedTime(
-                        chapter.task.common.last_update,
-                      ).clock()}</time
-                    ></span
-                  ></span
-                ></button
-              >
-              {#each row.markers as marker (marker.entry.revision)}{@const entry =
-                  marker.entry}{@const look = new MilestoneLook(
-                  entry,
-                )}{@const Icon = new ActionLook(entry).icon()}
-                <button
-                  class={`timeline-milestone milestone-${look.tone()}`}
-                  style:left={marker.left}
-                  style:top={marker.top}
-                  aria-label={look.label(chapter)}
-                  title={look.label(chapter)}
-                  onclick={() => onselect(chapter)}
-                  ><Icon size={16} strokeWidth={2} /></button
-                >
-              {/each}
-            </div>
+              ></button>
+            {/each}
           </div>
         </div>
       {/each}
     </div>
   </div>
   <div class="timeline-legend" aria-label={TimelineScale.TEXT.legend}>
-    {#each Object.values(ActionLook.LOOKS) as appearance (appearance.kind)}{@const Icon =
-        appearance.icon}<span data-type={appearance.kind}
-        ><Icon size={16} strokeWidth={2} />{appearance.label}</span
+    {#each MilestoneLook.PHASES as kind (kind)}<span
+        ><i
+          class={`phase-swatch milestone-${MilestoneLook.TONES[kind]}`}
+          aria-hidden="true"
+        ></i>{ActionLook.LOOKS[kind].label}</span
       >{/each}
   </div>
   <p class="window-map-note">{TimelineScale.TEXT.note}</p>

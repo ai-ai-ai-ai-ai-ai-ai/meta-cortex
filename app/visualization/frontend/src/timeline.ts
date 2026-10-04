@@ -24,10 +24,11 @@ export class TimelineScale {
     scrollRegion: "Recorded timeline; scroll horizontally for time guides",
     created: "Created",
     lastUpdate: "Last update",
+    to: "to",
     legend: "Recorded event legend",
     read: "Read",
     recordedLifetime: "log; recorded lifetime",
-    note: "Neutral bars show creation to last recorded update. Icons mark individual recorded events; creation, claims and heartbeats are neutral. Gaps and overlapping lifetimes do not measure execution duration or idle time. Select an event or lifetime to read its task log.",
+    note: "Colored pieces connect meaningful recorded events to the next meaningful record. Terminal marks end at their recorded time. These recorded phases do not measure continuous execution or idle time. Creation, assignment, claim and heartbeat records remain in the Log.",
   };
   row(chapter: TaskChapter): TimelineRow {
     const request: TimelineRowRequest = { chapter, scale: this };
@@ -68,6 +69,15 @@ export class TimelineScale {
   }
 }
 export class MilestoneLook {
+  static readonly PHASES: ReadonlyArray<EventKind> = [
+    "progress",
+    "checkpoint",
+    "ready",
+    "integrated",
+    "requeued",
+    "completed",
+    "cancelled",
+  ];
   static readonly TONES: Record<EventKind, MilestoneTone> = {
     created: MilestoneTone.Neutral,
     assigned: MilestoneTone.Assignment,
@@ -93,36 +103,64 @@ interface TimelineRowRequest {
   readonly chapter: TaskChapter;
   readonly scale: TimelineScale;
 }
-interface TimelineMarker {
+interface TimelinePiece {
   readonly entry: FeedEntry;
   readonly left: string;
-  readonly top: string;
+  readonly width: string;
+  readonly end: number;
 }
 export class TimelineRow {
-  readonly markers: ReadonlyArray<TimelineMarker>;
-  readonly height: string;
+  readonly pieces: ReadonlyArray<TimelinePiece>;
+  readonly height = "28px";
   constructor(request: TimelineRowRequest) {
-    const lanes: number[] = [];
-    const markers: TimelineMarker[] = [];
-    for (const entry of request.chapter.entries) {
-      const position = parseFloat(request.scale.position(entry.at));
-      let lane = lanes.findIndex((previous) => position - previous >= 5);
-      switch (lane) {
-        case -1:
-          lane = lanes.length;
+    const meaningful = request.chapter.entries.filter((entry) => {
+      switch (entry.kind) {
+        case "created":
+        case "assigned":
+        case "claimed":
+        case "heartbeat":
+          return false;
+        case "progress":
+        case "checkpoint":
+        case "ready":
+        case "integrated":
+        case "completed":
+        case "requeued":
+        case "cancelled":
+          return true;
+      }
+    });
+    const phases = meaningful.filter((entry, index) =>
+      meaningful.slice(index + 1).every((later) => later.at !== entry.at),
+    );
+    const pieces: TimelinePiece[] = [];
+    for (const [index, entry] of phases.entries()) {
+      let end = entry.at;
+      for (const next of phases.slice(index + 1, index + 2)) end = next.at;
+      switch (entry.kind) {
+        case "completed":
+        case "cancelled":
+          end = entry.at;
           break;
-        default:
+        case "created":
+        case "assigned":
+        case "claimed":
+        case "heartbeat":
+        case "progress":
+        case "checkpoint":
+        case "ready":
+        case "integrated":
+        case "requeued":
           break;
       }
-      lanes[lane] = position;
-      const marker: TimelineMarker = {
+      const piece: TimelinePiece = {
         entry,
+        end,
         left: request.scale.position(entry.at),
-        top: `${lane * 28 + 4}px`,
+        width: `${(100 * (end - entry.at)) / Math.max(1, request.scale.last() - request.scale.first())}%`,
       };
-      markers.push(marker);
+      pieces.push(piece);
     }
-    this.markers = markers;
-    this.height = `${Math.max(66, lanes.length * 28 + 30)}px`;
+    this.pieces = pieces;
   }
 }
