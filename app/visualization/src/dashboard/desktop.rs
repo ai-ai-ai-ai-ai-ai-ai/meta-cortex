@@ -121,6 +121,38 @@ fn dashboard_guide() -> Result<AgentGuide, Note> {
 mod tests {
     use super::DesktopContract;
 
+    #[test]
+    fn embedded_guide_ipc_needs_no_repository_or_managed_ledger_state() -> anyhow::Result<()> {
+        use super::dashboard_guide;
+        use meta_cortex_workbench::guide::AgentGuide;
+        use serde_json::Value;
+        use std::collections::BTreeMap;
+        use tauri::WebviewWindowBuilder;
+        use tauri::ipc::{CallbackFn, InvokeBody};
+        use tauri::test::{INVOKE_KEY, get_ipc_response, mock_builder, mock_context, noop_assets};
+        use tauri::webview::InvokeRequest;
+        let app = mock_builder()
+            .invoke_handler(tauri::generate_handler![dashboard_guide])
+            .build(mock_context(noop_assets()))?;
+        let webview = WebviewWindowBuilder::new(&app, "guide", Default::default()).build()?;
+        let response = get_ipc_response(
+            &webview,
+            InvokeRequest {
+                cmd: "dashboard_guide".to_owned(),
+                callback: CallbackFn(0),
+                error: CallbackFn(1),
+                url: "tauri://localhost".parse()?,
+                body: InvokeBody::Json(serde_json::to_value(BTreeMap::<String, String>::new())?),
+                headers: Default::default(),
+                invoke_key: INVOKE_KEY.to_owned(),
+            },
+        )
+        .map_err(|error| anyhow::anyhow!("guide IPC failed: {error}"))?
+        .deserialize::<Value>()?;
+        assert_eq!(response, serde_json::to_value(AgentGuide::embedded()?)?);
+        Ok(())
+    }
+
     /// Explicitly invoked against a real repository, never a native-window claim.
     #[test]
     #[ignore = "requires explicit real repository, feature, ledger and output paths"]
