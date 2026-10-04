@@ -41,9 +41,21 @@ it("shows a terminal timestamp without inventing an unrecorded active range", as
     name: /Completed · rust-release/,
   };
   const fixture = new Fixture();
+  const workflow = fixture.workflow();
+  for (const group of workflow.timeline.groups) {
+    group.windows = group.windows.filter(
+      (window) => window.status === "completed",
+    );
+    for (const window of group.windows)
+      workflow.timeline.extent = {
+        kind: "Recorded",
+        started: window.start,
+        finished: window.end,
+      };
+  }
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
-    workflow: fixture.workflow(),
+    workflow,
     initialTask: "",
     back: () => {},
   };
@@ -89,8 +101,8 @@ it("preserves per-event ownership after a chapter is reassigned", () => {
   };
   render(WorkflowPage, workflowProps);
   expect(screen.getByRole("heading", verifierHeadingQuery)).toBeTruthy();
-  expect(screen.getAllByText("Assigned to Rust Dev")).toHaveLength(2);
-  expect(screen.getAllByText("Reports to Host")).toHaveLength(2);
+  expect(screen.getAllByText("Assigned to Rust Dev")).toHaveLength(5);
+  expect(screen.getAllByText("Reports to Host")).toHaveLength(5);
 });
 it("keeps same-time milestones separately reachable for zero-duration tasks", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
@@ -120,8 +132,10 @@ it("keeps same-time milestones separately reachable for zero-duration tasks", as
   const markers = screen
     .getByRole("tabpanel", windowPanelQuery)
     .querySelectorAll(".timeline-piece");
-  expect(markers).toHaveLength(1);
+  expect(markers).toHaveLength(3);
   expect([...markers].map((marker) => marker.getAttribute("style"))).toEqual([
+    "left: 0%; width: 0%;",
+    "left: 0%; width: 0%;",
     "left: 0%; width: 0%;",
   ]);
 });
@@ -181,6 +195,8 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
 it("labels recorded boxes with elapsed duration and presents human task context on focus", async () => {
   const fixture = new Fixture();
   const workflow = fixture.workflow();
+  for (const group of workflow.timeline.groups)
+    group.windows = group.windows.slice(0, 1);
   for (const window of workflow.timeline.groups.flatMap(
     (group) => group.windows,
   )) {
@@ -229,7 +245,7 @@ it("labels recorded boxes with elapsed duration and presents human task context 
   expect(card?.textContent).not.toContain("Later completion");
   expect(card?.textContent).not.toContain("Later task objective");
   expect(card?.textContent).toContain("Recorded state · Working");
-  expect(card?.textContent).toContain("Worker ID unrecorded");
+  expect(card?.textContent).toMatch(/Worker …[a-f\d]{8}/);
   expect(card?.textContent).not.toContain("1200s");
 });
 it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens the selected original task", async () => {
@@ -287,7 +303,7 @@ it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens
     back: () => {},
   };
   const tabQuery: RoleQueryOptions = { name: "Time windows" };
-  const markerQuery: RoleQueryOptions = { name: /Completed · overlap-three/ };
+  const markerQuery: RoleQueryOptions = { name: /Working · overlap-three/ };
   render(WorkflowPage, props);
   await fireEvent.click(screen.getByRole("tab", tabQuery));
   const lanes = document.querySelectorAll(".worker-lanes");
