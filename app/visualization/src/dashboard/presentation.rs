@@ -259,7 +259,7 @@ mod tests {
         TaskCommon, TaskState, Workspace,
     };
     use meta_cortex_workbench::values::{
-        Attempt, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId, Timestamp,
+        Attempt, CommitId, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision, Timestamp,
     };
     use meta_cortex_workbench::versions::{RecordVersion, TaskRecordVersion};
     use meta_cortex_workbench::{Page, PageEnd};
@@ -280,7 +280,7 @@ mod tests {
                         objective: Note::from("Task objective".to_owned()),
                         acceptance: vec![Note::from("Acceptance".to_owned())],
                         dependencies: vec![],
-                        revision: Revision::INITIAL,
+                        revision: TaskRevision::INITIAL,
                         attempt: Attempt::UNCLAIMED,
                         created_at: now,
                         last_update: now,

@@ -8,7 +8,9 @@ use meta_cortex_workbench::request::{
 };
 use meta_cortex_workbench::values::Extensions;
 use meta_cortex_workbench::values::WorkerId;
-use meta_cortex_workbench::values::{BranchName, FeatureId, LeaseSeconds, Note, Revision, TaskId};
+use meta_cortex_workbench::values::{
+    BranchName, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
+};
 use meta_cortex_workbench::{
     Blocker, FeatureActivity, FeatureSummary, FlowState, LatestDelivery, RecordedRole,
     WorkflowCondition,
@@ -361,7 +363,7 @@ fn multiprocess_writer() -> anyhow::Result<()> {
                     worker_id: WorkerId::EXAMPLE,
                     feature: Scenario::feature()?,
                     task: Scenario::task()?,
-                    expected_revision: Revision::INITIAL,
+                    expected_revision: TaskRevision::INITIAL,
                     agent,
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 })
@@ -430,7 +432,7 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
  worker_id: WorkerId::EXAMPLE,
                 feature: Scenario::feature()?,
                 task: Scenario::task()?,
-                expected_revision: Revision::INITIAL,
+                expected_revision: TaskRevision::INITIAL,
                 agent,
                 ttl_seconds: LeaseSeconds::TEN_MINUTES,
             })
@@ -494,13 +496,13 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(first.end, PageEnd::More);
         assert_eq!(second.end, PageEnd::Complete);
         assert_eq!(first.records[0].task, task);
-        assert_eq!(second.records[1].task.common.revision, Revision::INITIAL);
+        assert_eq!(second.records[1].task.common.revision, TaskRevision::INITIAL);
         let workflow = observation.workflow(Scenario::feature()?).await?;
         assert_eq!(workflow.chapters.len(), 101);
         let chapter = workflow.chapters.iter().find(|chapter| chapter.task.common.id == task.common.id)
             .ok_or_else(|| anyhow::anyhow!("task chapter missing"))?;
         assert_eq!(chapter.entries.len(), 102);
-        assert_eq!(chapter.entries.first().ok_or_else(|| anyhow::anyhow!("first event"))?.revision, Revision::INITIAL);
+        assert_eq!(chapter.entries.first().ok_or_else(|| anyhow::anyhow!("first event"))?.revision, TaskRevision::INITIAL);
         assert_eq!(chapter.entries.last().ok_or_else(|| anyhow::anyhow!("last event"))?.revision, task.common.revision);
         assert!(matches!(chapter.role, RecordedRole::Recorded { agent: recorded } if recorded == agent));
         let later = observation.summaries(PageIndex::FIRST.next()).await?;
@@ -786,7 +788,7 @@ fn a_fresh_claim_reports_its_worker_blocker_and_full_activity_bounds() -> anyhow
         let first = ledger.claim(ClaimTask {
  worker_id: WorkerId::EXAMPLE,
             feature: Scenario::feature()?, task: Scenario::task()?,
-            expected_revision: Revision::INITIAL, agent: first_worker,
+            expected_revision: TaskRevision::INITIAL, agent: first_worker,
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
         }).await?;
         let progress = ledger.update(WorkerUpdate {

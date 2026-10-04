@@ -1,82 +1,46 @@
-//! Generate the checked-in UI sample through the public Workbench projection.
+//! Generate the UI sample through real public Workbench mutations and observation.
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
-use meta_cortex_workbench::model::worker::WorkerIdentity;
-use meta_cortex_workbench::model::workflow::TaskOwnership;
-use meta_cortex_workbench::model::{
-    Check, CheckOutcome, Checkpoint, EventKind, Progress, Task, TaskCommon, TaskState, Workspace,
+use meta_cortex_workbench::model::workflow::TaskAssignment;
+use meta_cortex_workbench::model::{Check, CheckOutcome, Progress, Workspace};
+use meta_cortex_workbench::request::{
+    AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, InitFeature,
+    WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    Attempt, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
+    BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, WorkerId,
 };
-use meta_cortex_workbench::versions::TaskRecordVersion;
-use meta_cortex_workbench::{
-    FeatureWorkflow, FeedEntry, FlowState, RecordedRole, RecordedTimeline, TaskChapter,
-    WorkflowTiming,
-};
+use meta_cortex_workbench::{DataDirectory, Workbench};
+use std::collections::BTreeMap;
+use tokio::runtime::Builder;
+
 fn main() -> anyhow::Result<()> {
-    let agent = AgentId::Development(DevelopmentAgent::RustDev);
-    let started = Timestamp::try_from(1791052200000)?;
-    let finished = Timestamp::try_from(1791053400000)?;
-    let feature = FeatureId::try_from("release-0-12-3".to_owned())?;
-    let progress = Progress {
-        summary: Note::from("Release implemented".to_owned()),
-        findings: Vec::new(),
-        next_steps: Vec::new(),
-        checks: Vec::new(),
-        extensions: Extensions::default(),
-    };
-    let task = Task {
-        version: TaskRecordVersion::CURRENT,
-        worker: WorkerIdentity::Unrecorded,
-        common: TaskCommon {
-            id: TaskId::try_from("rust-release".to_owned())?,
-            feature: feature.clone(),
-            objective: Note::from("Implement the release".to_owned()),
-            acceptance: vec![Note::from("Tests pass".to_owned())],
-            dependencies: Vec::new(),
-            revision: Revision::INITIAL.advance()?,
-            attempt: Attempt::UNCLAIMED.advance()?,
-            created_at: started,
-            last_update: finished,
-            last_progress: finished,
-            checkpoint: Checkpoint::Unrecorded,
-            progress: progress.clone(),
-        },
-        ownership: TaskOwnership::Unrecorded,
-        workspace: Workspace::ReadOnly,
-        state: TaskState::Completed {
-            agent,
-            attempt: Attempt::UNCLAIMED.advance()?,
-        },
-    };
-    let entries = vec![
-        FeedEntry {
-            objective: task.common.objective.clone(),
-            worker: task.worker,
-            kind: EventKind::Created,
-            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
-            ownership: task.ownership.clone(),
-            state: TaskState::Queued,
-            note: task.common.objective.clone(),
-            summary: Note::Empty,
-            at: started,
-            revision: Revision::INITIAL,
-            evidence: Vec::new(),
-            checkpoint: Checkpoint::Unrecorded,
-        },
-        FeedEntry {
-            objective: task.common.objective.clone(),
-            worker: task.worker,
-            kind: EventKind::Completed,
-            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
-            ownership: task.ownership.clone(),
-            state: task.state.clone(),
-            note: Note::from("Activity accepted".to_owned()),
-            summary: progress.summary.clone(),
-            at: finished,
-            revision: task.common.revision,
-            evidence: vec![Progress {
-                summary: progress.summary,
+    let project = tempfile::tempdir()?;
+    let data = tempfile::tempdir()?;
+    let mut options = git2::RepositoryInitOptions::new();
+    options.initial_head("codex/release-0-12-3");
+    let repository = git2::Repository::init_opts(project.path(), &options)?;
+    let signature = git2::Signature::now("Fixture", "fixture@example.invalid")?;
+    let tree = repository.find_tree(repository.index()?.write_tree()?)?;
+    repository.commit(Some("HEAD"), &signature, &signature, "Fixture", &tree, &[])?;
+    let workbench = Workbench::discover(project.path())?
+        .with_data_directory(DataDirectory::from(data.path().to_owned()));
+    Builder::new_current_thread()
+        .enable_time()
+        .build()?
+        .block_on(async {
+            let feature = FeatureId::try_from("release-0-12-3".to_owned())?;
+            let actor = AgentId::Gizmo(GizmoAgent::GizmoPrime);
+            let agent = AgentId::Development(DevelopmentAgent::RustDev);
+            let mut ledger = workbench
+                .initialize(InitFeature {
+                    feature: feature.clone(),
+                    objective: Note::from("Ship the release".to_owned()),
+                    branch: BranchName::try_from("codex/release-0-12-3".to_owned())?,
+                    worktree: project.path().to_owned(),
+                })
+                .await?;
+            let progress = Progress {
+                summary: Note::from("Release implemented".to_owned()),
                 findings: vec![Note::from("Checked the manifest".to_owned())],
                 next_steps: Vec::new(),
                 checks: vec![Check {
@@ -84,23 +48,70 @@ fn main() -> anyhow::Result<()> {
                     outcome: CheckOutcome::Passed,
                     evidence: Note::from("34 passed".to_owned()),
                 }],
-                extensions: Extensions::default(),
-            }],
-            checkpoint: Checkpoint::Unrecorded,
-        },
-    ];
-    let chapters = vec![TaskChapter {
-        task,
-        role: RecordedRole::Recorded { agent },
-        status: FlowState::Completed,
-        entries,
-    }];
-    let workflow = FeatureWorkflow {
-        feature,
-        timeline: RecordedTimeline::from(chapters.as_slice()),
-        timing: WorkflowTiming::from(chapters.as_slice()),
-        chapters,
-    };
-    println!("{}", serde_json::to_string_pretty(&workflow)?);
-    Ok(())
+                extensions: Extensions(BTreeMap::from([(
+                    "review_report".to_owned(),
+                    serde_json::Value::String("All checks passed".to_owned()),
+                )])),
+            };
+            let task = ledger
+                .create(CreateTask {
+                    feature: feature.clone(),
+                    task: TaskId::try_from("rust-release".to_owned())?,
+                    actor,
+                    objective: Note::from("Implement the release".to_owned()),
+                    acceptance: vec![Note::from("Tests pass".to_owned())],
+                    dependencies: Vec::new(),
+                    workspace: Workspace::ReadOnly,
+                    progress: Progress {
+                        summary: Note::Empty,
+                        findings: Vec::new(),
+                        next_steps: Vec::new(),
+                        checks: Vec::new(),
+                        extensions: Extensions::default(),
+                    },
+                })
+                .await?;
+            let task = ledger
+                .assign(AssignTask {
+                    feature: feature.clone(),
+                    task: task.common.id,
+                    expected_revision: task.common.revision,
+                    actor,
+                    assignment: TaskAssignment::from(agent),
+                })
+                .await?;
+            let task = ledger
+                .claim(ClaimTask {
+                    feature: feature.clone(),
+                    task: task.common.id,
+                    expected_revision: task.common.revision,
+                    agent,
+                    worker_id: WorkerId::EXAMPLE,
+                    ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                })
+                .await?;
+            let task = ledger
+                .update(WorkerUpdate {
+                    feature: feature.clone(),
+                    task: task.common.id,
+                    expected_revision: task.common.revision,
+                    agent,
+                    worker_id: WorkerId::EXAMPLE,
+                    attempt: task.common.attempt,
+                    action: WorkerAction::Ready { progress },
+                })
+                .await?;
+            ledger
+                .coordinate(CoordinatorUpdate {
+                    feature: feature.clone(),
+                    task: task.common.id,
+                    expected_revision: task.common.revision,
+                    actor,
+                    action: CoordinatorAction::Complete,
+                })
+                .await?;
+            let workflow = workbench.observe().await?.workflow(feature).await?;
+            println!("{}", serde_json::to_string_pretty(&workflow)?);
+            Ok(())
+        })
 }

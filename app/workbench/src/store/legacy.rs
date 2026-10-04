@@ -1,12 +1,13 @@
 use super::PERSISTENT_IO;
+use super::observation::SequenceProvenance;
 use super::relational::{EventTable, FeatureTable, RecordWriter, RelationalSchema, TaskTable};
 use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
 use crate::LedgerError;
 use crate::model::{Event, Feature, Task};
-use crate::values::FeatureId;
+use crate::values::{EventSequence, FeatureId};
 use crate::versions::StorageVersion;
-use sea_query::{Expr, ExprTrait, Iden, Query, SqliteQueryBuilder, Table};
+use sea_query::{Expr, ExprTrait, Iden, Order, Query, SqliteQueryBuilder, Table};
 use std::path::Path;
 use turso::transaction::TransactionBehavior;
 use turso::{Builder, Connection};
@@ -34,14 +35,31 @@ pub(super) struct LegacySource<'a> {
 pub(super) struct LegacyRecords {
     features: Vec<Feature>,
     tasks: Vec<Task>,
-    events: Vec<Event>,
+    events: Vec<LegacyEvent>,
+}
+struct LegacyEvent {
+    sequence: EventSequence,
+    event: Event,
+}
+enum LegacyWriteOrder {
+    PreserveRowId,
+    ImportedStorageOrder,
+}
+struct LegacyWrite<'a> {
+    connection: &'a Connection,
+    order: LegacyWriteOrder,
 }
 impl LegacyRecords {
     pub(super) async fn migrate(source: LegacySource<'_>) -> Result<(), LedgerError> {
         let records = Self::read(source).await?;
         Self::replace_tables(source).await?;
         RelationalSchema::create(source.connection).await?;
-        records.write(source.connection).await
+        records
+            .write(LegacyWrite {
+                connection: source.connection,
+                order: LegacyWriteOrder::PreserveRowId,
+            })
+            .await
     }
 
     pub(super) async fn read(source: LegacySource<'_>) -> Result<Self, LedgerError> {
@@ -96,8 +114,10 @@ impl LegacyRecords {
                     EventTable::TaskId,
                     EventTable::Revision,
                     EventTable::Document,
+                    EventTable::RowId,
                 ])
                 .from(EventTable::Table)
+                .order_by(EventTable::RowId, Order::Asc)
                 .to_owned(),
         )?
         .query(connection)
@@ -109,7 +129,10 @@ impl LegacyRecords {
                     if id == event.task.common.id.to_string()
                         && revision == i64::from(event.task.common.revision) =>
                 {
-                    events.push(event)
+                    events.push(LegacyEvent {
+                        sequence: EventSequence::from(row.get::<i64>(3)?),
+                        event,
+                    })
                 }
                 _ => {
                     return Err(LedgerError::Invalid(
@@ -125,7 +148,7 @@ impl LegacyRecords {
                     if tasks.iter().all(|task| task.common.feature == feature.id)
                         && events
                             .iter()
-                            .all(|event| event.task.common.feature == feature.id) => {}
+                            .all(|event| event.event.task.common.feature == feature.id) => {}
                 _ => {
                     return Err(LedgerError::Invalid(
                         "legacy records must belong to their feature",
@@ -163,15 +186,42 @@ impl LegacyRecords {
         Ok(())
     }
 
-    pub(super) async fn write(self, connection: &Connection) -> Result<(), LedgerError> {
+    async fn write(self, request: LegacyWrite<'_>) -> Result<(), LedgerError> {
+        let connection = request.connection;
         for feature in self.features {
             RecordWriter { connection }.feature(&feature).await?;
         }
         for task in self.tasks {
             RecordWriter { connection }.task(&task).await?;
         }
-        for event in self.events {
-            RecordWriter { connection }.event(&event).await?;
+        for legacy in self.events {
+            let event = legacy.event;
+            let mut insert = Query::insert();
+            insert.into_table(EventTable::Table);
+            let mut columns = vec![
+                EventTable::FeatureId,
+                EventTable::TaskId,
+                EventTable::Revision,
+                EventTable::Document,
+            ];
+            let mut values = vec![
+                event.task.common.feature.to_string().into(),
+                event.task.common.id.to_string().into(),
+                i64::from(event.task.common.revision).into(),
+                serde_json::to_string(&event)?.into(),
+            ];
+            match request.order {
+                LegacyWriteOrder::PreserveRowId => {
+                    columns.push(EventTable::RowId);
+                    values.push(i64::from(legacy.sequence).into());
+                }
+                LegacyWriteOrder::ImportedStorageOrder => {
+                    columns.push(EventTable::Provenance);
+                    values.push(i64::from(SequenceProvenance::LegacyStorageOrder).into());
+                }
+            }
+            insert.columns(columns).values(values)?;
+            SqlStatement::build(insert)?.execute(connection).await?;
         }
         Ok(())
     }
@@ -226,7 +276,8 @@ impl LegacyImport<'_> {
             StorageVersion::DocumentsV1 | StorageVersion::IndexedV2 => {}
             StorageVersion::Empty
             | StorageVersion::RelationalV3
-            | StorageVersion::CommonTasksV4 => {
+            | StorageVersion::CommonTasksV4
+            | StorageVersion::SequencedEventsV5 => {
                 return Err(LedgerError::Invalid("expected a V1/V2 feature database"));
             }
         }
@@ -243,7 +294,12 @@ impl LegacyImport<'_> {
                 ));
             }
         }
-        records.write(&tx).await?;
+        records
+            .write(LegacyWrite {
+                connection: &tx,
+                order: LegacyWriteOrder::ImportedStorageOrder,
+            })
+            .await?;
         snapshot.commit().await?;
         tx.commit().await?;
         Ok(())

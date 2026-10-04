@@ -17,7 +17,7 @@ use meta_cortex_workbench::request::{
 };
 use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
-    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
@@ -87,7 +87,7 @@ impl Catalog {
         let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
         let worker = AgentId::Development(DevelopmentAgent::RustDev);
         let ttl = LeaseSeconds::TEN_MINUTES;
-        let assigned_revision = Revision::INITIAL.advance()?;
+        let assigned_revision = TaskRevision::INITIAL.advance()?;
         let claimed_revision = assigned_revision.advance()?;
         let heartbeat_revision = claimed_revision.advance()?;
         let examples = [
@@ -169,7 +169,7 @@ impl Catalog {
                 operation: Operation::Task(TaskOperation::Assign(AssignTask {
                     feature: feature.clone(),
                     task: task.clone(),
-                    expected_revision: Revision::INITIAL,
+                    expected_revision: TaskRevision::INITIAL,
                     actor: coordinator,
                     assignment: TaskAssignment::from(worker),
                 })),

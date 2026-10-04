@@ -6,7 +6,7 @@ pub mod workflow;
 use super::LedgerError;
 use super::agents::AgentId;
 use super::values::{
-    Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
     Timestamp,
 };
 use super::versions::{RecordVersion, TaskRecordVersion};
@@ -119,7 +119,7 @@ pub struct TaskCommon {
     pub objective: Note,
     pub acceptance: Vec<Note>,
     pub dependencies: Vec<TaskId>,
-    pub revision: Revision,
+    pub revision: TaskRevision,
     pub attempt: Attempt,
     pub created_at: Timestamp,
     pub last_update: Timestamp,
@@ -211,7 +211,7 @@ impl Task {
         Ok(self)
     }
 
-    pub fn require_revision(&self, expected: Revision) -> Result<(), LedgerError> {
+    pub fn require_revision(&self, expected: TaskRevision) -> Result<(), LedgerError> {
         match self.common.revision == expected {
             true => Ok(()),
             false => Err(LedgerError::Conflict),
@@ -399,8 +399,8 @@ pub mod tests {
     use crate::model::worker::WorkerIdentity;
     use crate::values::WorkerId;
     use crate::values::{
-        Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
-        Timestamp,
+        Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, TaskId,
+        TaskRevision, Timestamp,
     };
     use crate::versions::TaskRecordVersion;
     use std::collections::BTreeMap;
@@ -424,7 +424,7 @@ pub mod tests {
                     objective: Note::from("Review".to_owned()),
                     acceptance: vec![Note::from("Report findings".to_owned())],
                     dependencies: Vec::new(),
-                    revision: Revision::INITIAL,
+                    revision: TaskRevision::INITIAL,
                     attempt: Attempt::UNCLAIMED,
                     created_at: now,
                     last_update: now,
@@ -535,7 +535,7 @@ pub mod tests {
             task.require_revision(task.common.revision.advance()?),
             Err(LedgerError::Conflict)
         ));
-        task.require_revision(Revision::INITIAL)?;
+        task.require_revision(TaskRevision::INITIAL)?;
         task = task.claim(Scenario::claim()?)?;
         assert!(matches!(
             task.clone().claim(Scenario::claim()?),

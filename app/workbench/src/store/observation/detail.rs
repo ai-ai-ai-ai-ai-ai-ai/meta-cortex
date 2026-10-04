@@ -1,5 +1,6 @@
 //! Complete, read-only task chapters for a selected feature. Pagination is consumed
 //! between short-lived WAL reads; no transaction is held while the UI is open.
+use super::revision_log::{RevisionLogEntry, SequencedEvent};
 use super::timeline::RecordedTimeline;
 use super::{FlowState, HistoryPage, Observation, PageEnd, PageIndex, TaskPage};
 use crate::LedgerError;
@@ -7,12 +8,13 @@ use crate::agents::AgentId;
 use crate::model::worker::WorkerIdentity;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Checkpoint, Event, EventKind, Progress, Task, TaskState};
-use crate::values::{FeatureId, Note, Revision, Timestamp};
+use crate::values::{FeatureId, Note, TaskRevision, Timestamp};
 use schemars::JsonSchema;
 use serde::Serialize;
 
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeatureWorkflow {
+    pub revision_log: Vec<RevisionLogEntry>,
     pub timeline: RecordedTimeline,
     pub feature: FeatureId,
     pub chapters: Vec<TaskChapter>,
@@ -43,7 +45,7 @@ pub struct TaskChapter {
     pub status: FlowState,
     pub entries: Vec<FeedEntry>,
 }
-#[derive(Debug, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 pub struct FeedEntry {
     pub objective: Note,
     /// Worker identity from this event snapshot, never inferred from its actor.
@@ -57,7 +59,7 @@ pub struct FeedEntry {
     pub note: Note,
     pub summary: Note,
     pub at: Timestamp,
-    pub revision: Revision,
+    pub revision: TaskRevision,
     /// Only evidence changed since the previous revision of this task.
     pub evidence: Vec<Progress>,
     pub checkpoint: Checkpoint,
@@ -81,18 +83,19 @@ impl Observation {
         }
         tasks.sort_by_key(|task| task.common.created_at);
         let mut chapters = Vec::new();
+        let mut revision_log = Vec::new();
         for task in tasks {
-            let mut events = Vec::new();
+            let mut recorded = Vec::new();
             let mut page = PageIndex::FIRST;
             loop {
                 let result = self
-                    .history(HistoryPage {
+                    .sequenced_history(HistoryPage {
                         feature: feature.clone(),
                         task: task.common.id.clone(),
                         page,
                     })
                     .await?;
-                events.extend(result.records);
+                recorded.extend(result.records);
                 match result.end {
                     PageEnd::Complete => break,
                     PageEnd::More => page = page.next(),
@@ -100,19 +103,44 @@ impl Observation {
             }
             // A concurrent writer can add revisions between pages. Deduplicate and
             // bound history to the task snapshot that this read is presenting.
-            events.sort_by_key(|event| event.task.common.revision);
-            events.dedup_by_key(|event| event.task.common.revision);
-            events.retain(|event| event.task.common.revision <= task.common.revision);
-            chapters.push(TaskChapter::from(ChapterSource { task, events }));
+            recorded.sort_by_key(|record: &SequencedEvent| record.event.task.common.revision);
+            recorded.dedup_by_key(|record| record.event.task.common.revision);
+            recorded.retain(|record| record.event.task.common.revision <= task.common.revision);
+            let mut order = Vec::new();
+            let mut events = Vec::new();
+            for record in recorded {
+                order.push(EventOrder {
+                    sequence: record.sequence,
+                    provenance: record.provenance,
+                });
+                events.push(record.event);
+            }
+            let chapter = TaskChapter::from(ChapterSource { task, events });
+            for (entry, recorded) in chapter.entries.iter().zip(order) {
+                revision_log.push(RevisionLogEntry {
+                    feature: feature.clone(),
+                    task: chapter.task.common.id.clone(),
+                    sequence: recorded.sequence,
+                    provenance: recorded.provenance,
+                    entry: entry.clone(),
+                });
+            }
+            chapters.push(chapter);
         }
+        revision_log.sort_by_key(|record| record.sequence);
         let timing = WorkflowTiming::from(chapters.as_slice());
         Ok(FeatureWorkflow {
+            revision_log,
             timeline: RecordedTimeline::from(chapters.as_slice()),
             feature,
             chapters,
             timing,
         })
     }
+}
+struct EventOrder {
+    sequence: crate::values::EventSequence,
+    provenance: super::SequenceProvenance,
 }
 struct ChapterSource {
     task: Task,
@@ -248,7 +276,7 @@ mod tests {
         TaskCommon, TaskState, Workspace,
     };
     use crate::values::{
-        Attempt, CommitId, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
+        Attempt, CommitId, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
     use crate::versions::{RecordVersion, TaskRecordVersion};
     use std::collections::BTreeMap;
@@ -256,6 +284,7 @@ mod tests {
     #[test]
     fn empty_workflow_exposes_an_explicit_empty_recorded_timeline() -> anyhow::Result<()> {
         let workflow = FeatureWorkflow {
+            revision_log: Vec::new(),
             timeline: super::RecordedTimeline::from([].as_slice()),
             feature: FeatureId::try_from("feature".to_owned())?,
             chapters: Vec::new(),
@@ -285,7 +314,7 @@ mod tests {
                     objective: Note::from("Review storage".to_owned()),
                     acceptance: vec![],
                     dependencies: vec![],
-                    revision: Revision::INITIAL,
+                    revision: TaskRevision::INITIAL,
                     attempt: Attempt::UNCLAIMED,
                     created_at: Timestamp::try_from(1000)?,
                     last_update: Timestamp::try_from(1000)?,

@@ -5,7 +5,7 @@ use meta_cortex_workbench::request::{
     AssignTask, ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery,
     WorkerUpdate,
 };
-use meta_cortex_workbench::values::{Attempt, Note, Revision, TaskId, Timestamp};
+use meta_cortex_workbench::values::{Attempt, Note, TaskId, TaskRevision, Timestamp};
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -149,7 +149,7 @@ pub(super) struct Task {
 #[derive(Debug, Deserialize)]
 pub(super) struct TaskCommon {
     pub(super) id: TaskId,
-    pub(super) revision: Revision,
+    pub(super) revision: TaskRevision,
     pub(super) attempt: Attempt,
     pub(super) last_update: Timestamp,
     pub(super) last_progress: Timestamp,

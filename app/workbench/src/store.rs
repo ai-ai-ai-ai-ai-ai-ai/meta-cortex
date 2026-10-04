@@ -5,6 +5,7 @@ mod mutations;
 pub(crate) mod observation;
 mod relational;
 mod schema;
+mod sequence;
 mod sql;
 
 use super::LedgerError;
@@ -14,7 +15,7 @@ use super::model::Workspace;
 use super::model::workflow::TaskOwnership;
 use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskCommon, TaskState, TaskView};
 use super::request::{CreateTask, InitFeature};
-use super::values::{Attempt, FeatureId, Revision, TaskId, Timestamp};
+use super::values::{Attempt, FeatureId, TaskId, TaskRevision, Timestamp};
 use super::versions::{RecordVersion, StorageVersion, TaskRecordVersion};
 use relational::{EventTable, FeatureTable, RecordWriter, TaskTable};
 use sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
@@ -139,7 +140,7 @@ impl Ledger {
                 objective: input.objective,
                 acceptance: input.acceptance,
                 dependencies: input.dependencies,
-                revision: Revision::INITIAL,
+                revision: TaskRevision::INITIAL,
                 attempt: Attempt::UNCLAIMED,
                 created_at: now,
                 last_update: now,

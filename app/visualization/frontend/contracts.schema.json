@@ -227,6 +227,11 @@
       ],
       "type": "string"
     },
+    "EventSequence": {
+      "description": "Database append identity, independent of a task-local revision. Signed rowids\npreserve supported historical SQLite storage identities without renumbering.",
+      "format": "int64",
+      "type": "integer"
+    },
     "Feature": {
       "additionalProperties": false,
       "properties": {
@@ -311,10 +316,14 @@
           "type": "array"
         },
         "feature": { "type": "string" },
+        "revision_log": {
+          "items": { "$ref": "#/$defs/RevisionLogEntry" },
+          "type": "array"
+        },
         "timeline": { "$ref": "#/$defs/RecordedTimeline" },
         "timing": { "$ref": "#/$defs/WorkflowTiming" }
       },
-      "required": ["timeline", "feature", "chapters", "timing"],
+      "required": ["revision_log", "timeline", "feature", "chapters", "timing"],
       "type": "object"
     },
     "FeedEntry": {
@@ -562,7 +571,22 @@
         }
       ]
     },
+    "RevisionLogEntry": {
+      "properties": {
+        "entry": { "$ref": "#/$defs/FeedEntry" },
+        "feature": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/SequenceProvenance" },
+        "sequence": { "$ref": "#/$defs/EventSequence" },
+        "task": { "type": "string" }
+      },
+      "required": ["feature", "task", "sequence", "provenance", "entry"],
+      "type": "object"
+    },
     "SecurityAgent": { "enum": ["SecurityAgent"], "type": "string" },
+    "SequenceProvenance": {
+      "enum": ["LegacyStorageOrder", "CommittedAppend"],
+      "type": "string"
+    },
     "SreAgent": {
       "enum": ["CicdAgent", "DockerSpecialist", "KubernetesSpecialist"],
       "type": "string"
