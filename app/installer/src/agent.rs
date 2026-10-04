@@ -95,7 +95,7 @@ impl ErrorCode {
             | LedgerError::Identifier(_)
             | LedgerError::BranchName(_)
             | LedgerError::CommitId(_)
-            | LedgerError::Revision(_)
+            | LedgerError::TaskRevision(_)
             | LedgerError::Attempt(_)
             | LedgerError::Timestamp(_)
             | LedgerError::LeaseSeconds(_) => ErrorCode::InvalidRequest,

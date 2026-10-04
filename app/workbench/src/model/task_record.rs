@@ -4,7 +4,9 @@ use super::workflow::TaskOwnership;
 use super::{Assignment, Checkpoint, Progress, Task, TaskCommon, TaskState, Workspace};
 use crate::LedgerError;
 use crate::agents::AgentId;
-use crate::values::{Attempt, BranchName, CommitId, FeatureId, Note, Revision, TaskId, Timestamp};
+use crate::values::{
+    Attempt, BranchName, CommitId, FeatureId, Note, TaskId, TaskRevision, Timestamp,
+};
 use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV2};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -49,7 +51,7 @@ pub(super) struct TaskV1 {
     pub acceptance: Vec<Note>,
     pub dependencies: Vec<TaskId>,
     pub workspace: WorkspaceV1,
-    pub revision: Revision,
+    pub revision: TaskRevision,
     pub attempt: Attempt,
     pub state: TaskStateV1,
     pub created_at: Timestamp,
@@ -178,7 +180,7 @@ mod tests {
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{Assignment, Checkpoint, Phase, Progress, Task, TaskState};
     use crate::values::{
-        Attempt, BranchName, CommitId, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
+        Attempt, BranchName, CommitId, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
     use crate::versions::{RecordVersion, TaskRecordVersion};
     use std::path::PathBuf;
@@ -195,7 +197,7 @@ mod tests {
                 acceptance: vec![Note::Empty],
                 dependencies: vec![],
                 workspace: WorkspaceV1::ReadOnly,
-                revision: Revision::INITIAL,
+                revision: TaskRevision::INITIAL,
                 attempt: Attempt::UNCLAIMED.advance()?,
                 state: TaskStateV1::Ready {
                     agent: AgentId::Development(DevelopmentAgent::RustDev),

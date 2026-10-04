@@ -149,9 +149,9 @@ impl TryFrom<String> for CommitId {
 )]
 #[serde(try_from = "i64")]
 #[schemars(with = "i64")]
-pub struct Revision(i64);
+pub struct TaskRevision(i64);
 
-impl Revision {
+impl TaskRevision {
     pub const INITIAL: Self = Self(1);
     pub fn advance(self) -> Result<Self, LedgerError> {
         let Self(value) = self;
@@ -162,20 +162,20 @@ impl Revision {
     }
 }
 
-impl TryFrom<i64> for Revision {
+impl TryFrom<i64> for TaskRevision {
     type Error = RevisionParseError;
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
         if value < 1 {
             return Err(RevisionParseError::NonPositive);
         }
-        Ok(Revision(value))
+        Ok(TaskRevision(value))
     }
 }
 
-impl From<Revision> for i64 {
-    fn from(value: Revision) -> Self {
-        let Revision(revision) = value;
+impl From<TaskRevision> for i64 {
+    fn from(value: TaskRevision) -> Self {
+        let TaskRevision(revision) = value;
         revision
     }
 }
@@ -376,12 +376,36 @@ pub enum WorkerIdParseError {
     #[error("worker UUID must not be nil")]
     Nil,
 }
+/// Database append identity, independent of a task-local revision. Signed rowids
+/// preserve supported historical SQLite storage identities without renumbering.
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Display,
+    Serialize,
+    Deserialize,
+    JsonSchema,
+    derive_more::From,
+)]
+#[serde(transparent)]
+pub struct EventSequence(i64);
+impl From<EventSequence> for i64 {
+    fn from(sequence: EventSequence) -> Self {
+        sequence.0
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::{
         Attempt, AttemptParseError, BranchName, BranchNameParseError, CommitId, CommitIdParseError,
-        FeatureId, IdentifierParseError, LeaseSeconds, LeaseSecondsParseError, Note, Revision,
-        RevisionParseError, TaskId, Timestamp, TimestampParseError,
+        FeatureId, IdentifierParseError, LeaseSeconds, LeaseSecondsParseError, Note,
+        RevisionParseError, TaskId, TaskRevision, Timestamp, TimestampParseError,
     };
     use schemars::schema_for;
     use serde::Deserialize;
@@ -566,8 +590,11 @@ pub mod tests {
 
     #[test]
     fn numeric_validation_preserves_zero_and_range_meaning() -> anyhow::Result<()> {
-        assert_eq!(Revision::try_from(0), Err(RevisionParseError::NonPositive));
-        assert_eq!(Revision::try_from(1), Ok(Revision::INITIAL));
+        assert_eq!(
+            TaskRevision::try_from(0),
+            Err(RevisionParseError::NonPositive)
+        );
+        assert_eq!(TaskRevision::try_from(1), Ok(TaskRevision::INITIAL));
         assert_eq!(Attempt::try_from(-1), Err(AttemptParseError::Negative));
         assert_eq!(Attempt::try_from(0), Ok(Attempt::UNCLAIMED));
         assert_eq!(
@@ -590,7 +617,7 @@ pub mod tests {
                 lease
             );
         }
-        assert!(serde_json::from_str::<Revision>("0").is_err());
+        assert!(serde_json::from_str::<TaskRevision>("0").is_err());
         assert!(serde_json::from_str::<Attempt>("-1").is_err());
         assert!(serde_json::from_str::<Timestamp>("-1").is_err());
         assert_eq!(serde_json::from_str::<Timestamp>("0")?, Timestamp(0));
@@ -620,7 +647,7 @@ pub mod tests {
             assert_eq!(decoded.kind, ScalarKind::String);
         }
         for schema in [
-            schema_for!(Revision),
+            schema_for!(TaskRevision),
             schema_for!(Attempt),
             schema_for!(Timestamp),
             schema_for!(LeaseSeconds),

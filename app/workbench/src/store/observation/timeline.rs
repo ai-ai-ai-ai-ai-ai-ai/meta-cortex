@@ -3,7 +3,7 @@ use super::{FeedEntry, FlowState, RecordedRole, TaskChapter};
 use crate::model::TaskState;
 use crate::model::worker::WorkerIdentity;
 use crate::model::workflow::TaskOwnership;
-use crate::values::{ElapsedMillis, Note, Revision, TaskId, Timestamp, WorkerId};
+use crate::values::{ElapsedMillis, Note, TaskId, TaskRevision, Timestamp, WorkerId};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -46,8 +46,8 @@ pub struct TimelineGroup {
 pub struct RecordedWindow {
     pub task: TaskId,
     pub objective: Note,
-    pub revision: Revision,
-    pub summary_revision: Revision,
+    pub revision: TaskRevision,
+    pub summary_revision: TaskRevision,
     pub start: Timestamp,
     pub end: Timestamp,
     pub duration_ms: ElapsedMillis,
@@ -376,7 +376,7 @@ mod tests {
                     objective: Note::from("Future objective must not leak".to_owned()),
                     acceptance: Vec::new(),
                     dependencies: Vec::new(),
-                    revision: Revision::INITIAL,
+                    revision: TaskRevision::INITIAL,
                     attempt: Attempt::UNCLAIMED,
                     created_at: Timestamp::EPOCH,
                     last_update: Timestamp::EPOCH,
@@ -418,7 +418,7 @@ mod tests {
         }
         fn record(mut self, record: Record) -> anyhow::Result<Self> {
             let at = Timestamp::try_from(record.at)?;
-            let revision = Revision::try_from(i64::try_from(self.chapter.entries.len())? + 1)?;
+            let revision = TaskRevision::try_from(i64::try_from(self.chapter.entries.len())? + 1)?;
             self.chapter.entries.push(FeedEntry {
                 objective: Note::from("Historical objective".to_owned()),
                 worker: record.worker,
@@ -531,7 +531,7 @@ mod tests {
                 .collect::<Result<Vec<_>, _>>()?
         );
         assert_eq!(windows[0].summary.to_string(), "Implementation in progress");
-        assert_eq!(windows[0].summary_revision, Revision::try_from(3)?);
+        assert_eq!(windows[0].summary_revision, TaskRevision::try_from(3)?);
         assert_eq!(windows[0].objective.to_string(), "Historical objective");
         assert_eq!(
             windows[0].duration_ms,
@@ -635,7 +635,7 @@ mod tests {
         );
         assert_eq!(windows[1].state, blocked);
         assert_eq!(windows[1].end, Timestamp::try_from(500)?);
-        assert_eq!(windows[4].revision, Revision::try_from(7)?);
+        assert_eq!(windows[4].revision, TaskRevision::try_from(7)?);
         assert_eq!(windows[4].end, Timestamp::try_from(700)?);
         Ok(())
     }
@@ -777,7 +777,7 @@ mod tests {
         );
         assert_eq!(
             timeline.groups[0].windows[0].summary_revision,
-            Revision::INITIAL
+            TaskRevision::INITIAL
         );
         Ok(())
     }

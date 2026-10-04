@@ -14,7 +14,7 @@ use meta_cortex_workbench::request::{
 };
 use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
-    BranchName, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    BranchName, CommitId, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use serde::{Deserialize, Serialize};
@@ -502,7 +502,7 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
         scenario.call(Operation::Task(TaskOperation::Assign(AssignTask {
             feature: task.common.feature.clone(),
             task: task.common.id.clone(),
-            expected_revision: Revision::INITIAL,
+            expected_revision: TaskRevision::INITIAL,
             actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             assignment: TaskAssignment::from(agent),
         })))?

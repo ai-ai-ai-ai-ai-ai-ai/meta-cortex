@@ -244,6 +244,12 @@ export type Workspace =
       kind: "git";
       path: string;
     };
+export type SequenceProvenance = "LegacyStorageOrder" | "CommittedAppend";
+/**
+ * Database append identity, independent of a task-local revision. Signed rowids
+ * preserve supported historical SQLite storage identities without renumbering.
+ */
+export type EventSequence = number;
 export type TimelineExtent =
   | {
       kind: "Empty";
@@ -417,6 +423,7 @@ export interface FlowCount {
 export interface FeatureWorkflow {
   chapters: TaskChapter[];
   feature: string;
+  revision_log: RevisionLogEntry[];
   timeline: RecordedTimeline;
   timing: WorkflowTiming;
   [k: string]: unknown;
@@ -549,6 +556,14 @@ export interface TaskCommon {
   objective: Note;
   progress: Progress;
   revision: number;
+}
+export interface RevisionLogEntry {
+  entry: FeedEntry;
+  feature: string;
+  provenance: SequenceProvenance;
+  sequence: EventSequence;
+  task: string;
+  [k: string]: unknown;
 }
 export interface RecordedTimeline {
   chapter_order: string[];

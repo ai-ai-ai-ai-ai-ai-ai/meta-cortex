@@ -2882,6 +2882,7 @@ version = "0.13.0"
 dependencies = [
  "anyhow",
  "derive_more",
+ "git2",
  "meta-cortex-workbench",
  "schemars 1.2.2",
  "serde",
@@ -2889,6 +2890,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "tempfile",
  "thiserror 2.0.20",
  "tokio",
  "tracing",

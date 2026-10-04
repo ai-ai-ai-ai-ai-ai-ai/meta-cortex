@@ -4,6 +4,8 @@ pub use timeline::{
     TimelineOrder,
 };
 mod detail;
+mod revision_log;
+pub use revision_log::{RevisionLogEntry, SequenceProvenance};
 mod workflow;
 use super::PERSISTENT_IO;
 use super::relational::{EventTable, FeatureTable, TaskTable};
@@ -140,11 +142,12 @@ impl Observation {
             .pragma_update(&ConnectionPragma::ForeignKeys.to_string(), 1)
             .await?;
         match LedgerSchema::version(&connection).await? {
-            StorageVersion::CommonTasksV4 => Ok(LedgerReader { connection }),
+            StorageVersion::SequencedEventsV5 => Ok(LedgerReader { connection }),
             version @ (StorageVersion::Empty
             | StorageVersion::DocumentsV1
             | StorageVersion::IndexedV2
-            | StorageVersion::RelationalV3) => {
+            | StorageVersion::RelationalV3
+            | StorageVersion::CommonTasksV4) => {
                 Err(LedgerError::ObservationMigrationRequired(version))
             }
         }

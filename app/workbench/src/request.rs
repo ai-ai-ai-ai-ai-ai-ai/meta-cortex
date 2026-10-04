@@ -2,7 +2,7 @@ use super::agents::AgentId;
 use super::model::workflow::TaskAssignment;
 use super::model::{Phase, Progress, Workspace};
 use super::values::{
-    Attempt, BranchName, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, CommitId, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use crate::values::WorkerId;
 use schemars::JsonSchema;
@@ -49,7 +49,7 @@ pub struct CreateTask {
 pub struct AssignTask {
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub actor: AgentId,
     pub assignment: TaskAssignment,
 }
@@ -60,7 +60,7 @@ pub struct ClaimTask {
     pub worker_id: WorkerId,
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub agent: AgentId,
     pub ttl_seconds: LeaseSeconds,
 }
@@ -71,7 +71,7 @@ pub struct WorkerUpdate {
     pub worker_id: WorkerId,
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub agent: AgentId,
     pub attempt: Attempt,
     pub action: WorkerAction,
@@ -103,7 +103,7 @@ pub enum WorkerAction {
 pub struct CoordinatorUpdate {
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub actor: AgentId,
     pub action: CoordinatorAction,
 }
@@ -136,7 +136,7 @@ mod tests {
     use super::ClaimTask;
     use crate::agents::{AgentId, DevelopmentAgent};
     use crate::values::WorkerId;
-    use crate::values::{FeatureId, LeaseSeconds, Revision, TaskId};
+    use crate::values::{FeatureId, LeaseSeconds, TaskId, TaskRevision};
 
     #[test]
     fn claim_contract_records_the_worker_instance() -> anyhow::Result<()> {
@@ -144,7 +144,7 @@ mod tests {
             worker_id: WorkerId::EXAMPLE,
             feature: FeatureId::try_from("feature".to_owned())?,
             task: TaskId::try_from("task".to_owned())?,
-            expected_revision: Revision::INITIAL,
+            expected_revision: TaskRevision::INITIAL,
             agent: AgentId::Development(DevelopmentAgent::RustDev),
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
         };

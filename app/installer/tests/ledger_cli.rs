@@ -16,7 +16,7 @@ use meta_cortex_workbench::request::{
     StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use serde::Deserialize;
@@ -70,7 +70,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         match result.result {
             Outcome::Error(error) => assert_eq!(error.code, "conflict"),
             Outcome::Success(Reply::Task(task)) => {
-                assert_eq!(task.common.revision, Revision::INITIAL.advance()?);
+                assert_eq!(task.common.revision, TaskRevision::INITIAL.advance()?);
                 assert_eq!(task.common.attempt, Attempt::UNCLAIMED.advance()?);
                 let State::Active { assignment } = task.state else {
                     bail!("claimed task must retain its active assignment")
@@ -88,7 +88,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         .run(Operation::Task(TaskOperation::Get(Examples::query()?)))?
     {
         Reply::TaskView(view) => {
-            assert_eq!(view.task.common.revision, Revision::INITIAL.advance()?)
+            assert_eq!(view.task.common.revision, TaskRevision::INITIAL.advance()?)
         }
         other @ (Reply::Features(_)
         | Reply::FrameworkInitialized { .. }
@@ -175,7 +175,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
             .task
             .common
             .revision,
-        Revision::INITIAL
+        TaskRevision::INITIAL
     );
     assert_eq!(scenario.status()?.len(), 1);
     assert_eq!(

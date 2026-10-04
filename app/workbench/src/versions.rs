@@ -141,10 +141,12 @@ pub enum StorageVersion {
     RelationalV3,
     #[display("4")]
     CommonTasksV4,
+    #[display("5")]
+    SequencedEventsV5,
 }
 
 impl StorageVersion {
-    pub const CURRENT: Self = Self::CommonTasksV4;
+    pub const CURRENT: Self = Self::SequencedEventsV5;
 }
 
 impl TryFrom<i64> for StorageVersion {
@@ -157,6 +159,7 @@ impl TryFrom<i64> for StorageVersion {
             2 => Ok(StorageVersion::IndexedV2),
             3 => Ok(StorageVersion::RelationalV3),
             4 => Ok(StorageVersion::CommonTasksV4),
+            5 => Ok(StorageVersion::SequencedEventsV5),
             _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::Database,
                 version: VersionNumber::from(version),
@@ -173,6 +176,7 @@ impl From<StorageVersion> for i64 {
             StorageVersion::IndexedV2 => 2,
             StorageVersion::RelationalV3 => 3,
             StorageVersion::CommonTasksV4 => 4,
+            StorageVersion::SequencedEventsV5 => 5,
         }
     }
 }

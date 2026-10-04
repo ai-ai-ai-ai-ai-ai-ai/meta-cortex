@@ -23,8 +23,9 @@ pub use store::observation::{
     ActiveWork, Blocker, Completion, FeatureActivity, FeatureOutcome, FeatureSummary,
     FeatureWorkflow, FeedEntry, FlowCount, FlowState, HistoryPage, LatestDelivery, Observation,
     Page, PageEnd, PageIndex, PullRequest, RecordedRole, RecordedTimeline, RecordedWindow,
-    TaskChapter, TaskCount, TaskPage, TimelineExtent, TimelineGroup, TimelineGroupIdentity,
-    TimelineOrder, WorkflowCondition, WorkflowTiming, WorkflowTotals,
+    RevisionLogEntry, SequenceProvenance, TaskChapter, TaskCount, TaskPage, TimelineExtent,
+    TimelineGroup, TimelineGroupIdentity, TimelineOrder, WorkflowCondition, WorkflowTiming,
+    WorkflowTotals,
 };
 pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};
@@ -93,7 +94,7 @@ pub enum LedgerError {
     #[error(transparent)]
     CommitId(#[from] values::CommitIdParseError),
     #[error(transparent)]
-    Revision(#[from] values::RevisionParseError),
+    TaskRevision(#[from] values::RevisionParseError),
     #[error(transparent)]
     Attempt(#[from] values::AttemptParseError),
     #[error(transparent)]
