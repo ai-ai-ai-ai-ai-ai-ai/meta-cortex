@@ -22,8 +22,10 @@ use std::{io, time::SystemTimeError};
 pub use store::observation::{
     ActiveWork, Blocker, Completion, FeatureActivity, FeatureOutcome, FeatureSummary,
     FeatureWorkflow, FeedEntry, FlowCount, FlowState, HistoryPage, LatestDelivery, Observation,
-    Page, PageEnd, PageIndex, PullRequest, RecordedRole, TaskChapter, TaskCount, TaskPage,
-    WorkflowCondition, WorkflowTiming, WorkflowTotals,
+    Page, PageEnd, PageIndex, PullRequest, RecordedRole, RecordedTimeline, RecordedWindow,
+    RevisionLogEntry, SequenceProvenance, StateMeaning, TaskChapter, TaskCount, TaskPage,
+    TimelineExtent, TimelineGroup, TimelineGroupIdentity, TimelineOrder, WorkflowCondition,
+    WorkflowTiming, WorkflowTotals,
 };
 pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};
@@ -92,7 +94,7 @@ pub enum LedgerError {
     #[error(transparent)]
     CommitId(#[from] values::CommitIdParseError),
     #[error(transparent)]
-    Revision(#[from] values::RevisionParseError),
+    TaskRevision(#[from] values::RevisionParseError),
     #[error(transparent)]
     Attempt(#[from] values::AttemptParseError),
     #[error(transparent)]
@@ -107,7 +109,7 @@ pub enum LedgerError {
     NotFound,
     #[error("operation is not valid in the current task state")]
     InvalidTransition,
-    #[error("owner or attempt no longer matches this assignment")]
+    #[error("role, worker, or attempt no longer matches this assignment")]
     AssignmentChanged,
     #[error("assignment expired; ask Gizmo to inspect and reassign it")]
     Expired,

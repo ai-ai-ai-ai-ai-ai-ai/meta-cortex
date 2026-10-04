@@ -15,8 +15,9 @@ use meta_cortex_workbench::request::{
     AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery,
     InitFeature, StoppedExecution, TaskQuery, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
-    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
@@ -86,7 +87,7 @@ impl Catalog {
         let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
         let worker = AgentId::Development(DevelopmentAgent::RustDev);
         let ttl = LeaseSeconds::TEN_MINUTES;
-        let assigned_revision = Revision::INITIAL.advance()?;
+        let assigned_revision = TaskRevision::INITIAL.advance()?;
         let claimed_revision = assigned_revision.advance()?;
         let heartbeat_revision = claimed_revision.advance()?;
         let examples = [
@@ -168,7 +169,7 @@ impl Catalog {
                 operation: Operation::Task(TaskOperation::Assign(AssignTask {
                     feature: feature.clone(),
                     task: task.clone(),
-                    expected_revision: Revision::INITIAL,
+                    expected_revision: TaskRevision::INITIAL,
                     actor: coordinator,
                     assignment: TaskAssignment::from(worker),
                 })),
@@ -196,6 +197,7 @@ impl Catalog {
                     "Claim a queued task atomically. Dependencies must be integrated or completed, and the agent must match the recorded assignment.",
                 ),
                 operation: Operation::Task(TaskOperation::Claim(ClaimTask {
+                    worker_id: WorkerId::EXAMPLE,
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: assigned_revision,
@@ -208,6 +210,7 @@ impl Catalog {
                     "Worker operation: heartbeat, progress, checkpoint, or ready. The schema below describes each action. Timestamps are Unix milliseconds; TTL is 1–86400 seconds.",
                 ),
                 operation: Operation::Task(TaskOperation::Update(WorkerUpdate {
+                    worker_id: WorkerId::EXAMPLE,
                     feature: feature.clone(),
                     task: task.clone(),
                     expected_revision: claimed_revision,

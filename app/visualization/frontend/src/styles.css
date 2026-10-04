@@ -471,6 +471,15 @@ details {
   gap: 13px;
   flex-wrap: wrap;
 }
+.briefing-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.briefing-title-row .primary-link {
+  flex-shrink: 0;
+}
 .feature-preview h2 {
   font-size: 38px;
   line-height: 1.12;
@@ -705,8 +714,13 @@ details {
   .briefing-footer {
     flex-wrap: wrap;
   }
-  .primary-link {
-    margin-left: auto;
+  .briefing-title-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .briefing-title-row .primary-link {
+    width: 100%;
   }
   .chapter-heading {
     flex-wrap: wrap;

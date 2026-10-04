@@ -1,4 +1,13 @@
+mod state_meaning;
+pub use state_meaning::StateMeaning;
+mod timeline;
+pub use timeline::{
+    RecordedTimeline, RecordedWindow, TimelineExtent, TimelineGroup, TimelineGroupIdentity,
+    TimelineOrder,
+};
 mod detail;
+mod revision_log;
+pub use revision_log::{RevisionLogEntry, SequenceProvenance};
 mod workflow;
 use super::PERSISTENT_IO;
 use super::relational::{EventTable, FeatureTable, TaskTable};
@@ -135,11 +144,12 @@ impl Observation {
             .pragma_update(&ConnectionPragma::ForeignKeys.to_string(), 1)
             .await?;
         match LedgerSchema::version(&connection).await? {
-            StorageVersion::CommonTasksV4 => Ok(LedgerReader { connection }),
+            StorageVersion::SequencedEventsV5 => Ok(LedgerReader { connection }),
             version @ (StorageVersion::Empty
             | StorageVersion::DocumentsV1
             | StorageVersion::IndexedV2
-            | StorageVersion::RelationalV3) => {
+            | StorageVersion::RelationalV3
+            | StorageVersion::CommonTasksV4) => {
                 Err(LedgerError::ObservationMigrationRequired(version))
             }
         }
@@ -277,7 +287,7 @@ mod tests {
         Builder::new_current_thread().enable_time().build()?.block_on(async {
             assert!(matches!(Observation::open(directory.path().join("missing")).await, Err(LedgerError::Uninitialized)));
             assert!(matches!(Observation::open(directory.path().to_owned()).await, Err(LedgerError::Invalid(_))));
-            for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2, StorageVersion::RelationalV3] {
+            for version in [StorageVersion::Empty, StorageVersion::DocumentsV1, StorageVersion::IndexedV2, StorageVersion::RelationalV3, StorageVersion::CommonTasksV4] {
                 let path = directory.path().join(format!("version-{version}.db"));
                 let database = DatabaseBuilder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?).with_io(PERSISTENT_IO).build().await?;
                 let connection = database.connect()?;

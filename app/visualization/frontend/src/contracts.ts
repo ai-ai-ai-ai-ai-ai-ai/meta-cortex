@@ -150,6 +150,26 @@ export type EventKind =
   | "completed"
   | "requeued"
   | "cancelled";
+export type ReportingTarget =
+  | {
+      kind: "Host";
+    }
+  | {
+      coordinator: GizmoAgent;
+      kind: "Gizmo";
+    };
+export type Phase =
+  | {
+      kind: "working";
+    }
+  | {
+      kind: "blocked";
+      reason: Note;
+    };
+/**
+ * Stable identity chosen once by the host worker, then reused across its tasks.
+ */
+export type WorkerId = string;
 export type RecordedRole =
   | {
       kind: "Unrecorded";
@@ -170,14 +190,6 @@ export type TaskOwnership =
   | {
       assignment: TaskAssignment;
       kind: "Assigned";
-    };
-export type ReportingTarget =
-  | {
-      kind: "Host";
-    }
-  | {
-      coordinator: GizmoAgent;
-      kind: "Gizmo";
     };
 export type TaskState =
   | {
@@ -205,18 +217,21 @@ export type TaskState =
       kind: "cancelled";
       reason: Note;
     };
-export type Phase =
-  | {
-      kind: "working";
-    }
-  | {
-      kind: "blocked";
-      reason: Note;
-    };
 /**
  * Current task shape. V1 payloads are decoded by the separate legacy task record.
  */
-export type TaskRecordVersion = 2;
+export type TaskRecordVersion = 3;
+/**
+ * Recorded host worker identity; legacy snapshots never invent one from a role.
+ */
+export type WorkerIdentity =
+  | {
+      kind: "Unrecorded";
+    }
+  | {
+      kind: "Recorded";
+      worker_id: WorkerId;
+    };
 export type Workspace =
   | {
       kind: "read_only";
@@ -229,6 +244,48 @@ export type Workspace =
       kind: "git";
       path: string;
     };
+export type SequenceProvenance = "LegacyStorageOrder" | "CommittedAppend";
+/**
+ * Database append identity, independent of a task-local revision. Signed rowids
+ * preserve supported historical SQLite storage identities without renumbering.
+ */
+export type EventSequence = number;
+export type TimelineExtent =
+  | {
+      kind: "Empty";
+      [k: string]: unknown;
+    }
+  | {
+      finished: number;
+      kind: "Recorded";
+      started: number;
+      [k: string]: unknown;
+    };
+export type TimelineGroupIdentity =
+  | {
+      kind: "RecordedWorker";
+      worker_id: WorkerId;
+      [k: string]: unknown;
+    }
+  | {
+      kind: "RoleHistory";
+      role: RecordedRole;
+      [k: string]: unknown;
+    };
+export type TimelineOrder =
+  | {
+      at: number;
+      kind: "Recorded";
+      [k: string]: unknown;
+    }
+  | {
+      kind: "Unrecorded";
+      [k: string]: unknown;
+    };
+/**
+ * Nonnegative recorded elapsed milliseconds, independent of display rounding.
+ */
+export type ElapsedMillis = number;
 export type WorkflowTiming =
   | {
       kind: "Empty";
@@ -366,6 +423,9 @@ export interface FlowCount {
 export interface FeatureWorkflow {
   chapters: TaskChapter[];
   feature: string;
+  revision_log: RevisionLogEntry[];
+  state_meanings: StateMeaning[];
+  timeline: RecordedTimeline;
   timing: WorkflowTiming;
   [k: string]: unknown;
 }
@@ -373,7 +433,7 @@ export interface TaskChapter {
   entries: FeedEntry[];
   role: RecordedRole;
   status: FlowState;
-  task: TaskV2;
+  task: TaskV3;
   [k: string]: unknown;
 }
 export interface FeedEntry {
@@ -386,8 +446,60 @@ export interface FeedEntry {
   evidence: Progress[];
   kind: EventKind;
   note: Note;
+  objective: Note;
+  /**
+   * Ownership recorded in this event snapshot, independent of its actor.
+   */
+  ownership:
+    | {
+        kind: "Unrecorded";
+      }
+    | {
+        assignment: TaskAssignment;
+        kind: "Assigned";
+      };
   revision: number;
+  /**
+   * Task state recorded in this event snapshot, independent of later revisions.
+   */
+  state:
+    | {
+        kind: "queued";
+      }
+    | {
+        assignment: Assignment;
+        kind: "active";
+      }
+    | {
+        agent: AgentId;
+        attempt: number;
+        kind: "ready";
+      }
+    | {
+        commit: string;
+        kind: "integrated";
+      }
+    | {
+        agent: AgentId;
+        attempt: number;
+        kind: "completed";
+      }
+    | {
+        kind: "cancelled";
+        reason: Note;
+      };
   summary: Note;
+  /**
+   * Worker identity from this event snapshot, never inferred from its actor.
+   */
+  worker:
+    | {
+        kind: "Unrecorded";
+      }
+    | {
+        kind: "Recorded";
+        worker_id: WorkerId;
+      };
   [k: string]: unknown;
 }
 export interface Progress {
@@ -407,11 +519,25 @@ export interface Check {
   evidence: Note;
   outcome: CheckOutcome;
 }
-export interface TaskV2 {
+/**
+ * The intended owner and reporting line survive every task state and attempt.
+ */
+export interface TaskAssignment {
+  agent: AgentId;
+  reports_to: ReportingTarget;
+}
+export interface Assignment {
+  agent: AgentId;
+  attempt: number;
+  expires_at: number;
+  phase: Phase;
+}
+export interface TaskV3 {
   common: TaskCommon;
   ownership: TaskOwnership;
   state: TaskState;
   version: TaskRecordVersion;
+  worker: WorkerIdentity;
   workspace: Workspace;
 }
 /**
@@ -432,16 +558,48 @@ export interface TaskCommon {
   progress: Progress;
   revision: number;
 }
-/**
- * The intended owner and reporting line survive every task state and attempt.
- */
-export interface TaskAssignment {
-  agent: AgentId;
-  reports_to: ReportingTarget;
+export interface RevisionLogEntry {
+  entry: FeedEntry;
+  feature: string;
+  provenance: SequenceProvenance;
+  sequence: EventSequence;
+  task: string;
+  [k: string]: unknown;
 }
-export interface Assignment {
-  agent: AgentId;
-  attempt: number;
-  expires_at: number;
-  phase: Phase;
+export interface StateMeaning {
+  evidence: Note;
+  meaning: Note;
+  next_step: Note;
+  qualification: Note;
+  state: FlowState;
+  [k: string]: unknown;
+}
+export interface RecordedTimeline {
+  chapter_order: string[];
+  extent: TimelineExtent;
+  groups: TimelineGroup[];
+  [k: string]: unknown;
+}
+export interface TimelineGroup {
+  identity: TimelineGroupIdentity;
+  order: TimelineOrder;
+  roles: RecordedRole[];
+  tasks: string[];
+  windows: RecordedWindow[];
+  [k: string]: unknown;
+}
+export interface RecordedWindow {
+  duration_ms: ElapsedMillis;
+  end: number;
+  objective: Note;
+  revision: number;
+  role: RecordedRole;
+  start: number;
+  state: TaskState;
+  status: FlowState;
+  summary: Note;
+  summary_revision: number;
+  task: string;
+  worker: WorkerIdentity;
+  [k: string]: unknown;
 }

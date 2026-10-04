@@ -25,6 +25,9 @@ Report to Team Gizmo through the host's agent communication tools.
 
 ### Execute and report
 
+- Apply the [workspace output transition](../../../gizmo-team/docs/coordination-state-machine.md#prepare-workspace-output)
+  when returning setup results before later integration work.
+
 - Before workers start, use [Set up workspaces](skills/local-feature/practices/local_feature/workspace-setup.md#set-up-workspaces)
   to create or reuse the feature worktree and create each worker's task worktree.
   Tell Team Gizmo:

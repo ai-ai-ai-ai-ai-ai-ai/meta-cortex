@@ -1,16 +1,23 @@
 //! Complete, read-only task chapters for a selected feature. Pagination is consumed
 //! between short-lived WAL reads; no transaction is held while the UI is open.
+use super::StateMeaning;
+use super::revision_log::{RevisionLogEntry, SequencedEvent};
+use super::timeline::RecordedTimeline;
 use super::{FlowState, HistoryPage, Observation, PageEnd, PageIndex, TaskPage};
 use crate::LedgerError;
 use crate::agents::AgentId;
+use crate::model::worker::WorkerIdentity;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Checkpoint, Event, EventKind, Progress, Task, TaskState};
-use crate::values::{FeatureId, Note, Revision, Timestamp};
+use crate::values::{EventSequence, FeatureId, Note, TaskRevision, Timestamp};
 use schemars::JsonSchema;
 use serde::Serialize;
 
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeatureWorkflow {
+    pub state_meanings: Vec<StateMeaning>,
+    pub revision_log: Vec<RevisionLogEntry>,
+    pub timeline: RecordedTimeline,
     pub feature: FeatureId,
     pub chapters: Vec<TaskChapter>,
     pub timing: WorkflowTiming,
@@ -27,7 +34,7 @@ pub enum WorkflowTiming {
         finished: Timestamp,
     },
 }
-#[derive(Debug, Serialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, JsonSchema)]
 #[serde(tag = "kind")]
 pub enum RecordedRole {
     Unrecorded,
@@ -40,14 +47,21 @@ pub struct TaskChapter {
     pub status: FlowState,
     pub entries: Vec<FeedEntry>,
 }
-#[derive(Debug, Serialize, JsonSchema)]
+#[derive(Clone, Debug, Serialize, JsonSchema)]
 pub struct FeedEntry {
+    pub objective: Note,
+    /// Worker identity from this event snapshot, never inferred from its actor.
+    pub worker: WorkerIdentity,
     pub kind: EventKind,
     pub actor: AgentId,
+    /// Ownership recorded in this event snapshot, independent of its actor.
+    pub ownership: TaskOwnership,
+    /// Task state recorded in this event snapshot, independent of later revisions.
+    pub state: TaskState,
     pub note: Note,
     pub summary: Note,
     pub at: Timestamp,
-    pub revision: Revision,
+    pub revision: TaskRevision,
     /// Only evidence changed since the previous revision of this task.
     pub evidence: Vec<Progress>,
     pub checkpoint: Checkpoint,
@@ -71,18 +85,19 @@ impl Observation {
         }
         tasks.sort_by_key(|task| task.common.created_at);
         let mut chapters = Vec::new();
+        let mut revision_log = Vec::new();
         for task in tasks {
-            let mut events = Vec::new();
+            let mut recorded = Vec::new();
             let mut page = PageIndex::FIRST;
             loop {
                 let result = self
-                    .history(HistoryPage {
+                    .sequenced_history(HistoryPage {
                         feature: feature.clone(),
                         task: task.common.id.clone(),
                         page,
                     })
                     .await?;
-                events.extend(result.records);
+                recorded.extend(result.records);
                 match result.end {
                     PageEnd::Complete => break,
                     PageEnd::More => page = page.next(),
@@ -90,18 +105,45 @@ impl Observation {
             }
             // A concurrent writer can add revisions between pages. Deduplicate and
             // bound history to the task snapshot that this read is presenting.
-            events.sort_by_key(|event| event.task.common.revision);
-            events.dedup_by_key(|event| event.task.common.revision);
-            events.retain(|event| event.task.common.revision <= task.common.revision);
-            chapters.push(TaskChapter::from(ChapterSource { task, events }));
+            recorded.sort_by_key(|record: &SequencedEvent| record.event.task.common.revision);
+            recorded.dedup_by_key(|record| record.event.task.common.revision);
+            recorded.retain(|record| record.event.task.common.revision <= task.common.revision);
+            let mut order = Vec::new();
+            let mut events = Vec::new();
+            for record in recorded {
+                order.push(EventOrder {
+                    sequence: record.sequence,
+                    provenance: record.provenance,
+                });
+                events.push(record.event);
+            }
+            let chapter = TaskChapter::from(ChapterSource { task, events });
+            for (entry, recorded) in chapter.entries.iter().zip(order) {
+                revision_log.push(RevisionLogEntry {
+                    feature: feature.clone(),
+                    task: chapter.task.common.id.clone(),
+                    sequence: recorded.sequence,
+                    provenance: recorded.provenance,
+                    entry: entry.clone(),
+                });
+            }
+            chapters.push(chapter);
         }
+        revision_log.sort_by_key(|record| record.sequence);
         let timing = WorkflowTiming::from(chapters.as_slice());
         Ok(FeatureWorkflow {
+            state_meanings: StateMeaning::all(),
+            revision_log,
+            timeline: RecordedTimeline::from(chapters.as_slice()),
             feature,
             chapters,
             timing,
         })
     }
+}
+struct EventOrder {
+    sequence: EventSequence,
+    provenance: super::SequenceProvenance,
 }
 struct ChapterSource {
     task: Task,
@@ -169,8 +211,12 @@ impl From<ChapterSource> for TaskChapter {
             };
             checkpoint = event.task.common.checkpoint;
             entries.push(FeedEntry {
+                objective: event.task.common.objective,
+                worker: event.task.worker,
                 kind: event.kind,
                 actor: event.actor,
+                ownership: event.task.ownership,
+                state: event.task.state,
                 note: event.note,
                 summary: event.task.common.progress.summary.clone(),
                 at: event.task.common.last_update,
@@ -224,18 +270,40 @@ impl From<&[TaskChapter]> for WorkflowTiming {
 
 #[cfg(test)]
 mod tests {
-    use super::{ChapterSource, RecordedRole, TaskChapter, WorkflowTiming};
+    use super::{ChapterSource, FeatureWorkflow, RecordedRole, TaskChapter, WorkflowTiming};
     use crate::agents::{AgentId, DevelopmentAgent};
+    use crate::model::worker::WorkerIdentity;
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{
-        Check, CheckOutcome, Checkpoint, Event, EventKind, Progress, Task, TaskCommon, TaskState,
-        Workspace,
+        Assignment, Check, CheckOutcome, Checkpoint, Event, EventKind, Phase, Progress, Task,
+        TaskCommon, TaskState, Workspace,
     };
     use crate::values::{
-        Attempt, CommitId, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
+        Attempt, CommitId, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
     use crate::versions::{RecordVersion, TaskRecordVersion};
     use std::collections::BTreeMap;
+
+    #[test]
+    fn empty_workflow_exposes_an_explicit_empty_recorded_timeline() -> anyhow::Result<()> {
+        let workflow = FeatureWorkflow {
+            state_meanings: super::StateMeaning::all(),
+            revision_log: Vec::new(),
+            timeline: super::RecordedTimeline::from([].as_slice()),
+            feature: FeatureId::try_from("feature".to_owned())?,
+            chapters: Vec::new(),
+            timing: WorkflowTiming::Empty,
+        };
+        let serialized = serde_json::to_value(workflow)?;
+        assert_eq!(serialized["timeline"]["extent"]["kind"], "Empty");
+        assert_eq!(serialized["state_meanings"][0]["state"], "queued");
+        assert_eq!(serialized["state_meanings"][6]["state"], "cancelled");
+        assert_eq!(
+            serialized["timeline"]["groups"],
+            serde_json::to_value(Vec::<TaskId>::new())?
+        );
+        Ok(())
+    }
 
     struct Scenario;
     impl Scenario {
@@ -244,6 +312,7 @@ mod tests {
         }
         fn task() -> anyhow::Result<Task> {
             Ok(Task {
+                worker: WorkerIdentity::Unrecorded,
                 version: TaskRecordVersion::CURRENT,
                 common: TaskCommon {
                     id: TaskId::try_from("task".to_owned())?,
@@ -251,7 +320,7 @@ mod tests {
                     objective: Note::from("Review storage".to_owned()),
                     acceptance: vec![],
                     dependencies: vec![],
-                    revision: Revision::INITIAL,
+                    revision: TaskRevision::INITIAL,
                     attempt: Attempt::UNCLAIMED,
                     created_at: Timestamp::try_from(1000)?,
                     last_update: Timestamp::try_from(1000)?,
@@ -279,6 +348,112 @@ mod tests {
                 task,
             }
         }
+    }
+    #[derive(serde::Deserialize)]
+    struct FeedSnapshot {
+        kind: EventKind,
+        state: TaskState,
+    }
+
+    #[test]
+    fn entries_preserve_historical_state_through_blocking_and_requeue() -> anyhow::Result<()> {
+        let first_attempt = Attempt::UNCLAIMED.advance()?;
+        let assignment = Assignment {
+            agent: Scenario::agent(),
+            attempt: first_attempt,
+            expires_at: Timestamp::try_from(5000)?,
+            phase: Phase::Working,
+        };
+        let working = TaskState::Active {
+            assignment: assignment.clone(),
+        };
+        let blocked = TaskState::Active {
+            assignment: Assignment {
+                phase: Phase::Blocked {
+                    reason: Note::from("Waiting for contract review".to_owned()),
+                },
+                ..assignment.clone()
+            },
+        };
+        let reclaimed = TaskState::Active {
+            assignment: Assignment {
+                agent: AgentId::Development(DevelopmentAgent::TypescriptDev),
+                attempt: first_attempt.advance()?,
+                ..assignment
+            },
+        };
+        let snapshots = [
+            FeedSnapshot {
+                kind: EventKind::Claimed,
+                state: working.clone(),
+            },
+            FeedSnapshot {
+                kind: EventKind::Progress,
+                state: blocked,
+            },
+            FeedSnapshot {
+                kind: EventKind::Progress,
+                state: working,
+            },
+            FeedSnapshot {
+                kind: EventKind::Requeued,
+                state: TaskState::Queued,
+            },
+            FeedSnapshot {
+                kind: EventKind::Claimed,
+                state: reclaimed,
+            },
+        ];
+        let mut task = Scenario::task()?;
+        let mut events = Vec::new();
+        for snapshot in &snapshots {
+            task.common.revision = task.common.revision.advance()?;
+            task.state = snapshot.state.clone();
+            events.push(Event {
+                kind: snapshot.kind.clone(),
+                ..Scenario::event(task.clone())
+            });
+        }
+        let chapter = TaskChapter::from(ChapterSource { task, events });
+        assert_eq!(chapter.entries.len(), snapshots.len());
+        for (entry, snapshot) in chapter.entries.iter().zip(snapshots) {
+            let recorded: FeedSnapshot = serde_json::from_str(&serde_json::to_string(entry)?)?;
+            assert_eq!(recorded.kind, snapshot.kind);
+            assert_eq!(recorded.state, snapshot.state);
+        }
+        Ok(())
+    }
+    #[test]
+    fn entries_preserve_historical_ownership_through_reassignment() -> anyhow::Result<()> {
+        let mut task = Scenario::task()?;
+        let legacy = Scenario::event(task.clone());
+        let original = TaskOwnership::Assigned {
+            assignment: TaskAssignment::from(Scenario::agent()),
+        };
+        task.common.revision = task.common.revision.advance()?;
+        task.ownership = original.clone();
+        let assigned = Event {
+            kind: EventKind::Assigned,
+            ..Scenario::event(task.clone())
+        };
+        task.common.revision = task.common.revision.advance()?;
+        task.ownership = TaskOwnership::Assigned {
+            assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::TypescriptDev)),
+        };
+        let reassigned = Event {
+            kind: EventKind::Assigned,
+            ..Scenario::event(task.clone())
+        };
+        let current = task.ownership.clone();
+        let chapter = TaskChapter::from(ChapterSource {
+            task,
+            events: vec![legacy, assigned, reassigned],
+        });
+        assert_eq!(chapter.entries[0].ownership, TaskOwnership::Unrecorded);
+        assert_eq!(chapter.entries[1].ownership, original);
+        assert_eq!(chapter.entries[2].ownership, current);
+        assert_eq!(chapter.entries[2].actor, Scenario::agent());
+        Ok(())
     }
     #[test]
     fn chapters_keep_changes_once_and_preserve_updated_evidence() -> anyhow::Result<()> {

@@ -45,6 +45,8 @@ the task; a missing native UI is reported as a blocker. Codex uses
 appear as buttons or a dropdown.
 
 The [agent instructions](teams/AGENTS.md) define the coordination workflow.
+The [coordination state machine](teams/gizmo-team/docs/coordination-state-machine.md)
+explains the framework architecture, operation outcomes, and human handoffs.
 In multi-agent mode:
 
 - **Gizmo Prime**

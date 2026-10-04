@@ -357,6 +357,8 @@ questions and the library's Bun helper; see the
 [setup and configuration instructions](cortex/README.md#execution-configuration).
 Read the [framework guide](cortex/README.md) for project context, agent
 coordination, model configuration, and agent skills.
+The [coordination state machine](cortex/teams/gizmo-team/docs/coordination-state-machine.md)
+is the evolving framework architecture and human handoff specification.
 
 ## Develop the application
 
@@ -397,6 +399,49 @@ The binary is built at `app/target/release/meta-cortex`
 (`app\target\release\meta-cortex.exe` on Windows). Release configuration
 lives in [app/dist-workspace.toml](app/dist-workspace.toml); only the executable
 is distributed. The [framework source](cortex/) remains at the repository root.
+
+### Dashboard projection boundary
+
+The native dashboard reads the existing ledger through the public Workbench
+observation API. The frontend's `dashboard_workflow` invocation reaches the
+[Tauri command handler](app/visualization/src/dashboard/desktop.rs), which calls
+`Workbench::observe` and `Observation::workflow` to return `FeatureWorkflow`.
+The handler remains a transport adapter; Workbench owns the read-only Turso
+access and the meaning of the returned workflow.
+
+- **Workbench:** derive recorded state windows, worker UUID groups and legacy
+  role groups, their order, and historical attribution. Supply each piece's
+  task objective, progress or blocked reason, timestamps, and numeric duration
+  from the corresponding recorded history. Preserve task chapters and event
+  history for the Log view.
+- **Visualization:** consume that projection through the generated Rust JSON
+  Schema and TypeScript contract. Svelte/TypeScript owns pixel geometry, visual
+  lanes, CSS, icons, hover and navigation behavior, and date/duration string
+  formatting. It does not reconstruct domain windows or worker attribution.
+- **Shared observation:** keep these derivations in Workbench so native and
+  Snapshot consumers use the same recorded meanings. The projection adds no
+  database format, alternate backend, or separate service.
+
+**Prohibited:** derive a second timeline in TypeScript by grouping raw events
+under each task's latest worker, then fill older cards with current progress.
+
+**Required:** use Workbench's historical groups and pieces; map their timestamps
+to pixels and format their numeric durations in the frontend. Keep the original
+history available for Log navigation.
+
+#### Verification evidence
+
+Validate the native command path with Tauri's `MockRuntime` against a real
+repository ledger, checking the handler's projected reply and read-only behavior.
+That establishes command-to-Turso integration; it does not establish native
+window rendering. Report rendered-window or browser visual checks separately.
+
+**Prohibited:** report a passing mocked-runtime command test as proof that a
+native window rendered correctly.
+
+**Required:** report the command-path result and the actual visual environment,
+such as a browser preview; identify native-window rendering as unverified when
+it was not exercised.
 
 ## Update a project
 

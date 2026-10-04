@@ -41,7 +41,7 @@ it("shows the split cards and briefing with recorded PR, dates and duration", as
   const panel = await screen.findByRole("article", {
     name: "Selected feature",
   });
-  expect(within(panel).getByText("20 min")).toBeTruthy();
+  expect(within(panel).getByText("0 sec")).toBeTruthy();
   expect(within(panel).getByText("Started")).toBeTruthy();
   expect(within(panel).getByText("Finished")).toBeTruthy();
   expect(
@@ -70,7 +70,7 @@ it("keeps the agent index across Log and Time windows, with revision metadata an
   );
   const index = screen.getByRole("navigation", { name: "Agent index" });
   expect(within(index).getByText("1. Rust Dev")).toBeTruthy();
-  expect(screen.getByText("· r2")).toBeTruthy();
+  expect(screen.getByText("· Task r2")).toBeTruthy();
   expect(screen.getByText("cargo test -p workbench")).toBeTruthy();
   await fireEvent.click(screen.getByRole("tab", { name: "Time windows" }));
   expect(screen.getByRole("navigation", { name: "Agent index" })).toBe(index);

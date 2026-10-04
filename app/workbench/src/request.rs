@@ -2,8 +2,9 @@ use super::agents::AgentId;
 use super::model::workflow::TaskAssignment;
 use super::model::{Phase, Progress, Workspace};
 use super::values::{
-    Attempt, BranchName, CommitId, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, CommitId, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
+use crate::values::WorkerId;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -48,7 +49,7 @@ pub struct CreateTask {
 pub struct AssignTask {
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub actor: AgentId,
     pub assignment: TaskAssignment,
 }
@@ -56,9 +57,10 @@ pub struct AssignTask {
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ClaimTask {
+    pub worker_id: WorkerId,
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub agent: AgentId,
     pub ttl_seconds: LeaseSeconds,
 }
@@ -66,9 +68,10 @@ pub struct ClaimTask {
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct WorkerUpdate {
+    pub worker_id: WorkerId,
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub agent: AgentId,
     pub attempt: Attempt,
     pub action: WorkerAction,
@@ -100,7 +103,7 @@ pub enum WorkerAction {
 pub struct CoordinatorUpdate {
     pub feature: FeatureId,
     pub task: TaskId,
-    pub expected_revision: Revision,
+    pub expected_revision: TaskRevision,
     pub actor: AgentId,
     pub action: CoordinatorAction,
 }
@@ -126,4 +129,34 @@ pub enum CoordinatorAction {
 #[serde(rename_all = "snake_case")]
 pub enum StoppedExecution {
     StoppedOrFinished,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ClaimTask;
+    use crate::agents::{AgentId, DevelopmentAgent};
+    use crate::values::WorkerId;
+    use crate::values::{FeatureId, LeaseSeconds, TaskId, TaskRevision};
+
+    #[test]
+    fn claim_contract_records_the_worker_instance() -> anyhow::Result<()> {
+        let claim = ClaimTask {
+            worker_id: WorkerId::EXAMPLE,
+            feature: FeatureId::try_from("feature".to_owned())?,
+            task: TaskId::try_from("task".to_owned())?,
+            expected_revision: TaskRevision::INITIAL,
+            agent: AgentId::Development(DevelopmentAgent::RustDev),
+            ttl_seconds: LeaseSeconds::TEN_MINUTES,
+        };
+        let encoded = serde_json::to_value(claim)?;
+        assert!(encoded.get("worker_id").is_some());
+        let decoded: ClaimTask = serde_json::from_value(encoded.clone())?;
+        assert_eq!(decoded.worker_id, WorkerId::EXAMPLE);
+        let serde_json::Value::Object(mut fields) = encoded else {
+            anyhow::bail!("claim must serialize as an object");
+        };
+        assert!(fields.remove("worker_id").is_some());
+        assert!(serde_json::from_value::<ClaimTask>(serde_json::Value::Object(fields)).is_err());
+        Ok(())
+    }
 }

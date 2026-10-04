@@ -3,7 +3,9 @@
 The ledger is the durable record of the entire feature workflow: coordination,
 assignments, implementation, verification, integration, and delivery.
 Host messages notify coordinators; the ledger lets a replacement
-coordinator or worker recover without the final message.
+coordinator or worker recover without the final message. The
+[coordination state machine](coordination-state-machine.md) explains how ledger
+states relate to workspace output, review, delivery, and the next responsible owner.
 
 ## Storage and ownership
 
@@ -142,8 +144,9 @@ identifies who recorded it, not who actually authored that Git commit.
    progress, recorded roles, and PR links. The selected briefing adds the task
    inventory, latest update, start/finish times, elapsed duration, and branch.
    Open a task block or **Open workflow** to see task chapters. One shared index
-   navigates both **Log** and **Time windows** in the right panel. Log actions
-   show recording actors, time, revision, and expandable evidence. Time windows
+   navigates both **Log** and **Time windows** in the right panel. The
+   [Revision log](#revision-log-and-event-order) shows database-wide order,
+   task revisions, recording actors, time, and expandable evidence. Time windows
    show task creation through last update, including concurrent task lifetimes.
    PR links open in the system browser.
 3. Close the window to exit.
@@ -217,8 +220,8 @@ detail, where paging does not apply. Snapshot views are:
   full task snapshot at that revision.
 
 States distinguish queued, working, blocked, ready, integrated, completed, and
-cancelled. Integrated records Git inclusion at the feature SHA; completed records
-coordinator acceptance of a read-only or feature activity.
+cancelled. Use the [recorded state meanings](#recorded-state-meanings) to interpret
+their guarantees and limits.
 Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
@@ -242,6 +245,68 @@ result, not a new test execution by the dashboard.
 **Prohibited:** treat a historical passed check as a fresh validation run.
 
 **Required:** inspect its event revision and recorded evidence before reporting it.
+
+### Recorded state meanings
+
+Workbench supplies shared `StateMeaning` metadata for all seven `FlowState`
+values through its generated Rust observation contract. The frontend discloses
+those meanings; it must not maintain a second interpretation of the states.
+The following qualifications distinguish recorded results from stronger claims:
+
+- **Working:** the task records an active assignment with a working phase. This
+  is not a measurement of a running host process or uninterrupted execution.
+- **Integrated:** a ready task with a Git or read-only workspace records the
+  current feature branch tip (`HEAD`) after checking that worktree is clean.
+  A recorded checkpoint must be an ancestor of that tip; `Unrecorded` is allowed
+  and supplies no checkpoint-inclusion evidence. This operation performs no
+  merge and does not require its recording actor to be `IntegrationAgent`.
+  Framework policy still assigns integration work to that role. The state does
+  not establish CI success, PR merge, deployment, or feature acceptance.
+- **Completed:** a ready read-only or feature activity records coordinator
+  acceptance. Git workspace tasks use integration instead. Completed and
+  Integrated are alternative terminal outcomes, not consecutive stages; an
+  integrated task cannot transition to completed.
+
+**Prohibited:** “Working proves the agent is executing; Integrated proves its PR
+merged; the next step is to mark that integrated task Completed.”
+
+**Required:** report the recorded working phase or integration tip with its
+actual evidence. Accept a ready read-only or feature activity through completion;
+report feature acceptance and delivery separately.
+
+### Revision log and event order
+
+The selected feature's **Revision log** orders events by their database-wide
+`EventSequence`. All writers sharing that repository database use the same
+sequence. The log displays this as `R`; `Task r` remains the task-local
+`TaskRevision` used for optimistic updates. Its numeric wire format is unchanged.
+An attempt identifies a task claim, not an event's position in the repository's history. `FeatureWorkflow.revision_log` exposes
+entries with `feature`, `task`, `sequence`, `provenance`, and the recorded
+`FeedEntry` in `entry`. The existing Event JSON stays unchanged; sequence and
+provenance belong to the storage envelope and observation result.
+
+- A successful mutation appends its event in the same `IMMEDIATE` transaction
+  as its task change. Database schema version `5` assigns its sequence through
+  `AUTOINCREMENT`; no separate counter service or read-side increment exists.
+- New entries have `CommittedAppend` provenance. Their sequence orders committed
+  appends in this database, independent of worker clocks and task revision values.
+- Migrated entries have `LegacyStorageOrder` provenance. The shared database
+  migration copies each actual old event `rowid`, retaining holes and storage order. Those values cannot
+  recover original commit chronology; do not describe them as historical commit
+  timestamps or newly observed append order.
+- Filtering to one feature retains global sequence values. Gaps can belong to
+  other features; neither filtering nor display renumbers entries. Sequence
+  values are not promised to be gapless. A rolled-back allocation can be reused.
+- Reading the log does not change event order, task revisions, attempts, or stored
+  snapshots. Use the current task revision, never global `R`, in `expected_revision`.
+
+**Prohibited:** relabel a feature's `R41` and `R44` as `R1` and `R2`, infer that
+the gap is missing feature history, or send `expected_revision: 44` when the
+selected task is at revision `7`.
+
+**Required:** retain `R41` and `R44`, show their task revisions separately, and
+use that task's observed revision `7` for its next update. Label migrated entries
+as legacy storage order rather than claiming their original commit chronology.
 
 ### Historical ownership
 
@@ -369,6 +434,86 @@ or mark the feature complete while integration and PR delivery are unrecorded.
 **Required:** retain Prime → Team Gizmo → integration and specialist reporting
 lines, with progress and acceptance evidence on each participating role's activity.
 
+## Worker instance identity
+
+`AgentId` identifies a catalog role, such as `Ai/TechWriter`. `WorkerId`
+identifies one host agent instance and is a validated, non-nil UUID. Stored
+UUIDs use lowercase, hyphenated form. Several instances may share a role; one
+instance may work on several tasks.
+
+1. Generate a UUID once when a host agent instance starts. Generate it locally
+   with an existing UUID tool, such as `uuidgen`; do not use the role, task ID,
+   branch, hostname, or host task path as the ID.
+2. Keep the exact UUID in that instance's session and continuation context.
+   Retain it across turns, follow-ups, resumed execution, and later assignments
+   to the same instance. Do not generate one per claim, task, or update.
+3. Report that UUID to the assigning coordinator through the existing host
+   communication. The coordinator retains and forwards the reported value
+   unchanged when continuing that same instance. Host names and task paths
+   may identify message provenance; they are not globally unique worker IDs.
+4. Give every newly spawned or replacement instance its own newly generated UUID.
+   A replacement does not adopt its predecessor's ID, even when resuming the
+   same role, task, or workspace. If the same instance's retained ID is missing,
+   recover it from its continuation or coordinator context before updating.
+5. Include `worker_id` in every `Task / Claim` and `Task / Update` request.
+   Keep the catalog role in `agent`; the worker UUID does not replace it.
+   Use the returned revision and attempt for subsequent updates.
+
+**Prohibited:** a resumed TechWriter generates a new UUID for each heartbeat,
+then a replacement copies the last UUID because it has the same role.
+
+**Required:** the resumed instance keeps its original UUID for every task and
+update. A replacement generates its own UUID and claims the task after the
+coordinator's inspected requeue. Both keep `agent: {team: Ai, role: TechWriter}`.
+
+### Claim and update requests
+
+The following illustrative requests assume an assigned, dependency-ready task
+at revision `2`. Replace the example UUID with the calling instance's retained
+UUID and use actual returned revisions and attempts. Both requests require
+`worker_id`; omission, `null`, nil or malformed UUIDs, and unknown aliases are rejected.
+
+```yaml
+version: 1
+project: /absolute/project
+operation:
+  group: Task
+  command:
+    name: Claim
+    arguments:
+      feature: example-feature
+      task: documentation
+      expected_revision: 2
+      agent: {team: Ai, role: TechWriter}
+      worker_id: 0fdfbf88-dcff-49b5-81a2-17eae97da30c
+      ttl_seconds: 3600
+```
+
+Assuming that claim returns revision `3` and attempt `1`, its heartbeat is:
+
+```yaml
+version: 1
+project: /absolute/project
+operation:
+  group: Task
+  command:
+    name: Update
+    arguments:
+      feature: example-feature
+      task: documentation
+      expected_revision: 3
+      agent: {team: Ai, role: TechWriter}
+      worker_id: 0fdfbf88-dcff-49b5-81a2-17eae97da30c
+      attempt: 1
+      action: {kind: heartbeat, ttl_seconds: 3600}
+```
+
+**Prohibited:** omit `worker_id` because `agent` already names TechWriter, or
+copy this illustrative UUID into a real agent's first claim.
+
+**Required:** generate the instance's UUID once, then supply that same value
+in its claim and heartbeat alongside the matching role and attempt.
+
 ## Assignment and worker lifecycle
 
 Prepare the feature branch and worktree using the delivery team's existing Git
@@ -384,12 +529,13 @@ workflow. The ledger records these resources; it does not create or merge them.
    Run `Task / Assign` on the queued task with its observed revision, intended
    agent, and reporting line. Only queued tasks accept assignment changes.
    Reassignment to another role requires an inspected requeue first.
-3. The worker reads `Task / Get` and runs `Task / Claim` with its catalog agent identity,
-   expected revision, and TTL. A claim succeeds only for a queued task whose
-   dependencies are integrated or completed. The agent must match recorded
+3. The worker reads `Task / Get` and runs `Task / Claim` with its catalog role,
+   retained worker UUID, expected revision, and TTL. A claim succeeds only for a
+   queued task whose dependencies are integrated or completed. The agent must match recorded
    ownership when available. The result contains its new attempt and revision.
 4. While working, the worker runs `Task / Update` at meaningful milestones and
-   before a potentially long operation. Choose the action from the catalog:
+   before a potentially long operation. Supply the same worker UUID with each
+   update. Choose the action from the catalog:
    - `heartbeat` renews activity and expiration without claiming meaningful progress.
    - `progress` records findings, next steps, checks, and a working or blocked phase.
    - `checkpoint` records a real commit from the task branch with continuation notes.
@@ -419,7 +565,8 @@ Rust model and rejected in requests and stored records. Flat strings such as
 `rust-dev`, unknown roles, and host session identifiers are rejected. Do not
 silently relabel historical actors or move them between teams.
 Task IDs remain per-assignment values. The task and attempt identify the claimed
-assignment even when multiple sessions execute the same role.
+assignment; the [worker UUID](#worker-instance-identity) identifies the executing
+instance across assignments.
 
 Prose fields accept empty strings and preserve whitespace exactly. A required
 field must still be supplied as a string; omitting it or supplying `null` is a
@@ -431,7 +578,7 @@ history. Two concurrent changes based on the same revision cannot both succeed.
 On `conflict`, reread before deciding whether the operation still applies. Do not
 blindly replay an old whole-document update.
 
-- Worker identity and attempt must still match.
+- Catalog role, worker UUID, and attempt must still match the active claim.
 - TTLs range from 1 to 86400 seconds. Choose enough time for the next operation
   and renew before expiry.
 - Timestamps are Unix milliseconds generated by the CLI.
@@ -439,9 +586,10 @@ blindly replay an old whole-document update.
   state and continuation notes must say so.
 
 A write task can become ready only when its worktree is clean and its checkpoint
-matches HEAD. Integration requires a clean feature worktree, a matching feature
-HEAD, and the recorded checkpoint in its ancestry. These Git checks do not run
-or prove tests; record actual check evidence and follow the assigned validation.
+matches HEAD. The [integration transition](#recorded-state-meanings) checks the
+clean feature worktree and its current tip, with checkpoint ancestry only when
+a checkpoint is recorded. These Git checks do not run or prove tests; record
+actual check evidence and follow the assigned validation.
 The command does not support recording a squash/rebase that drops the checkpoint
 from ancestry; retain the existing merge-based local integration workflow.
 
@@ -472,10 +620,13 @@ no background TTL process. Status computes expiration when queried.
 3. Record `Task / Coordinate` with `action.kind: requeue`, a reason, and
    `previous_execution: stopped_or_finished`. This is the coordinator's explicit
    acknowledgement, not an automatic host check. Preserve the branch, checkpoint,
-   progress, and history.
+   progress, and history. Requeue clears the current worker binding; historical
+   snapshots retain their recorded identity.
 4. Give the replacement worker the existing task and workspace. Its next claim
-   increments the attempt. Updates from the older attempt are rejected, even if
-   that worker rereads the current revision.
+   increments the attempt and binds its own worker UUID. Resuming the same host
+   instance retains its UUID; a replacement uses a new one under the
+   [worker identity rules](#worker-instance-identity). Updates from the older
+   attempt are rejected, even if that worker rereads the current revision.
 5. For integration failures, requeue the task after inspecting the previous
    execution and pass the repair context. After all integrated work and checks are
    complete, follow existing workspace cleanup rules. Keep the feature ledger.
@@ -500,11 +651,12 @@ the recorded task plus any newer Git changes.
 
 Command protocol, persisted record, and physical database versions are distinct.
 This release writes command, feature, and event-envelope version `1`, task
-record version `2`, and database version `4`. `Task / Assign` extends command
-discovery without changing existing request shapes. Task readers explicitly
-convert supported version `1` records into the current model with unrecorded
-ownership; they never invent historical reporting lines. Historical envelopes,
-actors, revisions, attempts, timestamps, and evidence remain intact.
+record version `3`, and database version `5`. `Task / Claim` and `Task / Update`
+require `worker_id`; discover their current request shapes with `meta-cortex list`.
+Task readers explicitly convert supported version `1` and `2` records into the
+current model with unrecorded worker identity. Version `1` ownership also remains
+unrecorded. Readers never invent historical workers or reporting lines. Historical
+envelopes, actors, revisions, attempts, timestamps, and evidence remain intact.
 
 Version `1` task records retain their released flat format. Version `2` encloses
 stable fields in `common`: identity, objective, acceptance, dependencies, revision,
@@ -512,29 +664,78 @@ attempt, timestamps, checkpoint, and progress. Ownership, workspace, and state
 remain version-specific fields. Later records can reuse `TaskCommon` while its
 field types and meanings remain unchanged; changes need a new common type so
 retained readers keep their released contracts. Serde decodes both versions into
-the current task model; writers emit only version `2`.
+the current task model alongside version `3`; writers emit only version `3`.
+
+Version `3` adds `worker` beside `common`, `ownership`, `workspace`, and `state`.
+It is either `{kind: Unrecorded}` or
+`{kind: Recorded, worker_id: <UUID>}`. Claim records the worker; readiness,
+integration, completion, and cancellation retain it. Requeue clears the current
+binding while preserving prior snapshots. Worker identity belongs to the task
+record, independently of database event ordering. Reading older task records
+does not rewrite them or invent historical worker identities.
+
+- **Prohibited:** derive UUIDs from old roles or event actors while reading
+  version `1` or `2` records.
+- **Required:** read their worker as `Unrecorded` and preserve their historical
+  snapshots. Only a current claim or valid worker update can record a worker UUID.
+
+### Continue an older active claim
+
+1. Preserve the existing active task's role and attempt after upgrading.
+2. Have its actual continuing instance send its retained UUID with the next
+   valid `Task / Update`. The update checks the recorded role and attempt before
+   binding an unrecorded worker identity.
+3. Use that UUID on every later update. Once recorded, another UUID is rejected.
+   Prior event snapshots remain unrecorded; the successful update records the
+   binding only in the new revision.
+
+**Prohibited:** assign the current worker's UUID to all earlier snapshots, or
+let a replacement bind an old active claim without inspected requeue.
+
+**Required:** the continuing instance records its own UUID on its next valid
+update. A replacement follows recovery and makes a new claim with its own UUID.
 
 ### Database constraints
 
-Database version `4` moves JSON key constraints to `common`, including nested
-task snapshots in events. Feature discovery and task commands migrate older
-storage transactionally, preserving historical actors and all task evidence.
-Observation requires the current database schema and reports when migration is
-needed; it never rewrites old storage itself. Older executables reject version
-`2` tasks and version `4` databases; stop older writers before upgrading.
+Database version `5` adds database-wide event order while retaining the JSON
+constraints introduced in version `4`. Event sequences use an `AUTOINCREMENT`
+primary key; `(feature_id, task_id, revision)` remains unique. Feature and task
+keys, foreign keys, and JSON identity/revision checks retain their existing
+meaning. Each task requires its feature and each event requires its task;
+parent deletion and key changes remain restricted while children exist.
+Required columns reject nulls, task revisions must be positive, and JSON IDs
+and revisions must match their relational columns. Every Workbench connection
+enables foreign keys.
 
-Version `4` uses a feature primary key, a `(feature_id, id)` task primary key,
-and a `(feature_id, task_id, revision)` event primary key. Foreign keys require
-each task's feature and each event's task to exist; parent deletion and key
-changes are restricted while children exist. The primary-key indexes cover
-feature status and ordered task history without redundant indexes. Required
-columns reject nulls, revisions must be positive, and JSON IDs and revisions
-must match their relational columns. Every Workbench connection enables foreign
-keys. JSON retains progress, findings, checks, and task snapshots.
+Feature discovery and task commands migrate older storage transactionally.
+Observation requires the current schema and reports when migration is needed;
+it never migrates storage. JSON retains actors, task snapshots, findings, checks,
+and evidence. [Event order](#revision-log-and-event-order) records whether its
+sequence came from a committed append or preserved legacy storage order.
+
+- **Prohibited:** advance a counter while reading history or change a task revision
+  to give an event its global position.
+- **Required:** assign the event sequence in the existing mutation transaction and
+  leave task revision checks and history content intact.
+
+### Invalid legacy data during migration
+
+A version `5` migration must fail atomically when legacy rows violate its
+constraints. Leave the prior schema and committed history intact and report the
+failure. Diagnose and resolve the integrity problem separately before rollout;
+an upgrade must not silently remap sequence values, deduplicate rows, or rewrite
+recorded history to make invalid data pass.
+
+**Prohibited:** migration finds conflicting legacy identities, renumbers or
+drops their events, and reports that the upgrade succeeded.
+
+**Required:** abort the migration transaction, preserve the source, and report
+the constraint failure. Keep rollout blocked until the integrity problem is
+resolved through separately authorized work and the isolated migration succeeds.
 
 ### Storage migration and supported readers
 
-Version `1`, `2`, and `3` databases migrate transactionally, retaining records
+Version `1`, `2`, `3`, and `4` databases migrate transactionally, retaining records
 and history across every feature. On first access, Workbench imports the old
 `~/.meta-cortex/<repo_id>/features/<feature-id>.db` files into the shared database.
 Each feature imports atomically and only once; an invalid source leaves its
@@ -552,6 +753,11 @@ current domain model and fixture tests before advancing the writer. Do not
 reinterpret older JSON through a generic map or silently add defaults that change
 its meaning. Adding extension keys does not change a known schema version.
 
+- Rebuild or install the current executable before using the new schema and
+  request contract. Stop older writers before upgrading; do not mix executable
+  versions against upgraded storage.
+- Validate migration using an isolated cloned ledger. Do not upgrade a shared
+  live ledger merely to obtain test evidence while older writers still use it.
 - Migrations move forward; older executables reject newer storage versions.
 - Before an upgrade that changes record shapes, preserve a consistent backup
   with all writers stopped.

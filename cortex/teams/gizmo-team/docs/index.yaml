@@ -1,12 +1,15 @@
 kind: navigation
 title: Gizmo Documentation
 entries:
+  - title: Coordination state machine
+    path: coordination-state-machine.md
+    summary: Framework architecture, distinct state domains, operation outcomes, and human handoffs.
   - title: Agent configuration
     path: agent-configuration.md
     summary: Host capacity preflight, configuration approval, role settings, and launches.
   - title: Agent work ledger
     path: agent-ledger.md
-    summary: Entire feature workflow, agent reporting lines, durable progress, and recovery.
+    summary: Feature workflow, worker identity, global event order, durable progress, and recovery.
   - title: Agent verification handoff
     path: agent-verification.md
     summary: Cataloged verifier selection, committed review, repair routing, and integration readiness.

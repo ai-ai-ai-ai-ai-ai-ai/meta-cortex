@@ -4,8 +4,9 @@ use meta_cortex_workbench::model::{Event, EventKind, Progress, Task, Workspace};
 use meta_cortex_workbench::request::{
     ClaimTask, CreateTask, InitFeature, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
-    BranchName, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::{
     RecordVersion, StorageVersion, VersionFamily, VersionNumber, VersionParseError,
@@ -150,7 +151,7 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
                 let conn = db.connect()?;
                 assert_eq!(
                     Scenario::version(&conn).await?,
-                    VersionNumber::from(i64::from(StorageVersion::CommonTasksV4))
+                    VersionNumber::from(i64::from(StorageVersion::SequencedEventsV5))
                 );
                 conn.pragma_update(
                     &DatabasePragma::UserVersion.to_string(),
@@ -224,7 +225,7 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
             let row = rows.next().await?.context("task")?;
             let mut task: Task = serde_json::from_str(&row.get::<String>(0)?)?;
             drop(rows);
-            task.common.revision = Revision::try_from(999)?;
+            task.common.revision = TaskRevision::try_from(999)?;
             task.common.objective = Note::from("Uncommitted progress".to_owned());
             tx.execute(
                 Query::update()
@@ -277,9 +278,10 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             let queued = ledger.status().await?.remove(0).task;
             let claimed = ledger
                 .claim(ClaimTask {
+                    worker_id: WorkerId::EXAMPLE,
                     feature: queued.common.feature,
                     task: queued.common.id,
-                    expected_revision: Revision::INITIAL,
+                    expected_revision: TaskRevision::INITIAL,
                     agent: AgentId::Development(DevelopmentAgent::RustDev),
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 })
@@ -310,6 +312,7 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
             );
             assert_eq!(ledger.history(&claimed.common.id).await?.len(), 2);
             let heartbeat = WorkerUpdate {
+                worker_id: WorkerId::EXAMPLE,
                 feature: claimed.common.feature,
                 task: claimed.common.id,
                 expected_revision: claimed.common.revision,

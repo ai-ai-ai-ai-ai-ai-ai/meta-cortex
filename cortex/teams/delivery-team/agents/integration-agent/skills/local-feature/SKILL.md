@@ -7,7 +7,9 @@ description: Manage local Git feature branches, isolated task worktrees, integra
 
 Produce a validated local feature branch using ordinary Git and the host's
 coordination tools. This skill owns the integration agent’s Git procedures;
-role instructions define assignments and communication.
+role instructions define assignments and communication. The
+[coordination state machine](../../../../../gizmo-team/docs/coordination-state-machine.md)
+places workspace output and verified integration in the feature workflow.
 
 ## Required actions
 

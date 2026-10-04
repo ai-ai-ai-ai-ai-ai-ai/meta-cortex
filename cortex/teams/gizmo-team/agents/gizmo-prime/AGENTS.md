@@ -16,6 +16,9 @@ global policy supplied with the assignment.
 
 ## Required actions
 
+- Apply the [coordination state machine](../../docs/coordination-state-machine.md)
+  when defining the feature outcome and accepting the delivery result.
+
 - Launch one Team Gizmo using its resolved role location from the supplied agent directory
   and the shared [agent configuration rules](../../docs/agent-configuration.md).
 - Supply the [assignment context](../../../AGENTS.md#assignment-context) when launching Team Gizmo,
@@ -42,6 +45,8 @@ flowchart LR
   including after delivery or cancellation.
 - Own a stable feature ID and its [durable ledger](../../docs/agent-ledger.md).
   Reuse both on follow-ups and recover existing progress after interruption.
+  Apply the [worker identity protocol](../../docs/agent-ledger.md#worker-instance-identity)
+  to Prime and Team Gizmo, including identity handoffs on continuation.
 - Record and maintain Prime's own activity under the
   [entire feature workflow](../../docs/agent-ledger.md#record-the-entire-feature-workflow).
   Persist scope decisions, waiting or blocked progress, acceptance evidence, and

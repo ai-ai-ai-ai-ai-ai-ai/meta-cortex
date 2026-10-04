@@ -206,6 +206,11 @@
       ],
       "type": "string"
     },
+    "ElapsedMillis": {
+      "description": "Nonnegative recorded elapsed milliseconds, independent of display rounding.",
+      "format": "int64",
+      "type": "integer"
+    },
     "EventKind": {
       "enum": [
         "created",
@@ -221,6 +226,11 @@
         "cancelled"
       ],
       "type": "string"
+    },
+    "EventSequence": {
+      "description": "Database append identity, independent of a task-local revision. Signed rowids\npreserve supported historical SQLite storage identities without renumbering.",
+      "format": "int64",
+      "type": "integer"
     },
     "Feature": {
       "additionalProperties": false,
@@ -306,9 +316,25 @@
           "type": "array"
         },
         "feature": { "type": "string" },
+        "revision_log": {
+          "items": { "$ref": "#/$defs/RevisionLogEntry" },
+          "type": "array"
+        },
+        "state_meanings": {
+          "items": { "$ref": "#/$defs/StateMeaning" },
+          "type": "array"
+        },
+        "timeline": { "$ref": "#/$defs/RecordedTimeline" },
         "timing": { "$ref": "#/$defs/WorkflowTiming" }
       },
-      "required": ["feature", "chapters", "timing"],
+      "required": [
+        "state_meanings",
+        "revision_log",
+        "timeline",
+        "feature",
+        "chapters",
+        "timing"
+      ],
       "type": "object"
     },
     "FeedEntry": {
@@ -323,12 +349,29 @@
         },
         "kind": { "$ref": "#/$defs/EventKind" },
         "note": { "$ref": "#/$defs/Note" },
+        "objective": { "$ref": "#/$defs/Note" },
+        "ownership": {
+          "$ref": "#/$defs/TaskOwnership",
+          "description": "Ownership recorded in this event snapshot, independent of its actor."
+        },
         "revision": { "format": "int64", "type": "integer" },
-        "summary": { "$ref": "#/$defs/Note" }
+        "state": {
+          "$ref": "#/$defs/TaskState",
+          "description": "Task state recorded in this event snapshot, independent of later revisions."
+        },
+        "summary": { "$ref": "#/$defs/Note" },
+        "worker": {
+          "$ref": "#/$defs/WorkerIdentity",
+          "description": "Worker identity from this event snapshot, never inferred from its actor."
+        }
       },
       "required": [
+        "objective",
+        "worker",
         "kind",
         "actor",
+        "ownership",
+        "state",
         "note",
         "summary",
         "at",
@@ -477,6 +520,49 @@
         }
       ]
     },
+    "RecordedTimeline": {
+      "properties": {
+        "chapter_order": { "items": { "type": "string" }, "type": "array" },
+        "extent": { "$ref": "#/$defs/TimelineExtent" },
+        "groups": {
+          "items": { "$ref": "#/$defs/TimelineGroup" },
+          "type": "array"
+        }
+      },
+      "required": ["extent", "groups", "chapter_order"],
+      "type": "object"
+    },
+    "RecordedWindow": {
+      "properties": {
+        "duration_ms": { "$ref": "#/$defs/ElapsedMillis" },
+        "end": { "format": "int64", "type": "integer" },
+        "objective": { "$ref": "#/$defs/Note" },
+        "revision": { "format": "int64", "type": "integer" },
+        "role": { "$ref": "#/$defs/RecordedRole" },
+        "start": { "format": "int64", "type": "integer" },
+        "state": { "$ref": "#/$defs/TaskState" },
+        "status": { "$ref": "#/$defs/FlowState" },
+        "summary": { "$ref": "#/$defs/Note" },
+        "summary_revision": { "format": "int64", "type": "integer" },
+        "task": { "type": "string" },
+        "worker": { "$ref": "#/$defs/WorkerIdentity" }
+      },
+      "required": [
+        "task",
+        "objective",
+        "revision",
+        "summary_revision",
+        "start",
+        "end",
+        "duration_ms",
+        "state",
+        "status",
+        "worker",
+        "role",
+        "summary"
+      ],
+      "type": "object"
+    },
     "ReportingTarget": {
       "oneOf": [
         {
@@ -496,10 +582,42 @@
         }
       ]
     },
+    "RevisionLogEntry": {
+      "properties": {
+        "entry": { "$ref": "#/$defs/FeedEntry" },
+        "feature": { "type": "string" },
+        "provenance": { "$ref": "#/$defs/SequenceProvenance" },
+        "sequence": { "$ref": "#/$defs/EventSequence" },
+        "task": { "type": "string" }
+      },
+      "required": ["feature", "task", "sequence", "provenance", "entry"],
+      "type": "object"
+    },
     "SecurityAgent": { "enum": ["SecurityAgent"], "type": "string" },
+    "SequenceProvenance": {
+      "enum": ["LegacyStorageOrder", "CommittedAppend"],
+      "type": "string"
+    },
     "SreAgent": {
       "enum": ["CicdAgent", "DockerSpecialist", "KubernetesSpecialist"],
       "type": "string"
+    },
+    "StateMeaning": {
+      "properties": {
+        "evidence": { "$ref": "#/$defs/Note" },
+        "meaning": { "$ref": "#/$defs/Note" },
+        "next_step": { "$ref": "#/$defs/Note" },
+        "qualification": { "$ref": "#/$defs/Note" },
+        "state": { "$ref": "#/$defs/FlowState" }
+      },
+      "required": [
+        "state",
+        "meaning",
+        "evidence",
+        "next_step",
+        "qualification"
+      ],
+      "type": "object"
     },
     "TaskAssignment": {
       "additionalProperties": false,
@@ -519,7 +637,7 @@
         },
         "role": { "$ref": "#/$defs/RecordedRole" },
         "status": { "$ref": "#/$defs/FlowState" },
-        "task": { "$ref": "#/$defs/TaskV2" }
+        "task": { "$ref": "#/$defs/TaskV3" }
       },
       "required": ["task", "role", "status", "entries"],
       "type": "object"
@@ -578,7 +696,7 @@
       ]
     },
     "TaskRecordVersion": {
-      "const": 2,
+      "const": 3,
       "description": "Current task shape. V1 payloads are decoded by the separate legacy task record.",
       "format": "int64",
       "type": "integer"
@@ -640,17 +758,122 @@
         }
       ]
     },
-    "TaskV2": {
+    "TaskV3": {
       "additionalProperties": false,
       "properties": {
         "common": { "$ref": "#/$defs/TaskCommon" },
         "ownership": { "$ref": "#/$defs/TaskOwnership" },
         "state": { "$ref": "#/$defs/TaskState" },
         "version": { "$ref": "#/$defs/TaskRecordVersion" },
+        "worker": { "$ref": "#/$defs/WorkerIdentity" },
         "workspace": { "$ref": "#/$defs/Workspace" }
       },
-      "required": ["version", "common", "ownership", "workspace", "state"],
+      "required": [
+        "version",
+        "worker",
+        "common",
+        "ownership",
+        "workspace",
+        "state"
+      ],
       "type": "object"
+    },
+    "TimelineExtent": {
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "Empty", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "finished": { "format": "int64", "type": "integer" },
+            "kind": { "const": "Recorded", "type": "string" },
+            "started": { "format": "int64", "type": "integer" }
+          },
+          "required": ["kind", "started", "finished"],
+          "type": "object"
+        }
+      ]
+    },
+    "TimelineGroup": {
+      "properties": {
+        "identity": { "$ref": "#/$defs/TimelineGroupIdentity" },
+        "order": { "$ref": "#/$defs/TimelineOrder" },
+        "roles": {
+          "items": { "$ref": "#/$defs/RecordedRole" },
+          "type": "array"
+        },
+        "tasks": { "items": { "type": "string" }, "type": "array" },
+        "windows": {
+          "items": { "$ref": "#/$defs/RecordedWindow" },
+          "type": "array"
+        }
+      },
+      "required": ["identity", "roles", "tasks", "windows", "order"],
+      "type": "object"
+    },
+    "TimelineGroupIdentity": {
+      "oneOf": [
+        {
+          "properties": {
+            "kind": { "const": "RecordedWorker", "type": "string" },
+            "worker_id": { "$ref": "#/$defs/WorkerId" }
+          },
+          "required": ["kind", "worker_id"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "kind": { "const": "RoleHistory", "type": "string" },
+            "role": { "$ref": "#/$defs/RecordedRole" }
+          },
+          "required": ["kind", "role"],
+          "type": "object"
+        }
+      ]
+    },
+    "TimelineOrder": {
+      "oneOf": [
+        {
+          "properties": {
+            "at": { "format": "int64", "type": "integer" },
+            "kind": { "const": "Recorded", "type": "string" }
+          },
+          "required": ["kind", "at"],
+          "type": "object"
+        },
+        {
+          "properties": { "kind": { "const": "Unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        }
+      ]
+    },
+    "WorkerId": {
+      "description": "Stable identity chosen once by the host worker, then reused across its tasks.",
+      "format": "uuid",
+      "type": "string"
+    },
+    "WorkerIdentity": {
+      "description": "Recorded host worker identity; legacy snapshots never invent one from a role.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "Unrecorded", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "Recorded", "type": "string" },
+            "worker_id": { "$ref": "#/$defs/WorkerId" }
+          },
+          "required": ["kind", "worker_id"],
+          "type": "object"
+        }
+      ]
     },
     "WorkflowCondition": {
       "description": "The single headline an observer needs first; attention outranks progress.",

@@ -40,6 +40,9 @@ Follow-ups stay with the existing coordinator.
 
 ## Communication and decisions
 
+Apply the [coordination state machine](gizmo-team/docs/coordination-state-machine.md)
+for operation boundaries and [human messages](gizmo-team/docs/coordination-state-machine.md#write-useful-human-messages).
+
 In multi-agent mode, team agents report results, blockers, questions, repair
 needs, and recommendations only to their assigning Team Gizmo. They do not
 contact peers, request work from another agent, launch subagents, or assign work.
@@ -111,15 +114,19 @@ Before launching an agent, the host agent or Gizmo coordinator resolves the
 following from the active library and supplies them in the launch instructions:
 
 - Objective, target scope, permitted changes, dependencies, acceptance criteria,
-  expected evidence, and stopping condition. State whether the task is review
+  expected evidence, and stopping condition. Use the
+  [transition narrative](gizmo-team/docs/coordination-state-machine.md#describe-each-transition-with-an-observable-outcome)
+  to state the operation, output, and next owner. State whether the task is review
   or verification only, implementation, or an explicitly requested workflow exercise.
 - For task workers after feature initialization: stable feature ID, task ID,
   ledger location, and the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
   Record the assignment before launching its worker. Coordinator and workspace
   bootstrap assignments establish this context before task workers launch.
 - The activity's assigned role, recorded reporting coordinator, and current
-  ledger revision and attempt. Coordinator activities use the same context once
-  the feature ledger is available.
+  ledger revision and attempt. Carry the instance's retained worker UUID on
+  continuations under the [worker identity protocol](gizmo-team/docs/agent-ledger.md#worker-instance-identity).
+  New instances establish their own identity through that protocol.
+  Coordinator activities use the same context once the feature ledger is available.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
 - The validated session `development.mode` and `development.delivery`, plus any

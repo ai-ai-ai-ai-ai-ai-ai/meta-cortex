@@ -9,8 +9,9 @@ use meta_cortex_workbench::request::{
     ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature,
     TaskQuery, WorkerAction, WorkerUpdate,
 };
+use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
-    Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, Revision, TaskId,
+    Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::{ProtocolVersion, StorageVersion};
 use std::env::consts::EXE_SUFFIX;
@@ -272,7 +273,7 @@ impl Cli<'_> {
         let Reply::Status { ledger, tasks } = reply else {
             bail!("unexpected status reply: {reply:?}");
         };
-        assert_eq!(ledger.storage_version, StorageVersion::CommonTasksV4);
+        assert_eq!(ledger.storage_version, StorageVersion::SequencedEventsV5);
         Ok(tasks)
     }
 }
@@ -304,9 +305,10 @@ impl Examples {
     pub(super) fn claim() -> anyhow::Result<ClaimTask> {
         let TaskQuery { feature, task } = Self::query()?;
         Ok(ClaimTask {
+            worker_id: WorkerId::EXAMPLE,
             feature,
             task,
-            expected_revision: Revision::INITIAL,
+            expected_revision: TaskRevision::INITIAL,
             agent: AgentId::Development(DevelopmentAgent::RustDev),
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
         })
@@ -314,9 +316,10 @@ impl Examples {
     pub(super) fn heartbeat() -> anyhow::Result<WorkerUpdate> {
         let TaskQuery { feature, task } = Self::query()?;
         Ok(WorkerUpdate {
+            worker_id: WorkerId::EXAMPLE,
             feature,
             task,
-            expected_revision: Revision::INITIAL.advance()?,
+            expected_revision: TaskRevision::INITIAL.advance()?,
             agent: AgentId::Development(DevelopmentAgent::RustDev),
             attempt: Attempt::UNCLAIMED.advance()?,
             action: WorkerAction::Heartbeat {
@@ -329,7 +332,7 @@ impl Examples {
         Ok(CoordinatorUpdate {
             feature,
             task,
-            expected_revision: Revision::INITIAL.advance()?,
+            expected_revision: TaskRevision::INITIAL.advance()?,
             actor: AgentId::Gizmo(GizmoAgent::Gizmo),
             action,
         })

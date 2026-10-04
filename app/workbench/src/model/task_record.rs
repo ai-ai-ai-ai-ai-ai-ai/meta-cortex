@@ -1,10 +1,13 @@
 //! Typed task readers: V1 never recorded workflow ownership; V2 requires it.
+use super::worker::WorkerIdentity;
 use super::workflow::TaskOwnership;
 use super::{Assignment, Checkpoint, Progress, Task, TaskCommon, TaskState, Workspace};
 use crate::LedgerError;
 use crate::agents::AgentId;
-use crate::values::{Attempt, BranchName, CommitId, FeatureId, Note, Revision, TaskId, Timestamp};
-use crate::versions::{RecordVersion, TaskRecordVersion};
+use crate::values::{
+    Attempt, BranchName, CommitId, FeatureId, Note, TaskId, TaskRevision, Timestamp,
+};
+use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV2};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -12,14 +15,26 @@ use std::path::PathBuf;
 #[derive(Deserialize)]
 #[serde(untagged)]
 pub(super) enum TaskRecord {
+    V3(TaskV3),
     V2(TaskV2),
     V1(TaskV1),
 }
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub(super) struct TaskV2 {
+pub(super) struct TaskV3 {
     pub version: TaskRecordVersion,
+    pub worker: WorkerIdentity,
+    pub common: TaskCommon,
+    pub ownership: TaskOwnership,
+    pub workspace: Workspace,
+    pub state: TaskState,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct TaskV2 {
+    pub version: TaskRecordVersionV2,
     pub common: TaskCommon,
     pub ownership: TaskOwnership,
     pub workspace: Workspace,
@@ -36,7 +51,7 @@ pub(super) struct TaskV1 {
     pub acceptance: Vec<Note>,
     pub dependencies: Vec<TaskId>,
     pub workspace: WorkspaceV1,
-    pub revision: Revision,
+    pub revision: TaskRevision,
     pub attempt: Attempt,
     pub state: TaskStateV1,
     pub created_at: Timestamp,
@@ -88,10 +103,11 @@ impl TryFrom<TaskRecord> for Task {
 
     fn try_from(record: TaskRecord) -> Result<Self, Self::Error> {
         let record = match record {
-            TaskRecord::V2(record) => record,
-            TaskRecord::V1(record) => record.into(),
+            TaskRecord::V3(record) => Self::from(record),
+            TaskRecord::V2(record) => Self::from(record),
+            TaskRecord::V1(record) => Self::from(TaskV2::from(record)),
         };
-        let task = Self::from(record);
+        let task = record;
         if let TaskOwnership::Assigned { assignment } = &task.ownership {
             assignment.validate()?;
         }
@@ -109,7 +125,7 @@ impl TryFrom<TaskRecord> for Task {
 impl From<TaskV1> for TaskV2 {
     fn from(record: TaskV1) -> Self {
         Self {
-            version: TaskRecordVersion::V2,
+            version: TaskRecordVersionV2::V2,
             common: TaskCommon {
                 id: record.id,
                 feature: record.feature,
@@ -134,7 +150,21 @@ impl From<TaskV1> for TaskV2 {
 impl From<TaskV2> for Task {
     fn from(record: TaskV2) -> Self {
         Self {
+            version: TaskRecordVersion::CURRENT,
+            worker: WorkerIdentity::Unrecorded,
+            common: record.common,
+            ownership: record.ownership,
+            workspace: record.workspace,
+            state: record.state,
+        }
+    }
+}
+
+impl From<TaskV3> for Task {
+    fn from(record: TaskV3) -> Self {
+        Self {
             version: record.version,
+            worker: record.worker,
             common: record.common,
             ownership: record.ownership,
             workspace: record.workspace,
@@ -145,12 +175,12 @@ impl From<TaskV2> for Task {
 
 #[cfg(test)]
 mod tests {
-    use super::{TaskRecord, TaskStateV1, TaskV1, TaskV2, WorkspaceV1};
+    use super::{TaskRecord, TaskStateV1, TaskV1, TaskV2, TaskV3, WorkspaceV1};
     use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{Assignment, Checkpoint, Phase, Progress, Task, TaskState};
     use crate::values::{
-        Attempt, BranchName, CommitId, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
+        Attempt, BranchName, CommitId, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
     use crate::versions::{RecordVersion, TaskRecordVersion};
     use std::path::PathBuf;
@@ -167,7 +197,7 @@ mod tests {
                 acceptance: vec![Note::Empty],
                 dependencies: vec![],
                 workspace: WorkspaceV1::ReadOnly,
-                revision: Revision::INITIAL,
+                revision: TaskRevision::INITIAL,
                 attempt: Attempt::UNCLAIMED.advance()?,
                 state: TaskStateV1::Ready {
                     agent: AgentId::Development(DevelopmentAgent::RustDev),
@@ -189,7 +219,33 @@ mod tests {
     }
 
     #[test]
-    fn native_readers_keep_v1_flat_and_require_strict_v2_common() -> anyhow::Result<()> {
+    fn v2_snapshots_remain_unrecorded_and_only_v3_requires_worker_identity() -> anyhow::Result<()> {
+        let legacy = TaskV2::from(Scenario::legacy()?);
+        let encoded = serde_json::to_string(&legacy)?;
+        let task: Task = serde_json::from_str(&encoded)?;
+        assert_eq!(task.worker, super::WorkerIdentity::Unrecorded);
+        assert_eq!(task.common, legacy.common);
+        assert_eq!(task.state, legacy.state);
+        assert_eq!(task.version, TaskRecordVersion::V3);
+        assert!(matches!(
+            serde_json::from_str::<TaskRecord>(&encoded)?,
+            TaskRecord::V2(_)
+        ));
+        let current = serde_json::to_string(&task)?;
+        for invalid in [
+            encoded.replace("\"version\":2", "\"version\":3"),
+            current.replace("\"version\":3", "\"version\":2"),
+            current.replace("\"worker\":{\"kind\":\"Unrecorded\"},", ""),
+        ] {
+            assert!(serde_json::from_str::<Task>(&invalid).is_err());
+        }
+        assert!(serde_json::from_str::<TaskV2>(&current).is_err());
+        assert_eq!(serde_json::from_str::<Task>(&current)?, task);
+        Ok(())
+    }
+
+    #[test]
+    fn native_readers_keep_v1_flat_and_require_strict_v3_common() -> anyhow::Result<()> {
         let legacy = serde_json::to_string(&Scenario::legacy()?)?;
         assert!(matches!(
             serde_json::from_str::<TaskRecord>(&legacy)?,
@@ -199,16 +255,16 @@ mod tests {
         let current = serde_json::to_string(&task)?;
         assert!(matches!(
             serde_json::from_str::<TaskRecord>(&current)?,
-            TaskRecord::V2(_)
+            TaskRecord::V3(_)
         ));
-        let decoded: TaskV2 = serde_json::from_str(&current)?;
+        let decoded: TaskV3 = serde_json::from_str(&current)?;
         assert_eq!(decoded.common, task.common);
-        assert_eq!(decoded.version, TaskRecordVersion::V2);
+        assert_eq!(decoded.version, TaskRecordVersion::V3);
         assert!(serde_json::from_str::<TaskV1>(&current).is_err());
         for invalid in [
             legacy.replace("\"version\":1", "\"version\":2"),
             legacy.replacen('{', "{\"unexpected\":0,", 1),
-            current.replace("\"version\":2", "\"version\":1"),
+            current.replace("\"version\":3", "\"version\":1"),
             current.replacen('{', "{\"unexpected\":0,", 1),
             current.replace("\"common\":{", "\"common\":{\"unexpected\":0,"),
             current.replace("\"common\":", "\"missing_common\":"),
@@ -223,7 +279,7 @@ mod tests {
     fn v1_reader_preserves_evidence_without_inventing_a_reporting_line() -> anyhow::Result<()> {
         let encoded = serde_json::to_string(&Scenario::legacy()?)?;
         let task: Task = serde_json::from_str(&encoded)?;
-        assert_eq!(task.version, TaskRecordVersion::V2);
+        assert_eq!(task.version, TaskRecordVersion::V3);
         assert_eq!(task.ownership, TaskOwnership::Unrecorded);
         assert_eq!(task.common.objective.to_string(), " Preserve history ");
         assert!(matches!(
@@ -249,7 +305,7 @@ mod tests {
     }
 
     #[test]
-    fn v2_requires_ownership_and_rejects_invalid_hierarchy() -> anyhow::Result<()> {
+    fn v3_requires_ownership_and_rejects_invalid_hierarchy() -> anyhow::Result<()> {
         let mut task = Task::try_from(TaskRecord::V1(Scenario::legacy()?))?;
         let encoded = serde_json::to_string(&task)?;
         assert!(
@@ -259,7 +315,7 @@ mod tests {
             .is_err()
         );
         assert!(
-            serde_json::from_str::<Task>(&encoded.replace("\"version\":2", "\"version\":1"))
+            serde_json::from_str::<Task>(&encoded.replace("\"version\":3", "\"version\":1"))
                 .is_err()
         );
         task.ownership = TaskOwnership::Assigned {

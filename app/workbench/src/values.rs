@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
@@ -148,9 +149,9 @@ impl TryFrom<String> for CommitId {
 )]
 #[serde(try_from = "i64")]
 #[schemars(with = "i64")]
-pub struct Revision(i64);
+pub struct TaskRevision(i64);
 
-impl Revision {
+impl TaskRevision {
     pub const INITIAL: Self = Self(1);
     pub fn advance(self) -> Result<Self, LedgerError> {
         let Self(value) = self;
@@ -161,20 +162,20 @@ impl Revision {
     }
 }
 
-impl TryFrom<i64> for Revision {
+impl TryFrom<i64> for TaskRevision {
     type Error = RevisionParseError;
 
     fn try_from(value: i64) -> Result<Self, Self::Error> {
         if value < 1 {
             return Err(RevisionParseError::NonPositive);
         }
-        Ok(Revision(value))
+        Ok(TaskRevision(value))
     }
 }
 
-impl From<Revision> for i64 {
-    fn from(value: Revision) -> Self {
-        let Revision(revision) = value;
+impl From<TaskRevision> for i64 {
+    fn from(value: TaskRevision) -> Self {
+        let TaskRevision(revision) = value;
         revision
     }
 }
@@ -213,7 +214,16 @@ impl TryFrom<i64> for Attempt {
 #[schemars(with = "i64")]
 pub struct Timestamp(i64);
 
+/// Nonnegative recorded elapsed milliseconds, independent of display rounding.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, JsonSchema)]
+#[serde(transparent)]
+pub struct ElapsedMillis(i64);
+
 impl Timestamp {
+    pub fn elapsed_since(self, started: Self) -> ElapsedMillis {
+        ElapsedMillis(self.0.saturating_sub(started.0).max(0))
+    }
+
     pub const EPOCH: Self = Self(0);
     pub fn now() -> Result<Self, LedgerError> {
         let value = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
@@ -323,16 +333,106 @@ pub enum LeaseSecondsParseError {
     TooLong,
 }
 
+/// Stable identity chosen once by the host worker, then reused across its tasks.
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
+#[serde(try_from = "String", into = "String")]
+#[schemars(with = "String", extend("format" = "uuid"))]
+pub struct WorkerId(Uuid);
+
+impl WorkerId {
+    /// Fixed illustrative identity for discovery examples and their fixtures.
+    pub const EXAMPLE: Self = Self(Uuid::from_u128(0x7ce4e2a5_e306_46ad_9180_c5d459180ee1));
+
+    pub fn generate() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl TryFrom<String> for WorkerId {
+    type Error = WorkerIdParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let uuid = Uuid::parse_str(&value)?;
+        match uuid {
+            uuid if uuid.is_nil() => Err(WorkerIdParseError::Nil),
+            uuid => Ok(Self(uuid)),
+        }
+    }
+}
+
+impl From<WorkerId> for String {
+    fn from(value: WorkerId) -> Self {
+        let WorkerId(uuid) = value;
+        uuid.to_string()
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum WorkerIdParseError {
+    #[error("invalid worker UUID: {0}")]
+    Invalid(#[from] uuid::Error),
+    #[error("worker UUID must not be nil")]
+    Nil,
+}
+/// Database append identity, independent of a task-local revision. Signed rowids
+/// preserve supported historical SQLite storage identities without renumbering.
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Display,
+    Serialize,
+    Deserialize,
+    JsonSchema,
+    derive_more::From,
+)]
+#[serde(transparent)]
+pub struct EventSequence(i64);
+impl From<EventSequence> for i64 {
+    fn from(sequence: EventSequence) -> Self {
+        let EventSequence(value) = sequence;
+        value
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::{
         Attempt, AttemptParseError, BranchName, BranchNameParseError, CommitId, CommitIdParseError,
-        FeatureId, IdentifierParseError, LeaseSeconds, LeaseSecondsParseError, Note, Revision,
-        RevisionParseError, TaskId, Timestamp, TimestampParseError,
+        FeatureId, IdentifierParseError, LeaseSeconds, LeaseSecondsParseError, Note,
+        RevisionParseError, TaskId, TaskRevision, Timestamp, TimestampParseError,
     };
     use schemars::schema_for;
     use serde::Deserialize;
 
+    #[test]
+    fn worker_ids_validate_uuid_identity_and_preserve_round_trips() -> anyhow::Result<()> {
+        let worker = super::WorkerId::generate();
+        let encoded = serde_json::to_string(&worker)?;
+        assert_eq!(serde_json::from_str::<super::WorkerId>(&encoded)?, worker);
+        assert_eq!(
+            super::WorkerId::try_from(worker.to_string().to_uppercase())?,
+            worker
+        );
+        for invalid in [
+            "",
+            "RustDev",
+            "not-a-uuid",
+            "00000000-0000-0000-0000-000000000000",
+        ] {
+            assert!(super::WorkerId::try_from(invalid.to_owned()).is_err());
+            assert!(
+                serde_json::from_str::<super::WorkerId>(&serde_json::to_string(invalid)?).is_err()
+            );
+        }
+        Ok(())
+    }
     #[test]
     fn named_lease_preserves_duration_and_external_validation() -> serde_json::Result<()> {
         let encoded = serde_json::to_string(&LeaseSeconds::TEN_MINUTES)?;
@@ -491,8 +591,11 @@ pub mod tests {
 
     #[test]
     fn numeric_validation_preserves_zero_and_range_meaning() -> anyhow::Result<()> {
-        assert_eq!(Revision::try_from(0), Err(RevisionParseError::NonPositive));
-        assert_eq!(Revision::try_from(1), Ok(Revision::INITIAL));
+        assert_eq!(
+            TaskRevision::try_from(0),
+            Err(RevisionParseError::NonPositive)
+        );
+        assert_eq!(TaskRevision::try_from(1), Ok(TaskRevision::INITIAL));
         assert_eq!(Attempt::try_from(-1), Err(AttemptParseError::Negative));
         assert_eq!(Attempt::try_from(0), Ok(Attempt::UNCLAIMED));
         assert_eq!(
@@ -515,7 +618,7 @@ pub mod tests {
                 lease
             );
         }
-        assert!(serde_json::from_str::<Revision>("0").is_err());
+        assert!(serde_json::from_str::<TaskRevision>("0").is_err());
         assert!(serde_json::from_str::<Attempt>("-1").is_err());
         assert!(serde_json::from_str::<Timestamp>("-1").is_err());
         assert_eq!(serde_json::from_str::<Timestamp>("0")?, Timestamp(0));
@@ -545,7 +648,7 @@ pub mod tests {
             assert_eq!(decoded.kind, ScalarKind::String);
         }
         for schema in [
-            schema_for!(Revision),
+            schema_for!(TaskRevision),
             schema_for!(Attempt),
             schema_for!(Timestamp),
             schema_for!(LeaseSeconds),

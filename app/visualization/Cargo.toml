@@ -22,6 +22,9 @@ tauri-build.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
+git2.workspace = true
+tempfile.workspace = true
+tauri = { workspace = true, features = ["test"] }
 anyhow.workspace = true
 serde_json.workspace = true
 

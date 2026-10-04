@@ -24,6 +24,10 @@ pub(super) enum TaskTable {
 }
 #[derive(Iden)]
 pub(super) enum EventTable {
+    Sequence,
+    Provenance,
+    #[iden = "rowid"]
+    RowId,
     #[iden = "events"]
     Table,
     FeatureId,
@@ -120,6 +124,16 @@ impl TaskTable {
 }
 impl EventTable {
     fn create() -> TableCreateStatement {
+        Self::definition()
+            .primary_key(
+                Index::create()
+                    .col(Self::FeatureId)
+                    .col(Self::TaskId)
+                    .col(Self::Revision),
+            )
+            .to_owned()
+    }
+    pub(super) fn definition() -> TableCreateStatement {
         Table::create()
             .table(Self::Table)
             .col(ColumnDef::new(Self::FeatureId).text().not_null())
@@ -149,12 +163,6 @@ impl EventTable {
                 ])),
             )
             // Covers history ordering and the composite parent FK without redundant indexes.
-            .primary_key(
-                Index::create()
-                    .col(Self::FeatureId)
-                    .col(Self::TaskId)
-                    .col(Self::Revision),
-            )
             .foreign_key(
                 ForeignKey::create()
                     .from(Self::Table, (Self::FeatureId, Self::TaskId))
@@ -235,6 +243,7 @@ impl RecordWriter<'_> {
 pub mod tests {
     use super::{EventTable, FeatureTable, RecordWriter, TaskTable};
     use crate::agents::{AgentId, GizmoAgent};
+    use crate::model::worker::WorkerIdentity;
     use crate::model::workflow::TaskOwnership;
     use crate::model::{
         Checkpoint, Event, EventKind, Feature, Progress, Task, TaskCommon, TaskState, Workspace,
@@ -242,7 +251,7 @@ pub mod tests {
     use crate::store::schema::LedgerSchema;
     use crate::store::sql::SqlStatement;
     use crate::values::{
-        Attempt, BranchName, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
+        Attempt, BranchName, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
     use crate::versions::{RecordVersion, TaskRecordVersion};
     use sea_query::{Expr, ExprTrait, Query};
@@ -266,6 +275,7 @@ pub mod tests {
             };
             let now = Timestamp::now()?;
             let task = Task {
+                worker: WorkerIdentity::Unrecorded,
                 version: TaskRecordVersion::CURRENT,
                 common: TaskCommon {
                     id: TaskId::try_from("task".to_owned())?,
@@ -273,7 +283,7 @@ pub mod tests {
                     objective: feature.objective.clone(),
                     acceptance: vec![Note::from("Checked".to_owned())],
                     dependencies: Vec::new(),
-                    revision: Revision::INITIAL,
+                    revision: TaskRevision::INITIAL,
                     attempt: Attempt::UNCLAIMED,
                     created_at: now,
                     last_update: now,
@@ -304,6 +314,43 @@ pub mod tests {
                 event,
             })
         }
+    }
+
+    #[test]
+    fn events_receive_database_allocated_append_sequences() -> anyhow::Result<()> {
+        runtime::Builder::new_current_thread()
+            .enable_time()
+            .build()?
+            .block_on(async {
+                #[derive(sea_query::Iden)]
+                enum AppendColumn {
+                    Sequence,
+                }
+                let database = Builder::new_local(":memory:").build().await?;
+                let mut connection = database.connect()?;
+                LedgerSchema::migrate(&mut connection).await?;
+                let records = Records::new()?;
+                let writer = RecordWriter {
+                    connection: &connection,
+                };
+                writer.feature(&records.feature).await?;
+                writer.task(&records.task).await?;
+                writer.event(&records.event).await?;
+                let mut rows = SqlStatement::build(
+                    Query::select()
+                        .column(AppendColumn::Sequence)
+                        .from(EventTable::Table)
+                        .to_owned(),
+                )?
+                .query(&connection)
+                .await?;
+                let row = rows
+                    .next()
+                    .await?
+                    .ok_or_else(|| anyhow::anyhow!("event missing"))?;
+                assert_eq!(row.get::<i64>(0)?, 1);
+                Ok(())
+            })
     }
 
     #[test]

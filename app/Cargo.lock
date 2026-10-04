@@ -2855,7 +2855,7 @@ dependencies = [
 
 [[package]]
 name = "meta-cortex"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -2878,10 +2878,11 @@ dependencies = [
 
 [[package]]
 name = "meta-cortex-visualization"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "anyhow",
  "derive_more",
+ "git2",
  "meta-cortex-workbench",
  "schemars 1.2.2",
  "serde",
@@ -2889,6 +2890,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "tempfile",
  "thiserror 2.0.20",
  "tokio",
  "tracing",
@@ -2896,7 +2898,7 @@ dependencies = [
 
 [[package]]
 name = "meta-cortex-workbench"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "anyhow",
  "derive_more",
