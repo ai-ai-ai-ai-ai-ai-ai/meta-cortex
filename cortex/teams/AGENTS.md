@@ -118,8 +118,10 @@ following from the active library and supplies them in the launch instructions:
   Record the assignment before launching its worker. Coordinator and workspace
   bootstrap assignments establish this context before task workers launch.
 - The activity's assigned role, recorded reporting coordinator, and current
-  ledger revision and attempt. Coordinator activities use the same context once
-  the feature ledger is available.
+  ledger revision and attempt. Carry the instance's retained worker UUID on
+  continuations under the [worker identity protocol](gizmo-team/docs/agent-ledger.md#worker-instance-identity).
+  New instances establish their own identity through that protocol.
+  Coordinator activities use the same context once the feature ledger is available.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
 - The validated session `development.mode` and `development.delivery`, plus any

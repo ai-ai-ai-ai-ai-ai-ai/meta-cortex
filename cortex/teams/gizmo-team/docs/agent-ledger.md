@@ -369,6 +369,86 @@ or mark the feature complete while integration and PR delivery are unrecorded.
 **Required:** retain Prime → Team Gizmo → integration and specialist reporting
 lines, with progress and acceptance evidence on each participating role's activity.
 
+## Worker instance identity
+
+`AgentId` identifies a catalog role, such as `Ai/TechWriter`. `WorkerId`
+identifies one host agent instance and is a validated, non-nil UUID. Stored
+UUIDs use lowercase, hyphenated form. Several instances may share a role; one
+instance may work on several tasks.
+
+1. Generate a UUID once when a host agent instance starts. Generate it locally
+   with an existing UUID tool, such as `uuidgen`; do not use the role, task ID,
+   branch, hostname, or host task path as the ID.
+2. Keep the exact UUID in that instance's session and continuation context.
+   Retain it across turns, follow-ups, resumed execution, and later assignments
+   to the same instance. Do not generate one per claim, task, or update.
+3. Report that UUID to the assigning coordinator through the existing host
+   communication. The coordinator retains and forwards the reported value
+   unchanged when continuing that same instance. Host names and task paths
+   may identify message provenance; they are not globally unique worker IDs.
+4. Give every newly spawned or replacement instance its own newly generated UUID.
+   A replacement does not adopt its predecessor's ID, even when resuming the
+   same role, task, or workspace. If the same instance's retained ID is missing,
+   recover it from its continuation or coordinator context before updating.
+5. Include `worker_id` in every `Task / Claim` and `Task / Update` request.
+   Keep the catalog role in `agent`; the worker UUID does not replace it.
+   Use the returned revision and attempt for subsequent updates.
+
+**Prohibited:** a resumed TechWriter generates a new UUID for each heartbeat,
+then a replacement copies the last UUID because it has the same role.
+
+**Required:** the resumed instance keeps its original UUID for every task and
+update. A replacement generates its own UUID and claims the task after the
+coordinator's inspected requeue. Both keep `agent: {team: Ai, role: TechWriter}`.
+
+### Claim and update requests
+
+The following illustrative requests assume an assigned, dependency-ready task
+at revision `2`. Replace the example UUID with the calling instance's retained
+UUID and use actual returned revisions and attempts. Both requests require
+`worker_id`; omission, `null`, nil or malformed UUIDs, and unknown aliases are rejected.
+
+```yaml
+version: 1
+project: /absolute/project
+operation:
+  group: Task
+  command:
+    name: Claim
+    arguments:
+      feature: example-feature
+      task: documentation
+      expected_revision: 2
+      agent: {team: Ai, role: TechWriter}
+      worker_id: 0fdfbf88-dcff-49b5-81a2-17eae97da30c
+      ttl_seconds: 3600
+```
+
+Assuming that claim returns revision `3` and attempt `1`, its heartbeat is:
+
+```yaml
+version: 1
+project: /absolute/project
+operation:
+  group: Task
+  command:
+    name: Update
+    arguments:
+      feature: example-feature
+      task: documentation
+      expected_revision: 3
+      agent: {team: Ai, role: TechWriter}
+      worker_id: 0fdfbf88-dcff-49b5-81a2-17eae97da30c
+      attempt: 1
+      action: {kind: heartbeat, ttl_seconds: 3600}
+```
+
+**Prohibited:** omit `worker_id` because `agent` already names TechWriter, or
+copy this illustrative UUID into a real agent's first claim.
+
+**Required:** generate the instance's UUID once, then supply that same value
+in its claim and heartbeat alongside the matching role and attempt.
+
 ## Assignment and worker lifecycle
 
 Prepare the feature branch and worktree using the delivery team's existing Git
@@ -384,12 +464,13 @@ workflow. The ledger records these resources; it does not create or merge them.
    Run `Task / Assign` on the queued task with its observed revision, intended
    agent, and reporting line. Only queued tasks accept assignment changes.
    Reassignment to another role requires an inspected requeue first.
-3. The worker reads `Task / Get` and runs `Task / Claim` with its catalog agent identity,
-   expected revision, and TTL. A claim succeeds only for a queued task whose
-   dependencies are integrated or completed. The agent must match recorded
+3. The worker reads `Task / Get` and runs `Task / Claim` with its catalog role,
+   retained worker UUID, expected revision, and TTL. A claim succeeds only for a
+   queued task whose dependencies are integrated or completed. The agent must match recorded
    ownership when available. The result contains its new attempt and revision.
 4. While working, the worker runs `Task / Update` at meaningful milestones and
-   before a potentially long operation. Choose the action from the catalog:
+   before a potentially long operation. Supply the same worker UUID with each
+   update. Choose the action from the catalog:
    - `heartbeat` renews activity and expiration without claiming meaningful progress.
    - `progress` records findings, next steps, checks, and a working or blocked phase.
    - `checkpoint` records a real commit from the task branch with continuation notes.
@@ -419,7 +500,8 @@ Rust model and rejected in requests and stored records. Flat strings such as
 `rust-dev`, unknown roles, and host session identifiers are rejected. Do not
 silently relabel historical actors or move them between teams.
 Task IDs remain per-assignment values. The task and attempt identify the claimed
-assignment even when multiple sessions execute the same role.
+assignment; the [worker UUID](#worker-instance-identity) identifies the executing
+instance across assignments.
 
 Prose fields accept empty strings and preserve whitespace exactly. A required
 field must still be supplied as a string; omitting it or supplying `null` is a
@@ -431,7 +513,7 @@ history. Two concurrent changes based on the same revision cannot both succeed.
 On `conflict`, reread before deciding whether the operation still applies. Do not
 blindly replay an old whole-document update.
 
-- Worker identity and attempt must still match.
+- Catalog role, worker UUID, and attempt must still match the active claim.
 - TTLs range from 1 to 86400 seconds. Choose enough time for the next operation
   and renew before expiry.
 - Timestamps are Unix milliseconds generated by the CLI.
@@ -472,10 +554,13 @@ no background TTL process. Status computes expiration when queried.
 3. Record `Task / Coordinate` with `action.kind: requeue`, a reason, and
    `previous_execution: stopped_or_finished`. This is the coordinator's explicit
    acknowledgement, not an automatic host check. Preserve the branch, checkpoint,
-   progress, and history.
+   progress, and history. Requeue clears the current worker binding; historical
+   snapshots retain their recorded identity.
 4. Give the replacement worker the existing task and workspace. Its next claim
-   increments the attempt. Updates from the older attempt are rejected, even if
-   that worker rereads the current revision.
+   increments the attempt and binds its own worker UUID. Resuming the same host
+   instance retains its UUID; a replacement uses a new one under the
+   [worker identity rules](#worker-instance-identity). Updates from the older
+   attempt are rejected, even if that worker rereads the current revision.
 5. For integration failures, requeue the task after inspecting the previous
    execution and pass the repair context. After all integrated work and checks are
    complete, follow existing workspace cleanup rules. Keep the feature ledger.
@@ -500,11 +585,12 @@ the recorded task plus any newer Git changes.
 
 Command protocol, persisted record, and physical database versions are distinct.
 This release writes command, feature, and event-envelope version `1`, task
-record version `2`, and database version `4`. `Task / Assign` extends command
-discovery without changing existing request shapes. Task readers explicitly
-convert supported version `1` records into the current model with unrecorded
-ownership; they never invent historical reporting lines. Historical envelopes,
-actors, revisions, attempts, timestamps, and evidence remain intact.
+record version `3`, and database version `4`. `Task / Claim` and `Task / Update`
+require `worker_id`; discover their current request shapes with `meta-cortex list`.
+Task readers explicitly convert supported version `1` and `2` records into the
+current model with unrecorded worker identity. Version `1` ownership also remains
+unrecorded. Readers never invent historical workers or reporting lines. Historical
+envelopes, actors, revisions, attempts, timestamps, and evidence remain intact.
 
 Version `1` task records retain their released flat format. Version `2` encloses
 stable fields in `common`: identity, objective, acceptance, dependencies, revision,
@@ -512,7 +598,35 @@ attempt, timestamps, checkpoint, and progress. Ownership, workspace, and state
 remain version-specific fields. Later records can reuse `TaskCommon` while its
 field types and meanings remain unchanged; changes need a new common type so
 retained readers keep their released contracts. Serde decodes both versions into
-the current task model; writers emit only version `2`.
+the current task model alongside version `3`; writers emit only version `3`.
+
+Version `3` adds `worker` beside `common`, `ownership`, `workspace`, and `state`.
+It is either `{kind: Unrecorded}` or
+`{kind: Recorded, worker_id: <UUID>}`. Claim records the worker; readiness,
+integration, completion, and cancellation retain it. Requeue clears the current
+binding while preserving prior snapshots. The SQL layout remains version `4`;
+reading older records does not rewrite them or backfill their history.
+
+- **Prohibited:** derive UUIDs from old roles or event actors while reading
+  version `1` or `2` records.
+- **Required:** read their worker as `Unrecorded` and preserve their historical
+  snapshots. Only a current claim or valid worker update can record a worker UUID.
+
+### Continue an older active claim
+
+1. Preserve the existing active task's role and attempt after upgrading.
+2. Have its actual continuing instance send its retained UUID with the next
+   valid `Task / Update`. The update checks the recorded role and attempt before
+   binding an unrecorded worker identity.
+3. Use that UUID on every later update. Once recorded, another UUID is rejected.
+   Prior event snapshots remain unrecorded; the successful update records the
+   binding only in the new revision.
+
+**Prohibited:** assign the current worker's UUID to all earlier snapshots, or
+let a replacement bind an old active claim without inspected requeue.
+
+**Required:** the continuing instance records its own UUID on its next valid
+update. A replacement follows recovery and makes a new claim with its own UUID.
 
 ### Database constraints
 
@@ -520,8 +634,9 @@ Database version `4` moves JSON key constraints to `common`, including nested
 task snapshots in events. Feature discovery and task commands migrate older
 storage transactionally, preserving historical actors and all task evidence.
 Observation requires the current database schema and reports when migration is
-needed; it never rewrites old storage itself. Older executables reject version
-`2` tasks and version `4` databases; stop older writers before upgrading.
+needed; it never rewrites old storage itself. Executables without task version
+`3` support cannot read newly written tasks even though the database version
+remains `4`; stop older writers before upgrading.
 
 Version `4` uses a feature primary key, a `(feature_id, id)` task primary key,
 and a `(feature_id, task_id, revision)` event primary key. Foreign keys require
