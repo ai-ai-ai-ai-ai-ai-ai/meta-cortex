@@ -21,6 +21,7 @@ it("keeps dense phases bounded, omits lifecycle records and selects the final si
         kind,
         actor: Fixture.PRIME,
         ownership: chapter.task.ownership,
+        state: chapter.task.state,
         note: "",
         summary: "",
         at: chapter.task.common.created_at + Math.min(index, 6) * 1000,

@@ -46,6 +46,8 @@ pub struct FeedEntry {
     pub actor: AgentId,
     /// Ownership recorded in this event snapshot, independent of its actor.
     pub ownership: TaskOwnership,
+    /// Task state recorded in this event snapshot, independent of later revisions.
+    pub state: TaskState,
     pub note: Note,
     pub summary: Note,
     pub at: Timestamp,
@@ -174,6 +176,7 @@ impl From<ChapterSource> for TaskChapter {
                 kind: event.kind,
                 actor: event.actor,
                 ownership: event.task.ownership,
+                state: event.task.state,
                 note: event.note,
                 summary: event.task.common.progress.summary.clone(),
                 at: event.task.common.last_update,
@@ -231,8 +234,8 @@ mod tests {
     use crate::agents::{AgentId, DevelopmentAgent};
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{
-        Check, CheckOutcome, Checkpoint, Event, EventKind, Progress, Task, TaskCommon, TaskState,
-        Workspace,
+        Assignment, Check, CheckOutcome, Checkpoint, Event, EventKind, Phase, Progress, Task,
+        TaskCommon, TaskState, Workspace,
     };
     use crate::values::{
         Attempt, CommitId, Extensions, FeatureId, Note, Revision, TaskId, Timestamp,
@@ -282,6 +285,80 @@ mod tests {
                 task,
             }
         }
+    }
+    #[derive(serde::Deserialize)]
+    struct FeedSnapshot {
+        kind: EventKind,
+        state: TaskState,
+    }
+
+    #[test]
+    fn entries_preserve_historical_state_through_blocking_and_requeue() -> anyhow::Result<()> {
+        let first_attempt = Attempt::UNCLAIMED.advance()?;
+        let assignment = Assignment {
+            agent: Scenario::agent(),
+            attempt: first_attempt,
+            expires_at: Timestamp::try_from(5000)?,
+            phase: Phase::Working,
+        };
+        let working = TaskState::Active {
+            assignment: assignment.clone(),
+        };
+        let blocked = TaskState::Active {
+            assignment: Assignment {
+                phase: Phase::Blocked {
+                    reason: Note::from("Waiting for contract review".to_owned()),
+                },
+                ..assignment.clone()
+            },
+        };
+        let reclaimed = TaskState::Active {
+            assignment: Assignment {
+                agent: AgentId::Development(DevelopmentAgent::TypescriptDev),
+                attempt: first_attempt.advance()?,
+                ..assignment
+            },
+        };
+        let snapshots = [
+            FeedSnapshot {
+                kind: EventKind::Claimed,
+                state: working.clone(),
+            },
+            FeedSnapshot {
+                kind: EventKind::Progress,
+                state: blocked,
+            },
+            FeedSnapshot {
+                kind: EventKind::Progress,
+                state: working,
+            },
+            FeedSnapshot {
+                kind: EventKind::Requeued,
+                state: TaskState::Queued,
+            },
+            FeedSnapshot {
+                kind: EventKind::Claimed,
+                state: reclaimed,
+            },
+        ];
+        let mut task = Scenario::task()?;
+        let mut events = Vec::new();
+        for snapshot in &snapshots {
+            task.common.revision = task.common.revision.advance()?;
+            task.state = snapshot.state.clone();
+            events.push(Event {
+                kind: snapshot.kind.clone(),
+                ..Scenario::event(task.clone())
+            });
+        }
+        let chapter = TaskChapter::from(ChapterSource { task, events });
+        assert_eq!(chapter.entries.len(), snapshots.len());
+        for (entry, snapshot) in chapter.entries.iter().zip(snapshots) {
+            let recorded: FeedSnapshot = serde_json::from_str(&serde_json::to_string(entry)?)?;
+            assert_eq!(recorded.kind, snapshot.kind);
+            assert_eq!(recorded.state, snapshot.state);
+        }
+        Ok(())
     }
     #[test]
     fn entries_preserve_historical_ownership_through_reassignment() -> anyhow::Result<()> {

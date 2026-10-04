@@ -158,6 +158,14 @@ export type ReportingTarget =
       coordinator: GizmoAgent;
       kind: "Gizmo";
     };
+export type Phase =
+  | {
+      kind: "working";
+    }
+  | {
+      kind: "blocked";
+      reason: Note;
+    };
 export type RecordedRole =
   | {
       kind: "Unrecorded";
@@ -203,14 +211,6 @@ export type TaskState =
     }
   | {
       kind: "cancelled";
-      reason: Note;
-    };
-export type Phase =
-  | {
-      kind: "working";
-    }
-  | {
-      kind: "blocked";
       reason: Note;
     };
 /**
@@ -398,6 +398,35 @@ export interface FeedEntry {
         kind: "Assigned";
       };
   revision: number;
+  /**
+   * Task state recorded in this event snapshot, independent of later revisions.
+   */
+  state:
+    | {
+        kind: "queued";
+      }
+    | {
+        assignment: Assignment;
+        kind: "active";
+      }
+    | {
+        agent: AgentId;
+        attempt: number;
+        kind: "ready";
+      }
+    | {
+        commit: string;
+        kind: "integrated";
+      }
+    | {
+        agent: AgentId;
+        attempt: number;
+        kind: "completed";
+      }
+    | {
+        kind: "cancelled";
+        reason: Note;
+      };
   summary: Note;
   [k: string]: unknown;
 }
@@ -425,6 +454,12 @@ export interface TaskAssignment {
   agent: AgentId;
   reports_to: ReportingTarget;
 }
+export interface Assignment {
+  agent: AgentId;
+  attempt: number;
+  expires_at: number;
+  phase: Phase;
+}
 export interface TaskV2 {
   common: TaskCommon;
   ownership: TaskOwnership;
@@ -449,10 +484,4 @@ export interface TaskCommon {
   objective: Note;
   progress: Progress;
   revision: number;
-}
-export interface Assignment {
-  agent: AgentId;
-  attempt: number;
-  expires_at: number;
-  phase: Phase;
 }

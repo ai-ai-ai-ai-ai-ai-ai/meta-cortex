@@ -328,12 +328,17 @@
           "description": "Ownership recorded in this event snapshot, independent of its actor."
         },
         "revision": { "format": "int64", "type": "integer" },
+        "state": {
+          "$ref": "#/$defs/TaskState",
+          "description": "Task state recorded in this event snapshot, independent of later revisions."
+        },
         "summary": { "$ref": "#/$defs/Note" }
       },
       "required": [
         "kind",
         "actor",
         "ownership",
+        "state",
         "note",
         "summary",
         "at",

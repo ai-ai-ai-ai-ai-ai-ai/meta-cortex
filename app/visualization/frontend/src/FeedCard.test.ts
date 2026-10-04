@@ -23,6 +23,7 @@ class FeedScenario {
       actor: Fixture.PRIME,
       ownership,
       kind: "assigned",
+      state: { kind: "queued" },
       at: Fixture.NOW,
       revision: 1,
       note: "Task assigned",

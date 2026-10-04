@@ -127,6 +127,7 @@ export class Fixture {
           entries: [
             {
               kind: "created",
+              state: { kind: "queued" },
               actor: Fixture.PRIME,
               ownership: { kind: "Unrecorded" },
               note: "Implement the release",
@@ -138,6 +139,7 @@ export class Fixture {
             },
             {
               kind: "completed",
+              state: task.state,
               actor: Fixture.PRIME,
               ownership: { kind: "Unrecorded" },
               note: "Activity accepted",
