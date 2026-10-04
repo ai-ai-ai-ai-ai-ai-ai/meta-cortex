@@ -21,7 +21,7 @@ impl From<FlowState> for StateMeaning {
     fn from(state: FlowState) -> Self {
         let (meaning, evidence, next_step, qualification) = match state {
             FlowState::Queued => (
-                "The task is queued and eligible for a worker claim.",
+                "The task is waiting for a worker claim.",
                 "The recorded task state is Queued; there is no active claim.",
                 "The assigned worker claims the task when its prerequisites are satisfied.",
                 "Assignment and queueing do not prove that a worker has started execution.",

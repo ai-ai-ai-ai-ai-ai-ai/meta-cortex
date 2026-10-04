@@ -2,7 +2,7 @@
   "state_meanings": [
     {
       "state": "queued",
-      "meaning": "The task is queued and eligible for a worker claim.",
+      "meaning": "The task is waiting for a worker claim.",
       "evidence": "The recorded task state is Queued; there is no active claim.",
       "next_step": "The assigned worker claims the task when its prerequisites are satisfied.",
       "qualification": "Assignment and queueing do not prove that a worker has started execution."
@@ -74,7 +74,7 @@
         },
         "note": "Implement the release",
         "summary": "",
-        "at": 1791148549600,
+        "at": 1791148839972,
         "revision": 1,
         "evidence": [
           {
@@ -123,7 +123,7 @@
         },
         "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
         "summary": "",
-        "at": 1791148549601,
+        "at": 1791148839973,
         "revision": 2,
         "evidence": [
           {
@@ -176,7 +176,7 @@
               "role": "RustDev"
             },
             "attempt": 1,
-            "expires_at": 1791149149602,
+            "expires_at": 1791149439974,
             "phase": {
               "kind": "working"
             }
@@ -184,7 +184,7 @@
         },
         "note": "Assignment claimed",
         "summary": "",
-        "at": 1791148549602,
+        "at": 1791148839974,
         "revision": 3,
         "evidence": [
           {
@@ -239,7 +239,7 @@
         },
         "note": "Release implemented",
         "summary": "Release implemented",
-        "at": 1791148549603,
+        "at": 1791148839975,
         "revision": 4,
         "evidence": [
           {
@@ -302,7 +302,7 @@
         },
         "note": "Activity accepted by its coordinator",
         "summary": "Release implemented",
-        "at": 1791148549604,
+        "at": 1791148839976,
         "revision": 5,
         "evidence": [
           {
@@ -322,8 +322,8 @@
   "timeline": {
     "extent": {
       "kind": "Recorded",
-      "started": 1791148549602,
-      "finished": 1791148549604
+      "started": 1791148839974,
+      "finished": 1791148839976
     },
     "groups": [
       {
@@ -347,8 +347,8 @@
             "objective": "Implement the release",
             "revision": 3,
             "summary_revision": 3,
-            "start": 1791148549602,
-            "end": 1791148549603,
+            "start": 1791148839974,
+            "end": 1791148839975,
             "duration_ms": 1,
             "state": {
               "kind": "active",
@@ -358,7 +358,7 @@
                   "role": "RustDev"
                 },
                 "attempt": 1,
-                "expires_at": 1791149149602,
+                "expires_at": 1791149439974,
                 "phase": {
                   "kind": "working"
                 }
@@ -383,8 +383,8 @@
             "objective": "Implement the release",
             "revision": 4,
             "summary_revision": 4,
-            "start": 1791148549603,
-            "end": 1791148549604,
+            "start": 1791148839975,
+            "end": 1791148839976,
             "duration_ms": 1,
             "state": {
               "kind": "ready",
@@ -413,8 +413,8 @@
             "objective": "Implement the release",
             "revision": 5,
             "summary_revision": 5,
-            "start": 1791148549604,
-            "end": 1791148549604,
+            "start": 1791148839976,
+            "end": 1791148839976,
             "duration_ms": 0,
             "state": {
               "kind": "completed",
@@ -441,7 +441,7 @@
         ],
         "order": {
           "kind": "Recorded",
-          "at": 1791148549602
+          "at": 1791148839974
         }
       }
     ],
@@ -464,9 +464,9 @@
           "dependencies": [],
           "revision": 5,
           "attempt": 1,
-          "created_at": 1791148549600,
-          "last_update": 1791148549604,
-          "last_progress": 1791148549603,
+          "created_at": 1791148839972,
+          "last_update": 1791148839976,
+          "last_progress": 1791148839975,
           "checkpoint": {
             "kind": "unrecorded"
           },
@@ -538,7 +538,7 @@
           },
           "note": "Implement the release",
           "summary": "",
-          "at": 1791148549600,
+          "at": 1791148839972,
           "revision": 1,
           "evidence": [
             {
@@ -581,7 +581,7 @@
           },
           "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
           "summary": "",
-          "at": 1791148549601,
+          "at": 1791148839973,
           "revision": 2,
           "evidence": [
             {
@@ -628,7 +628,7 @@
                 "role": "RustDev"
               },
               "attempt": 1,
-              "expires_at": 1791149149602,
+              "expires_at": 1791149439974,
               "phase": {
                 "kind": "working"
               }
@@ -636,7 +636,7 @@
           },
           "note": "Assignment claimed",
           "summary": "",
-          "at": 1791148549602,
+          "at": 1791148839974,
           "revision": 3,
           "evidence": [
             {
@@ -685,7 +685,7 @@
           },
           "note": "Release implemented",
           "summary": "Release implemented",
-          "at": 1791148549603,
+          "at": 1791148839975,
           "revision": 4,
           "evidence": [
             {
@@ -742,7 +742,7 @@
           },
           "note": "Activity accepted by its coordinator",
           "summary": "Release implemented",
-          "at": 1791148549604,
+          "at": 1791148839976,
           "revision": 5,
           "evidence": [
             {
@@ -762,7 +762,7 @@
   ],
   "timing": {
     "kind": "Finished",
-    "started": 1791148549600,
-    "finished": 1791148549604
+    "started": 1791148839972,
+    "finished": 1791148839976
   }
 }
