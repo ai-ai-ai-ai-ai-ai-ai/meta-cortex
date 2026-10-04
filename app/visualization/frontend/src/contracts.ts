@@ -136,7 +136,7 @@ export interface DesktopContract {
   [k: string]: unknown;
 }
 /**
- * Every recorded feature with its totals, held work, outcomes and pull requests.
+ * The most recently active features with their totals, held work, outcomes and pull requests.
  */
 export interface DesktopReply {
   features: Page;

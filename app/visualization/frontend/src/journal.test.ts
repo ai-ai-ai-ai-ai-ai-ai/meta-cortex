@@ -75,7 +75,7 @@ it("explains open work: progress, the latest delivery, quiet time and why it is 
   expect(entry.sentence()).toBe(
     "1 of 6 tasks done over 50m · last task integrated 2h ago",
   );
-  expect(entry.quiet()).toEqual(["quiet for 1h 40m"]);
+  expect(entry.quiet()).toEqual(["quiet 1h 40m"]);
   expect(entry.reasons()).toEqual([
     "Blocked: rust-review — Release SHA formatting fails",
   ]);
@@ -87,6 +87,13 @@ it("explains open work: progress, the latest delivery, quiet time and why it is 
     "Blocked",
     "Queued",
   ]);
+  expect(
+    entry.timeline().map((strip) => ({
+      open: strip.open,
+      bar: Math.round(strip.bar),
+      ticks: strip.ticks.map(Math.round),
+    })),
+  ).toEqual([{ open: true, bar: 33, ticks: [40, 80] }]);
 });
 
 it("summarizes finished work by its duration, cancellations and missing delivery", () => {
@@ -97,6 +104,12 @@ it("summarizes finished work by its duration, cancellations and missing delivery
   );
   expect(entry.quiet()).toEqual([]);
   expect(entry.reasons()).toEqual([]);
+  expect(
+    entry.timeline().map((strip) => ({
+      open: strip.open,
+      bar: Math.round(strip.bar),
+    })),
+  ).toEqual([{ open: false, bar: 44 }]);
 });
 
 it("names agents whose lease expired and caps the outcome chips", () => {

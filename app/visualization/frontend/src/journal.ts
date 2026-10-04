@@ -165,6 +165,34 @@ interface Segment {
   readonly count: number;
   readonly share: number;
 }
+interface Strip {
+  /** Percent of the time from the first task to now that the feature was active. */
+  readonly bar: number;
+  readonly ticks: ReadonlyArray<number>;
+  readonly open: boolean;
+  readonly description: string;
+}
+interface GridFrame {
+  readonly span: number;
+}
+/** Unlabelled gridlines at the coarsest step that keeps a strip readable. */
+class TimeGrid {
+  static readonly STEPS = [1, 3, 6, 12, 24, 48, 168, 720].map(
+    (hours) => hours * TimeLook.HOUR,
+  );
+  static readonly MOST = 8;
+  constructor(private readonly frame: GridFrame) {}
+  ticks(): ReadonlyArray<number> {
+    const { span } = this.frame;
+    return TimeGrid.STEPS.filter((step) => span / step <= TimeGrid.MOST)
+      .slice(0, 1)
+      .flatMap((step) =>
+        [...Array(Math.floor(span / step)).keys()]
+          .map((index) => (100 * (index + 1) * step) / span)
+          .filter((position) => position < 100),
+      );
+  }
+}
 /** One feature as a journal card: what it is for, how far it got, and what needs a person. */
 export class JournalEntry {
   static readonly OUTCOMES = 5;
@@ -194,7 +222,22 @@ export class JournalEntry {
       .first()
       .filter(() => this.frame.summary.totals.condition !== "finished")
       .filter(() => this.frame.now - last >= JournalEntry.QUIET_AFTER)
-      .map(() => `quiet for ${new Duration(this.frame.now - last).label()}`);
+      .map(() => `quiet ${new Duration(this.frame.now - last).label()}`);
+  }
+  /** The feature's active span on a track that ends now; empty before any task exists. */
+  timeline(): ReadonlyArray<Strip> {
+    const { summary, now } = this.frame;
+    const last = new Activity(summary).last();
+    const time = new TimeLook(now);
+    return new Activity(summary).first().map((first) => {
+      const frame: GridFrame = { span: Math.max(1, now - first) };
+      return {
+        bar: (100 * Math.min(frame.span, last - first)) / frame.span,
+        ticks: new TimeGrid(frame).ticks(),
+        open: summary.totals.condition !== "finished",
+        description: `${summary.feature.id}: ${this.progress()}; active from ${time.absolute(first)} to ${time.absolute(last)}`,
+      };
+    });
   }
   reasons(): ReadonlyArray<string> {
     const time = new TimeLook(this.frame.now);

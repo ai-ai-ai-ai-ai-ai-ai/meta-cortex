@@ -40,21 +40,17 @@
             .SOFT[status.tone]}"
           ><status.icon class="size-3" aria-hidden="true" />{status.label}</span
         >
-        {#each summary.pull_requests as request (request.url)}
-          <PullRequestChip {request} />
-        {/each}
-        <span class="truncate font-mono text-muted-foreground"
-          >{summary.feature.id}</span
-        >
+        {#if entry.timeline().length === 0}
+          <span class="truncate font-mono text-muted-foreground"
+            >{summary.feature.id}</span
+          >
+        {/if}
       </p>
       <p
         class="text-[13px] text-muted-foreground sm:text-right"
         data-testid="feature-sentence"
       >
         {entry.sentence()}
-        {#each entry.quiet() as quiet (quiet)}
-          <span class="whitespace-nowrap text-status-stalled">· {quiet}</span>
-        {/each}
       </p>
     </div>
 
@@ -69,18 +65,82 @@
       </ul>
     {/if}
 
-    <div
-      role="img"
-      aria-label={`${summary.feature.id} progress: ${entry.progress()}`}
-      class="flex h-1.5 w-full overflow-hidden rounded-full bg-muted"
-    >
-      {#each entry.segments() as segment (segment.label)}
+    {#each entry.timeline() as strip (strip.description)}
+      <div class="flex h-9 items-center" data-testid="feature-timeline">
+        <div class="relative flex h-full min-w-0 flex-1 items-center">
+          {#each strip.ticks as tick (tick)}
+            <span
+              aria-hidden="true"
+              class="absolute inset-y-0 w-px bg-border/70"
+              style:left={`${tick}%`}
+            ></span>
+          {/each}
+          <div
+            class={[
+              "relative flex h-8 max-w-full shrink grow-0 items-center gap-2 overflow-hidden rounded-lg border bg-muted pr-1",
+              {
+                "min-w-72": summary.pull_requests.length > 0,
+                "min-w-44": summary.pull_requests.length === 0,
+              },
+            ]}
+            style:flex-basis={`${strip.bar}%`}
+          >
+            <span
+              role="img"
+              aria-label={strip.description}
+              class="absolute inset-0 flex"
+            >
+              {#each entry.segments() as segment (segment.label)}
+                <span
+                  class="h-full opacity-70 {ToneClasses.FILL[segment.tone]}"
+                  style:width={`${segment.share * 100}%`}
+                ></span>
+              {/each}
+            </span>
+            <span
+              class="relative min-w-0 flex-1 truncate px-3 font-mono text-xs font-medium"
+              >{summary.feature.id}</span
+            >
+            {#each summary.pull_requests as request (request.url)}
+              <span class="relative shrink-0"
+                ><PullRequestChip {request} /></span
+              >
+            {/each}
+          </div>
+          <div
+            class="relative flex h-full min-w-fit flex-1 items-center justify-center px-2"
+          >
+            {#if strip.open}
+              <span
+                aria-hidden="true"
+                class="absolute inset-x-0 top-1/2 border-t-2 border-dashed border-muted-foreground/40"
+              ></span>
+            {/if}
+            {#each entry.quiet() as quiet (quiet)}
+              <span
+                class="relative inline-flex items-center gap-1.5 rounded-md border border-status-stalled/60 bg-card px-2 py-0.5 text-xs whitespace-nowrap text-status-stalled"
+                ><span
+                  aria-hidden="true"
+                  class="size-2 rounded-full bg-status-stalled"
+                ></span>{quiet}</span
+              >
+            {/each}
+          </div>
+        </div>
         <span
-          class="h-full {ToneClasses.FILL[segment.tone]}"
-          style:width={`${segment.share * 100}%`}
+          aria-label="now"
+          class="h-full w-0.5 shrink-0 bg-status-blocked"
+          role="img"
         ></span>
-      {/each}
-    </div>
+        <span
+          aria-hidden="true"
+          class={[
+            "w-5 shrink-0 border-t-2 border-dashed border-muted-foreground/40",
+            { invisible: !strip.open },
+          ]}
+        ></span>
+      </div>
+    {/each}
 
     {#if entry.outcomes().length > 0}
       <div class="flex flex-wrap items-center gap-1.5">
@@ -183,7 +243,7 @@
     </ol>
     {#if truncated}
       <p class="text-xs text-muted-foreground">
-        Showing the first 100 recorded features by ID.
+        Showing the 100 most recently active features.
       </p>
     {/if}
   {/if}

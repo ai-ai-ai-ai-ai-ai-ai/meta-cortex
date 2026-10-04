@@ -7,7 +7,7 @@ use super::{LedgerReader, Observation, Page, PageIndex, RecordLimit};
 use crate::LedgerError;
 use crate::agents::AgentId;
 use crate::model::{Feature, LeaseHealth, Phase, TaskState};
-use crate::store::relational::{JsonFunction, TaskTable};
+use crate::store::relational::{FeatureTable, JsonFunction, TaskTable};
 use crate::store::sql::SqlStatement;
 use crate::values::{Note, TaskId, Timestamp};
 pub use outcomes::{FeatureOutcome, LatestDelivery};
@@ -243,10 +243,11 @@ struct ActiveQuery<'feature> {
     now: Timestamp,
 }
 impl Observation {
+    /// Most recently active features first; features without tasks follow in ID order.
     pub async fn summaries(&self, page: PageIndex) -> Result<Page<FeatureSummary>, LedgerError> {
         let reader = self.reader().await?;
         let now = Timestamp::now()?;
-        let features = reader.features(page).await?;
+        let features = reader.recent_features(page).await?;
         let mut records = Vec::new();
         for feature in features.records {
             records.push(reader.summary(SummaryQuery { feature, now }).await?);
@@ -258,6 +259,37 @@ impl Observation {
     }
 }
 impl LedgerReader {
+    /// Latest task update first; features without tasks follow in ID order.
+    async fn recent_features(&self, page: PageIndex) -> Result<Page<Feature>, LedgerError> {
+        let latest = Func::max(Func::cust(JsonFunction::JsonExtract).args([
+            Expr::col((TaskTable::Table, TaskTable::Document)),
+            Expr::val("$.common.last_update"),
+        ]));
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .column((FeatureTable::Table, FeatureTable::Document))
+                .from(FeatureTable::Table)
+                .left_join(
+                    TaskTable::Table,
+                    Expr::col((TaskTable::Table, TaskTable::FeatureId))
+                        .equals((FeatureTable::Table, FeatureTable::Id)),
+                )
+                .group_by_col((FeatureTable::Table, FeatureTable::Id))
+                .group_by_col((FeatureTable::Table, FeatureTable::Document))
+                .order_by_expr(latest.into(), Order::Desc)
+                .order_by((FeatureTable::Table, FeatureTable::Id), Order::Asc)
+                .offset(page.offset())
+                .limit(RecordLimit::PAGE.probe())
+                .to_owned(),
+        )?
+        .query(&self.connection)
+        .await?;
+        let mut records = Vec::new();
+        while let Some(row) = rows.next().await? {
+            records.push(serde_json::from_str(&row.get::<String>(0)?)?);
+        }
+        Ok(RecordLimit::PAGE.bound(records))
+    }
     async fn summary(&self, query: SummaryQuery) -> Result<FeatureSummary, LedgerError> {
         let SummaryQuery { feature, now } = query;
         let mut select = Query::select();

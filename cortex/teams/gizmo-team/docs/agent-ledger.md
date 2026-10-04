@@ -254,8 +254,8 @@ roles and activities when continuing the feature.
 
 ### Refresh and pages
 
-The native journal reads the first 100 features by ID and notes when more
-exist. It refreshes every five seconds; Pause stops automatic reads, Refresh
+The native journal reads up to 100 features, most recently active first;
+features without tasks follow in ID order. It notes when more exist and refreshes every five seconds; Pause stops automatic reads, Refresh
 reads at once, and Retry follows an observation failure.
 
 Feature, task, and history queries return at most 100 records per page. Snapshot

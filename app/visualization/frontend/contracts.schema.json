@@ -146,7 +146,7 @@
       ]
     },
     "DesktopReply": {
-      "description": "Every recorded feature with its totals, held work, outcomes and pull requests.",
+      "description": "The most recently active features with their totals, held work, outcomes and pull requests.",
       "properties": { "features": { "$ref": "#/$defs/Page" } },
       "required": ["features"],
       "type": "object"

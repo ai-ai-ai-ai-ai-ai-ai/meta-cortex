@@ -510,7 +510,7 @@ once. These reads never update the ledger.
 Pull requests come from GitHub pull request URLs that tasks record in their
 progress extensions, such as `pr_url`; click one to copy its link. Feature
 creation and completion events are not stored, so dates are task activity bounds.
-The journal covers the first 100 features by ID.
+The journal covers the 100 most recently active features.
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
 an explicit project. `mode: Desktop` opens the native window; `mode: Snapshot`

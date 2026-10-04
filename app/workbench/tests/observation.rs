@@ -486,10 +486,16 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(second.end, PageEnd::Complete);
         assert_eq!(first.records[0].task, task);
         assert_eq!(second.records[1].task.common.revision, Revision::INITIAL);
+        let later = observation.summaries(PageIndex::FIRST.next()).await?;
+        assert_eq!(later.end, PageEnd::Complete);
+        assert!(matches!(
+            later.records.as_slice(),
+            [summary] if summary.feature.id == FeatureId::try_from("feature-099".to_owned())?
+                && matches!(summary.totals.activity, FeatureActivity::Empty)
+        ));
         let summaries = observation.summaries(PageIndex::FIRST).await?;
         assert_eq!(summaries.records.len(), 100);
         assert_eq!(summaries.end, PageEnd::More);
-        let summaries = observation.summaries(PageIndex::FIRST.next()).await?;
         let summary = &summaries.records[0];
         assert_eq!(summary.feature.id, Scenario::feature()?);
         let totals = &summary.totals;

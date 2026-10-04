@@ -8,7 +8,7 @@ use std::sync::Arc;
 use tauri::{State, async_runtime};
 use tokio::runtime::Builder;
 
-/// Every recorded feature with its totals, held work, outcomes and pull requests.
+/// The most recently active features with their totals, held work, outcomes and pull requests.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DesktopReply {
     pub features: Page<FeatureSummary>,
