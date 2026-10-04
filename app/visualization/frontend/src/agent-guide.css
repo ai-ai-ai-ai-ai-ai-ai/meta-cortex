@@ -271,3 +271,37 @@
   border-left: 1px solid var(--muted);
   opacity: 0.65;
 }
+
+.guide-teams {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+@media (max-width: 1100px) {
+  .guide-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .guide-hierarchy {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .guide-detail {
+    grid-column: 1;
+    grid-row: 2;
+    position: static;
+  }
+  .guide-teams {
+    grid-column: 1;
+    grid-row: 3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 0;
+  }
+  .guide-teams::before,
+  .guide-team::before {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .guide-teams {
+    grid-template-columns: 1fr;
+  }
+}
