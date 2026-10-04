@@ -10,6 +10,7 @@ import type { RevisionLogEntry } from "./contracts";
 import type { ComponentProps } from "svelte";
 import WorkflowPage from "./WorkflowPage.svelte";
 import { Fixture } from "./dashboard-fixture";
+import { RecordedTime } from "./observability";
 type WorkflowProps = ComponentProps<typeof WorkflowPage>;
 type RoleQueryOptions = NonNullable<Parameters<typeof screen.getByRole>[1]>;
 beforeEach(() => {
@@ -247,6 +248,24 @@ it("labels recorded boxes with elapsed duration and presents human task context 
   expect(card?.textContent).toContain("Recorded state · Working");
   expect(card?.textContent).toMatch(/Worker …[a-f\d]{8}/);
   expect(card?.textContent).not.toContain("1200s");
+  const timing = card?.querySelector(".task-card-times");
+  expect(
+    Array.from(
+      timing?.querySelectorAll("dt") ?? [],
+      (term) => term.textContent,
+    ),
+  ).toEqual(["Started", "Ended", "Total"]);
+  expect(
+    Array.from(
+      timing?.querySelectorAll("dd") ?? [],
+      (value) => value.textContent,
+    ),
+  ).toEqual([
+    new RecordedTime(fixture.ago(150)).clock(),
+    new RecordedTime(fixture.ago(130)).clock(),
+    "20 min",
+  ]);
+  expect(timing?.textContent).not.toContain(RecordedTime.ZONE_LABEL);
 });
 it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens the selected original task", async () => {
   const scrollBoundary: PropertyDescriptor = {

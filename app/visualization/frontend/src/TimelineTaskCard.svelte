@@ -52,8 +52,21 @@
     <span>{TimelinePiece.TEXT.progress}</span>{piece.summary()}
   </p>
   <footer>
-    <time>{piece.times()}</time><button
-      onclick={() => onselect(piece.window.task)}
+    <dl class="task-card-times">
+      <div>
+        <dt>{TimelinePiece.TEXT.started}</dt>
+        <dd><time>{piece.started()}</time></dd>
+      </div>
+      <div>
+        <dt>{TimelinePiece.TEXT.ended}</dt>
+        <dd><time>{piece.ended()}</time></dd>
+      </div>
+      <div>
+        <dt>{TimelinePiece.TEXT.total}</dt>
+        <dd>{piece.total()}</dd>
+      </div>
+    </dl>
+    <button onclick={() => onselect(piece.window.task)}
       >{TimelinePiece.TEXT.open}</button
     >
   </footer>

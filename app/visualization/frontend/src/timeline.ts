@@ -192,13 +192,22 @@ export class TimelinePiece {
         return TimelinePiece.TEXT.unrecorded;
     }
   }
-  times(): string {
-    return `${new RecordedTime(this.window.start).clock()}–${new RecordedTime(this.window.end).clock()} · ${RecordedTime.ZONE_LABEL}`;
+  started(): string {
+    return new RecordedTime(this.window.start).clock();
+  }
+  ended(): string {
+    return new RecordedTime(this.window.end).clock();
+  }
+  total(): string {
+    return new Elapsed(this.window.duration_ms).label();
   }
   label(): string {
     return `${this.look.label()} · ${this.window.task} · ${this.window.objective}`;
   }
   static readonly TEXT = {
+    started: "Started",
+    ended: "Ended",
+    total: "Total",
     worker: "Worker",
     roleUnrecorded: "Role unrecorded",
     unrecorded: "Worker ID unrecorded",

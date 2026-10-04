@@ -1012,6 +1012,7 @@ ul.evidence-body li + li {
 }
 .timeline-task-card footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1019,9 +1020,21 @@ ul.evidence-body li + li {
   border-top: 1px solid var(--line);
   padding-top: 10px;
 }
-.timeline-task-card time {
+.task-card-times {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-width: 220px;
+}
+.task-card-times dt {
   font-size: 10px;
   color: var(--muted);
+}
+.task-card-times dd {
+  margin: 2px 0 0;
+  font-size: 11px;
+  white-space: nowrap;
 }
 .timeline-task-card footer button {
   font-size: 11px;
