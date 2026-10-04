@@ -150,6 +150,14 @@ export type EventKind =
   | "completed"
   | "requeued"
   | "cancelled";
+export type ReportingTarget =
+  | {
+      kind: "Host";
+    }
+  | {
+      coordinator: GizmoAgent;
+      kind: "Gizmo";
+    };
 export type RecordedRole =
   | {
       kind: "Unrecorded";
@@ -170,14 +178,6 @@ export type TaskOwnership =
   | {
       assignment: TaskAssignment;
       kind: "Assigned";
-    };
-export type ReportingTarget =
-  | {
-      kind: "Host";
-    }
-  | {
-      coordinator: GizmoAgent;
-      kind: "Gizmo";
     };
 export type TaskState =
   | {
@@ -386,6 +386,17 @@ export interface FeedEntry {
   evidence: Progress[];
   kind: EventKind;
   note: Note;
+  /**
+   * Ownership recorded in this event snapshot, independent of its actor.
+   */
+  ownership:
+    | {
+        kind: "Unrecorded";
+      }
+    | {
+        assignment: TaskAssignment;
+        kind: "Assigned";
+      };
   revision: number;
   summary: Note;
   [k: string]: unknown;
@@ -406,6 +417,13 @@ export interface Check {
   command: Note;
   evidence: Note;
   outcome: CheckOutcome;
+}
+/**
+ * The intended owner and reporting line survive every task state and attempt.
+ */
+export interface TaskAssignment {
+  agent: AgentId;
+  reports_to: ReportingTarget;
 }
 export interface TaskV2 {
   common: TaskCommon;
@@ -431,13 +449,6 @@ export interface TaskCommon {
   objective: Note;
   progress: Progress;
   revision: number;
-}
-/**
- * The intended owner and reporting line survive every task state and attempt.
- */
-export interface TaskAssignment {
-  agent: AgentId;
-  reports_to: ReportingTarget;
 }
 export interface Assignment {
   agent: AgentId;

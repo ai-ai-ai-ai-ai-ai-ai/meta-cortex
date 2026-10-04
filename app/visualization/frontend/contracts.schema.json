@@ -323,12 +323,17 @@
         },
         "kind": { "$ref": "#/$defs/EventKind" },
         "note": { "$ref": "#/$defs/Note" },
+        "ownership": {
+          "$ref": "#/$defs/TaskOwnership",
+          "description": "Ownership recorded in this event snapshot, independent of its actor."
+        },
         "revision": { "format": "int64", "type": "integer" },
         "summary": { "$ref": "#/$defs/Note" }
       },
       "required": [
         "kind",
         "actor",
+        "ownership",
         "note",
         "summary",
         "at",

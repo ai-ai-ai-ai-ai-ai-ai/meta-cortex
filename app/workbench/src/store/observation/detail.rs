@@ -44,6 +44,8 @@ pub struct TaskChapter {
 pub struct FeedEntry {
     pub kind: EventKind,
     pub actor: AgentId,
+    /// Ownership recorded in this event snapshot, independent of its actor.
+    pub ownership: TaskOwnership,
     pub note: Note,
     pub summary: Note,
     pub at: Timestamp,
@@ -171,6 +173,7 @@ impl From<ChapterSource> for TaskChapter {
             entries.push(FeedEntry {
                 kind: event.kind,
                 actor: event.actor,
+                ownership: event.task.ownership,
                 note: event.note,
                 summary: event.task.common.progress.summary.clone(),
                 at: event.task.common.last_update,
@@ -279,6 +282,38 @@ mod tests {
                 task,
             }
         }
+    }
+    #[test]
+    fn entries_preserve_historical_ownership_through_reassignment() -> anyhow::Result<()> {
+        let mut task = Scenario::task()?;
+        let legacy = Scenario::event(task.clone());
+        let original = TaskOwnership::Assigned {
+            assignment: TaskAssignment::from(Scenario::agent()),
+        };
+        task.common.revision = task.common.revision.advance()?;
+        task.ownership = original.clone();
+        let assigned = Event {
+            kind: EventKind::Assigned,
+            ..Scenario::event(task.clone())
+        };
+        task.common.revision = task.common.revision.advance()?;
+        task.ownership = TaskOwnership::Assigned {
+            assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::TypescriptDev)),
+        };
+        let reassigned = Event {
+            kind: EventKind::Assigned,
+            ..Scenario::event(task.clone())
+        };
+        let current = task.ownership.clone();
+        let chapter = TaskChapter::from(ChapterSource {
+            task,
+            events: vec![legacy, assigned, reassigned],
+        });
+        assert_eq!(chapter.entries[0].ownership, TaskOwnership::Unrecorded);
+        assert_eq!(chapter.entries[1].ownership, original);
+        assert_eq!(chapter.entries[2].ownership, current);
+        assert_eq!(chapter.entries[2].actor, Scenario::agent());
+        Ok(())
     }
     #[test]
     fn chapters_keep_changes_once_and_preserve_updated_evidence() -> anyhow::Result<()> {

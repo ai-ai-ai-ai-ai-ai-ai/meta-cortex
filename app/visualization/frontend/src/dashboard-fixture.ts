@@ -128,6 +128,7 @@ export class Fixture {
             {
               kind: "created",
               actor: Fixture.PRIME,
+              ownership: { kind: "Unrecorded" },
               note: "Implement the release",
               summary: "",
               at: this.ago(150),
@@ -138,6 +139,7 @@ export class Fixture {
             {
               kind: "completed",
               actor: Fixture.PRIME,
+              ownership: { kind: "Unrecorded" },
               note: "Activity accepted",
               summary: "Release implemented",
               at: this.ago(130),
