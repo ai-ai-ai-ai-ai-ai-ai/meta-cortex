@@ -19,7 +19,7 @@ for inputs.
 In single-agent mode, the current agent applies this role directly.
 
 The coordinator retains responsibility for feature scope and acceptance.
-Report pending work as pending.
+Report pending work as pending. Include cleanup results in the return to Team Gizmo.
 
 ## Required actions
 
