@@ -7,7 +7,7 @@ use super::{LedgerReader, Observation, Page, PageIndex, RecordLimit};
 use crate::LedgerError;
 use crate::agents::AgentId;
 use crate::model::{Feature, LeaseHealth, Phase, TaskState};
-use crate::store::relational::{FeatureTable, JsonFunction, TaskTable};
+use crate::store::relational::{EventTable, FeatureTable, JsonFunction, TaskTable};
 use crate::store::sql::SqlStatement;
 use crate::values::{Note, TaskId, Timestamp};
 pub use outcomes::{FeatureOutcome, LatestDelivery};
@@ -227,6 +227,8 @@ pub struct FeatureSummary {
     pub feature: Feature,
     pub totals: WorkflowTotals,
     pub active: Vec<ActiveWork>,
+    /// Distinct roles that actually authored saved events.
+    pub actors: Vec<AgentId>,
     /// Pull requests recorded in task progress extensions, most often recorded first.
     pub pull_requests: Vec<PullRequest>,
     /// Live tasks no other task depends on, most recently updated first.
@@ -342,6 +344,7 @@ impl LedgerReader {
         let StateCounts(flow) = counts.clone();
         let pull_requests = self.pull_requests(&feature).await?;
         let shape = self.shape(&feature).await?;
+        let actors = self.actors(&feature).await?;
         Ok(FeatureSummary {
             feature,
             totals: WorkflowTotals {
@@ -352,10 +355,31 @@ impl LedgerReader {
                 condition,
             },
             active,
+            actors,
             pull_requests,
             outcomes: shape.outcomes(),
             latest_delivery: shape.latest_delivery(),
         })
+    }
+    async fn actors(&self, feature: &Feature) -> Result<Vec<AgentId>, LedgerError> {
+        let actor = Func::cust(JsonFunction::JsonExtract)
+            .args([Expr::col(EventTable::Document), Expr::val("$.actor")]);
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .distinct()
+                .expr(actor.clone())
+                .from(EventTable::Table)
+                .and_where(Expr::col(EventTable::FeatureId).eq(feature.id.to_string()))
+                .order_by_expr(actor.into(), Order::Asc)
+                .to_owned(),
+        )?
+        .query(&self.connection)
+        .await?;
+        let mut actors = Vec::new();
+        while let Some(row) = rows.next().await? {
+            actors.push(serde_json::from_str(&row.get::<String>(0)?)?);
+        }
+        Ok(actors)
     }
     async fn active(&self, query: ActiveQuery<'_>) -> Result<Vec<ActiveWork>, LedgerError> {
         let last_update = JsonPath::from("$.common.last_update").extract();

@@ -11,7 +11,7 @@
     ReadController,
   } from "./dashboard-state.svelte";
   import { TimeLook } from "./presentation";
-  import JournalPage from "./JournalPage.svelte";
+  import FeaturePage from "./FeaturePage.svelte";
 
   const dashboard = new ReadController(new DashboardApi());
   const live = new LiveRefresh();
@@ -29,15 +29,13 @@
   $effect(() => live.run(Effect.sync(() => dashboard.refresh())));
 </script>
 
-<div class="min-h-dvh bg-background">
-  <header
-    class="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/90 px-4 backdrop-blur md:px-8"
-  >
+<div class="app">
+  <header class="topbar">
     <span
-      class="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground"
+      class="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground"
       aria-hidden="true"><Network class="size-4" /></span
     >
-    <span class="mr-auto text-sm font-semibold">Meta-Cortex</span>
+    <span class="mr-auto text-sm font-semibold">Workbench</span>
     <p
       class="hidden items-center gap-2 text-xs text-muted-foreground sm:flex"
       role="status"
@@ -62,7 +60,7 @@
     <Button
       variant="ghost"
       size="sm"
-      class="h-10"
+      class="h-7"
       onclick={() => live.toggle()}
       aria-label={live.label()}
     >
@@ -73,7 +71,7 @@
     <Button
       variant="outline"
       size="sm"
-      class="h-10"
+      class="h-7"
       disabled={dashboard.busy()}
       onclick={() => dashboard.refresh()}
       aria-label="Refresh now"
@@ -85,7 +83,7 @@
     </Button>
   </header>
 
-  <main class="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-8">
+  <main class="page">
     {#each dashboard.failures() as failure (failure.message)}
       <div
         role="alert"
@@ -109,11 +107,7 @@
     {/each}
 
     {#each dashboard.journals() as summaries, index (index)}
-      <JournalPage
-        {summaries}
-        now={clock.now}
-        truncated={dashboard.truncated()}
-      />
+      <FeaturePage {summaries} truncated={dashboard.truncated()} />
     {:else}
       {#if dashboard.failures().length === 0}
         <div role="status" class="space-y-4" aria-label="Reading the ledger">

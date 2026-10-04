@@ -137,13 +137,15 @@ identifies who recorded it, not who actually authored that Git commit.
 
    It resolves the existing repository identity and shared database from the
    current directory, then opens the native Tauri Workbench window.
-2. The window opens on a feature journal grouped by the day each feature was
-   last active, newest first. Each card shows the feature's objective, status,
-   recorded pull request, ID, completed task count, elapsed span, latest
-   delivery, and how long open work has been quiet. Recorded blocked reasons and
-   expired claims appear as attention reasons. A progress bar splits tasks by
-   state, and Delivers lists the deliverables. The window refreshes every five
-   seconds until paused.
+2. The window opens on a split feature preview, newest activity first. Brief
+   cards show the title, precise first-task date, expandable objective, compact
+   progress, recorded roles, and PR links. The selected briefing adds the task
+   inventory, latest update, start/finish times, elapsed duration, and branch.
+   Open a task block or **Open workflow** to see task chapters. One shared index
+   navigates both **Log** and **Time windows** in the right panel. Log actions
+   show recording actors, time, revision, and expandable evidence. Time windows
+   show task creation through last update, including concurrent task lifetimes.
+   PR links open in the system browser.
 3. Close the window to exit.
 
 The shipped executable embeds its Svelte/TypeScript frontend assets. Native IPC
@@ -221,13 +223,15 @@ Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
 current views refresh. Full-feature state counts summarize recorded task states
-in the journal. A feature's deliverables are its non-cancelled tasks that no
+in the split feature preview. A feature's deliverables are its non-cancelled tasks that no
 other recorded task depends on, excluding Gizmo coordination tasks; its latest
 delivery is the most recently updated integrated or completed task. A feature's
 pull requests are GitHub pull request URLs found in its tasks' current progress
 extensions, most often recorded first; no pull request field is stored. Feature
-work dates use the earliest task creation and latest task update across all
-pages. Elapsed spans include waiting, not just active execution.
+start uses the earliest task creation. Finish is available when all tasks are
+closed and terminal events are recorded; later annotations do not extend it.
+Elapsed duration includes waiting. Timeline windows instead use task creation
+and last update and do not imply uninterrupted agent execution.
 Feature creation and completion events are not stored.
 Recorded ownership identifies the assigned role and reporting target. Task
 creators, claimed workers, and event actors remain separate recorded facts; none
@@ -254,9 +258,11 @@ roles and activities when continuing the feature.
 
 ### Refresh and pages
 
-The native journal reads up to 100 features, most recently active first;
+The native feature list reads up to 100 features, most recently active first;
 features without tasks follow in ID order. It notes when more exist and refreshes every five seconds; Pause stops automatic reads, Refresh
-reads at once, and Retry follows an observation failure.
+reads at once, and Retry follows an observation failure. Selected workflow detail
+consumes all task/history pages and refreshes when recorded activity changes.
+Evidence repeated across revisions appears only when changed.
 
 Feature, task, and history queries return at most 100 records per page. Snapshot
 request page indexes and text remain zero-based. Snapshot retains

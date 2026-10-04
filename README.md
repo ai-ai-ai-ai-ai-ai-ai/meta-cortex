@@ -497,20 +497,31 @@ existing repository identity and shared database, then opens the native Tauri
 Workbench window. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
-The window opens on a feature journal: a timeline grouped by the day each
-feature was last active, newest first. Each card leads with what the feature is
-for, then its status, pull request and ID, a sentence such as
-`12 of 12 tasks done in 53m · last task integrated 5h ago`, and how long open
-work has been quiet. Blocked tasks and workers that stopped reporting are
-listed in red. A progress bar splits the tasks by state, and Delivers lists the
-specialist tasks no other task depends on, which are the feature's deliverables.
-The dashboard refreshes every five seconds; Pause stops it and Refresh reads at
-once. These reads never update the ledger.
+The window opens on a split feature preview. Compact cards show the title,
+precise first-task date, expandable description, task progress, recorded roles,
+and pull requests. Selecting a card opens a briefing with task inventory,
+latest recorded update, start and finish times, elapsed duration, and branch.
+Each inventory block opens that task in the full workflow.
 
-Pull requests come from GitHub pull request URLs that tasks record in their
-progress extensions, such as `pr_url`; click one to copy its link. Feature
-creation and completion events are not stored, so dates are task activity bounds.
-The journal covers the 100 most recently active features.
+The workflow keeps a shared agent/task index beside two views: **Log** presents
+task chapters with distinct action icons, time and revision metadata, and
+expandable commands, findings, next steps, checkpoints, and saved details.
+**Time windows** compares task lifetimes from creation to their latest recorded
+update. Overlap does not prove continuous agent execution. Select a window to
+jump to its log. Repeated evidence appears only when it changes.
+
+The dashboard refreshes summaries every five seconds; Pause stops automatic
+reads and Refresh reads at once. Selected workflow history refreshes when its
+recorded activity changes. Reads use read-only multiprocess WAL connections;
+no HTTP server or database migration is involved.
+
+Pull requests come exclusively from URLs saved in task progress extensions,
+such as `pr_url`; clicking one opens the system browser. Feature start means
+first task creation. Finish means all tasks are closed, using their terminal
+events rather than later annotations; duration includes pauses. These values
+do not establish separate feature acceptance. The feature list covers the 100
+most recently active features and reports when more exist; a selected workflow
+loads every task and history page.
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
 an explicit project. `mode: Desktop` opens the native window; `mode: Snapshot`

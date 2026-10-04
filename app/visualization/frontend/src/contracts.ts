@@ -129,10 +129,127 @@ export type WorkflowCondition =
   | "active"
   | "waiting"
   | "finished";
+export type Checkpoint =
+  | {
+      kind: "unrecorded";
+    }
+  | {
+      commit: string;
+      kind: "git";
+    };
+export type CheckOutcome = "passed" | "failed" | "not_run";
+export type EventKind =
+  | "created"
+  | "claimed"
+  | "assigned"
+  | "heartbeat"
+  | "progress"
+  | "checkpoint"
+  | "ready"
+  | "integrated"
+  | "completed"
+  | "requeued"
+  | "cancelled";
+export type RecordedRole =
+  | {
+      kind: "Unrecorded";
+      [k: string]: unknown;
+    }
+  | {
+      agent: AgentId;
+      kind: "Recorded";
+      [k: string]: unknown;
+    };
+/**
+ * V1 tasks did not record an intended owner or reporting line.
+ */
+export type TaskOwnership =
+  | {
+      kind: "Unrecorded";
+    }
+  | {
+      assignment: TaskAssignment;
+      kind: "Assigned";
+    };
+export type ReportingTarget =
+  | {
+      kind: "Host";
+    }
+  | {
+      coordinator: GizmoAgent;
+      kind: "Gizmo";
+    };
+export type TaskState =
+  | {
+      kind: "queued";
+    }
+  | {
+      assignment: Assignment;
+      kind: "active";
+    }
+  | {
+      agent: AgentId;
+      attempt: number;
+      kind: "ready";
+    }
+  | {
+      commit: string;
+      kind: "integrated";
+    }
+  | {
+      agent: AgentId;
+      attempt: number;
+      kind: "completed";
+    }
+  | {
+      kind: "cancelled";
+      reason: Note;
+    };
+export type Phase =
+  | {
+      kind: "working";
+    }
+  | {
+      kind: "blocked";
+      reason: Note;
+    };
+/**
+ * Current task shape. V1 payloads are decoded by the separate legacy task record.
+ */
+export type TaskRecordVersion = 2;
+export type Workspace =
+  | {
+      kind: "read_only";
+    }
+  | {
+      kind: "feature";
+    }
+  | {
+      branch: string;
+      kind: "git";
+      path: string;
+    };
+export type WorkflowTiming =
+  | {
+      kind: "Empty";
+      [k: string]: unknown;
+    }
+  | {
+      kind: "Running";
+      started: number;
+      [k: string]: unknown;
+    }
+  | {
+      finished: number;
+      kind: "Finished";
+      started: number;
+      [k: string]: unknown;
+    };
 
 export interface DesktopContract {
   failure: DesktopFailure;
   reply: DesktopReply;
+  workflow: FeatureWorkflow;
   [k: string]: unknown;
 }
 /**
@@ -152,6 +269,10 @@ export interface Page {
 }
 export interface FeatureSummary {
   active: ActiveWork[];
+  /**
+   * Distinct roles that actually authored saved events.
+   */
+  actors: AgentId[];
   feature: Feature;
   latest_delivery: LatestDelivery;
   /**
@@ -241,4 +362,86 @@ export interface FlowCount {
   count: number;
   state: FlowState;
   [k: string]: unknown;
+}
+export interface FeatureWorkflow {
+  chapters: TaskChapter[];
+  feature: string;
+  timing: WorkflowTiming;
+  [k: string]: unknown;
+}
+export interface TaskChapter {
+  entries: FeedEntry[];
+  role: RecordedRole;
+  status: FlowState;
+  task: TaskV2;
+  [k: string]: unknown;
+}
+export interface FeedEntry {
+  actor: AgentId;
+  at: number;
+  checkpoint: Checkpoint;
+  /**
+   * Only evidence changed since the previous revision of this task.
+   */
+  evidence: Progress[];
+  kind: EventKind;
+  note: Note;
+  revision: number;
+  summary: Note;
+  [k: string]: unknown;
+}
+export interface Progress {
+  checks: Check[];
+  /**
+   * Task-specific data only. Coordination never interprets these keys.
+   */
+  extensions?: {
+    [k: string]: unknown;
+  };
+  findings: Note[];
+  next_steps: Note[];
+  summary: Note;
+}
+export interface Check {
+  command: Note;
+  evidence: Note;
+  outcome: CheckOutcome;
+}
+export interface TaskV2 {
+  common: TaskCommon;
+  ownership: TaskOwnership;
+  state: TaskState;
+  version: TaskRecordVersion;
+  workspace: Workspace;
+}
+/**
+ * Shared task fields in V2 and later records.
+ * Keep this shape stable for retained readers; changed field meanings need a new type.
+ */
+export interface TaskCommon {
+  acceptance: Note[];
+  attempt: number;
+  checkpoint: Checkpoint;
+  created_at: number;
+  dependencies: string[];
+  feature: string;
+  id: string;
+  last_progress: number;
+  last_update: number;
+  objective: Note;
+  progress: Progress;
+  revision: number;
+}
+/**
+ * The intended owner and reporting line survive every task state and attempt.
+ */
+export interface TaskAssignment {
+  agent: AgentId;
+  reports_to: ReportingTarget;
+}
+export interface Assignment {
+  agent: AgentId;
+  attempt: number;
+  expires_at: number;
+  phase: Phase;
 }

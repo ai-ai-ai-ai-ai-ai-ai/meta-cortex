@@ -125,3 +125,23 @@ it("validates native replies and preserves Unicode and permitted extensions", as
   native.invoke.mockResolvedValueOnce(reply);
   expect(await Effect.runPromise(new DashboardApi().read())).toEqual(reply);
 });
+
+it("validates full workflow replies and rejects a malformed event", async () => {
+  const workflow = new Fixture().workflow();
+  native.invoke.mockResolvedValueOnce(workflow);
+  expect(
+    await Effect.runPromise(new DashboardApi().workflow(workflow.feature)),
+  ).toEqual(workflow);
+  native.invoke.mockResolvedValueOnce({
+    ...workflow,
+    timing: { kind: "Finished", started: 1 },
+  });
+  expect(
+    await Effect.runPromise(
+      Effect.result(new DashboardApi().workflow(workflow.feature)),
+    ),
+  ).toMatchObject({
+    _tag: "Failure",
+    failure: { kind: ReadFailureKind.InvalidReply },
+  });
+});

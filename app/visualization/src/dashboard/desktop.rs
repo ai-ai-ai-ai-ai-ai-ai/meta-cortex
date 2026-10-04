@@ -1,11 +1,12 @@
 use super::{DashboardError, DashboardReport, NativeExitCode};
-use meta_cortex_workbench::values::Note;
-use meta_cortex_workbench::{FeatureSummary, Page, PageIndex, Workbench};
+use meta_cortex_workbench::values::{FeatureId, Note};
+use meta_cortex_workbench::{FeatureSummary, FeatureWorkflow, Page, PageIndex, Workbench};
 use schemars::JsonSchema;
 use serde::Serialize;
 use std::future::Future;
 use std::sync::Arc;
 use tauri::{State, async_runtime};
+use tauri_plugin_opener::init;
 use tokio::runtime::Builder;
 
 /// The most recently active features with their totals, held work, outcomes and pull requests.
@@ -33,6 +34,7 @@ impl From<DashboardError> for DesktopFailure {
 #[derive(JsonSchema)]
 pub struct DesktopContract {
     pub reply: DesktopReply,
+    pub workflow: FeatureWorkflow,
     pub failure: DesktopFailure,
 }
 pub struct DesktopLaunch {
@@ -42,8 +44,9 @@ impl DesktopLaunch {
     /// Run only after async preparation returns to the executable's original main thread.
     pub fn run(self) -> Result<DashboardReport, DashboardError> {
         let app = tauri::Builder::default()
+            .plugin(init())
             .manage(Arc::new(self))
-            .invoke_handler(tauri::generate_handler![dashboard_read])
+            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
             .build(tauri::generate_context!())?;
         match app.run_return(|_handle, _event| {}) {
             0 => {}
@@ -58,6 +61,12 @@ impl DesktopLaunch {
         Ok(DesktopReply {
             features: observation.summaries(PageIndex::FIRST).await?,
         })
+    }
+    fn blocking_workflow(&self, feature: FeatureId) -> Result<FeatureWorkflow, DashboardError> {
+        Builder::new_current_thread()
+            .enable_time()
+            .build()?
+            .block_on(async { Ok(self.workbench.observe().await?.workflow(feature).await?) })
     }
     fn blocking_read(&self) -> Result<DesktopReply, DashboardError> {
         Builder::new_current_thread()
@@ -74,6 +83,22 @@ fn dashboard_read(
     let owner = Arc::clone(state.inner());
     async move {
         async_runtime::spawn_blocking(move || owner.blocking_read())
+            .await
+            .map_err(DashboardError::from)
+            .flatten()
+            .map_err(DesktopFailure::from)
+    }
+}
+
+// Tauri injects State independently of the serialized feature argument.
+#[tauri::command(async)]
+fn dashboard_workflow(
+    state: State<'_, Arc<DesktopLaunch>>,
+    feature: FeatureId,
+) -> impl Future<Output = Result<FeatureWorkflow, DesktopFailure>> + Send + 'static {
+    let owner = Arc::clone(state.inner());
+    async move {
+        async_runtime::spawn_blocking(move || owner.blocking_workflow(feature))
             .await
             .map_err(DashboardError::from)
             .flatten()

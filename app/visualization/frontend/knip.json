@@ -7,5 +7,6 @@
   ],
   "project": ["src/**/*.{ts,svelte}", "tools/**/*.ts"],
   "ignore": ["src/contracts.ts"],
-  "ignoreDependencies": ["tw-animate-css"]
+  "ignoreDependencies": ["tw-animate-css"],
+  "ignoreMembers": ["Features", "Workflow", "Log", "Windows", "Closed", "Open"]
 }

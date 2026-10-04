@@ -9,7 +9,8 @@ use meta_cortex_workbench::request::{
 use meta_cortex_workbench::values::Extensions;
 use meta_cortex_workbench::values::{BranchName, FeatureId, LeaseSeconds, Note, Revision, TaskId};
 use meta_cortex_workbench::{
-    Blocker, FeatureActivity, FeatureSummary, FlowState, LatestDelivery, WorkflowCondition,
+    Blocker, FeatureActivity, FeatureSummary, FlowState, LatestDelivery, RecordedRole,
+    WorkflowCondition,
 };
 use meta_cortex_workbench::{
     DataDirectory, HistoryPage, LedgerError, Observation, PageEnd, PageIndex, TaskPage, Workbench,
@@ -203,6 +204,9 @@ fn read_only_observation_preserves_records_history_schema_and_files() -> anyhow:
             assert_eq!(outcomes, [(Scenario::task()?, FlowState::Queued)]);
             assert_eq!(summary.latest_delivery, LatestDelivery::Nothing);
 
+            let workflow = observation.workflow(Scenario::feature()?).await?;
+            assert_eq!(workflow.chapters.len(), 1);
+            assert_eq!(workflow.chapters[0].entries.len(), 1);
             let history = observation
                 .history(HistoryPage {
                     feature: Scenario::feature()?,
@@ -486,6 +490,14 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(second.end, PageEnd::Complete);
         assert_eq!(first.records[0].task, task);
         assert_eq!(second.records[1].task.common.revision, Revision::INITIAL);
+        let workflow = observation.workflow(Scenario::feature()?).await?;
+        assert_eq!(workflow.chapters.len(), 101);
+        let chapter = workflow.chapters.iter().find(|chapter| chapter.task.common.id == task.common.id)
+            .ok_or_else(|| anyhow::anyhow!("task chapter missing"))?;
+        assert_eq!(chapter.entries.len(), 102);
+        assert_eq!(chapter.entries.first().ok_or_else(|| anyhow::anyhow!("first event"))?.revision, Revision::INITIAL);
+        assert_eq!(chapter.entries.last().ok_or_else(|| anyhow::anyhow!("last event"))?.revision, task.common.revision);
+        assert!(matches!(chapter.role, RecordedRole::Recorded { agent: recorded } if recorded == agent));
         let later = observation.summaries(PageIndex::FIRST.next()).await?;
         assert_eq!(later.end, PageEnd::Complete);
         assert!(matches!(

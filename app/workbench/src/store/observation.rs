@@ -1,3 +1,4 @@
+mod detail;
 mod workflow;
 use super::PERSISTENT_IO;
 use super::relational::{EventTable, FeatureTable, TaskTable};
@@ -9,6 +10,7 @@ use crate::request::TaskQuery;
 use crate::values::{FeatureId, TaskId};
 use crate::versions::StorageVersion;
 use derive_more::Display;
+pub use detail::{FeatureWorkflow, FeedEntry, RecordedRole, TaskChapter, WorkflowTiming};
 use schemars::JsonSchema;
 use sea_query::{Expr, ExprTrait, Iden, Order, Query};
 use serde::{Deserialize, Serialize};
