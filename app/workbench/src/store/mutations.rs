@@ -42,6 +42,14 @@ impl Ledger {
         };
         let task = documents.task(&input.task).await?;
         task.require_revision(input.expected_revision)?;
+        let objective = match &task.common.objective {
+            Note::Empty => "not recorded".to_owned(),
+            Note::Text(text) => text.to_string(),
+        };
+        let note = Note::from(format!(
+            "{} assigned task {} to {}, reporting to {}. Objective: {objective}. State: queued, awaiting claim.",
+            input.actor, task.common.id, input.assignment.agent, input.assignment.reports_to,
+        ));
         let mut task = task.assign(input.assignment)?;
         task.common.last_update = Timestamp::now()?;
         let task = documents
@@ -49,7 +57,7 @@ impl Ledger {
                 version: RecordVersion::CURRENT,
                 kind: EventKind::Assigned,
                 actor: input.actor,
-                note: Note::from("Agent and reporting coordinator assigned".to_owned()),
+                note,
                 task,
             })
             .await?;
@@ -286,11 +294,11 @@ impl TaskChange<'_> {
 mod tests {
     use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
     use crate::model::worker::WorkerIdentity;
-    use crate::model::workflow::TaskOwnership;
+    use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{EventKind, Progress, Task, TaskCommon, TaskState, Workspace};
     use crate::request::{
-        ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, InitFeature, StoppedExecution,
-        WorkerAction, WorkerUpdate,
+        AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, InitFeature,
+        StoppedExecution, WorkerAction, WorkerUpdate,
     };
     use crate::store::relational::{EventTable, TaskTable};
     use crate::store::sql::SqlStatement;
@@ -420,6 +428,30 @@ mod tests {
                 },
             }
         }
+    }
+
+    #[test]
+    fn assignment_notes_name_the_transition_and_preserve_queued_state() -> anyhow::Result<()> {
+        let scenario = Scenario::create()?;
+        Builder::new_current_thread().enable_time().build()?.block_on(async {
+            let mut ledger = scenario.ledger().await?;
+            let actor = AgentId::Gizmo(GizmoAgent::Gizmo);
+            struct AssignmentExample { recipient: AgentId, objective: Note, description: &'static str }
+            for (index, example) in [
+                AssignmentExample { recipient: AgentId::Development(DevelopmentAgent::RustDev), objective: Note::from("Replace vague assignment notes".to_owned()), description: "Replace vague assignment notes" },
+                AssignmentExample { recipient: AgentId::Gizmo(GizmoAgent::GizmoPrime), objective: Note::Empty, description: "not recorded" },
+            ].into_iter().enumerate() {
+                let recipient = example.recipient;
+                let id = TaskId::try_from(format!("note-{index}"))?;
+                let task = ledger.create(CreateTask { feature: ledger.info().feature.id, task: id.clone(), actor, objective: example.objective, acceptance: vec![Note::from("Names the actual assignment".to_owned())], dependencies: Vec::new(), workspace: Workspace::ReadOnly, progress: Scenario::progress() }).await?;
+                let assigned = ledger.assign(AssignTask { feature: ledger.info().feature.id, task: id.clone(), expected_revision: task.common.revision, actor, assignment: TaskAssignment::from(recipient) }).await?;
+                assert_eq!(assigned.state, TaskState::Queued);
+                let event = ledger.history(&id).await?.pop().ok_or_else(|| anyhow::anyhow!("assignment event missing"))?;
+                assert_eq!(event.kind, EventKind::Assigned);
+                assert_eq!(event.note.to_string(), format!("{actor} assigned task {id} to {recipient}, reporting to {}. Objective: {}. State: queued, awaiting claim.", recipient.reports_to(), example.description));
+            }
+            Ok(())
+        })
     }
 
     #[test]
