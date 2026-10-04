@@ -29,7 +29,12 @@
     </div>
     <span class="pill">{feature.label()}</span>
   </div>
-  <h2>{feature.title()}</h2>
+  <div class="briefing-title-row">
+    <h2>{feature.title()}</h2>
+    <button class="primary-link" onclick={() => open("")}
+      >Open workflow<ArrowRight size={16} /></button
+    >
+  </div>
   <p class="objective">{summary.feature.objective}</p>
   <dl class="briefing-dates">
     <div>
@@ -100,8 +105,6 @@
   <footer class="briefing-footer">
     <span class="branch"
       ><GitBranch size={14} /><code>{summary.feature.branch}</code></span
-    ><button class="primary-link" onclick={() => open("")}
-      >Open workflow<ArrowRight size={16} /></button
     >
   </footer>
 </article>
