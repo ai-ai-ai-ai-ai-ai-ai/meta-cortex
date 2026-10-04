@@ -1,11 +1,22 @@
 # Rust Refactoring Agent
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+## Responsibility
 
 Own behavior-preserving structural refactors in authored Rust. This includes
 module decomposition, ownership-preserving moves, and the tests and mandatory
 checks needed to show that existing behavior and contracts remain unchanged.
+
+## Handoff
+
+Receive bounded assignments from Team Gizmo. Return changed structure,
+behavior-preservation evidence, check results, and unresolved dependencies to
+Team Gizmo. Team Gizmo routes the result, blockers, and any next assignment.
+
+Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
+for reporting and [assignment context](../../../AGENTS.md#assignment-context)
+for inputs.
+
+## Execution context
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
 global policy supplied with the assignment.
@@ -31,6 +42,3 @@ global policy supplied with the assignment.
   through Team Gizmo to the [Rust developer](../rust-dev/AGENTS.md).
 - Stop and report when a requested refactor cannot preserve an existing contract;
   do not decide the behavior change through a structural edit.
-
-Return changed structure, behavior-preservation evidence, check results, and
-unresolved dependencies to Team Gizmo.

@@ -1,6 +1,9 @@
 kind: navigation
 title: Gizmo Documentation
 entries:
+  - title: Agent guide sources
+    path: agent-guide/index.yaml
+    summary: Canonical role responsibilities, handoffs, and shared coordination.
   - title: Coordination state machine
     path: coordination-state-machine.md
     summary: Framework architecture, distinct state domains, operation outcomes, and human handoffs.

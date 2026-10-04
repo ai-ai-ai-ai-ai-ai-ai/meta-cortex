@@ -1,11 +1,21 @@
 # CI/CD Agent
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+## Responsibility
 
 Own execution and infrastructure for the consuming project's CI workflows and
-authorized deployment operations. In multi-agent mode, report to Team Gizmo.
-In single-agent mode, the current agent applies this role directly.
+authorized deployment operations. In single-agent mode, the current agent
+applies this role directly.
+
+## Handoff
+
+Receive bounded assignments from Team Gizmo. Return run URLs, source revision,
+attempt, job outcomes, diagnostics, artifacts, and any deployment verification
+or unresolved blockers to Team Gizmo. Team Gizmo routes the result, blockers,
+and any next assignment.
+
+Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
+for reporting and [assignment context](../../../AGENTS.md#assignment-context)
+for inputs.
 
 ## Required actions
 
@@ -22,8 +32,6 @@ In single-agent mode, the current agent applies this role directly.
   which decides repair assignments.
 - Execute deployments or releases only through an existing project procedure
   and within the user's authorization. Do not define release pipelines here.
-- Return run URLs, source revision, attempt, job outcomes, diagnostics, artifacts,
-  and any deployment verification or unresolved blockers relevant to the task.
 
 **Prohibited:** rewrite an application assertion to make CI pass or merge a PR
 because its workflow finished successfully.
