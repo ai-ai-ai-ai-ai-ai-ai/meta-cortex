@@ -22,7 +22,6 @@ export type DesktopFailure =
       [k: string]: unknown;
     };
 export type Note = string;
-export type PageEnd = "Complete" | "More";
 /**
  * An agent role scoped to its owning Cortex team.
  */
@@ -66,6 +65,35 @@ export type SreAgent =
   | "DockerSpecialist"
   | "KubernetesSpecialist";
 export type DeliveryAgent = "IntegrationAgent" | "PrAgent";
+export type ReportingTarget =
+  | {
+      kind: "Host";
+    }
+  | {
+      coordinator: GizmoAgent;
+      kind: "Gizmo";
+    };
+export type GuideDocumentId =
+  | {
+      agent: AgentId;
+      kind: "Agent";
+      [k: string]: unknown;
+    }
+  | {
+      kind: "Protocol";
+      protocol: GuideProtocol;
+      [k: string]: unknown;
+    };
+export type GuideProtocol = "Communication" | "Coordination" | "Verification";
+export type GuideSection = "Whole" | "Responsibility" | "Handoff";
+export type GuideTeamId =
+  | "Gizmo"
+  | "Development"
+  | "Ai"
+  | "Security"
+  | "Sre"
+  | "Delivery";
+export type PageEnd = "Complete" | "More";
 /**
  * Why held work cannot proceed, as its worker recorded it.
  */
@@ -150,14 +178,6 @@ export type EventKind =
   | "completed"
   | "requeued"
   | "cancelled";
-export type ReportingTarget =
-  | {
-      kind: "Host";
-    }
-  | {
-      coordinator: GizmoAgent;
-      kind: "Gizmo";
-    };
 export type Phase =
   | {
       kind: "working";
@@ -305,8 +325,47 @@ export type WorkflowTiming =
 
 export interface DesktopContract {
   failure: DesktopFailure;
+  guide: AgentGuide;
   reply: DesktopReply;
   workflow: FeatureWorkflow;
+  [k: string]: unknown;
+}
+export interface AgentGuide {
+  agents: GuideAgent[];
+  documents: GuideDocument[];
+  reviews: ReviewViaGizmo[];
+  teams: GuideTeam[];
+  [k: string]: unknown;
+}
+export interface GuideAgent {
+  agent: AgentId;
+  handoff: Note;
+  label: Note;
+  reports_to: ReportingTarget;
+  responsibility: Note;
+  source: GuideSource;
+  [k: string]: unknown;
+}
+export interface GuideSource {
+  document: GuideDocumentId;
+  section: GuideSection;
+  [k: string]: unknown;
+}
+export interface GuideDocument {
+  id: GuideDocumentId;
+  markdown: Note;
+  path: string;
+  [k: string]: unknown;
+}
+export interface ReviewViaGizmo {
+  author: AgentId;
+  coordinator: GizmoAgent;
+  reviewer: AgentId;
+  [k: string]: unknown;
+}
+export interface GuideTeam {
+  agents: AgentId[];
+  team: GuideTeamId;
   [k: string]: unknown;
 }
 /**
