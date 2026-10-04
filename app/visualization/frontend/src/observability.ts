@@ -150,6 +150,7 @@ export class RecordedTime {
   }
 }
 export class WorkflowLook {
+  static readonly EMPTY_TIMELINE = "No recorded task lifetimes or events.";
   constructor(readonly workflow: FeatureWorkflow) {}
   roles(): ReadonlyArray<string> {
     return [
@@ -289,39 +290,75 @@ class TaskBlock {
     }
   }
 }
+interface ActionAppearance {
+  readonly kind: EventKind;
+  readonly label: string;
+  readonly icon: typeof Check;
+}
 export class ActionLook {
-  static readonly LABELS: Record<EventKind, string> = {
-    created: "Task created",
-    assigned: "Assignment recorded",
-    claimed: "Task claimed",
-    heartbeat: "Heartbeat",
-    progress: "Progress update",
-    checkpoint: "Checkpoint recorded",
-    ready: "Ready for handoff",
-    integrated: "Integration recorded",
-    completed: "Activity accepted",
-    requeued: "Task requeued",
-    cancelled: "Task cancelled",
+  static readonly TEXT = {
+    recordedBy: "Recorded by",
+    task: "Task",
+    assignedTo: "Assigned to",
+    reportsTo: "Reports to",
+    unrecorded: "Unrecorded",
+    host: "Host",
+    revision: "revision",
   };
-  static readonly ICONS: Record<EventKind, typeof Check> = {
-    created: FilePlus,
-    assigned: UserPlus,
-    claimed: Play,
-    heartbeat: HeartPulse,
-    progress: AlignLeft,
-    checkpoint: GitCommitHorizontal,
-    ready: Flag,
-    integrated: GitMerge,
-    completed: Check,
-    requeued: RotateCcw,
-    cancelled: X,
+  static readonly LOOKS: Record<EventKind, ActionAppearance> = {
+    created: { kind: "created", label: "Task created", icon: FilePlus },
+    assigned: {
+      kind: "assigned",
+      label: "Assignment recorded",
+      icon: UserPlus,
+    },
+    claimed: { kind: "claimed", label: "Task claimed", icon: Play },
+    heartbeat: { kind: "heartbeat", label: "Heartbeat", icon: HeartPulse },
+    progress: { kind: "progress", label: "Progress update", icon: AlignLeft },
+    checkpoint: {
+      kind: "checkpoint",
+      label: "Checkpoint recorded",
+      icon: GitCommitHorizontal,
+    },
+    ready: { kind: "ready", label: "Ready for handoff", icon: Flag },
+    integrated: {
+      kind: "integrated",
+      label: "Integration recorded",
+      icon: GitMerge,
+    },
+    completed: { kind: "completed", label: "Activity accepted", icon: Check },
+    requeued: { kind: "requeued", label: "Task requeued", icon: RotateCcw },
+    cancelled: { kind: "cancelled", label: "Task cancelled", icon: X },
   };
+  recipient(): string {
+    switch (this.entry.ownership.kind) {
+      case "Unrecorded":
+        return ActionLook.TEXT.unrecorded;
+      case "Assigned":
+        return new AgentLook(this.entry.ownership.assignment.agent).name();
+    }
+  }
+  reporting(): string {
+    switch (this.entry.ownership.kind) {
+      case "Unrecorded":
+        return ActionLook.TEXT.unrecorded;
+      case "Assigned":
+        switch (this.entry.ownership.assignment.reports_to.kind) {
+          case "Host":
+            return ActionLook.TEXT.host;
+          case "Gizmo":
+            return AgentLook.ROLES[
+              this.entry.ownership.assignment.reports_to.coordinator
+            ];
+        }
+    }
+  }
   constructor(readonly entry: FeedEntry) {}
   label(): string {
-    return ActionLook.LABELS[this.entry.kind];
+    return ActionLook.LOOKS[this.entry.kind].label;
   }
   icon(): typeof Check {
-    return ActionLook.ICONS[this.entry.kind];
+    return ActionLook.LOOKS[this.entry.kind].icon;
   }
 }
 
@@ -355,6 +392,12 @@ export class EvidenceLook {
 }
 export class ChapterNavigation {
   constructor(private readonly id: string) {}
+  focus(): void {
+    Match.value(document.getElementById(`heading-${this.id}`)).pipe(
+      Match.when(Match.instanceOf(HTMLElement), (element) => element.focus()),
+      Match.orElse(() => {}),
+    );
+  }
   jump(): void {
     const node = document.getElementById(`task-${this.id}`);
     Match.value(node).pipe(

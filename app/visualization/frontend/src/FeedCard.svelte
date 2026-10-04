@@ -13,8 +13,9 @@
   import { AgentLook } from "./presentation";
   interface Props {
     entry: FeedEntry;
+    task: string;
   }
-  let { entry }: Props = $props();
+  let { entry, task }: Props = $props();
   let look = $derived(new ActionLook(entry));
   let Icon = $derived(look.icon());
 </script>
@@ -23,12 +24,20 @@
   <span class="window-dot" aria-hidden="true"></span>
   <details class="event">
     <summary
-      ><span class="event-icon"><Icon size={16} /></span>
+      ><span class="event-icon"
+        ><Icon size={16} strokeWidth={2} aria-hidden="true" /></span
+      >
       <div class="event-copy">
         <div class="kind-line">
           <strong>{look.label()}</strong><span
-            >{new AgentLook(entry.actor).name()}</span
+            >{ActionLook.TEXT.recordedBy}
+            {new AgentLook(entry.actor).name()}</span
           >
+        </div>
+        <div class="event-provenance">
+          <span>{ActionLook.TEXT.task} <code>{task}</code></span><span
+            >{ActionLook.TEXT.assignedTo} {look.recipient()}</span
+          ><span>{ActionLook.TEXT.reportsTo} {look.reporting()}</span>
         </div>
         <div class="action-meta">
           <time

@@ -461,3 +461,232 @@ ul.evidence-body li + li {
   line-height: 1.6;
   color: var(--muted);
 }
+.event-provenance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.event-icon {
+  flex-shrink: 0;
+}
+.event-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
+}
+.timeline-scroll {
+  overflow-x: auto;
+  padding: 4px 16px;
+  margin: 0 -4px;
+}
+.timeline-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.timeline-canvas {
+  min-width: 650px;
+}
+.time-axis {
+  display: flex;
+  margin-left: 151px;
+}
+.time-axis time {
+  text-align: center;
+}
+.duration-row {
+  align-items: start;
+  margin-top: 18px;
+}
+.duration-label {
+  min-height: 44px;
+}
+.duration-label small {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.task-bounds {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--muted);
+  font: 10px/1.7 var(--mono);
+  margin-bottom: 5px;
+}
+.duration-track {
+  overflow: visible;
+  height: auto;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(16.6667% - 1px),
+    var(--line) calc(16.6667% - 1px),
+    var(--line) 16.6667%
+  );
+  border-right: 1px solid var(--line);
+}
+.duration-bar {
+  top: 0;
+  bottom: 0;
+  opacity: 0.5;
+}
+.timeline-milestone {
+  position: absolute;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  background: var(--surface);
+  z-index: 1;
+  border-radius: 2px;
+}
+.timeline-milestone:focus-visible,
+.duration-bar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.timeline-milestone svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+}
+.milestone-neutral {
+  color: var(--muted);
+  border-radius: 50%;
+}
+.milestone-assignment {
+  color: var(--ink);
+}
+.milestone-progress {
+  color: var(--accent);
+}
+.milestone-checkpoint {
+  color: var(--status-ready);
+}
+.milestone-ready {
+  color: var(--status-ready);
+  border-radius: 8px 2px;
+}
+.milestone-integrated {
+  color: var(--status-integrated);
+}
+.milestone-completed {
+  color: var(--status-completed);
+  border-radius: 50%;
+}
+.milestone-requeued,
+.milestone-cancelled {
+  color: var(--destructive);
+}
+.timeline-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.timeline-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.timeline-legend svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+}
+.timeline-legend [data-type="created"],
+.timeline-legend [data-type="claimed"],
+.timeline-legend [data-type="heartbeat"] {
+  color: var(--muted);
+}
+.timeline-legend [data-type="assigned"] {
+  color: var(--ink);
+}
+.timeline-legend [data-type="progress"] {
+  color: var(--accent);
+}
+.timeline-legend [data-type="checkpoint"],
+.timeline-legend [data-type="ready"] {
+  color: var(--status-ready);
+}
+.timeline-legend [data-type="integrated"] {
+  color: var(--status-integrated);
+}
+.timeline-legend [data-type="completed"] {
+  color: var(--status-completed);
+}
+.timeline-legend [data-type="requeued"],
+.timeline-legend [data-type="cancelled"] {
+  color: var(--destructive);
+}
+.time-axis {
+  position: relative;
+  height: 22px;
+  display: block;
+}
+.time-axis time {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.time-axis time:first-child {
+  transform: none;
+}
+.time-axis time:last-child:not(:first-child) {
+  transform: translateX(-100%);
+}
+.milestone-progress,
+.timeline-legend [data-type="progress"] {
+  color: light-dark(#386482, #a2c5dc);
+}
+.milestone-integrated,
+.milestone-completed,
+.timeline-legend [data-type="integrated"],
+.timeline-legend [data-type="completed"] {
+  color: light-dark(#496d59, #a5c6ad);
+}
+.milestone-requeued,
+.timeline-legend [data-type="requeued"] {
+  color: light-dark(#8a6044, #d4b295);
+}
+.duration-bar {
+  opacity: 1;
+  container-type: inline-size;
+}
+.inline-task-bounds {
+  display: none;
+  position: absolute;
+  bottom: 3px;
+  left: 8px;
+  right: 8px;
+  justify-content: space-between;
+  gap: 10px;
+  font: 10px/1.5 var(--mono);
+  color: var(--ink);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.duration-track {
+  padding-bottom: 22px;
+}
+@container (min-width: 260px) {
+  .inline-task-bounds {
+    display: flex;
+  }
+}
+@media (max-width: 640px) {
+  .inline-task-bounds {
+    display: none;
+  }
+}
