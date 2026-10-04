@@ -17,6 +17,8 @@ for reporting and [assignment context](../../../AGENTS.md#assignment-context)
 for inputs.
 
 In single-agent mode, the current agent applies this role directly.
+Include the run attempt, artifacts, and any deployment verification relevant
+to the task in the result returned to Team Gizmo.
 
 ## Required actions
 
