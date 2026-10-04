@@ -110,6 +110,93 @@ fn dashboard_workflow(
 mod tests {
     use super::DesktopContract;
 
+    /// Explicitly invoked against a real repository, never a native-window claim.
+    #[test]
+    #[ignore = "requires explicit real repository, feature, ledger and output paths"]
+    fn actual_workflow_ipc_reads_existing_turso_without_writes() -> anyhow::Result<()> {
+        use super::{DesktopLaunch, dashboard_read, dashboard_workflow};
+        use meta_cortex_workbench::Workbench;
+        use meta_cortex_workbench::values::FeatureId;
+        use std::io::ErrorKind;
+        use std::path::PathBuf;
+        use std::sync::Arc;
+        use std::{env, fs};
+        use tauri::WebviewWindowBuilder;
+        use tauri::ipc::{CallbackFn, InvokeBody};
+        use tauri::test::{INVOKE_KEY, get_ipc_response, mock_builder, mock_context, noop_assets};
+        use tauri::webview::InvokeRequest;
+        #[derive(serde::Serialize)]
+        struct WorkflowInvocation {
+            feature: FeatureId,
+        }
+        let project = PathBuf::from(
+            env::var_os("META_CORTEX_IPC_PROJECT")
+                .ok_or_else(|| anyhow::anyhow!("META_CORTEX_IPC_PROJECT is required"))?,
+        );
+        let ledger = PathBuf::from(
+            env::var_os("META_CORTEX_IPC_LEDGER")
+                .ok_or_else(|| anyhow::anyhow!("META_CORTEX_IPC_LEDGER is required"))?,
+        );
+        let output = PathBuf::from(
+            env::var_os("META_CORTEX_IPC_OUTPUT")
+                .ok_or_else(|| anyhow::anyhow!("META_CORTEX_IPC_OUTPUT is required"))?,
+        );
+        let feature = FeatureId::try_from(env::var("META_CORTEX_IPC_FEATURE")?)?;
+        let before = fs::read(&ledger)?;
+        let wal = ledger.with_extension("db-wal");
+        let before_wal = match fs::read(&wal) {
+            Ok(bytes) => bytes,
+            Err(error) if error.kind() == ErrorKind::NotFound => Vec::new(),
+            Err(error) => return Err(error.into()),
+        };
+        let launch = DesktopLaunch {
+            workbench: Workbench::discover(&project)?,
+        };
+        let expected = serde_json::to_value(launch.blocking_workflow(feature.clone())?)?;
+        let app = mock_builder()
+            .manage(Arc::new(launch))
+            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
+            .build(mock_context(noop_assets()))?;
+        let webview = WebviewWindowBuilder::new(&app, "main", Default::default()).build()?;
+        let response = get_ipc_response(
+            &webview,
+            InvokeRequest {
+                cmd: "dashboard_workflow".to_owned(),
+                callback: CallbackFn(0),
+                error: CallbackFn(1),
+                url: "tauri://localhost".parse()?,
+                body: InvokeBody::Json(serde_json::to_value(WorkflowInvocation { feature })?),
+                headers: Default::default(),
+                invoke_key: INVOKE_KEY.to_owned(),
+            },
+        )
+        .map_err(|error| anyhow::anyhow!("IPC failed: {error}"))?
+        .deserialize::<serde_json::Value>()?;
+        assert_eq!(
+            response, expected,
+            "actual IPC handler must expose the public Workbench projection"
+        );
+        assert_eq!(
+            before,
+            fs::read(&ledger)?,
+            "observation must not modify the database"
+        );
+        let after_wal = match fs::read(&wal) {
+            Ok(bytes) => bytes,
+            Err(error) if error.kind() == ErrorKind::NotFound => Vec::new(),
+            Err(error) => return Err(error.into()),
+        };
+        assert_eq!(
+            before_wal, after_wal,
+            "observation must not append WAL records"
+        );
+        fs::write(output, serde_json::to_vec_pretty(&response)?)?;
+        println!(
+            "Tauri MockRuntime IPC -> actual dashboard_workflow -> Workbench -> real Turso; database and WAL bytes unchanged. No native window render asserted."
+        );
+        Ok(())
+    }
+
     #[test]
     fn committed_frontend_schema_matches_the_rust_contract() -> anyhow::Result<()> {
         let committed: serde_json::Value =

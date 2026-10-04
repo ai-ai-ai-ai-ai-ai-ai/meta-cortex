@@ -1,3 +1,4 @@
+import { Match } from "effect";
 import fixtureWorkflow from "./workflow-fixture.json";
 import { workflow } from "virtual:dashboard-validators";
 import type {
@@ -87,8 +88,10 @@ export class Fixture {
     },
   };
   workflow(): FeatureWorkflow {
-    if (workflow(fixtureWorkflow)) return structuredClone(fixtureWorkflow);
-    throw new Error("Regenerate the Rust workflow fixture");
+    return Match.value(fixtureWorkflow).pipe(
+      Match.when(workflow, (value) => structuredClone(value)),
+      Match.orElse(() => { throw new Error("Regenerate the Rust workflow fixture"); }),
+    );
   }
   reply(): DesktopReply {
     return { features: { records: [this.summary], end: "Complete" } };

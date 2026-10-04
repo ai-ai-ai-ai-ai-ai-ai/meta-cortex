@@ -154,6 +154,7 @@ impl RecordedWindow {
     fn record(mut self, entry: &FeedEntry) -> Self {
         match &entry.summary {
             Note::Empty => {}
+            Note::Text(text) if text.to_string().trim().is_empty() => {}
             Note::Text(_) => {
                 self.summary = entry.summary.clone();
                 self.summary_revision = entry.revision;
@@ -218,11 +219,13 @@ impl From<&GroupSource> for TimelineGroupIdentity {
 impl TimelineGroup {
     #[must_use]
     fn include(mut self, source: GroupSource) -> Self {
-        if let None = self.roles.iter().find(|role| **role == source.role) {
-            self.roles.push(source.role);
+        match self.roles.iter().find(|role| **role == source.role) {
+            Some(_) => {}
+            None => self.roles.push(source.role),
         }
-        if let None = self.tasks.iter().find(|task| **task == source.task) {
-            self.tasks.push(source.task);
+        match self.tasks.iter().find(|task| **task == source.task) {
+            Some(_) => {}
+            None => self.tasks.push(source.task),
         }
         self
     }
@@ -350,7 +353,7 @@ mod tests {
     use crate::model::{
         Assignment, Checkpoint, EventKind, Phase, Progress, Task, TaskCommon, Workspace,
     };
-    use crate::values::{Attempt, Extensions, FeatureId};
+    use crate::values::{Attempt, CommitId, Extensions, FeatureId};
     use crate::versions::TaskRecordVersion;
 
     struct Scenario {
@@ -413,7 +416,6 @@ mod tests {
                 },
             })
         }
-        #[must_use]
         fn record(mut self, record: Record) -> anyhow::Result<Self> {
             let at = Timestamp::try_from(record.at)?;
             let revision = Revision::try_from(i64::try_from(self.chapter.entries.len())? + 1)?;
@@ -587,7 +589,7 @@ mod tests {
             Record {
                 at: 600,
                 state: TaskState::Integrated {
-                    commit: crate::values::CommitId::try_from("a".repeat(40))?,
+                    commit: CommitId::try_from("a".repeat(40))?,
                 },
                 worker,
                 summary: "Integrated",
@@ -727,6 +729,56 @@ mod tests {
             timeline.groups[3].order,
             TimelineOrder::Unrecorded
         ));
+        Ok(())
+    }
+    #[test]
+    fn one_worker_retains_every_historical_role_and_ignores_blank_progress() -> anyhow::Result<()> {
+        let worker = WorkerIdentity::Recorded {
+            worker_id: WorkerId::EXAMPLE,
+        };
+        let other = AgentId::Development(DevelopmentAgent::TypescriptDev);
+        let chapter = Scenario::new("roles")?
+            .record(Record {
+                at: 100,
+                state: Scenario::working(1)?,
+                worker,
+                summary: "Earlier useful note",
+            })?
+            .record(Record {
+                at: 200,
+                state: Scenario::working(1)?,
+                worker,
+                summary: "  \n",
+            })?
+            .record(Record {
+                at: 300,
+                state: TaskState::Ready {
+                    agent: other,
+                    attempt: Attempt::try_from(1)?,
+                },
+                worker,
+                summary: "Different role",
+            })?
+            .chapter;
+        let timeline = RecordedTimeline::from([chapter].as_slice());
+        assert_eq!(timeline.groups.len(), 1);
+        assert_eq!(
+            timeline.groups[0].roles,
+            [
+                RecordedRole::Recorded {
+                    agent: Scenario::agent()
+                },
+                RecordedRole::Recorded { agent: other }
+            ]
+        );
+        assert_eq!(
+            timeline.groups[0].windows[0].summary.to_string(),
+            "Earlier useful note"
+        );
+        assert_eq!(
+            timeline.groups[0].windows[0].summary_revision,
+            Revision::INITIAL
+        );
         Ok(())
     }
 }
