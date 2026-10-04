@@ -19,7 +19,12 @@ use request::InitFeature;
 use sea_query::error;
 use std::path::Path;
 use std::{io, time::SystemTimeError};
-pub use store::observation::{HistoryPage, Observation, Page, PageEnd, PageIndex, TaskPage};
+pub use store::observation::{
+    ActiveWork, Blocker, Completion, FeatureActivity, FeatureOutcome, FeatureSummary,
+    FeatureWorkflow, FeedEntry, FlowCount, FlowState, HistoryPage, LatestDelivery, Observation,
+    Page, PageEnd, PageIndex, PullRequest, RecordedRole, TaskChapter, TaskCount, TaskPage,
+    WorkflowCondition, WorkflowTiming, WorkflowTotals,
+};
 pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};
 use thiserror::Error;

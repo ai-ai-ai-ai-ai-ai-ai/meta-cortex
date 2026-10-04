@@ -1,4 +1,4 @@
-use super::AgentError;
+use super::{AgentError, Execution};
 use crate::information::InfoReport;
 use crate::installation::{InitRequest, Project, ToolSetup};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
@@ -155,22 +155,23 @@ impl Request {
         }
     }
 
-    pub async fn execute(self) -> Result<Reply, AgentError> {
+    pub async fn execute(self) -> Result<Execution, AgentError> {
         match self.operation {
             Operation::Workbench(WorkbenchOperation::Dashboard(input)) => {
                 let workbench = Workbench::discover(&self.project)?;
-                Ok(Reply::Dashboard(
+                Ok(Execution::from(
                     Dashboard::from(workbench).execute(input).await?,
                 ))
             }
-            Operation::Framework(operation) => operation.execute(self.project),
-            Operation::Feature(operation) => {
-                operation.execute(Workbench::discover(&self.project)?).await
-            }
+            Operation::Framework(operation) => operation.execute(self.project).map(Execution::from),
+            Operation::Feature(operation) => operation
+                .execute(Workbench::discover(&self.project)?)
+                .await
+                .map(Execution::from),
             Operation::Task(operation) => {
                 let workbench = Workbench::discover(&self.project)?;
                 let mut ledger = workbench.open(operation.feature().clone()).await?;
-                operation.execute(&mut ledger).await
+                operation.execute(&mut ledger).await.map(Execution::from)
             }
         }
     }

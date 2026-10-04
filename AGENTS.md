@@ -50,9 +50,10 @@ coverage with `cargo llvm-cov --locked --workspace --fail-under-lines 90`.
 This project does not retain legacy CLI aliases, interactive setup paths, or
 old instruction formats for hypothetical compatibility. `list` discovers commands;
 `run` executes typed YAML requests, including framework initialization and inspection.
-`dashboard` opens the interactive Workbench dashboard for the current repository
+`dashboard` opens the native Tauri Workbench dashboard for the current repository
 without a request file or required arguments. It observes existing ledger data;
-typed `Workbench / Dashboard` requests retain targeted views and Snapshot output.
+typed `Workbench / Dashboard` requests use `Desktop` for the native feature journal
+and `Snapshot` for headless text output.
 Remove superseded paths and update their callers, tests, and documentation together.
 Keep the explicitly required Workbench schema-version and migration support;
 add other compatibility mechanisms only for a demonstrated supported contract.

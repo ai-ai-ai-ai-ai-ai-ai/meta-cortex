@@ -32,7 +32,7 @@ pub(super) enum EventTable {
     Document,
 }
 #[derive(Iden)]
-enum JsonFunction {
+pub(super) enum JsonFunction {
     JsonValid,
     JsonExtract,
 }

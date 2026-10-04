@@ -1,0 +1,1 @@
+{"identifier":"dashboard","description":"Open recorded pull requests in the system browser.","windows":["main"],"permissions":[{"identifier":"opener:allow-open-url","allow":[{"url":"https://*/**"}]}]}

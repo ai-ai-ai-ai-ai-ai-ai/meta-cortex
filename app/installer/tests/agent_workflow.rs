@@ -1,5 +1,5 @@
 use anyhow::{Context, bail};
-use meta_cortex_visualization::{DashboardMode, DashboardRequest, DashboardView};
+use meta_cortex_visualization::{DashboardRequest, DashboardView};
 use meta_cortex_workbench::PageIndex;
 use meta_cortex_workbench::agents::{
     AgentId, DeliveryAgent, DevelopmentAgent, GizmoAgent, ReportingTarget,
@@ -443,8 +443,7 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
             .any(|event| event.kind == EventKind::Progress && event.actor == prime)
     );
     let Reply::Dashboard(snapshot) = scenario.run(Operation::Workbench(
-        WorkbenchOperation::Dashboard(DashboardRequest {
-            mode: DashboardMode::Snapshot,
+        WorkbenchOperation::Dashboard(DashboardRequest::Snapshot {
             view: DashboardView::Tasks {
                 feature: Scenario::feature()?,
             },

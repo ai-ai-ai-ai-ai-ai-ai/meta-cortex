@@ -132,7 +132,20 @@ impl TryFrom<String> for CommitId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Display,
+    Serialize,
+    Deserialize,
+    JsonSchema,
+)]
 #[serde(try_from = "i64")]
 #[schemars(with = "i64")]
 pub struct Revision(i64);
@@ -201,6 +214,7 @@ impl TryFrom<i64> for Attempt {
 pub struct Timestamp(i64);
 
 impl Timestamp {
+    pub const EPOCH: Self = Self(0);
     pub fn now() -> Result<Self, LedgerError> {
         let value = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
         Ok(Self(

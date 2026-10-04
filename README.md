@@ -193,7 +193,14 @@ operation:
 meta-cortex run --request info.yaml
 ```
 
-Use a file for an interactive Workbench request so keyboard input stays available:
+Open the native Workbench dashboard from your repository root or a subdirectory:
+
+```powershell
+meta-cortex dashboard
+```
+
+No request file or required arguments are needed. For headless text output,
+use an explicit project with `mode: Snapshot`:
 
 ```powershell
 @'
@@ -204,18 +211,15 @@ operation:
   command:
     name: Dashboard
     arguments:
-      mode: Interactive
+      mode: Snapshot
       view: {kind: Features}
       page: 0
 '@ | Set-Content -Encoding utf8 dashboard.yaml
-meta-cortex run --request dashboard.yaml
+meta-cortex run --request dashboard.yaml > dashboard-output.yaml
 ```
 
-**Prohibited:** pipe an Interactive Dashboard request into stdin; that consumes
-its keyboard input.
-
-**Required:** use `dashboard.yaml` in a terminal, or change `mode` to `Snapshot`
-for redirected output. Workbench observation requires an existing repository
+Use `mode: Desktop` without `view` or `page` to open the native window for that project.
+Workbench observation requires an existing repository
 identity and ledger; initialization of the framework alone does not create a ledger.
 
 ### Harness instruction files
@@ -364,10 +368,22 @@ The [Rust workspace](app/Cargo.toml) contains three crates:
   tasks, claims, progress, Git checkpoints, and repository-wide Turso ledgers. It owns
   database migrations and storage tests; installer uses its public API.
 - [visualization](app/visualization): the `meta-cortex-visualization` library for
-  the terminal dashboard, using Workbench’s read-only observation API.
+  the native Tauri dashboard with embedded Svelte/TypeScript assets, using
+  Workbench’s read-only observation API.
+
+Install the dashboard’s package-local dependencies once before Cargo builds:
 
 ```sh
-cd app
+cd app/visualization/frontend
+bun install --frozen-lockfile
+cd ../..
+```
+
+Ordinary Cargo builds run the frontend TypeScript/Vite build and embed its assets.
+See [native build prerequisites](CONTRIBUTING.md#native-dashboard-prerequisites).
+From `app/`, run:
+
+```sh
 cargo fmt --all --check
 cargo check --locked --workspace --all-targets
 cargo clippy --locked --workspace --all-targets -- -D warnings
@@ -477,15 +493,40 @@ meta-cortex dashboard
 ```
 
 No request file or required arguments are needed. The command resolves the
-existing repository identity and shared database, then opens the interactive
-Features view. Terminal stdin and stdout are required. Select with Up/Down or
-`j`/`k`, press Enter for details, press `h` for task history, and exit with `q`
-or Ctrl-C.
+existing repository identity and shared database, then opens the native Tauri
+Workbench window. Close the window to exit. The executable embeds the dashboard
+assets and reads through native IPC; no HTTP server is required.
+
+The window opens on a split feature preview. Compact cards show the title,
+precise first-task date, expandable description, task progress, recorded roles,
+and pull requests. Selecting a card opens a briefing with task inventory,
+latest recorded update, start and finish times, elapsed duration, and branch.
+Each inventory block opens that task in the full workflow.
+
+The workflow keeps a shared agent/task index beside two views: **Log** presents
+task chapters with distinct action icons, time and revision metadata, and
+expandable commands, findings, next steps, checkpoints, and saved details.
+**Time windows** compares task lifetimes from creation to their latest recorded
+update. Overlap does not prove continuous agent execution. Select a window to
+jump to its log. Repeated evidence appears only when it changes.
+
+The dashboard refreshes summaries every five seconds; Pause stops automatic
+reads and Refresh reads at once. Selected workflow history refreshes when its
+recorded activity changes. Reads use read-only multiprocess WAL connections;
+no HTTP server or database migration is involved.
+
+Pull requests come exclusively from URLs saved in task progress extensions,
+such as `pr_url`; clicking one opens the system browser. Feature start means
+first task creation. Finish means all tasks are closed, using their terminal
+events rather than later annotations; duration includes pauses. These values
+do not establish separate feature acceptance. The feature list covers the 100
+most recently active features and reports when more exist; a selected workflow
+loads every task and history page.
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
-an explicit project, initial view, and page. Typed Interactive requests use a
-request file to preserve keyboard stdin. Typed Snapshot requests support
-redirected output through `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
+an explicit project. `mode: Desktop` opens the native window; `mode: Snapshot`
+with a `view` and `page` returns headless text through
+`meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)

@@ -6,9 +6,8 @@ use super::protocol::{
 };
 use crate::installation::ToolSetup;
 use derive_more::{Display, From};
-use meta_cortex_visualization::{DashboardMode, DashboardRequest, DashboardView};
+use meta_cortex_visualization::DashboardRequest;
 use meta_cortex_workbench::LedgerError;
-use meta_cortex_workbench::PageIndex;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::workflow::TaskAssignment;
 use meta_cortex_workbench::model::{Progress, Workspace};
@@ -93,13 +92,11 @@ impl Catalog {
         let examples = [
             CommandExample {
                 description: CommandSummary::from(
-                    "Observe recorded Workbench data in a terminal dashboard. Interactive requires stdin/stdout terminals; Snapshot returns text. Arrow keys select, Enter opens details, h opens task history, Esc goes back, n/p change bounded pages, J/K scroll, r refreshes and q or Ctrl-C exits. Observation never initializes, migrates, imports or updates the ledger.",
+                    "Observe recorded Workbench data in a native desktop window. Desktop opens the feature journal; Snapshot returns the requested Features, Tasks, Task or History view as text without creating a window. Snapshot reads use bounded pages; events retain their recorded task snapshots. Observation never initializes, migrates, imports or updates the ledger.",
                 ),
-                operation: Operation::Workbench(WorkbenchOperation::Dashboard(DashboardRequest {
-                    mode: DashboardMode::Interactive,
-                    view: DashboardView::Features,
-                    page: PageIndex::FIRST,
-                })),
+                operation: Operation::Workbench(WorkbenchOperation::Dashboard(
+                    DashboardRequest::Desktop {},
+                )),
             },
             CommandExample {
                 description: CommandSummary::from(

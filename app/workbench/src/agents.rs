@@ -16,7 +16,9 @@ use std::path::PathBuf;
 /// use meta_cortex_workbench::agents::SreAgent;
 /// let agent = SreAgent::RustDev;
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(tag = "team", content = "role", deny_unknown_fields)]
 #[schemars(description = "An agent role scoped to its owning Cortex team.")]
 pub enum AgentId {
@@ -34,13 +36,17 @@ pub enum AgentId {
     Delivery(DeliveryAgent),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 pub enum GizmoAgent {
     GizmoPrime,
     Gizmo,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 pub enum DevelopmentAgent {
     RustDev,
     RustRefactoring,
@@ -50,25 +56,33 @@ pub enum DevelopmentAgent {
     WebDesigner,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 pub enum AiAgent {
     TechWriter,
     TechWriterVerifier,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 pub enum SecurityAgent {
     SecurityAgent,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 pub enum SreAgent {
     CicdAgent,
     DockerSpecialist,
     KubernetesSpecialist,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 pub enum DeliveryAgent {
     IntegrationAgent,
     PrAgent,
@@ -137,7 +151,9 @@ impl AgentId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(tag = "kind", content = "coordinator", deny_unknown_fields)]
 pub enum ReportingTarget {
     #[display("host")]

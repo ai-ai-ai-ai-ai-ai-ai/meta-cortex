@@ -86,6 +86,16 @@ pub struct Assignment {
     pub phase: Phase,
 }
 
+impl Assignment {
+    /// Expiry is an observation at `now`, not proof that the worker stopped.
+    pub fn lease(&self, now: Timestamp) -> LeaseHealth {
+        match self.expires_at <= now {
+            true => LeaseHealth::Expired,
+            false => LeaseHealth::Current,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum TaskState {
@@ -352,10 +362,7 @@ impl Task {
 
     pub fn view(self, now: Timestamp) -> TaskView {
         let lease = match &self.state {
-            TaskState::Active { assignment } if assignment.expires_at <= now => {
-                LeaseHealth::Expired
-            }
-            TaskState::Active { .. } => LeaseHealth::Current,
+            TaskState::Active { assignment } => assignment.lease(now),
             TaskState::Queued
             | TaskState::Ready { .. }
             | TaskState::Integrated { .. }
