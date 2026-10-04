@@ -220,8 +220,8 @@ detail, where paging does not apply. Snapshot views are:
   full task snapshot at that revision.
 
 States distinguish queued, working, blocked, ready, integrated, completed, and
-cancelled. Integrated records Git inclusion at the feature SHA; completed records
-coordinator acceptance of a read-only or feature activity.
+cancelled. Use the [recorded state meanings](#recorded-state-meanings) to interpret
+their guarantees and limits.
 Timestamps are recorded Unix milliseconds. Checks show recorded evidence and
 are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
@@ -245,6 +245,34 @@ result, not a new test execution by the dashboard.
 **Prohibited:** treat a historical passed check as a fresh validation run.
 
 **Required:** inspect its event revision and recorded evidence before reporting it.
+
+### Recorded state meanings
+
+Workbench supplies shared `StateMeaning` metadata for all seven `FlowState`
+values through its generated Rust observation contract. The frontend discloses
+those meanings; it must not maintain a second interpretation of the states.
+The following qualifications distinguish recorded results from stronger claims:
+
+- **Working:** the task records an active assignment with a working phase. This
+  is not a measurement of a running host process or uninterrupted execution.
+- **Integrated:** a ready task with a Git or read-only workspace records the
+  current feature branch tip (`HEAD`) after checking that worktree is clean.
+  A recorded checkpoint must be an ancestor of that tip; `Unrecorded` is allowed
+  and supplies no checkpoint-inclusion evidence. This operation performs no
+  merge and does not require its recording actor to be `IntegrationAgent`.
+  Framework policy still assigns integration work to that role. The state does
+  not establish CI success, PR merge, deployment, or feature acceptance.
+- **Completed:** a ready read-only or feature activity records coordinator
+  acceptance. Git workspace tasks use integration instead. Completed and
+  Integrated are alternative terminal outcomes, not consecutive stages; an
+  integrated task cannot transition to completed.
+
+**Prohibited:** “Working proves the agent is executing; Integrated proves its PR
+merged; the next step is to mark that integrated task Completed.”
+
+**Required:** report the recorded working phase or integration tip with its
+actual evidence. Accept a ready read-only or feature activity through completion;
+report feature acceptance and delivery separately.
 
 ### Revision log and event order
 
@@ -558,9 +586,10 @@ blindly replay an old whole-document update.
   state and continuation notes must say so.
 
 A write task can become ready only when its worktree is clean and its checkpoint
-matches HEAD. Integration requires a clean feature worktree, a matching feature
-HEAD, and the recorded checkpoint in its ancestry. These Git checks do not run
-or prove tests; record actual check evidence and follow the assigned validation.
+matches HEAD. The [integration transition](#recorded-state-meanings) checks the
+clean feature worktree and its current tip, with checkpoint ancestry only when
+a checkpoint is recorded. These Git checks do not run or prove tests; record
+actual check evidence and follow the assigned validation.
 The command does not support recording a squash/rebase that drops the checkpoint
 from ancestry; retain the existing merge-based local integration workflow.
 

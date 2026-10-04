@@ -19,7 +19,10 @@ They describe the existing framework, not additional stored states.
 - **Task:** the bounded responsibility and its recorded lifecycle. The
   [ledger protocol](agent-ledger.md#assignment-and-worker-lifecycle) owns its
   transitions: `queued`; `active` with `working` or `blocked` phase; `ready`;
-  `integrated`; `completed`; and `cancelled`. Cancellation is not success.
+  `integrated`; `completed`; and `cancelled`. Apply the ledger's
+  [recorded state meanings](agent-ledger.md#recorded-state-meanings): a working
+  phase is recorded activity, while integration and completion are alternative
+  terminal outcomes. Cancellation is not success.
 - **Worker:** the executing host instance, separate from its catalog role.
   Apply the [worker identity protocol](agent-ledger.md#worker-instance-identity)
   for UUID retention. Revision, attempt, and identity checks remain ledger
@@ -177,8 +180,10 @@ literal placeholder sent to the verifier.
 - **Evidence and output:** report the task and destination branch, resulting
   feature SHA, actual check outcomes, and durable integration result. A conflict
   or failed check includes its operation, revisions, and diagnostic.
-- **Next owner and expected state:** the worker task becomes `integrated` after
-  verified inclusion. Team Gizmo routes a failure to its responsible owner or
+- **Next owner and expected state:** after the policy-required merge and checks,
+  record the worker task as `integrated` under the
+  [transition's actual guarantees](agent-ledger.md#recorded-state-meanings).
+  Team Gizmo routes a failure to its responsible owner or
   advances to remaining integration and delivery work. The integration activity
   itself completes only after its assigned responsibilities are accepted.
 
