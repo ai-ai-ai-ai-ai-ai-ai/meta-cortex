@@ -14,11 +14,7 @@
   let workers = $derived(new WorkerTimeline(workflow));
 </script>
 
-<div
-  class="execution-map"
-  role="tabpanel"
-  aria-label={TimelineScale.TEXT.title}
->
+<div class="execution-map">
   <div class="window-map-heading">
     <div>
       <h2>{TimelineScale.TEXT.title}</h2>

@@ -6,9 +6,11 @@
     FeatureLook,
     WorkflowLook,
     WorkflowView,
+    WorkflowTabs,
     ChapterLook,
     RecordedTime,
   } from "./observability";
+  import RevisionLog from "./RevisionLog.svelte";
   import Timeline from "./Timeline.svelte";
   import { TimelineScale } from "./timeline";
   import { WorkerTimeline } from "./worker-timeline";
@@ -32,12 +34,20 @@
     selected = task;
     new ChapterNavigation(selected).jump();
   }
+  function navigateTab(event: KeyboardEvent): void {
+    for (const tab of new WorkflowTabs(view).next(event.key)) {
+      event.preventDefault();
+      view = tab;
+      new WorkflowTabs(tab).focus();
+    }
+  }
   $effect(() => {
     switch (view) {
       case WorkflowView.Log:
         new ChapterNavigation(selected).focus();
         break;
       case WorkflowView.Windows:
+      case WorkflowView.Revisions:
         break;
     }
     new ChapterNavigation(selected).jump();
@@ -91,56 +101,69 @@
     <div class="view-tabs" role="tablist" aria-label="Workflow view">
       {#each Object.values(WorkflowView) as tab (tab)}<button
           role="tab"
+          id={WorkflowTabs.id(tab)}
+          aria-controls="workflow-panel"
+          tabindex={new WorkflowTabs(view).tabIndex(tab)}
+          onkeydown={navigateTab}
           aria-selected={view === tab}
           onclick={() => (view = tab)}>{tab}</button
         >{/each}
     </div>
-    {#if view === WorkflowView.Log}<div
-        class="feed"
-        role="tabpanel"
-        aria-label="Log"
-      >
-        {#each chapters as chapter (chapter.task.common.id)}{@const item =
-            new ChapterLook(chapter)}
-          <section class="task-chapter" id={`task-${chapter.task.common.id}`}>
-            <div class="chapter-heading">
-              <span class="avatar">{item.mark()}</span>
-              <div class="chapter-copy">
-                <div class="chapter-heading-line">
-                  <h2 id={`heading-${chapter.task.common.id}`} tabindex="-1">
-                    {item.agent()}
-                  </h2>
-                  <span
-                    >{new RecordedTime(
-                      chapter.task.common.created_at,
-                    ).clock()}–{new RecordedTime(
-                      chapter.task.common.last_update,
-                    ).clock()}</span
-                  >
+    <div
+      id="workflow-panel"
+      role="tabpanel"
+      aria-labelledby={WorkflowTabs.id(view)}
+      tabindex="0"
+    >
+      {#if view === WorkflowView.Log}<div class="feed">
+          {#each chapters as chapter (chapter.task.common.id)}{@const item =
+              new ChapterLook(chapter)}
+            <section class="task-chapter" id={`task-${chapter.task.common.id}`}>
+              <div class="chapter-heading">
+                <span class="avatar">{item.mark()}</span>
+                <div class="chapter-copy">
+                  <div class="chapter-heading-line">
+                    <h2 id={`heading-${chapter.task.common.id}`} tabindex="-1">
+                      {item.agent()}
+                    </h2>
+                    <span
+                      >{new RecordedTime(
+                        chapter.task.common.created_at,
+                      ).clock()}–{new RecordedTime(
+                        chapter.task.common.last_update,
+                      ).clock()}</span
+                    >
+                  </div>
+                  <p>{chapter.task.common.objective}</p>
                 </div>
-                <p>{chapter.task.common.objective}</p>
+                <span class="chapter-state"
+                  >{new StatusLook(chapter.status).look().label}</span
+                >
               </div>
-              <span class="chapter-state"
-                >{new StatusLook(chapter.status).look().label}</span
-              >
-            </div>
-            <p class="chapter-route">{item.reporting()}</p>
-            <div class="window-events">
-              {#each chapter.entries as entry (entry.revision)}<FeedCard
-                  {entry}
-                  task={chapter.task.common.id}
-                />{:else}<p class="empty">No event history recorded.</p>{/each}
-            </div>
-          </section>{/each}
-      </div>
-    {:else if workflow.chapters.length}<Timeline
-        {workflow}
-        {selected}
-        onselect={(task: string) => {
-          selected = task;
-          view = WorkflowView.Log;
-          new ChapterNavigation(selected).jump();
-        }}
-      />{:else}<p class="empty">{WorkflowLook.EMPTY_TIMELINE}</p>{/if}
+              <p class="chapter-route">{item.reporting()}</p>
+              <div class="window-events">
+                {#each chapter.entries as entry (entry.revision)}<FeedCard
+                    {entry}
+                    task={chapter.task.common.id}
+                  />{:else}<p class="empty">
+                    No event history recorded.
+                  </p>{/each}
+              </div>
+            </section>{/each}
+        </div>
+      {:else if view === WorkflowView.Revisions}<RevisionLog
+          entries={workflow.revision_log}
+          onselect={jump}
+        />
+      {:else if workflow.chapters.length}<Timeline
+          {workflow}
+          {selected}
+          onselect={(task: string) => {
+            selected = task;
+            view = WorkflowView.Log;
+            new ChapterNavigation(selected).jump();
+          }}
+        />{:else}<p class="empty">{WorkflowLook.EMPTY_TIMELINE}</p>{/if}
+    </div>
   </div>
 </div>

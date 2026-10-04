@@ -1034,3 +1034,32 @@ ul.evidence-body li + li {
   font-size: 11px;
   overflow-wrap: anywhere;
 }
+.revision-log {
+  display: grid;
+  gap: 16px;
+}
+.revision-log-entry {
+  border: 1px solid var(--line);
+  padding: 16px;
+  min-width: 0;
+}
+.revision-log-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+}
+.revision-log-heading > span {
+  color: var(--muted);
+}
+.revision-log-heading > button {
+  margin-left: auto;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.revision-objective {
+  font-size: 12px;
+  margin: 10px 0 14px;
+  overflow-wrap: anywhere;
+}

@@ -44,7 +44,7 @@
             datetime={new RecordedTime(entry.at).iso()}
             title={new RecordedTime(entry.at).full()}
             >{new RecordedTime(entry.at).clock()}</time
-          ><span>· r{entry.revision}</span>
+          ><span>· {ActionLook.TEXT.taskRevision}{entry.revision}</span>
         </div>
         <p class="event-title">{entry.note}</p>
         <div class="child-tags">
