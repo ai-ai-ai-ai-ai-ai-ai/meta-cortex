@@ -164,6 +164,32 @@ repository’s Features view.
 
 **Required:** run `meta-cortex dashboard` from that repository or its linked worktree.
 
+### Browse agent roles
+
+The always-visible **Agent guide** button in the top bar opens the roles graph
+inside the native Tauri window. The guide remains usable when the ledger
+catalog is empty. It describes framework roles independently of recorded
+feature activity.
+
+1. Select **Agent guide** to open the graph.
+2. Select any catalog agent to read its canonical role documentation beside
+   the graph.
+3. After following a bundled document link, select **Back to agent document**
+   to return to the selected role document.
+4. Select **Workbench** to return to the feature journal.
+
+The guide is embedded at build time from the current shipped framework's
+canonical `cortex/teams/*/agents/*/AGENTS.md` files. Its content reflects the
+framework bundled with that executable build. Browsing roles uses the embedded
+assets without a runtime localhost server or retained preview JSON.
+
+**Prohibited:** require a recorded feature or a localhost preview to read an agent role.
+
+**Required:** open **Agent guide** in an empty feature catalog, select a catalog
+agent, and read its bundled role documentation beside the graph. After opening
+a bundled protocol link, use **Back to agent document** to return to that role.
+Select **Workbench** to return to the feature journal within the native app.
+
 ### Advanced typed requests
 
 1. Run `meta-cortex list` to discover the typed `Workbench / Dashboard` request.
