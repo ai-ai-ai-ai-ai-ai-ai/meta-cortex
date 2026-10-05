@@ -49,7 +49,7 @@ class CanonicalFixture {
             document.path,
           ),
           "utf8",
-        ),
+        ).replace(/\r\n/g, "\n"),
       ),
     );
   }

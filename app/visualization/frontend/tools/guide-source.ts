@@ -147,7 +147,7 @@ export class GuideSource implements Plugin {
   private read(path: string): string {
     const absolute = resolve(this.root, path);
     this.inputs.add(absolute);
-    return readFileSync(absolute, "utf8");
+    return readFileSync(absolute, "utf8").replace(/\r\n/g, "\n");
   }
   private entries(source: string): ReadonlyArray<CatalogEntry> {
     const entrySchema = Schema.Struct(GuideSourceFields.ENTRY);
