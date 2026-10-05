@@ -1,3 +1,4 @@
+use super::schema;
 use super::{Documents, Ledger};
 use crate::LedgerError;
 use crate::git::{CheckpointCheck, IntegrationCheck, ReadyCheck, Repository, TaskWorkspaceCheck};
@@ -36,6 +37,9 @@ impl Ledger {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
+        schema::LedgerSchema::require_current(&tx)
+            .await
+            .map_err(|error| error.in_feature(&self.state.feature.id))?;
         let documents = Documents {
             connection: &tx,
             feature: &self.state.feature.id,
@@ -75,6 +79,9 @@ impl Ledger {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
+        schema::LedgerSchema::require_current(&tx)
+            .await
+            .map_err(|error| error.in_feature(&self.state.feature.id))?;
         let documents = Documents {
             connection: &tx,
             feature: &self.state.feature.id,
@@ -119,6 +126,9 @@ impl Ledger {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
+        schema::LedgerSchema::require_current(&tx)
+            .await
+            .map_err(|error| error.in_feature(&self.state.feature.id))?;
         let documents = Documents {
             connection: &tx,
             feature: &self.state.feature.id,
@@ -146,6 +156,9 @@ impl Ledger {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
+        schema::LedgerSchema::require_current(&tx)
+            .await
+            .map_err(|error| error.in_feature(&self.state.feature.id))?;
         let documents = Documents {
             connection: &tx,
             feature: &self.state.feature.id,
@@ -614,7 +627,7 @@ mod tests {
                 assert_eq!(chapter.entries.len(), history.len());
                 assert_eq!(
                     ledger.info().storage_version,
-                    StorageVersion::SequencedEventsV5
+                    StorageVersion::FeatureHistoryV6
                 );
                 Ok(())
             })

@@ -112,21 +112,12 @@ mod tests {
 
     #[test]
     #[ignore = "requires exported synthetic V4 fixture in META_CORTEX_V4_FIXTURE"]
-    fn native_startup_prepares_v4_before_serving_ipc() -> anyhow::Result<()> {
-        use super::{dashboard_read, dashboard_workflow};
+    fn native_startup_reports_selected_migration_without_changing_storage() -> anyhow::Result<()> {
         use crate::dashboard::{Dashboard, DashboardExecution, DashboardRequest};
-        use anyhow::Context;
-        use meta_cortex_workbench::versions::StorageVersion;
-        use meta_cortex_workbench::{DataDirectory, LedgerError, Workbench};
+        use meta_cortex_workbench::{DataDirectory, Workbench};
         use std::env;
         use std::path::PathBuf;
-        use std::sync::Arc;
-        use tauri::WebviewWindowBuilder;
-        use tauri::ipc::{CallbackFn, InvokeBody, InvokeResponseBody};
-        use tauri::test as native_test;
-        use tauri::webview::InvokeRequest;
         use tokio::runtime::Builder;
-
         let root = PathBuf::from(
             env::var_os("META_CORTEX_V4_FIXTURE")
                 .ok_or_else(|| anyhow::anyhow!("synthetic fixture required"))?,
@@ -134,45 +125,16 @@ mod tests {
         let workbench = Workbench::discover(&root.join("project"))?
             .with_data_directory(DataDirectory::from(root.join("data")));
         let runtime = Builder::new_current_thread().enable_time().build()?;
-        assert!(matches!(
-            runtime.block_on(workbench.observe()),
-            Err(LedgerError::ObservationMigrationRequired(
-                StorageVersion::CommonTasksV4
-            ))
-        ));
-        let DashboardExecution::Desktop(launch) = runtime
-            .block_on(Dashboard::from(workbench).execute(DashboardRequest::Desktop {}))
-            .context("native startup preparation")?
+        let DashboardExecution::Desktop(launch) =
+            runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest::Desktop {}))?
         else {
             return Err(anyhow::anyhow!("native startup must return Desktop"));
         };
-        let reply = launch
+        let error = launch
             .blocking_read()
-            .context("first native feature projection")?;
-        assert!(!reply.features.records.is_empty());
-        let expected = serde_json::to_string(&reply)?;
-        let app = native_test::mock_builder()
-            .manage(Arc::new(launch))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
-            .build(native_test::mock_context(native_test::noop_assets()))?;
-        let webview = WebviewWindowBuilder::new(&app, "main", Default::default()).build()?;
-        let response = native_test::get_ipc_response(
-            &webview,
-            InvokeRequest {
-                cmd: "dashboard_read".to_owned(),
-                callback: CallbackFn(0),
-                error: CallbackFn(1),
-                url: "tauri://localhost".parse()?,
-                body: InvokeBody::Json(serde_json::Value::Null),
-                headers: Default::default(),
-                invoke_key: native_test::INVOKE_KEY.to_owned(),
-            },
-        )
-        .map_err(|error| anyhow::anyhow!("IPC failed: {error}"))?;
-        match response {
-            InvokeResponseBody::Json(text) => assert_eq!(text, expected),
-            InvokeResponseBody::Raw(_) => return Err(anyhow::anyhow!("expected JSON IPC reply")),
-        }
+            .err()
+            .ok_or_else(|| anyhow::anyhow!("old storage requires selected migration"))?;
+        assert!(error.to_string().contains("requires migration"));
         Ok(())
     }
 

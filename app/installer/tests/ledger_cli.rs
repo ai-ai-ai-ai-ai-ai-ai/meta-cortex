@@ -32,7 +32,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     let scenario = scenario.initialize(Examples::feature()?.feature)?;
     assert_eq!(
         scenario.ledger().storage_version,
-        StorageVersion::SequencedEventsV5
+        StorageVersion::FeatureHistoryV6
     );
     let Reply::Ledger(reopened) = scenario
         .client()
@@ -47,7 +47,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     else {
         bail!("other ledger")
     };
-    assert_eq!(scenario.ledger().path, other.path);
+    assert_ne!(scenario.ledger().path, other.path);
     let scenario = scenario.create_task(Examples::task()?)?;
     assert_eq!(scenario.created_task().common.id, Examples::query()?.task);
     assert!(matches!(scenario.created_task().state, State::Queued));
@@ -202,7 +202,8 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         bail!("expected features")
     };
     assert_eq!(features.len(), 2);
-    assert!(features.iter().all(|feature| feature.path == other.path));
+    assert_eq!(features[0].path, reopened.path);
+    assert_eq!(features[1].path, other.path);
     let mut options = StatusOptions::new();
     options
         .include_ignored(false)
@@ -845,8 +846,8 @@ fn scenario_setup_requires_successful_effects() -> anyhow::Result<()> {
 }
 
 #[test]
-fn independent_processes_share_global_order_without_changing_task_revisions() -> anyhow::Result<()>
-{
+fn independent_processes_keep_feature_local_order_without_changing_task_revisions()
+-> anyhow::Result<()> {
     use meta_cortex_workbench::values::EventSequence;
     use meta_cortex_workbench::{DataDirectory, SequenceProvenance, Workbench};
     use std::collections::BTreeSet;
@@ -892,7 +893,7 @@ fn independent_processes_share_global_order_without_changing_task_revisions() ->
         .chain(&second.revision_log)
         .map(|record| record.sequence)
         .collect();
-    assert_eq!(identities.len(), 12);
+    assert_eq!(identities.len(), 6);
     assert_eq!(first.revision_log.len(), 6);
     assert_eq!(second.revision_log.len(), 6);
     assert!(
@@ -933,8 +934,8 @@ fn independent_processes_share_global_order_without_changing_task_revisions() ->
             runtime.block_on(observation.workflow(Examples::feature()?.feature))?
         )?
     );
-    // Each CLI invocation starts a new process; other-feature appends remain gaps
-    // in a selected feature, without renumbering its visible records.
+    // Each CLI invocation starts a new process; each feature continues its own
+    // sequence independently without renumbering its visible records.
     let mut other = Examples::task()?;
     other.feature = other_id.clone();
     other.task = TaskId::try_from("restart-other".to_owned())?;
@@ -953,19 +954,13 @@ fn independent_processes_share_global_order_without_changing_task_revisions() ->
         .client()
         .run(Operation::Task(TaskOperation::Create(resumed)))?;
     let after = runtime.block_on(observation.workflow(Examples::feature()?.feature))?;
-    assert!(
+    assert_eq!(
         after
             .revision_log
             .last()
             .context("restart append")?
-            .sequence
-            > other_sequence
-    );
-    assert!(
-        after
-            .revision_log
-            .iter()
-            .all(|record| record.sequence != other_sequence)
+            .sequence,
+        other_sequence
     );
     assert_eq!(
         after.revision_log[..6]

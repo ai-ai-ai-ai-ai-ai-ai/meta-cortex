@@ -2,10 +2,11 @@ use super::legacy::{LegacyLayout, LegacyRecords, LegacySource};
 use super::relational::RelationalSchema;
 use super::sequence::SequenceSchema;
 use super::{LedgerError, StorageVersion};
+use sea_query::Iden;
 #[cfg(test)]
 use sea_query::{ColumnDef, Expr, ExprTrait, Table, TableCreateStatement};
-use sea_query::{Iden, Index, SqliteQueryBuilder};
 use turso::Connection;
+#[cfg(test)]
 use turso::transaction::TransactionBehavior;
 
 // These identifiers preserve the existing on-disk schema.
@@ -30,6 +31,7 @@ pub(super) enum TaskTable {
 }
 
 #[derive(Iden)]
+#[cfg(test)]
 pub(super) enum EventTable {
     #[iden = "events"]
     Table,
@@ -37,11 +39,6 @@ pub(super) enum EventTable {
     Revision,
     #[cfg(test)]
     Document,
-}
-
-#[derive(Iden)]
-enum EventIndex {
-    EventsTaskRevision,
 }
 
 #[derive(Iden)]
@@ -67,99 +64,70 @@ impl LedgerSchema {
         version
     }
 
+    pub(super) async fn configure(connection: &Connection) -> Result<(), LedgerError> {
+        connection
+            .pragma_update(&DatabasePragma::ForeignKeys.to_string(), 1)
+            .await?;
+        Ok(())
+    }
+
+    #[cfg(test)]
     pub async fn migrate(connection: &mut Connection) -> Result<(), LedgerError> {
-        SchemaPreparation::Initialize.migrate(connection).await
-    }
-
-    pub(super) async fn prepare_observation(
-        connection: &mut Connection,
-    ) -> Result<(), LedgerError> {
-        SchemaPreparation::Existing.migrate(connection).await
-    }
-}
-
-enum SchemaPreparation {
-    Initialize,
-    Existing,
-}
-impl SchemaPreparation {
-    // Turso's transaction API requires a mutable connection borrow.
-    async fn migrate(self, connection: &mut Connection) -> Result<(), LedgerError> {
         connection
             .pragma_update(&DatabasePragma::ForeignKeys.to_string(), 1)
             .await?;
         let tx = connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
-        let mut version = LedgerSchema::version(&tx).await?;
-        match version {
-            StorageVersion::Empty => match self {
-                Self::Existing => return Err(LedgerError::Uninitialized),
-                Self::Initialize => {}
-            },
-            StorageVersion::DocumentsV1
-            | StorageVersion::IndexedV2
-            | StorageVersion::RelationalV3
-            | StorageVersion::CommonTasksV4
-            | StorageVersion::SequencedEventsV5 => {}
-        }
-        match version {
-            StorageVersion::SequencedEventsV5 => {
-                tx.commit().await?;
-                return Ok(());
-            }
-            StorageVersion::Empty
+        Self::migrate_transaction(&tx).await?;
+        tx.commit().await?;
+        Ok(())
+    }
+
+    pub(super) async fn require_current(connection: &Connection) -> Result<(), LedgerError> {
+        match Self::version(connection).await? {
+            StorageVersion::FeatureHistoryV6 => Ok(()),
+            version @ (StorageVersion::Empty
             | StorageVersion::DocumentsV1
             | StorageVersion::IndexedV2
             | StorageVersion::RelationalV3
-            | StorageVersion::CommonTasksV4 => {}
+            | StorageVersion::CommonTasksV4
+            | StorageVersion::SequencedEventsV5) => {
+                Err(LedgerError::ObservationMigrationRequired(version))
+            }
         }
-        loop {
-            version = match version {
-                StorageVersion::Empty => {
-                    RelationalSchema::create(&tx).await?;
-                    StorageVersion::CommonTasksV4
-                }
-                StorageVersion::DocumentsV1 => {
-                    let index = Index::create()
-                        .name(EventIndex::EventsTaskRevision.to_string())
-                        .table(EventTable::Table)
-                        .col(EventTable::TaskId)
-                        .col(EventTable::Revision)
-                        .unique()
-                        .to_string(SqliteQueryBuilder);
-                    tx.execute(index, ()).await?;
-                    StorageVersion::IndexedV2
-                }
-                StorageVersion::IndexedV2 => {
-                    LegacyRecords::migrate(LegacySource {
-                        connection: &tx,
-                        layout: LegacyLayout::FeatureDatabase,
-                    })
-                    .await?;
-                    StorageVersion::CommonTasksV4
-                }
-                StorageVersion::RelationalV3 => {
-                    LegacyRecords::migrate(LegacySource {
-                        connection: &tx,
-                        layout: LegacyLayout::RepositoryDatabase,
-                    })
-                    .await?;
-                    StorageVersion::CommonTasksV4
-                }
-                StorageVersion::CommonTasksV4 => {
-                    SequenceSchema::migrate(&tx).await?;
-                    StorageVersion::SequencedEventsV5
-                }
-                StorageVersion::SequencedEventsV5 => break,
-            };
+    }
+
+    pub(super) async fn migrate_transaction(connection: &Connection) -> Result<(), LedgerError> {
+        match Self::version(connection).await? {
+            StorageVersion::FeatureHistoryV6 => return Ok(()),
+            StorageVersion::Empty => {
+                RelationalSchema::create(connection).await?;
+                SequenceSchema::migrate(connection).await?;
+            }
+            StorageVersion::DocumentsV1 | StorageVersion::IndexedV2 => {
+                LegacyRecords::migrate(LegacySource {
+                    connection,
+                    layout: LegacyLayout::FeatureDatabase,
+                })
+                .await?;
+            }
+            StorageVersion::RelationalV3
+            | StorageVersion::CommonTasksV4
+            | StorageVersion::SequencedEventsV5 => {
+                LegacyRecords::migrate(LegacySource {
+                    connection,
+                    layout: LegacyLayout::RepositoryDatabase,
+                })
+                .await?;
+            }
         }
-        tx.pragma_update(
-            &DatabasePragma::UserVersion.to_string(),
-            StorageVersion::CURRENT,
-        )
-        .await?;
-        tx.commit().await?;
+        connection
+            .pragma_update(
+                &DatabasePragma::UserVersion.to_string(),
+                StorageVersion::CURRENT,
+            )
+            .await?;
         Ok(())
     }
 }
@@ -526,7 +494,7 @@ pub mod tests {
             [features, tasks, events]
         }
 
-        async fn repository(connection: &Connection) -> anyhow::Result<()> {
+        pub(crate) async fn repository(connection: &Connection) -> anyhow::Result<()> {
             connection
                 .pragma_update(&DatabasePragma::ForeignKeys.to_string(), 1)
                 .await?;
@@ -697,7 +665,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::SequencedEventsV5
+                    StorageVersion::FeatureHistoryV6
                 );
                 assert_eq!(RepositorySnapshot::read(&connection).await?, expected);
                 LedgerSchema::migrate(&mut connection).await?;
@@ -768,7 +736,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::SequencedEventsV5
+                    StorageVersion::FeatureHistoryV6
                 );
                 assert_eq!(RepositorySnapshot::read(&connection).await?, original);
                 anyhow::Ok(())
@@ -805,7 +773,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::SequencedEventsV5
+                    StorageVersion::FeatureHistoryV6
                 );
                 LedgerSchema::migrate(&mut connection).await?;
                 let mut rows = SqlStatement::build(
@@ -821,7 +789,7 @@ pub mod tests {
                     .await?
                     .ok_or_else(|| anyhow::anyhow!("missing history"))?;
                 let migrated = row.get::<String>(0)?;
-                assert_eq!(migrated, serde_json::to_string(&expected)?);
+                assert_eq!(migrated, original);
                 assert_eq!(serde_json::from_str::<Event>(&migrated)?, expected);
                 assert_eq!(expected.task.version, TaskRecordVersion::V3);
                 drop(rows);
@@ -879,7 +847,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::SequencedEventsV5
+                    StorageVersion::FeatureHistoryV6
                 );
                 anyhow::Ok(())
             })

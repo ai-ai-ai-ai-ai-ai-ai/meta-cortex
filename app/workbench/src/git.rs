@@ -1,5 +1,5 @@
 use super::model::{Checkpoint, Feature, Workspace};
-use super::values::{BranchName, CommitId};
+use super::values::{BranchName, CommitId, FeatureId};
 use super::{DataDirectory, LedgerError};
 use crate::repository_id::RepositoryId;
 use derive_more::From;
@@ -77,7 +77,7 @@ impl Repository {
         self
     }
 
-    fn repository_directory(&self) -> Result<PathBuf, LedgerError> {
+    pub(crate) fn repository_directory(&self) -> Result<PathBuf, LedgerError> {
         let id = RepositoryId::read(&self.root)?;
         let name = self
             .root
@@ -162,6 +162,23 @@ impl Repository {
 
     pub fn ledger_path(&self) -> Result<PathBuf, LedgerError> {
         Ok(self.repository_directory()?.join("workbench.db"))
+    }
+
+    pub(crate) fn feature_path(&self, feature: &FeatureId) -> Result<PathBuf, LedgerError> {
+        Ok(self
+            .repository_directory()?
+            .join("features")
+            .join(format!("{feature}.db")))
+    }
+
+    pub(crate) fn historical_path(&self, feature: &FeatureId) -> Result<PathBuf, LedgerError> {
+        let id = RepositoryId::read(&self.root)?;
+        Ok(self
+            .data
+            .path()
+            .join(id.to_string())
+            .join("features")
+            .join(format!("{feature}.db")))
     }
 
     pub fn require_workspace(&self, workspace: &Workspace) -> Result<(), LedgerError> {

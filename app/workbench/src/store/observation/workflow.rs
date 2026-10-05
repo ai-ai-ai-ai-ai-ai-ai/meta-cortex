@@ -1,5 +1,6 @@
-//! Read-side workflow projections. Storage stays the shared ledger contract; these
+//! Read-side workflow projections of feature ledgers. These
 //! views extract only the fields observers need instead of decoding whole snapshots.
+use crate::store::record_fields::{TaskDocument, TaskField};
 mod outcomes;
 mod pull_requests;
 
@@ -7,7 +8,7 @@ use super::{LedgerReader, Observation, Page, PageIndex, RecordLimit};
 use crate::LedgerError;
 use crate::agents::AgentId;
 use crate::model::{Feature, LeaseHealth, Phase, TaskState};
-use crate::store::relational::{EventTable, FeatureTable, JsonFunction, TaskTable};
+use crate::store::relational::{EventTable, JsonFunction, TaskTable};
 use crate::store::sql::SqlStatement;
 use crate::values::{Note, TaskId, Timestamp};
 pub use outcomes::{FeatureOutcome, LatestDelivery};
@@ -247,51 +248,52 @@ struct ActiveQuery<'feature> {
 impl Observation {
     /// Most recently active features first; features without tasks follow in ID order.
     pub async fn summaries(&self, page: PageIndex) -> Result<Page<FeatureSummary>, LedgerError> {
-        let reader = self.reader().await?;
         let now = Timestamp::now()?;
-        let features = reader.recent_features(page).await?;
         let mut records = Vec::new();
-        for feature in features.records {
-            records.push(reader.summary(SummaryQuery { feature, now }).await?);
+        for info in self.repository.observed_features().await? {
+            let reader = self.reader(&info.feature.id).await?;
+            records.push(
+                reader
+                    .summary(SummaryQuery {
+                        feature: info.feature,
+                        now,
+                    })
+                    .await?,
+            );
         }
-        Ok(Page {
-            records,
-            end: features.end,
-        })
+        records.sort_by(|left, right| {
+            right
+                .totals
+                .activity
+                .recency()
+                .cmp(&left.totals.activity.recency())
+                .then_with(|| left.feature.id.cmp(&right.feature.id))
+        });
+        Ok(RecordLimit::PAGE.bound(
+            records
+                .into_iter()
+                .skip(page.offset() as usize)
+                .take(RecordLimit::PAGE.probe() as usize)
+                .collect(),
+        ))
+    }
+}
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum FeatureRecency {
+    Empty,
+    Recorded(Timestamp),
+}
+impl FeatureActivity {
+    fn recency(&self) -> FeatureRecency {
+        match self {
+            Self::Empty => FeatureRecency::Empty,
+            Self::Recorded {
+                last_activity_at, ..
+            } => FeatureRecency::Recorded(*last_activity_at),
+        }
     }
 }
 impl LedgerReader {
-    /// Latest task update first; features without tasks follow in ID order.
-    async fn recent_features(&self, page: PageIndex) -> Result<Page<Feature>, LedgerError> {
-        let latest = Func::max(Func::cust(JsonFunction::JsonExtract).args([
-            Expr::col((TaskTable::Table, TaskTable::Document)),
-            Expr::val("$.common.last_update"),
-        ]));
-        let mut rows = SqlStatement::build(
-            Query::select()
-                .column((FeatureTable::Table, FeatureTable::Document))
-                .from(FeatureTable::Table)
-                .left_join(
-                    TaskTable::Table,
-                    Expr::col((TaskTable::Table, TaskTable::FeatureId))
-                        .equals((FeatureTable::Table, FeatureTable::Id)),
-                )
-                .group_by_col((FeatureTable::Table, FeatureTable::Id))
-                .group_by_col((FeatureTable::Table, FeatureTable::Document))
-                .order_by_expr(latest.into(), Order::Desc)
-                .order_by((FeatureTable::Table, FeatureTable::Id), Order::Asc)
-                .offset(page.offset())
-                .limit(RecordLimit::PAGE.probe())
-                .to_owned(),
-        )?
-        .query(&self.connection)
-        .await?;
-        let mut records = Vec::new();
-        while let Some(row) = rows.next().await? {
-            records.push(serde_json::from_str(&row.get::<String>(0)?)?);
-        }
-        Ok(RecordLimit::PAGE.bound(records))
-    }
     async fn summary(&self, query: SummaryQuery) -> Result<FeatureSummary, LedgerError> {
         let SummaryQuery { feature, now } = query;
         let mut select = Query::select();
@@ -301,8 +303,12 @@ impl LedgerReader {
         for state in FlowState::ALL {
             select.expr(Func::count(Expr::case(state.predicate(), Expr::val(1))));
         }
-        select.expr(Func::min(JsonPath::from("$.common.created_at").extract()));
-        select.expr(Func::max(JsonPath::from("$.common.last_update").extract()));
+        select.expr(Func::min(
+            TaskField::CreatedAt.extract(TaskDocument::CurrentTask),
+        ));
+        select.expr(Func::max(
+            TaskField::LastUpdate.extract(TaskDocument::CurrentTask),
+        ));
         let mut rows = SqlStatement::build(select)?.query(&self.connection).await?;
         let row = rows
             .next()
@@ -382,12 +388,12 @@ impl LedgerReader {
         Ok(actors)
     }
     async fn active(&self, query: ActiveQuery<'_>) -> Result<Vec<ActiveWork>, LedgerError> {
-        let last_update = JsonPath::from("$.common.last_update").extract();
+        let last_update = TaskField::LastUpdate.extract(TaskDocument::CurrentTask);
         let mut rows = SqlStatement::build(
             Query::select()
                 .column(TaskTable::Id)
                 .expr(JsonPath::from("$.state").extract())
-                .expr(JsonPath::from("$.common.progress.summary").extract())
+                .expr(TaskField::Summary.extract(TaskDocument::CurrentTask))
                 .expr(last_update.clone())
                 .from(TaskTable::Table)
                 .and_where(Expr::col(TaskTable::FeatureId).eq(query.feature.id.to_string()))
@@ -396,7 +402,7 @@ impl LedgerReader {
                         .extract()
                         .is_in(["active", "ready"]),
                 )
-                .order_by_expr(last_update.into(), Order::Desc)
+                .order_by_expr(last_update, Order::Desc)
                 .limit(RecordLimit::PAGE.sql_count())
                 .to_owned(),
         )?
