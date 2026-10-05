@@ -11,6 +11,7 @@
   font-size: 13px;
 }
 .guide-layout {
+  --guide-connector: color-mix(in srgb, var(--muted) 35%, var(--line));
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
@@ -66,7 +67,6 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  border-top: 1px solid var(--line);
   padding-top: 16px;
 }
 .guide-team {
@@ -230,14 +230,12 @@
   left: 50%;
   top: 0;
   height: 13px;
-  border-left: 1px solid var(--muted);
-  opacity: 0.65;
+  border-left: 1px solid var(--guide-connector);
 }
 .guide-teams {
   grid-column: 1;
   grid-row: 2;
   margin-top: 10px;
-  border-top: 1px solid var(--muted);
   position: relative;
 }
 .guide-teams::before {
@@ -246,7 +244,19 @@
   left: 50%;
   top: -34px;
   height: 34px;
-  border-left: 1px solid var(--muted);
+  border-left: 1px solid var(--guide-connector);
+}
+.guide-teams::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(10% - 4.8px);
+  right: calc(10% - 4.8px);
+  height: 30px;
+  border: 1px solid var(--guide-connector);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  pointer-events: none;
 }
 .guide-team {
   position: relative;
@@ -259,7 +269,22 @@
   left: 50%;
   top: -30px;
   height: 30px;
-  border-left: 1px solid var(--muted);
+  border-left: 1px solid var(--guide-connector);
+}
+.guide-team:first-child::before,
+.guide-team:last-child::before {
+  display: none;
+}
+.guide-team::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--guide-connector);
 }
 .guide-group-reports {
   font-size: 9px;
@@ -307,8 +332,7 @@
   left: 50%;
   bottom: 0;
   height: 13px;
-  border-left: 1px solid var(--muted);
-  opacity: 0.65;
+  border-left: 1px solid var(--guide-connector);
 }
 
 .guide-teams {
@@ -335,7 +359,9 @@
     border-top: 0;
   }
   .guide-teams::before,
-  .guide-team::before {
+  .guide-teams::after,
+  .guide-team::before,
+  .guide-team::after {
     display: none;
   }
 }
