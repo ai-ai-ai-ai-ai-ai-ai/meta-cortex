@@ -548,6 +548,18 @@ existing repository identity and feature storage, then opens the native Tauri
 Workbench window. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
+The always-visible **Agent guide** button in the top bar opens the roles graph
+inside the same native window, including when the ledger catalog is empty.
+Select any catalog agent to read its canonical role documentation beside the
+graph. After following a bundled document link, **Back to agent document**
+returns to the selected role document. **Workbench** returns to the feature journal.
+The executable bundles the guide at build time from the shipped framework's
+canonical `cortex/teams/*/agents/*/AGENTS.md` files. It does not load a localhost
+server or retained preview JSON at runtime.
+
+- **Prohibited:** require a recorded feature or a localhost preview to read an agent role.
+- **Required:** open **Agent guide**, select a catalog agent, and read its bundled role documentation even with an empty feature catalog.
+
 The window opens on a split feature preview. Compact cards show the title,
 precise first-task date, expandable description, task progress, recorded roles,
 and pull requests. Selecting a card opens a briefing with task inventory,
