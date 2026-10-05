@@ -173,20 +173,6 @@
 .guide-document summary {
   cursor: pointer;
 }
-.guide-document p {
-  font-size: 14px;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-  margin: 12px 0;
-}
-.guide-document pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-family: inherit;
-  line-height: 1.6;
-  max-height: 400px;
-  overflow-y: auto;
-}
 @media (max-width: 1050px) {
   .guide-teams {
     grid-template-columns: repeat(2, minmax(0, 1fr));

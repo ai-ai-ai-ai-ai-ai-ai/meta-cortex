@@ -3,6 +3,7 @@
   import type { AgentGuide } from "./contracts";
   import { GuideLook } from "./agent-guide";
   import { AgentLook } from "./presentation";
+  import GuideDocumentView from "./GuideDocumentView.svelte";
   import "./agent-guide.css";
   interface Props {
     guide: AgentGuide;
@@ -105,8 +106,7 @@
         {#each look.documents(agent) as document (document.path)}
           <details class="guide-document">
             <summary>{GuideLook.TEXT.documentation}</summary>
-            <p>{document.path}</p>
-            <pre>{document.markdown}</pre>
+            <GuideDocumentView source={document} documents={guide.documents} />
           </details>
         {/each}
       {/each}

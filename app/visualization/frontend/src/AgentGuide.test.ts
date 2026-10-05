@@ -47,7 +47,7 @@ it("opens the static guide despite a failed ledger read and displays selected ca
   )) {
     expect(detail.textContent).toContain(agent.responsibility);
     expect(
-      within(detail)
+      within(within(detail).getByRole("region", { name: "Handoff policy" }))
         .getAllByRole("listitem")
         .map((step) => step.textContent)
         .join("\n"),
@@ -58,9 +58,9 @@ it("opens the static guide despite a failed ledger read and displays selected ca
   const disclosure = detail.querySelector("details");
   expect(disclosure?.open).toBe(false);
   disclosure?.setAttribute("open", "");
-  expect(detail.querySelector("pre")?.textContent).toContain(
-    "# Rust Developer",
-  );
+  expect(
+    within(detail).getByRole("heading", { name: "Rust Developer", level: 1 }),
+  ).toBeTruthy();
   await waitFor(() =>
     expect(native.invoke).toHaveBeenCalledWith("dashboard_guide"),
   );
