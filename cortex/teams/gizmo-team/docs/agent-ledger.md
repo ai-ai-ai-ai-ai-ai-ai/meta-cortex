@@ -118,8 +118,11 @@ current revision and attempt from the previous response.
 ## Workbench dashboard
 
 `meta-cortex dashboard` and typed `Workbench / Dashboard` requests observe
-recorded Turso ledger content without claims, heartbeats, requeues, imports,
-migrations, or other updates. It does not collect
+recorded Turso ledger content without automatic claims, heartbeats, requeues,
+migrations or other updates. Desktop provides an explicit
+[Upgrade and open action](#upgrade-and-open-one-feature) for a selected supported
+feature; opening the dashboard and refreshing its catalog remain observational.
+It does not collect
 host agent state, runtime metadata, chat content, or Git work and authorship data.
 Git is used only to resolve the existing repository identity and storage path.
 For example, a recorded integration SHA is ledger evidence; its event actor
@@ -291,9 +294,9 @@ belong to the storage envelope and observation result.
   `AUTOINCREMENT`; no separate counter service or read-side increment exists.
 - New entries have `CommittedAppend` provenance. Their sequence orders committed
   appends in this feature database, independently of worker clocks and task revisions.
-- Imported entries retain their original sequence and provenance. Historical
-  positions from the shared repository database may have gaps belonging to other
-  features. Import and display never renumber them or claim a new global order.
+- Retained historical entries keep their original sequence and provenance,
+  including gaps. Migration and display never renumber them or claim a new
+  global order.
 - Entries migrated from pre-sequence schemas `1` through `4` retain actual event
   `rowid` values with `LegacyStorageOrder` provenance, including holes. These
   values preserve storage order; they cannot recover original commit chronology.
@@ -305,7 +308,7 @@ belong to the storage envelope and observation result.
 - Reading the log does not change event order, task revisions, attempts, or stored
   snapshots. Use the current task revision, never `R`, in `expected_revision`.
 
-**Prohibited:** relabel imported `R41` and `R44` as `R1` and `R2`, infer that
+**Prohibited:** relabel historical `R41` and `R44` as `R1` and `R2`, infer that
 another feature's `R45` happened later, or send `expected_revision: 44` when the
 selected task is at revision `7`.
 
@@ -348,28 +351,63 @@ event can push an older event onto the next page.
 ### Storage requirements and errors
 
 `meta-cortex dashboard` reports a structured error with exit status `2` before
-opening the window when run outside Git or when repository identity or the
-ledger storage is missing. It does not create storage to recover from these errors.
+opening the window when run outside Git or when repository identity is missing.
+It does not create identity to recover from these errors. An absent `features/`
+directory produces an empty catalog without creating storage.
 
-Observation requires an existing repository identity and ledger storage at the
-current schema version; it never initializes either. Feature discovery reads
-feature files and legacy sources without importing or migrating them. The current
-per-feature file takes precedence over legacy copies. The observer uses a short
-250 ms database busy timeout. Desktop read failures appear in the window;
-refresh to retry or close the window to exit. Snapshot failures return structured errors
-with exit status `2`.
+The dashboard catalog reads only the resolved repository’s `features/<id>.db`
+files, independently. Opening the window, listing cards, and refreshing never
+migrate storage. One unavailable feature file does not hide other readable
+features. Old storage layouts are ignored and left untouched.
 
-An older or empty schema reports that migration is required; unsupported
-versions are rejected. Errors identify the affected feature and schema version.
-Use existing Workbench initialization/access under the
-[version and migration contract](#versions-and-durable-contracts), then retry.
-Those operations retain their migration and import semantics; opening the
-dashboard does not perform them. For example, observing a version `2` database
-reports the required migration instead of upgrading it.
+- **Current schema:** the feature is available for detail observation.
+- **Supported older schema:** read-only metadata keeps the feature visible with
+  its stored schema version and an upgrade state. Detail remains gated until
+  the selected upgrade succeeds.
+- **Future per-feature schema:** identify the unavailable feature from its file
+  name and schema header only. Do not decode future feature or task records.
+- **Feature file read failure:** show the affected feature and concrete failure
+  while retaining other readable feature cards.
 
-- **Prohibited:** expect Dashboard to migrate a version `2` database.
+**Prohibited:** one version `99` file blanks the entire catalog, or its records
+are decoded as a supported version merely to construct a card.
 
-- **Required:** complete the existing Workbench upgrade workflow, then retry observation.
+**Required:** show that file's identity and unsupported version as unavailable,
+and keep independently readable features visible without changing any database.
+
+Detail observation requires the current schema. The observer uses a short
+250 ms database busy timeout. Desktop failures appear in the window; refresh to
+retry or close the window to exit. Snapshot failures return structured errors
+with exit status `2`. A schema error identifies the affected feature
+and version. Snapshot never upgrades storage. `Feature / List` and Snapshot feature listings
+also expose metadata availability without forcing detail reads.
+
+- **Prohibited:** treat an older feature's visible catalog metadata as proof that
+  its detail can be read, or use Snapshot to migrate it.
+- **Required:** retain the upgrade gate for detail and use an explicit selected
+  upgrade before retrying current-schema observation.
+
+### Upgrade and open one feature
+
+1. Select a feature whose catalog state reports a supported upgrade. Stop older
+   writers before upgrading that feature under the
+   [released format requirements](#released-format-support).
+2. Choose **Upgrade and open**. This explicit action uses the existing selected
+   Workbench open/migration path for that feature only under the
+   [migration contract](#versions-and-durable-contracts).
+3. Open the selected feature's detail after the operation succeeds. If it fails,
+   show the concrete failure and retain the other catalog entries. Do not retry by
+   downgrading storage or rewriting history.
+
+The action preserves historical JSON, ordering, and provenance under the existing
+migration contract. It does not migrate other features or read old storage layouts.
+Future schemas have no supported upgrade action.
+
+**Prohibited:** clicking **Upgrade and open** for `alpha` upgrades `beta`, or
+opening the dashboard performs that action without a click.
+
+**Required:** upgrade only `alpha` after its explicit selection, then open its
+detail; leave `beta` and ignored old storage files unchanged.
 
 ## Record the entire feature workflow
 
@@ -759,39 +797,19 @@ rewrites its schema as version `6`.
 **Required:** migrate only `alpha` when supported; reject its future version
 with feature/version context and leave committed data unchanged.
 
-### Selected legacy import
+### Supported storage location
 
-When the current feature file is absent, Workbench can import that feature from
-the historical repository-wide
-`~/.meta-cortex/<repo-name>/<repo_id>/workbench.db` or the older
-`~/.meta-cortex/<repo_id>/features/<feature>.db` layout. Legacy sources are read
-only. Import copies only the selected feature, preserving record and event JSON,
-actors, timestamps, revisions, sequence values, provenance, and gaps. It does not
-migrate or update the source database. An invalid source leaves the import
-uncommitted and reports an error. Sources and their engine-managed sidecars
-remain intact; preserve them together.
+Only `~/.meta-cortex/<repo-name>/<repo_id>/features/<feature>.db` in the resolved
+repository storage directory is supported. `META_CORTEX_HOME` still overrides
+the application home. Old shared `workbench.db` files and unnamed historical
+home layouts are ignored. Workbench never imports, deletes, or automatically
+converts those files. Their presence does not populate an empty feature catalog.
 
-**Prohibited:** importing `alpha` copies every feature or renumbers its events.
+**Prohibited:** fall back to `workbench.db` when the repository’s `features/`
+directory is absent, or delete old files while listing features.
 
-**Required:** copy only `alpha`, preserve its stored JSON and ordering envelope,
-and leave the legacy source and sidecars intact.
-
-### Legacy writer shutdown
-
-Stop **all legacy shared-store writers** before transitioning any feature.
-Released older binaries cannot be fenced by the new executable and may continue
-writing the shared source after import. Mixed-layout writers are unsafe, even
-when they work on different features. Keep old writers stopped throughout the
-transition and use the current executable for later work. The transactional
-schema check protects current writers against a newer schema; it cannot control
-released binaries writing a different file.
-
-**Prohibited:** import feature `alpha`, leave an older agent writing
-`workbench.db`, and assume the new `alpha.db` will receive its later updates.
-
-**Required:** stop legacy writers, preserve the source and sidecars, import
-`alpha` through its selected command, and continue it only with current writers.
-Verify retained history before separately deciding whether to archive backups.
+**Required:** show an empty catalog, leave old files untouched, and use only the
+resolved per-feature location for subsequent feature initialization and access.
 
 ### Released format support
 
@@ -805,8 +823,8 @@ its meaning. Adding extension keys does not change a known schema version.
 - Rebuild or install the current executable before using the new schema and
   request contract. Stop older writers before upgrading; do not mix executable
   versions against upgraded storage.
-- Validate migration using an isolated cloned ledger. Do not upgrade a shared
-  live ledger merely to obtain test evidence while older writers still use it.
+- Validate migration using an isolated cloned ledger. Do not upgrade a
+  live feature ledger merely to obtain test evidence while older writers still use it.
 - Migrations move forward. Current writers reject unsupported newer schemas
   within every write transaction; released legacy writers still require shutdown.
 - Before an upgrade that changes record shapes, preserve a consistent backup
