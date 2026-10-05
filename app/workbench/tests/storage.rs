@@ -1,8 +1,9 @@
 use anyhow::{Context, bail};
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+use meta_cortex_workbench::model::workflow::TaskAssignment;
 use meta_cortex_workbench::model::{Event, EventKind, Progress, Task, Workspace};
 use meta_cortex_workbench::request::{
-    ClaimTask, CreateTask, InitFeature, WorkerAction, WorkerUpdate,
+    AssignTask, ClaimTask, CreateTask, InitFeature, WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
@@ -11,7 +12,9 @@ use meta_cortex_workbench::values::{
 use meta_cortex_workbench::versions::{
     RecordVersion, StorageVersion, VersionFamily, VersionNumber, VersionParseError,
 };
-use meta_cortex_workbench::{DataDirectory, Ledger, LedgerError, Workbench};
+use meta_cortex_workbench::{
+    DataDirectory, FeatureCard, Ledger, LedgerError, PageIndex, Workbench,
+};
 use sea_query::{Iden, Query, SqliteQueryBuilder};
 use std::env;
 use std::fs;
@@ -52,6 +55,7 @@ enum EventTable {
 #[derive(Iden)]
 enum DatabasePragma {
     UserVersion,
+    IntegrityCheck,
 }
 
 struct Scenario {
@@ -405,4 +409,152 @@ fn features_have_distinct_database_paths() -> anyhow::Result<()> {
             assert_eq!(first.status().await?.len(), 1);
             anyhow::Ok(())
         })
+}
+
+struct DurabilityWriter {
+    workbench: Workbench,
+    prefix: TaskId,
+}
+impl DurabilityWriter {
+    async fn write(&self, index: u32) -> anyhow::Result<()> {
+        let feature = FeatureId::try_from("feature".to_owned())?;
+        let task = TaskId::try_from(format!("{}-{index}", self.prefix))?;
+        self.workbench
+            .open(feature.clone())
+            .await?
+            .create(CreateTask {
+                feature: feature.clone(),
+                task: task.clone(),
+                actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                objective: Note::from("Concurrent task".to_owned()),
+                acceptance: vec![Note::from("Persist assignment and history".to_owned())],
+                dependencies: Vec::new(),
+                workspace: Workspace::ReadOnly,
+                progress: Progress {
+                    summary: Note::from("Waiting".to_owned()),
+                    findings: Vec::new(),
+                    next_steps: Vec::new(),
+                    checks: Vec::new(),
+                    extensions: Extensions::default(),
+                },
+            })
+            .await?;
+        self.workbench
+            .open(feature.clone())
+            .await?
+            .assign(AssignTask {
+                feature,
+                task,
+                expected_revision: TaskRevision::INITIAL,
+                actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::RustDev)),
+            })
+            .await?;
+        Ok(())
+    }
+}
+
+#[test]
+fn durability_writer_child() -> anyhow::Result<()> {
+    let project = match env::var_os("META_CORTEX_DURABILITY_PROJECT") {
+        Some(path) => PathBuf::from(path),
+        None => return Ok(()),
+    };
+    let data = PathBuf::from(env::var_os("META_CORTEX_DURABILITY_DATA").context("data")?);
+    let writer = DurabilityWriter {
+        workbench: Workbench::discover(&project)?.with_data_directory(DataDirectory::from(data)),
+        prefix: TaskId::try_from(env::var("META_CORTEX_DURABILITY_WRITER")?)?,
+    };
+    Builder::new_current_thread()
+        .enable_time()
+        .build()?
+        .block_on(async {
+            for index in 0..20 {
+                writer.write(index).await?;
+            }
+            anyhow::Ok(())
+        })
+}
+
+impl Scenario {
+    fn writer(&self, prefix: TaskId) -> anyhow::Result<Child> {
+        Ok(Command::new(env::current_exe()?)
+            .args(["--exact", "durability_writer_child", "--nocapture"])
+            .env("META_CORTEX_DURABILITY_PROJECT", self.directory.path())
+            .env("META_CORTEX_DURABILITY_DATA", self.data.path())
+            .env("META_CORTEX_DURABILITY_WRITER", prefix.to_string())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?)
+    }
+    async fn observe_during_writes(&self) -> anyhow::Result<()> {
+        let workbench = Workbench::discover(self.directory.path())?
+            .with_data_directory(DataDirectory::from(self.data.path().to_owned()));
+        for _ in 0..200 {
+            let catalog = workbench
+                .observe()
+                .await?
+                .summaries(PageIndex::FIRST)
+                .await?;
+            assert!(matches!(
+                catalog.features.records.as_slice(),
+                [FeatureCard::Current { .. }]
+            ));
+        }
+        Ok(())
+    }
+    async fn verify_durable_writes(&self) -> anyhow::Result<()> {
+        let ledger = self.open().await?;
+        let tasks = ledger.status().await?;
+        assert_eq!(tasks.len(), 41);
+        for prefix in ["first", "second"] {
+            for index in 0..20 {
+                let id = TaskId::try_from(format!("{prefix}-{index}"))?;
+                let view = ledger.task(&id).await?;
+                assert_eq!(view.task.common.revision, TaskRevision::INITIAL.advance()?);
+                assert_eq!(ledger.history(&id).await?.len(), 2);
+            }
+        }
+        let path = ledger.info().path;
+        drop(ledger);
+        let database = turso::Builder::new_local(path.to_str().context("path")?)
+            .read_only(true)
+            .with_io(PERSISTENT_IO)
+            .experimental_multiprocess_wal(true)
+            .build()
+            .await?;
+        let connection = database.connect()?;
+        let mut results = Vec::new();
+        connection
+            .pragma_query(&DatabasePragma::IntegrityCheck.to_string(), |row| {
+                results.push(row.get::<String>(0));
+                Ok(())
+            })
+            .await?;
+        assert_eq!(results.into_iter().collect::<Result<Vec<_>, _>>()?, ["ok"]);
+        Ok(())
+    }
+}
+
+#[test]
+fn concurrent_writers_and_dashboard_reads_preserve_tasks_history_and_integrity()
+-> anyhow::Result<()> {
+    let scenario = Scenario::create()?;
+    let runtime = Builder::new_current_thread().enable_time().build()?;
+    drop(runtime.block_on(scenario.initialize())?);
+    let writers = [
+        scenario.writer(TaskId::try_from("first".to_owned())?)?,
+        scenario.writer(TaskId::try_from("second".to_owned())?)?,
+    ];
+    runtime.block_on(scenario.observe_during_writes())?;
+    for writer in writers {
+        let output = writer.wait_with_output()?;
+        assert!(
+            output.status.success(),
+            "{}\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    runtime.block_on(scenario.verify_durable_writes())
 }

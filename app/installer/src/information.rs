@@ -39,6 +39,7 @@ pub enum Version {
     V0_12_3,
     V0_13_0,
     V0_14_0,
+    V0_15_0,
 }
 
 #[derive(Debug, PartialEq, Eq, Error)]
@@ -84,6 +85,7 @@ impl Version {
             b"0.12.3" => Ok(Version::V0_12_3),
             b"0.13.0" => Ok(Version::V0_13_0),
             b"0.14.0" => Ok(Version::V0_14_0),
+            b"0.15.0" => Ok(Version::V0_15_0),
             _ => Err(VersionTextError::Unsupported),
         }
     }
@@ -121,6 +123,7 @@ impl Version {
             Self::V0_12_3 => "0.12.3",
             Self::V0_13_0 => "0.13.0",
             Self::V0_14_0 => "0.14.0",
+            Self::V0_15_0 => "0.15.0",
         }
     }
 
@@ -245,7 +248,7 @@ mod tests {
                 Err(VersionTextError::Unsupported)
             );
         }
-        assert_eq!(Version::CURRENT, Version::V0_14_0);
+        assert_eq!(Version::CURRENT, Version::V0_15_0);
         for version in [
             Version::V0_6_2,
             Version::V0_7_0,
@@ -262,6 +265,7 @@ mod tests {
             Version::V0_12_3,
             Version::V0_13_0,
             Version::V0_14_0,
+            Version::V0_15_0,
         ] {
             let text = version.as_str().to_owned();
             assert_eq!(Version::try_from(text.clone()), Ok(version));
