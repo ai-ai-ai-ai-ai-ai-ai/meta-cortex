@@ -503,8 +503,8 @@ installation before retrying.
 ## Agent work ledger
 
 The `meta-cortex` binary includes an embedded Turso ledger at
-`~/.meta-cortex/<repo-name>/<repo_id>/workbench.db`. All agents, features, and
-worktrees in a repository use this same database. Framework or feature
+`~/.meta-cortex/<repo-name>/<repo_id>/features/<feature>.db`. Each feature has
+its own database, shared by its agents and linked worktrees. Framework or feature
 initialization generates a UUID once in the main checkout's
 `.meta-cortex/repository-id`. Initialization from any linked worktree reuses that
 ID. The file is locally ignored by Git, so a fresh clone gets a new identity;
@@ -529,6 +529,12 @@ integration records, framework initialization, and project inspection.
 See the [agent ledger protocol](cortex/teams/gizmo-team/docs/agent-ledger.md) for
 ownership, recovery, version compatibility, and local storage boundaries.
 
+- **Prohibited:** continue feature `alpha` by opening another feature’s database
+  or creating a new ledger for each worker checkout.
+
+- **Required:** pass `alpha` and the consuming project path so linked worktrees
+  resolve the same `features/alpha.db` ledger.
+
 ### Observe recorded work
 
 From your repository root, any subdirectory, or a linked worktree, run:
@@ -538,7 +544,7 @@ meta-cortex dashboard
 ```
 
 No request file or required arguments are needed. The command resolves the
-existing repository identity and shared database, then opens the native Tauri
+existing repository identity and feature storage, then opens the native Tauri
 Workbench window. Close the window to exit. The executable embeds the dashboard
 assets and reads through native IPC; no HTTP server is required.
 
@@ -558,9 +564,8 @@ jump to its log. Repeated evidence appears only when it changes.
 - The dashboard refreshes summaries every five seconds; Pause stops automatic
   reads and Refresh reads at once.
 - Selected workflow history refreshes when its recorded activity changes.
-- Reads use read-only multiprocess WAL connections; no HTTP server is involved.
-- Before those reads, Desktop prepares an existing supported older shared database
-  by migrating it transactionally to the current schema.
+- Reads use read-only multiprocess WAL connections; no HTTP server or database
+  migration is involved.
 
 Pull requests come exclusively from URLs saved in task progress extensions,
 such as `pr_url`; clicking one opens the system browser. Feature start means
@@ -579,9 +584,12 @@ recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
 for exact typed requests, views, fields, paging, refresh, and storage requirements.
 The command reports errors outside Git or when repository identity or the ledger
-is missing. Desktop preparation does not initialize storage or import separate
-legacy feature databases. Snapshot remains read-only and reports when migration
-is required.
+is missing. It does not initialize, migrate, or import storage.
+
+- **Prohibited:** open the dashboard expecting it to upgrade an older ledger.
+
+- **Required:** use the selected feature’s supported migration workflow described
+  in the linked ledger guidance, then reopen the dashboard to observe its records.
 
 ## Cortex context declarations
 
