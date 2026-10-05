@@ -9,13 +9,13 @@
 required_total_agents = 20
 
 [gizmo-prime]
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 reasoning_effort = "low"
 
 [team.gizmo]
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 reasoning_effort = "low"
 
 [team.agent]
-model = "gpt-6.1-sol"
+model = "gpt-6-astra"
 reasoning_effort = "low"
