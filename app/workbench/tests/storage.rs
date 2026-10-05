@@ -151,7 +151,7 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
                 let conn = db.connect()?;
                 assert_eq!(
                     Scenario::version(&conn).await?,
-                    VersionNumber::from(i64::from(StorageVersion::SequencedEventsV5))
+                    VersionNumber::from(i64::from(StorageVersion::FeatureHistoryV6))
                 );
                 conn.pragma_update(
                     &DatabasePragma::UserVersion.to_string(),
@@ -161,10 +161,10 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
             }
             assert!(matches!(
                 scenario.open().await,
-                Err(LedgerError::UnsupportedVersion(VersionParseError::Unsupported {
-                    schema: VersionFamily::Database,
-                    version
-                })) if version == VersionNumber::from(99)
+                Err(LedgerError::FeatureStorage { source, .. }) if matches!(*source,
+                    LedgerError::UnsupportedVersion(VersionParseError::Unsupported {
+                        schema: VersionFamily::Database, version
+                    }) if version == VersionNumber::from(99))
             ));
             let db = turso::Builder::new_local(path.to_str().context("path")?)
                 .with_io(PERSISTENT_IO)
@@ -323,6 +323,86 @@ fn killed_writer_preserves_last_committed_task_and_history() -> anyhow::Result<(
                 },
             };
             ledger.update(heartbeat).await?;
+            anyhow::Ok(())
+        })
+}
+
+#[test]
+fn open_writer_rejects_schema_advanced_by_another_connection() -> anyhow::Result<()> {
+    let scenario = Scenario::create()?;
+    Builder::new_current_thread()
+        .enable_time()
+        .build()?
+        .block_on(async {
+            let mut ledger = scenario.initialize().await?;
+            let path = ledger.info().path;
+            let database = turso::Builder::new_local(path.to_str().context("path")?)
+                .with_io(PERSISTENT_IO)
+                .experimental_multiprocess_wal(true)
+                .build()
+                .await?;
+            let connection = database.connect()?;
+            connection
+                .pragma_update(
+                    &DatabasePragma::UserVersion.to_string(),
+                    VersionNumber::from(99),
+                )
+                .await?;
+            let task = ledger.task(&TaskId::try_from("task".to_owned())?).await?;
+            let result = ledger
+                .claim(ClaimTask {
+                    feature: ledger.info().feature.id,
+                    task: TaskId::try_from("task".to_owned())?,
+                    expected_revision: task.task.common.revision,
+                    agent: AgentId::Development(DevelopmentAgent::RustDev),
+                    worker_id: WorkerId::try_from(
+                        "409766ea-0c85-4db1-9890-ea6d058c78da".to_owned(),
+                    )?,
+                    ttl_seconds: LeaseSeconds::try_from(3600)?,
+                })
+                .await;
+            assert!(
+                result.is_err(),
+                "stale writer must reject an unsupported schema"
+            );
+            assert_eq!(
+                ledger
+                    .history(&TaskId::try_from("task".to_owned())?)
+                    .await?
+                    .len(),
+                1
+            );
+            anyhow::Ok(())
+        })
+}
+
+#[test]
+fn features_have_distinct_database_paths() -> anyhow::Result<()> {
+    let scenario = Scenario::create()?;
+    Builder::new_current_thread()
+        .enable_time()
+        .build()?
+        .block_on(async {
+            let first = scenario.initialize().await?;
+            let workbench = Workbench::discover(scenario.directory.path())?
+                .with_data_directory(DataDirectory::from(scenario.data.path().to_owned()));
+            let input = InitFeature {
+                feature: FeatureId::try_from("second".to_owned())?,
+                objective: Note::from("second".to_owned()),
+                branch: first.info().feature.branch,
+                worktree: scenario.directory.path().to_owned(),
+            };
+            let second = workbench.initialize(input).await?;
+            assert_ne!(first.info().path, second.info().path);
+            assert_eq!(
+                second
+                    .info()
+                    .path
+                    .file_name()
+                    .and_then(|name| name.to_str()),
+                Some("second.db")
+            );
+            assert_eq!(first.status().await?.len(), 1);
             anyhow::Ok(())
         })
 }

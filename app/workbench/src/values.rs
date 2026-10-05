@@ -34,7 +34,9 @@ impl TryFrom<String> for TaskId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Display, Serialize, Deserialize, JsonSchema)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Display, Serialize, Deserialize, JsonSchema,
+)]
 #[serde(try_from = "String")]
 #[schemars(with = "String")]
 pub struct FeatureId(String);

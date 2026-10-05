@@ -89,6 +89,7 @@ impl From<&AgentError> for Failure {
 impl ErrorCode {
     fn ledger(error: &LedgerError) -> Self {
         match error {
+            LedgerError::FeatureStorage { source, .. } => Self::ledger(source),
             LedgerError::Conflict | LedgerError::AlreadyExists => ErrorCode::Conflict,
             LedgerError::NotFound | LedgerError::Uninitialized => ErrorCode::NotFound,
             LedgerError::Invalid(_)

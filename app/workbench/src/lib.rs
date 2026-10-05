@@ -1,4 +1,4 @@
-//! Durable task coordination, Git checkpoints, and repository-wide Turso storage.
+//! Durable task coordination, Git checkpoints, and per-feature Turso storage.
 //!
 //! [`Workbench`] identifies a repository through Git and opens its user-owned ledgers.
 //! Command-line transport and framework installation belong to the application.
@@ -73,22 +73,26 @@ impl Workbench {
 
     /// Observe existing current-schema storage without initialization or migration.
     pub async fn observe(&self) -> Result<Observation, LedgerError> {
-        Observation::open(self.repository.ledger_path()?).await
-    }
-
-    /// Migrate existing supported storage, then return a read-only observation.
-    /// Does not initialize repository identity, empty storage, or import separate ledgers.
-    pub async fn prepare_observation(&self) -> Result<Observation, LedgerError> {
-        Observation::prepare(self.repository.ledger_path()?).await
+        Observation::open(self.repository.clone()).await
     }
 
     pub async fn features(&self) -> Result<Vec<LedgerInfo>, LedgerError> {
-        Ledger::features(&self.repository).await
+        match self.repository.observed_features().await {
+            Err(LedgerError::Uninitialized) => Ok(Vec::new()),
+            result => result,
+        }
     }
 }
 
 #[derive(Debug, Error)]
 pub enum LedgerError {
+    #[error("feature {feature} (current database schema {current}): {source}")]
+    FeatureStorage {
+        feature: FeatureId,
+        current: versions::StorageVersion,
+        #[source]
+        source: Box<LedgerError>,
+    },
     #[error("invalid ledger input: {0}")]
     Invalid(&'static str),
     #[error(transparent)]
@@ -126,7 +130,7 @@ pub enum LedgerError {
     #[error("ledger has not been initialized; run Feature / Initialize")]
     Uninitialized,
     #[error(
-        "Workbench database version {0} requires storage preparation before read-only observation"
+        "Workbench database version {0} requires migration; open the selected feature with the current meta-cortex before observing"
     )]
     ObservationMigrationRequired(versions::StorageVersion),
     #[error("file operation failed: {0}")]
@@ -141,4 +145,14 @@ pub enum LedgerError {
     Json(#[from] serde_json::Error),
     #[error("clock is before the Unix epoch: {0}")]
     Clock(#[from] SystemTimeError),
+}
+
+impl LedgerError {
+    pub(crate) fn in_feature(self, feature: &FeatureId) -> Self {
+        Self::FeatureStorage {
+            feature: feature.clone(),
+            current: versions::StorageVersion::CURRENT,
+            source: Box::new(self),
+        }
+    }
 }

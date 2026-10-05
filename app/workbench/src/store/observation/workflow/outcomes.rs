@@ -1,8 +1,9 @@
-use super::{FlowState, JsonPath, LedgerReader, RecordLimit};
+use super::{FlowState, LedgerReader, RecordLimit};
 use crate::LedgerError;
 use crate::agents::AgentId;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Feature, Task, TaskState};
+use crate::store::record_fields::{TaskDocument, TaskField};
 use crate::store::relational::TaskTable;
 use crate::store::sql::SqlStatement;
 use crate::values::{TaskId, Timestamp};
@@ -116,13 +117,13 @@ impl FeatureShape {
 }
 impl LedgerReader {
     pub(super) async fn shape(&self, feature: &Feature) -> Result<FeatureShape, LedgerError> {
-        let last_update = JsonPath::from("$.common.last_update").extract();
+        let last_update = TaskField::LastUpdate.extract(TaskDocument::CurrentTask);
         let mut rows = SqlStatement::build(
             Query::select()
                 .column(TaskTable::Document)
                 .from(TaskTable::Table)
                 .and_where(Expr::col(TaskTable::FeatureId).eq(feature.id.to_string()))
-                .order_by_expr(last_update.into(), Order::Desc)
+                .order_by_expr(last_update, Order::Desc)
                 .limit(RecordLimit::FEATURE_TASKS.sql_count())
                 .to_owned(),
         )?
