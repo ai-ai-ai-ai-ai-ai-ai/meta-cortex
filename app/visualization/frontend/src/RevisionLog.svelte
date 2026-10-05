@@ -14,9 +14,9 @@
   {#each entries as record (record.sequence)}{@const look = new RevisionLook(
       record,
     )}
-    <article class="revision-log-entry" aria-label={look.global()}>
+    <article class="revision-log-entry" aria-label={look.sequence()}>
       <div class="revision-log-heading">
-        <strong>{look.global()}</strong><span>{look.provenance()}</span>
+        <strong>{look.sequence()}</strong><span>{look.provenance()}</span>
         <button onclick={() => onselect(record.task)}
           >{RevisionLook.TEXT.open}</button
         >

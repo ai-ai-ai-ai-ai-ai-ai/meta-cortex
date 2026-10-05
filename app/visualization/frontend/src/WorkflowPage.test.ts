@@ -368,7 +368,7 @@ it("keeps a focused trigger card open after pointer leave until focus also leave
   vi.useRealTimers();
 });
 
-it("renders supplied global revisions without sorting or renumbering and retains selection on refresh", async () => {
+it("renders supplied feature revisions without sorting or renumbering and retains selection on refresh", async () => {
   const fixture = new Fixture();
   const workflow = fixture.workflow();
   const records: RevisionLogEntry[] = [];
@@ -403,7 +403,7 @@ it("renders supplied global revisions without sorting or renumbering and retains
     [...panel.querySelectorAll("article")].map((article) =>
       article.getAttribute("aria-label"),
     ),
-  ).toEqual(["Global R90", "Global R41"]);
+  ).toEqual(["Feature R90", "Feature R41"]);
   expect(panel.textContent).toContain("Task r7");
   expect(panel.textContent).toContain("Task r2");
   expect(panel.textContent).toContain("Legacy storage order");
