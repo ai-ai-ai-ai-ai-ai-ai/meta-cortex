@@ -12,6 +12,9 @@ const opener = vi.hoisted(() => ({
   openUrl: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@tauri-apps/plugin-opener", () => opener);
+vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true }));
+const diagrams = vi.hoisted(() => ({ initialize: vi.fn(), render: vi.fn() }));
+vi.mock("mermaid", () => ({ default: diagrams }));
 const source: GuideDocument = {
   id: { kind: "Protocol", protocol: "Communication" },
   path: "teams/AGENTS.md",
@@ -25,6 +28,7 @@ const linked: GuideDocument = {
     "# Details\n\n## Handoff\n\n1. First step\n2. Second step\n\n[Back](../AGENTS.md#responsibilities)",
 };
 beforeEach(() => {
+  vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
     configurable: true,
     value: vi.fn(),
@@ -32,6 +36,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
+  diagrams.render.mockReset();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
   opener.openUrl.mockClear();
 });
@@ -46,6 +52,14 @@ it("renders semantic Markdown and follows embedded relative links and anchors", 
   expect(container.querySelector("pre code")?.textContent).toContain(
     "const count = 1;",
   );
+  expect(
+    screen.getByRole("link", { name: "Details" }).getAttribute("href"),
+  ).toBe(
+    new URL(
+      "teams/docs/detail.md#handoff",
+      import.meta.env.VITE_GUIDE_SOURCE_BASE,
+    ).href,
+  );
   await fireEvent.click(screen.getByRole("link", { name: "Details" }));
   expect(screen.getByRole("heading", { name: "Details" })).toBeTruthy();
   expect(document.activeElement).toBe(
@@ -56,8 +70,10 @@ it("renders semantic Markdown and follows embedded relative links and anchors", 
     screen.getByRole("heading", { name: "Responsibilities" }),
   );
   await fireEvent.click(screen.getByRole("link", { name: "Missing" }));
-  expect(screen.getByRole("status").textContent).toContain(
-    "Not included in this guide: teams/missing.md",
+  await waitFor(() =>
+    expect(opener.openUrl).toHaveBeenCalledWith(
+      new URL("teams/missing.md", import.meta.env.VITE_GUIDE_SOURCE_BASE).href,
+    ),
   );
   await fireEvent.click(screen.getByRole("link", { name: "External" }));
   await waitFor(() =>
@@ -79,4 +95,49 @@ it("escapes raw HTML and rejects executable Markdown URLs", () => {
     "<script>example</script>",
   );
   expect(screen.getByRole("heading", { name: "Safe" })).toBeTruthy();
+});
+
+it("renders Mermaid fences as strict diagrams without changing ordinary code", async () => {
+  diagrams.render.mockResolvedValue({
+    svg: '<svg role="img" aria-label="Flow"><text>Team Gizmo</text></svg>',
+  });
+  const diagram: GuideDocument = {
+    ...source,
+    markdown:
+      "# Flow\n\n```mermaid\nflowchart LR\n A --> B\n```\n\n```ts\nconst n = 1;\n```",
+  };
+  const { container } = render(GuideDocumentView, {
+    source: diagram,
+    documents: [diagram],
+  });
+  expect(await screen.findByRole("img", { name: "Flow" })).toBeTruthy();
+  expect(diagrams.initialize).toHaveBeenCalledWith(
+    expect.objectContaining({
+      securityLevel: "strict",
+      startOnLoad: false,
+      theme: "dark",
+    }),
+  );
+  expect(container.querySelector("code.language-ts")?.textContent).toContain(
+    "const n = 1;",
+  );
+});
+it("keeps Mermaid source visible when a diagram cannot render", async () => {
+  diagrams.render.mockRejectedValue(new Error("Invalid diagram"));
+  const diagram: GuideDocument = {
+    ...source,
+    markdown: "```mermaid\ninvalid diagram\n```",
+  };
+  const { container } = render(GuideDocumentView, {
+    source: diagram,
+    documents: [diagram],
+  });
+  expect(
+    await screen.findByText(
+      "This diagram could not be rendered. Its Mermaid source is shown below.",
+    ),
+  ).toBeTruthy();
+  expect(container.querySelector("pre code")?.textContent).toContain(
+    "invalid diagram",
+  );
 });

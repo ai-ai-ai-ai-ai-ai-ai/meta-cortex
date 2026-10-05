@@ -1,5 +1,7 @@
 import MarkdownIt from "markdown-it";
 import anchor from "markdown-it-anchor";
+import { isTauri } from "@tauri-apps/api/core";
+import { GuideDiagram } from "./guide-diagram";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Effect, Match } from "effect";
 import type { GuideDocument } from "./contracts";
@@ -7,6 +9,8 @@ import type { GuideDocument } from "./contracts";
 export class GuideMarkdown {
   private readonly parser = new MarkdownIt({ html: false }).use(anchor);
   private fragment = "";
+  private readonly diagrams = new GuideDiagram();
+  private readonly sourceBase: string = import.meta.env.VITE_GUIDE_SOURCE_BASE;
   constructor(
     readonly documents: ReadonlyArray<GuideDocument>,
     readonly select: (path: string) => void,
@@ -22,8 +26,7 @@ export class GuideMarkdown {
           const link = target.closest("a");
           Match.value(link).pipe(
             Match.when(Match.instanceOf(HTMLAnchorElement), (element) => {
-              event.preventDefault();
-              this.follow(element.getAttribute("href") ?? "", current, node);
+              this.follow(element, event, node);
             }),
             Match.orElse(() => {}),
           );
@@ -31,53 +34,87 @@ export class GuideMarkdown {
         Match.orElse(() => {}),
       );
     };
+    const disclosure = node.closest("details");
+    const draw = () => {
+      Match.value(disclosure?.open ?? true).pipe(
+        Match.when(true, () => this.diagrams.render(node)),
+        Match.orElse(() => {}),
+      );
+    };
+    disclosure?.addEventListener("toggle", draw);
     node.addEventListener("click", click);
+    draw();
     return {
       update: (next: GuideDocument) => {
         current = next;
         this.render(node, current);
         this.focus(node);
+        draw();
       },
-      destroy: () => node.removeEventListener("click", click),
+      destroy: () => {
+        node.removeEventListener("click", click);
+        disclosure?.removeEventListener("toggle", draw);
+      },
     };
   };
 
   private render(node: HTMLElement, source: GuideDocument): void {
     // Raw HTML is disabled; markdown-it escapes content and rejects unsafe URLs.
     node.innerHTML = this.parser.render(source.markdown);
+    for (const link of node.querySelectorAll<HTMLAnchorElement>("a[href]")) {
+      const url = URL.parse(
+        link.getAttribute("href") ?? "",
+        new URL(source.path, this.sourceBase),
+      );
+      Match.value(url).pipe(
+        Match.when(Match.defined, (resolved) => {
+          link.href = resolved.href;
+        }),
+        Match.orElse(() => link.removeAttribute("href")),
+      );
+    }
     for (const heading of node.querySelectorAll<HTMLElement>("[id]")) {
       heading.id = `guide-doc-${heading.id}`;
     }
   }
 
-  private follow(href: string, source: GuideDocument, node: HTMLElement): void {
+  private follow(
+    link: HTMLAnchorElement,
+    event: MouseEvent,
+    node: HTMLElement,
+  ): void {
     this.notice("");
-    const base = new URL(source.path, "https://guide.invalid/");
-    Match.value(URL.parse(href, base)).pipe(
-      Match.when(Match.defined, (url) => this.route(url, node)),
-      Match.orElse(() => this.notice("This documentation link is invalid.")),
-    );
-  }
-
-  private route(url: URL, node: HTMLElement): void {
-    switch (url.origin) {
-      case "https://guide.invalid": {
-        const path = url.pathname.slice(1);
-        this.fragment = url.hash.slice(1);
-        Match.value(this.documents.find((doc) => doc.path === path)).pipe(
-          Match.when(Match.defined, (doc) => {
-            this.select(doc.path);
-            this.focus(node);
+    const url = new URL(link.href);
+    const document = this.documents.find((doc) => {
+      const target = new URL(doc.path, this.sourceBase);
+      return target.origin === url.origin && target.pathname === url.pathname;
+    });
+    const ordinaryClick =
+      event.button === 0 &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      !event.altKey;
+    Match.value({ document, ordinaryClick }).pipe(
+      Match.when(
+        { document: Match.defined, ordinaryClick: true },
+        ({ document }) => {
+          event.preventDefault();
+          this.fragment = url.hash.slice(1);
+          this.select(document.path);
+          this.focus(node);
+        },
+      ),
+      Match.orElse(() => {
+        Match.value(isTauri()).pipe(
+          Match.when(true, () => {
+            event.preventDefault();
+            this.external(url);
           }),
-          Match.orElse(() =>
-            this.notice(`Not included in this guide: ${path}`),
-          ),
+          Match.orElse(() => {}),
         );
-        return;
-      }
-      default:
-        this.external(url);
-    }
+      }),
+    );
   }
 
   private external(url: URL): void {
