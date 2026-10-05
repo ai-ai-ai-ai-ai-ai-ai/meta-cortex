@@ -73,14 +73,26 @@
       {#each look.selected(selected) as agent (agent.agent.role)}
         <p class="eyebrow">{GuideLook.TEAMS[agent.agent.team]}</p>
         <h2>{agent.label}</h2>
-        <dl>
-          <dt>{GuideLook.TEXT.owns}</dt>
-          <dd>{agent.responsibility}</dd>
-          <dt>{GuideLook.TEXT.reports}</dt>
-          <dd>{look.target(agent.reports_to)}</dd>
-          <dt>{GuideLook.TEXT.handoff}</dt>
-          <dd>{agent.handoff}</dd>
-        </dl>
+        <div class="guide-detail-sections">
+          <dl class="guide-responsibility">
+            <div>
+              <dt>{GuideLook.TEXT.owns}</dt>
+              <dd>{agent.responsibility}</dd>
+            </div>
+            <div>
+              <dt>{GuideLook.TEXT.reports}</dt>
+              <dd>{look.target(agent.reports_to)}</dd>
+            </div>
+          </dl>
+          <section class="guide-handoff" aria-label={GuideLook.TEXT.handoff}>
+            <h3>{GuideLook.TEXT.handoff}</h3>
+            <ol>
+              {#each agent.handoff.split("\n") as step, index (index)}
+                <li>{step}</li>
+              {/each}
+            </ol>
+          </section>
+        </div>
         {#each look.reviews(agent) as review (review.author.role)}
           <p class="guide-review">
             {new AgentLook(review.author).name()} → {new AgentLook(

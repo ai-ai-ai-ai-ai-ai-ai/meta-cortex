@@ -88,31 +88,76 @@
 .guide-detail {
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 22px;
+  padding: 28px;
   background: var(--surface);
   scroll-margin-top: 70px;
 }
 .guide-detail h2 {
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 600;
-  margin: 4px 0 20px;
+  margin: 6px 0 28px;
 }
-.guide-detail dt {
-  font-size: 10px;
+.guide-detail > .eyebrow {
+  font-size: 14px;
+}
+.guide-detail-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+  gap: 32px;
+}
+.guide-responsibility {
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  margin: 0;
+}
+.guide-responsibility > div {
+  border-left: 3px solid var(--line);
+  padding-left: 18px;
+}
+.guide-detail dt,
+.guide-handoff h3 {
+  font-size: 15px;
+  font-weight: 600;
   color: var(--muted);
-  margin: 15px 0 5px;
+  margin: 0 0 10px;
 }
 .guide-detail dd {
-  font-size: 12px;
+  font-size: 18px;
   line-height: 1.6;
+  margin: 0;
   white-space: pre-line;
+  max-width: 46ch;
+}
+.guide-handoff {
+  padding-left: 28px;
+  border-left: 1px solid var(--line);
+}
+.guide-handoff ol {
+  margin: 0;
+  padding-left: 28px;
+  list-style: decimal;
+}
+.guide-handoff li {
+  padding: 12px 0 12px 8px;
+  font-size: 17px;
+  line-height: 1.6;
+  max-width: 65ch;
+}
+.guide-handoff li + li {
+  border-top: 1px solid var(--line);
+}
+.guide-handoff li::marker {
+  color: var(--muted);
+  font-weight: 600;
 }
 .guide-review {
   margin-top: 14px;
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 .guide-review small {
   display: block;
@@ -121,15 +166,15 @@
 }
 .guide-document {
   border-top: 1px solid var(--line);
-  margin-top: 20px;
-  padding-top: 15px;
-  font-size: 12px;
+  margin-top: 28px;
+  padding-top: 22px;
+  font-size: 16px;
 }
 .guide-document summary {
   cursor: pointer;
 }
 .guide-document p {
-  font-size: 10px;
+  font-size: 14px;
   color: var(--muted);
   overflow-wrap: anywhere;
   margin: 12px 0;
@@ -148,6 +193,18 @@
   }
 }
 @media (max-width: 700px) {
+  .guide-detail {
+    padding: 22px;
+  }
+  .guide-detail-sections {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .guide-handoff {
+    padding: 24px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
   .guide-layout {
     display: flex;
     flex-direction: column;

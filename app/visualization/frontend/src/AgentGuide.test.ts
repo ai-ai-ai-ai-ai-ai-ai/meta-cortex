@@ -46,7 +46,12 @@ it("opens the static guide despite a failed ledger read and displays selected ca
     (entry) => entry.agent.role === "RustDev",
   )) {
     expect(detail.textContent).toContain(agent.responsibility);
-    expect(detail.textContent).toContain(agent.handoff);
+    expect(
+      within(detail)
+        .getAllByRole("listitem")
+        .map((step) => step.textContent)
+        .join("\n"),
+    ).toBe(agent.handoff);
   }
   expect(within(detail).getByText("review via Team Gizmo")).toBeTruthy();
   expect(screen.queryByRole("alert")).toBeNull();
