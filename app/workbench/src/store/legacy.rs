@@ -1,5 +1,3 @@
-use super::PERSISTENT_IO;
-use super::catalog::FilePresence;
 use super::observation::SequenceProvenance;
 use super::relational::{EventTable, FeatureTable, RelationalSchema, TaskTable};
 use super::schema::LedgerSchema;
@@ -9,9 +7,8 @@ use crate::LedgerError;
 use crate::model::{Event, Feature, Task};
 use crate::values::{EventSequence, FeatureId};
 use crate::versions::StorageVersion;
-use sea_query::{Expr, ExprTrait, Iden, Order, Query, SelectStatement, SqliteQueryBuilder, Table};
-use std::path::Path;
-use turso::{Builder, Connection};
+use sea_query::{Iden, Order, Query, SelectStatement, SqliteQueryBuilder, Table};
+use turso::Connection;
 
 #[derive(Iden)]
 pub(super) enum LegacyFeature {
@@ -22,7 +19,7 @@ pub(super) enum LegacyFeature {
 #[derive(Clone, Copy)]
 pub(super) enum LegacyLayout {
     FeatureDatabase,
-    RepositoryDatabase,
+    RelationalDatabase,
 }
 #[derive(Clone, Copy)]
 pub(super) struct LegacySource<'a> {
@@ -46,14 +43,8 @@ pub(super) struct LegacyRecords {
     tasks: Vec<StoredRecord<Task>>,
     events: Vec<LegacyEvent>,
 }
-#[derive(Clone, Copy)]
-enum RecordSelection<'a> {
-    All,
-    Feature(&'a FeatureId),
-}
 struct RecordRead<'a> {
     source: LegacySource<'a>,
-    selection: RecordSelection<'a>,
     version: StorageVersion,
 }
 impl RecordRead<'_> {
@@ -62,11 +53,6 @@ impl RecordRead<'_> {
         query
             .columns([TaskTable::Id, TaskTable::Revision, TaskTable::Document])
             .from(TaskTable::Table);
-        if let RecordSelection::Feature(feature) = self.selection
-            && let LegacyLayout::RepositoryDatabase = self.source.layout
-        {
-            query.and_where(Expr::col(TaskTable::FeatureId).eq(feature.to_string()));
-        }
         query
     }
     fn events(&self) -> SelectStatement {
@@ -90,11 +76,6 @@ impl RecordRead<'_> {
             | StorageVersion::RelationalV3
             | StorageVersion::CommonTasksV4 => {}
         }
-        if let RecordSelection::Feature(feature) = self.selection
-            && let LegacyLayout::RepositoryDatabase = self.source.layout
-        {
-            query.and_where(Expr::col(EventTable::FeatureId).eq(feature.to_string()));
-        }
         query
     }
     async fn features(&self) -> Result<Vec<StoredRecord<Feature>>, LedgerError> {
@@ -105,13 +86,10 @@ impl RecordRead<'_> {
                     .column(LegacyFeature::Document)
                     .from(LegacyFeature::Table);
             }
-            LegacyLayout::RepositoryDatabase => {
+            LegacyLayout::RelationalDatabase => {
                 query
                     .column(FeatureTable::Document)
                     .from(FeatureTable::Table);
-                if let RecordSelection::Feature(feature) = self.selection {
-                    query.and_where(Expr::col(FeatureTable::Id).eq(feature.to_string()));
-                }
             }
         }
         let mut rows = SqlStatement::build(query)?
@@ -132,7 +110,6 @@ impl LegacyRecords {
     pub(super) async fn migrate(source: LegacySource<'_>) -> Result<(), LedgerError> {
         let records = Self::read(RecordRead {
             source,
-            selection: RecordSelection::All,
             version: LedgerSchema::version(source.connection).await?,
         })
         .await?;
@@ -207,21 +184,21 @@ impl LegacyRecords {
             tasks,
             events,
         };
-        records.require_selection(&request)?;
+        records.require_single_feature()?;
         Ok(records)
     }
-    fn require_selection(&self, request: &RecordRead<'_>) -> Result<(), LedgerError> {
-        match (request.selection, request.source.layout) {
-            (RecordSelection::Feature(feature), _) => self.require_feature(feature),
-            (RecordSelection::All, LegacyLayout::RepositoryDatabase) => Ok(()),
-            (RecordSelection::All, LegacyLayout::FeatureDatabase) => match self.features.as_slice()
-            {
-                [feature] => self.require_feature(&feature.value.id),
-                [] if self.tasks.is_empty() && self.events.is_empty() => Ok(()),
-                _ => Err(LedgerError::Invalid(
+    fn require_single_feature(&self) -> Result<(), LedgerError> {
+        match self.features.as_slice() {
+            [feature] => self.require_feature(&feature.value.id),
+            [] => match (self.tasks.as_slice(), self.events.as_slice()) {
+                ([], []) => Ok(()),
+                ([_, ..], []) | ([], [_, ..]) | ([_, ..], [_, ..]) => Err(LedgerError::Invalid(
                     "legacy records must belong to one feature",
                 )),
             },
+            [_, _, ..] => Err(LedgerError::Invalid(
+                "legacy records must belong to one feature",
+            )),
         }
     }
     fn require_feature(&self, selected: &FeatureId) -> Result<(), LedgerError> {
@@ -257,7 +234,7 @@ impl LegacyRecords {
         }
         let table = match source.layout {
             LegacyLayout::FeatureDatabase => Table::drop().table(LegacyFeature::Table).to_owned(),
-            LegacyLayout::RepositoryDatabase => Table::drop().table(FeatureTable::Table).to_owned(),
+            LegacyLayout::RelationalDatabase => Table::drop().table(FeatureTable::Table).to_owned(),
         };
         source
             .connection
@@ -335,76 +312,13 @@ impl LegacyEvent {
         Ok(())
     }
 }
-pub(super) struct LegacyImport<'a> {
-    pub connection: &'a Connection,
-    pub feature: &'a FeatureId,
-}
-impl LegacyImport<'_> {
-    pub(super) async fn import(&self, path: &Path) -> Result<(), LedgerError> {
-        LedgerSchema::require_current(self.connection).await?;
-        let mut rows = SqlStatement::build(
-            Query::select()
-                .column(FeatureTable::Id)
-                .from(FeatureTable::Table)
-                .and_where(Expr::col(FeatureTable::Id).eq(self.feature.to_string()))
-                .to_owned(),
-        )?
-        .query(self.connection)
-        .await?;
-        match rows.next().await? {
-            Some(row) => {
-                drop(row);
-                return Ok(());
-            }
-            None => drop(rows),
-        }
-        let FilePresence::Present = FilePresence::from(path.try_exists()?) else {
-            return Ok(());
-        };
-        let database = Builder::new_local(
-            path.to_str()
-                .ok_or(LedgerError::Invalid("ledger path must be UTF-8"))?,
-        )
-        .with_io(PERSISTENT_IO)
-        .experimental_multiprocess_wal(true)
-        .read_only(true)
-        .build()
-        .await?;
-        let mut source = database.connect()?;
-        let snapshot = source.transaction().await?;
-        let version = LedgerSchema::version(&snapshot).await?;
-        let layout = match version {
-            StorageVersion::DocumentsV1 | StorageVersion::IndexedV2 => {
-                LegacyLayout::FeatureDatabase
-            }
-            StorageVersion::RelationalV3
-            | StorageVersion::CommonTasksV4
-            | StorageVersion::SequencedEventsV5
-            | StorageVersion::FeatureHistoryV6 => LegacyLayout::RepositoryDatabase,
-            StorageVersion::Empty => return Err(LedgerError::Invalid("legacy database is empty")),
-        };
-        let records = LegacyRecords::read(RecordRead {
-            source: LegacySource {
-                connection: &snapshot,
-                layout,
-            },
-            selection: RecordSelection::Feature(self.feature),
-            version,
-        })
-        .await?;
-        records.write(self.connection).await?;
-        snapshot.commit().await?;
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
-    use super::PERSISTENT_IO;
     use crate::git::Repository;
+    use crate::store::PERSISTENT_IO;
     use crate::store::schema::LedgerSchema;
     use crate::store::schema::tests::LegacyFixture;
-    use crate::values::{EventSequence, Extensions, FeatureId, TaskId};
+    use crate::values::{EventSequence, FeatureId};
     use crate::versions::StorageVersion;
     use crate::{DataDirectory, Workbench};
     use sea_query::Iden;
@@ -413,84 +327,16 @@ pub mod tests {
     use tokio::runtime;
     use turso::Builder;
 
-    #[test]
-    fn discovery_observes_and_selected_access_imports_old_location_once() -> anyhow::Result<()> {
-        let directory = tempfile::tempdir()?;
-        let root = directory.path().join("project");
-        git2::Repository::init(&root)?;
-        let data = directory.path().join("data");
-        let workbench =
-            Workbench::discover(&root)?.with_data_directory(DataDirectory::from(data.clone()));
-        workbench.initialize_repository()?;
-        let id = fs::read_to_string(root.join(".meta-cortex/repository-id"))?;
-        let legacy = data.join(id.trim()).join("features");
-        fs::create_dir_all(&legacy)?;
-        let path = legacy.join("feature.db");
-        runtime::Builder::new_current_thread()
-            .enable_time()
-            .build()?
-            .block_on(async {
-                let source =
-                    Builder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?)
-                        .with_io(PERSISTENT_IO)
-                        .experimental_multiprocess_wal(true)
-                        .build()
-                        .await?;
-                let connection = source.connect()?;
-                LegacyFixture::create(&connection).await?;
-                drop(connection);
-                drop(source);
-                assert!(workbench.features().await.is_err());
-                assert!(
-                    !data
-                        .join("project")
-                        .join(id.trim())
-                        .join("features/feature.db")
-                        .exists()
-                );
-                let ledger = workbench
-                    .open(FeatureId::try_from("feature".to_owned())?)
-                    .await?;
-                assert_eq!(
-                    ledger.info().path,
-                    data.join("project")
-                        .join(id.trim())
-                        .join("features/feature.db")
-                );
-                assert_eq!(ledger.status().await?.len(), 1);
-                assert_eq!(
-                    ledger
-                        .history(&TaskId::try_from("task".to_owned())?)
-                        .await?
-                        .len(),
-                    1
-                );
-                drop(ledger);
-                assert_eq!(workbench.features().await?.len(), 1);
-                let source =
-                    Builder::new_local(path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?)
-                        .with_io(PERSISTENT_IO)
-                        .experimental_multiprocess_wal(true)
-                        .read_only(true)
-                        .build()
-                        .await?;
-                assert_eq!(
-                    LedgerSchema::version(&source.connect()?).await?,
-                    StorageVersion::DocumentsV1
-                );
-                anyhow::Ok(())
-            })
-    }
-    #[derive(sea_query::Iden)]
+    #[derive(Iden)]
     enum Pragma {
         UserVersion,
     }
-    struct ImportScenario {
+    struct MigrationScenario {
         directory: tempfile::TempDir,
         repository: Repository,
         workbench: Workbench,
     }
-    impl ImportScenario {
+    impl MigrationScenario {
         fn new() -> anyhow::Result<Self> {
             let directory = tempfile::tempdir()?;
             let root = directory.path().join("project");
@@ -523,7 +369,7 @@ pub mod tests {
             use sea_query::{Expr, ExprTrait, Query};
             RelationalSchema::create(connection).await?;
             SequenceSchema::migrate(connection).await?;
-            for feature in ["feature", "other"] {
+            for feature in ["feature"] {
                 let mut records = Records::new()?;
                 records.feature.id = FeatureId::try_from(feature.to_owned())?;
                 records.feature.worktree = self.directory.path().join("project");
@@ -591,233 +437,7 @@ pub mod tests {
             Ok(events)
         }
     }
-    #[test]
-    fn shared_import_preserves_selected_bytes_positions_and_source_and_ignores_other_future_features()
-    -> anyhow::Result<()> {
-        use crate::agents::{AgentId, GizmoAgent};
-        use crate::model::{Progress, Workspace};
-        use crate::request::CreateTask;
-        use crate::values::Note;
-        let scenario = ImportScenario::new()?;
-        runtime::Builder::new_current_thread()
-            .enable_time()
-            .build()?
-            .block_on(async {
-                let shared = scenario.repository.ledger_path()?;
-                let source = scenario.database(&shared).await?;
-                let source_connection = source.connect()?;
-                scenario.seed(&source_connection).await?;
-                let original = StoredEvent::read(&source_connection).await?;
-                let feature = FeatureId::try_from("feature".to_owned())?;
-                let other = FeatureId::try_from("other".to_owned())?;
-                let historical = scenario.repository.historical_path(&feature)?;
-                let old = scenario.database(&historical).await?;
-                LegacyFixture::create(&old.connect()?).await?;
-                drop(old);
-                // Discovery refuses V5 without migrating it or producing a target.
-                let error = scenario
-                    .workbench
-                    .features()
-                    .await
-                    .err()
-                    .ok_or_else(|| anyhow::anyhow!("expected migration notice"))?;
-                assert!(error.to_string().contains("feature"));
-                assert!(!scenario.repository.feature_path(&feature)?.exists());
-                let mut ledger = scenario.workbench.open(feature.clone()).await?;
-                let imported = scenario.database(&ledger.info().path).await?;
-                assert_eq!(
-                    StoredEvent::read(&imported.connect()?).await?,
-                    vec![StoredEvent {
-                        sequence: original[1].sequence,
-                        provenance: original[1].provenance,
-                        document: original[1].document.clone()
-                    }]
-                );
-                assert_eq!(ledger.status().await?.len(), 1);
-                ledger
-                    .create(CreateTask {
-                        feature: feature.clone(),
-                        task: TaskId::try_from("new-task".to_owned())?,
-                        actor: AgentId::Gizmo(GizmoAgent::Gizmo),
-                        objective: Note::from("new".to_owned()),
-                        acceptance: vec![Note::from("checked".to_owned())],
-                        dependencies: Vec::new(),
-                        workspace: Workspace::ReadOnly,
-                        progress: Progress {
-                            summary: Note::Empty,
-                            findings: Vec::new(),
-                            next_steps: Vec::new(),
-                            checks: Vec::new(),
-                            extensions: Extensions::default(),
-                        },
-                    })
-                    .await?;
-                let appended = StoredEvent::read(&imported.connect()?).await?;
-                assert_eq!(appended[1].sequence, EventSequence::from(9));
-                assert_eq!(
-                    appended[1].provenance,
-                    super::SequenceProvenance::CommittedAppend
-                );
-                assert_eq!(StoredEvent::read(&source_connection).await?, original);
-                assert_eq!(
-                    LedgerSchema::version(&source_connection).await?,
-                    StorageVersion::SequencedEventsV5
-                );
-                let other_database = scenario
-                    .database(&scenario.repository.feature_path(&other)?)
-                    .await?;
-                other_database
-                    .connect()?
-                    .pragma_update(&Pragma::UserVersion.to_string(), 99)
-                    .await?;
-                // A selected reader/writer never inspects the unrelated future database.
-                assert_eq!(
-                    scenario
-                        .workbench
-                        .open(feature.clone())
-                        .await?
-                        .status()
-                        .await?
-                        .len(),
-                    2
-                );
-                let observation = scenario.workbench.observe().await?;
-                assert_eq!(
-                    observation
-                        .tasks(crate::TaskPage {
-                            feature,
-                            page: crate::PageIndex::FIRST
-                        })
-                        .await?
-                        .records
-                        .len(),
-                    2
-                );
-                let error = scenario
-                    .workbench
-                    .features()
-                    .await
-                    .err()
-                    .ok_or_else(|| anyhow::anyhow!("expected future rejection"))?;
-                assert!(error.to_string().contains("other"));
-                assert!(error.to_string().contains("99"));
-                assert_eq!(StoredEvent::read(&source_connection).await?, original);
-                anyhow::Ok(())
-            })
-    }
-
-    #[test]
-    fn failed_import_rolls_back_and_retries_without_shadowing_source() -> anyhow::Result<()> {
-        use crate::store::relational::EventTable;
-        use crate::store::sql::SqlStatement;
-        use sea_query::{Expr, ExprTrait, Query};
-        let scenario = ImportScenario::new()?;
-        runtime::Builder::new_current_thread()
-            .enable_time()
-            .build()?
-            .block_on(async {
-                let source = scenario
-                    .database(&scenario.repository.ledger_path()?)
-                    .await?;
-                let connection = source.connect()?;
-                scenario.seed(&connection).await?;
-                let missing = FeatureId::try_from("missing".to_owned())?;
-                assert!(matches!(
-                    scenario.workbench.open(missing.clone()).await,
-                    Err(crate::LedgerError::Uninitialized)
-                ));
-                let empty = scenario
-                    .database(&scenario.repository.feature_path(&missing)?)
-                    .await?;
-                assert_eq!(
-                    LedgerSchema::version(&empty.connect()?).await?,
-                    StorageVersion::Empty
-                );
-                // Deliberately malformed future source is rejected before any target schema can commit.
-                connection
-                    .pragma_update(&Pragma::UserVersion.to_string(), 99)
-                    .await?;
-                let feature = FeatureId::try_from("feature".to_owned())?;
-                assert!(scenario.workbench.open(feature.clone()).await.is_err());
-                let target = scenario
-                    .database(&scenario.repository.feature_path(&feature)?)
-                    .await?;
-                assert_eq!(
-                    LedgerSchema::version(&target.connect()?).await?,
-                    StorageVersion::Empty
-                );
-                let error = scenario
-                    .workbench
-                    .observe()
-                    .await?
-                    .tasks(crate::TaskPage {
-                        feature: feature.clone(),
-                        page: crate::PageIndex::FIRST,
-                    })
-                    .await
-                    .err()
-                    .ok_or_else(|| anyhow::anyhow!("expected source rejection"))?;
-                assert!(error.to_string().contains("99"));
-                connection
-                    .pragma_update(
-                        &Pragma::UserVersion.to_string(),
-                        StorageVersion::SequencedEventsV5,
-                    )
-                    .await?;
-                let mut ledger = scenario.workbench.open(feature.clone()).await?;
-                assert_eq!(
-                    ledger
-                        .history(&TaskId::try_from("task".to_owned())?)
-                        .await?
-                        .len(),
-                    1
-                );
-                // Once imported, even a corrupt retained source is no longer read for this feature.
-                connection
-                    .pragma_update(&Pragma::UserVersion.to_string(), 99)
-                    .await?;
-                SqlStatement::build(
-                    Query::delete()
-                        .from_table(EventTable::Table)
-                        .and_where(Expr::col(EventTable::FeatureId).eq(feature.to_string()))
-                        .to_owned(),
-                )?
-                .execute(&connection)
-                .await?;
-                ledger = scenario.workbench.open(feature).await?;
-                assert_eq!(
-                    ledger
-                        .history(&TaskId::try_from("task".to_owned())?)
-                        .await?
-                        .len(),
-                    1
-                );
-                anyhow::Ok(())
-            })
-    }
-    impl ImportScenario {
-        async fn retain_selected(&self, connection: &turso::Connection) -> anyhow::Result<()> {
-            use crate::store::relational::{EventTable, FeatureTable, TaskTable};
-            use crate::store::sql::SqlStatement;
-            use sea_query::{Expr, ExprTrait, Query};
-            for query in [
-                Query::delete()
-                    .from_table(EventTable::Table)
-                    .and_where(Expr::col(EventTable::FeatureId).ne("feature"))
-                    .to_owned(),
-                Query::delete()
-                    .from_table(TaskTable::Table)
-                    .and_where(Expr::col(TaskTable::FeatureId).ne("feature"))
-                    .to_owned(),
-                Query::delete()
-                    .from_table(FeatureTable::Table)
-                    .and_where(Expr::col(FeatureTable::Id).ne("feature"))
-                    .to_owned(),
-            ] {
-                SqlStatement::build(query)?.execute(connection).await?;
-            }
-            Ok(())
-        }
+    impl MigrationScenario {
         async fn migrate_selected_version(&self, version: StorageVersion) -> anyhow::Result<()> {
             use crate::store::relational::tests::Records;
             use crate::store::relational::{EventTable, RecordWriter, RelationalSchema};
@@ -846,15 +466,6 @@ pub mod tests {
                 StorageVersion::Empty | StorageVersion::FeatureHistoryV6 => {
                     return Err(anyhow::anyhow!("expected released old schema"));
                 }
-            }
-            match version {
-                StorageVersion::RelationalV3
-                | StorageVersion::CommonTasksV4
-                | StorageVersion::SequencedEventsV5 => self.retain_selected(&connection).await?,
-                StorageVersion::Empty
-                | StorageVersion::DocumentsV1
-                | StorageVersion::IndexedV2
-                | StorageVersion::FeatureHistoryV6 => {}
             }
             connection
                 .pragma_update(&Pragma::UserVersion.to_string(), version)
@@ -930,7 +541,7 @@ pub mod tests {
                     StorageVersion::CommonTasksV4,
                     StorageVersion::SequencedEventsV5,
                 ] {
-                    ImportScenario::new()?
+                    MigrationScenario::new()?
                         .migrate_selected_version(version)
                         .await?;
                 }

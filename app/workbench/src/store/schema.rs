@@ -117,7 +117,7 @@ impl LedgerSchema {
             | StorageVersion::SequencedEventsV5 => {
                 LegacyRecords::migrate(LegacySource {
                     connection,
-                    layout: LegacyLayout::RepositoryDatabase,
+                    layout: LegacyLayout::RelationalDatabase,
                 })
                 .await?;
             }
@@ -506,10 +506,7 @@ pub mod tests {
             }
             let records = Records::new()?;
             let agent = AgentId::Development(DevelopmentAgent::RustDev);
-            for id in [
-                records.feature.id.clone(),
-                FeatureId::try_from("second-feature".to_owned())?,
-            ] {
+            for id in [records.feature.id.clone()] {
                 let feature = Feature {
                     id: id.clone(),
                     ..records.feature.clone()
@@ -649,8 +646,7 @@ pub mod tests {
     }
 
     #[test]
-    fn v3_repository_migration_preserves_every_feature_and_historical_snapshot()
-    -> anyhow::Result<()> {
+    fn v3_single_feature_migration_preserves_historical_snapshots() -> anyhow::Result<()> {
         runtime::Builder::new_current_thread()
             .enable_time()
             .build()?
@@ -659,9 +655,9 @@ pub mod tests {
                 let mut connection = database.connect()?;
                 LegacyFixture::repository(&connection).await?;
                 let expected = RepositorySnapshot::read(&connection).await?;
-                assert_eq!(expected.features.len(), 2);
-                assert_eq!(expected.tasks.len(), 2);
-                assert_eq!(expected.events.len(), 4);
+                assert_eq!(expected.features.len(), 1);
+                assert_eq!(expected.tasks.len(), 1);
+                assert_eq!(expected.events.len(), 2);
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,

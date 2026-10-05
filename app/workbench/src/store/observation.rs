@@ -9,12 +9,12 @@ mod detail;
 mod revision_log;
 pub use revision_log::{RevisionLogEntry, SequenceProvenance};
 mod workflow;
-use super::catalog::{FeatureFile, FilePresence};
+use super::catalog::{CatalogFeature, FeatureCatalog, FeatureFile};
 use super::relational::{EventTable, TaskTable};
 use super::sql::SqlStatement;
 use crate::LedgerError;
 use crate::git::Repository;
-use crate::model::{Event, Feature, Task};
+use crate::model::{Event, Task};
 use crate::request::TaskQuery;
 use crate::values::{FeatureId, TaskId};
 use derive_more::Display;
@@ -24,8 +24,9 @@ use sea_query::{Expr, ExprTrait, Order, Query};
 use serde::{Deserialize, Serialize};
 use turso::Connection;
 pub use workflow::{
-    ActiveWork, Blocker, Completion, FeatureActivity, FeatureOutcome, FeatureSummary, FlowCount,
-    FlowState, LatestDelivery, PullRequest, TaskCount, WorkflowCondition, WorkflowTotals,
+    ActiveWork, Blocker, Completion, FeatureActivity, FeatureCard, FeatureCards, FeatureOutcome,
+    FeatureSummary, FlowCount, FlowState, LatestDelivery, PullRequest, TaskCount,
+    WorkflowCondition, WorkflowTotals,
 };
 
 /// A page of bounded records. Each operation releases its connection before returning.
@@ -94,6 +95,10 @@ pub struct HistoryPage {
     pub page: PageIndex,
 }
 
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct CatalogPage {
+    pub features: Page<CatalogFeature>,
+}
 /// Read-only capability: never initializes identity/storage, imports, migrates or coordinates.
 /// Only existing repository identity/path discovery uses Git; content comes exclusively from Turso.
 pub struct Observation {
@@ -105,46 +110,26 @@ struct LedgerReader {
 }
 impl Observation {
     pub(crate) async fn open(repository: Repository) -> Result<Self, LedgerError> {
-        match (
-            FilePresence::from(!repository.feature_files()?.is_empty()),
-            FilePresence::from(repository.ledger_path()?.try_exists()?),
-            FilePresence::from(!repository.legacy_ledgers()?.is_empty()),
-        ) {
-            (FilePresence::Missing, FilePresence::Missing, FilePresence::Missing) => {
-                Err(LedgerError::Uninitialized)
-            }
-            (
-                FilePresence::Present,
-                FilePresence::Missing | FilePresence::Present,
-                FilePresence::Missing | FilePresence::Present,
-            )
-            | (
-                FilePresence::Missing,
-                FilePresence::Present,
-                FilePresence::Missing | FilePresence::Present,
-            )
-            | (FilePresence::Missing, FilePresence::Missing, FilePresence::Present) => {
-                Ok(Self { repository })
-            }
-        }
+        repository.repository_directory()?;
+        Ok(Self { repository })
     }
     async fn reader(&self, feature: &FeatureId) -> Result<LedgerReader, LedgerError> {
-        let file: FeatureFile = self.repository.observation_file(feature).await?;
+        let file: FeatureFile = self.repository.observation_file(feature)?;
         Ok(LedgerReader {
             connection: file.reader().await?,
         })
     }
-    pub async fn features(&self, page: PageIndex) -> Result<Page<Feature>, LedgerError> {
-        let records = self
-            .repository
-            .observed_features()
-            .await?
-            .into_iter()
-            .skip(page.offset() as usize)
-            .take(RecordLimit::PAGE.probe() as usize)
-            .map(|info| info.feature)
-            .collect();
-        Ok(RecordLimit::PAGE.bound(records))
+    pub async fn features(&self, page: PageIndex) -> Result<CatalogPage, LedgerError> {
+        let FeatureCatalog { features } = self.repository.observed_features().await?;
+        Ok(CatalogPage {
+            features: RecordLimit::PAGE.bound(
+                features
+                    .into_iter()
+                    .skip(page.offset() as usize)
+                    .take(RecordLimit::PAGE.probe() as usize)
+                    .collect(),
+            ),
+        })
     }
     pub async fn tasks(&self, request: TaskPage) -> Result<Page<Task>, LedgerError> {
         self.reader(&request.feature).await?.tasks(request).await

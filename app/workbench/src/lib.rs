@@ -19,13 +19,14 @@ use request::InitFeature;
 use sea_query::error;
 use std::path::Path;
 use std::{io, time::SystemTimeError};
+pub use store::catalog::{CatalogFeature, FeatureCatalog};
 pub use store::observation::{
-    ActiveWork, Blocker, Completion, FeatureActivity, FeatureOutcome, FeatureSummary,
-    FeatureWorkflow, FeedEntry, FlowCount, FlowState, HistoryPage, LatestDelivery, Observation,
-    Page, PageEnd, PageIndex, PullRequest, RecordedRole, RecordedTimeline, RecordedWindow,
-    RevisionLogEntry, SequenceProvenance, StateMeaning, TaskChapter, TaskCount, TaskPage,
-    TimelineExtent, TimelineGroup, TimelineGroupIdentity, TimelineOrder, WorkflowCondition,
-    WorkflowTiming, WorkflowTotals,
+    ActiveWork, Blocker, CatalogPage, Completion, FeatureActivity, FeatureCard, FeatureCards,
+    FeatureOutcome, FeatureSummary, FeatureWorkflow, FeedEntry, FlowCount, FlowState, HistoryPage,
+    LatestDelivery, Observation, Page, PageEnd, PageIndex, PullRequest, RecordedRole,
+    RecordedTimeline, RecordedWindow, RevisionLogEntry, SequenceProvenance, StateMeaning,
+    TaskChapter, TaskCount, TaskPage, TimelineExtent, TimelineGroup, TimelineGroupIdentity,
+    TimelineOrder, WorkflowCondition, WorkflowTiming, WorkflowTotals,
 };
 pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};
@@ -71,14 +72,16 @@ impl Workbench {
         .await
     }
 
-    /// Observe existing current-schema storage without initialization or migration.
+    /// Observe metadata and availability without initialization or migration. Detail reads require current storage.
     pub async fn observe(&self) -> Result<Observation, LedgerError> {
         Observation::open(self.repository.clone()).await
     }
 
-    pub async fn features(&self) -> Result<Vec<LedgerInfo>, LedgerError> {
+    pub async fn features(&self) -> Result<FeatureCatalog, LedgerError> {
         match self.repository.observed_features().await {
-            Err(LedgerError::Uninitialized) => Ok(Vec::new()),
+            Err(LedgerError::Uninitialized) => Ok(FeatureCatalog {
+                features: Vec::new(),
+            }),
             result => result,
         }
     }

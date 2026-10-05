@@ -24,6 +24,27 @@ export type DesktopFailure =
 export type Note = string;
 export type PageEnd = "Complete" | "More";
 /**
+ * A card never substitutes empty workflow data for an unavailable ledger.
+ */
+export type FeatureCard =
+  | {
+      kind: "current";
+      summary: FeatureSummary;
+      [k: string]: unknown;
+    }
+  | {
+      feature: Feature;
+      kind: "upgrade_required";
+      storage_version: number;
+      [k: string]: unknown;
+    }
+  | {
+      feature: string;
+      kind: "unavailable";
+      message: Note;
+      [k: string]: unknown;
+    };
+/**
  * An agent role scoped to its owning Cortex team.
  */
 export type AgentId =
@@ -321,7 +342,7 @@ export interface DesktopReply {
  */
 export interface Page {
   end: PageEnd;
-  records: FeatureSummary[];
+  records: FeatureCard[];
   [k: string]: unknown;
 }
 export interface FeatureSummary {

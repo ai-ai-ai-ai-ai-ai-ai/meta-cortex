@@ -10,7 +10,7 @@ use meta_cortex_workbench::request::{
 };
 use meta_cortex_workbench::values::FeatureId;
 use meta_cortex_workbench::versions::ProtocolVersion;
-use meta_cortex_workbench::{Ledger, LedgerError, LedgerInfo, Workbench};
+use meta_cortex_workbench::{FeatureCatalog, Ledger, LedgerError, LedgerInfo, Workbench};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -130,7 +130,7 @@ pub enum Reply {
     },
     FrameworkInfo(InfoReport),
     Ledger(LedgerInfo),
-    Features(Vec<LedgerInfo>),
+    Features(FeatureCatalog),
     Task(Task),
     TaskView(TaskView),
     Status {

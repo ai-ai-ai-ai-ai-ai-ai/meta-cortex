@@ -1,5 +1,5 @@
 use crate::model::worker::WorkerIdentity;
-mod catalog;
+pub(crate) mod catalog;
 mod legacy;
 mod lifecycle;
 mod mutations;
@@ -75,7 +75,7 @@ pub(crate) struct InitializeLedger {
     pub input: InitFeature,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, schemars::JsonSchema)]
 pub struct LedgerInfo {
     pub path: PathBuf,
     pub storage_version: StorageVersion,

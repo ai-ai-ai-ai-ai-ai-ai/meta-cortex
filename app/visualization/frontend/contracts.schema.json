@@ -263,6 +263,37 @@
         }
       ]
     },
+    "FeatureCard": {
+      "description": "A card never substitutes empty workflow data for an unavailable ledger.",
+      "oneOf": [
+        {
+          "properties": {
+            "kind": { "const": "current", "type": "string" },
+            "summary": { "$ref": "#/$defs/FeatureSummary" }
+          },
+          "required": ["kind", "summary"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "feature": { "$ref": "#/$defs/Feature" },
+            "kind": { "const": "upgrade_required", "type": "string" },
+            "storage_version": { "format": "int64", "type": "integer" }
+          },
+          "required": ["kind", "feature", "storage_version"],
+          "type": "object"
+        },
+        {
+          "properties": {
+            "feature": { "type": "string" },
+            "kind": { "const": "unavailable", "type": "string" },
+            "message": { "$ref": "#/$defs/Note" }
+          },
+          "required": ["kind", "feature", "message"],
+          "type": "object"
+        }
+      ]
+    },
     "FeatureOutcome": {
       "description": "A task no other recorded task depends on: something the feature delivers.",
       "properties": {
@@ -433,7 +464,7 @@
       "properties": {
         "end": { "$ref": "#/$defs/PageEnd" },
         "records": {
-          "items": { "$ref": "#/$defs/FeatureSummary" },
+          "items": { "$ref": "#/$defs/FeatureCard" },
           "type": "array"
         }
       },

@@ -54,6 +54,16 @@ export class WorkflowController {
     );
     this.interrupt = Effect.runCallback(read);
   }
+  show(workflow: FeatureWorkflow): void {
+    this.interrupt();
+    this.failures = [];
+    this.state = { kind: DetailKind.Loaded, workflow };
+  }
+  clear(): void {
+    this.interrupt();
+    this.failures = [];
+    this.state = { kind: DetailKind.Empty };
+  }
   stop(): void {
     this.interrupt();
   }

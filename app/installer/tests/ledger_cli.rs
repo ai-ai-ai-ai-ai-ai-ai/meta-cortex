@@ -201,9 +201,9 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     else {
         bail!("expected features")
     };
-    assert_eq!(features.len(), 2);
-    assert_eq!(features[0].path, reopened.path);
-    assert_eq!(features[1].path, other.path);
+    assert_eq!(features.features.len(), 2);
+    assert_eq!(features.features[0].ledger()?.path, reopened.path);
+    assert_eq!(features.features[1].ledger()?.path, other.path);
     let mut options = StatusOptions::new();
     options
         .include_ignored(false)
@@ -665,7 +665,7 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
     else {
         bail!("feature list")
     };
-    assert!(empty.is_empty());
+    assert!(empty.features.is_empty());
     let another = scenario.initialization(FeatureId::try_from("another".to_owned())?)?;
     let scenario = scenario.initialize(Examples::feature()?.feature)?;
     scenario
@@ -680,9 +680,13 @@ fn rediscover_features_and_use_installer_through_yaml() -> anyhow::Result<()> {
     else {
         bail!("feature list")
     };
-    assert_eq!(features.len(), 2);
+    assert_eq!(features.features.len(), 2);
     assert!(
         features
+            .features
+            .iter()
+            .map(CatalogFeature::ledger)
+            .collect::<anyhow::Result<Vec<_>>>()?
             .iter()
             .any(|item| item.path == scenario.ledger().path)
     );

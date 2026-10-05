@@ -1,3 +1,4 @@
+use meta_cortex_workbench::FeatureCard;
 use meta_cortex_workbench::agents::DeliveryAgent;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
 use meta_cortex_workbench::model::workflow::TaskAssignment;
@@ -135,9 +136,15 @@ impl Scenario {
             .await?
             .summaries(PageIndex::FIRST)
             .await?
+            .features
             .records
             .into_iter()
-            .find(|summary| summary.feature.id == feature)
+            .find_map(|card| match card {
+                FeatureCard::Current { summary } if summary.feature.id == feature => Some(*summary),
+                FeatureCard::Current { .. }
+                | FeatureCard::UpgradeRequired { .. }
+                | FeatureCard::Unavailable { .. } => None,
+            })
             .ok_or_else(|| anyhow::anyhow!("fixture summary missing"))
     }
     fn files(directory: &Path) -> anyhow::Result<Vec<FileSnapshot>> {
@@ -183,7 +190,7 @@ fn read_only_observation_preserves_records_history_schema_and_files() -> anyhow:
     scenario.runtime.block_on(async {
         let observation = scenario.observe().await?;
         for _ in 0..5 {
-            let features = observation.features(PageIndex::FIRST).await?;
+            let features = observation.features(PageIndex::FIRST).await?.features;
             assert_eq!(features.records.len(), 1);
             assert_eq!(features.end, PageEnd::Complete);
             let tasks = observation
@@ -193,9 +200,11 @@ fn read_only_observation_preserves_records_history_schema_and_files() -> anyhow:
                 })
                 .await?;
             assert_eq!(tasks.records.len(), 1);
-            let summaries = observation.summaries(PageIndex::FIRST).await?;
+            let summaries = observation.summaries(PageIndex::FIRST).await?.features;
             assert_eq!(summaries.records.len(), 1);
-            let summary = &summaries.records[0];
+            let FeatureCard::Current { summary } = &summaries.records[0] else {
+                anyhow::bail!("current summary");
+            };
             assert_eq!(serde_json::to_value(&summary.totals.counts)?[0]["count"], 1);
             assert_eq!(summary.totals.condition, WorkflowCondition::Waiting);
             assert!(summary.active.is_empty());
@@ -227,6 +236,7 @@ fn read_only_observation_preserves_records_history_schema_and_files() -> anyhow:
                 observation
                     .features(PageIndex::FIRST.next())
                     .await?
+                    .features
                     .records
                     .is_empty()
             );
@@ -455,8 +465,8 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
                 .await?;
         }
         let observation = scenario.observe().await?;
-        let first = observation.features(PageIndex::FIRST).await?;
-        let second = observation.features(PageIndex::FIRST.next()).await?;
+        let first = observation.features(PageIndex::FIRST).await?.features;
+        let second = observation.features(PageIndex::FIRST.next()).await?.features;
         assert_eq!(first.records.len(), 100);
         assert_eq!(second.records.len(), 1);
         assert_eq!(first.end, PageEnd::More);
@@ -505,17 +515,17 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(chapter.entries.first().ok_or_else(|| anyhow::anyhow!("first event"))?.revision, TaskRevision::INITIAL);
         assert_eq!(chapter.entries.last().ok_or_else(|| anyhow::anyhow!("last event"))?.revision, task.common.revision);
         assert!(matches!(chapter.role, RecordedRole::Recorded { agent: recorded } if recorded == agent));
-        let later = observation.summaries(PageIndex::FIRST.next()).await?;
+        let later = observation.summaries(PageIndex::FIRST.next()).await?.features;
         assert_eq!(later.end, PageEnd::Complete);
         assert!(matches!(
             later.records.as_slice(),
-            [summary] if summary.feature.id == FeatureId::try_from("feature-099".to_owned())?
+            [FeatureCard::Current { summary }] if summary.feature.id == FeatureId::try_from("feature-099".to_owned())?
                 && matches!(summary.totals.activity, FeatureActivity::Empty)
         ));
-        let summaries = observation.summaries(PageIndex::FIRST).await?;
+        let summaries = observation.summaries(PageIndex::FIRST).await?.features;
         assert_eq!(summaries.records.len(), 100);
         assert_eq!(summaries.end, PageEnd::More);
-        let summary = &summaries.records[0];
+        let FeatureCard::Current { summary } = &summaries.records[0] else { anyhow::bail!("current summary"); };
         assert_eq!(summary.feature.id, Scenario::feature()?);
         let totals = &summary.totals;
         let counts = serde_json::to_value(&totals.counts)?;

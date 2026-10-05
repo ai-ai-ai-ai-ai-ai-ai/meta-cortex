@@ -10,7 +10,9 @@ use crate::agents::AgentId;
 use crate::model::{Feature, LeaseHealth, Phase, TaskState};
 use crate::store::relational::{EventTable, JsonFunction, TaskTable};
 use crate::store::sql::SqlStatement;
-use crate::values::{Note, TaskId, Timestamp};
+use crate::values::{FeatureId, Note, TaskId, Timestamp};
+use crate::versions::StorageVersion;
+use crate::{CatalogFeature, FeatureCatalog};
 pub use outcomes::{FeatureOutcome, LatestDelivery};
 pub use pull_requests::PullRequest;
 use schemars::JsonSchema;
@@ -237,6 +239,42 @@ pub struct FeatureSummary {
     pub latest_delivery: LatestDelivery,
 }
 
+/// A card never substitutes empty workflow data for an unavailable ledger.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum FeatureCard {
+    Current {
+        summary: Box<FeatureSummary>,
+    },
+    UpgradeRequired {
+        feature: Feature,
+        storage_version: StorageVersion,
+    },
+    Unavailable {
+        feature: FeatureId,
+        message: Note,
+    },
+}
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct FeatureCards {
+    pub features: Page<FeatureCard>,
+}
+impl FeatureCard {
+    fn id(&self) -> &FeatureId {
+        match self {
+            Self::Current { summary } => &summary.feature.id,
+            Self::UpgradeRequired { feature, .. } => &feature.id,
+            Self::Unavailable { feature, .. } => feature,
+        }
+    }
+    fn recency(&self) -> FeatureRecency {
+        match self {
+            Self::Current { summary } => summary.totals.activity.recency(),
+            Self::UpgradeRequired { .. } | Self::Unavailable { .. } => FeatureRecency::Empty,
+        }
+    }
+}
+
 struct SummaryQuery {
     feature: Feature,
     now: Timestamp,
@@ -246,38 +284,62 @@ struct ActiveQuery<'feature> {
     now: Timestamp,
 }
 impl Observation {
+    async fn current_card(&self, query: SummaryQuery) -> FeatureCard {
+        let feature = query.feature.id.clone();
+        let result = async { self.reader(&feature).await?.summary(query).await }.await;
+        match result {
+            Ok(summary) => FeatureCard::Current {
+                summary: Box::new(summary),
+            },
+            Err(error) => FeatureCard::Unavailable {
+                feature: feature.clone(),
+                message: Note::from(error.in_feature(&feature).to_string()),
+            },
+        }
+    }
+
     /// Most recently active features first; features without tasks follow in ID order.
-    pub async fn summaries(&self, page: PageIndex) -> Result<Page<FeatureSummary>, LedgerError> {
+    pub async fn summaries(&self, page: PageIndex) -> Result<FeatureCards, LedgerError> {
         let now = Timestamp::now()?;
+        let FeatureCatalog { features } = self.repository.observed_features().await?;
         let mut records = Vec::new();
-        for info in self.repository.observed_features().await? {
-            let reader = self.reader(&info.feature.id).await?;
-            records.push(
-                reader
-                    .summary(SummaryQuery {
-                        feature: info.feature,
+        for entry in features {
+            let card = match entry {
+                CatalogFeature::Current { ledger } => {
+                    self.current_card(SummaryQuery {
+                        feature: ledger.feature,
                         now,
                     })
-                    .await?,
-            );
+                    .await
+                }
+                CatalogFeature::UpgradeRequired { ledger } => FeatureCard::UpgradeRequired {
+                    feature: ledger.feature,
+                    storage_version: ledger.storage_version,
+                },
+                CatalogFeature::Unavailable { feature, message } => {
+                    FeatureCard::Unavailable { feature, message }
+                }
+            };
+            records.push(card);
         }
         records.sort_by(|left, right| {
             right
-                .totals
-                .activity
                 .recency()
-                .cmp(&left.totals.activity.recency())
-                .then_with(|| left.feature.id.cmp(&right.feature.id))
+                .cmp(&left.recency())
+                .then_with(|| left.id().cmp(right.id()))
         });
-        Ok(RecordLimit::PAGE.bound(
-            records
-                .into_iter()
-                .skip(page.offset() as usize)
-                .take(RecordLimit::PAGE.probe() as usize)
-                .collect(),
-        ))
+        Ok(FeatureCards {
+            features: RecordLimit::PAGE.bound(
+                records
+                    .into_iter()
+                    .skip(page.offset() as usize)
+                    .take(RecordLimit::PAGE.probe() as usize)
+                    .collect(),
+            ),
+        })
     }
 }
+
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum FeatureRecency {
     Empty,

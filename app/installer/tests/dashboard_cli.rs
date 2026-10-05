@@ -214,22 +214,14 @@ fn dashboard_help_and_repository_errors_need_no_request_file() -> anyhow::Result
     assert!(!data.exists());
     let scenario = Scenario::new()?;
     fs::remove_file(&scenario.database)?;
-    let output = Command::new(executable)
-        .arg("dashboard")
-        .current_dir(&scenario.project)
-        .env("META_CORTEX_HOME", scenario.data.path())
-        .output()?;
-    assert_eq!(output.status.code(), Some(2));
-    let response: Response = serde_saphyr::from_str(&String::from_utf8(output.stdout)?)?;
-    let Outcome::Error(failure) = response.result else {
-        anyhow::bail!("missing ledger accepted");
+    let outcome = scenario.run(DashboardRequest::Snapshot {
+        view: DashboardView::Features,
+        page: PageIndex::FIRST,
+    })?;
+    let Outcome::Success(Reply::Dashboard(report)) = outcome else {
+        anyhow::bail!("empty feature catalog failed");
     };
-    assert!(
-        failure
-            .message
-            .to_string()
-            .contains("has not been initialized")
-    );
+    assert!(report.content.to_string().contains("No recorded features"));
     assert!(!scenario.database.exists());
     Ok(())
 }

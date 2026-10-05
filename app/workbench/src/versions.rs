@@ -130,6 +130,8 @@ impl TryFrom<i64> for TaskRecordVersion {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize)]
 #[serde(try_from = "i64", into = "i64")]
+#[derive(JsonSchema)]
+#[schemars(with = "i64")]
 pub enum StorageVersion {
     #[display("0")]
     Empty,

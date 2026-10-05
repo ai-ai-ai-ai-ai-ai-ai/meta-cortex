@@ -124,26 +124,6 @@ impl Repository {
         Ok(())
     }
 
-    pub(crate) fn legacy_ledgers(&self) -> Result<Vec<PathBuf>, LedgerError> {
-        let id = RepositoryId::read(&self.root)?;
-        let directory = self.data.path().join(id.to_string()).join("features");
-        let mut paths = Vec::new();
-        match fs::read_dir(directory) {
-            Ok(entries) => {
-                for entry in entries {
-                    let path = entry?.path();
-                    if let Some("db") = path.extension().and_then(|extension| extension.to_str()) {
-                        paths.push(path);
-                    }
-                }
-            }
-            Err(error) if error.kind() == ErrorKind::NotFound => {}
-            Err(error) => return Err(error.into()),
-        }
-        paths.sort();
-        Ok(paths)
-    }
-
     pub fn discover(project: &Path) -> Result<Self, LedgerError> {
         let common_dir = git2::Repository::discover(project)?
             .commondir()
@@ -160,23 +140,9 @@ impl Repository {
         })
     }
 
-    pub fn ledger_path(&self) -> Result<PathBuf, LedgerError> {
-        Ok(self.repository_directory()?.join("workbench.db"))
-    }
-
     pub(crate) fn feature_path(&self, feature: &FeatureId) -> Result<PathBuf, LedgerError> {
         Ok(self
             .repository_directory()?
-            .join("features")
-            .join(format!("{feature}.db")))
-    }
-
-    pub(crate) fn historical_path(&self, feature: &FeatureId) -> Result<PathBuf, LedgerError> {
-        let id = RepositoryId::read(&self.root)?;
-        Ok(self
-            .data
-            .path()
-            .join(id.to_string())
             .join("features")
             .join(format!("{feature}.db")))
     }
@@ -327,7 +293,7 @@ pub mod tests {
         git2::Repository::init(&original)?;
         let repository = Repository::discover(&original)?.with_data_directory(data.clone());
         assert!(matches!(
-            repository.ledger_path(),
+            repository.repository_directory(),
             Err(LedgerError::Uninitialized)
         ));
         assert!(!original.join(".meta-cortex").exists());
@@ -381,14 +347,13 @@ pub mod tests {
         let expected = data
             .path()
             .join("project with spaces 🦀")
-            .join(id.to_string())
-            .join("workbench.db");
-        assert_eq!(main.ledger_path()?, expected);
+            .join(id.to_string());
+        assert_eq!(main.repository_directory()?, expected);
         let linked_path = directory.path().join("worker checkout");
         repository.worktree("worker", &linked_path, None)?;
         let linked = Repository::discover(&linked_path)?.with_data_directory(data);
         linked.initialize()?;
-        assert_eq!(linked.ledger_path()?, expected);
+        assert_eq!(linked.repository_directory()?, expected);
         assert!(!linked_path.join(".meta-cortex/repository-id").exists());
         Ok(())
     }

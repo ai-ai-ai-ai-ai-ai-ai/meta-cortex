@@ -13,16 +13,42 @@ export enum ReadFailureKind {
 export type DashboardFailure =
   | DesktopFailure
   | { kind: ReadFailureKind; message: string; cause: unknown };
+enum WorkflowCommand {
+  Read = "dashboard_workflow",
+  Upgrade = "dashboard_upgrade",
+}
+type WorkflowArguments = {
+  feature: string;
+};
+interface WorkflowRequest {
+  command: WorkflowCommand;
+  feature: string;
+}
 export class DashboardApi {
   workflow(feature: string): Effect.Effect<FeatureWorkflow, DashboardFailure> {
+    const request: WorkflowRequest = { command: WorkflowCommand.Read, feature };
+    return this.loadWorkflow(request);
+  }
+  upgrade(feature: string): Effect.Effect<FeatureWorkflow, DashboardFailure> {
+    const request: WorkflowRequest = {
+      command: WorkflowCommand.Upgrade,
+      feature,
+    };
+    return this.loadWorkflow(request);
+  }
+  private loadWorkflow(
+    request: WorkflowRequest,
+  ): Effect.Effect<FeatureWorkflow, DashboardFailure> {
+    const args: WorkflowArguments = { feature: request.feature };
     return Effect.tryPromise({
-      try: () => invoke<unknown>("dashboard_workflow", { feature }),
+      try: () => invoke<unknown>(request.command, args),
       catch: (cause) =>
         Match.value(cause).pipe(
           Match.when(failure, (value) => value),
           Match.orElse((value) => ({
             kind: ReadFailureKind.Transport,
-            message: "The workflow could not be read. Refresh to retry.",
+            message:
+              "The workflow operation could not be completed. Retry the selected action.",
             cause: value,
           })),
         ),

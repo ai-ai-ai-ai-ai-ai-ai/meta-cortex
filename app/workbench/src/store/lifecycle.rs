@@ -1,6 +1,5 @@
 use super::PERSISTENT_IO;
 use super::catalog::FilePresence;
-use super::legacy::LegacyImport;
 use super::relational::FeatureTable;
 use super::schema::LedgerSchema;
 use super::sql::SqlStatement;
@@ -95,17 +94,9 @@ impl Ledger<Located<Feature>> {
 impl Ledger<Located<FeatureId>> {
     fn locate(request: OpenLedger) -> Result<Self, LedgerError> {
         let path = request.repository.feature_path(&request.feature)?;
-        if let (FilePresence::Missing, FilePresence::Missing, FilePresence::Missing) = (
-            FilePresence::from(path.try_exists()?),
-            FilePresence::from(request.repository.ledger_path()?.try_exists()?),
-            FilePresence::from(
-                request
-                    .repository
-                    .historical_path(&request.feature)?
-                    .try_exists()?,
-            ),
-        ) {
-            return Err(LedgerError::Uninitialized);
+        match FilePresence::from(path.try_exists()?) {
+            FilePresence::Missing => return Err(LedgerError::Uninitialized),
+            FilePresence::Present => {}
         }
 
         fs::create_dir_all(
@@ -152,7 +143,7 @@ impl<FeatureInput> Ledger<Connected<FeatureInput>> {
         request: MigrationRequest<'_>,
     ) -> Result<Ledger<SchemaReady<FeatureInput>>, LedgerError> {
         let selected = request.selected;
-        // Schema creation/migration and the selected import commit together.
+        // Selected schema changes commit only after the feature scope is verified.
         // Turso's transaction API requires a mutable connection resource.
         LedgerSchema::configure(&self.state.connection).await?;
         let tx = self
@@ -170,18 +161,6 @@ impl<FeatureInput> Ledger<Connected<FeatureInput>> {
         .require_feature_scope()
         .await
         .map_err(|error| error.in_feature(selected))?;
-        let importer = LegacyImport {
-            connection: &tx,
-            feature: selected,
-        };
-        importer
-            .import(&self.repository.ledger_path()?)
-            .await
-            .map_err(|error| error.in_feature(selected))?;
-        importer
-            .import(&self.repository.historical_path(selected)?)
-            .await
-            .map_err(|error| error.in_feature(selected))?;
         if let FeaturePreparation::Existing = request.mode {
             Documents {
                 connection: &tx,
