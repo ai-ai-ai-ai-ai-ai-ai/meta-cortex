@@ -52,14 +52,15 @@ old instruction formats for hypothetical compatibility. `list` discovers command
 `run` executes typed YAML requests, including framework initialization and inspection.
 `dashboard` opens the native Tauri Workbench dashboard for the current repository
 without a request file or required arguments. Desktop observes existing ledger
-storage without migrations or imports under the
+storage only in the resolved repository’s `features/<id>.db` files, without
+automatic migrations, under the
 [dashboard contract](cortex/teams/gizmo-team/docs/agent-ledger.md#storage-requirements-and-errors);
 typed `Workbench / Dashboard` requests use `Desktop` for the native feature journal
 and `Snapshot` for headless text output.
 
-- **Prohibited:** open Desktop expecting it to migrate or import an older feature ledger.
-- **Required:** use the selected feature’s initialization/access workflow to migrate
-  or import that ledger, then open Desktop to observe it.
+- **Prohibited:** migrate older feature ledgers when Desktop opens or refreshes.
+- **Required:** show their availability and require the explicit **Upgrade and open**
+  action to migrate only the selected feature before opening its detail.
 
 Remove superseded paths and update their callers, tests, and documentation together.
 Keep the explicitly required Workbench schema-version and migration support;

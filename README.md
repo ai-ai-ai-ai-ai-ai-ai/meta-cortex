@@ -564,8 +564,8 @@ jump to its log. Repeated evidence appears only when it changes.
 - The dashboard refreshes summaries every five seconds; Pause stops automatic
   reads and Refresh reads at once.
 - Selected workflow history refreshes when its recorded activity changes.
-- Reads use read-only multiprocess WAL connections; no HTTP server or database
-  migration is involved.
+- Automatic reads use read-only multiprocess WAL connections; no HTTP server or
+  automatic database migration is involved.
 
 Pull requests come exclusively from URLs saved in task progress extensions,
 such as `pr_url`; clicking one opens the system browser. Feature start means
@@ -583,13 +583,19 @@ The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
 for exact typed requests, views, fields, paging, refresh, and storage requirements.
-The command reports errors outside Git or when repository identity or the ledger
-is missing. It does not initialize, migrate, or import storage.
+The command reports errors outside Git or when repository identity is missing.
+An absent `features/` directory produces an empty catalog. Only the resolved
+repository’s `features/<id>.db` files are read; older storage layouts are ignored
+and left untouched. Opening and refreshing the dashboard never migrate storage.
+Supported older features remain listed with an upgrade state; their detail stays
+closed until **Upgrade and open** upgrades only that selected feature. Future
+schemas and unreadable feature files show an unavailable state while other cards
+remain visible. The canonical guidance describes the supported metadata limits.
 
-- **Prohibited:** open the dashboard expecting it to upgrade an older ledger.
-
-- **Required:** use the selected feature’s supported migration workflow described
-  in the linked ledger guidance, then reopen the dashboard to observe its records.
+- **Prohibited:** a refresh upgrades every older ledger or one future schema
+  blanks the whole feature list.
+- **Required:** keep available cards visible, label the affected feature,
+  and upgrade only the supported feature explicitly selected by the user.
 
 ## Cortex context declarations
 

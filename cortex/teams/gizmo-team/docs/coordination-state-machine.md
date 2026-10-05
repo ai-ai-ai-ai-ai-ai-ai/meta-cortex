@@ -49,16 +49,16 @@ revision and combined checks; PR delivery remains later work.”
 
 The [ledger's event order](agent-ledger.md#revision-log-and-event-order) places
 new committed events in a feature-local sequence. It does not replace a task's
-optimistic revision, claim attempt, or worker UUID. Imported events preserve
+optimistic revision, claim attempt, or worker UUID. Historical events preserve
 their historical sequence positions, provenance, and gaps. Legacy storage order
 does not recover commit chronology, and separate feature sequences establish
 no cross-feature order.
 
 **Prohibited:** treat a larger `R` in another feature as a later event, or fill
-imported gaps by renumbering the feature's events.
+historical gaps by renumbering the feature's events.
 
 **Required:** cite the feature and `R` when locating a ledger event, and the task's
-own revision and attempt when describing update preconditions. Preserve imported
+own revision and attempt when describing update preconditions. Preserve historical
 positions and ordering limitations without changing recorded history.
 
 ### Describe each transition with an observable outcome
