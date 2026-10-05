@@ -51,7 +51,9 @@ This project does not retain legacy CLI aliases, interactive setup paths, or
 old instruction formats for hypothetical compatibility. `list` discovers commands;
 `run` executes typed YAML requests, including framework initialization and inspection.
 `dashboard` opens the native Tauri Workbench dashboard for the current repository
-without a request file or required arguments. It observes existing ledger data;
+without a request file or required arguments. Desktop prepares existing supported
+storage before observing ledger data under the
+[dashboard contract](cortex/teams/gizmo-team/docs/agent-ledger.md#storage-requirements-and-errors);
 typed `Workbench / Dashboard` requests use `Desktop` for the native feature journal
 and `Snapshot` for headless text output.
 Remove superseded paths and update their callers, tests, and documentation together.

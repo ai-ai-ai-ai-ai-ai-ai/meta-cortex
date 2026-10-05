@@ -117,8 +117,10 @@ current revision and attempt from the previous response.
 ## Workbench dashboard
 
 `meta-cortex dashboard` and typed `Workbench / Dashboard` requests observe
-recorded Turso ledger content without claims, heartbeats, requeues, imports,
-migrations, or other updates. It does not collect
+recorded Turso ledger content. Desktop first prepares existing supported storage
+under the [storage requirements](#storage-requirements-and-errors); subsequent
+observation performs no claims, heartbeats, requeues, imports, or other updates.
+The dashboard does not collect
 host agent state, runtime metadata, chat content, or Git work and authorship data.
 Git is used only to resolve the existing repository identity and storage path.
 For example, a recorded integration SHA is ledger evidence; its event actor
@@ -345,23 +347,30 @@ event can push an older event onto the next page.
 `meta-cortex dashboard` reports a structured error with exit status `2` before
 opening the window when run outside Git or when repository identity or the
 shared database is missing. It does not create storage to recover from these errors.
-
 Observation requires an existing repository identity and shared database at the
 current schema version; it never initializes either. The observer uses a short
 250 ms database busy timeout. Desktop read failures appear in the window;
 refresh to retry or close the window to exit. Snapshot failures return structured errors
 with exit status `2`.
 
-An older or empty schema reports that migration is required; unsupported
-versions are rejected. Use existing Workbench initialization/access under the
-[version and migration contract](#versions-and-durable-contracts), then retry.
-Those operations retain their migration and import semantics; opening the
-dashboard does not perform them. For example, observing a version `2` database
-reports the required migration instead of upgrading it.
+Desktop preparation migrates an existing, nonempty version `1`, `2`, `3`, or `4`
+shared database transactionally to version `5` before observation. This applies
+to both `meta-cortex dashboard` and typed `mode: Desktop` requests; no separate
+Feature / List request is needed. Preparation never initializes a missing
+repository identity or database and never imports separate legacy feature databases.
+Empty schemas and unsupported versions are rejected. Invalid legacy data aborts
+the migration, preserving the prior schema and recorded events under the
+[version and migration contract](#versions-and-durable-contracts).
 
-- **Prohibited:** expect Dashboard to migrate a version `2` database.
+The observation API and `mode: Snapshot` remain strictly read-only. They report
+migration requirements for older schemas instead of upgrading them.
 
-- **Required:** complete the existing Workbench upgrade workflow, then retry observation.
+- **Prohibited:** use a Snapshot request to upgrade a version `2` database, or
+  expect Desktop preparation to create missing storage or repair invalid events.
+
+- **Required:** open Desktop against existing supported storage to prepare it
+  transactionally, then observe it. If migration fails, preserve the source and
+  report the failure; resolve invalid data through separately authorized work.
 
 ## Record the entire feature workflow
 
@@ -708,7 +717,9 @@ and revisions must match their relational columns. Every Workbench connection
 enables foreign keys.
 
 Feature discovery and task commands migrate older storage transactionally.
-Observation requires the current schema and reports when migration is needed;
+Desktop also prepares existing supported storage before observation, under the
+[dashboard storage requirements](#storage-requirements-and-errors). Observation
+itself requires the current schema and reports when migration is needed;
 it never migrates storage. JSON retains actors, task snapshots, findings, checks,
 and evidence. [Event order](#revision-log-and-event-order) records whether its
 sequence came from a committed append or preserved legacy storage order.
@@ -736,7 +747,8 @@ resolved through separately authorized work and the isolated migration succeeds.
 ### Storage migration and supported readers
 
 Version `1`, `2`, `3`, and `4` databases migrate transactionally, retaining records
-and history across every feature. On first access, Workbench imports the old
+and history across every feature. On first access through feature discovery or
+task commands, Workbench imports the old
 `~/.meta-cortex/<repo_id>/features/<feature-id>.db` files into the shared database.
 Each feature imports atomically and only once; an invalid source leaves its
 import uncommitted and reports an error. Stop older agents before upgrading:
