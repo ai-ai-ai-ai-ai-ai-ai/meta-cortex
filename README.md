@@ -555,10 +555,12 @@ expandable commands, findings, next steps, checkpoints, and saved details.
 update. Overlap does not prove continuous agent execution. Select a window to
 jump to its log. Repeated evidence appears only when it changes.
 
-The dashboard refreshes summaries every five seconds; Pause stops automatic
-reads and Refresh reads at once. Selected workflow history refreshes when its
-recorded activity changes. Reads use read-only multiprocess WAL connections;
-no HTTP server or database migration is involved.
+- The dashboard refreshes summaries every five seconds; Pause stops automatic
+  reads and Refresh reads at once.
+- Selected workflow history refreshes when its recorded activity changes.
+- Reads use read-only multiprocess WAL connections; no HTTP server is involved.
+- Before those reads, Desktop prepares an existing supported older shared database
+  by migrating it transactionally to the current schema.
 
 Pull requests come exclusively from URLs saved in task progress extensions,
 such as `pr_url`; clicking one opens the system browser. Feature start means
@@ -577,7 +579,9 @@ recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
 for exact typed requests, views, fields, paging, refresh, and storage requirements.
 The command reports errors outside Git or when repository identity or the ledger
-is missing. It does not initialize, migrate, or import storage.
+is missing. Desktop preparation does not initialize storage or import separate
+legacy feature databases. Snapshot remains read-only and reports when migration
+is required.
 
 ## Cortex context declarations
 

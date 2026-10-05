@@ -75,7 +75,7 @@ impl Dashboard {
                 }))
             }
             DashboardRequest::Desktop {} => {
-                self.workbench.observe().await?;
+                self.workbench.prepare_observation().await?;
                 Ok(DashboardExecution::Desktop(DesktopLaunch {
                     workbench: self.workbench,
                 }))
