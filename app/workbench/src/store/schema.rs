@@ -68,13 +68,41 @@ impl LedgerSchema {
     }
 
     pub async fn migrate(connection: &mut Connection) -> Result<(), LedgerError> {
+        SchemaPreparation::Initialize.migrate(connection).await
+    }
+
+    pub(super) async fn prepare_observation(
+        connection: &mut Connection,
+    ) -> Result<(), LedgerError> {
+        SchemaPreparation::Existing.migrate(connection).await
+    }
+}
+
+enum SchemaPreparation {
+    Initialize,
+    Existing,
+}
+impl SchemaPreparation {
+    // Turso's transaction API requires a mutable connection borrow.
+    async fn migrate(self, connection: &mut Connection) -> Result<(), LedgerError> {
         connection
             .pragma_update(&DatabasePragma::ForeignKeys.to_string(), 1)
             .await?;
         let tx = connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
-        let mut version = Self::version(&tx).await?;
+        let mut version = LedgerSchema::version(&tx).await?;
+        match version {
+            StorageVersion::Empty => match self {
+                Self::Existing => return Err(LedgerError::Uninitialized),
+                Self::Initialize => {}
+            },
+            StorageVersion::DocumentsV1
+            | StorageVersion::IndexedV2
+            | StorageVersion::RelationalV3
+            | StorageVersion::CommonTasksV4
+            | StorageVersion::SequencedEventsV5 => {}
+        }
         match version {
             StorageVersion::SequencedEventsV5 => {
                 tx.commit().await?;

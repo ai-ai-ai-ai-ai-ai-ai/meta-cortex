@@ -76,6 +76,12 @@ impl Workbench {
         Observation::open(self.repository.ledger_path()?).await
     }
 
+    /// Migrate existing supported storage, then return a read-only observation.
+    /// Does not initialize repository identity, empty storage, or import separate ledgers.
+    pub async fn prepare_observation(&self) -> Result<Observation, LedgerError> {
+        Observation::prepare(self.repository.ledger_path()?).await
+    }
+
     pub async fn features(&self) -> Result<Vec<LedgerInfo>, LedgerError> {
         Ledger::features(&self.repository).await
     }
@@ -120,7 +126,7 @@ pub enum LedgerError {
     #[error("ledger has not been initialized; run Feature / Initialize")]
     Uninitialized,
     #[error(
-        "Workbench database version {0} requires migration; run Feature / List with the current meta-cortex before observing"
+        "Workbench database version {0} requires storage preparation before read-only observation"
     )]
     ObservationMigrationRequired(versions::StorageVersion),
     #[error("file operation failed: {0}")]
