@@ -30,6 +30,7 @@ impl From<ExitStatus> for BuildOutcome {
 }
 impl FrontendBuild {
     fn run(mut self) -> Result<(), BuildFailure> {
+        println!("cargo:rerun-if-changed=../../cortex/teams");
         println!("cargo:rerun-if-changed=frontend/src");
         println!("cargo:rerun-if-changed=frontend/tools");
         println!("cargo:rerun-if-changed=frontend/contracts.schema.json");
