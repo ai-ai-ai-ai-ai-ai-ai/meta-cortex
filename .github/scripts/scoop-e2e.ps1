@@ -75,9 +75,17 @@ try {
     (Join-Path $candidateRoot 'native project with spaces\.meta-cortex\repository-id')
   )
   foreach ($tool in @('mise', 'bun', 'vale')) { $retained += Join-Path $env:META_CORTEX_HOME "$tool\bin\$tool.exe" }
-  $databases = @(Get-ChildItem $env:META_CORTEX_HOME -Filter workbench.db -Recurse)
-  if ($databases.Count -ne 1) { throw 'Expected the actual candidate Workbench database' }
-  $retained += $databases[0].FullName
+  $firstFeature = @(Get-ChildItem -LiteralPath $env:META_CORTEX_HOME -Filter native-windows.db -File -Recurse)
+  if ($firstFeature.Count -ne 1) { throw 'Expected one actual native-windows feature database' }
+  $featureDirectory = $firstFeature[0].Directory.FullName
+  if ((Split-Path -Leaf $featureDirectory) -ne 'features') { throw 'Candidate database is not in the features directory' }
+  $databases = @(Get-ChildItem -LiteralPath $featureDirectory -Filter '*.db' -File)
+  if ($databases.Count -ne 2) { throw 'Expected both actual candidate feature databases' }
+  foreach ($name in @('native-windows.db', 'native-windows-other.db')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $featureDirectory $name) -PathType Leaf)) { throw "Missing candidate feature database: $name" }
+  }
+  # Preserve the closed databases and any engine-managed sidecars together.
+  $retained += @(Get-ChildItem -LiteralPath $featureDirectory -File | ForEach-Object { $_.FullName })
   $hashes = @{}
   foreach ($path in $retained) { $hashes[$path] = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash }
   $upgradeFrom = $manifest.version

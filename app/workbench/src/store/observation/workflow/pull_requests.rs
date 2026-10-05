@@ -1,8 +1,9 @@
 //! Pull requests a feature's tasks recorded in their progress extensions. The ledger
 //! has no dedicated field, so observers read the GitHub URLs agents already store there.
-use super::{JsonPath, LedgerReader, RecordLimit};
+use super::{LedgerReader, RecordLimit};
 use crate::LedgerError;
 use crate::model::Feature;
+use crate::store::record_fields::{TaskDocument, TaskField};
 use crate::store::relational::TaskTable;
 use crate::store::sql::SqlStatement;
 use crate::values::{TaskId, Timestamp};
@@ -131,8 +132,8 @@ impl LedgerReader {
         &self,
         feature: &Feature,
     ) -> Result<Vec<PullRequest>, LedgerError> {
-        let extensions = JsonPath::from("$.common.progress.extensions").extract();
-        let last_update = JsonPath::from("$.common.last_update").extract();
+        let extensions = TaskField::Extensions.extract(TaskDocument::CurrentTask);
+        let last_update = TaskField::LastUpdate.extract(TaskDocument::CurrentTask);
         let mut rows = SqlStatement::build(
             Query::select()
                 .column(TaskTable::Id)
@@ -141,7 +142,7 @@ impl LedgerReader {
                 .from(TaskTable::Table)
                 .and_where(Expr::col(TaskTable::FeatureId).eq(feature.id.to_string()))
                 .and_where(extensions.like("%/pull/%"))
-                .order_by_expr(last_update.into(), Order::Desc)
+                .order_by_expr(last_update, Order::Desc)
                 .limit(RecordLimit::PAGE.sql_count())
                 .to_owned(),
         )?

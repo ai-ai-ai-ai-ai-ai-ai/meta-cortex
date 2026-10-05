@@ -1,11 +1,11 @@
 use super::snapshot::{Selection, SnapshotContext};
 use meta_cortex_workbench::model::workflow::TaskOwnership;
-use meta_cortex_workbench::model::{Checkpoint, Event, Feature, Phase, Task, TaskState, Workspace};
+use meta_cortex_workbench::model::{Checkpoint, Event, Phase, Task, TaskState, Workspace};
 use meta_cortex_workbench::values::{Extensions, Note};
-use meta_cortex_workbench::{Page, PageEnd};
+use meta_cortex_workbench::{CatalogFeature, CatalogPage, Page, PageEnd};
 
 pub(super) enum Content {
-    Features(Page<Feature>),
+    Features(CatalogPage),
     Tasks(Page<Task>),
     History(Page<Event>),
     Task(Box<Task>),
@@ -13,7 +13,7 @@ pub(super) enum Content {
 impl Content {
     pub fn end(&self) -> PageEnd {
         match self {
-            Self::Features(page) => page.end,
+            Self::Features(page) => page.features.end,
             Self::Tasks(page) => page.end,
             Self::History(page) => page.end,
             Self::Task(_) => PageEnd::Complete,
@@ -49,23 +49,30 @@ impl Content {
     }
 }
 struct FeatureList<'a> {
-    page: &'a Page<Feature>,
+    page: &'a CatalogPage,
     selection: Selection,
 }
 impl FeatureList<'_> {
     fn text(&self) -> String {
         let Self { page, selection } = self;
         let mut text = String::from("FEATURES\n");
-        for (index, feature) in page.records.iter().enumerate() {
-            text.push_str(&format!(
-                "{} {} · {} · {}\n",
-                RowMarker::from(Selection::from(index) == *selection),
-                feature.id,
-                feature.branch,
-                feature.objective
-            ));
+        for (index, entry) in page.features.records.iter().enumerate() {
+            let marker = RowMarker::from(Selection::from(index) == *selection);
+            match entry {
+                CatalogFeature::Current { ledger } => text.push_str(&format!(
+                    "{marker} {} · {} · {}\n",
+                    ledger.feature.id, ledger.feature.branch, ledger.feature.objective
+                )),
+                CatalogFeature::UpgradeRequired { ledger } => text.push_str(&format!(
+                    "{marker} {} · {} · Upgrade required (database schema {})\n",
+                    ledger.feature.id, ledger.feature.objective, ledger.storage_version
+                )),
+                CatalogFeature::Unavailable { feature, message } => {
+                    text.push_str(&format!("{marker} {feature} · Unavailable: {message}\n"))
+                }
+            }
         }
-        text.push_str(match page.records.as_slice() {
+        text.push_str(match page.features.records.as_slice() {
             [] => "No recorded features on this page.",
             [_, ..] => "",
         });
@@ -262,7 +269,7 @@ mod tests {
         Attempt, CommitId, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision, Timestamp,
     };
     use meta_cortex_workbench::versions::{RecordVersion, TaskRecordVersion};
-    use meta_cortex_workbench::{Page, PageEnd};
+    use meta_cortex_workbench::{CatalogPage, Page, PageEnd};
 
     struct TaskFixture {
         task: Task,
@@ -511,9 +518,11 @@ mod tests {
         );
 
         for content in [
-            Content::Features(Page {
-                records: vec![],
-                end: PageEnd::Complete,
+            Content::Features(CatalogPage {
+                features: Page {
+                    records: vec![],
+                    end: PageEnd::Complete,
+                },
             }),
             Content::Tasks(Page {
                 records: vec![],

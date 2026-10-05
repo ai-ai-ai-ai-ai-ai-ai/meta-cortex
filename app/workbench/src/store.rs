@@ -1,8 +1,10 @@
 use crate::model::worker::WorkerIdentity;
+pub(crate) mod catalog;
 mod legacy;
 mod lifecycle;
 mod mutations;
 pub(crate) mod observation;
+mod record_fields;
 mod relational;
 mod schema;
 mod sequence;
@@ -73,7 +75,7 @@ pub(crate) struct InitializeLedger {
     pub input: InitFeature,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, schemars::JsonSchema)]
 pub struct LedgerInfo {
     pub path: PathBuf,
     pub storage_version: StorageVersion,
@@ -119,6 +121,9 @@ impl Ledger {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)
             .await?;
+        schema::LedgerSchema::require_current(&tx)
+            .await
+            .map_err(|error| error.in_feature(&self.state.feature.id))?;
         let documents = Documents {
             connection: &tx,
             feature: &self.state.feature.id,
@@ -249,6 +254,25 @@ impl Ledger {
 }
 
 impl Documents<'_> {
+    async fn require_feature_scope(&self) -> Result<(), LedgerError> {
+        let mut rows = SqlStatement::build(
+            Query::select()
+                .column(FeatureTable::Id)
+                .from(FeatureTable::Table)
+                .and_where(Expr::col(FeatureTable::Id).ne(self.feature.to_string()))
+                .limit(1)
+                .to_owned(),
+        )?
+        .query(self.connection)
+        .await?;
+        match rows.next().await? {
+            Some(_) => Err(LedgerError::Invalid(
+                "feature database contains an unrelated feature",
+            )),
+            None => Ok(()),
+        }
+    }
+
     async fn feature(&self) -> Result<Feature, LedgerError> {
         let mut rows = SqlStatement::build(
             Query::select()

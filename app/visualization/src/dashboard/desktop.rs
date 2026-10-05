@@ -1,6 +1,6 @@
 use super::{DashboardError, DashboardReport, NativeExitCode};
 use meta_cortex_workbench::values::{FeatureId, Note};
-use meta_cortex_workbench::{FeatureSummary, FeatureWorkflow, Page, PageIndex, Workbench};
+use meta_cortex_workbench::{FeatureCard, FeatureWorkflow, Page, PageIndex, Workbench};
 use schemars::JsonSchema;
 use serde::Serialize;
 use std::future::Future;
@@ -12,7 +12,7 @@ use tokio::runtime::Builder;
 /// The most recently active features with their totals, held work, outcomes and pull requests.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DesktopReply {
-    pub features: Page<FeatureSummary>,
+    pub features: Page<FeatureCard>,
 }
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(tag = "kind")]
@@ -46,7 +46,11 @@ impl DesktopLaunch {
         let app = tauri::Builder::default()
             .plugin(init())
             .manage(Arc::new(self))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
+            .invoke_handler(tauri::generate_handler![
+                dashboard_read,
+                dashboard_workflow,
+                dashboard_upgrade
+            ])
             .build(tauri::generate_context!())?;
         match app.run_return(|_handle, _event| {}) {
             0 => {}
@@ -58,8 +62,9 @@ impl DesktopLaunch {
     }
     async fn read(&self) -> Result<DesktopReply, DashboardError> {
         let observation = self.workbench.observe().await?;
+        let catalog = observation.summaries(PageIndex::FIRST).await?;
         Ok(DesktopReply {
-            features: observation.summaries(PageIndex::FIRST).await?,
+            features: catalog.features,
         })
     }
     fn blocking_workflow(&self, feature: FeatureId) -> Result<FeatureWorkflow, DashboardError> {
@@ -67,6 +72,15 @@ impl DesktopLaunch {
             .enable_time()
             .build()?
             .block_on(async { Ok(self.workbench.observe().await?.workflow(feature).await?) })
+    }
+    fn blocking_upgrade(&self, feature: FeatureId) -> Result<FeatureWorkflow, DashboardError> {
+        Builder::new_current_thread()
+            .enable_time()
+            .build()?
+            .block_on(async {
+                self.workbench.open(feature.clone()).await?;
+                Ok(self.workbench.observe().await?.workflow(feature).await?)
+            })
     }
     fn blocking_read(&self) -> Result<DesktopReply, DashboardError> {
         Builder::new_current_thread()
@@ -106,81 +120,31 @@ fn dashboard_workflow(
     }
 }
 
+// Only an explicit selected-feature action may migrate storage.
+#[tauri::command(async)]
+fn dashboard_upgrade(
+    state: State<'_, Arc<DesktopLaunch>>,
+    feature: FeatureId,
+) -> impl Future<Output = Result<FeatureWorkflow, DesktopFailure>> + Send + 'static {
+    let owner = Arc::clone(state.inner());
+    async move {
+        async_runtime::spawn_blocking(move || owner.blocking_upgrade(feature))
+            .await
+            .map_err(DashboardError::from)
+            .flatten()
+            .map_err(DesktopFailure::from)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::DesktopContract;
-
-    #[test]
-    #[ignore = "requires exported synthetic V4 fixture in META_CORTEX_V4_FIXTURE"]
-    fn native_startup_prepares_v4_before_serving_ipc() -> anyhow::Result<()> {
-        use super::{dashboard_read, dashboard_workflow};
-        use crate::dashboard::{Dashboard, DashboardExecution, DashboardRequest};
-        use anyhow::Context;
-        use meta_cortex_workbench::versions::StorageVersion;
-        use meta_cortex_workbench::{DataDirectory, LedgerError, Workbench};
-        use std::env;
-        use std::path::PathBuf;
-        use std::sync::Arc;
-        use tauri::WebviewWindowBuilder;
-        use tauri::ipc::{CallbackFn, InvokeBody, InvokeResponseBody};
-        use tauri::test as native_test;
-        use tauri::webview::InvokeRequest;
-        use tokio::runtime::Builder;
-
-        let root = PathBuf::from(
-            env::var_os("META_CORTEX_V4_FIXTURE")
-                .ok_or_else(|| anyhow::anyhow!("synthetic fixture required"))?,
-        );
-        let workbench = Workbench::discover(&root.join("project"))?
-            .with_data_directory(DataDirectory::from(root.join("data")));
-        let runtime = Builder::new_current_thread().enable_time().build()?;
-        assert!(matches!(
-            runtime.block_on(workbench.observe()),
-            Err(LedgerError::ObservationMigrationRequired(
-                StorageVersion::CommonTasksV4
-            ))
-        ));
-        let DashboardExecution::Desktop(launch) = runtime
-            .block_on(Dashboard::from(workbench).execute(DashboardRequest::Desktop {}))
-            .context("native startup preparation")?
-        else {
-            return Err(anyhow::anyhow!("native startup must return Desktop"));
-        };
-        let reply = launch
-            .blocking_read()
-            .context("first native feature projection")?;
-        assert!(!reply.features.records.is_empty());
-        let expected = serde_json::to_string(&reply)?;
-        let app = native_test::mock_builder()
-            .manage(Arc::new(launch))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
-            .build(native_test::mock_context(native_test::noop_assets()))?;
-        let webview = WebviewWindowBuilder::new(&app, "main", Default::default()).build()?;
-        let response = native_test::get_ipc_response(
-            &webview,
-            InvokeRequest {
-                cmd: "dashboard_read".to_owned(),
-                callback: CallbackFn(0),
-                error: CallbackFn(1),
-                url: "tauri://localhost".parse()?,
-                body: InvokeBody::Json(serde_json::Value::Null),
-                headers: Default::default(),
-                invoke_key: native_test::INVOKE_KEY.to_owned(),
-            },
-        )
-        .map_err(|error| anyhow::anyhow!("IPC failed: {error}"))?;
-        match response {
-            InvokeResponseBody::Json(text) => assert_eq!(text, expected),
-            InvokeResponseBody::Raw(_) => return Err(anyhow::anyhow!("expected JSON IPC reply")),
-        }
-        Ok(())
-    }
 
     /// Explicitly invoked against a real repository, never a native-window claim.
     #[test]
     #[ignore = "requires explicit real repository, feature, ledger and output paths"]
     fn actual_workflow_ipc_reads_existing_turso_without_writes() -> anyhow::Result<()> {
-        use super::{DesktopLaunch, dashboard_read, dashboard_workflow};
+        use super::{DesktopLaunch, dashboard_read, dashboard_upgrade, dashboard_workflow};
         use meta_cortex_workbench::Workbench;
         use meta_cortex_workbench::values::FeatureId;
         use std::io::ErrorKind;
@@ -221,7 +185,11 @@ mod tests {
         let expected = serde_json::to_value(launch.blocking_workflow(feature.clone())?)?;
         let app = mock_builder()
             .manage(Arc::new(launch))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
+            .invoke_handler(tauri::generate_handler![
+                dashboard_read,
+                dashboard_workflow,
+                dashboard_upgrade
+            ])
             .build(mock_context(noop_assets()))?;
         let webview = WebviewWindowBuilder::new(&app, "main", Default::default()).build()?;
         let response = get_ipc_response(

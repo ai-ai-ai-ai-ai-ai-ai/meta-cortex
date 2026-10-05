@@ -1,4 +1,5 @@
-//! Global append order is storage evidence; task revisions remain local counters.
+//! Feature-local append order is storage evidence; imported positions retain their
+//! original sequence and provenance. Task revisions remain independent counters.
 use super::{FeedEntry, HistoryPage, Observation, Page, RecordLimit};
 use crate::LedgerError;
 use crate::model::Event;
@@ -50,7 +51,7 @@ impl Observation {
         &self,
         request: HistoryPage,
     ) -> Result<Page<SequencedEvent>, LedgerError> {
-        let reader = self.reader().await?;
+        let reader = self.reader(&request.feature).await?;
         let mut rows = SqlStatement::build(
             Query::select()
                 .columns([

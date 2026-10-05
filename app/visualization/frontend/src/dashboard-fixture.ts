@@ -96,7 +96,12 @@ export class Fixture {
     );
   }
   reply(): DesktopReply {
-    return { features: { records: [this.summary], end: "Complete" } };
+    return {
+      features: {
+        records: [{ kind: "current", summary: this.summary }],
+        end: "Complete",
+      },
+    };
   }
   /** A timestamp the given number of minutes before `Fixture.NOW`. */
   ago(minutes: number): number {

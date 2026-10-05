@@ -273,7 +273,7 @@ impl Cli<'_> {
         let Reply::Status { ledger, tasks } = reply else {
             bail!("unexpected status reply: {reply:?}");
         };
-        assert_eq!(ledger.storage_version, StorageVersion::SequencedEventsV5);
+        assert_eq!(ledger.storage_version, StorageVersion::FeatureHistoryV6);
         Ok(tasks)
     }
 }

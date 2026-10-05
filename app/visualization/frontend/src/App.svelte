@@ -107,7 +107,11 @@
     {/each}
 
     {#each dashboard.featurePages() as summaries, index (index)}
-      <FeaturePage {summaries} truncated={dashboard.truncated()} />
+      <FeaturePage
+        {summaries}
+        truncated={dashboard.truncated()}
+        refresh={() => dashboard.refresh()}
+      />
     {:else}
       {#if dashboard.failures().length === 0}
         <div role="status" class="space-y-4" aria-label="Reading the ledger">

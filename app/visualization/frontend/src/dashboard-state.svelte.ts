@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { DesktopReply, FeatureSummary } from "./contracts";
+import type { DesktopReply, FeatureCard } from "./contracts";
 import type { DashboardApi, DashboardFailure } from "./api";
 
 enum LoadKind {
@@ -61,7 +61,7 @@ export class ReadController {
     this.interrupt();
   }
   /** Empty until the first reply; a loaded page may itself hold no features. */
-  featurePages(): ReadonlyArray<ReadonlyArray<FeatureSummary>> {
+  featurePages(): ReadonlyArray<ReadonlyArray<FeatureCard>> {
     switch (this.reply.kind) {
       case ReplyKind.Empty:
         return [];

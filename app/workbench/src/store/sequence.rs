@@ -97,10 +97,10 @@ impl SequenceSchema {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::store::PERSISTENT_IO;
     use crate::store::relational::tests::Records;
     use crate::store::relational::{RecordWriter, RelationalSchema};
     use crate::store::schema::LedgerSchema;
-    use crate::store::{PERSISTENT_IO, observation::Observation};
     use crate::values::EventSequence;
     use crate::versions::StorageVersion;
     use tokio::runtime::Builder;
@@ -152,7 +152,7 @@ mod tests {
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;
-                let connection = database.connect()?;
+                let mut connection = database.connect()?;
                 connection
                     .pragma_update(&Pragma::ForeignKeys.to_string(), 1)
                     .await?;
@@ -190,10 +190,10 @@ mod tests {
                         .collect::<Vec<_>>(),
                     [EventSequence::from(1), EventSequence::from(3)]
                 );
-                Observation::prepare(path.clone()).await?;
+                LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::SequencedEventsV5
+                    StorageVersion::FeatureHistoryV6
                 );
                 assert_eq!(snapshot(&connection).await?, before);
                 let mut provenance = SqlStatement::build(
@@ -294,7 +294,7 @@ mod tests {
                 .experimental_multiprocess_wal(true)
                 .build()
                 .await?;
-                let connection = database.connect()?;
+                let mut connection = database.connect()?;
                 RelationalSchema::create(&connection).await?;
                 connection
                     .execute(
@@ -332,9 +332,12 @@ mod tests {
                 writer.event(&records.event).await?;
                 writer.event(&records.event).await?;
                 let before = snapshot(&connection).await?;
-                let error = Observation::prepare(path).await.err().ok_or_else(|| {
-                    anyhow::anyhow!("duplicate legacy identity must reject migration")
-                })?;
+                let error = LedgerSchema::migrate(&mut connection)
+                    .await
+                    .err()
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("duplicate legacy identity must reject migration")
+                    })?;
                 assert!(matches!(error, LedgerError::Database(_)));
                 assert!(error.to_string().contains("UNIQUE constraint failed"));
                 assert_eq!(

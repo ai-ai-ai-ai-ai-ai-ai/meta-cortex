@@ -9,11 +9,12 @@ states relate to workspace output, review, delivery, and the next responsible ow
 
 ## Storage and ownership
 
-All agents and features in one repository share one embedded Turso database.
+Each feature has one embedded Turso database shared by its agents and linked
+project worktrees.
 Resolve its location from any linked project worktree:
 
 ```text
-~/.meta-cortex/<repo-name>/<repo_id>/workbench.db
+~/.meta-cortex/<repo-name>/<repo_id>/features/<feature>.db
 ```
 
 - **Repository identity**
@@ -37,7 +38,7 @@ Pass the consuming project path and a stable feature
 ID to every command. Do not use the library's repository as the project. The
 feature ID stays fixed when a host session restarts. Reuse the ID and feature
 branch on follow-ups. Task IDs are scoped to their feature, so different features
-can reuse a task ID inside the same database. Never create a database per task,
+can reuse a task ID in their separate databases. Never create a database per task,
 agent, or worktree. Preserve the database and its engine-managed sidecars together.
 
 - Gizmo Prime owns the feature objective and branch decision.
@@ -117,10 +118,11 @@ current revision and attempt from the previous response.
 ## Workbench dashboard
 
 `meta-cortex dashboard` and typed `Workbench / Dashboard` requests observe
-recorded Turso ledger content. Desktop first prepares existing supported storage
-under the [storage requirements](#storage-requirements-and-errors); subsequent
-observation performs no claims, heartbeats, requeues, imports, or other updates.
-The dashboard does not collect
+recorded Turso ledger content without automatic claims, heartbeats, requeues,
+migrations or other updates. Desktop provides an explicit
+[Upgrade and open action](#upgrade-and-open-one-feature) for a selected supported
+feature; opening the dashboard and refreshing its catalog remain observational.
+It does not collect
 host agent state, runtime metadata, chat content, or Git work and authorship data.
 Git is used only to resolve the existing repository identity and storage path.
 For example, a recorded integration SHA is ledger evidence; its event actor
@@ -139,7 +141,7 @@ identifies who recorded it, not who actually authored that Git commit.
    meta-cortex dashboard
    ```
 
-   It resolves the existing repository identity and shared database from the
+   It resolves the existing repository identity and feature storage from the
    current directory, then opens the native Tauri Workbench window.
 2. The window opens on a split feature preview, newest activity first. Brief
    cards show the title, precise first-task date, expandable objective, compact
@@ -147,7 +149,7 @@ identifies who recorded it, not who actually authored that Git commit.
    inventory, latest update, start/finish times, elapsed duration, and branch.
    Open a task block or **Open workflow** to see task chapters. One shared index
    navigates both **Log** and **Time windows** in the right panel. The
-   [Revision log](#revision-log-and-event-order) shows database-wide order,
+   [Revision log](#revision-log-and-event-order) shows feature-local event order,
    task revisions, recording actors, time, and expandable evidence. Time windows
    show task creation through last update, including concurrent task lifetimes.
    PR links open in the system browser.
@@ -278,37 +280,41 @@ report feature acceptance and delivery separately.
 
 ### Revision log and event order
 
-The selected feature's **Revision log** orders events by their database-wide
-`EventSequence`. All writers sharing that repository database use the same
-sequence. The log displays this as `R`; `Task r` remains the task-local
-`TaskRevision` used for optimistic updates. Its numeric wire format is unchanged.
-An attempt identifies a task claim, not an event's position in the repository's history. `FeatureWorkflow.revision_log` exposes
+The selected feature's **Revision log** orders events by `EventSequence` in
+that feature's database. New appends use a feature-local sequence. The log
+shows this as `R`; `Task r` remains the task-local `TaskRevision` used for
+optimistic updates. Its numeric wire format is unchanged. An attempt identifies
+a task claim, not an event's position. `FeatureWorkflow.revision_log` exposes
 entries with `feature`, `task`, `sequence`, `provenance`, and the recorded
-`FeedEntry` in `entry`. The existing Event JSON stays unchanged; sequence and
-provenance belong to the storage envelope and observation result.
+`FeedEntry` in `entry`. Event JSON stays unchanged; sequence and provenance
+belong to the storage envelope and observation result.
 
 - A successful mutation appends its event in the same `IMMEDIATE` transaction
-  as its task change. Database schema version `5` assigns its sequence through
+  as its task change. Database schema version `6` assigns its sequence through
   `AUTOINCREMENT`; no separate counter service or read-side increment exists.
 - New entries have `CommittedAppend` provenance. Their sequence orders committed
-  appends in this database, independent of worker clocks and task revision values.
-- Migrated entries have `LegacyStorageOrder` provenance. The shared database
-  migration copies each actual old event `rowid`, retaining holes and storage order. Those values cannot
-  recover original commit chronology; do not describe them as historical commit
-  timestamps or newly observed append order.
-- Filtering to one feature retains global sequence values. Gaps can belong to
-  other features; neither filtering nor display renumbers entries. Sequence
-  values are not promised to be gapless. A rolled-back allocation can be reused.
+  appends in this feature database, independently of worker clocks and task revisions.
+- Retained historical entries keep their original sequence and provenance,
+  including gaps. Migration and display never renumber them or claim a new
+  global order.
+- Entries migrated from pre-sequence schemas `1` through `4` retain actual event
+  `rowid` values with `LegacyStorageOrder` provenance, including holes. These
+  values preserve storage order; they cannot recover original commit chronology.
+- Migration from version `5` to `6` preserves existing sequence values and
+  provenance, including `CommittedAppend`, without renumbering events.
+- Sequence values are not promised to be gapless. A rolled-back allocation can
+  be reused. Equal or larger `R` values in different feature databases establish
+  no cross-feature ordering.
 - Reading the log does not change event order, task revisions, attempts, or stored
-  snapshots. Use the current task revision, never global `R`, in `expected_revision`.
+  snapshots. Use the current task revision, never `R`, in `expected_revision`.
 
-**Prohibited:** relabel a feature's `R41` and `R44` as `R1` and `R2`, infer that
-the gap is missing feature history, or send `expected_revision: 44` when the
+**Prohibited:** relabel historical `R41` and `R44` as `R1` and `R2`, infer that
+another feature's `R45` happened later, or send `expected_revision: 44` when the
 selected task is at revision `7`.
 
-**Required:** retain `R41` and `R44`, show their task revisions separately, and
-use that task's observed revision `7` for its next update. Label migrated entries
-as legacy storage order rather than claiming their original commit chronology.
+**Required:** retain `R41` and `R44` with their provenance, show task revisions
+separately, and use that task's observed revision `7` for its next update.
+Interpret later appends within the selected feature only.
 
 ### Historical ownership
 
@@ -345,32 +351,63 @@ event can push an older event onto the next page.
 ### Storage requirements and errors
 
 `meta-cortex dashboard` reports a structured error with exit status `2` before
-opening the window when run outside Git or when repository identity or the
-shared database is missing. It does not create storage to recover from these errors.
-Observation requires an existing repository identity and shared database at the
-current schema version; it never initializes either. The observer uses a short
-250 ms database busy timeout. Desktop read failures appear in the window;
-refresh to retry or close the window to exit. Snapshot failures return structured errors
-with exit status `2`.
+opening the window when run outside Git or when repository identity is missing.
+It does not create identity to recover from these errors. An absent `features/`
+directory produces an empty catalog without creating storage.
 
-Desktop preparation migrates an existing, nonempty version `1`, `2`, `3`, or `4`
-shared database transactionally to version `5` before observation. This applies
-to both `meta-cortex dashboard` and typed `mode: Desktop` requests; no separate
-Feature / List request is needed. Preparation never initializes a missing
-repository identity or database and never imports separate legacy feature databases.
-Empty schemas and unsupported versions are rejected. Invalid legacy data aborts
-the migration, preserving the prior schema and recorded events under the
-[version and migration contract](#versions-and-durable-contracts).
+The dashboard catalog reads only the resolved repository’s `features/<id>.db`
+files, independently. Opening the window, listing cards, and refreshing never
+migrate storage. One unavailable feature file does not hide other readable
+features. Old storage layouts are ignored and left untouched.
 
-The observation API and `mode: Snapshot` remain strictly read-only. They report
-migration requirements for older schemas instead of upgrading them.
+- **Current schema:** the feature is available for detail observation.
+- **Supported older schema:** read-only metadata keeps the feature visible with
+  its stored schema version and an upgrade state. Detail remains gated until
+  the selected upgrade succeeds.
+- **Future per-feature schema:** identify the unavailable feature from its file
+  name and schema header only. Do not decode future feature or task records.
+- **Feature file read failure:** show the affected feature and concrete failure
+  while retaining other readable feature cards.
 
-- **Prohibited:** use a Snapshot request to upgrade a version `2` database, or
-  expect Desktop preparation to create missing storage or repair invalid events.
+**Prohibited:** one version `99` file blanks the entire catalog, or its records
+are decoded as a supported version merely to construct a card.
 
-- **Required:** open Desktop against existing supported storage to prepare it
-  transactionally, then observe it. If migration fails, preserve the source and
-  report the failure; resolve invalid data through separately authorized work.
+**Required:** show that file's identity and unsupported version as unavailable,
+and keep independently readable features visible without changing any database.
+
+Detail observation requires the current schema. The observer uses a short
+250 ms database busy timeout. Desktop failures appear in the window; refresh to
+retry or close the window to exit. Snapshot failures return structured errors
+with exit status `2`. A schema error identifies the affected feature
+and version. Snapshot never upgrades storage. `Feature / List` and Snapshot feature listings
+also expose metadata availability without forcing detail reads.
+
+- **Prohibited:** treat an older feature's visible catalog metadata as proof that
+  its detail can be read, or use Snapshot to migrate it.
+- **Required:** retain the upgrade gate for detail and use an explicit selected
+  upgrade before retrying current-schema observation.
+
+### Upgrade and open one feature
+
+1. Select a feature whose catalog state reports a supported upgrade. Stop older
+   writers before upgrading that feature under the
+   [released format requirements](#released-format-support).
+2. Choose **Upgrade and open**. This explicit action uses the existing selected
+   Workbench open/migration path for that feature only under the
+   [migration contract](#versions-and-durable-contracts).
+3. Open the selected feature's detail after the operation succeeds. If it fails,
+   show the concrete failure and retain the other catalog entries. Do not retry by
+   downgrading storage or rewriting history.
+
+The action preserves historical JSON, ordering, and provenance under the existing
+migration contract. It does not migrate other features or read old storage layouts.
+Future schemas have no supported upgrade action.
+
+**Prohibited:** clicking **Upgrade and open** for `alpha` upgrades `beta`, or
+opening the dashboard performs that action without a click.
+
+**Required:** upgrade only `alpha` after its explicit selection, then open its
+detail; leave `beta` and ignored old storage files unchanged.
 
 ## Record the entire feature workflow
 
@@ -660,7 +697,7 @@ the recorded task plus any newer Git changes.
 
 Command protocol, persisted record, and physical database versions are distinct.
 This release writes command, feature, and event-envelope version `1`, task
-record version `3`, and database version `5`. `Task / Claim` and `Task / Update`
+record version `3`, and database version `6`. `Task / Claim` and `Task / Update`
 require `worker_id`; discover their current request shapes with `meta-cortex list`.
 Task readers explicitly convert supported version `1` and `2` records into the
 current model with unrecorded worker identity. Version `1` ownership also remains
@@ -706,8 +743,11 @@ update. A replacement follows recovery and makes a new claim with its own UUID.
 
 ### Database constraints
 
-Database version `5` adds database-wide event order while retaining the JSON
-constraints introduced in version `4`. Event sequences use an `AUTOINCREMENT`
+Database version `6` retains the event sequence introduced in version `5`.
+Its JSON identity and revision constraints accept the supported record shapes:
+flat version `1` fields and the `common` fields in later versions. Migration
+preserves original JSON bytes instead of rewriting old event snapshots to match
+a newer record shape. Event sequences use an `AUTOINCREMENT`
 primary key; `(feature_id, task_id, revision)` remains unique. Feature and task
 keys, foreign keys, and JSON identity/revision checks retain their existing
 meaning. Each task requires its feature and each event requires its task;
@@ -716,22 +756,23 @@ Required columns reject nulls, task revisions must be positive, and JSON IDs
 and revisions must match their relational columns. Every Workbench connection
 enables foreign keys.
 
-Feature discovery and task commands migrate older storage transactionally.
-Desktop also prepares existing supported storage before observation, under the
-[dashboard storage requirements](#storage-requirements-and-errors). Observation
-itself requires the current schema and reports when migration is needed;
-it never migrates storage. JSON retains actors, task snapshots, findings, checks,
+Commands selecting a feature migrate only its supported older storage
+transactionally. `Feature / List` and dashboard observation never migrate storage;
+they report when migration is needed. Every write transaction checks the current
+schema after acquiring the transaction, before changing records. An already-open
+writer therefore rejects a schema upgraded beyond its supported version.
+JSON retains actors, task snapshots, findings, checks,
 and evidence. [Event order](#revision-log-and-event-order) records whether its
 sequence came from a committed append or preserved legacy storage order.
 
-- **Prohibited:** advance a counter while reading history or change a task revision
-  to give an event its global position.
-- **Required:** assign the event sequence in the existing mutation transaction and
-  leave task revision checks and history content intact.
+- **Prohibited:** an already-open writer trusts its startup schema check and
+  appends after another executable upgrades the database to a future version.
+- **Required:** check the schema inside the acquired write transaction and reject
+  the unsupported version before changing the task or appending its event.
 
 ### Invalid legacy data during migration
 
-A version `5` migration must fail atomically when legacy rows violate its
+A version `6` migration must fail atomically when legacy rows violate its
 constraints. Leave the prior schema and committed history intact and report the
 failure. Diagnose and resolve the integrity problem separately before rollout;
 an upgrade must not silently remap sequence values, deduplicate rows, or rewrite
@@ -746,17 +787,31 @@ resolved through separately authorized work and the isolated migration succeeds.
 
 ### Storage migration and supported readers
 
-Version `1`, `2`, `3`, and `4` databases migrate transactionally, retaining records
-and history across every feature. On first access through feature discovery or
-task commands, Workbench imports the old
-`~/.meta-cortex/<repo_id>/features/<feature-id>.db` files into the shared database.
-Each feature imports atomically and only once; an invalid source leaves its
-import uncommitted and reports an error. Stop older agents before upgrading:
-old executables still write the old files. Sources and sidecars remain intact
-as backups; after verifying the imported history, they may be archived or
-removed together. Never resume older writers against those backups. Unsupported
-versions are rejected; the CLI never resets a database or guesses how to decode
-an unknown record.
+A command selecting a feature migrates supported version `1`, `2`, `3`, `4`, or `5`
+storage to version `6` transactionally. It leaves other feature databases alone.
+A future schema version is rejected without mutation or downgrade.
+
+**Prohibited:** selecting `alpha` upgrades `beta`, or accepting version `99`
+rewrites its schema as version `6`.
+
+**Required:** migrate only `alpha` when supported; reject its future version
+with feature/version context and leave committed data unchanged.
+
+### Supported storage location
+
+Only `~/.meta-cortex/<repo-name>/<repo_id>/features/<feature>.db` in the resolved
+repository storage directory is supported. `META_CORTEX_HOME` still overrides
+the application home. Old shared `workbench.db` files and unnamed historical
+home layouts are ignored. Workbench never imports, deletes, or automatically
+converts those files. Their presence does not populate an empty feature catalog.
+
+**Prohibited:** fall back to `workbench.db` when the repository’s `features/`
+directory is absent, or delete old files while listing features.
+
+**Required:** show an empty catalog, leave old files untouched, and use only the
+resolved per-feature location for subsequent feature initialization and access.
+
+### Released format support
 
 There are no historical command/record formats before version
 `1`. When evolving those formats, retain typed readers for the current version
@@ -768,9 +823,10 @@ its meaning. Adding extension keys does not change a known schema version.
 - Rebuild or install the current executable before using the new schema and
   request contract. Stop older writers before upgrading; do not mix executable
   versions against upgraded storage.
-- Validate migration using an isolated cloned ledger. Do not upgrade a shared
-  live ledger merely to obtain test evidence while older writers still use it.
-- Migrations move forward; older executables reject newer storage versions.
+- Validate migration using an isolated cloned ledger. Do not upgrade a
+  live feature ledger merely to obtain test evidence while older writers still use it.
+- Migrations move forward. Current writers reject unsupported newer schemas
+  within every write transaction; released legacy writers still require shutdown.
 - Before an upgrade that changes record shapes, preserve a consistent backup
   with all writers stopped.
 - To downgrade, restore that backup; do not rewrite newer records in place.

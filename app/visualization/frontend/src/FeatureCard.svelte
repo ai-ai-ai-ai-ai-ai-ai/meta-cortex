@@ -57,6 +57,7 @@
     </div>
   </div>
   <div class="card-footer">
+    <span>Available</span>
     <span>{look.signals().join(" · ")}</span><PullRequests
       requests={summary.pull_requests}
     /><span>{summary.actors.length} roles</span>

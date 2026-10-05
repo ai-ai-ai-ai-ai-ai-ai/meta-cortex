@@ -130,6 +130,8 @@ impl TryFrom<i64> for TaskRecordVersion {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Display, Serialize, Deserialize)]
 #[serde(try_from = "i64", into = "i64")]
+#[derive(JsonSchema)]
+#[schemars(with = "i64")]
 pub enum StorageVersion {
     #[display("0")]
     Empty,
@@ -143,10 +145,12 @@ pub enum StorageVersion {
     CommonTasksV4,
     #[display("5")]
     SequencedEventsV5,
+    #[display("6")]
+    FeatureHistoryV6,
 }
 
 impl StorageVersion {
-    pub const CURRENT: Self = Self::SequencedEventsV5;
+    pub const CURRENT: Self = Self::FeatureHistoryV6;
 }
 
 impl TryFrom<i64> for StorageVersion {
@@ -160,6 +164,7 @@ impl TryFrom<i64> for StorageVersion {
             3 => Ok(StorageVersion::RelationalV3),
             4 => Ok(StorageVersion::CommonTasksV4),
             5 => Ok(StorageVersion::SequencedEventsV5),
+            6 => Ok(StorageVersion::FeatureHistoryV6),
             _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::Database,
                 version: VersionNumber::from(version),
@@ -177,6 +182,7 @@ impl From<StorageVersion> for i64 {
             StorageVersion::RelationalV3 => 3,
             StorageVersion::CommonTasksV4 => 4,
             StorageVersion::SequencedEventsV5 => 5,
+            StorageVersion::FeatureHistoryV6 => 6,
         }
     }
 }
@@ -256,6 +262,7 @@ mod tests {
             StorageVersion::RelationalV3,
             StorageVersion::CommonTasksV4,
             StorageVersion::SequencedEventsV5,
+            StorageVersion::FeatureHistoryV6,
         ] {
             let encoded = serde_json::to_string(&version)?;
             assert_eq!(encoded, i64::from(version).to_string());
@@ -271,7 +278,7 @@ mod tests {
             assert!(serde_json::from_str::<ProtocolVersion>(input).is_err());
             assert!(serde_json::from_str::<RecordVersion>(input).is_err());
         }
-        for input in ["-1", "6", "99", "1.5", "\"IndexedV2\""] {
+        for input in ["-1", "7", "99", "1.5", "\"IndexedV2\""] {
             assert!(serde_json::from_str::<StorageVersion>(input).is_err());
         }
     }

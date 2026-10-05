@@ -1,5 +1,8 @@
+use super::record_fields::{TaskDocument, TaskField};
 use super::{LedgerError, sql::SqlStatement};
-use crate::model::{Event, Feature, Task};
+use crate::model::Event;
+#[cfg(test)]
+use crate::model::{Feature, Task};
 use sea_query::{
     ColumnDef, Expr, ExprTrait, ForeignKey, ForeignKeyAction, Func, Iden, Index, Query,
     SqliteQueryBuilder, Table, TableCreateStatement,
@@ -98,17 +101,14 @@ impl TaskTable {
             )
             .col(ColumnDef::new(Self::Document).text().not_null())
             .check(Func::cust(JsonFunction::JsonValid).arg(Expr::col(Self::Document)))
+            .check(Expr::col(Self::Id).is(TaskField::Id.extract(TaskDocument::CurrentTask)))
             .check(
-                Expr::col(Self::Id).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.common.id")])),
+                Expr::col(Self::FeatureId)
+                    .is(TaskField::Feature.extract(TaskDocument::CurrentTask)),
             )
             .check(
-                Expr::col(Self::FeatureId).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.common.feature")])),
-            )
-            .check(
-                Expr::col(Self::Revision).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.common.revision")])),
+                Expr::col(Self::Revision)
+                    .is(TaskField::Revision.extract(TaskDocument::CurrentTask)),
             )
             // The leading feature column indexes both status reads and the parent FK.
             .primary_key(Index::create().col(Self::FeatureId).col(Self::Id))
@@ -146,21 +146,14 @@ impl EventTable {
             )
             .col(ColumnDef::new(Self::Document).text().not_null())
             .check(Func::cust(JsonFunction::JsonValid).arg(Expr::col(Self::Document)))
+            .check(Expr::col(Self::TaskId).is(TaskField::Id.extract(TaskDocument::HistoricalEvent)))
             .check(
-                Expr::col(Self::TaskId).is(Func::cust(JsonFunction::JsonExtract)
-                    .args([Expr::col(Self::Document), Expr::val("$.task.common.id")])),
+                Expr::col(Self::FeatureId)
+                    .is(TaskField::Feature.extract(TaskDocument::HistoricalEvent)),
             )
             .check(
-                Expr::col(Self::FeatureId).is(Func::cust(JsonFunction::JsonExtract).args([
-                    Expr::col(Self::Document),
-                    Expr::val("$.task.common.feature"),
-                ])),
-            )
-            .check(
-                Expr::col(Self::Revision).is(Func::cust(JsonFunction::JsonExtract).args([
-                    Expr::col(Self::Document),
-                    Expr::val("$.task.common.revision"),
-                ])),
+                Expr::col(Self::Revision)
+                    .is(TaskField::Revision.extract(TaskDocument::HistoricalEvent)),
             )
             // Covers history ordering and the composite parent FK without redundant indexes.
             .foreign_key(
@@ -178,6 +171,7 @@ pub(super) struct RecordWriter<'a> {
     pub connection: &'a Connection,
 }
 impl RecordWriter<'_> {
+    #[cfg(test)]
     pub(super) async fn feature(&self, feature: &Feature) -> Result<(), LedgerError> {
         SqlStatement::build(
             Query::insert()
@@ -193,6 +187,7 @@ impl RecordWriter<'_> {
         .await?;
         Ok(())
     }
+    #[cfg(test)]
     pub(super) async fn task(&self, task: &Task) -> Result<(), LedgerError> {
         SqlStatement::build(
             Query::insert()

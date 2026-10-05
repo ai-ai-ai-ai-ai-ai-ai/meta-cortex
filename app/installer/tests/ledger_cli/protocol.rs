@@ -116,7 +116,7 @@ pub(super) struct Failure {
 #[serde(tag = "kind", content = "value", rename_all = "snake_case")]
 pub(super) enum Reply {
     Ledger(LedgerInfo),
-    Features(Vec<LedgerInfo>),
+    Features(FeatureCatalog),
     FrameworkInitialized {
         project: PathBuf,
     },
@@ -135,6 +135,25 @@ pub(super) enum Reply {
 pub(super) struct InfoPaths {
     pub(super) project: PathBuf,
     pub(super) framework: PathBuf,
+}
+#[derive(Debug, Deserialize)]
+pub(super) struct FeatureCatalog {
+    pub(super) features: Vec<CatalogFeature>,
+}
+#[derive(Debug, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub(super) enum CatalogFeature {
+    Current { ledger: LedgerInfo },
+    UpgradeRequired { ledger: LedgerInfo },
+    Unavailable { feature: FeatureId },
+}
+impl CatalogFeature {
+    pub(super) fn ledger(&self) -> anyhow::Result<&LedgerInfo> {
+        match self {
+            Self::Current { ledger } | Self::UpgradeRequired { ledger } => Ok(ledger),
+            Self::Unavailable { feature } => anyhow::bail!("feature {feature} unavailable"),
+        }
+    }
 }
 #[derive(Debug, Deserialize)]
 pub(super) struct LedgerInfo {
@@ -176,3 +195,4 @@ pub(super) struct Event {
     pub(super) note: Note,
     pub(super) task: Task,
 }
+use meta_cortex_workbench::values::FeatureId;

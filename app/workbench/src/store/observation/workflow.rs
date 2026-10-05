@@ -1,5 +1,6 @@
-//! Read-side workflow projections. Storage stays the shared ledger contract; these
+//! Read-side workflow projections of feature ledgers. These
 //! views extract only the fields observers need instead of decoding whole snapshots.
+use crate::store::record_fields::{TaskDocument, TaskField};
 mod outcomes;
 mod pull_requests;
 
@@ -7,9 +8,11 @@ use super::{LedgerReader, Observation, Page, PageIndex, RecordLimit};
 use crate::LedgerError;
 use crate::agents::AgentId;
 use crate::model::{Feature, LeaseHealth, Phase, TaskState};
-use crate::store::relational::{EventTable, FeatureTable, JsonFunction, TaskTable};
+use crate::store::relational::{EventTable, JsonFunction, TaskTable};
 use crate::store::sql::SqlStatement;
-use crate::values::{Note, TaskId, Timestamp};
+use crate::values::{FeatureId, Note, TaskId, Timestamp};
+use crate::versions::StorageVersion;
+use crate::{CatalogFeature, FeatureCatalog};
 pub use outcomes::{FeatureOutcome, LatestDelivery};
 pub use pull_requests::PullRequest;
 use schemars::JsonSchema;
@@ -236,6 +239,42 @@ pub struct FeatureSummary {
     pub latest_delivery: LatestDelivery,
 }
 
+/// A card never substitutes empty workflow data for an unavailable ledger.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum FeatureCard {
+    Current {
+        summary: Box<FeatureSummary>,
+    },
+    UpgradeRequired {
+        feature: Feature,
+        storage_version: StorageVersion,
+    },
+    Unavailable {
+        feature: FeatureId,
+        message: Note,
+    },
+}
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct FeatureCards {
+    pub features: Page<FeatureCard>,
+}
+impl FeatureCard {
+    fn id(&self) -> &FeatureId {
+        match self {
+            Self::Current { summary } => &summary.feature.id,
+            Self::UpgradeRequired { feature, .. } => &feature.id,
+            Self::Unavailable { feature, .. } => feature,
+        }
+    }
+    fn recency(&self) -> FeatureRecency {
+        match self {
+            Self::Current { summary } => summary.totals.activity.recency(),
+            Self::UpgradeRequired { .. } | Self::Unavailable { .. } => FeatureRecency::Empty,
+        }
+    }
+}
+
 struct SummaryQuery {
     feature: Feature,
     now: Timestamp,
@@ -245,53 +284,78 @@ struct ActiveQuery<'feature> {
     now: Timestamp,
 }
 impl Observation {
-    /// Most recently active features first; features without tasks follow in ID order.
-    pub async fn summaries(&self, page: PageIndex) -> Result<Page<FeatureSummary>, LedgerError> {
-        let reader = self.reader().await?;
-        let now = Timestamp::now()?;
-        let features = reader.recent_features(page).await?;
-        let mut records = Vec::new();
-        for feature in features.records {
-            records.push(reader.summary(SummaryQuery { feature, now }).await?);
+    async fn current_card(&self, query: SummaryQuery) -> FeatureCard {
+        let feature = query.feature.id.clone();
+        let result = async { self.reader(&feature).await?.summary(query).await }.await;
+        match result {
+            Ok(summary) => FeatureCard::Current {
+                summary: Box::new(summary),
+            },
+            Err(error) => FeatureCard::Unavailable {
+                feature: feature.clone(),
+                message: Note::from(error.in_feature(&feature).to_string()),
+            },
         }
-        Ok(Page {
-            records,
-            end: features.end,
+    }
+
+    /// Most recently active features first; features without tasks follow in ID order.
+    pub async fn summaries(&self, page: PageIndex) -> Result<FeatureCards, LedgerError> {
+        let now = Timestamp::now()?;
+        let FeatureCatalog { features } = self.repository.observed_features().await?;
+        let mut records = Vec::new();
+        for entry in features {
+            let card = match entry {
+                CatalogFeature::Current { ledger } => {
+                    self.current_card(SummaryQuery {
+                        feature: ledger.feature,
+                        now,
+                    })
+                    .await
+                }
+                CatalogFeature::UpgradeRequired { ledger } => FeatureCard::UpgradeRequired {
+                    feature: ledger.feature,
+                    storage_version: ledger.storage_version,
+                },
+                CatalogFeature::Unavailable { feature, message } => {
+                    FeatureCard::Unavailable { feature, message }
+                }
+            };
+            records.push(card);
+        }
+        records.sort_by(|left, right| {
+            right
+                .recency()
+                .cmp(&left.recency())
+                .then_with(|| left.id().cmp(right.id()))
+        });
+        Ok(FeatureCards {
+            features: RecordLimit::PAGE.bound(
+                records
+                    .into_iter()
+                    .skip(page.offset() as usize)
+                    .take(RecordLimit::PAGE.probe() as usize)
+                    .collect(),
+            ),
         })
     }
 }
-impl LedgerReader {
-    /// Latest task update first; features without tasks follow in ID order.
-    async fn recent_features(&self, page: PageIndex) -> Result<Page<Feature>, LedgerError> {
-        let latest = Func::max(Func::cust(JsonFunction::JsonExtract).args([
-            Expr::col((TaskTable::Table, TaskTable::Document)),
-            Expr::val("$.common.last_update"),
-        ]));
-        let mut rows = SqlStatement::build(
-            Query::select()
-                .column((FeatureTable::Table, FeatureTable::Document))
-                .from(FeatureTable::Table)
-                .left_join(
-                    TaskTable::Table,
-                    Expr::col((TaskTable::Table, TaskTable::FeatureId))
-                        .equals((FeatureTable::Table, FeatureTable::Id)),
-                )
-                .group_by_col((FeatureTable::Table, FeatureTable::Id))
-                .group_by_col((FeatureTable::Table, FeatureTable::Document))
-                .order_by_expr(latest.into(), Order::Desc)
-                .order_by((FeatureTable::Table, FeatureTable::Id), Order::Asc)
-                .offset(page.offset())
-                .limit(RecordLimit::PAGE.probe())
-                .to_owned(),
-        )?
-        .query(&self.connection)
-        .await?;
-        let mut records = Vec::new();
-        while let Some(row) = rows.next().await? {
-            records.push(serde_json::from_str(&row.get::<String>(0)?)?);
+
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum FeatureRecency {
+    Empty,
+    Recorded(Timestamp),
+}
+impl FeatureActivity {
+    fn recency(&self) -> FeatureRecency {
+        match self {
+            Self::Empty => FeatureRecency::Empty,
+            Self::Recorded {
+                last_activity_at, ..
+            } => FeatureRecency::Recorded(*last_activity_at),
         }
-        Ok(RecordLimit::PAGE.bound(records))
     }
+}
+impl LedgerReader {
     async fn summary(&self, query: SummaryQuery) -> Result<FeatureSummary, LedgerError> {
         let SummaryQuery { feature, now } = query;
         let mut select = Query::select();
@@ -301,8 +365,12 @@ impl LedgerReader {
         for state in FlowState::ALL {
             select.expr(Func::count(Expr::case(state.predicate(), Expr::val(1))));
         }
-        select.expr(Func::min(JsonPath::from("$.common.created_at").extract()));
-        select.expr(Func::max(JsonPath::from("$.common.last_update").extract()));
+        select.expr(Func::min(
+            TaskField::CreatedAt.extract(TaskDocument::CurrentTask),
+        ));
+        select.expr(Func::max(
+            TaskField::LastUpdate.extract(TaskDocument::CurrentTask),
+        ));
         let mut rows = SqlStatement::build(select)?.query(&self.connection).await?;
         let row = rows
             .next()
@@ -382,12 +450,12 @@ impl LedgerReader {
         Ok(actors)
     }
     async fn active(&self, query: ActiveQuery<'_>) -> Result<Vec<ActiveWork>, LedgerError> {
-        let last_update = JsonPath::from("$.common.last_update").extract();
+        let last_update = TaskField::LastUpdate.extract(TaskDocument::CurrentTask);
         let mut rows = SqlStatement::build(
             Query::select()
                 .column(TaskTable::Id)
                 .expr(JsonPath::from("$.state").extract())
-                .expr(JsonPath::from("$.common.progress.summary").extract())
+                .expr(TaskField::Summary.extract(TaskDocument::CurrentTask))
                 .expr(last_update.clone())
                 .from(TaskTable::Table)
                 .and_where(Expr::col(TaskTable::FeatureId).eq(query.feature.id.to_string()))
@@ -396,7 +464,7 @@ impl LedgerReader {
                         .extract()
                         .is_in(["active", "ready"]),
                 )
-                .order_by_expr(last_update.into(), Order::Desc)
+                .order_by_expr(last_update, Order::Desc)
                 .limit(RecordLimit::PAGE.sql_count())
                 .to_owned(),
         )?

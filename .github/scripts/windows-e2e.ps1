@@ -225,9 +225,17 @@ class WindowsInstallationScenario {
             'features' { }
             default { throw 'Feature discovery failed' }
         }
-        switch (@($features.value).Count) {
+        switch (@($features.value.features).Count) {
             1 { }
             default { throw 'Feature discovery did not retain one initialized feature' }
+        }
+        switch ($features.value.features[0].kind) {
+            'current' { }
+            default { throw 'Feature discovery did not report current storage' }
+        }
+        switch ($features.value.features[0].ledger.feature.id) {
+            'native-windows' { }
+            default { throw 'Feature discovery did not retain the initialized feature identity' }
         }
         $status = $scenario.Invoke(@{ group = 'Feature'; command = @{ name = 'Status'; arguments = @{ feature = 'native-windows' } } })
         switch ($status.value.tasks[0].task.common.revision) {
@@ -247,10 +255,72 @@ class WindowsInstallationScenario {
                 $false { throw "Dashboard did not retain recorded content: $expected" }
             }
         }
-        $databases = @(Get-ChildItem -LiteralPath $managedHome -Filter workbench.db -Recurse)
+        switch ($status.value.ledger.path) {
+            $feature.value.path { }
+            default { throw 'Linked worktree did not reuse the initialized feature database' }
+        }
+        $featureDirectory = Split-Path -Parent $feature.value.path
+        switch (Split-Path -Leaf $featureDirectory) {
+            'features' { }
+            default { throw 'Feature database is not in the features directory' }
+        }
+        switch (Split-Path -Leaf $feature.value.path) {
+            'native-windows.db' { }
+            default { throw 'Feature database is not named for its feature' }
+        }
+        $databases = @(Get-ChildItem -LiteralPath $featureDirectory -Filter '*.db')
         switch ($databases.Count) {
             1 { }
-            default { throw 'Linked worktree did not reuse one repository database' }
+            default { throw 'Linked worktree access created another feature database' }
+        }
+        $otherFeature = $scenario.Invoke(@{ group = 'Feature'; command = @{ name = 'Initialize'; arguments = @{
+            feature = 'native-windows-other'; objective = 'Verify separate feature storage'
+            branch = 'linked-e2e'; worktree = $linkedProject
+        } } })
+        switch ($otherFeature.value.path -eq (Join-Path $featureDirectory 'native-windows-other.db')) {
+            $true { }
+            $false { throw 'Second feature did not receive its own database' }
+        }
+        $otherStatus = $scenario.Invoke(@{ group = 'Feature'; command = @{ name = 'Status'; arguments = @{ feature = 'native-windows-other' } } })
+        switch (@($otherStatus.value.tasks).Count) {
+            0 { }
+            default { throw 'Second feature inherited tasks from the first feature' }
+        }
+        $otherTask = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Create'; arguments = @{
+            feature = 'native-windows-other'; task = 'persisted-task'; actor = @{ team = 'Gizmo'; role = 'Gizmo' }
+            objective = 'Reuse a task ID in a separate feature'; acceptance = @('Keep feature tasks isolated')
+            dependencies = @(); workspace = @{ kind = 'read_only' }
+            progress = @{ summary = 'Separate feature progress'; findings = @(); next_steps = @(); checks = @(); extensions = @{} }
+        } } })
+        $scenario.Project = $nativeProject
+        $otherReopened = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Get'; arguments = @{ feature = 'native-windows-other'; task = 'persisted-task' } } })
+        switch ($otherReopened.value.task.common.revision) {
+            $otherTask.value.common.revision { }
+            default { throw 'Second feature task revision did not survive process restart' }
+        }
+        switch ($otherReopened.value.task.common.progress.summary) {
+            'Separate feature progress' { }
+            default { throw 'Second feature task did not survive reopening from the original worktree' }
+        }
+        $firstReopened = $scenario.Invoke($getOperation)
+        switch ($firstReopened.value.task.common.revision) {
+            $updated.value.common.revision { }
+            default { throw 'Second feature changed the first feature task revision' }
+        }
+        switch ($firstReopened.value.task.common.progress.summary) {
+            'Windows durable progress retained' { }
+            default { throw 'Second feature changed the first feature task progress' }
+        }
+        $databases = @(Get-ChildItem -LiteralPath $featureDirectory -Filter '*.db')
+        switch ($databases.Count) {
+            2 { }
+            default { throw 'Repository did not retain exactly two feature databases' }
+        }
+        foreach ($expectedDatabase in @($feature.value.path, $otherFeature.value.path)) {
+            switch (Test-Path -LiteralPath $expectedDatabase -PathType Leaf) {
+                $true { }
+                $false { throw "Feature database is missing: $expectedDatabase" }
+            }
         }
         switch (Get-Content -LiteralPath $identityPath -Raw) {
             $identity { }
