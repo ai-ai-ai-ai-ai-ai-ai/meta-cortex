@@ -2903,6 +2903,7 @@ dependencies = [
  "anyhow",
  "derive_more",
  "git2",
+ "pulldown-cmark",
  "schemars 1.2.2",
  "sea-query",
  "serde",

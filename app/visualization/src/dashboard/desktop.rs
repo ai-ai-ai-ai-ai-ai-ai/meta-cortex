@@ -1,4 +1,5 @@
 use super::{DashboardError, DashboardReport, NativeExitCode};
+use meta_cortex_workbench::guide::AgentGuide;
 use meta_cortex_workbench::values::{FeatureId, Note};
 use meta_cortex_workbench::{FeatureSummary, FeatureWorkflow, Page, PageIndex, Workbench};
 use schemars::JsonSchema;
@@ -33,6 +34,7 @@ impl From<DashboardError> for DesktopFailure {
 }
 #[derive(JsonSchema)]
 pub struct DesktopContract {
+    pub guide: AgentGuide,
     pub reply: DesktopReply,
     pub workflow: FeatureWorkflow,
     pub failure: DesktopFailure,
@@ -46,7 +48,11 @@ impl DesktopLaunch {
         let app = tauri::Builder::default()
             .plugin(init())
             .manage(Arc::new(self))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
+            .invoke_handler(tauri::generate_handler![
+                dashboard_read,
+                dashboard_workflow,
+                dashboard_guide
+            ])
             .build(tauri::generate_context!())?;
         match app.run_return(|_handle, _event| {}) {
             0 => {}
@@ -106,15 +112,52 @@ fn dashboard_workflow(
     }
 }
 
+#[tauri::command]
+fn dashboard_guide() -> Result<AgentGuide, Note> {
+    AgentGuide::embedded().map_err(|error| Note::from(error.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::DesktopContract;
+
+    #[test]
+    fn embedded_guide_ipc_needs_no_repository_or_managed_ledger_state() -> anyhow::Result<()> {
+        use super::dashboard_guide;
+        use meta_cortex_workbench::guide::AgentGuide;
+        use serde_json::Value;
+        use std::collections::BTreeMap;
+        use tauri::WebviewWindowBuilder;
+        use tauri::ipc::{CallbackFn, InvokeBody};
+        use tauri::test::{INVOKE_KEY, get_ipc_response, mock_builder, mock_context, noop_assets};
+        use tauri::webview::InvokeRequest;
+        let app = mock_builder()
+            .invoke_handler(tauri::generate_handler![dashboard_guide])
+            .build(mock_context(noop_assets()))?;
+        let webview = WebviewWindowBuilder::new(&app, "guide", Default::default()).build()?;
+        let response = get_ipc_response(
+            &webview,
+            InvokeRequest {
+                cmd: "dashboard_guide".to_owned(),
+                callback: CallbackFn(0),
+                error: CallbackFn(1),
+                url: "tauri://localhost".parse()?,
+                body: InvokeBody::Json(serde_json::to_value(BTreeMap::<String, String>::new())?),
+                headers: Default::default(),
+                invoke_key: INVOKE_KEY.to_owned(),
+            },
+        )
+        .map_err(|error| anyhow::anyhow!("guide IPC failed: {error}"))?
+        .deserialize::<Value>()?;
+        assert_eq!(response, serde_json::to_value(AgentGuide::embedded()?)?);
+        Ok(())
+    }
 
     /// Explicitly invoked against a real repository, never a native-window claim.
     #[test]
     #[ignore = "requires explicit real repository, feature, ledger and output paths"]
     fn actual_workflow_ipc_reads_existing_turso_without_writes() -> anyhow::Result<()> {
-        use super::{DesktopLaunch, dashboard_read, dashboard_workflow};
+        use super::{DesktopLaunch, dashboard_guide, dashboard_read, dashboard_workflow};
         use meta_cortex_workbench::Workbench;
         use meta_cortex_workbench::values::FeatureId;
         use std::io::ErrorKind;
@@ -155,7 +198,11 @@ mod tests {
         let expected = serde_json::to_value(launch.blocking_workflow(feature.clone())?)?;
         let app = mock_builder()
             .manage(Arc::new(launch))
-            .invoke_handler(tauri::generate_handler![dashboard_read, dashboard_workflow])
+            .invoke_handler(tauri::generate_handler![
+                dashboard_read,
+                dashboard_workflow,
+                dashboard_guide
+            ])
             .build(mock_context(noop_assets()))?;
         let webview = WebviewWindowBuilder::new(&app, "main", Default::default()).build()?;
         let response = get_ipc_response(

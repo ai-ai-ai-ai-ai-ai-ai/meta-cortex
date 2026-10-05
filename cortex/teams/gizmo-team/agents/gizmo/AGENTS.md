@@ -1,7 +1,26 @@
 # Team Gizmo
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+## Responsibility
+
+- Own bounded worker assignments, coordination, and integration order.
+
+## Handoff
+
+- Receive the feature assignment from Gizmo Prime.
+- Report combined results, validation evidence, and blockers to Gizmo Prime.
+- Route the next assignment to the responsible worker or delivery owner.
+
+## Protocol
+
+Follow the [shared communication rules](../../../AGENTS.md#communication-and-decisions)
+for reporting and [assignment context](../../../AGENTS.md#assignment-context)
+for inputs.
+
+Use the resolved role locations supplied with the assignment. Each agent links
+its skills; their SKILL.md files own the instructions. Gizmo does not maintain
+a skill registry.
+
+## Execution context
 
 This coordinator runs only when the user has selected `multi_agent` for the
 session. Inherit the validated `development.mode` and `development.delivery`
@@ -13,12 +32,6 @@ The entry point uses the [native user-input skill](skills/user-input/SKILL.md)
 before choosing whether to launch this coordinator. Use the same skill for
 YAML-defined configuration questions during coordination. Its host UI workflow
 also works in the current agent without launching Gizmo.
-
-Team Gizmo is the single team coordinator reporting to Gizmo Prime.
-It manages development, security, SRE, documentation, and delivery agents using
-the resolved role locations supplied with its assignment. Each agent’s
-`AGENTS.md` links its skills; their `SKILL.md` files contain the instructions.
-Gizmo does not maintain a skill registry.
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
 global policy supplied with the assignment.
@@ -84,7 +97,6 @@ for that assignment rather than preloading unrelated agents.
 - Coordinate independent work concurrently when supported; order overlapping or dependent work.
 - Preserve clear ownership and resolve conflicts between agent contributions.
 - Check each result against its assignment and route corrections to its owner.
-- Combine results and return concise evidence and blockers to Gizmo Prime.
 
 ## Control local feature changes
 

@@ -1,7 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { Effect, Match } from "effect";
-import { reply, failure, workflow } from "virtual:dashboard-validators";
+import { reply, failure, workflow, guide } from "virtual:dashboard-validators";
 import type {
+  AgentGuide,
   DesktopReply,
   DesktopFailure,
   FeatureWorkflow,
@@ -14,6 +15,30 @@ export type DashboardFailure =
   | DesktopFailure
   | { kind: ReadFailureKind; message: string; cause: unknown };
 export class DashboardApi {
+  guide(): Effect.Effect<AgentGuide, DashboardFailure> {
+    const transport: {
+      try: () => Promise<unknown>;
+      catch: (cause: unknown) => DashboardFailure;
+    } = {
+      try: () => invoke<unknown>("dashboard_guide"),
+      catch: (cause: unknown): DashboardFailure => ({
+        kind: ReadFailureKind.Transport,
+        message: "The agent guide could not be loaded. Retry to read it again.",
+        cause,
+      }),
+    };
+    return Effect.tryPromise(transport).pipe(
+      Effect.filterOrFail(
+        guide,
+        (cause): DashboardFailure => ({
+          kind: ReadFailureKind.InvalidReply,
+          message: "The native agent guide reply is invalid.",
+          cause,
+        }),
+      ),
+    );
+  }
+
   workflow(feature: string): Effect.Effect<FeatureWorkflow, DashboardFailure> {
     return Effect.tryPromise({
       try: () => invoke<unknown>("dashboard_workflow", { feature }),

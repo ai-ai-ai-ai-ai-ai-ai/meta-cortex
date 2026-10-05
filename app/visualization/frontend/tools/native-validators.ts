@@ -53,10 +53,17 @@ export class NativeValidators implements Plugin {
       $ref: "#/$defs/FeatureWorkflow",
       $defs: schema.$defs,
     };
+    const guideSchema: AnySchemaObject = {
+      $id: "dashboard-guide",
+      $ref: "#/$defs/AgentGuide",
+      $defs: schema.$defs,
+    };
+    validator.addSchema(guideSchema);
     validator.addSchema(workflowSchema);
     validator.addSchema(replySchema);
     validator.addSchema(failureSchema);
     const exports: ValidatorExports = {
+      guide: "dashboard-guide",
       workflow: "dashboard-workflow",
       reply: "dashboard-reply",
       failure: "dashboard-failure",

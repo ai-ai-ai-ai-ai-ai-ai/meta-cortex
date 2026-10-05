@@ -6,6 +6,7 @@
 pub mod agents;
 mod data_directory;
 mod git;
+pub mod guide;
 pub mod model;
 mod repository_id;
 pub mod request;

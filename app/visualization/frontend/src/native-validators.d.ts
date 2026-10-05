@@ -1,5 +1,8 @@
 /** Static AJV exports supplied by the Vite plugin from Rust's contract schema. */
 declare module "virtual:dashboard-validators" {
+  export function guide(
+    value: unknown,
+  ): value is import("./contracts").AgentGuide;
   export function workflow(
     value: unknown,
   ): value is import("./contracts").FeatureWorkflow;

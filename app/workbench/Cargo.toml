@@ -9,6 +9,7 @@ homepage.workspace = true
 publish.workspace = true
 
 [dependencies]
+pulldown-cmark.workspace = true
 git2.workspace = true
 thiserror.workspace = true
 serde.workspace = true
