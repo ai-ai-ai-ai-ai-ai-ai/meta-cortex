@@ -12,7 +12,7 @@
 }
 .guide-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 350px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -90,8 +90,7 @@
   border-radius: 16px;
   padding: 22px;
   background: var(--surface);
-  position: sticky;
-  top: 76px;
+  scroll-margin-top: 70px;
 }
 .guide-detail h2 {
   font-size: 20px;
@@ -144,9 +143,6 @@
   overflow-y: auto;
 }
 @media (max-width: 1050px) {
-  .guide-layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
-  }
   .guide-teams {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -235,8 +231,8 @@
   margin: 3px 0 6px;
 }
 .guide-detail {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-column: 1;
+  grid-row: 3;
 }
 @media (max-width: 700px) {
   .guide-layout {
@@ -250,12 +246,12 @@
   }
   .guide-detail {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 3;
     scroll-margin-top: 70px;
   }
   .guide-teams {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
   }
   .guide-teams::before {
     display: none;
@@ -286,12 +282,12 @@
   }
   .guide-detail {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 3;
     position: static;
   }
   .guide-teams {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     border-top: 0;
   }
