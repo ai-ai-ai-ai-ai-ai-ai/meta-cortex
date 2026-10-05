@@ -116,19 +116,16 @@ struct LedgerReader {
 impl Observation {
     pub(crate) async fn prepare(path: PathBuf) -> Result<Self, LedgerError> {
         let observation = Self { path };
-        match observation.reader().await {
-            Ok(_) => return Ok(observation),
-            Err(LedgerError::ObservationMigrationRequired(StorageVersion::Empty)) => {
+        match fs::metadata(&observation.path) {
+            Ok(metadata) if metadata.is_file() && metadata.len() == 0 => {
                 return Err(LedgerError::Uninitialized);
             }
-            Err(LedgerError::ObservationMigrationRequired(
-                StorageVersion::DocumentsV1
-                | StorageVersion::IndexedV2
-                | StorageVersion::RelationalV3
-                | StorageVersion::CommonTasksV4
-                | StorageVersion::SequencedEventsV5,
-            )) => {}
-            Err(error) => return Err(error),
+            Ok(metadata) if metadata.is_file() => {}
+            Ok(_) => return Err(LedgerError::Invalid("ledger path must be a regular file")),
+            Err(error) if error.kind() == ErrorKind::NotFound => {
+                return Err(LedgerError::Uninitialized);
+            }
+            Err(error) => return Err(error.into()),
         }
         let database = Builder::new_local(
             observation
@@ -142,10 +139,21 @@ impl Observation {
         .await?;
         let mut connection = database.connect()?;
         connection.busy_timeout(Duration::from_secs(10))?;
-        LedgerSchema::prepare_observation(&mut connection).await?;
+        // Turso shares the backing database by file identity, including its open mode.
+        // Keep preparation on writable-capable handles throughout; overlapping read-only
+        // preflights can otherwise lend their backing handle to another preparer's writer.
+        match LedgerSchema::version(&connection).await? {
+            StorageVersion::SequencedEventsV5 => {}
+            StorageVersion::Empty => return Err(LedgerError::Uninitialized),
+            StorageVersion::DocumentsV1
+            | StorageVersion::IndexedV2
+            | StorageVersion::RelationalV3
+            | StorageVersion::CommonTasksV4 => {
+                LedgerSchema::prepare_observation(&mut connection).await?;
+            }
+        }
         drop(connection);
         drop(database);
-        observation.reader().await?;
         Ok(observation)
     }
 
@@ -458,6 +466,12 @@ mod tests {
                 ));
                 let path = workbench.repository.ledger_path()?;
                 assert!(!path.exists());
+                fs::write(&path, [])?;
+                assert!(matches!(
+                    workbench.prepare_observation().await,
+                    Err(LedgerError::Uninitialized)
+                ));
+                assert!(fs::read(&path)?.is_empty());
                 let database = DatabaseBuilder::new_local(
                     path.to_str().ok_or_else(|| anyhow::anyhow!("path"))?,
                 )
