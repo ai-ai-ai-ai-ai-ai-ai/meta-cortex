@@ -3,6 +3,8 @@
   import { ChevronRight } from "@lucide/svelte";
   import { FeatureLook, RecordedTime } from "./observability";
   import PullRequests from "./PullRequests.svelte";
+  import { Match } from "effect";
+  import type { ActionReturn } from "svelte/action";
   interface Props {
     summary: FeatureSummary;
     selected: string;
@@ -10,11 +12,30 @@
   }
   let { summary, selected, select }: Props = $props();
   let look = $derived(new FeatureLook(summary));
+  function selectNoninteractiveBody(target: Element): void {
+    Match.value(target.closest("button, a, details")).pipe(
+      Match.when(Match.instanceOf(Element), () => {}),
+      Match.orElse(() => select(summary)),
+    );
+  }
+  function selectBody(event: MouseEvent): void {
+    Match.value(event.target).pipe(
+      Match.when(Match.instanceOf(Element), selectNoninteractiveBody),
+      Match.orElse(() => {}),
+    );
+  }
+  function cardSelection(node: HTMLElement): ActionReturn {
+    node.addEventListener("click", selectBody);
+    return {
+      destroy: () => node.removeEventListener("click", selectBody),
+    };
+  }
 </script>
 
 <article
   class="feature-menu-card"
   class:selected={selected === summary.feature.id}
+  use:cardSelection
 >
   <button
     class="menu-select"
