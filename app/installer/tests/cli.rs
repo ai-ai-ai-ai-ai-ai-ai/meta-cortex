@@ -227,7 +227,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     })?;
     let info = scenario.info()?;
     assert_eq!(info.schema_version, ReportSchemaVersion::V5);
-    assert_eq!(info.cli_version, ReportVersion::V0_15_0);
+    assert_eq!(info.cli_version, ReportVersion::V0_16_0);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
         env!("CARGO_PKG_VERSION")
