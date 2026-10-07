@@ -38,6 +38,19 @@ pub(super) enum WorkbenchOperation {
 pub(super) enum FrameworkOperation {
     Initialize(FrameworkInit),
     Info(EmptyArguments),
+    Wrapper(WrapperArguments),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct WrapperArguments {
+    pub(super) release: WrapperRelease,
+}
+// The catalog example selects a known release; independent consumers name that fixture identity.
+#[derive(Debug, Serialize, Deserialize)]
+pub(super) enum WrapperRelease {
+    #[serde(rename = "0.15.0")]
+    V0_15_0,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

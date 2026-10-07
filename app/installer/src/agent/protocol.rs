@@ -2,6 +2,7 @@ use super::{AgentError, Execution};
 use crate::information::InfoReport;
 use crate::installation::{InitRequest, Project, ToolSetup};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
+use crate::wrapper::{ProjectWrapper, WrapperReport, WrapperRequest};
 use meta_cortex_visualization::{Dashboard, DashboardReport, DashboardRequest};
 use meta_cortex_workbench::model::{Event, Task, TaskView};
 use meta_cortex_workbench::request::{
@@ -37,6 +38,7 @@ pub enum Operation {
 pub enum FrameworkOperation {
     Initialize(FrameworkInit),
     Info(EmptyArguments),
+    Wrapper(WrapperRequest),
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -129,6 +131,7 @@ pub enum Reply {
         project: PathBuf,
     },
     FrameworkInfo(InfoReport),
+    FrameworkWrapper(WrapperReport),
     Ledger(LedgerInfo),
     Features(FeatureCatalog),
     Task(Task),
@@ -186,6 +189,9 @@ impl FrameworkOperation {
                     project: project.path().to_path_buf(),
                 })
             }
+            Self::Wrapper(input) => Ok(Reply::FrameworkWrapper(
+                ProjectWrapper::open(project)?.generate(input)?,
+            )),
             Self::Info(_) => Ok(Reply::FrameworkInfo(InfoReport::from(
                 Project::open(project)?.info()?,
             ))),

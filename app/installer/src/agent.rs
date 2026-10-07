@@ -3,6 +3,7 @@ mod discovery;
 mod protocol;
 
 use crate::installation::InstallError;
+use crate::wrapper::{WrapperError, WrapperReleaseError};
 use catalog::Catalog;
 use derive_more::{Display, From};
 use meta_cortex_visualization::{
@@ -31,6 +32,10 @@ pub enum AgentError {
     Ledger(#[from] LedgerError),
     #[error(transparent)]
     Install(#[from] InstallError),
+    #[error(transparent)]
+    Wrapper(#[from] WrapperError),
+    #[error(transparent)]
+    WrapperRelease(#[from] WrapperReleaseError),
     #[error("input/output failure: {0}")]
     Io(#[from] io::Error),
 }
@@ -71,10 +76,10 @@ impl From<&AgentError> for Failure {
             AgentError::Dashboard(DashboardError::Native(_) | DashboardError::Exit(_)) => {
                 ErrorCode::Native
             }
-            AgentError::Request(_) => ErrorCode::InvalidRequest,
+            AgentError::Request(_) | AgentError::WrapperRelease(_) => ErrorCode::InvalidRequest,
             AgentError::Response(_) => ErrorCode::Response,
             AgentError::Io(_) => ErrorCode::Io,
-            AgentError::Install(_) => ErrorCode::Installation,
+            AgentError::Install(_) | AgentError::Wrapper(_) => ErrorCode::Installation,
             AgentError::Ledger(error) | AgentError::Dashboard(DashboardError::Ledger(error)) => {
                 ErrorCode::ledger(error)
             }

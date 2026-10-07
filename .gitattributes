@@ -1,1 +1,3 @@
 app/visualization/frontend/** text=auto eol=lf
+meta-cortexw text eol=lf
+.meta-cortex-version text eol=lf
