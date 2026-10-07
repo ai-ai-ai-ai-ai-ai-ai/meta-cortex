@@ -28,13 +28,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
-      - name: Build embedded desktop frontend
+      - name: Verify desktop frontend
         working-directory: app/visualization/frontend
         run: |
           bun install --frozen-lockfile
           bun run verify
           bun run test
-          bun run build
+      - name: Build embedded desktop frontend
+        if: runner.os != 'Windows'
+        working-directory: app/visualization/frontend
+        # Windows Cargo builds generate these assets through visualization/build.rs.
+        run: bun run build
       - name: Set up compiler cache
         uses: ./.github/actions/rust-sccache
         with:
@@ -53,7 +57,9 @@ jobs:
       - name: Install the native Windows executable
         if: runner.os == 'Windows'
         shell: pwsh
-        run: cargo install --locked --path installer --root "$env:RUNNER_TEMP\meta cortex installed"
+        # Exercise Cargo installation using the dev profile shared with workspace tests.
+        # The Release workflow separately builds and verifies the optimized Windows archive.
+        run: cargo install --debug --locked --path installer --root "$env:RUNNER_TEMP\meta cortex installed"
       - name: Verify native Windows installation and durable ledger
         if: runner.os == 'Windows'
         shell: pwsh
