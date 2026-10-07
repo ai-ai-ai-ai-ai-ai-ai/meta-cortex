@@ -19,20 +19,19 @@ project.
 Commit `meta-cortexw`, `meta-cortexw.ps1`, and `.meta-cortex-version` in your
 Git repository. The scripts bootstrap the exact executable version in the pin
 file, so collaborators can use a fresh clone without installing a global command.
-The initial pin is `0.15.0`; it has no `v` prefix and does not select `latest`.
+The current pin is `0.16.0`; it has no `v` prefix and does not select `latest`.
 The wrapper accepts stable numeric release versions from `0.15.0` onward.
 
 1. Obtain both launcher scripts from a fixed source revision that contains them.
-   The wrapper scripts are source files; wrapper release assets are not yet
-   published. The download examples require this source revision to be published
-   on GitHub. Before publication, copy both files from an inspected source
-   checkout instead. These shell commands run in the consuming project;
-   replace `/path/to/meta-cortex-source` with that checkout's absolute path:
+   The wrapper scripts are source files, separate from executable release
+   installers. Copy both files from an inspected source checkout, or download
+   the fixed source revision below. Run these shell commands in the consuming
+   project. Replace `/path/to/meta-cortex-source` with that checkout's absolute path:
 
    ```sh
    source_checkout=/path/to/meta-cortex-source
    cp "$source_checkout/meta-cortexw" "$source_checkout/meta-cortexw.ps1" .
-   printf '%s\n' '0.15.0' > .meta-cortex-version
+   printf '%s\n' '0.16.0' > .meta-cortex-version
    chmod +x meta-cortexw
    ```
 
@@ -43,17 +42,17 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    $sourceCheckout = 'C:\path\to\meta-cortex-source'
    Copy-Item (Join-Path $sourceCheckout 'meta-cortexw') .
    Copy-Item (Join-Path $sourceCheckout 'meta-cortexw.ps1') .
-   Set-Content -Encoding ascii .meta-cortex-version '0.15.0'
+   Set-Content -Encoding ascii .meta-cortex-version '0.16.0'
    ```
 
-   After publication, download the same source files directly:
+   To download the same source files directly:
 
    ```sh
    source_revision=8e09fb1bee5633ba7f05ab6c53918a3401bdeaf7
    source_url="https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$source_revision"
    curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw" -o meta-cortexw
    curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw.ps1" -o meta-cortexw.ps1
-   printf '%s\n' '0.15.0' > .meta-cortex-version
+   printf '%s\n' '0.16.0' > .meta-cortex-version
    chmod +x meta-cortexw
    ```
 
@@ -64,7 +63,7 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    $sourceUrl = "https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$sourceRevision"
    Invoke-WebRequest "$sourceUrl/meta-cortexw" -OutFile meta-cortexw
    Invoke-WebRequest "$sourceUrl/meta-cortexw.ps1" -OutFile meta-cortexw.ps1
-   Set-Content -Encoding ascii .meta-cortex-version '0.15.0'
+   Set-Content -Encoding ascii .meta-cortex-version '0.16.0'
    ```
 
 2. Commit the three files, including the shell script's executable permission.
@@ -80,8 +79,8 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    .\meta-cortexw.ps1 list
    ```
 
-**Prohibited:** use an unavailable wrapper release URL or require the unreleased
-`Framework / Wrapper` command to acquire the first scripts.
+**Prohibited:** require a globally installed command solely to acquire the
+first scripts, or treat the executable installer as a wrapper source download.
 
 **Required:** acquire the scripts directly from their fixed source revision and
 write the exact pin before invoking the wrapper.
@@ -89,9 +88,9 @@ write the exact pin before invoking the wrapper.
 ### Run the pinned command
 
 The first invocation downloads the versioned cargo-dist installer and uses it
-to install the executable in the wrapper cache. The initial `0.15.0` pin uses
-`/releases/download/v0.15.0/meta-cortex-installer.sh` or
-`/releases/download/v0.15.0/meta-cortex-installer.ps1` on this repository's
+to install the executable in the wrapper cache. The current `0.16.0` pin uses
+`/releases/download/v0.16.0/meta-cortex-installer.sh` or
+`/releases/download/v0.16.0/meta-cortex-installer.ps1` on this repository's
 GitHub release. Later invocations reuse the cached executable after checking
 that its `--version` matches the pin.
 
@@ -582,8 +581,7 @@ updates the command.
 ### Upgrade the project pin
 
 1. Choose an exact published stable release at or above `0.15.0` and edit
-   `.meta-cortex-version`, for
-   example replacing `0.15.0` with the version you have verified is available.
+   `.meta-cortex-version`, for example replacing `0.15.0` with `0.16.0`.
    Keep only the version and a trailing newline. Earlier releases, prerelease
    suffixes, build metadata, and leading-zero components are unsupported.
 2. Run `./meta-cortexw list` or `.\meta-cortexw.ps1 list`. The wrapper installs
@@ -604,12 +602,12 @@ change the committed pin.
 **Required:** commit the exact published version and validate it through the
 project wrapper.
 
-### Scaffold with a future release
+### Scaffold with the command
 
-`Framework / Wrapper` is implemented in source for the next release. Released
-`0.15.0` cannot execute it. Use direct source acquisition above until a release
-containing this command is published; discover that release's schema with
-`list` before using this request:
+Release `0.16.0` provides typed `Framework / Wrapper` scaffolding. Released
+`0.15.0` cannot execute it. Use direct source acquisition above when no capable
+executable is installed, or discover `Framework / Wrapper` through `list` before
+using this request:
 
 ```yaml
 version: 1
@@ -619,7 +617,7 @@ operation:
   command:
     name: Wrapper
     arguments:
-      release: '0.15.0'
+      release: '0.16.0'
 ```
 
 The capable executable writes the two launchers and exact pin into the project.

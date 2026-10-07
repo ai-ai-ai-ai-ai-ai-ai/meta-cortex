@@ -202,9 +202,9 @@ require separate wrapper assets or a global command.
    installers are published. Check first use and cached use against that exact
    release; retain the global installation instructions.
 
-The initial pin remains `0.15.0`. The new typed `Framework / Wrapper` command
-will ship in the next release; the current published executable does not provide
-it. Wrapper source acquisition is independent of this command's rollout.
+The current pin is `0.16.0`. Release `0.16.0` provides typed
+`Framework / Wrapper` scaffolding; released `0.15.0` does not. Wrapper source
+acquisition remains independent of the executable running that command.
 
 **Prohibited:** document nonexistent wrapper release assets or advance the
 bootstrap pin to an unpublished release.
