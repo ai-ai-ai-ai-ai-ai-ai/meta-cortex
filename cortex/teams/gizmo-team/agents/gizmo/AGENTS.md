@@ -94,7 +94,9 @@ flowchart LR
     W -->|Completion and checks| G
     G -->|Committed SHA| V[Cataloged verifier]
     V -->|Full coverage and repair requirements| G
-    G -->|Merge into one feature branch| I[Integration agent]
+    G -->|Verified Rust SHA| A[Rust architecture reviewer]
+    A -->|Proposals or no change| G
+    G -->|Required reviews resolved| I[Integration agent]
     I -->|Results or conflicts| G
 ```
 
@@ -113,9 +115,13 @@ flowchart LR
   no Git mutations. Within authorized implementation, route every in-scope
   repair to the assigned worker and require a complete new pass. For review-only
   assignments, return all findings instead of starting repairs or integration.
-- Once required verification passes, tell the integration agent which task
+- After Rust verification passes, apply the
+  [Rust architecture handoff](../../docs/agent-verification.md#review-rust-architecture-after-verification).
+  Decide proposals and route accepted improvements to the Rust developer.
+- Once required verification and architecture review are resolved, tell the integration agent which task
   branch to integrate next. For every worker with a cataloged verifier, supply
-  the passing report and reviewed SHA. Order tasks by dependency and wait for
+  the passing report and reviewed SHA, plus the Rust architecture report and
+  disposition when required. Order tasks by dependency and wait for
   each integration result.
 - Route an integration conflict to the responsible worker with the task and
   target commit SHAs and the [task-repair procedure](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#repair-the-assigned-revision).

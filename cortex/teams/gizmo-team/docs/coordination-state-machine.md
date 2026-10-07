@@ -156,9 +156,9 @@ the retained worker UUID and diagnostic when needed to distinguish the execution
 - **Evidence and output:** return the exact reviewed SHA, verdict, complete
   findings, coverage, and validation limitations to Team Gizmo.
 - **Next owner and expected state:** Team Gizmo routes in-scope repairs to the
-  worker for authorized implementation, or directs integration of the matching
-  passing revision. A review-only task ends with its report; it does not authorize
-  repairs. A replacement revision needs its own complete review.
+  worker for authorized implementation. A passing Rust revision proceeds to
+  architecture review below; other passing revisions proceed to integration.
+  A review-only task ends with its report; it does not authorize repairs. A replacement revision needs its own complete review.
 
 **Prohibited:** “RustVerifier, review the parser when ready,” without an exact
 revision or a defined review result.
@@ -166,14 +166,35 @@ revision or a defined review result.
 **Required:** “Team Gizmo → RustVerifier, parser review: review the supplied full
 `commit_sha` read-only using your complete catalog and the attached verification
 request. Return the verdict, all findings, coverage, and check limitations to me.
-I will route repairs or assign integration of that exact SHA.” Here `commit_sha`
-stands for the actual resolvable commit in the request, not a branch name or a
+I will route repairs or arrange architecture review of that exact SHA.” Here
+`commit_sha` stands for the actual resolvable commit in the request, not a branch name or a
 literal placeholder sent to the verifier.
+
+#### Review the verified Rust architecture
+
+- **Preconditions and inputs:** the full consolidated Rust worker SHA has passed
+  complete Rust verification; Gizmo supplies that result and affected solution context.
+- **Owner and operation:** the Rust architecture reviewer applies Improve
+  Architecture read-only under the
+  [Rust architecture handoff](agent-verification.md#review-rust-architecture-after-verification).
+- **Evidence and output:** a report identifying that SHA, inspected architecture,
+  grounded actionable proposals or an honest no-change conclusion, and limitations.
+- **Next owner and expected state:** Gizmo decides the proposals. Accepted work
+  returns to RustDev and the complete verification and architecture review cycle.
+  A resolved report for the current SHA permits the integration handoff; report
+  readiness alone does not approve integration.
+
+**Prohibited:** accept the reviewer's report as a code change or reuse it after
+RustDev produces a replacement commit.
+
+**Required:** Gizmo records its decision, assigns accepted work to RustDev, and
+obtains both fresh reviews of the full replacement before directing integration.
 
 #### Integrate the verified change
 
 - **Preconditions and inputs:** Team Gizmo supplies the ready task's branch,
-  workspace, checkpoint, and required review evidence for the same SHA.
+  workspace, checkpoint, and required review evidence for the same SHA, including
+  the resolved architecture review for Rust work.
 - **Owner and operation:** integration applies the
   [reviewed integration gate](../../delivery-team/agents/integration-agent/skills/local-feature/spec/reviewed-integration.md)
   and existing merge procedure, then runs the assigned combined checks.
