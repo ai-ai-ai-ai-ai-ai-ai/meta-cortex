@@ -3,6 +3,7 @@ mod configuration;
 mod information;
 mod installation;
 mod integration;
+mod wrapper;
 
 use agent::AgentCli;
 use clap::{Parser, Subcommand};

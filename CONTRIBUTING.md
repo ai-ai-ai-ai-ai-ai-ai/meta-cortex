@@ -185,6 +185,33 @@ Read declarations as text; validation never executes their command strings.
   embedded frontend assets. Linux runner setup includes GTK 3/WebKitGTK 4.1.
 - Windows x86-64 packages use a native Windows runner and ZIP archive.
 
+### Wrapper source and release pins
+
+The root `meta-cortexw` and `meta-cortexw.ps1` files are the canonical project
+launchers. `.meta-cortex-version` selects an exact published executable release.
+Their bootstrap uses that release's existing cargo-dist installer; it does not
+require separate wrapper assets or a global command.
+
+1. Keep [project acquisition and usage](README.md#add-the-project-wrapper)
+   aligned with the canonical scripts and the committed pin.
+2. When changing launcher source, update the immutable source revision used in
+   the README acquisition examples after the source commit is available.
+   Verify both scripts exist at that revision before presenting the downloads
+   as available.
+3. Advance the executable pin only after its versioned shell and PowerShell
+   installers are published. Check first use and cached use against that exact
+   release; retain the global installation instructions.
+
+The initial pin remains `0.15.0`. The new typed `Framework / Wrapper` command
+will ship in the next release; the current published executable does not provide
+it. Wrapper source acquisition is independent of this command's rollout.
+
+**Prohibited:** document nonexistent wrapper release assets or advance the
+bootstrap pin to an unpublished release.
+
+**Required:** publish the ordinary cargo-dist release first, then verify and
+commit an exact pin; obtain launchers from their inspected source revision.
+
 ### Distribution tooling
 
 [Cargo-dist](https://axodotdev.github.io/cargo-dist/book/) builds the platform
