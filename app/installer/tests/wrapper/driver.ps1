@@ -12,6 +12,6 @@ function Invoke-WebRequest {
     }
     Copy-Item -LiteralPath $env:WRAPPER_TEST_INSTALLER -Destination $OutFile
 }
-$arguments = Get-Content -LiteralPath $env:WRAPPER_TEST_ARGUMENTS
+$arguments = @(Get-Content -LiteralPath $env:WRAPPER_TEST_ARGUMENTS)
 & $env:WRAPPER_TEST_SCRIPT @arguments
 exit $LASTEXITCODE

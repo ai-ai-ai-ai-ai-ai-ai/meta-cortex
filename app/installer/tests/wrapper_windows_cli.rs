@@ -104,7 +104,9 @@ fn powershell_bootstrap_cache_cwd_arguments_and_exit_status() -> anyhow::Result<
     );
     assert_eq!(String::from_utf8(cold.stdout)?.trim(), "meta-cortex 0.15.0");
     assert!(scenario.cache.join("0.15.0/meta-cortex.exe").is_file());
-    assert!(scenario.invoke()?.status.success());
+    let warm = scenario.invoke()?;
+    assert!(warm.status.success());
+    assert_eq!(String::from_utf8(warm.stdout)?.trim(), "meta-cortex 0.15.0");
     assert_eq!(fs::read_to_string(&scenario.downloads)?.lines().count(), 1);
     let request = Request {
         version: ProtocolVersion::CURRENT,
