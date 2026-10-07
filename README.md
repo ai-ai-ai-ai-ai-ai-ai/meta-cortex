@@ -49,7 +49,7 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    After publication, download the same source files directly:
 
    ```sh
-   source_revision=fd17080e178e2a15645f37c30524b3c092372cf8
+   source_revision=8e09fb1bee5633ba7f05ab6c53918a3401bdeaf7
    source_url="https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$source_revision"
    curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw" -o meta-cortexw
    curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw.ps1" -o meta-cortexw.ps1
@@ -60,7 +60,7 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    In PowerShell:
 
    ```powershell
-   $sourceRevision = 'fd17080e178e2a15645f37c30524b3c092372cf8'
+   $sourceRevision = '8e09fb1bee5633ba7f05ab6c53918a3401bdeaf7'
    $sourceUrl = "https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$sourceRevision"
    Invoke-WebRequest "$sourceUrl/meta-cortexw" -OutFile meta-cortexw
    Invoke-WebRequest "$sourceUrl/meta-cortexw.ps1" -OutFile meta-cortexw.ps1
