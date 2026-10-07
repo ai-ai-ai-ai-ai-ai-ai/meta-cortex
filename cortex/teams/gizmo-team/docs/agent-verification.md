@@ -28,8 +28,8 @@ sequenceDiagram
     end
     opt Completed Rust work
         G->>A: Full verified worker SHA and affected solution context
-        A->>G: Grounded proposals or no change
-        Note over G,A: Accepted changes return to RustDev, full verification, then fresh architecture review
+        A->>G: Architecture and simplification assessments
+        Note over G,A: Accepted changes return to RustDev, full verification, then both fresh assessments
     end
     G->>I: Matching ready SHA, passing review, and resolved architecture review when required
     I->>I: Merge that task and run combined checks
@@ -284,11 +284,13 @@ fresh evidence for all earlier repairs and the entire new change.
    architecture. Keep the branch stable. Sequence this through Gizmo without
    making the unintegrated worker task a ledger dependency.
 2. Supply the reviewer's own role and
-   [Improve Architecture skill](../../dev-team/agents/rust-refactoring/skills/improve-architecture/SKILL.md).
-   That skill owns architectural judgment and report contents. Do not supply or
+   [Improve Architecture](../../dev-team/agents/rust-refactoring/skills/improve-architecture/SKILL.md)
+   followed by [Simplificator](../../dev-team/agents/rust-refactoring/skills/simplificator/SKILL.md).
+   Each skill owns its distinct assessment and report contents. Do not supply or
    load the Rust developer role or implementation skill bundle for this review.
-3. Check that the returned report covers the full worker change and affected
-   solution at the verified SHA. Resolve missing evidence before deciding the
+3. Require both assessments in the returned report: architectural fit and
+   simplification of the full worker solution with related existing code at the
+   verified SHA. Resolve missing evidence before deciding the
    result. Record the report and Gizmo's disposition in the existing ledger;
    use ordinary prose and task records, without a new protocol or runtime state.
 4. Decide which proposals are worthwhile and within the authorized scope.
@@ -298,10 +300,11 @@ fresh evidence for all earlier repairs and the entire new change.
 5. For accepted improvements, assign the complete actionable findings to the
    Rust developer. Use the existing recovery and ordinary task-completion paths
    to obtain a replacement consolidated commit containing the whole worker task.
-   Require its mandatory checks, a fresh complete Rust verifier pass, then a
-   fresh architecture review of the entire replacement commit and affected
-   solution. A fixes-only review or an earlier report cannot approve it.
-6. Once the current SHA has passing verification, a complete architecture report,
+   Require its mandatory checks, a fresh complete Rust verifier pass, then
+   fresh architecture and simplification assessments of the entire replacement
+   commit and related solution. A fixes-only review or an earlier report cannot
+   approve it.
+6. Once the current SHA has passing verification, a report completing both assessments,
    and no accepted improvements left unimplemented, pass that report and Gizmo's
    disposition with the matching SHA to integration. Review-only assignments
    stop with their reports. In single-agent mode, perform these responsibilities
@@ -311,8 +314,9 @@ fresh evidence for all earlier repairs and the entire new change.
 or integrate its replacement after checking only the proposed module move.
 
 **Required:** Gizmo assigns the accepted move to RustDev, receives the full
-replacement commit, obtains complete Rust verification and fresh architecture
-review, then passes both reports and its decision for that same SHA to integration.
+replacement commit, obtains complete Rust verification and both fresh assessments,
+then passes the verification and reviewer reports and its decision for that same
+SHA to integration.
 If the review supports no improvement, record that conclusion and proceed without
 manufacturing a refactor.
 

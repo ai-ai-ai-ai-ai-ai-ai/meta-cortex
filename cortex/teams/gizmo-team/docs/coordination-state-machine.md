@@ -175,10 +175,11 @@ literal placeholder sent to the verifier.
 - **Preconditions and inputs:** the full consolidated Rust worker SHA has passed
   complete Rust verification; Gizmo supplies that result and affected solution context.
 - **Owner and operation:** the Rust architecture reviewer applies Improve
-  Architecture read-only under the
+  Architecture and Simplificator read-only under the
   [Rust architecture handoff](agent-verification.md#review-rust-architecture-after-verification).
 - **Evidence and output:** a report identifying that SHA, inspected architecture,
-  grounded actionable proposals or an honest no-change conclusion, and limitations.
+  both architecture and simplification assessments of the full solution and related
+  existing code, grounded proposals or no-change conclusions, and limitations.
 - **Next owner and expected state:** Gizmo decides the proposals. Accepted work
   returns to RustDev and the complete verification and architecture review cycle.
   A resolved report for the current SHA permits the integration handoff; report
@@ -188,7 +189,8 @@ literal placeholder sent to the verifier.
 RustDev produces a replacement commit.
 
 **Required:** Gizmo records its decision, assigns accepted work to RustDev, and
-obtains both fresh reviews of the full replacement before directing integration.
+obtains complete verification and both fresh assessments of the full replacement
+before directing integration.
 
 #### Integrate the verified change
 

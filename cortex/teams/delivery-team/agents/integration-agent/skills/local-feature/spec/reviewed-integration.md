@@ -69,7 +69,8 @@ has the same total, but no duplicate or missing key.
    [Rust architecture handoff](../../../../../../gizmo-team/docs/agent-verification.md#review-rust-architecture-after-verification).
 2. Require that report to identify the same full SHA as the passing Rust
    verification report and current ready checkpoint. Check that its scope covers
-   the complete worker change and affected solution, with no unresolved evidence
+   both architecture and simplification assessments of the complete worker solution
+   and related existing code, with no unresolved evidence
    blockers or accepted improvements awaiting implementation.
 3. Return missing, stale, or unresolved architecture evidence to Gizmo before
    merging. A supported no-change conclusion with Gizmo's disposition satisfies

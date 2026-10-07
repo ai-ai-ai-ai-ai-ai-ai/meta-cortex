@@ -117,7 +117,8 @@ flowchart LR
   assignments, return all findings instead of starting repairs or integration.
 - After Rust verification passes, apply the
   [Rust architecture handoff](../../docs/agent-verification.md#review-rust-architecture-after-verification).
-  Decide proposals and route accepted improvements to the Rust developer.
+  Require both architecture and simplification assessments. Decide proposals and
+  route accepted improvements to the Rust developer.
 - Once required verification and architecture review are resolved, tell the integration agent which task
   branch to integrate next. For every worker with a cataloged verifier, supply
   the passing report and reviewed SHA, plus the Rust architecture report and

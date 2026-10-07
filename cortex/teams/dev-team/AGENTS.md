@@ -10,8 +10,8 @@ the consuming project.
   - Rust domain behavior, contract changes, and Rust-owned WASM interfaces.
   - Verifier: [Rust verifier](agents/rust-verifier/AGENTS.md).
 - **[Rust architecture reviewer](agents/rust-refactoring/AGENTS.md)**
-  - Read-only architecture review after successful Rust verification of the full worker commit.
-  - Grounded improvement proposals or no-change conclusions returned to Team Gizmo.
+  - Read-only architecture and simplification review after successful Rust verification.
+  - Full worker solution and related existing code; proposals or no change to Team Gizmo.
 - **[Rust verifier](agents/rust-verifier/AGENTS.md)**
   - Read-only, exhaustive Rust catalog compliance review of committed work.
   - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
