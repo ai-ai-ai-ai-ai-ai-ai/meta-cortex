@@ -466,7 +466,7 @@ fn discovery_examples_and_strict_input_errors() -> anyhow::Result<()> {
         task,
         workbench,
     } = catalog.commands;
-    assert_eq!([framework.len(), feature.len(), task.len()], [2, 3, 7]);
+    assert_eq!([framework.len(), feature.len(), task.len()], [3, 3, 7]);
     for command in &framework {
         assert!(matches!(command.example.operation, Operation::Framework(_)));
     }

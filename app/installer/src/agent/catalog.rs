@@ -5,6 +5,7 @@ use super::protocol::{
     FrameworkOperation, Operation, Request, TaskOperation, WorkbenchOperation,
 };
 use crate::installation::ToolSetup;
+use crate::wrapper::{WrapperRelease, WrapperRequest};
 use derive_more::{Display, From};
 use meta_cortex_visualization::DashboardRequest;
 use meta_cortex_workbench::LedgerError;
@@ -91,6 +92,14 @@ impl Catalog {
         let claimed_revision = assigned_revision.advance()?;
         let heartbeat_revision = claimed_revision.advance()?;
         let examples = [
+            CommandExample {
+                description: CommandSummary::from(
+                    "Create project launchers and a separate exact stable release pin (0.15.0 or later) for committing; refuses existing wrapper files.",
+                ),
+                operation: Operation::Framework(FrameworkOperation::Wrapper(WrapperRequest {
+                    release: WrapperRelease::current()?,
+                })),
+            },
             CommandExample {
                 description: CommandSummary::from(
                     "Observe recorded Workbench data in a native desktop window. Desktop opens the feature journal; Snapshot returns the requested Features, Tasks, Task or History view as text without creating a window. Snapshot reads use bounded pages; events retain their recorded task snapshots. Observation never initializes, migrates, imports or updates the ledger.",
