@@ -51,6 +51,8 @@ pub(super) struct WrapperArguments {
 pub(super) enum WrapperRelease {
     #[serde(rename = "0.15.0")]
     V0_15_0,
+    #[serde(rename = "0.16.0")]
+    V0_16_0,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

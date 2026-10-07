@@ -220,7 +220,7 @@ mod tests {
         assert_eq!(report.files.len(), 3);
         assert_eq!(
             fs::read_to_string(root.path().join(".meta-cortex-version"))?,
-            "0.15.0\n"
+            "0.16.0\n"
         );
         assert_eq!(
             fs::read_to_string(root.path().join("meta-cortexw"))?,

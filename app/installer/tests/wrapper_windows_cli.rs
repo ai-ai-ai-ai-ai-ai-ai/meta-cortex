@@ -32,7 +32,7 @@ impl WindowsWrapperScenario {
         fs::write(&driver, include_str!("wrapper/driver.ps1"))?;
         fs::write(&installer, include_str!("wrapper/installer.ps1"))?;
         fs::write(&wrapper, include_str!("../../../meta-cortexw.ps1"))?;
-        fs::write(root.path().join(".meta-cortex-version"), "0.15.0\n")?;
+        fs::write(root.path().join(".meta-cortex-version"), "0.16.0\n")?;
         fs::write(&arguments, "--version\n")?;
         Ok(Self {
             root,
@@ -92,8 +92,8 @@ fn powershell_bootstrap_cache_cwd_arguments_and_exit_status() -> anyhow::Result<
     }
     #[derive(serde::Serialize)]
     enum Release {
-        #[serde(rename = "0.15.0")]
-        V0_15_0,
+        #[serde(rename = "0.16.0")]
+        V0_16_0,
     }
     let scenario = WindowsWrapperScenario::new()?;
     let cold = scenario.invoke()?;
@@ -102,17 +102,17 @@ fn powershell_bootstrap_cache_cwd_arguments_and_exit_status() -> anyhow::Result<
         "{}",
         String::from_utf8_lossy(&cold.stderr)
     );
-    assert_eq!(String::from_utf8(cold.stdout)?.trim(), "meta-cortex 0.15.0");
-    assert!(scenario.cache.join("0.15.0/meta-cortex.exe").is_file());
+    assert_eq!(String::from_utf8(cold.stdout)?.trim(), "meta-cortex 0.16.0");
+    assert!(scenario.cache.join("0.16.0/meta-cortex.exe").is_file());
     let warm = scenario.invoke()?;
     assert!(warm.status.success());
-    assert_eq!(String::from_utf8(warm.stdout)?.trim(), "meta-cortex 0.15.0");
+    assert_eq!(String::from_utf8(warm.stdout)?.trim(), "meta-cortex 0.16.0");
     assert_eq!(fs::read_to_string(&scenario.downloads)?.lines().count(), 1);
     let request = Request {
         version: ProtocolVersion::CURRENT,
         project: scenario.caller.clone(),
         operation: Operation::Framework(FrameworkOperation::Wrapper(WrapperArguments {
-            release: Release::V0_15_0,
+            release: Release::V0_16_0,
         })),
     };
     fs::write(
@@ -133,13 +133,13 @@ fn powershell_bootstrap_cache_cwd_arguments_and_exit_status() -> anyhow::Result<
     assert_eq!(scenario.invoke()?.status.code(), Some(2));
     fs::write(
         scenario.root.path().join(".meta-cortex-version"),
-        "0.16.0\n",
+        "0.17.0\n",
     )?;
     let mismatch = scenario.invoke()?;
     assert!(!mismatch.status.success());
     assert!(String::from_utf8(mismatch.stderr)?.contains("version mismatch"));
-    assert!(scenario.cache.join("0.15.0/meta-cortex.exe").is_file());
     assert!(scenario.cache.join("0.16.0/meta-cortex.exe").is_file());
+    assert!(scenario.cache.join("0.17.0/meta-cortex.exe").is_file());
     Ok(())
 }
 
@@ -151,7 +151,7 @@ fn powershell_rejects_download_failure_and_invalid_pins() -> anyhow::Result<()> 
         .env("WRAPPER_DOWNLOAD_FAILURE", "yes")
         .output()?;
     assert!(!failure.status.success());
-    assert!(!scenario.cache.join("0.15.0/meta-cortex.exe").exists());
+    assert!(!scenario.cache.join("0.16.0/meta-cortex.exe").exists());
     for pin in [
         "0.14.0",
         "0.15.0-beta.1",
