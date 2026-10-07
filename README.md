@@ -14,9 +14,125 @@ project.
 
 ## Get started
 
-### Install the command
+### Add the project wrapper
 
-Choose one installation method.
+Commit `meta-cortexw`, `meta-cortexw.ps1`, and `.meta-cortex-version` in your
+Git repository. The scripts bootstrap the exact executable version in the pin
+file, so collaborators can use a fresh clone without installing a global command.
+The initial pin is `0.15.0`; it has no `v` prefix and does not select `latest`.
+The wrapper accepts stable numeric release versions from `0.15.0` onward.
+
+1. Obtain both launcher scripts from a fixed source revision that contains them.
+   The wrapper scripts are source files; wrapper release assets are not yet
+   published. The download examples require this source revision to be published
+   on GitHub. Before publication, copy both files from an inspected source
+   checkout instead. These shell commands run in the consuming project;
+   replace `/path/to/meta-cortex-source` with that checkout's absolute path:
+
+   ```sh
+   source_checkout=/path/to/meta-cortex-source
+   cp "$source_checkout/meta-cortexw" "$source_checkout/meta-cortexw.ps1" .
+   printf '%s\n' '0.15.0' > .meta-cortex-version
+   chmod +x meta-cortexw
+   ```
+
+   In PowerShell, set `$sourceCheckout` to that checkout's absolute path, then
+   copy the files and write the pin:
+
+   ```powershell
+   $sourceCheckout = 'C:\path\to\meta-cortex-source'
+   Copy-Item (Join-Path $sourceCheckout 'meta-cortexw') .
+   Copy-Item (Join-Path $sourceCheckout 'meta-cortexw.ps1') .
+   Set-Content -Encoding ascii .meta-cortex-version '0.15.0'
+   ```
+
+   After publication, download the same source files directly:
+
+   ```sh
+   source_revision=fd17080e178e2a15645f37c30524b3c092372cf8
+   source_url="https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$source_revision"
+   curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw" -o meta-cortexw
+   curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw.ps1" -o meta-cortexw.ps1
+   printf '%s\n' '0.15.0' > .meta-cortex-version
+   chmod +x meta-cortexw
+   ```
+
+   In PowerShell:
+
+   ```powershell
+   $sourceRevision = 'fd17080e178e2a15645f37c30524b3c092372cf8'
+   $sourceUrl = "https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$sourceRevision"
+   Invoke-WebRequest "$sourceUrl/meta-cortexw" -OutFile meta-cortexw
+   Invoke-WebRequest "$sourceUrl/meta-cortexw.ps1" -OutFile meta-cortexw.ps1
+   Set-Content -Encoding ascii .meta-cortex-version '0.15.0'
+   ```
+
+2. Commit the three files, including the shell script's executable permission.
+   Git clients on Windows can record that permission with
+   `git update-index --chmod=+x meta-cortexw` after staging it.
+3. Discover the pinned executable's commands:
+
+   ```sh
+   ./meta-cortexw list
+   ```
+
+   ```powershell
+   .\meta-cortexw.ps1 list
+   ```
+
+**Prohibited:** use an unavailable wrapper release URL or require the unreleased
+`Framework / Wrapper` command to acquire the first scripts.
+
+**Required:** acquire the scripts directly from their fixed source revision and
+write the exact pin before invoking the wrapper.
+
+### Run the pinned command
+
+The first invocation downloads the versioned cargo-dist installer and uses it
+to install the executable in the wrapper cache. The initial `0.15.0` pin uses
+`/releases/download/v0.15.0/meta-cortex-installer.sh` or
+`/releases/download/v0.15.0/meta-cortex-installer.ps1` on this repository's
+GitHub release. Later invocations reuse the cached executable after checking
+that its `--version` matches the pin.
+
+- macOS and Linux require `sh` and `curl`; ARM64 and x86-64 are supported.
+- Windows x86-64 requires PowerShell and `Invoke-WebRequest`.
+- The release installer selects and downloads the native package. Linux runtime
+  requirements still apply; see [native prerequisites](CONTRIBUTING.md#native-dashboard-prerequisites).
+- The default POSIX executable cache is
+  `${XDG_CACHE_HOME:-$HOME/.cache}/meta-cortex/wrapper/<version>/meta-cortex`.
+- The default Windows cache is
+  `%LOCALAPPDATA%\meta-cortex\wrapper\<version>\meta-cortex.exe`.
+- `META_CORTEX_WRAPPER_CACHE` overrides the cache root. The wrapper adds a
+  version directory beneath that root.
+- First use requires network access. A populated cache can be reused without
+  downloading the executable again; framework initialization has its own
+  tool and dependency requirements below.
+
+The wrapper forwards arguments and the executable's exit status. It keeps the
+caller's working directory, including when called from a subdirectory:
+
+```sh
+./meta-cortexw run --request request.yaml
+cd src
+../meta-cortexw run --request ../request.yaml
+```
+
+Relative request paths resolve from that working directory. YAML `project`
+continues to name the explicit project. Bootstrap failures stop before command
+execution; inspect the diagnostic, correct the pin or download problem, and
+retry. A missing or malformed pin and a cached executable version mismatch
+are errors.
+
+**Prohibited:** run `../meta-cortexw run --request request.yaml` from `src/`
+when the request exists only in the repository root.
+
+**Required:** pass `../request.yaml` from `src/`, or invoke the wrapper from the
+root with `request.yaml`.
+
+### Install a global command
+
+A global command remains optional. Choose one installation method.
 
 **Homebrew**
 
@@ -82,11 +198,14 @@ operation:
       instructions: write
 ```
 
-Then run:
+Then run from your project:
 
 ```sh
-meta-cortex run --request request.yaml
+./meta-cortexw run --request request.yaml
 ```
+
+In PowerShell, run `.\meta-cortexw.ps1 run --request request.yaml`.
+The global `meta-cortex` command accepts the same arguments.
 
 Use `harness: none` and `instructions: skip` to install only the framework.
 Initialization installs `.meta-cortex/` with the bundled model and reasoning-effort
@@ -153,18 +272,19 @@ All framework scripts share that workspace's `node_modules`; individual skills
 do not install dependencies. Repeating initialization also restores missing dependencies.
 Effect guidance comes directly from `.meta-cortex/node_modules/effect/AGENTS.md`.
 Dependency installation requires network access or a populated Bun cache.
-Installing or initializing Meta-Cortex does not start agents. Run `meta-cortex list`
+Installing or initializing Meta-Cortex does not start agents. Run `./meta-cortexw list`
 to discover every operation, its typed schema, and a complete request example.
-`meta-cortex run --request -` reads a request from stdin.
+`./meta-cortexw run --request -` reads a request from stdin.
 
 ### PowerShell typed requests
 
-Use the same YAML command schema on Windows. Set `project` to an absolute Git
+Use the project wrapper for the examples below. A global `meta-cortex` command
+can receive the same arguments. Use the same YAML command schema on Windows. Set `project` to an absolute Git
 repository path such as `'C:\projects\my-app'`. Single-quoted PowerShell
 here-strings preserve the YAML literally:
 
 ```powershell
-meta-cortex list
+.\meta-cortexw.ps1 list
 @'
 version: 1
 project: 'C:\projects\my-app'
@@ -175,7 +295,7 @@ operation:
     arguments:
       harness: codex
       instructions: write
-'@ | meta-cortex run --request -
+'@ | .\meta-cortexw.ps1 run --request -
 ```
 
 To inspect the project through a request file:
@@ -190,14 +310,24 @@ operation:
     name: Info
     arguments: {}
 '@ | Set-Content -Encoding utf8 info.yaml
-meta-cortex run --request info.yaml
+.\meta-cortexw.ps1 run --request info.yaml
 ```
 
-Open the native Workbench dashboard from your repository root or a subdirectory:
+Open the native Workbench dashboard from your repository root:
 
 ```powershell
-meta-cortex dashboard
+.\meta-cortexw.ps1 dashboard
 ```
+
+From an immediate `src` subdirectory, address the root launcher explicitly:
+
+```powershell
+Set-Location src
+..\meta-cortexw.ps1 dashboard
+```
+
+For any other subdirectory, use the actual relative or absolute path to the
+launcher. The caller's directory remains the dashboard's repository context.
 
 No request file or required arguments are needed. For headless text output,
 use an explicit project with `mode: Snapshot`:
@@ -215,7 +345,7 @@ operation:
       view: {kind: Features}
       page: 0
 '@ | Set-Content -Encoding utf8 dashboard.yaml
-meta-cortex run --request dashboard.yaml > dashboard-output.yaml
+.\meta-cortexw.ps1 run --request dashboard.yaml > dashboard-output.yaml
 ```
 
 Use `mode: Desktop` without `view` or `page` to open the native window for that project.
@@ -267,7 +397,7 @@ operation:
 ```
 
 ```sh
-meta-cortex run --request info.yaml > meta-cortex-info.yaml
+./meta-cortexw run --request info.yaml > meta-cortex-info.yaml
 ```
 
 The operation returns a versioned YAML response containing the project report.
@@ -449,7 +579,61 @@ Updating the executable and updating a project's framework are separate actions.
 An existing `.meta-cortex/` directory does not change when Homebrew or Scoop
 updates the command.
 
-### Upgrade the command
+### Upgrade the project pin
+
+1. Choose an exact published stable release at or above `0.15.0` and edit
+   `.meta-cortex-version`, for
+   example replacing `0.15.0` with the version you have verified is available.
+   Keep only the version and a trailing newline. Earlier releases, prerelease
+   suffixes, build metadata, and leading-zero components are unsupported.
+2. Run `./meta-cortexw list` or `.\meta-cortexw.ps1 list`. The wrapper installs
+   that version in its separate cache directory and checks its identity.
+3. Review and commit the pin change. Collaborators receive it through Git and
+   bootstrap the same executable on their next invocation.
+
+Changing the pin leaves the installed project framework untouched. Follow
+[framework replacement](#replace-an-installed-framework) when that also needs
+an upgrade. Updating a global command does not change the wrapper's pin.
+Update launcher source deliberately from an inspected source revision when
+the launcher itself changes; review and commit those files separately from
+choosing the executable release.
+
+**Prohibited:** replace the pin with `latest` or expect a Homebrew upgrade to
+change the committed pin.
+
+**Required:** commit the exact published version and validate it through the
+project wrapper.
+
+### Scaffold with a future release
+
+`Framework / Wrapper` is implemented in source for the next release. Released
+`0.15.0` cannot execute it. Use direct source acquisition above until a release
+containing this command is published; discover that release's schema with
+`list` before using this request:
+
+```yaml
+version: 1
+project: /path/to/project
+operation:
+  group: Framework
+  command:
+    name: Wrapper
+    arguments:
+      release: '0.15.0'
+```
+
+The capable executable writes the two launchers and exact pin into the project.
+It refuses existing wrapper files; edit an existing pin deliberately to upgrade.
+The `release` argument chooses the executable to bootstrap, independently of
+the executable running the scaffolding request.
+
+**Prohibited:** send this request to released `0.15.0` and claim wrapper setup
+is supported there.
+
+**Required:** obtain the first launchers from source, or use a published release
+whose `list` output advertises `Framework / Wrapper`.
+
+### Upgrade a global command
 
 For a Homebrew installation:
 
@@ -517,8 +701,8 @@ Database files and their engine-managed sidecars are persistent state; keep them
 together when backing up or moving them. Application storage is outside `.git`.
 
 ```sh
-meta-cortex list
-meta-cortex run --request request.yaml
+./meta-cortexw list
+./meta-cortexw run --request request.yaml
 ```
 
 `list` prints typed command schemas and complete YAML requests. `run` accepts a
@@ -537,16 +721,35 @@ ownership, recovery, version compatibility, and local storage boundaries.
 
 ### Observe recorded work
 
-From your repository root, any subdirectory, or a linked worktree, run:
+From your repository root, run:
 
 ```sh
-meta-cortex dashboard
+./meta-cortexw dashboard
 ```
 
-No request file or required arguments are needed. The command resolves the
-existing repository identity and feature storage, then opens the native Tauri
-Workbench window. Close the window to exit. The executable embeds the dashboard
-assets and reads through native IPC; no HTTP server is required.
+From an immediate `src` subdirectory, address the root launcher explicitly:
+
+```sh
+cd src
+../meta-cortexw dashboard
+```
+
+- Use the actual relative or absolute launcher path from any other subdirectory.
+- A linked worktree uses its checked-out root launcher in the same way.
+- The wrapper preserves the caller's directory, so the executable resolves that
+  repository or linked worktree.
+
+**Prohibited:** use `./meta-cortexw dashboard` from `src/` when the launcher
+exists only at the repository root.
+
+**Required:** use `../meta-cortexw dashboard` from that immediate subdirectory,
+or supply the launcher's actual path from a deeper directory.
+
+- No request file or required arguments are needed.
+- The command resolves the existing repository identity and feature storage,
+  then opens the native Tauri Workbench window. Close the window to exit.
+- The executable embeds the dashboard assets and reads through native IPC;
+  no HTTP server is required.
 
 The always-visible **Agent guide** button in the top bar opens the roles graph
 inside the same native window, including when the ledger catalog is empty.
@@ -587,10 +790,10 @@ do not establish separate feature acceptance. The feature list covers the 100
 most recently active features and reports when more exist; a selected workflow
 loads every task and history page.
 
-Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests with
+Run `./meta-cortexw list` for advanced typed `Workbench / Dashboard` requests with
 an explicit project. `mode: Desktop` opens the native window; `mode: Snapshot`
 with a `view` and `page` returns headless text through
-`meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
+`./meta-cortexw run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
 [dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
