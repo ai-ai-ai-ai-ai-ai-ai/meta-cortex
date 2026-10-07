@@ -4,13 +4,16 @@ Team Gizmo starts verification when an agent with a cataloged verifier reports
 committed work ready. The worker owns changes and repairs; its verifier owns
 read-only review. Every verifier uses the same [request and result protocol](../agents/gizmo/skills/agent-verification/spec/communication-protocol.md),
 [committed Git reads](../agents/gizmo/skills/agent-verification/spec/git-review.md), and [agent ledger](agent-ledger.md).
-Gizmo requires a complete passing review before integration.
+Gizmo requires a complete passing review before integration. Completed Rust work
+then follows the [architecture handoff](#review-rust-architecture-after-verification)
+before integration.
 
 ```mermaid
 sequenceDiagram
     participant D as Worker
     participant G as Team Gizmo
     participant V as Verifier
+    participant A as Rust architecture reviewer
     participant I as Integration agent
     D->>D: Consolidate task, commit, validate, checkpoint, ready
     D->>G: Branch, workspace, final SHA, files, check evidence
@@ -23,7 +26,12 @@ sequenceDiagram
         G->>V: New complete review of replacement SHA
         V->>G: New complete result
     end
-    G->>I: Only a passing reviewed SHA matching ready task head
+    opt Completed Rust work
+        G->>A: Full verified worker SHA and affected solution context
+        A->>G: Architecture and simplification assessments
+        Note over G,A: Accepted changes return to RustDev, full verification, then both fresh assessments
+    end
+    G->>I: Matching ready SHA, passing review, and resolved architecture review when required
     I->>I: Merge that task and run combined checks
     I->>G: Actual integration SHA, checks, and ledger result
 ```
@@ -267,12 +275,59 @@ replacement commit without another complete verifier pass.
 **Required:** give the new verifier the new SHA and previous report, then require
 fresh evidence for all earlier repairs and the entire new change.
 
+### Review Rust architecture after verification
+
+1. After a complete Rust verifier pass for a completed Rust worker commit,
+   assign the [Rust architecture reviewer](../../dev-team/agents/rust-refactoring/AGENTS.md)
+   a read-only task under `Development/RustRefactoring`. Supply the same full
+   consolidated SHA, task base, passing report, scope, and affected project
+   architecture. Keep the branch stable. Sequence this through Gizmo without
+   making the unintegrated worker task a ledger dependency.
+2. Supply the reviewer's own role and
+   [Improve Architecture](../../dev-team/agents/rust-refactoring/skills/improve-architecture/SKILL.md)
+   followed by [Simplificator](../../dev-team/agents/rust-refactoring/skills/simplificator/SKILL.md).
+   Each skill owns its distinct assessment and report contents. Do not supply or
+   load the Rust developer role or implementation skill bundle for this review.
+3. Require both assessments in the returned report: architectural fit and
+   simplification of the full worker solution with related existing code at the
+   verified SHA. Resolve missing evidence before deciding the
+   result. Record the report and Gizmo's disposition in the existing ledger;
+   use ordinary prose and task records, without a new protocol or runtime state.
+4. Decide which proposals are worthwhile and within the authorized scope.
+   Record why each is accepted, declined, or deferred. A supported no-change
+   conclusion is a valid result; recommendations do not compel new work.
+   Report broader proposals through the hierarchy without expanding the task.
+5. For accepted improvements, assign the complete actionable findings to the
+   Rust developer. Use the existing recovery and ordinary task-completion paths
+   to obtain a replacement consolidated commit containing the whole worker task.
+   Require its mandatory checks, a fresh complete Rust verifier pass, then
+   fresh architecture and simplification assessments of the entire replacement
+   commit and related solution. A fixes-only review or an earlier report cannot
+   approve it.
+6. Once the current SHA has passing verification, a report completing both assessments,
+   and no accepted improvements left unimplemented, pass that report and Gizmo's
+   disposition with the matching SHA to integration. Review-only assignments
+   stop with their reports. In single-agent mode, perform these responsibilities
+   locally under the same scope and evidence requirements.
+
+**Prohibited:** send architectural findings to the reviewer for implementation,
+or integrate its replacement after checking only the proposed module move.
+
+**Required:** Gizmo assigns the accepted move to RustDev, receives the full
+replacement commit, obtains complete Rust verification and both fresh assessments,
+then passes the verification and reviewer reports and its decision for that same
+SHA to integration.
+If the review supports no improvement, record that conclusion and proceed without
+manufacturing a refactor.
+
 ### Integrate the reviewed revision
 
 1. Supply the integration agent with the passing report, reviewed SHA, and task
    branch, worktree, and consolidation base. Require both the branch head and
    worker ready checkpoint to match
-   that SHA. A later commit requires a new review before integration.
+   that SHA. For Rust work, include the architecture report and Gizmo disposition
+   from the [architecture handoff](#review-rust-architecture-after-verification).
+   A later commit requires new applicable reviews before integration.
 2. Give the integration owner the
    [reviewed-task integration protocol](../../delivery-team/agents/integration-agent/skills/local-feature/spec/reviewed-integration.md).
    It applies the review gate before the ordinary Git merge procedure and
@@ -281,7 +336,8 @@ fresh evidence for all earlier repairs and the entire new change.
    and conflict-resolution commits. The verifier never commits. The PR agent
    owns pushing the integrated feature under `create_pr`.
    - Route conflict resolutions or later repairs through the responsible worker and a
-     complete verifier pass before retrying integration.
+     complete verifier pass before retrying integration. Rust replacements also
+     repeat the architecture handoff.
 3. Retain review results and repair history in the existing tasks. After accepting
    a read-only review's result, record its completion through the ledger's
    existing read-only integration path. Do not require a verifier code commit.

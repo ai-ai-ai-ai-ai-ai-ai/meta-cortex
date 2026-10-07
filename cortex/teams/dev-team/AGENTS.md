@@ -6,13 +6,12 @@ the consuming project.
 ## Agent catalog
 
 - **[Rust developer](agents/rust-dev/AGENTS.md)**
-  - New Rust implementation, compiled tooling, tests, and behavior corrections.
+  - Rust implementation, structural refactors, compiled tooling, tests, and corrections.
   - Rust domain behavior, contract changes, and Rust-owned WASM interfaces.
   - Verifier: [Rust verifier](agents/rust-verifier/AGENTS.md).
-- **[Rust refactoring agent](agents/rust-refactoring/AGENTS.md)**
-  - Behavior-preserving Rust structural refactors, their tests, and mandatory checks.
-  - Module decomposition and ownership-preserving moves under existing contracts.
-  - Verifier: [Rust verifier](agents/rust-verifier/AGENTS.md).
+- **[Rust architecture reviewer](agents/rust-refactoring/AGENTS.md)**
+  - Read-only architecture and simplification review after successful Rust verification.
+  - Full worker solution and related existing code; proposals or no change to Team Gizmo.
 - **[Rust verifier](agents/rust-verifier/AGENTS.md)**
   - Read-only, exhaustive Rust catalog compliance review of committed work.
   - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
@@ -38,16 +37,18 @@ agent's assignment.
 
 Team Gizmo assigns web design to web-designer and JS/TS behavior and functional tests to
 typescript-dev. It assigns new Rust behavior, domain work, contract changes, and
-Rust-owned WASM work to rust-dev. It assigns behavior-preserving Rust structural
-refactors and their tests/checks to rust-refactoring. A Svelte file may need both
-roles; Team Gizmo sequences edits to shared components and supplies the design
-decisions to the implementation owner. For work crossing these boundaries, give
+Rust-owned WASM work, structural refactors, and their tests/checks to rust-dev.
+After Rust verification passes, it assigns architecture review to rust-refactoring
+under the [Rust architecture handoff](../gizmo-team/docs/agent-verification.md#review-rust-architecture-after-verification).
+Architectural proposals return to Team Gizmo for a scope decision and any Rust
+developer assignment. The reviewer never implements them.
+
+A Svelte file may need web design and TypeScript implementation; Team Gizmo
+sequences edits to shared components and supplies the design decisions to the
+implementation owner. For work crossing these boundaries, give
 each agent a bounded assignment and explicit dependencies. Pass these boundaries
 with each assignment; language expertise does not authorize taking over another
 agent's work or feature coordination.
-
-If a structural refactor reveals an intended behavior or contract change, route
-that change through Team Gizmo to rust-dev before proceeding.
 
 - **Prohibited:** assign a developer a credential-storage fix and implicitly
   authorize it to redefine the security policy and rewrite the agent instructions.

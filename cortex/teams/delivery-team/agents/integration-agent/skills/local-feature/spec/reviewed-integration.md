@@ -62,6 +62,26 @@ evidenced decision for each of those two keys, keeping all other decisions
 complete. Recheck the complete key set before proceeding. The repaired report
 has the same total, but no duplicate or missing key.
 
+### Check the Rust architecture handoff
+
+1. For completed Rust work, require the architecture report and Gizmo's
+   disposition from the canonical
+   [Rust architecture handoff](../../../../../../gizmo-team/docs/agent-verification.md#review-rust-architecture-after-verification).
+2. Require that report to identify the same full SHA as the passing Rust
+   verification report and current ready checkpoint. Check that its scope covers
+   both architecture and simplification assessments of the complete worker solution
+   and related existing code, with no unresolved evidence
+   blockers or accepted improvements awaiting implementation.
+3. Return missing, stale, or unresolved architecture evidence to Gizmo before
+   merging. A supported no-change conclusion with Gizmo's disposition satisfies
+   this gate; integration does not invent architectural findings or implement them.
+
+**Prohibited:** merge a newer Rust commit with an architecture report for its
+predecessor because the verifier passed the newer commit.
+
+**Required:** obtain Gizmo's resolved architecture handoff for the same newer
+SHA, then continue the matching-commit gate.
+
 ### Match the reviewed commit before merging
 
 1. Use Gizmo's complete passing report and integration assignment after the
@@ -136,7 +156,9 @@ reviewed revision; the earlier report for `C2` cannot approve `C3`.
    those revisions and owns implementation corrections and commits.
 2. When repairs, conflict resolution, or consolidation produce a replacement
    task SHA, require Gizmo to obtain a complete review of that SHA before retrying
-   integration. Never reuse the old report or checkpoint as approval.
+   integration. Rust replacements also repeat the
+   [architecture handoff](#check-the-rust-architecture-handoff) after verification.
+   Never reuse the old report or checkpoint as approval.
 3. Repeat this protocol with the replacement passing report and ready checkpoint.
    Preserve already-integrated history using the ordinary repair procedure.
    A repair made after an earlier merge also needs its own reviewed SHA.
