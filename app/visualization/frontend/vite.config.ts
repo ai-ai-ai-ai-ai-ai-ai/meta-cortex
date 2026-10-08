@@ -18,6 +18,7 @@ export default {
     rollupOptions: {
       output: {
         manualChunks: {
+          "agent-guide-content": ["virtual:agent-guide"],
           effect: ["effect"],
           markdown: ["markdown-it", "markdown-it-anchor"],
           "diagram-drawing": ["d3"],

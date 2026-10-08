@@ -1,13 +1,17 @@
 <script lang="ts">
   import type { FeatureWorkflow } from "./contracts";
-  import { Elapsed } from "./observability";
+  import {
+    Elapsed,
+    WorkflowOpeningKind,
+    type WorkflowOpening,
+  } from "./observability";
   import { TimelineScale, RecordedStateLook } from "./timeline";
   import StateMeanings from "./StateMeanings.svelte";
   import TimelineTaskCard from "./TimelineTaskCard.svelte";
   import { WorkerTimeline } from "./worker-timeline";
   interface Props {
     workflow: FeatureWorkflow;
-    selected: string;
+    selected: WorkflowOpening;
     onselect: (task: string) => void;
   }
   let { workflow, selected, onselect }: Props = $props();
@@ -44,7 +48,11 @@
           id={row.look.key()}
           class:selected={row
             .chapters()
-            .some((chapter) => chapter.task.common.id === selected)}
+            .some(
+              (chapter) =>
+                selected.kind === WorkflowOpeningKind.Task &&
+                chapter.task.common.id === selected.task,
+            )}
         >
           <details class="worker-task-menu duration-label-group">
             <summary class="duration-label"

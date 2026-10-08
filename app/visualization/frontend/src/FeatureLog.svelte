@@ -1,12 +1,6 @@
-<script lang="ts" module>
-  export interface EvidenceSelection {
-    readonly task: string;
-    readonly revision: number;
-  }
-</script>
-
 <script lang="ts">
   import type { FeatureLogEntry, StateMeaning } from "./contracts";
+  import type { EvidenceSelection } from "./feature-log";
   import { ChevronRight } from "@lucide/svelte";
   import { RecordedTime } from "./observability";
   import { AgentLook } from "./presentation";

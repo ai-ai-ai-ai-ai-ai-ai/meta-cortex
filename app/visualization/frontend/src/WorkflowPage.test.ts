@@ -5,14 +5,16 @@ import {
   render,
   screen,
   within,
+  waitFor,
 } from "@testing-library/svelte";
 import type { RevisionLogEntry } from "./contracts";
 import type { ComponentProps } from "svelte";
 import WorkflowPage from "./WorkflowPage.svelte";
 import { Fixture } from "./dashboard-fixture";
-import { RecordedTime } from "./observability";
+import { RecordedTime, WorkflowOpeningKind } from "./observability";
 type WorkflowProps = ComponentProps<typeof WorkflowPage>;
 type RoleQueryOptions = NonNullable<Parameters<typeof screen.getByRole>[1]>;
+type TextQueryOptions = NonNullable<Parameters<typeof screen.getByText>[1]>;
 beforeEach(() => {
   const show: PropertyDescriptor = {
     configurable: true,
@@ -28,6 +30,8 @@ beforeEach(() => {
   };
   Object.defineProperty(HTMLElement.prototype, "showPopover", show);
   Object.defineProperty(HTMLElement.prototype, "hidePopover", hide);
+  const scroll: PropertyDescriptor = { configurable: true, value: () => {} };
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", scroll);
 });
 afterEach(() => {
   cleanup();
@@ -35,17 +39,164 @@ afterEach(() => {
   Reflect.deleteProperty(HTMLElement.prototype, "hidePopover");
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
+it("opens the feature's Feature log by default and retains it across workflow refresh", async () => {
+  const fixture = new Fixture();
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow: fixture.workflow(),
+    opening: { kind: WorkflowOpeningKind.Feature },
+    back: () => {},
+  };
+  const featureQuery: RoleQueryOptions = { name: "Feature log" };
+  const rendered = render(WorkflowPage, props);
+  expect(
+    screen.getByRole("tab", featureQuery).getAttribute("aria-selected"),
+  ).toBe("true");
+  expect(screen.getByRole("tabpanel", featureQuery)).toBeTruthy();
+  const refreshed: WorkflowProps = { ...props, workflow: fixture.workflow() };
+  await rendered.rerender(refreshed);
+  expect(
+    screen.getByRole("tab", featureQuery).getAttribute("aria-selected"),
+  ).toBe("true");
+});
+
+it("opens an explicit task in Log with keyboard focus and scroll", () => {
+  const fixture = new Fixture();
+  const scroll = vi.fn();
+  const boundary: PropertyDescriptor = { configurable: true, value: scroll };
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", boundary);
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow: fixture.workflow(),
+    opening: { kind: WorkflowOpeningKind.Task, task: "rust-release" },
+    back: () => {},
+  };
+  const logQuery: RoleQueryOptions = { name: "Log" };
+  render(WorkflowPage, props);
+  expect(screen.getByRole("tab", logQuery).getAttribute("aria-selected")).toBe(
+    "true",
+  );
+  expect(document.activeElement?.id).toBe("heading-rust-release");
+  expect(scroll).toHaveBeenCalled();
+});
+it("opens an outcome's original task Log with focus and scroll, keeping Feature log reachable", async () => {
+  const fixture = new Fixture();
+  const scroll = vi.fn();
+  const boundary: PropertyDescriptor = { configurable: true, value: scroll };
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", boundary);
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow: fixture.workflow(),
+    opening: { kind: WorkflowOpeningKind.Feature },
+    back: () => {},
+  };
+  render(WorkflowPage, props);
+  const featureQuery: RoleQueryOptions = { name: "Feature log" };
+  const taskQuery: RoleQueryOptions = {
+    name: "Open Log for task rust-release",
+  };
+  const panel = screen.getByRole("tabpanel", featureQuery);
+  expect(within(panel).getAllByRole("button", taskQuery)).toHaveLength(2);
+  for (const button of within(panel)
+    .getAllByRole("button", taskQuery)
+    .slice(0, 1)) {
+    await fireEvent.click(button);
+  }
+  const logQuery: RoleQueryOptions = { name: "Log" };
+  expect(screen.getByRole("tab", logQuery).getAttribute("aria-selected")).toBe(
+    "true",
+  );
+  expect(document.activeElement?.id).toBe("heading-rust-release");
+  expect(scroll).toHaveBeenCalled();
+  await fireEvent.click(screen.getByRole("tab", featureQuery));
+  expect(
+    screen.getByRole("tabpanel", featureQuery).querySelectorAll("article"),
+  ).toHaveLength(2);
+});
+it("opens checkpoint and integration evidence at their exact Log revisions", async () => {
+  const fixture = new Fixture();
+  const workflow = fixture.workflow();
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow,
+    opening: { kind: WorkflowOpeningKind.Feature },
+    back: () => {},
+  };
+  const scroll = vi.fn();
+  const boundary: PropertyDescriptor = { configurable: true, value: scroll };
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", boundary);
+  render(WorkflowPage, props);
+  const featureQuery: RoleQueryOptions = { name: "Feature log" };
+  const logQuery: RoleQueryOptions = { name: "Log" };
+  for (const entry of workflow.feature_log.slice(0, 1)) {
+    const shortQuery: RoleQueryOptions = {
+      name: `Open checkpoint evidence for task ${entry.task}, revision ${entry.checkpoint.recorded.revision}`,
+    };
+    for (const button of screen.getAllByRole("button", shortQuery).slice(0, 1))
+      await fireEvent.click(button);
+    const checkpoint = document.getElementById(
+      `event-${entry.task}-r${entry.checkpoint.recorded.revision}`,
+    );
+    await waitFor(() => expect(checkpoint?.hasAttribute("open")).toBe(true));
+    expect(document.activeElement).toBe(checkpoint?.querySelector("summary"));
+    expect(
+      screen.getByRole("tab", logQuery).getAttribute("aria-selected"),
+    ).toBe("true");
+    await fireEvent.click(screen.getByRole("tab", featureQuery));
+    const evidenceQuery: TextQueryOptions = { selector: "summary span" };
+    for (const row of screen
+      .getByRole("tabpanel", featureQuery)
+      .querySelectorAll("article"))
+      await fireEvent.click(within(row).getByText("Evidence", evidenceQuery));
+    const integrationQuery: RoleQueryOptions = {
+      name: `Integration evidence · r${entry.integration.recorded.revision}`,
+    };
+    for (const button of screen
+      .getAllByRole("button", integrationQuery)
+      .slice(0, 1))
+      await fireEvent.click(button);
+    const integration = document.getElementById(
+      `event-${entry.task}-r${entry.integration.recorded.revision}`,
+    );
+    await waitFor(() => expect(integration?.hasAttribute("open")).toBe(true));
+    expect(document.activeElement).toBe(integration?.querySelector("summary"));
+    expect(integration?.getAttribute("id")).not.toBe(
+      checkpoint?.getAttribute("id"),
+    );
+  }
+  expect(scroll).toHaveBeenCalled();
+});
+it("shows a missing-outcomes log without inferring rows from integrated task history", async () => {
+  const fixture = new Fixture();
+  const workflow = fixture.workflow();
+  workflow.feature_log = [];
+  const props: WorkflowProps = {
+    summary: fixture.summary,
+    workflow,
+    opening: { kind: WorkflowOpeningKind.Feature },
+    back: () => {},
+  };
+  render(WorkflowPage, props);
+  expect(screen.getByText("No implementation outcomes recorded")).toBeTruthy();
+  const featureQuery: RoleQueryOptions = { name: "Feature log" };
+  expect(
+    screen.getByRole("tabpanel", featureQuery).querySelectorAll("article"),
+  ).toHaveLength(0);
+  const logQuery: RoleQueryOptions = { name: "Log" };
+  await fireEvent.click(screen.getByRole("tab", logQuery));
+  expect(screen.getAllByText("Checkpoint recorded")).toHaveLength(2);
+});
 it("shows a terminal timestamp without inventing an unrecorded active range", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
   const windowPanelQuery: RoleQueryOptions = { name: "Time windows" };
   const acceptedEventQuery: RoleQueryOptions = {
-    name: /Completed · rust-release/,
+    name: /Integrated · rust-release/,
   };
   const fixture = new Fixture();
   const workflow = fixture.workflow();
   for (const group of workflow.timeline.groups) {
     group.windows = group.windows.filter(
-      (window) => window.status === "completed",
+      (window) => window.status === "integrated",
     );
     for (const window of group.windows)
       workflow.timeline.extent = {
@@ -57,7 +208,7 @@ it("shows a terminal timestamp without inventing an unrecorded active range", as
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
     workflow,
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   render(WorkflowPage, workflowProps);
@@ -97,13 +248,13 @@ it("preserves per-event ownership after a chapter is reassigned", () => {
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
     workflow,
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Task, task: "rust-release" },
     back: () => {},
   };
   render(WorkflowPage, workflowProps);
   expect(screen.getByRole("heading", verifierHeadingQuery)).toBeTruthy();
-  expect(screen.getAllByText("Assigned to Rust Dev")).toHaveLength(5);
-  expect(screen.getAllByText("Reports to Host")).toHaveLength(5);
+  expect(screen.getAllByText("Assigned to Rust Dev")).toHaveLength(7);
+  expect(screen.getAllByText("Reports to Host")).toHaveLength(7);
 });
 it("keeps same-time milestones separately reachable for zero-duration tasks", async () => {
   const windowTabQuery: RoleQueryOptions = { name: "Time windows" };
@@ -125,7 +276,7 @@ it("keeps same-time milestones separately reachable for zero-duration tasks", as
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
     workflow,
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   render(WorkflowPage, workflowProps);
@@ -153,7 +304,7 @@ it("shows a truthful empty timeline", async () => {
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
     workflow,
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   render(WorkflowPage, workflowProps);
@@ -178,13 +329,13 @@ it("preserves keyboard focus when a timeline event opens its task log", async ()
   const workflowProps: WorkflowProps = {
     summary: fixture.summary,
     workflow: fixture.workflow(),
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   render(WorkflowPage, workflowProps);
   await fireEvent.click(screen.getByRole("tab", windowTabQuery));
   const acceptedEventQuery: RoleQueryOptions = {
-    name: /Completed · rust-release/,
+    name: /Integrated · rust-release/,
   };
   const marker = screen.getByRole("button", acceptedEventQuery);
   marker.focus();
@@ -226,7 +377,7 @@ it("labels recorded boxes with elapsed duration and presents human task context 
   const props: WorkflowProps = {
     summary: fixture.summary,
     workflow,
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   const tabQuery: RoleQueryOptions = { name: "Time windows" };
@@ -318,7 +469,7 @@ it("keeps overlapping worker tasks reachable in bounded keyboard lanes and opens
   const props: WorkflowProps = {
     summary: fixture.summary,
     workflow,
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   const tabQuery: RoleQueryOptions = { name: "Time windows" };
@@ -347,11 +498,11 @@ it("keeps a focused trigger card open after pointer leave until focus also leave
   const props: WorkflowProps = {
     summary: fixture.summary,
     workflow: fixture.workflow(),
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   const tabQuery: RoleQueryOptions = { name: "Time windows" };
-  const markerQuery: RoleQueryOptions = { name: /Completed · rust-release/ };
+  const markerQuery: RoleQueryOptions = { name: /Integrated · rust-release/ };
   render(WorkflowPage, props);
   await fireEvent.click(screen.getByRole("tab", tabQuery));
   const marker = screen.getByRole("button", markerQuery);
@@ -391,7 +542,7 @@ it("renders supplied feature revisions without sorting or renumbering and retain
   const props: WorkflowProps = {
     summary: fixture.summary,
     workflow,
-    initialTask: "",
+    opening: { kind: WorkflowOpeningKind.Feature },
     back: () => {},
   };
   const tabQuery: RoleQueryOptions = { name: "Revision log" };
@@ -434,10 +585,11 @@ it("supports arrow and boundary keys for workflow tabs and opens the original re
   const props: WorkflowProps = {
     summary: fixture.summary,
     workflow: fixture.workflow(),
-    initialTask: "rust-release",
+    opening: { kind: WorkflowOpeningKind.Task, task: "rust-release" },
     back: () => {},
   };
   const logQuery: RoleQueryOptions = { name: "Log" };
+  const featureQuery: RoleQueryOptions = { name: "Feature log" };
   const revisionQuery: RoleQueryOptions = { name: "Revision log" };
   const openQuery: RoleQueryOptions = { name: "Open task log" };
   const endKey: KeyboardEventInit = { key: "End" };
@@ -451,8 +603,10 @@ it("supports arrow and boundary keys for workflow tabs and opens the original re
   expect(document.activeElement).toBe(revisions);
   expect(revisions.getAttribute("tabindex")).toBe("0");
   await fireEvent.keyDown(revisions, homeKey);
-  expect(document.activeElement).toBe(log);
-  await fireEvent.keyDown(log, previousKey);
+  const featureLog = screen.getByRole("tab", featureQuery);
+  expect(document.activeElement).toBe(featureLog);
+  expect(featureLog.getAttribute("aria-selected")).toBe("true");
+  await fireEvent.keyDown(featureLog, previousKey);
   expect(document.activeElement).toBe(revisions);
   const panel = screen.getByRole("tabpanel", revisionQuery);
   for (const button of within(panel)

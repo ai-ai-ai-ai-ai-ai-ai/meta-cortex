@@ -28,6 +28,7 @@ afterEach(() => {
   cleanup();
   native.invoke.mockReset();
   native.openUrl.mockReset();
+  Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 
 class SelectionScenario {
@@ -106,6 +107,11 @@ class SelectionScenario {
       await fireEvent.click(within(briefing).getByRole("button", openQuery));
       const workflowQuery: ByRoleOptions = { name: "Agent index" };
       const index = await screen.findByRole("navigation", workflowQuery);
+      const featureLogQuery: ByRoleOptions = { name: "Feature log" };
+      expect(
+        screen.getByRole("tab", featureLogQuery).getAttribute("aria-selected"),
+      ).toBe("true");
+      expect(screen.getByRole("tabpanel", featureLogQuery)).toBeTruthy();
       expect(within(index).getAllByText(objective)).toBeTruthy();
       const headingQuery: ByRoleOptions = {
         name: new FeatureLook(fixture.summary).title(),
@@ -123,6 +129,31 @@ it("switches corresponding briefing and workflow repeatedly from card body click
 });
 it("switches corresponding briefing and workflow repeatedly from progress bar clicks", async () => {
   await new SelectionScenario().switchRepeatedly(SelectionSurface.Progress);
+});
+it("opens the inventory task directly in Log, then generic workflow returns to Feature log", async () => {
+  const scenario = new SelectionScenario();
+  scenario.install();
+  native.invoke.mockResolvedValueOnce(scenario.first.workflow());
+  const scroll = vi.fn();
+  const boundary: PropertyDescriptor = { configurable: true, value: scroll };
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", boundary);
+  render(App);
+  const taskQuery: ByRoleOptions = { name: "Open task rust-release" };
+  await fireEvent.click(await screen.findByRole("button", taskQuery));
+  const logQuery: ByRoleOptions = { name: "Log" };
+  expect(screen.getByRole("tab", logQuery).getAttribute("aria-selected")).toBe(
+    "true",
+  );
+  expect(document.activeElement?.id).toBe("heading-rust-release");
+  expect(scroll).toHaveBeenCalled();
+  const backQuery: ByRoleOptions = { name: "Features" };
+  await fireEvent.click(screen.getByRole("button", backQuery));
+  const openQuery: ByRoleOptions = { name: "Open workflow" };
+  await fireEvent.click(screen.getByRole("button", openQuery));
+  const featureQuery: ByRoleOptions = { name: "Feature log" };
+  expect(
+    screen.getByRole("tab", featureQuery).getAttribute("aria-selected"),
+  ).toBe("true");
 });
 it("preserves description and PR actions without selecting their card", async () => {
   const scenario = new SelectionScenario();
