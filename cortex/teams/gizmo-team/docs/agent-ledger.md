@@ -34,8 +34,8 @@ Resolve its location from any linked project worktree:
     checkout reuses its existing named directory and database.
   - All repositories share Bun in that location's `bun/` directory.
 
-Pass the consuming project path and a stable feature
-ID to every command. Do not use the library's repository as the project. The
+For development coordination commands, pass the consuming project path and a
+stable feature ID. Do not use the library's repository as the project. The
 feature ID stays fixed when a host session restarts. Reuse the ID and feature
 branch on follow-ups. Task IDs are scoped to their feature, so different features
 can reuse a task ID in their separate databases. Never create a database per task,
@@ -97,7 +97,7 @@ LEDGER_REQUEST
 This is a local discovery-and-call interface, similar to skill scripts. It is
 not an MCP JSON-RPC server. `Framework / Initialize` and `Framework / Info` run
 through the same typed YAML interface. `list` and `run` provide discovery and
-request execution; `dashboard` opens interactive observation for the current repository.
+request execution; `dashboard` opens Homeostat for global storage observation.
 
 Commands use `operation.group` and a group-specific `operation.command` with
 `name` and `arguments`. References such as `Task / Claim` below name that pair;
@@ -115,7 +115,7 @@ YAML/JSON are wire formats; the application operates on concrete Rust types.
 **Required:** discover the schema and send `action.kind: heartbeat` with the
 current revision and attempt from the previous response.
 
-## Workbench dashboard
+## Homeostat dashboard
 
 `meta-cortex dashboard` and typed `Workbench / Dashboard` requests observe
 recorded Turso ledger content without automatic claims, heartbeats, requeues,
@@ -124,7 +124,9 @@ migrations or other updates. Desktop provides an explicit
 feature; opening the dashboard and refreshing its catalog remain observational.
 It does not collect
 host agent state, runtime metadata, chat content, or Git work and authorship data.
-Git is used only to resolve the existing repository identity and storage path.
+Desktop does not discover a project, consult Git, or require an available checkout.
+Snapshot resolves the existing repository identity and storage path from its
+request project. Development coordination retains its project and Git requirements.
 For example, a recorded integration SHA is ledger evidence; its event actor
 identifies who recorded it, not who actually authored that Git commit.
 
@@ -134,46 +136,54 @@ identifies who recorded it, not who actually authored that Git commit.
 
 ### Open the dashboard
 
-1. Run the command from the consuming repository root, any subdirectory, or a
-   linked worktree, without a request file or required arguments:
+1. Run the installed command from any directory, including the user's home,
+   without a request file or required arguments:
 
    ```sh
    meta-cortex dashboard
    ```
 
-   It resolves the existing repository identity and feature storage from the
-   current directory, then opens the native Tauri Workbench window.
-2. The window opens on a split feature preview, newest activity first. Brief
-   cards show the title, precise first-task date, expandable objective, compact
-   progress, recorded roles, and PR links. The selected briefing adds the task
-   inventory, latest update, start/finish times, elapsed duration, and branch.
+   It opens the native Tauri Homeostat window and reads the application home.
+2. Select a stored repository group from the landing list. Each group shows its
+   stored name, repository UUID, and feature count. The UUID distinguishes
+   same-name clones; a retained group remains browsable after its
+   checkout is deleted.
+3. Browse that group's existing split feature preview, newest activity first.
+   Brief cards show the title, precise first-task date, expandable objective,
+   compact progress, recorded roles, and PR links. The selected briefing adds the
+   task inventory, latest update, start/finish times, elapsed duration, and branch.
    Select **Open workflow** for the first/default tab, the compact
    [Feature log](#feature-log). A task block opens that task's **Log** chapter
-   directly. A shared task index navigates
-   **Log** and **Time windows**. The
+   directly. A shared task index navigates **Log** and **Time windows**. The
    [Revision log](#revision-log-and-event-order) shows feature-local event order,
    task revisions, recording actors, time, and expandable evidence. Time windows
    show task creation through last update, including concurrent task lifetimes.
    PR links open in the system browser.
-3. Close the window to exit.
+4. Use breadcrumbs or Back to return from a journal to its group's feature list,
+   then to the repository list. A feature ID is always selected within its group;
+   identical feature IDs in different groups do not share journals.
+5. Close the window to exit.
 
 The shipped executable embeds its Svelte/TypeScript frontend assets. Native IPC
 reads bounded Workbench observations; no HTTP server or browser tab is required.
 Loading, empty results, and observation errors are shown in the window.
 
-**Prohibited:** tell the user a request file is required to open the current
-repository’s Features view.
+**Prohibited:** require Git discovery before opening Homeostat from `~`, or
+combine two same-name repositories' `alpha` journals into one feature.
 
-**Required:** run `meta-cortex dashboard` from that repository or its linked worktree.
+**Required:** run `meta-cortex dashboard` from `~`, select the intended name/UUID
+group, then open only that group's `alpha` journal. Return through the group's
+feature list using breadcrumbs or Back.
 
 ### Feature log
 
-**Open workflow** opens on **Feature log**, a concise journal of explicit
+Within the selected repository group and feature, **Open workflow** opens on
+**Feature log**, a concise journal of explicit
 [implementation outcomes](#record-implementation-outcomes) whose owning Git
 tasks have integrated. Each compact row shows the outcome summary, latest
 checkpoint recorder, and labeled task integration time. Expand a row for its
 detail, task, checkpoint and integration SHAs, and recorded evidence. Its task
-link opens that task's **Log** chapter.
+link opens that task's **Log** chapter in the same selected journal.
 
 - Outcomes come from the owning task's latest checkpoint complete set. The
   checkpoint event's SHA must match the integrated task's recorded checkpoint.
@@ -227,6 +237,19 @@ because RustDev recorded its checkpoint and IntegrationAgent recorded integratio
 integration actor and time in expanded evidence. Report deployment only from
 its own recorded result.
 
+#### Selected journal evidence
+
+Outcome rows, expanded checkpoint evidence, and task **Log** links belong to
+the current repository group and feature selection. Changing that selection
+removes the prior journal's results. A delayed observation reply for the prior
+selection cannot restore its rows or open its task evidence in the new journal.
+
+**Prohibited:** after selecting repository B's `alpha`, a late reply for
+repository A's `alpha` restores A's outcomes or its expanded checkpoint.
+
+**Required:** display only B's `alpha` journal and its task/checkpoint evidence.
+Discard A's late reply; use breadcrumbs or Back to select A intentionally.
+
 ### Browse agent roles
 
 The always-visible **Agent guide** button in the top bar opens the roles graph
@@ -239,7 +262,7 @@ feature activity.
    the graph.
 3. After following a bundled document link, select **Back to agent document**
    to return to the selected role document.
-4. Select **Workbench** to return to the feature journal.
+4. Select **Homeostat** to return to the prior browsing context.
 
 The guide is embedded at build time from the current shipped framework's
 canonical `cortex/teams/*/agents/*/AGENTS.md` files. Its content reflects the
@@ -251,7 +274,7 @@ assets without a runtime localhost server or retained preview JSON.
 **Required:** open **Agent guide** in an empty feature catalog, select a catalog
 agent, and read its bundled role documentation beside the graph. After opening
 a bundled protocol link, use **Back to agent document** to return to that role.
-Select **Workbench** to return to the feature journal within the native app.
+Select **Homeostat** to return to the prior browsing context within the native app.
 
 ### Advanced typed requests
 
@@ -278,16 +301,20 @@ Select **Workbench** to return to the feature journal within the native app.
    meta-cortex run --request dashboard.yaml > dashboard-output.yaml
    ```
 
-4. To open the native window for that project instead, replace the arguments
-   with only `mode: Desktop`; Desktop accepts no `view` or `page`.
+4. To open global Homeostat instead, replace the arguments with only
+   `mode: Desktop`; Desktop accepts no `view` or `page`. Keep the required
+   `project` envelope field, but Desktop ignores it for discovery and does not
+   require that path to exist or belong to Git.
 
 Both modes accept file or stdin requests. Snapshot reads once and returns the
 normal versioned YAML response with `data.kind: dashboard` and
 `data.value.content` containing the selected view’s text.
 
-**Prohibited:** expect `mode: Desktop` to produce a headless report.
+**Prohibited:** expect `mode: Desktop` to restrict browsing to its `project`, or
+to produce a headless report.
 
-**Required:** choose `mode: Snapshot` for scripted or redirected text output.
+**Required:** choose `mode: Snapshot` with the consuming project, view, and page
+for repository-scoped scripted output; choose `Desktop` for global browsing.
 
 ### Views and recorded fields
 
@@ -420,9 +447,10 @@ roles and activities when continuing the feature.
 
 ### Refresh and pages
 
-The native feature list reads up to 100 features, most recently active first;
-features without tasks follow in ID order. It notes when more exist and refreshes every five seconds; Pause stops automatic reads, Refresh
-reads at once, and Retry follows an observation failure. Selected workflow detail
+Within a selected repository group, the native feature list reads up to 100
+features, most recently active first; features without tasks follow in ID order.
+It notes when more exist and refreshes every five seconds; Pause stops automatic
+reads, Refresh reads at once, and Retry follows an observation failure. Selected workflow detail
 consumes all task/history pages and refreshes when recorded activity changes.
 Evidence repeated across revisions appears only when changed.
 
@@ -439,15 +467,29 @@ event can push an older event onto the next page.
 
 ### Storage requirements and errors
 
-`meta-cortex dashboard` reports a structured error with exit status `2` before
-opening the window when run outside Git or when repository identity is missing.
-It does not create identity to recover from these errors. An absent `features/`
-directory produces an empty catalog without creating storage.
+Homeostat discovers only existing repository groups at
+`~/.meta-cortex/<repo-name>/<repository-UUID>/features/<feature>.db`.
+`META_CORTEX_HOME` overrides the application home. Directory identity and the
+existing feature databases are sufficient; no checkout, repository identity file,
+or Git discovery is required for Desktop observation.
 
-The dashboard catalog reads only the resolved repository’s `features/<id>.db`
-files, independently. Opening the window, listing cards, and refreshing never
-migrate storage. One unavailable feature file does not hide other readable
-features. Old storage layouts are ignored and left untouched.
+- Startup and refresh do not initialize anything, write records, create databases
+  or directories, or automatically migrate storage.
+- An absent application home or absent feature storage produces a useful empty
+  view and remains absent. The empty view explains that no stored ledgers exist.
+- Groups are identified by stored name and UUID. Feature IDs are scoped to the
+  selected group, even when another group uses the same ID.
+- Desktop lists and reads each existing feature independently. One unavailable
+  file does not hide other readable features or repository groups.
+- Old storage layouts are ignored and left untouched; there is no fallback search
+  or import from shared `workbench.db` files.
+
+**Prohibited:** opening Homeostat from `~` initializes a repository, creates an
+absent application home, or searches old layouts to fill an empty landing list.
+
+**Required:** show an empty view without creating storage when the application
+home is absent. When retained groups exist, browse their existing feature files
+by name/UUID even after their checkouts have been deleted.
 
 - **Current schema:** the feature is available for detail observation.
 - **Supported older schema:** read-only metadata keeps the feature visible with
@@ -466,9 +508,11 @@ and keep independently readable features visible without changing any database.
 
 Detail observation requires the current schema. The observer uses a short
 250 ms database busy timeout. Desktop failures appear in the window; refresh to
-retry or close the window to exit. Snapshot failures return structured errors
-with exit status `2`. A schema error identifies the affected feature
-and version. Snapshot never upgrades storage. `Feature / List` and Snapshot feature listings
+retry or close the window to exit. Snapshot remains repository scoped: missing
+Git context or repository identity returns a structured error with exit status `2`
+without creating identity. Other Snapshot failures also return structured errors
+with exit status `2`. A schema error identifies the affected feature and version.
+Snapshot never upgrades storage. `Feature / List` and Snapshot feature listings
 also expose metadata availability without forcing detail reads.
 
 - **Prohibited:** treat an older feature's visible catalog metadata as proof that
@@ -481,8 +525,9 @@ also expose metadata availability without forcing detail reads.
 1. Select a feature whose catalog state reports a supported upgrade. Stop older
    writers before upgrading that feature under the
    [released format requirements](#released-format-support).
-2. Choose **Upgrade and open**. This explicit action uses the existing selected
-   Workbench open/migration path for that feature only under the
+2. Choose **Upgrade and open**. This explicit action opens and migrates the
+   existing feature database in the selected storage group without resolving Git
+   or a checkout, under the
    [migration contract](#versions-and-durable-contracts).
 3. Open the selected feature's detail after the operation succeeds. If it fails,
    show the concrete failure and retain the other catalog entries. Do not retry by
@@ -492,11 +537,12 @@ The action preserves historical JSON, ordering, and provenance under the existin
 migration contract. It does not migrate other features or read old storage layouts.
 Future schemas have no supported upgrade action.
 
-**Prohibited:** clicking **Upgrade and open** for `alpha` upgrades `beta`, or
-opening the dashboard performs that action without a click.
+**Prohibited:** clicking **Upgrade and open** for one group's `alpha` upgrades
+another group's `alpha` or `beta`, or opening the dashboard upgrades without a click.
 
-**Required:** upgrade only `alpha` after its explicit selection, then open its
-detail; leave `beta` and ignored old storage files unchanged.
+**Required:** after explicit selection, upgrade only that group's existing
+`alpha` database and open its detail, even without its checkout. Leave all other
+features and ignored old storage files unchanged.
 
 ## Record the entire feature workflow
 
@@ -999,10 +1045,11 @@ with feature/version context and leave committed data unchanged.
 
 ### Supported storage location
 
-Only `~/.meta-cortex/<repo-name>/<repo_id>/features/<feature>.db` in the resolved
-repository storage directory is supported. `META_CORTEX_HOME` still overrides
-the application home. Old shared `workbench.db` files and unnamed historical
-home layouts are ignored. Workbench never imports, deletes, or automatically
+Only `~/.meta-cortex/<repo-name>/<repo_id>/features/<feature>.db` is supported.
+Development commands resolve the repository group through the project identity;
+Homeostat discovers existing groups directly from application storage.
+`META_CORTEX_HOME` still overrides the application home. Old shared
+`workbench.db` files and unnamed historical home layouts are ignored. Workbench never imports, deletes, or automatically
 converts those files. Their presence does not populate an empty feature catalog.
 
 **Prohibited:** fall back to `workbench.db` when the repository’s `features/`
@@ -1032,8 +1079,9 @@ its meaning. Adding extension keys does not change a known schema version.
 - Before an upgrade that changes record shapes, preserve a consistent backup
   with all writers stopped.
 - To downgrade, restore that backup; do not rewrite newer records in place.
-- The database stays local to the repository. Push, clone, and ordinary source
-  commits do not copy it; separate clones or machines do not share this ledger.
+- The database stays in the local application home, grouped by repository. Push,
+  clone, and ordinary source commits do not copy it; separate clones or machines
+  do not share this ledger.
 
 **Prohibited:** accept version `99` using the version `1` decoder or discard
 history to make an upgrade work.
