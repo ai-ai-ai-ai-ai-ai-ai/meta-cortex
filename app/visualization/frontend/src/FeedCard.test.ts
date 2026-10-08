@@ -32,6 +32,7 @@ class FeedScenario {
       summary: "",
       checkpoint: { kind: "unrecorded" },
       evidence: [],
+      outcomes: [],
     };
   }
 }

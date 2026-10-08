@@ -605,6 +605,7 @@ fn integrated_work_is_the_latest_delivery_and_replaces_its_inputs_as_outcome() -
                 agent: worker,
                 attempt: task.common.attempt,
                 action: WorkerAction::Checkpoint {
+                    outcomes: Vec::new(),
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
                     commit: commit.clone(),
                     progress: Scenario::progress(),

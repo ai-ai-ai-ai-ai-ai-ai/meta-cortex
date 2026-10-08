@@ -238,6 +238,7 @@ impl RecordWriter<'_> {
 pub mod tests {
     use super::{EventTable, FeatureTable, RecordWriter, TaskTable};
     use crate::agents::{AgentId, GizmoAgent};
+    use crate::model::event_record::EventEnvelope;
     use crate::model::worker::WorkerIdentity;
     use crate::model::workflow::TaskOwnership;
     use crate::model::{
@@ -297,7 +298,7 @@ pub mod tests {
                 state: TaskState::Queued,
             };
             let event = Event {
-                version: RecordVersion::V1,
+                envelope: EventEnvelope::V1,
                 kind: EventKind::Created,
                 actor: AgentId::Gizmo(GizmoAgent::Gizmo),
                 note: feature.objective.clone(),

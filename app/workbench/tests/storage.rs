@@ -1,5 +1,6 @@
 use anyhow::{Context, bail};
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+use meta_cortex_workbench::model::event_record::EventEnvelope;
 use meta_cortex_workbench::model::workflow::TaskAssignment;
 use meta_cortex_workbench::model::{Event, EventKind, Progress, Task, Workspace};
 use meta_cortex_workbench::request::{
@@ -10,7 +11,7 @@ use meta_cortex_workbench::values::{
     BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::{
-    RecordVersion, StorageVersion, VersionFamily, VersionNumber, VersionParseError,
+    StorageVersion, VersionFamily, VersionNumber, VersionParseError,
 };
 use meta_cortex_workbench::{
     DataDirectory, FeatureCard, Ledger, LedgerError, PageIndex, Workbench,
@@ -241,7 +242,7 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
             )
             .await?;
             let event = Event {
-                version: RecordVersion::V1,
+                envelope: EventEnvelope::V1,
                 kind: EventKind::Progress,
                 actor: AgentId::Development(DevelopmentAgent::RustDev),
                 note: task.common.objective.clone(),

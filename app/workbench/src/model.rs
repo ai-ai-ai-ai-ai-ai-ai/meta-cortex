@@ -1,4 +1,6 @@
 use crate::values::WorkerId;
+pub mod checkpoint_outcome;
+pub mod event_record;
 mod task_record;
 pub mod worker;
 pub mod workflow;
@@ -10,6 +12,7 @@ use super::values::{
     Timestamp,
 };
 use super::versions::{RecordVersion, TaskRecordVersion};
+use event_record::EventEnvelope;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -171,9 +174,13 @@ pub enum EventKind {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
+#[serde(
+    try_from = "event_record::EventRecord",
+    into = "event_record::EventRecord"
+)]
+#[schemars(with = "event_record::EventV2")]
 pub struct Event {
-    pub version: RecordVersion,
+    pub envelope: EventEnvelope,
     pub kind: EventKind,
     pub actor: AgentId,
     pub note: Note,

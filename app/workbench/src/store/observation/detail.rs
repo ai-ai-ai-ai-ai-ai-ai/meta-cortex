@@ -1,11 +1,13 @@
 //! Complete, read-only task chapters for a selected feature. Pagination is consumed
 //! between short-lived WAL reads; no transaction is held while the UI is open.
 use super::StateMeaning;
+use super::feature_log::{FeatureLog, TaskLogSource};
 use super::revision_log::{RevisionLogEntry, SequencedEvent};
 use super::timeline::RecordedTimeline;
 use super::{FlowState, HistoryPage, Observation, PageEnd, PageIndex, TaskPage};
 use crate::LedgerError;
 use crate::agents::AgentId;
+use crate::model::checkpoint_outcome::CheckpointOutcome;
 use crate::model::worker::WorkerIdentity;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Checkpoint, Event, EventKind, Progress, Task, TaskState};
@@ -15,6 +17,7 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct FeatureWorkflow {
+    pub feature_log: FeatureLog,
     pub state_meanings: Vec<StateMeaning>,
     pub revision_log: Vec<RevisionLogEntry>,
     pub timeline: RecordedTimeline,
@@ -49,6 +52,7 @@ pub struct TaskChapter {
 }
 #[derive(Clone, Debug, Serialize, JsonSchema)]
 pub struct FeedEntry {
+    pub outcomes: Vec<CheckpointOutcome>,
     pub objective: Note,
     /// Worker identity from this event snapshot, never inferred from its actor.
     pub worker: WorkerIdentity,
@@ -86,6 +90,7 @@ impl Observation {
         tasks.sort_by_key(|task| task.common.created_at);
         let mut chapters = Vec::new();
         let mut revision_log = Vec::new();
+        let mut feature_log = FeatureLog::default();
         for task in tasks {
             let mut recorded = Vec::new();
             let mut page = PageIndex::FIRST;
@@ -108,6 +113,10 @@ impl Observation {
             recorded.sort_by_key(|record: &SequencedEvent| record.event.task.common.revision);
             recorded.dedup_by_key(|record| record.event.task.common.revision);
             recorded.retain(|record| record.event.task.common.revision <= task.common.revision);
+            feature_log = feature_log.include(TaskLogSource {
+                task: &task,
+                records: &recorded,
+            });
             let mut order = Vec::new();
             let mut events = Vec::new();
             for record in recorded {
@@ -132,6 +141,7 @@ impl Observation {
         revision_log.sort_by_key(|record| record.sequence);
         let timing = WorkflowTiming::from(chapters.as_slice());
         Ok(FeatureWorkflow {
+            feature_log: feature_log.ordered(),
             state_meanings: StateMeaning::all(),
             revision_log,
             timeline: RecordedTimeline::from(chapters.as_slice()),
@@ -211,6 +221,7 @@ impl From<ChapterSource> for TaskChapter {
             };
             checkpoint = event.task.common.checkpoint;
             entries.push(FeedEntry {
+                outcomes: event.envelope.outcomes().to_vec(),
                 objective: event.task.common.objective,
                 worker: event.task.worker,
                 kind: event.kind,
@@ -272,6 +283,7 @@ impl From<&[TaskChapter]> for WorkflowTiming {
 mod tests {
     use super::{ChapterSource, FeatureWorkflow, RecordedRole, TaskChapter, WorkflowTiming};
     use crate::agents::{AgentId, DevelopmentAgent};
+    use crate::model::event_record::EventEnvelope;
     use crate::model::worker::WorkerIdentity;
     use crate::model::workflow::{TaskAssignment, TaskOwnership};
     use crate::model::{
@@ -281,12 +293,13 @@ mod tests {
     use crate::values::{
         Attempt, CommitId, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
-    use crate::versions::{RecordVersion, TaskRecordVersion};
+    use crate::versions::TaskRecordVersion;
     use std::collections::BTreeMap;
 
     #[test]
     fn empty_workflow_exposes_an_explicit_empty_recorded_timeline() -> anyhow::Result<()> {
         let workflow = FeatureWorkflow {
+            feature_log: super::FeatureLog::default(),
             state_meanings: super::StateMeaning::all(),
             revision_log: Vec::new(),
             timeline: super::RecordedTimeline::from([].as_slice()),
@@ -341,7 +354,9 @@ mod tests {
         }
         fn event(task: Task) -> Event {
             Event {
-                version: RecordVersion::CURRENT,
+                envelope: EventEnvelope::V2 {
+                    outcomes: Vec::new(),
+                },
                 kind: EventKind::Progress,
                 actor: Self::agent(),
                 note: Note::Empty,

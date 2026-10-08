@@ -147,7 +147,7 @@ mod tests {
             Ok(StoredDocuments {
                 task: serde_json::to_string(task)?,
                 event: serde_json::to_string(&HistoricalEvent {
-                    version: event.version,
+                    version: RecordVersion::V1,
                     kind: event.kind.clone(),
                     actor: event.actor,
                     note: &event.note,

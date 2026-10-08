@@ -1,5 +1,6 @@
 //! Generate the UI sample through real public Workbench mutations and observation.
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+use meta_cortex_workbench::model::checkpoint_outcome::{CheckpointOutcome, OutcomeId};
 use meta_cortex_workbench::model::workflow::TaskAssignment;
 use meta_cortex_workbench::model::{Check, CheckOutcome, Progress, Workspace};
 use meta_cortex_workbench::request::{
@@ -7,7 +8,7 @@ use meta_cortex_workbench::request::{
     WorkerAction, WorkerUpdate,
 };
 use meta_cortex_workbench::values::{
-    BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, WorkerId,
+    BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, TaskId, WorkerId,
 };
 use meta_cortex_workbench::{DataDirectory, Workbench};
 use serde_json::Value;
@@ -22,7 +23,27 @@ fn main() -> anyhow::Result<()> {
     let repository = git2::Repository::init_opts(project.path(), &options)?;
     let signature = git2::Signature::now("Fixture", "fixture@example.invalid")?;
     let tree = repository.find_tree(repository.index()?.write_tree()?)?;
-    repository.commit(Some("HEAD"), &signature, &signature, "Fixture", &tree, &[])?;
+    let checkpoint = CommitId::try_from(
+        repository
+            .commit(Some("HEAD"), &signature, &signature, "Fixture", &tree, &[])?
+            .to_string(),
+    )?;
+    let worker_root = tempfile::tempdir()?;
+    let worker_path = worker_root.path().join("worker");
+    let worker_reference = repository
+        .branch(
+            "codex/release-implementation",
+            &repository.head()?.peel_to_commit()?,
+            false,
+        )?
+        .into_reference();
+    let mut worker_options = git2::WorktreeAddOptions::new();
+    worker_options.reference(Some(&worker_reference));
+    repository.worktree(
+        "release-implementation",
+        &worker_path,
+        Some(&worker_options),
+    )?;
     let workbench = Workbench::discover(project.path())?
         .with_data_directory(DataDirectory::from(data.path().to_owned()));
     Builder::new_current_thread()
@@ -62,7 +83,10 @@ fn main() -> anyhow::Result<()> {
                     objective: Note::from("Implement the release".to_owned()),
                     acceptance: vec![Note::from("Tests pass".to_owned())],
                     dependencies: Vec::new(),
-                    workspace: Workspace::ReadOnly,
+                    workspace: Workspace::Git {
+                        branch: BranchName::try_from("codex/release-implementation".to_owned())?,
+                        path: worker_path.clone(),
+                    },
                     progress: Progress {
                         summary: Note::Empty,
                         findings: Vec::new(),
@@ -91,6 +115,54 @@ fn main() -> anyhow::Result<()> {
                     ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 })
                 .await?;
+            let manifest = CheckpointOutcome {
+                id: OutcomeId::try_from("release-manifest".to_owned())?,
+                summary: Note::from("Updated the release manifest".to_owned()),
+                detail: Note::from(
+                    "Declared the supported release and package metadata.".to_owned(),
+                ),
+            };
+            let task = ledger
+                .update(WorkerUpdate {
+                    feature: feature.clone(),
+                    task: task.common.id,
+                    expected_revision: task.common.revision,
+                    agent,
+                    worker_id: WorkerId::EXAMPLE,
+                    attempt: task.common.attempt,
+                    action: WorkerAction::Checkpoint {
+                        outcomes: vec![manifest.clone()],
+                        ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                        commit: checkpoint.clone(),
+                        progress: progress.clone(),
+                    },
+                })
+                .await?;
+            let task = ledger
+                .update(WorkerUpdate {
+                    feature: feature.clone(),
+                    task: task.common.id,
+                    expected_revision: task.common.revision,
+                    agent,
+                    worker_id: WorkerId::EXAMPLE,
+                    attempt: task.common.attempt,
+                    action: WorkerAction::Checkpoint {
+                        outcomes: vec![
+                            manifest,
+                            CheckpointOutcome {
+                                id: OutcomeId::try_from("release-validation".to_owned())?,
+                                summary: Note::from("Validated the release package".to_owned()),
+                                detail: Note::from(
+                                    "Recorded the package checks for local integration.".to_owned(),
+                                ),
+                            },
+                        ],
+                        ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                        commit: checkpoint.clone(),
+                        progress: progress.clone(),
+                    },
+                })
+                .await?;
             let task = ledger
                 .update(WorkerUpdate {
                     feature: feature.clone(),
@@ -108,7 +180,7 @@ fn main() -> anyhow::Result<()> {
                     task: task.common.id,
                     expected_revision: task.common.revision,
                     actor,
-                    action: CoordinatorAction::Complete,
+                    action: CoordinatorAction::Integrate { commit: checkpoint },
                 })
                 .await?;
             let workflow = workbench.observe().await?.workflow(feature).await?;
