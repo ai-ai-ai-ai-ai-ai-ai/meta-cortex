@@ -21,7 +21,6 @@ export default {
           "agent-guide-content": ["virtual:agent-guide"],
           effect: ["effect"],
           "native-contracts": ["virtual:dashboard-validators"],
-          "agent-guide-content": ["virtual:agent-guide"],
           markdown: ["markdown-it", "markdown-it-anchor"],
           "diagram-drawing": ["d3"],
           "diagram-layout": ["dagre-d3-es"],
