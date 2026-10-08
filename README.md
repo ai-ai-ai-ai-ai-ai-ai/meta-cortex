@@ -312,21 +312,22 @@ operation:
 .\meta-cortexw.ps1 run --request info.yaml
 ```
 
-Open the native Workbench dashboard from your repository root:
+Open Homeostat from any directory with the installed command:
 
 ```powershell
-.\meta-cortexw.ps1 dashboard
+meta-cortex dashboard
 ```
 
-From an immediate `src` subdirectory, address the root launcher explicitly:
+If you use the repository launcher, supply its actual relative or absolute path
+from your current directory. For example, from an immediate `src` subdirectory:
 
 ```powershell
 Set-Location src
 ..\meta-cortexw.ps1 dashboard
 ```
 
-For any other subdirectory, use the actual relative or absolute path to the
-launcher. The caller's directory remains the dashboard's repository context.
+Homeostat reads stored repository groups from the application home. The caller's
+directory does not select a repository, and a checkout is not required.
 
 No request file or required arguments are needed. For headless text output,
 use an explicit project with `mode: Snapshot`:
@@ -347,9 +348,10 @@ operation:
 .\meta-cortexw.ps1 run --request dashboard.yaml > dashboard-output.yaml
 ```
 
-Use `mode: Desktop` without `view` or `page` to open the native window for that project.
-Workbench observation requires an existing repository
-identity and ledger; initialization of the framework alone does not create a ledger.
+Use `mode: Desktop` without `view` or `page` to open global Homeostat. The
+required `project` envelope field is retained but ignored by Desktop discovery.
+Snapshot requires an existing repository identity; framework initialization
+alone does not create a ledger.
 
 ### Harness instruction files
 
@@ -534,7 +536,8 @@ is distributed. The [framework source](cortex/) remains at the repository root.
 The native dashboard reads the existing ledger through the public Workbench
 observation API. The frontend's `dashboard_workflow` invocation reaches the
 [Tauri command handler](app/visualization/src/dashboard/desktop.rs), which calls
-`Workbench::observe` and `Observation::workflow` to return `FeatureWorkflow`.
+Workbench's storage observation API to return `FeatureWorkflow` for the
+selected repository group and feature.
 The handler remains a transport adapter; Workbench owns the read-only Turso
 access and the meaning of the returned workflow.
 
@@ -561,7 +564,8 @@ history available for Log navigation.
 #### Verification evidence
 
 Validate the native command path with Tauri's `MockRuntime` against a real
-repository ledger, checking the handler's projected reply and read-only behavior.
+stored feature ledger, checking the handler's projected reply and read-only
+behavior without requiring its checkout.
 That establishes command-to-Turso integration; it does not establish native
 window rendering. Report rendered-window or browser visual checks separately.
 
@@ -719,33 +723,29 @@ ownership, recovery, version compatibility, and local storage boundaries.
 
 ### Observe recorded work
 
-From your repository root, run:
+Run the installed command from any directory, including your home:
 
 ```sh
-./meta-cortexw dashboard
+meta-cortex dashboard
 ```
 
-From an immediate `src` subdirectory, address the root launcher explicitly:
+If you use a checked-out launcher, supply its actual relative or absolute path.
+For example, from an immediate `src` subdirectory:
 
 ```sh
 cd src
 ../meta-cortexw dashboard
 ```
 
-- Use the actual relative or absolute launcher path from any other subdirectory.
-- A linked worktree uses its checked-out root launcher in the same way.
-- The wrapper preserves the caller's directory, so the executable resolves that
-  repository or linked worktree.
-
 **Prohibited:** use `./meta-cortexw dashboard` from `src/` when the launcher
-exists only at the repository root.
+exists only at the repository root, or require a checkout to browse stored work.
 
-**Required:** use `../meta-cortexw dashboard` from that immediate subdirectory,
-or supply the launcher's actual path from a deeper directory.
+**Required:** use the launcher's actual path when developing locally. Use the
+installed `meta-cortex dashboard` from `~` to browse existing storage directly.
 
 - No request file or required arguments are needed.
-- The command resolves the existing repository identity and feature storage,
-  then opens the native Tauri Workbench window. Close the window to exit.
+- The command opens the native Tauri Homeostat window without project or Git
+  discovery. Close the window to exit.
 - The executable embeds the dashboard assets and reads through native IPC;
   no HTTP server is required.
 
@@ -753,7 +753,7 @@ The always-visible **Agent guide** button in the top bar opens the roles graph
 inside the same native window, including when the ledger catalog is empty.
 Select any catalog agent to read its canonical role documentation beside the
 graph. After following a bundled document link, **Back to agent document**
-returns to the selected role document. **Workbench** returns to the feature journal.
+returns to the selected role document. **Homeostat** returns to the prior browsing context.
 The executable bundles the guide at build time from the shipped framework's
 canonical `cortex/teams/*/agents/*/AGENTS.md` files. It does not load a localhost
 server or retained preview JSON at runtime.
@@ -761,7 +761,21 @@ server or retained preview JSON at runtime.
 - **Prohibited:** require a recorded feature or a localhost preview to read an agent role.
 - **Required:** open **Agent guide**, select a catalog agent, and read its bundled role documentation even with an empty feature catalog.
 
-The window opens on a split feature preview. Compact cards show the title,
+The landing list shows stored repository groups with their name, UUID, and
+feature count. Select a group to open its existing split feature
+preview. Same-name clones remain distinct by UUID; identical feature IDs in
+different groups remain separate. Stored groups stay browsable after their
+checkouts are deleted. Breadcrumbs and Back return from a journal to its group
+and then the landing list.
+
+**Prohibited:** merge two same-name groups' `alpha` features into one journal.
+
+**Required:** select the intended repository UUID, then browse only its `alpha`.
+Use breadcrumbs or Back to select a different group.
+
+#### Feature journal
+
+Within a group, compact feature cards show the title,
 precise first-task date, expandable description, task progress, recorded roles,
 and pull requests. Selecting a card opens a briefing with task inventory,
 latest recorded update, start and finish times, elapsed duration, and branch.
@@ -788,26 +802,44 @@ do not establish separate feature acceptance. The feature list covers the 100
 most recently active features and reports when more exist; a selected workflow
 loads every task and history page.
 
-Run `./meta-cortexw list` for advanced typed `Workbench / Dashboard` requests with
-an explicit project. `mode: Desktop` opens the native window; `mode: Snapshot`
-with a `view` and `page` returns headless text through
-`./meta-cortexw run --request dashboard.yaml > dashboard-output.yaml`.
+**Prohibited:** interpret overlapping time windows as proof that host agents ran
+continuously, or treat a recorded passed check as a new test run.
+
+**Required:** read the saved task history and check evidence; report recorded
+lifetimes separately from actual execution or fresh validation.
+
+#### Typed requests and storage
+
+Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests.
+`mode: Desktop` opens global Homeostat and ignores the required `project` envelope
+field for discovery. `mode: Snapshot` retains repository-scoped headless output
+with an explicit project, `view`, and `page`; redirect the result with
+`meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
-[dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#workbench-dashboard)
+[dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#homeostat-dashboard)
 for exact typed requests, views, fields, paging, refresh, and storage requirements.
-The command reports errors outside Git or when repository identity is missing.
-An absent `features/` directory produces an empty catalog. Only the resolved
-repository’s `features/<id>.db` files are read; older storage layouts are ignored
-and left untouched. Opening and refreshing the dashboard never migrate storage.
-Supported older features remain listed with an upgrade state; their detail stays
-closed until **Upgrade and open** upgrades only that selected feature. Future
-schemas and unreadable feature files show an unavailable state while other cards
-remain visible. The canonical guidance describes the supported metadata limits.
 
-- **Prohibited:** a refresh upgrades every older ledger or one future schema
-  blanks the whole feature list.
-- **Required:** keep available cards visible, label the affected feature,
+Homeostat follows the canonical storage boundary:
+
+- Read only existing groups at
+  `~/.meta-cortex/<repo-name>/<repository-UUID>/features/<feature>.db`, or the same
+  layout under `META_CORTEX_HOME`. Directory identity and existing databases
+  are sufficient.
+- Startup and refresh do not initialize repositories, write records, create
+  databases or directories, or automatically migrate storage.
+- An absent application home produces a useful empty view and stays absent.
+- Older storage layouts are ignored and left untouched.
+
+Supported older features remain listed with an upgrade state; their detail stays
+closed until **Upgrade and open** migrates only that selected group's existing
+feature database, without Git or a checkout. Future schemas and unreadable
+feature files show an unavailable state while other cards remain visible. The
+canonical guidance describes the supported metadata limits.
+
+- **Prohibited:** startup creates an absent application home, a refresh upgrades
+  older ledgers, or one future schema blanks the whole repository list.
+- **Required:** preserve absent storage, keep readable groups and features visible,
   and upgrade only the supported feature explicitly selected by the user.
 
 ## Cortex context declarations
