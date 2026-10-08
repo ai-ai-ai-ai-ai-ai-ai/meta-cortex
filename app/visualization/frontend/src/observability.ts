@@ -1,4 +1,5 @@
 import { Match, Predicate } from "effect";
+import type { EvidenceSelection } from "./feature-log";
 import type {
   FeatureSummary,
   FeatureWorkflow,
@@ -7,6 +8,7 @@ import type {
   EventKind,
   FlowState,
   Progress,
+  FeatureLogEntry,
 } from "./contracts";
 import { AgentLook } from "./presentation";
 import {
@@ -27,12 +29,46 @@ export enum Screen {
   Workflow = "Workflow",
 }
 export enum WorkflowView {
+  FeatureLog = "Feature log",
   Log = "Log",
   Windows = "Time windows",
   Revisions = "Revision log",
 }
+export enum WorkflowOpeningKind {
+  Feature = "Feature",
+  Task = "Task",
+}
+export type WorkflowOpening =
+  | { readonly kind: WorkflowOpeningKind.Feature }
+  | {
+      readonly kind: WorkflowOpeningKind.Task;
+      readonly task: FeatureLogEntry["task"];
+    };
+export class RecordedEventNavigation {
+  constructor(private readonly target: EvidenceSelection) {}
+  id(): string {
+    return `event-${this.target.task}-r${this.target.revision}`;
+  }
+  open(): void {
+    Match.value(document.getElementById(this.id())).pipe(
+      Match.when(Match.instanceOf(HTMLDetailsElement), (event) => {
+        event.open = true;
+        const position: ScrollIntoViewOptions = { block: "start" };
+        event.scrollIntoView(position);
+        Match.value(event.querySelector("summary")).pipe(
+          Match.when(Match.instanceOf(HTMLElement), (summary) =>
+            summary.focus(),
+          ),
+          Match.orElse(() => {}),
+        );
+      }),
+      Match.orElse(() => {}),
+    );
+  }
+}
 export class WorkflowTabs {
   static readonly VIEWS = [
+    WorkflowView.FeatureLog,
     WorkflowView.Log,
     WorkflowView.Windows,
     WorkflowView.Revisions,

@@ -8,8 +8,14 @@
     ArrowRight,
     FileText,
   } from "@lucide/svelte";
-  import { ActionLook, RecordedTime, EvidenceLook } from "./observability";
+  import {
+    ActionLook,
+    RecordedTime,
+    EvidenceLook,
+    RecordedEventNavigation,
+  } from "./observability";
   import RecordedDetail from "./RecordedDetail.svelte";
+  import type { EvidenceSelection } from "./feature-log";
   import { AgentLook } from "./presentation";
   interface Props {
     entry: FeedEntry;
@@ -18,11 +24,12 @@
   let { entry, task }: Props = $props();
   let look = $derived(new ActionLook(entry));
   let Icon = $derived(look.icon());
+  let target: EvidenceSelection = $derived({ task, revision: entry.revision });
 </script>
 
 <div class="window-event" data-type={entry.kind}>
   <span class="window-dot" aria-hidden="true"></span>
-  <details class="event">
+  <details class="event" id={new RecordedEventNavigation(target).id()}>
     <summary
       ><span class="event-icon"
         ><Icon size={16} strokeWidth={2} aria-hidden="true" /></span

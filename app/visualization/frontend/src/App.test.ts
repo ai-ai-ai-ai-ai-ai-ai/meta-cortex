@@ -6,6 +6,7 @@ import {
   screen,
   within,
   waitFor,
+  type ByRoleOptions as RoleQueryOptions,
 } from "@testing-library/svelte";
 import App from "./App.svelte";
 import { Fixture } from "./dashboard-fixture";
@@ -70,6 +71,8 @@ it("keeps the agent index across Log and Time windows, with revision metadata an
   );
   const index = screen.getByRole("navigation", { name: "Agent index" });
   expect(within(index).getByText("1. Rust Dev")).toBeTruthy();
+  const logQuery: RoleQueryOptions = { name: "Log" };
+  await fireEvent.click(screen.getByRole("tab", logQuery));
   expect(screen.getByText("· Task r2")).toBeTruthy();
   expect(screen.getByText("cargo test -p workbench")).toBeTruthy();
   await fireEvent.click(screen.getByRole("tab", { name: "Time windows" }));

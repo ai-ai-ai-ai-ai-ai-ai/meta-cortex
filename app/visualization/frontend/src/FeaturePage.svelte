@@ -14,7 +14,12 @@
     UpgradeKind,
     type UpgradeRequest,
   } from "./feature-upgrade.svelte";
-  import { FeatureFilter, Screen } from "./observability";
+  import {
+    FeatureFilter,
+    Screen,
+    WorkflowOpeningKind,
+    type WorkflowOpening,
+  } from "./observability";
   import FeatureMenuCard from "./FeatureCard.svelte";
   import FeatureBriefing from "./FeatureBriefing.svelte";
   import WorkflowPage from "./WorkflowPage.svelte";
@@ -28,7 +33,7 @@
   let filter = $state(FeatureFilter.All);
   let selected = $state("");
   let screen = $state(Screen.Features);
-  let task = $state("");
+  let opening = $state<WorkflowOpening>({ kind: WorkflowOpeningKind.Feature });
   const detail = new WorkflowController(new DashboardApi());
   const upgrade = new FeatureUpgrade(new DashboardApi());
   let filtered = $derived(
@@ -93,7 +98,7 @@
     selected = workflow.feature;
     detail.show(workflow);
     screen = Screen.Workflow;
-    task = "";
+    opening = { kind: WorkflowOpeningKind.Feature };
     refresh();
   }
   function upgradeSelected(card: FeatureCard): void {
@@ -103,8 +108,8 @@
     };
     upgrade.open(request);
   }
-  function open(id: string): void {
-    task = id;
+  function open(request: WorkflowOpening): void {
+    opening = request;
     screen = Screen.Workflow;
   }
 </script>
@@ -123,7 +128,7 @@
   {#each currentSummaries as summary (summary.feature.id)}<WorkflowPage
       {summary}
       workflow={detail.state.workflow}
-      initialTask={task}
+      {opening}
       back={() => (screen = Screen.Features)}
     />{/each}
 {:else}
