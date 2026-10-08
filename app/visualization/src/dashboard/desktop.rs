@@ -232,10 +232,10 @@ mod tests {
         use std::fs;
         use std::io::ErrorKind;
         use std::sync::Arc;
-        use tauri::WebviewWindowBuilder;
         use tauri::ipc::{CallbackFn, InvokeBody};
         use tauri::test::{INVOKE_KEY, get_ipc_response, mock_builder, mock_context, noop_assets};
         use tauri::webview::InvokeRequest;
+        use tauri::{Url, WebviewWindowBuilder};
         #[derive(serde::Serialize)]
         struct WorkflowInvocation {
             selection: StoredFeatureSelection,
@@ -341,13 +341,17 @@ mod tests {
             ])
             .build(mock_context(noop_assets()))?;
         let webview = WebviewWindowBuilder::new(&app, "main", Default::default()).build()?;
+        #[cfg(any(windows, target_os = "android"))]
+        let local_origin = "http://tauri.localhost".parse::<Url>()?;
+        #[cfg(not(any(windows, target_os = "android")))]
+        let local_origin = "tauri://localhost".parse::<Url>()?;
         for case in [
             IpcCase {
                 request: InvokeRequest {
                     cmd: "dashboard_read".to_owned(),
                     callback: CallbackFn(0),
                     error: CallbackFn(1),
-                    url: "tauri://localhost".parse()?,
+                    url: local_origin.clone(),
                     body: InvokeBody::Json(serde_json::to_value(CatalogInvocation {})?),
                     headers: Default::default(),
                     invoke_key: INVOKE_KEY.to_owned(),
@@ -359,7 +363,7 @@ mod tests {
                     cmd: "dashboard_features".to_owned(),
                     callback: CallbackFn(0),
                     error: CallbackFn(1),
-                    url: "tauri://localhost".parse()?,
+                    url: local_origin.clone(),
                     body: InvokeBody::Json(serde_json::to_value(RepositoryInvocation {
                         repository,
                     })?),
@@ -373,7 +377,7 @@ mod tests {
                     cmd: "dashboard_workflow".to_owned(),
                     callback: CallbackFn(0),
                     error: CallbackFn(1),
-                    url: "tauri://localhost".parse()?,
+                    url: local_origin.clone(),
                     body: InvokeBody::Json(serde_json::to_value(WorkflowInvocation {
                         selection: selection.clone(),
                     })?),
@@ -387,7 +391,7 @@ mod tests {
                     cmd: "dashboard_upgrade".to_owned(),
                     callback: CallbackFn(0),
                     error: CallbackFn(1),
-                    url: "tauri://localhost".parse()?,
+                    url: local_origin,
                     body: InvokeBody::Json(serde_json::to_value(WorkflowInvocation { selection })?),
                     headers: Default::default(),
                     invoke_key: INVOKE_KEY.to_owned(),
