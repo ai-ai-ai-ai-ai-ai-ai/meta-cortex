@@ -39,6 +39,9 @@
   let integrationMeanings = $derived(
     workflow.state_meanings.filter((meaning) => meaning.state === "integrated"),
   );
+  function focusHeading(node: HTMLElement): void {
+    node.focus();
+  }
   function jump(task: string): void {
     view = WorkflowView.Log;
     selected = { kind: WorkflowOpeningKind.Task, task };
@@ -97,7 +100,7 @@
     <button class="back-link" onclick={back}
       ><ArrowLeft size={14} />Features</button
     >
-    <h1>{new FeatureLook(summary).title()}</h1>
+    <h1 tabindex="-1" use:focusHeading>{new FeatureLook(summary).title()}</h1>
   </div>
   <PullRequests requests={summary.pull_requests} />
 </div>
