@@ -183,6 +183,7 @@ pub mod tests {
         DatabasePragma, EventTable, FeatureTable, LedgerSchema, StorageVersion, TaskTable,
     };
     use crate::agents::{AgentId, DevelopmentAgent};
+    use crate::model::event_record::EventEnvelope;
     use crate::model::workflow::TaskOwnership;
     use crate::model::{
         Checkpoint, ClaimAt, Event, EventKind, Feature, Progress, Task, TaskState, Workspace,
@@ -258,7 +259,7 @@ pub mod tests {
     impl From<Event> for LegacyEvent {
         fn from(event: Event) -> Self {
             Self {
-                version: event.version,
+                version: RecordVersion::V1,
                 kind: event.kind,
                 actor: event.actor,
                 note: event.note,
@@ -528,7 +529,7 @@ pub mod tests {
                 task.common.revision = task.common.revision.advance()?;
                 task.common.progress.summary = Note::from("Original claim evidence".to_owned());
                 let claimed = Event {
-                    version: RecordVersion::V1,
+                    envelope: EventEnvelope::V1,
                     kind: EventKind::Claimed,
                     actor: agent,
                     note: Note::from("Worker claimed the task".to_owned()),

@@ -2,6 +2,8 @@ use super::schema;
 use super::{Documents, Ledger};
 use crate::LedgerError;
 use crate::git::{CheckpointCheck, IntegrationCheck, ReadyCheck, Repository, TaskWorkspaceCheck};
+use crate::model::checkpoint_outcome::CheckpointOutcome;
+use crate::model::event_record::EventEnvelope;
 use crate::model::worker::WorkerIdentity;
 use crate::model::{
     Checkpoint, ClaimAt, Event, EventKind, Feature, Phase, Task, TaskState, WorkerAt,
@@ -10,7 +12,6 @@ use crate::request::{
     AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, WorkerAction, WorkerUpdate,
 };
 use crate::values::{Note, Timestamp};
-use crate::versions::RecordVersion;
 use turso::transaction::TransactionBehavior;
 
 struct TaskChange<'a> {
@@ -58,7 +59,9 @@ impl Ledger {
         task.common.last_update = Timestamp::now()?;
         let task = documents
             .save(Event {
-                version: RecordVersion::CURRENT,
+                envelope: EventEnvelope::V2 {
+                    outcomes: Vec::new(),
+                },
                 kind: EventKind::Assigned,
                 actor: input.actor,
                 note,
@@ -105,7 +108,9 @@ impl Ledger {
         task.common.last_update = now;
         let task = documents
             .save(Event {
-                version: RecordVersion::CURRENT,
+                envelope: EventEnvelope::V2 {
+                    outcomes: Vec::new(),
+                },
                 kind: EventKind::Claimed,
                 actor: input.agent,
                 note: Note::from("Assignment claimed".to_owned()),
@@ -188,6 +193,7 @@ impl TaskChange<'_> {
                 now: self.now,
             })?
             .clone();
+        let mut recorded_outcomes = Vec::new();
         let kind = match input.action {
             WorkerAction::Heartbeat { ttl_seconds } => {
                 assignment.expires_at = self.now.expires(ttl_seconds)?;
@@ -207,10 +213,13 @@ impl TaskChange<'_> {
                 EventKind::Progress
             }
             WorkerAction::Checkpoint {
+                outcomes,
                 ttl_seconds,
                 commit,
                 progress,
             } => {
+                CheckpointOutcome::require_distinct(&outcomes)?;
+                recorded_outcomes = outcomes;
                 self.repository.checkpoint(CheckpointCheck {
                     workspace: &self.task.workspace,
                     commit: &commit,
@@ -245,7 +254,9 @@ impl TaskChange<'_> {
         };
         self.task.common.last_update = self.now;
         Ok(Event {
-            version: RecordVersion::CURRENT,
+            envelope: EventEnvelope::V2 {
+                outcomes: recorded_outcomes,
+            },
             kind,
             actor: input.agent,
             note: self.task.common.progress.summary.clone(),
@@ -294,7 +305,9 @@ impl TaskChange<'_> {
         };
         self.task.common.last_update = self.now;
         Ok(Event {
-            version: RecordVersion::CURRENT,
+            envelope: EventEnvelope::V2 {
+                outcomes: Vec::new(),
+            },
             kind: details.kind,
             actor: input.actor,
             note: details.note,
@@ -399,7 +412,7 @@ mod tests {
                 .pop()
                 .ok_or_else(|| anyhow::anyhow!("claim event missing"))?;
             let legacy = LegacyEvent {
-                version: event.version,
+                version: RecordVersion::V1,
                 kind: event.kind,
                 actor: event.actor,
                 note: event.note,

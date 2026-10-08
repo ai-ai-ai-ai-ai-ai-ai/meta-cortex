@@ -147,6 +147,17 @@
         }
       ]
     },
+    "CheckpointOutcome": {
+      "additionalProperties": false,
+      "description": "An explicitly recorded completed implementation milestone included by a checkpoint.",
+      "properties": {
+        "detail": { "$ref": "#/$defs/Note" },
+        "id": { "$ref": "#/$defs/OutcomeId" },
+        "summary": { "$ref": "#/$defs/Note" }
+      },
+      "required": ["id", "summary", "detail"],
+      "type": "object"
+    },
     "Completion": {
       "description": "Finished work over all recorded work; cancelled tasks are closed but not finished.",
       "properties": {
@@ -299,6 +310,63 @@
         }
       ]
     },
+    "FeatureLog": {
+      "description": "Already ordered newest integration first, then original declaration order.",
+      "items": { "$ref": "#/$defs/FeatureLogEntry" },
+      "type": "array"
+    },
+    "FeatureLogCheckpoint": {
+      "properties": {
+        "commit": { "type": "string" },
+        "recorded": { "$ref": "#/$defs/FeatureLogEvidence" }
+      },
+      "required": ["commit", "recorded"],
+      "type": "object"
+    },
+    "FeatureLogEntry": {
+      "properties": {
+        "checkpoint": {
+          "$ref": "#/$defs/FeatureLogCheckpoint",
+          "description": "Latest complete-set reaffirmation, including the final checkpoint SHA."
+        },
+        "detail": { "$ref": "#/$defs/Note" },
+        "first_recorded": {
+          "$ref": "#/$defs/FeatureLogEvidence",
+          "description": "Earliest declaration of this stable task-local milestone identity."
+        },
+        "id": { "$ref": "#/$defs/OutcomeId" },
+        "integration": {
+          "$ref": "#/$defs/FeatureLogCheckpoint",
+          "description": "Actual recorded integration completion, independently of milestone time."
+        },
+        "summary": { "$ref": "#/$defs/Note" },
+        "task": { "type": "string" }
+      },
+      "required": [
+        "id",
+        "task",
+        "summary",
+        "detail",
+        "first_recorded",
+        "checkpoint",
+        "integration"
+      ],
+      "type": "object"
+    },
+    "FeatureLogEvidence": {
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/AgentId",
+          "description": "The agent that recorded this evidence, never Git authorship."
+        },
+        "at": { "format": "int64", "type": "integer" },
+        "provenance": { "$ref": "#/$defs/SequenceProvenance" },
+        "revision": { "format": "int64", "type": "integer" },
+        "sequence": { "$ref": "#/$defs/EventSequence" }
+      },
+      "required": ["at", "actor", "revision", "sequence", "provenance"],
+      "type": "object"
+    },
     "FeatureOutcome": {
       "description": "A task no other recorded task depends on: something the feature delivers.",
       "properties": {
@@ -352,6 +420,7 @@
           "type": "array"
         },
         "feature": { "type": "string" },
+        "feature_log": { "$ref": "#/$defs/FeatureLog" },
         "revision_log": {
           "items": { "$ref": "#/$defs/RevisionLogEntry" },
           "type": "array"
@@ -364,6 +433,7 @@
         "timing": { "$ref": "#/$defs/WorkflowTiming" }
       },
       "required": [
+        "feature_log",
         "state_meanings",
         "revision_log",
         "timeline",
@@ -386,6 +456,10 @@
         "kind": { "$ref": "#/$defs/EventKind" },
         "note": { "$ref": "#/$defs/Note" },
         "objective": { "$ref": "#/$defs/Note" },
+        "outcomes": {
+          "items": { "$ref": "#/$defs/CheckpointOutcome" },
+          "type": "array"
+        },
         "ownership": {
           "$ref": "#/$defs/TaskOwnership",
           "description": "Ownership recorded in this event snapshot, independent of its actor."
@@ -402,6 +476,7 @@
         }
       },
       "required": [
+        "outcomes",
         "objective",
         "worker",
         "kind",
@@ -464,6 +539,10 @@
       "type": "string"
     },
     "Note": { "type": "string" },
+    "OutcomeId": {
+      "description": "Stable identity within one task, independent of summary text or checkpoint SHA.",
+      "type": "string"
+    },
     "Page": {
       "description": "A page of bounded records. Each operation releases its connection before returning.",
       "properties": {

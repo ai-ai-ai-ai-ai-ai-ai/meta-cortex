@@ -8,9 +8,9 @@ use crate::store::sql::SqlStatement;
 use crate::values::{EventSequence, FeatureId, TaskId};
 use schemars::JsonSchema;
 use sea_query::{Expr, ExprTrait, Order, Query};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, JsonSchema)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum SequenceProvenance {
     LegacyStorageOrder,
     CommittedAppend,

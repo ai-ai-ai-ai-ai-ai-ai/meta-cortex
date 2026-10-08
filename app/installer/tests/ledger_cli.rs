@@ -358,6 +358,7 @@ fn linked_worktrees_share_feature_ledger_and_checkpoints() -> anyhow::Result<()>
         .run(Operation::Task(TaskOperation::Update(WorkerUpdate {
             worker_id: WorkerId::EXAMPLE,
             action: WorkerAction::Checkpoint {
+                outcomes: Vec::new(),
                 ttl_seconds: LeaseSeconds::TEN_MINUTES,
                 commit: commit.clone(),
                 progress: Examples::progress(Note::from("File added".to_owned())),

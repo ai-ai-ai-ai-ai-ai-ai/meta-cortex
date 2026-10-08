@@ -27,11 +27,12 @@ use std::{io, time::SystemTimeError};
 pub use store::catalog::{CatalogFeature, FeatureCatalog};
 pub use store::observation::{
     ActiveWork, Blocker, CatalogPage, Completion, FeatureActivity, FeatureCard, FeatureCards,
-    FeatureOutcome, FeatureSummary, FeatureWorkflow, FeedEntry, FlowCount, FlowState, HistoryPage,
-    LatestDelivery, Observation, Page, PageEnd, PageIndex, PullRequest, RecordedRole,
-    RecordedTimeline, RecordedWindow, RevisionLogEntry, SequenceProvenance, StateMeaning,
-    TaskChapter, TaskCount, TaskPage, TimelineExtent, TimelineGroup, TimelineGroupIdentity,
-    TimelineOrder, WorkflowCondition, WorkflowTiming, WorkflowTotals,
+    FeatureLog, FeatureLogCheckpoint, FeatureLogEntry, FeatureLogEvidence, FeatureOutcome,
+    FeatureSummary, FeatureWorkflow, FeedEntry, FlowCount, FlowState, HistoryPage, LatestDelivery,
+    Observation, Page, PageEnd, PageIndex, PullRequest, RecordedRole, RecordedTimeline,
+    RecordedWindow, RevisionLogEntry, SequenceProvenance, StateMeaning, TaskChapter, TaskCount,
+    TaskPage, TimelineExtent, TimelineGroup, TimelineGroupIdentity, TimelineOrder,
+    WorkflowCondition, WorkflowTiming, WorkflowTotals,
 };
 pub use store::{FeatureLoaded, Ledger, LedgerInfo};
 use store::{InitializeLedger, OpenLedger};

@@ -13,7 +13,7 @@ related: []
 rules:
 - id: local_feature:completion
   source: ../task-commits.md#finish-task-work
-  summary: Validate, consolidate requested task commits, and record final readiness.
+  summary: Validate, consolidate, reaffirm final checkpoint outcomes, and record readiness.
 - id: local_feature:repair
   source: ../task-commits.md#repair-the-assigned-revision
   summary: Repair assigned revisions directly; validate and return a commit.

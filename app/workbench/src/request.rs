@@ -1,4 +1,5 @@
 use super::agents::AgentId;
+use super::model::checkpoint_outcome::CheckpointOutcome;
 use super::model::workflow::TaskAssignment;
 use super::model::{Phase, Progress, Workspace};
 use super::values::{
@@ -89,6 +90,9 @@ pub enum WorkerAction {
         progress: Progress,
     },
     Checkpoint {
+        /// Complete replacement set; omitted or empty records no included milestones.
+        #[serde(default)]
+        outcomes: Vec<CheckpointOutcome>,
         ttl_seconds: LeaseSeconds,
         commit: CommitId,
         progress: Progress,

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte";
+  import { Effect } from "effect";
   import type { FeatureSummary, FeatureWorkflow } from "./contracts";
   import { ArrowLeft } from "@lucide/svelte";
   import {
@@ -10,8 +11,13 @@
     WorkflowTabs,
     ChapterLook,
     RecordedTime,
+    RecordedEventNavigation,
+    WorkflowOpeningKind,
+    type WorkflowOpening,
   } from "./observability";
   import RevisionLog from "./RevisionLog.svelte";
+  import FeatureLog from "./FeatureLog.svelte";
+  import type { EvidenceSelection } from "./feature-log";
   import Timeline from "./Timeline.svelte";
   import { TimelineScale } from "./timeline";
   import { WorkerTimeline } from "./worker-timeline";
@@ -21,22 +27,33 @@
   interface Props {
     summary: FeatureSummary;
     workflow: FeatureWorkflow;
-    initialTask: string;
+    opening: WorkflowOpening;
     back: () => void;
   }
-  let { summary, workflow, initialTask, back }: Props = $props();
-  let view = $state(WorkflowView.Log);
-  let selected = $derived(initialTask);
+  let { summary, workflow, opening, back }: Props = $props();
+  let view = $state(WorkflowView.FeatureLog);
+  let selected = $derived(opening);
   let look = $derived(new WorkflowLook(workflow));
   let chapters = $derived(new TimelineScale(workflow).chapters());
   let workers = $derived(new WorkerTimeline(workflow));
+  let integrationMeanings = $derived(
+    workflow.state_meanings.filter((meaning) => meaning.state === "integrated"),
+  );
   function focusHeading(node: HTMLElement): void {
     node.focus();
   }
   function jump(task: string): void {
     view = WorkflowView.Log;
-    selected = task;
-    new ChapterNavigation(selected).jump();
+    selected = { kind: WorkflowOpeningKind.Task, task };
+  }
+  function jumpEvidence(target: EvidenceSelection): void {
+    jump(target.task);
+    const afterRender = Effect.promise(tick).pipe(
+      Effect.andThen(
+        Effect.sync(() => new RecordedEventNavigation(target).open()),
+      ),
+    );
+    void Effect.runPromise(afterRender);
   }
   async function selectTab(tab: WorkflowView): Promise<void> {
     view = tab;
@@ -50,15 +67,31 @@
     }
   }
   $effect(() => {
+    switch (opening.kind) {
+      case WorkflowOpeningKind.Feature:
+        break;
+      case WorkflowOpeningKind.Task:
+        view = WorkflowView.Log;
+        break;
+    }
+  });
+  $effect(() => {
     switch (view) {
       case WorkflowView.Log:
-        new ChapterNavigation(selected).focus();
+        switch (selected.kind) {
+          case WorkflowOpeningKind.Feature:
+            break;
+          case WorkflowOpeningKind.Task:
+            new ChapterNavigation(selected.task).focus();
+            new ChapterNavigation(selected.task).jump();
+            break;
+        }
         break;
+      case WorkflowView.FeatureLog:
       case WorkflowView.Windows:
       case WorkflowView.Revisions:
         break;
     }
-    new ChapterNavigation(selected).jump();
   });
 </script>
 
@@ -93,7 +126,8 @@
         {#each row.chapters() as chapter (chapter.task.common.id)}
           <button
             class="task-link"
-            class:selected={selected === chapter.task.common.id}
+            class:selected={selected.kind === WorkflowOpeningKind.Task &&
+              selected.task === chapter.task.common.id}
             onclick={() => jump(chapter.task.common.id)}
             ><span class="copy"
               ><strong>{chapter.task.common.id}</strong><small
@@ -123,7 +157,16 @@
       aria-labelledby={WorkflowTabs.id(view)}
       tabindex="0"
     >
-      {#if view === WorkflowView.Log}<div class="feed">
+      {#if view === WorkflowView.FeatureLog}
+        {#each integrationMeanings as integrationMeaning (integrationMeaning.state)}
+          <FeatureLog
+            entries={workflow.feature_log}
+            {integrationMeaning}
+            onselect={jump}
+            onevidence={jumpEvidence}
+          />
+        {/each}
+      {:else if view === WorkflowView.Log}<div class="feed">
           {#each chapters as chapter (chapter.task.common.id)}{@const item =
               new ChapterLook(chapter)}
             <section class="task-chapter" id={`task-${chapter.task.common.id}`}>
@@ -166,11 +209,7 @@
       {:else if workflow.chapters.length}<Timeline
           {workflow}
           {selected}
-          onselect={(task: string) => {
-            selected = task;
-            view = WorkflowView.Log;
-            new ChapterNavigation(selected).jump();
-          }}
+          onselect={jump}
         />{:else}<p class="empty">{WorkflowLook.EMPTY_TIMELINE}</p>{/if}
     </div>
   </div>

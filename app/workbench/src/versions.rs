@@ -74,6 +74,39 @@ impl TryFrom<i64> for RecordVersion {
 pub(crate) enum TaskRecordVersionV2 {
     V2,
 }
+
+/// Event envelopes evolve independently of feature and task record shapes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(try_from = "i64", into = "i64")]
+#[schemars(with = "i64")]
+pub enum EventRecordVersion {
+    V1,
+    V2,
+}
+impl EventRecordVersion {
+    pub const CURRENT: Self = Self::V2;
+}
+impl From<EventRecordVersion> for i64 {
+    fn from(version: EventRecordVersion) -> Self {
+        match version {
+            EventRecordVersion::V1 => 1,
+            EventRecordVersion::V2 => 2,
+        }
+    }
+}
+impl TryFrom<i64> for EventRecordVersion {
+    type Error = VersionParseError;
+    fn try_from(version: i64) -> Result<Self, Self::Error> {
+        match version {
+            1 => Ok(Self::V1),
+            2 => Ok(Self::V2),
+            _ => Err(VersionParseError::Unsupported {
+                schema: VersionFamily::EventRecord,
+                version: VersionNumber::from(version),
+            }),
+        }
+    }
+}
 impl From<TaskRecordVersionV2> for i64 {
     fn from(version: TaskRecordVersionV2) -> Self {
         match version {
@@ -193,6 +226,8 @@ pub enum VersionFamily {
     Command,
     #[display("record")]
     Record,
+    #[display("event record")]
+    EventRecord,
     #[display("task record")]
     TaskRecord,
     #[display("database")]

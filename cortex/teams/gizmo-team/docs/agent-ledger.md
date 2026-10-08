@@ -152,8 +152,9 @@ identifies who recorded it, not who actually authored that Git commit.
    Brief cards show the title, precise first-task date, expandable objective,
    compact progress, recorded roles, and PR links. The selected briefing adds the
    task inventory, latest update, start/finish times, elapsed duration, and branch.
-   Open a task block or **Open workflow** to see task chapters. One shared index
-   navigates both **Log** and **Time windows** in the right panel. The
+   Select **Open workflow** for the first/default tab, the compact
+   [Feature log](#feature-log). A task block opens that task's **Log** chapter
+   directly. A shared task index navigates **Log** and **Time windows**. The
    [Revision log](#revision-log-and-event-order) shows feature-local event order,
    task revisions, recording actors, time, and expandable evidence. Time windows
    show task creation through last update, including concurrent task lifetimes.
@@ -173,6 +174,81 @@ combine two same-name repositories' `alpha` journals into one feature.
 **Required:** run `meta-cortex dashboard` from `~`, select the intended name/UUID
 group, then open only that group's `alpha` journal. Return through the group's
 feature list using breadcrumbs or Back.
+
+### Feature log
+
+Within the selected repository group and feature, **Open workflow** opens on
+**Feature log**, a concise journal of explicit
+[implementation outcomes](#record-implementation-outcomes) whose owning Git
+tasks have integrated. Each compact row shows the outcome summary, latest
+checkpoint recorder, and labeled task integration time. Expand a row for its
+detail, task, checkpoint and integration SHAs, and recorded evidence. Its task
+link opens that task's **Log** chapter in the same selected journal.
+
+- Outcomes come from the owning task's latest checkpoint complete set. The
+  checkpoint event's SHA must match the integrated task's recorded checkpoint.
+  Integration without recorded checkpoint inclusion supplies no outcome rows.
+  Missing checkpoint or integration history supplies no row; current task state
+  alone cannot reconstruct that evidence.
+- Ready, requeued, or cancelled tasks, reviews, coordination, heartbeats, and
+  ordinary progress do not become implementation outcomes. Historical checkpoints
+  without explicit outcomes remain missing; summaries, task titles, and Git data
+  are not substitutes.
+- Rows show the newest feature-local integration sequence first, with first
+  declaration sequence order within one integration. Recorded timestamps label
+  their own events; clock values do not override that sequence order.
+- A stable outcome ID identifies one milestone within its task. Reaffirmations
+  update that milestone's checkpoint evidence. Different IDs remain separate
+  even when their summaries or consolidated commit SHA are identical.
+
+**Prohibited:** turn every completed task into a row, collapse two outcomes
+named “Improve navigation,” or show a checkpoint time as integration completion.
+
+**Required:** show the two explicitly declared IDs after their owning Git task
+integrates. Label the checkpoint recording and task integration times separately;
+retain their distinct milestone identities and task evidence.
+
+#### Outcome evidence
+
+`FeatureWorkflow.feature_log` supplies each row's `id`, `task`, `summary`, and
+`detail`, with three evidence references:
+
+- **`first_recorded`**
+  - Earliest declaration of this task-local ID.
+  - Includes `at`, `actor`, `revision`, `sequence`, and `provenance`.
+- **`checkpoint`**
+  - Latest reaffirming checkpoint's `commit` and `recorded` reference.
+  - Its reference has the same fields as `first_recorded`.
+  - `checkpoint.recorded.actor` is the responsible recorder shown compactly.
+- **`integration`**
+  - Owning task's integration `commit` and `recorded` reference.
+  - Its reference has the same fields as `first_recorded`.
+  - `integration.recorded.at` is the task integration completion time.
+
+These actors identify who recorded evidence. They do not establish Git
+authorship. Task integration has the limits in
+[recorded state meanings](#recorded-state-meanings); it does not establish CI
+success, PR merge, deployment, or feature acceptance.
+
+**Prohibited:** describe the row as “RustDev authored and deployed this change”
+because RustDev recorded its checkpoint and IntegrationAgent recorded integration.
+
+**Required:** describe RustDev as the checkpoint recorder and retain the separate
+integration actor and time in expanded evidence. Report deployment only from
+its own recorded result.
+
+#### Selected journal evidence
+
+Outcome rows, expanded checkpoint evidence, and task **Log** links belong to
+the current repository group and feature selection. Changing that selection
+removes the prior journal's results. A delayed observation reply for the prior
+selection cannot restore its rows or open its task evidence in the new journal.
+
+**Prohibited:** after selecting repository B's `alpha`, a late reply for
+repository A's `alpha` restores A's outcomes or its expanded checkpoint.
+
+**Required:** display only B's `alpha` journal and its task/checkpoint evidence.
+Discard A's late reply; use breadcrumbs or Back to select A intentionally.
 
 ### Browse agent roles
 
@@ -643,7 +719,8 @@ workflow. The ledger records these resources; it does not create or merge them.
    update. Choose the action from the catalog:
    - `heartbeat` renews activity and expiration without claiming meaningful progress.
    - `progress` records findings, next steps, checks, and a working or blocked phase.
-   - `checkpoint` records a real commit from the task branch with continuation notes.
+   - `checkpoint` records a real commit from the task branch with continuation notes
+     and an explicit [implementation outcome set](#record-implementation-outcomes).
    - `ready` records the final result before sending the completion notification.
 5. Team Gizmo reads durable readiness and directs the integration agent. After
    merging and running the assigned combined checks, that agent records
@@ -704,6 +781,100 @@ heartbeat, or treat a successful database write as proof of passing tests.
 **Required:** commit a worker milestone, record its SHA and next steps, then
 continue on the worker branch until ready for integration.
 
+## Record implementation outcomes
+
+Workers record concise implementation outcomes at real Git checkpoints. These
+describe implemented behavior or durable guidance, rather than activity such as
+“started work” or “ran tests.” Progress and checks keep their existing evidence
+fields. The [Feature log](#feature-log) projects outcomes only after the owning
+Git task integrates with recorded checkpoint inclusion.
+
+### Declare checkpoint outcomes
+
+1. Commit the implemented milestone on the assigned task branch. Inspect its
+   changes and use the full valid checkpoint SHA.
+2. Send `Task / Update` with `action.kind: checkpoint` and `outcomes`. Each
+   outcome has a validated task-local `id`, a concise `summary`, and a `detail`
+   explaining the concrete result. Discover the current request with
+   `meta-cortex list`; use the active worker UUID, attempt, and returned revision.
+3. Supply the complete set of outcomes accepted at this checkpoint. IDs must be
+   unique within the set. Reuse an ID when updating or reaffirming the same
+   milestone; use distinct IDs for distinct milestones.
+4. Record findings, actual checks, and next steps in `progress` as before.
+   An unfinished checkpoint may record implemented milestones, but its task
+   remains active and those outcomes do not appear in Feature log yet.
+
+**Prohibited:** record `summary: Working on navigation` as an implementation
+outcome, or use a heartbeat to claim that a checkpoint was integrated.
+
+**Required:** record `summary: Add task links to the feature journal` with detail
+describing the implemented destination. Keep remaining work in `progress.next_steps`
+and wait for recorded task integration before presenting it in Feature log.
+
+### Reaffirm the complete final set
+
+Each checkpoint's `outcomes` replaces the prior complete set. Omission and an
+empty list both mean no outcomes at that checkpoint. An omitted milestone is
+not automatically included from an earlier private checkpoint. Readiness does
+not copy or restore earlier outcome declarations.
+
+1. Before final readiness, follow the
+   [task completion procedure](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#finish-task-work).
+   Consolidate private commits when required and validate the final SHA.
+2. Record a checkpoint at that final SHA with the complete accepted outcome set.
+   Reaffirm retained milestones using their existing IDs. Several milestones
+   may share this one consolidated SHA; equal summaries do not merge their IDs.
+3. Record readiness using the next returned revision. Send the final SHA and
+   validation evidence to Team Gizmo. Integration later supplies its own evidence;
+   the final checkpoint alone does not prove inclusion in the feature branch.
+
+For example, a worker has implemented both journal navigation and expandable
+evidence across private checkpoints. After consolidation, reaffirm both against
+the final commit. This illustrative request assumes revision `8`, attempt `1`,
+an active TechWriter claim, and a valid committed task HEAD. Replace all example
+identity, revision, and commit values with the observed assignment values:
+
+```yaml
+version: 1
+project: /absolute/project-docs
+operation:
+  group: Task
+  command:
+    name: Update
+    arguments:
+      feature: example-feature
+      task: journal-guidance
+      expected_revision: 8
+      agent: {team: Ai, role: TechWriter}
+      worker_id: 0fdfbf88-dcff-49b5-81a2-17eae97da30c
+      attempt: 1
+      action:
+        kind: checkpoint
+        ttl_seconds: 3600
+        commit: 0123456789abcdef0123456789abcdef01234567
+        outcomes:
+          - id: journal-navigation
+            summary: Document journal navigation
+            detail: Explain the default Feature log and links to task Log chapters.
+          - id: journal-evidence
+            summary: Document journal evidence
+            detail: Distinguish checkpoint recorder and time from task integration evidence.
+        progress:
+          summary: Journal guidance consolidated and validated at final task HEAD.
+          findings: []
+          next_steps: [Record readiness and hand the final SHA to Team Gizmo.]
+          checks: []
+          extensions: {}
+```
+
+**Prohibited:** send the final checkpoint with no `outcomes` and expect both
+private checkpoint milestones to survive, or reuse one ID for both milestones.
+
+**Required:** send both distinct IDs in the final complete set shown above.
+To remove journal evidence intentionally, send only `journal-navigation`; to
+remove the whole set, send `outcomes: []`. Historical declarations remain in
+history, but removed outcomes are absent from the current Feature log projection.
+
 ## Recovery and stale work
 
 A lease expiring is an observation, not proof the worker has stopped. There is
@@ -755,13 +926,29 @@ the recorded task plus any newer Git changes.
 ## Versions and durable contracts
 
 Command protocol, persisted record, and physical database versions are distinct.
-This release writes command, feature, and event-envelope version `1`, task
-record version `3`, and database version `6`. `Task / Claim` and `Task / Update`
+This release writes command and feature version `1`, event-envelope version `2`,
+task record version `3`, and database version `6`. `Task / Claim` and `Task / Update`
 require `worker_id`; discover their current request shapes with `meta-cortex list`.
 Task readers explicitly convert supported version `1` and `2` records into the
 current model with unrecorded worker identity. Version `1` ownership also remains
 unrecorded. Readers never invent historical workers or reporting lines. Historical
 envelopes, actors, revisions, attempts, timestamps, and evidence remain intact.
+
+### Checkpoint event records
+
+Event version `2` records the explicit checkpoint `outcomes` set. Typed readers
+retain version `1` events with no recorded outcomes; they never infer outcomes
+from historical progress, titles, or checks. Reading and migration preserve the
+historical JSON bytes. Outcomes belong to event evidence, so task record version
+`3`, `TaskCommon`, and database version `6` remain unchanged.
+
+**Prohibited:** backfill version `1` checkpoints from their progress summaries
+or rewrite their JSON as version `2` merely to populate Feature log.
+
+**Required:** retain their history and leave missing outcomes missing. Record
+explicit outcomes on a new valid checkpoint when continuing an assigned task.
+
+### Retained task records
 
 Version `1` task records retain their released flat format. Version `2` encloses
 stable fields in `common`: identity, objective, acceptance, dependencies, revision,
@@ -881,8 +1068,10 @@ reinterpret older JSON through a generic map or silently add defaults that chang
 its meaning. Adding extension keys does not change a known schema version.
 
 - Rebuild or install the current executable before using the new schema and
-  request contract. Stop older writers before upgrading; do not mix executable
-  versions against upgraded storage.
+  request contract. Before the first write of a newer record format, stop older
+  writers and move every active participant to the current executable. This
+  applies even when the physical database version is unchanged. Do not mix
+  executable versions against upgraded storage.
 - Validate migration using an isolated cloned ledger. Do not upgrade a
   live feature ledger merely to obtain test evidence while older writers still use it.
 - Migrations move forward. Current writers reject unsupported newer schemas
@@ -899,3 +1088,9 @@ history to make an upgrade work.
 
 **Required:** reject the unsupported version with an upgrade message, leaving
 its committed data intact.
+
+- **Prohibited:** leave an older executable writing because event version `2`
+  still uses database version `6`.
+- **Required:** stop older writers and move active participants to the current
+  executable before the first version `2` event write. An unchanged physical
+  schema does not establish compatibility with a newer event format.

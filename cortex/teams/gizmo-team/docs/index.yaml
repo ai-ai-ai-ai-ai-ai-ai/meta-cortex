@@ -9,7 +9,7 @@ entries:
     summary: Host capacity preflight, configuration approval, role settings, and launches.
   - title: Agent work ledger
     path: agent-ledger.md
-    summary: Feature workflow, Homeostat storage browsing, worker identity, durable progress, and recovery.
+    summary: Homeostat repository browsing, Feature log, checkpoint outcomes, workflow, and recovery.
   - title: Agent verification handoff
     path: agent-verification.md
     summary: Cataloged verification, Rust architecture and simplification review, repair routing, and integration readiness.

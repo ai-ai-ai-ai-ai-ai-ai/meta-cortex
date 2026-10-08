@@ -361,6 +361,7 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
     let worker = scenario.update(ActivityUpdate {
         task: worker,
         action: WorkerAction::Checkpoint {
+            outcomes: Vec::new(),
             ttl_seconds: LeaseSeconds::TEN_MINUTES,
             commit: commit.clone(),
             progress: Scenario::progress(Note::from("Implementation checkpoint".to_owned())),

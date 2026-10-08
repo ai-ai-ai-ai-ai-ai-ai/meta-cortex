@@ -7,17 +7,27 @@
     RecordedTime,
     ChapterLook,
     ActionLook,
+    WorkflowOpeningKind,
+    type WorkflowOpening,
   } from "./observability";
   import { AgentLook } from "./presentation";
   import PullRequests from "./PullRequests.svelte";
   interface Props {
     summary: FeatureSummary;
     workflow: FeatureWorkflow;
-    open: (task: string) => void;
+    open: (opening: WorkflowOpening) => void;
   }
   let { summary, workflow, open }: Props = $props();
   let feature = $derived(new FeatureLook(summary));
   let look = $derived(new WorkflowLook(workflow));
+  function openWorkflow(): void {
+    const opening: WorkflowOpening = { kind: WorkflowOpeningKind.Feature };
+    open(opening);
+  }
+  function openTask(task: string): void {
+    const opening: WorkflowOpening = { kind: WorkflowOpeningKind.Task, task };
+    open(opening);
+  }
 </script>
 
 <article class="feature-preview" aria-label="Selected feature">
@@ -31,7 +41,7 @@
   </div>
   <div class="briefing-title-row">
     <h2>{feature.title()}</h2>
-    <button class="primary-link" onclick={() => open("")}
+    <button class="primary-link" onclick={openWorkflow}
       >Open workflow<ArrowRight size={16} /></button
     >
   </div>
@@ -69,7 +79,7 @@
       <div class="task-blocks">
         {#each look.inventory() as chapter (chapter.task.common.id)}<button
             class={`task-block ${new ChapterLook(chapter).block()}`}
-            onclick={() => open(chapter.task.common.id)}
+            onclick={() => openTask(chapter.task.common.id)}
             title={`${new ChapterLook(chapter).agent()}: ${chapter.task.common.objective}`}
             aria-label={`Open task ${chapter.task.common.id}`}
           ></button>{/each}

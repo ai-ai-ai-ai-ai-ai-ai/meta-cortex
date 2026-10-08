@@ -6,7 +6,7 @@ import {
   screen,
   within,
   waitFor,
-  type ByRoleOptions,
+  type ByRoleOptions as RoleQueryOptions,
 } from "@testing-library/svelte";
 import App from "./App.svelte";
 import { Effect } from "effect";
@@ -29,7 +29,7 @@ afterEach(() => {
 });
 type NativeReply = DesktopCatalogReply | DesktopReply | FeatureWorkflow;
 class NativeFixture {
-  static readonly OPEN_REPOSITORY: ByRoleOptions = {
+  static readonly OPEN_REPOSITORY: RoleQueryOptions = {
     name: `Open meta-cortex, ${Fixture.REPOSITORY.repository_id}`,
   };
   constructor(readonly fixture: Fixture) {}
@@ -95,6 +95,8 @@ it("keeps the agent index across Log and Time windows, with revision metadata an
   );
   const index = screen.getByRole("navigation", { name: "Agent index" });
   expect(within(index).getByText("1. Rust Dev")).toBeTruthy();
+  const logQuery: RoleQueryOptions = { name: "Log" };
+  await fireEvent.click(screen.getByRole("tab", logQuery));
   expect(screen.getByText("· Task r2")).toBeTruthy();
   expect(screen.getByText("cargo test -p workbench")).toBeTruthy();
   await fireEvent.click(screen.getByRole("tab", { name: "Time windows" }));
@@ -153,14 +155,14 @@ it("preserves the last repository catalog when refresh fails and retries at the 
     message: "Repository catalog temporarily unavailable",
   };
   native.invoke.mockRejectedValueOnce(failure);
-  const refresh: ByRoleOptions = { name: "Refresh now" };
+  const refresh: RoleQueryOptions = { name: "Refresh now" };
   await fireEvent.click(screen.getByRole("button", refresh));
   const alert = await screen.findByRole("alert");
   expect(alert.textContent).toContain("Showing the last successful read");
   expect(
     screen.getByRole("button", NativeFixture.OPEN_REPOSITORY),
   ).toBeTruthy();
-  const retry: ByRoleOptions = { name: "Retry" };
+  const retry: RoleQueryOptions = { name: "Retry" };
   await fireEvent.click(within(alert).getByRole("button", retry));
   await waitFor(() => expect(native.invoke).toHaveBeenCalledTimes(3));
   expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read");

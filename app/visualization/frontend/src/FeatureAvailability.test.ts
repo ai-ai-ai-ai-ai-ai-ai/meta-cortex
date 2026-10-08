@@ -140,6 +140,10 @@ it("upgrades only the selected feature on explicit action, prevents repeat submi
   expect(native.invoke).toHaveBeenCalledWith("dashboard_upgrade", args);
   const workflowQuery: RoleQueryOptions = { name: "Agent index" };
   await screen.findByRole("navigation", workflowQuery);
+  const featureQuery: RoleQueryOptions = { name: "Feature log" };
+  expect(
+    screen.getByRole("tab", featureQuery).getAttribute("aria-selected"),
+  ).toBe("true");
   expect(
     native.invoke.mock.calls.filter((call) => call[0] === "dashboard_upgrade"),
   ).toHaveLength(1);

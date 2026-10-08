@@ -1,4 +1,90 @@
 {
+  "feature_log": [
+    {
+      "id": "release-manifest",
+      "task": "rust-release",
+      "summary": "Updated the release manifest",
+      "detail": "Declared the supported release and package metadata.",
+      "first_recorded": {
+        "at": 1791445782894,
+        "actor": {
+          "team": "Development",
+          "role": "RustDev"
+        },
+        "revision": 4,
+        "sequence": 4,
+        "provenance": "CommittedAppend"
+      },
+      "checkpoint": {
+        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "recorded": {
+          "at": 1791445782896,
+          "actor": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "revision": 5,
+          "sequence": 5,
+          "provenance": "CommittedAppend"
+        }
+      },
+      "integration": {
+        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "recorded": {
+          "at": 1791445782901,
+          "actor": {
+            "team": "Gizmo",
+            "role": "GizmoPrime"
+          },
+          "revision": 7,
+          "sequence": 7,
+          "provenance": "CommittedAppend"
+        }
+      }
+    },
+    {
+      "id": "release-validation",
+      "task": "rust-release",
+      "summary": "Validated the release package",
+      "detail": "Recorded the package checks for local integration.",
+      "first_recorded": {
+        "at": 1791445782896,
+        "actor": {
+          "team": "Development",
+          "role": "RustDev"
+        },
+        "revision": 5,
+        "sequence": 5,
+        "provenance": "CommittedAppend"
+      },
+      "checkpoint": {
+        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "recorded": {
+          "at": 1791445782896,
+          "actor": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "revision": 5,
+          "sequence": 5,
+          "provenance": "CommittedAppend"
+        }
+      },
+      "integration": {
+        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "recorded": {
+          "at": 1791445782901,
+          "actor": {
+            "team": "Gizmo",
+            "role": "GizmoPrime"
+          },
+          "revision": 7,
+          "sequence": 7,
+          "provenance": "CommittedAppend"
+        }
+      }
+    }
+  ],
   "state_meanings": [
     {
       "state": "queued",
@@ -57,6 +143,7 @@
       "sequence": 1,
       "provenance": "CommittedAppend",
       "entry": {
+        "outcomes": [],
         "objective": "Implement the release",
         "worker": {
           "kind": "Unrecorded"
@@ -74,7 +161,7 @@
         },
         "note": "Implement the release",
         "summary": "",
-        "at": 1791148839972,
+        "at": 1791445782889,
         "revision": 1,
         "evidence": [
           {
@@ -96,6 +183,7 @@
       "sequence": 2,
       "provenance": "CommittedAppend",
       "entry": {
+        "outcomes": [],
         "objective": "Implement the release",
         "worker": {
           "kind": "Unrecorded"
@@ -123,7 +211,7 @@
         },
         "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
         "summary": "",
-        "at": 1791148839973,
+        "at": 1791445782891,
         "revision": 2,
         "evidence": [
           {
@@ -145,6 +233,7 @@
       "sequence": 3,
       "provenance": "CommittedAppend",
       "entry": {
+        "outcomes": [],
         "objective": "Implement the release",
         "worker": {
           "kind": "Recorded",
@@ -176,7 +265,7 @@
               "role": "RustDev"
             },
             "attempt": 1,
-            "expires_at": 1791149439974,
+            "expires_at": 1791446382893,
             "phase": {
               "kind": "working"
             }
@@ -184,7 +273,7 @@
         },
         "note": "Assignment claimed",
         "summary": "",
-        "at": 1791148839974,
+        "at": 1791445782893,
         "revision": 3,
         "evidence": [
           {
@@ -206,6 +295,157 @@
       "sequence": 4,
       "provenance": "CommittedAppend",
       "entry": {
+        "outcomes": [
+          {
+            "id": "release-manifest",
+            "summary": "Updated the release manifest",
+            "detail": "Declared the supported release and package metadata."
+          }
+        ],
+        "objective": "Implement the release",
+        "worker": {
+          "kind": "Recorded",
+          "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+        },
+        "kind": "checkpoint",
+        "actor": {
+          "team": "Development",
+          "role": "RustDev"
+        },
+        "ownership": {
+          "kind": "Assigned",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "reports_to": {
+              "kind": "Gizmo",
+              "coordinator": "Gizmo"
+            }
+          }
+        },
+        "state": {
+          "kind": "active",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "attempt": 1,
+            "expires_at": 1791446382894,
+            "phase": {
+              "kind": "working"
+            }
+          }
+        },
+        "note": "Release implemented",
+        "summary": "Release implemented",
+        "at": 1791445782894,
+        "revision": 4,
+        "evidence": [
+          {
+            "summary": "Release implemented",
+            "findings": ["Checked the manifest"],
+            "next_steps": [],
+            "checks": [
+              {
+                "command": "cargo test -p workbench",
+                "outcome": "passed",
+                "evidence": "34 passed"
+              }
+            ],
+            "extensions": {
+              "review_report": "All checks passed"
+            }
+          }
+        ],
+        "checkpoint": {
+          "kind": "git",
+          "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+        }
+      }
+    },
+    {
+      "feature": "release-0-12-3",
+      "task": "rust-release",
+      "sequence": 5,
+      "provenance": "CommittedAppend",
+      "entry": {
+        "outcomes": [
+          {
+            "id": "release-manifest",
+            "summary": "Updated the release manifest",
+            "detail": "Declared the supported release and package metadata."
+          },
+          {
+            "id": "release-validation",
+            "summary": "Validated the release package",
+            "detail": "Recorded the package checks for local integration."
+          }
+        ],
+        "objective": "Implement the release",
+        "worker": {
+          "kind": "Recorded",
+          "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+        },
+        "kind": "checkpoint",
+        "actor": {
+          "team": "Development",
+          "role": "RustDev"
+        },
+        "ownership": {
+          "kind": "Assigned",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "reports_to": {
+              "kind": "Gizmo",
+              "coordinator": "Gizmo"
+            }
+          }
+        },
+        "state": {
+          "kind": "active",
+          "assignment": {
+            "agent": {
+              "team": "Development",
+              "role": "RustDev"
+            },
+            "attempt": 1,
+            "expires_at": 1791446382896,
+            "phase": {
+              "kind": "working"
+            }
+          }
+        },
+        "note": "Release implemented",
+        "summary": "Release implemented",
+        "at": 1791445782896,
+        "revision": 5,
+        "evidence": [
+          {
+            "summary": "",
+            "findings": [],
+            "next_steps": [],
+            "checks": [],
+            "extensions": {}
+          }
+        ],
+        "checkpoint": {
+          "kind": "unrecorded"
+        }
+      }
+    },
+    {
+      "feature": "release-0-12-3",
+      "task": "rust-release",
+      "sequence": 6,
+      "provenance": "CommittedAppend",
+      "entry": {
+        "outcomes": [],
         "objective": "Implement the release",
         "worker": {
           "kind": "Recorded",
@@ -239,23 +479,15 @@
         },
         "note": "Release implemented",
         "summary": "Release implemented",
-        "at": 1791148839975,
-        "revision": 4,
+        "at": 1791445782899,
+        "revision": 6,
         "evidence": [
           {
-            "summary": "Release implemented",
-            "findings": ["Checked the manifest"],
+            "summary": "",
+            "findings": [],
             "next_steps": [],
-            "checks": [
-              {
-                "command": "cargo test -p workbench",
-                "outcome": "passed",
-                "evidence": "34 passed"
-              }
-            ],
-            "extensions": {
-              "review_report": "All checks passed"
-            }
+            "checks": [],
+            "extensions": {}
           }
         ],
         "checkpoint": {
@@ -266,15 +498,16 @@
     {
       "feature": "release-0-12-3",
       "task": "rust-release",
-      "sequence": 5,
+      "sequence": 7,
       "provenance": "CommittedAppend",
       "entry": {
+        "outcomes": [],
         "objective": "Implement the release",
         "worker": {
           "kind": "Recorded",
           "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
         },
-        "kind": "completed",
+        "kind": "integrated",
         "actor": {
           "team": "Gizmo",
           "role": "GizmoPrime"
@@ -293,17 +526,13 @@
           }
         },
         "state": {
-          "kind": "completed",
-          "agent": {
-            "team": "Development",
-            "role": "RustDev"
-          },
-          "attempt": 1
+          "kind": "integrated",
+          "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
         },
-        "note": "Activity accepted by its coordinator",
+        "note": "Integration recorded by the integration owner",
         "summary": "Release implemented",
-        "at": 1791148839976,
-        "revision": 5,
+        "at": 1791445782901,
+        "revision": 7,
         "evidence": [
           {
             "summary": "",
@@ -322,8 +551,8 @@
   "timeline": {
     "extent": {
       "kind": "Recorded",
-      "started": 1791148839974,
-      "finished": 1791148839976
+      "started": 1791445782893,
+      "finished": 1791445782901
     },
     "groups": [
       {
@@ -346,10 +575,10 @@
             "task": "rust-release",
             "objective": "Implement the release",
             "revision": 3,
-            "summary_revision": 3,
-            "start": 1791148839974,
-            "end": 1791148839975,
-            "duration_ms": 1,
+            "summary_revision": 5,
+            "start": 1791445782893,
+            "end": 1791445782899,
+            "duration_ms": 6,
             "state": {
               "kind": "active",
               "assignment": {
@@ -358,7 +587,7 @@
                   "role": "RustDev"
                 },
                 "attempt": 1,
-                "expires_at": 1791149439974,
+                "expires_at": 1791446382893,
                 "phase": {
                   "kind": "working"
                 }
@@ -376,16 +605,16 @@
                 "role": "RustDev"
               }
             },
-            "summary": ""
+            "summary": "Release implemented"
           },
           {
             "task": "rust-release",
             "objective": "Implement the release",
-            "revision": 4,
-            "summary_revision": 4,
-            "start": 1791148839975,
-            "end": 1791148839976,
-            "duration_ms": 1,
+            "revision": 6,
+            "summary_revision": 6,
+            "start": 1791445782899,
+            "end": 1791445782901,
+            "duration_ms": 2,
             "state": {
               "kind": "ready",
               "agent": {
@@ -411,20 +640,16 @@
           {
             "task": "rust-release",
             "objective": "Implement the release",
-            "revision": 5,
-            "summary_revision": 5,
-            "start": 1791148839976,
-            "end": 1791148839976,
+            "revision": 7,
+            "summary_revision": 7,
+            "start": 1791445782901,
+            "end": 1791445782901,
             "duration_ms": 0,
             "state": {
-              "kind": "completed",
-              "agent": {
-                "team": "Development",
-                "role": "RustDev"
-              },
-              "attempt": 1
+              "kind": "integrated",
+              "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
             },
-            "status": "completed",
+            "status": "integrated",
             "worker": {
               "kind": "Recorded",
               "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
@@ -441,7 +666,7 @@
         ],
         "order": {
           "kind": "Recorded",
-          "at": 1791148839974
+          "at": 1791445782893
         }
       }
     ],
@@ -462,13 +687,14 @@
           "objective": "Implement the release",
           "acceptance": ["Tests pass"],
           "dependencies": [],
-          "revision": 5,
+          "revision": 7,
           "attempt": 1,
-          "created_at": 1791148839972,
-          "last_update": 1791148839976,
-          "last_progress": 1791148839975,
+          "created_at": 1791445782889,
+          "last_update": 1791445782901,
+          "last_progress": 1791445782899,
           "checkpoint": {
-            "kind": "unrecorded"
+            "kind": "git",
+            "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
           },
           "progress": {
             "summary": "Release implemented",
@@ -500,15 +726,13 @@
           }
         },
         "workspace": {
-          "kind": "read_only"
+          "kind": "git",
+          "branch": "codex/release-implementation",
+          "path": "/var/folders/gs/k7k3qrf546937s68q1tf_h900000gn/T/.tmpytYnH9/worker"
         },
         "state": {
-          "kind": "completed",
-          "agent": {
-            "team": "Development",
-            "role": "RustDev"
-          },
-          "attempt": 1
+          "kind": "integrated",
+          "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
         }
       },
       "role": {
@@ -518,9 +742,10 @@
           "role": "RustDev"
         }
       },
-      "status": "completed",
+      "status": "integrated",
       "entries": [
         {
+          "outcomes": [],
           "objective": "Implement the release",
           "worker": {
             "kind": "Unrecorded"
@@ -538,7 +763,7 @@
           },
           "note": "Implement the release",
           "summary": "",
-          "at": 1791148839972,
+          "at": 1791445782889,
           "revision": 1,
           "evidence": [
             {
@@ -554,6 +779,7 @@
           }
         },
         {
+          "outcomes": [],
           "objective": "Implement the release",
           "worker": {
             "kind": "Unrecorded"
@@ -581,7 +807,7 @@
           },
           "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
           "summary": "",
-          "at": 1791148839973,
+          "at": 1791445782891,
           "revision": 2,
           "evidence": [
             {
@@ -597,6 +823,7 @@
           }
         },
         {
+          "outcomes": [],
           "objective": "Implement the release",
           "worker": {
             "kind": "Recorded",
@@ -628,7 +855,7 @@
                 "role": "RustDev"
               },
               "attempt": 1,
-              "expires_at": 1791149439974,
+              "expires_at": 1791446382893,
               "phase": {
                 "kind": "working"
               }
@@ -636,7 +863,7 @@
           },
           "note": "Assignment claimed",
           "summary": "",
-          "at": 1791148839974,
+          "at": 1791445782893,
           "revision": 3,
           "evidence": [
             {
@@ -652,6 +879,145 @@
           }
         },
         {
+          "outcomes": [
+            {
+              "id": "release-manifest",
+              "summary": "Updated the release manifest",
+              "detail": "Declared the supported release and package metadata."
+            }
+          ],
+          "objective": "Implement the release",
+          "worker": {
+            "kind": "Recorded",
+            "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+          },
+          "kind": "checkpoint",
+          "actor": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "ownership": {
+            "kind": "Assigned",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "reports_to": {
+                "kind": "Gizmo",
+                "coordinator": "Gizmo"
+              }
+            }
+          },
+          "state": {
+            "kind": "active",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "attempt": 1,
+              "expires_at": 1791446382894,
+              "phase": {
+                "kind": "working"
+              }
+            }
+          },
+          "note": "Release implemented",
+          "summary": "Release implemented",
+          "at": 1791445782894,
+          "revision": 4,
+          "evidence": [
+            {
+              "summary": "Release implemented",
+              "findings": ["Checked the manifest"],
+              "next_steps": [],
+              "checks": [
+                {
+                  "command": "cargo test -p workbench",
+                  "outcome": "passed",
+                  "evidence": "34 passed"
+                }
+              ],
+              "extensions": {
+                "review_report": "All checks passed"
+              }
+            }
+          ],
+          "checkpoint": {
+            "kind": "git",
+            "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+          }
+        },
+        {
+          "outcomes": [
+            {
+              "id": "release-manifest",
+              "summary": "Updated the release manifest",
+              "detail": "Declared the supported release and package metadata."
+            },
+            {
+              "id": "release-validation",
+              "summary": "Validated the release package",
+              "detail": "Recorded the package checks for local integration."
+            }
+          ],
+          "objective": "Implement the release",
+          "worker": {
+            "kind": "Recorded",
+            "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
+          },
+          "kind": "checkpoint",
+          "actor": {
+            "team": "Development",
+            "role": "RustDev"
+          },
+          "ownership": {
+            "kind": "Assigned",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "reports_to": {
+                "kind": "Gizmo",
+                "coordinator": "Gizmo"
+              }
+            }
+          },
+          "state": {
+            "kind": "active",
+            "assignment": {
+              "agent": {
+                "team": "Development",
+                "role": "RustDev"
+              },
+              "attempt": 1,
+              "expires_at": 1791446382896,
+              "phase": {
+                "kind": "working"
+              }
+            }
+          },
+          "note": "Release implemented",
+          "summary": "Release implemented",
+          "at": 1791445782896,
+          "revision": 5,
+          "evidence": [
+            {
+              "summary": "",
+              "findings": [],
+              "next_steps": [],
+              "checks": [],
+              "extensions": {}
+            }
+          ],
+          "checkpoint": {
+            "kind": "unrecorded"
+          }
+        },
+        {
+          "outcomes": [],
           "objective": "Implement the release",
           "worker": {
             "kind": "Recorded",
@@ -685,23 +1051,15 @@
           },
           "note": "Release implemented",
           "summary": "Release implemented",
-          "at": 1791148839975,
-          "revision": 4,
+          "at": 1791445782899,
+          "revision": 6,
           "evidence": [
             {
-              "summary": "Release implemented",
-              "findings": ["Checked the manifest"],
+              "summary": "",
+              "findings": [],
               "next_steps": [],
-              "checks": [
-                {
-                  "command": "cargo test -p workbench",
-                  "outcome": "passed",
-                  "evidence": "34 passed"
-                }
-              ],
-              "extensions": {
-                "review_report": "All checks passed"
-              }
+              "checks": [],
+              "extensions": {}
             }
           ],
           "checkpoint": {
@@ -709,12 +1067,13 @@
           }
         },
         {
+          "outcomes": [],
           "objective": "Implement the release",
           "worker": {
             "kind": "Recorded",
             "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
           },
-          "kind": "completed",
+          "kind": "integrated",
           "actor": {
             "team": "Gizmo",
             "role": "GizmoPrime"
@@ -733,17 +1092,13 @@
             }
           },
           "state": {
-            "kind": "completed",
-            "agent": {
-              "team": "Development",
-              "role": "RustDev"
-            },
-            "attempt": 1
+            "kind": "integrated",
+            "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
           },
-          "note": "Activity accepted by its coordinator",
+          "note": "Integration recorded by the integration owner",
           "summary": "Release implemented",
-          "at": 1791148839976,
-          "revision": 5,
+          "at": 1791445782901,
+          "revision": 7,
           "evidence": [
             {
               "summary": "",
@@ -762,7 +1117,7 @@
   ],
   "timing": {
     "kind": "Finished",
-    "started": 1791148839972,
-    "finished": 1791148839976
+    "started": 1791445782889,
+    "finished": 1791445782901
   }
 }

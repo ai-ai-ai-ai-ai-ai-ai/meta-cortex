@@ -15,6 +15,7 @@ import type {
   DesktopFailure,
   StoredFeatureSelection,
   DesktopReply,
+  FeatureWorkflow,
 } from "./contracts";
 import type { WorkflowInvocation, RepositoryReadArguments } from "./api";
 import App from "./App.svelte";
@@ -28,6 +29,7 @@ vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 afterEach(() => {
   cleanup();
   native.invoke.mockReset();
+  Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
 class CloneScenario {
   static readonly GROUPS: ByRoleOptions = { name: "Choose a repository" };
@@ -36,6 +38,7 @@ class CloneScenario {
   static readonly WINDOWS: ByRoleOptions = { name: "Time windows" };
   static readonly JOURNAL: ByRoleOptions = { name: "Release 0 12 3", level: 1 };
   static readonly LOG: ByRoleOptions = { name: "Log" };
+  static readonly FEATURE_LOG: ByRoleOptions = { name: "Feature log" };
   static readonly REPOSITORIES: ByRoleOptions = { name: "Repositories" };
   static readonly BACK: ByRoleOptions = { name: "Back to repositories" };
   static readonly BREADCRUMB: ByRoleOptions = { name: "Breadcrumb" };
@@ -80,6 +83,11 @@ class CloneScenario {
   }
   empty(): DesktopReply {
     return { features: { records: [], end: "Complete" } };
+  }
+  outcomes(summary: string): FeatureWorkflow {
+    const workflow = this.fixture.workflow();
+    for (const entry of workflow.feature_log) entry.summary = summary;
+    return workflow;
   }
   async open(repository: RepositorySelection): Promise<void> {
     await fireEvent.click(
@@ -146,11 +154,118 @@ it("starts at repository groups, distinguishes same-name clones and scopes repea
   );
   await fireEvent.click(screen.getByRole("button", CloneScenario.OPEN));
   expect(
-    screen.getByRole("tab", CloneScenario.LOG).getAttribute("aria-selected"),
+    screen
+      .getByRole("tab", CloneScenario.FEATURE_LOG)
+      .getAttribute("aria-selected"),
   ).toBe("true");
   const breadcrumb = screen.getByRole("navigation", CloneScenario.BREADCRUMB);
   expect(breadcrumb.textContent).toContain(scenario.second.repository_id);
   expect(breadcrumb.textContent).toContain(scenario.fixture.summary.feature.id);
+});
+it("keeps outcome and exact revision navigation within the selected repository for repeated feature and task IDs", async () => {
+  const scenario = new CloneScenario();
+  scenario.install();
+  const scroll = vi.fn();
+  const boundary: PropertyDescriptor = { configurable: true, value: scroll };
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", boundary);
+  render(App);
+  const first = scenario.outcomes("First repository outcome");
+  native.invoke.mockResolvedValueOnce(scenario.fixture.reply());
+  native.invoke.mockResolvedValueOnce(first);
+  await scenario.open(scenario.first);
+  await screen.findByRole("article", CloneScenario.BRIEFING);
+  await fireEvent.click(screen.getByRole("button", CloneScenario.OPEN));
+  expect(
+    screen
+      .getByRole("tab", CloneScenario.FEATURE_LOG)
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  expect(screen.getAllByText("First repository outcome")).toHaveLength(
+    first.feature_log.length,
+  );
+  for (const entry of first.feature_log.slice(0, 1)) {
+    const checkpoint: ByRoleOptions = {
+      name: `Open checkpoint evidence for task ${entry.task}, revision ${entry.checkpoint.recorded.revision}`,
+    };
+    for (const button of screen.getAllByRole("button", checkpoint).slice(0, 1))
+      await fireEvent.click(button);
+    const event = document.getElementById(
+      `event-${entry.task}-r${entry.checkpoint.recorded.revision}`,
+    );
+    await waitFor(() => expect(event?.hasAttribute("open")).toBe(true));
+    expect(document.activeElement).toBe(event?.querySelector("summary"));
+    expect(
+      screen.getByRole("tab", CloneScenario.LOG).getAttribute("aria-selected"),
+    ).toBe("true");
+  }
+  await scenario.back(CloneScenario.REPOSITORIES);
+  const second = scenario.outcomes("Second repository outcome");
+  native.invoke.mockResolvedValueOnce(scenario.fixture.reply());
+  native.invoke.mockResolvedValueOnce(second);
+  await scenario.open(scenario.second);
+  await screen.findByRole("article", CloneScenario.BRIEFING);
+  expect(native.invoke).toHaveBeenLastCalledWith(
+    "dashboard_workflow",
+    scenario.workflowRequest(scenario.second),
+  );
+  await fireEvent.click(screen.getByRole("button", CloneScenario.OPEN));
+  expect(screen.queryAllByText("First repository outcome")).toHaveLength(0);
+  expect(screen.getAllByText("Second repository outcome")).toHaveLength(
+    second.feature_log.length,
+  );
+  expect(
+    screen
+      .getByRole("tab", CloneScenario.FEATURE_LOG)
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  for (const entry of second.feature_log.slice(0, 1)) {
+    const evidence = screen
+      .getByRole("tabpanel", CloneScenario.FEATURE_LOG)
+      .querySelectorAll(".outcome-evidence > summary");
+    for (const summary of Array.from(evidence).slice(0, 1))
+      await fireEvent.click(summary);
+    const integration: ByRoleOptions = {
+      name: `Integration evidence · r${entry.integration.recorded.revision}`,
+    };
+    for (const button of screen.getAllByRole("button", integration).slice(0, 1))
+      await fireEvent.click(button);
+    const event = document.getElementById(
+      `event-${entry.task}-r${entry.integration.recorded.revision}`,
+    );
+    await waitFor(() => expect(event?.hasAttribute("open")).toBe(true));
+    expect(document.activeElement).toBe(event?.querySelector("summary"));
+  }
+  expect(scroll).toHaveBeenCalled();
+});
+it("discards a previous repository's delayed workflow before opening same-ID outcomes in another repository", async () => {
+  const scenario = new CloneScenario();
+  scenario.install();
+  render(App);
+  native.invoke.mockResolvedValueOnce(scenario.fixture.reply());
+  native.invoke.mockImplementationOnce(() =>
+    Effect.runPromise(
+      Effect.sleep("100 millis").pipe(
+        Effect.as(scenario.outcomes("Stale repository outcome")),
+      ),
+    ),
+  );
+  await scenario.open(scenario.first);
+  await screen.findByText("Reading workflow…");
+  await scenario.back(CloneScenario.BACK);
+  native.invoke.mockResolvedValueOnce(scenario.fixture.reply());
+  native.invoke.mockResolvedValueOnce(
+    scenario.outcomes("Current repository outcome"),
+  );
+  await scenario.open(scenario.second);
+  await screen.findByRole("article", CloneScenario.BRIEFING);
+  await fireEvent.click(screen.getByRole("button", CloneScenario.OPEN));
+  await Effect.runPromise(Effect.sleep("150 millis"));
+  expect(screen.queryAllByText("Stale repository outcome")).toHaveLength(0);
+  expect(screen.getAllByText("Current repository outcome")).toHaveLength(2);
+  expect(native.invoke).toHaveBeenLastCalledWith(
+    "dashboard_workflow",
+    scenario.workflowRequest(scenario.second),
+  );
 });
 it("cancels a previous group's delayed feature read before opening another group", async () => {
   const scenario = new CloneScenario();
