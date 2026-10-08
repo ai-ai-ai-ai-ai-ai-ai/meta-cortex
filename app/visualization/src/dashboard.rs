@@ -11,7 +11,9 @@ use serde::{Deserialize, Serialize};
 use std::io;
 use thiserror::Error;
 
-pub use desktop::{DesktopContract, DesktopFailure, DesktopLaunch, DesktopReply};
+pub use desktop::{
+    DesktopCatalogReply, DesktopContract, DesktopFailure, DesktopLaunch, DesktopReply,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", deny_unknown_fields)]
@@ -21,7 +23,7 @@ pub enum DashboardView {
     Task { query: TaskQuery },
     History { query: TaskQuery },
 }
-/// `Desktop` opens the native Workbench dashboard; `Snapshot` returns one view as text.
+/// `Desktop` opens Homeostat for global stored repositories; `Snapshot` returns one view as text.
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "mode", deny_unknown_fields)]
 pub enum DashboardRequest {
@@ -75,10 +77,7 @@ impl Dashboard {
                 }))
             }
             DashboardRequest::Desktop {} => {
-                self.workbench.observe().await?;
-                Ok(DashboardExecution::Desktop(DesktopLaunch {
-                    workbench: self.workbench,
-                }))
+                Ok(DashboardExecution::Desktop(DesktopLaunch::discover()?))
             }
         }
     }

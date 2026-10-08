@@ -1,15 +1,48 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { Effect } from "effect";
-import { DashboardApi, ReadFailureKind } from "./api";
+import {
+  DashboardApi,
+  NativeCommand,
+  ReadFailureKind,
+  type RepositoryReadArguments,
+  type InvalidNativeReply,
+  type NativeTransportFailure,
+} from "./api";
 import type {
   DesktopFailure,
   DesktopReply,
   FeatureWorkflow,
+  StoredFeatureSelection,
+  RepositorySelection,
+  PageEnd,
 } from "./contracts";
 import { Fixture } from "./dashboard-fixture";
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
 afterEach(() => native.invoke.mockReset());
+type InvalidReplyProjection = Pick<InvalidNativeReply, "kind">;
+type TransportFailureProjection = Pick<NativeTransportFailure, "kind">;
+interface InvalidReplyExpectation {
+  _tag: "Failure";
+  failure: InvalidReplyProjection;
+}
+interface TransportFailureExpectation {
+  _tag: "Failure";
+  failure: TransportFailureProjection;
+}
+/** Deliberately omits repository_id to exercise the catalog decoder. */
+type IncompleteRepositoryIdentity = Pick<RepositorySelection, "name">;
+interface IncompleteRepositoryCatalog {
+  repositories: IncompleteRepositoryPage;
+}
+interface IncompleteRepositoryPage {
+  end: PageEnd;
+  records: ReadonlyArray<IncompleteRepositoryCard>;
+}
+interface IncompleteRepositoryCard {
+  repository: IncompleteRepositoryIdentity;
+  feature_count: number;
+}
 interface InvalidInput {
   name: string;
   raw: unknown;
@@ -95,12 +128,14 @@ const invalidReplies: ReadonlyArray<InvalidInput> = [
 it.each(invalidReplies)("rejects native $name", async ({ raw }) => {
   native.invoke.mockResolvedValueOnce(raw);
   const result = await Effect.runPromise(
-    Effect.result(new DashboardApi().read()),
+    Effect.result(new DashboardApi().features(Fixture.REPOSITORY)),
   );
-  expect(result).toMatchObject({
+  const rejected: InvalidReplyExpectation = {
     _tag: "Failure",
-    failure: { kind: ReadFailureKind.InvalidReply, cause: raw },
-  });
+    failure: { kind: ReadFailureKind.InvalidReply },
+  };
+  expect(result).toMatchObject(rejected);
+  expect(result).not.toHaveProperty("failure.cause");
 });
 const invalidFailures: ReadonlyArray<InvalidInput> = [
   {
@@ -115,12 +150,14 @@ it.each(invalidFailures)(
   async ({ raw }) => {
     native.invoke.mockRejectedValueOnce(raw);
     const result = await Effect.runPromise(
-      Effect.result(new DashboardApi().read()),
+      Effect.result(new DashboardApi().features(Fixture.REPOSITORY)),
     );
-    expect(result).toMatchObject({
+    const rejected: TransportFailureExpectation = {
       _tag: "Failure",
-      failure: { kind: ReadFailureKind.Transport, cause: raw },
-    });
+      failure: { kind: ReadFailureKind.Transport },
+    };
+    expect(result).toMatchObject(rejected);
+    expect(result).not.toHaveProperty("failure.cause");
   },
 );
 const failures: DesktopFailure[] = [
@@ -131,7 +168,9 @@ const failures: DesktopFailure[] = [
 it.each(failures)("preserves native $kind failure", async (failure) => {
   native.invoke.mockRejectedValueOnce(failure);
   expect(
-    await Effect.runPromise(Effect.result(new DashboardApi().read())),
+    await Effect.runPromise(
+      Effect.result(new DashboardApi().features(Fixture.REPOSITORY)),
+    ),
   ).toMatchObject({ _tag: "Failure", failure });
 });
 it("validates native replies and preserves Unicode and permitted extensions", async () => {
@@ -142,17 +181,26 @@ it("validates native replies and preserves Unicode and permitted extensions", as
     extra: "allowed by schema",
   };
   native.invoke.mockResolvedValueOnce(extended);
-  expect(await Effect.runPromise(new DashboardApi().read())).toEqual(extended);
-  expect(native.invoke).toHaveBeenCalledWith("dashboard_read");
+  expect(
+    await Effect.runPromise(new DashboardApi().features(Fixture.REPOSITORY)),
+  ).toEqual(extended);
+  const request: RepositoryReadArguments = { repository: Fixture.REPOSITORY };
+  expect(native.invoke).toHaveBeenCalledWith("dashboard_features", request);
   native.invoke.mockResolvedValueOnce(reply);
-  expect(await Effect.runPromise(new DashboardApi().read())).toEqual(reply);
+  expect(
+    await Effect.runPromise(new DashboardApi().features(Fixture.REPOSITORY)),
+  ).toEqual(reply);
 });
 
 it("validates full workflow replies and rejects a malformed event", async () => {
   const workflow = new Fixture().workflow();
+  const selection: StoredFeatureSelection = {
+    repository: Fixture.REPOSITORY,
+    feature: workflow.feature,
+  };
   native.invoke.mockResolvedValueOnce(workflow);
   expect(
-    await Effect.runPromise(new DashboardApi().workflow(workflow.feature)),
+    await Effect.runPromise(new DashboardApi().workflow(selection)),
   ).toEqual(workflow);
   native.invoke.mockResolvedValueOnce({
     ...workflow,
@@ -160,7 +208,7 @@ it("validates full workflow replies and rejects a malformed event", async () => 
   });
   expect(
     await Effect.runPromise(
-      Effect.result(new DashboardApi().workflow(workflow.feature)),
+      Effect.result(new DashboardApi().workflow(selection)),
     ),
   ).toMatchObject({
     _tag: "Failure",
@@ -169,15 +217,11 @@ it("validates full workflow replies and rejects a malformed event", async () => 
 });
 
 interface UpgradeArguments {
-  feature: string;
+  selection: StoredFeatureSelection;
 }
 /** Deliberately incomplete native payload exercises the workflow decoder. */
 interface IncompleteWorkflowReply {
   feature: FeatureWorkflow["feature"];
-}
-interface InvalidUpgradeExpectation {
-  _tag: "Failure";
-  failure: { kind: ReadFailureKind.InvalidReply };
 }
 interface NativeUpgradeExpectation {
   _tag: "Failure";
@@ -186,21 +230,27 @@ interface NativeUpgradeExpectation {
 
 it("validates selected upgrade replies and preserves native failures", async () => {
   const workflow: FeatureWorkflow = new Fixture().workflow();
+  const selection: StoredFeatureSelection = {
+    repository: Fixture.REPOSITORY,
+    feature: workflow.feature,
+  };
   native.invoke.mockResolvedValueOnce(workflow);
   expect(
-    await Effect.runPromise(new DashboardApi().upgrade(workflow.feature)),
+    await Effect.runPromise(new DashboardApi().upgrade(selection)),
   ).toEqual(workflow);
-  const args: UpgradeArguments = { feature: workflow.feature };
+  const args: UpgradeArguments = {
+    selection: { repository: Fixture.REPOSITORY, feature: workflow.feature },
+  };
   expect(native.invoke).toHaveBeenCalledWith("dashboard_upgrade", args);
   const malformed: IncompleteWorkflowReply = { feature: workflow.feature };
   native.invoke.mockResolvedValueOnce(malformed);
-  const invalid: InvalidUpgradeExpectation = {
+  const invalid: InvalidReplyExpectation = {
     _tag: "Failure",
     failure: { kind: ReadFailureKind.InvalidReply },
   };
   expect(
     await Effect.runPromise(
-      Effect.result(new DashboardApi().upgrade(workflow.feature)),
+      Effect.result(new DashboardApi().upgrade(selection)),
     ),
   ).toMatchObject(invalid);
   const failure: DesktopFailure = { kind: "Ledger", message: "Upgrade failed" };
@@ -208,7 +258,61 @@ it("validates selected upgrade replies and preserves native failures", async () 
   const rejected: NativeUpgradeExpectation = { _tag: "Failure", failure };
   expect(
     await Effect.runPromise(
-      Effect.result(new DashboardApi().upgrade(workflow.feature)),
+      Effect.result(new DashboardApi().upgrade(selection)),
     ),
   ).toMatchObject(rejected);
+});
+it("validates the global repository catalog separately from scoped feature pages", async () => {
+  const fixture = new Fixture();
+  native.invoke.mockResolvedValueOnce(fixture.catalog());
+  expect(await Effect.runPromise(new DashboardApi().read())).toEqual(
+    fixture.catalog(),
+  );
+  expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read");
+  native.invoke.mockResolvedValueOnce(fixture.reply());
+  const rejectedFeaturePage: InvalidReplyExpectation = {
+    _tag: "Failure",
+    failure: { kind: ReadFailureKind.InvalidReply },
+  };
+  expect(
+    await Effect.runPromise(Effect.result(new DashboardApi().read())),
+  ).toMatchObject(rejectedFeaturePage);
+  const incomplete: IncompleteRepositoryCatalog = {
+    repositories: {
+      end: "Complete",
+      records: [{ repository: { name: "repo" }, feature_count: 1 }],
+    },
+  };
+  native.invoke.mockResolvedValueOnce(incomplete);
+  const rejectedMissingIdentity: InvalidReplyExpectation = {
+    _tag: "Failure",
+    failure: { kind: ReadFailureKind.InvalidReply },
+  };
+  expect(
+    await Effect.runPromise(Effect.result(new DashboardApi().read())),
+  ).toMatchObject(rejectedMissingIdentity);
+});
+type TransportContextProjection = Pick<
+  NativeTransportFailure,
+  "kind" | "operation" | "detail"
+>;
+interface NativeTransportExpectation {
+  _tag: "Failure";
+  failure: TransportContextProjection;
+}
+it("preserves concrete transport context without retaining an undecoded rejection", async () => {
+  native.invoke.mockRejectedValueOnce(new Error("native connection closed"));
+  const result = await Effect.runPromise(
+    Effect.result(new DashboardApi().read()),
+  );
+  const rejected: NativeTransportExpectation = {
+    _tag: "Failure",
+    failure: {
+      kind: ReadFailureKind.Transport,
+      operation: NativeCommand.Catalog,
+      detail: "Error: native connection closed",
+    },
+  };
+  expect(result).toMatchObject(rejected);
+  expect(result).not.toHaveProperty("failure.cause");
 });

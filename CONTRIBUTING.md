@@ -72,8 +72,9 @@ Cargo and dist commands from `app/`:
 cd app
 ```
 
-1. Discover commands and run a typed YAML request against an existing test project
-   using the [README initialization example](README.md#initialize-your-project):
+1. Open Homeostat to browse existing application-home storage, discover commands,
+   or run a typed YAML request against an existing test project using the
+   [README initialization example](README.md#initialize-your-project):
 
    ```sh
    cargo run --package meta-cortex -- dashboard

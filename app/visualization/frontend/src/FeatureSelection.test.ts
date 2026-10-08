@@ -5,16 +5,21 @@ import {
   render,
   screen,
   within,
+  waitFor,
   type ByRoleOptions,
 } from "@testing-library/svelte";
 import { Effect, Match } from "effect";
 import App from "./App.svelte";
 import { Fixture } from "./dashboard-fixture";
 import { FeatureLook } from "./observability";
-import type { DesktopReply, FeatureWorkflow } from "./contracts";
+import type {
+  DesktopReply,
+  StoredFeatureSelection,
+  FeatureLogEntry,
+} from "./contracts";
 
 interface WorkflowReadArguments {
-  readonly feature: FeatureWorkflow["feature"];
+  readonly selection: StoredFeatureSelection;
 }
 
 enum SelectionSurface {
@@ -32,6 +37,9 @@ afterEach(() => {
 });
 
 class SelectionScenario {
+  static readonly OPEN_REPOSITORY: ByRoleOptions = {
+    name: `Open meta-cortex, ${Fixture.REPOSITORY.repository_id}`,
+  };
   readonly first = new Fixture();
   readonly second = new Fixture();
   constructor() {
@@ -48,6 +56,7 @@ class SelectionScenario {
         ],
       },
     };
+    native.invoke.mockResolvedValueOnce(this.first.catalog());
     native.invoke.mockResolvedValueOnce(reply);
   }
   card(fixture: Fixture): HTMLElement {
@@ -63,16 +72,40 @@ class SelectionScenario {
       }),
     );
   }
+  async openCheckpoint(entry: FeatureLogEntry): Promise<void> {
+    const checkpointQuery: ByRoleOptions = {
+      name: `Open checkpoint evidence for task ${entry.task}, revision ${entry.checkpoint.recorded.revision}`,
+    };
+    for (const button of screen
+      .getAllByRole("button", checkpointQuery)
+      .slice(0, 1))
+      await fireEvent.click(button);
+    const event = document.getElementById(
+      `event-${entry.task}-r${entry.checkpoint.recorded.revision}`,
+    );
+    await waitFor(() => expect(event?.hasAttribute("open")).toBe(true));
+    expect(document.activeElement).toBe(event?.querySelector("summary"));
+  }
   async switchRepeatedly(surface: SelectionSurface): Promise<void> {
     this.install();
     native.invoke.mockResolvedValueOnce(this.first.workflow());
+    const boundary: PropertyDescriptor = {
+      configurable: true,
+      value: () => {},
+    };
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", boundary);
     render(App);
+    await fireEvent.click(
+      await screen.findByRole("button", SelectionScenario.OPEN_REPOSITORY),
+    );
     const briefingQuery: ByRoleOptions = { name: "Selected feature" };
     await screen.findByRole("article", briefingQuery);
     for (const fixture of [this.second, this.first, this.second]) {
       const workflow = fixture.workflow();
       workflow.feature = fixture.summary.feature.id;
       const objective = `${fixture.summary.feature.id} workflow objective`;
+      const outcome = `${fixture.summary.feature.id} implementation outcome`;
+      for (const entry of workflow.feature_log) entry.summary = outcome;
       for (const chapter of workflow.chapters) {
         chapter.task.common.objective = objective;
       }
@@ -93,7 +126,10 @@ class SelectionScenario {
         within(briefing).getByText(fixture.summary.feature.objective),
       ).toBeTruthy();
       const args: WorkflowReadArguments = {
-        feature: fixture.summary.feature.id,
+        selection: {
+          repository: Fixture.REPOSITORY,
+          feature: fixture.summary.feature.id,
+        },
       };
       expect(native.invoke).toHaveBeenLastCalledWith(
         "dashboard_workflow",
@@ -112,12 +148,20 @@ class SelectionScenario {
         screen.getByRole("tab", featureLogQuery).getAttribute("aria-selected"),
       ).toBe("true");
       expect(screen.getByRole("tabpanel", featureLogQuery)).toBeTruthy();
+      expect(screen.getAllByText(outcome)).toHaveLength(
+        workflow.feature_log.length,
+      );
+      expect(screen.queryAllByText(/implementation outcome/)).toHaveLength(
+        workflow.feature_log.length,
+      );
       expect(within(index).getAllByText(objective)).toBeTruthy();
       const headingQuery: ByRoleOptions = {
         name: new FeatureLook(fixture.summary).title(),
         level: 1,
       };
       expect(screen.getByRole("heading", headingQuery)).toBeTruthy();
+      for (const entry of workflow.feature_log.slice(0, 1))
+        await this.openCheckpoint(entry);
       const backQuery: ByRoleOptions = { name: "Features" };
       await fireEvent.click(screen.getByRole("button", backQuery));
     }
@@ -138,6 +182,9 @@ it("opens the inventory task directly in Log, then generic workflow returns to F
   const boundary: PropertyDescriptor = { configurable: true, value: scroll };
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", boundary);
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", SelectionScenario.OPEN_REPOSITORY),
+  );
   const taskQuery: ByRoleOptions = { name: "Open task rust-release" };
   await fireEvent.click(await screen.findByRole("button", taskQuery));
   const logQuery: ByRoleOptions = { name: "Log" };
@@ -160,6 +207,9 @@ it("preserves description and PR actions without selecting their card", async ()
   scenario.install();
   native.invoke.mockResolvedValueOnce(scenario.first.workflow());
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", SelectionScenario.OPEN_REPOSITORY),
+  );
   const briefingQuery: ByRoleOptions = { name: "Selected feature" };
   await screen.findByRole("article", briefingQuery);
   const card = scenario.card(scenario.second);
@@ -174,7 +224,7 @@ it("preserves description and PR actions without selecting their card", async ()
   expect(native.openUrl).toHaveBeenCalledWith(
     "https://github.com/acme/release/pull/41",
   );
-  expect(native.invoke).toHaveBeenCalledTimes(2);
+  expect(native.invoke).toHaveBeenCalledTimes(3);
   const briefing = screen.getByRole("article", briefingQuery);
   expect(
     within(briefing).getByText(scenario.first.summary.feature.objective),
@@ -192,6 +242,9 @@ it("keeps the latest selection when an earlier native workflow read completes la
   );
   native.invoke.mockResolvedValueOnce(secondWorkflow);
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", SelectionScenario.OPEN_REPOSITORY),
+  );
   const previewQuery: ByRoleOptions = { name: "Preview Second feature" };
   await fireEvent.click(await screen.findByRole("button", previewQuery));
   const briefingQuery: ByRoleOptions = { name: "Selected feature" };

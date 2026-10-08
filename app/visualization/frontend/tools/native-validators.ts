@@ -53,10 +53,17 @@ export class NativeValidators implements Plugin {
       $ref: "#/$defs/FeatureWorkflow",
       $defs: schema.$defs,
     };
+    const catalogSchema: AnySchemaObject = {
+      $id: "dashboard-catalog",
+      $ref: "#/$defs/DesktopCatalogReply",
+      $defs: schema.$defs,
+    };
+    validator.addSchema(catalogSchema);
     validator.addSchema(workflowSchema);
     validator.addSchema(replySchema);
     validator.addSchema(failureSchema);
     const exports: ValidatorExports = {
+      catalog: "dashboard-catalog",
       workflow: "dashboard-workflow",
       reply: "dashboard-reply",
       failure: "dashboard-failure",

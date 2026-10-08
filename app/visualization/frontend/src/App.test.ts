@@ -9,6 +9,14 @@ import {
   type ByRoleOptions as RoleQueryOptions,
 } from "@testing-library/svelte";
 import App from "./App.svelte";
+import { Effect } from "effect";
+import type {
+  DesktopCatalogReply,
+  DesktopReply,
+  FeatureWorkflow,
+  DesktopFailure,
+} from "./contracts";
+import type { WorkflowInvocation } from "./api";
 import { Fixture } from "./dashboard-fixture";
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
@@ -19,16 +27,22 @@ afterEach(() => {
   cleanup();
   native.invoke.mockReset();
 });
+type NativeReply = DesktopCatalogReply | DesktopReply | FeatureWorkflow;
 class NativeFixture {
+  static readonly OPEN_REPOSITORY: RoleQueryOptions = {
+    name: `Open meta-cortex, ${Fixture.REPOSITORY.repository_id}`,
+  };
   constructor(readonly fixture: Fixture) {}
-  read(command: string): Promise<unknown> {
+  read(command: string): Promise<NativeReply> {
     switch (command) {
       case "dashboard_read":
-        return Promise.resolve(this.fixture.reply());
+        return Effect.runPromise(Effect.succeed(this.fixture.catalog()));
+      case "dashboard_features":
+        return Effect.runPromise(Effect.succeed(this.fixture.reply()));
       case "dashboard_workflow":
-        return Promise.resolve(this.fixture.workflow());
+        return Effect.runPromise(Effect.succeed(this.fixture.workflow()));
       default:
-        return Promise.reject(new Error("Unexpected command"));
+        return Effect.runPromise(Effect.fail(new Error("Unexpected command")));
     }
   }
   install(): void {
@@ -39,6 +53,9 @@ it("shows the split cards and briefing with recorded PR, dates and duration", as
   const fixture = new Fixture();
   new NativeFixture(fixture).install();
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", NativeFixture.OPEN_REPOSITORY),
+  );
   const panel = await screen.findByRole("article", {
     name: "Selected feature",
   });
@@ -59,13 +76,20 @@ it("shows the split cards and briefing with recorded PR, dates and duration", as
       .getByRole("button", { name: "Preview Release 0 12 3" })
       .getAttribute("aria-pressed"),
   ).toBe("true");
-  expect(native.invoke).toHaveBeenCalledWith("dashboard_workflow", {
-    feature: fixture.summary.feature.id,
-  });
+  const request: WorkflowInvocation = {
+    selection: {
+      repository: Fixture.REPOSITORY,
+      feature: fixture.summary.feature.id,
+    },
+  };
+  expect(native.invoke).toHaveBeenCalledWith("dashboard_workflow", request);
 });
 it("keeps the agent index across Log and Time windows, with revision metadata and command evidence", async () => {
   new NativeFixture(new Fixture()).install();
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", NativeFixture.OPEN_REPOSITORY),
+  );
   await fireEvent.click(
     await screen.findByRole("button", { name: "Open workflow" }),
   );
@@ -85,11 +109,14 @@ it("refreshes summaries without reloading unchanged task history or resetting th
   new NativeFixture(new Fixture()).install();
   render(App);
   await fireEvent.click(
+    await screen.findByRole("button", NativeFixture.OPEN_REPOSITORY),
+  );
+  await fireEvent.click(
     await screen.findByRole("button", { name: "Open workflow" }),
   );
   await fireEvent.click(screen.getByRole("tab", { name: "Time windows" }));
   await fireEvent.click(screen.getByRole("button", { name: "Refresh now" }));
-  await waitFor(() => expect(native.invoke).toHaveBeenCalledTimes(3));
+  await waitFor(() => expect(native.invoke).toHaveBeenCalledTimes(4));
   expect(
     native.invoke.mock.calls.filter(
       ([command]) => command === "dashboard_workflow",
@@ -108,11 +135,35 @@ it("reports a failed ledger read with a retry", async () => {
   expect(alert.textContent).toContain("ledger locked");
   expect(within(alert).getByRole("button", { name: "Retry" })).toBeTruthy();
 });
-it("shows an empty feature list without querying history", async () => {
-  native.invoke.mockResolvedValue({
-    features: { records: [], end: "Complete" },
-  });
+it("shows an empty repository list without querying features or history", async () => {
+  const empty: DesktopCatalogReply = {
+    repositories: { records: [], end: "Complete" },
+  };
+  native.invoke.mockResolvedValue(empty);
   render(App);
-  expect(await screen.findByText("No features recorded yet")).toBeTruthy();
+  expect(await screen.findByText("No repositories recorded yet")).toBeTruthy();
   expect(native.invoke).toHaveBeenCalledTimes(1);
+});
+
+it("preserves the last repository catalog when refresh fails and retries at the global scope", async () => {
+  const fixture = new Fixture();
+  new NativeFixture(fixture).install();
+  render(App);
+  await screen.findByRole("button", NativeFixture.OPEN_REPOSITORY);
+  const failure: DesktopFailure = {
+    kind: "Ledger",
+    message: "Repository catalog temporarily unavailable",
+  };
+  native.invoke.mockRejectedValueOnce(failure);
+  const refresh: RoleQueryOptions = { name: "Refresh now" };
+  await fireEvent.click(screen.getByRole("button", refresh));
+  const alert = await screen.findByRole("alert");
+  expect(alert.textContent).toContain("Showing the last successful read");
+  expect(
+    screen.getByRole("button", NativeFixture.OPEN_REPOSITORY),
+  ).toBeTruthy();
+  const retry: RoleQueryOptions = { name: "Retry" };
+  await fireEvent.click(within(alert).getByRole("button", retry));
+  await waitFor(() => expect(native.invoke).toHaveBeenCalledTimes(3));
+  expect(native.invoke).toHaveBeenLastCalledWith("dashboard_read");
 });

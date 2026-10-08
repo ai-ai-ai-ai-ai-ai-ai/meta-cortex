@@ -103,7 +103,7 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Observe recorded Workbench data in a native desktop window. Desktop opens the feature journal; Snapshot returns the requested Features, Tasks, Task or History view as text without creating a window. Snapshot reads use bounded pages; events retain their recorded task snapshots. Observation never initializes, migrates, imports or updates the ledger.",
+                    "Open Homeostat to observe global stored repository groups without a checkout. Desktop opens the selected repository feature journal; Snapshot remains repository scoped and returns the requested Features, Tasks, Task or History view as text without creating a window. Snapshot reads use bounded pages; events retain their recorded task snapshots. Observation never initializes, migrates, imports or updates the ledger.",
                 ),
                 operation: Operation::Workbench(WorkbenchOperation::Dashboard(
                     DashboardRequest::Desktop {},

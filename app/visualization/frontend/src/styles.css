@@ -751,3 +751,84 @@ details {
   margin-left: 6px;
   opacity: 0.8;
 }
+
+.repository-list {
+  display: grid;
+  border-top: 1px solid var(--border);
+}
+.repository-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  min-height: 88px;
+  padding: 20px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.repository-row:hover {
+  background: var(--subtle);
+}
+.repository-row:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+.repository-identity {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.repository-identity strong {
+  font-size: 16px;
+}
+.repository-identity code {
+  color: var(--muted);
+  font-size: 12px;
+}
+.repository-count {
+  margin-left: auto;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.repository-back,
+.repository-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.repository-breadcrumb .back-link,
+.repository-back button {
+  min-height: 44px;
+}
+.topbar button {
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .state-filter,
+  .search-wrap input,
+  .feature-preview .small-control,
+  .primary-link,
+  .page-heading .back-link {
+    min-height: 44px;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding-block: 8px;
+  }
+  .repository-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .repository-count {
+    margin-left: 0;
+  }
+  .repository-row .repository-identity {
+    width: 100%;
+  }
+}

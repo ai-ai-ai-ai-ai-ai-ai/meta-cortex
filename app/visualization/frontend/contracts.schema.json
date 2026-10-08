@@ -172,6 +172,12 @@
       "enum": ["IntegrationAgent", "PrAgent"],
       "type": "string"
     },
+    "DesktopCatalogReply": {
+      "description": "The most recently active features with their totals, held work, outcomes and pull requests.",
+      "properties": { "repositories": { "$ref": "#/$defs/Page2" } },
+      "required": ["repositories"],
+      "type": "object"
+    },
     "DesktopFailure": {
       "oneOf": [
         {
@@ -201,7 +207,6 @@
       ]
     },
     "DesktopReply": {
-      "description": "The most recently active features with their totals, held work, outcomes and pull requests.",
       "properties": { "features": { "$ref": "#/$defs/Page" } },
       "required": ["features"],
       "type": "object"
@@ -550,6 +555,18 @@
       "required": ["records", "end"],
       "type": "object"
     },
+    "Page2": {
+      "description": "A page of bounded records. Each operation releases its connection before returning.",
+      "properties": {
+        "end": { "$ref": "#/$defs/PageEnd" },
+        "records": {
+          "items": { "$ref": "#/$defs/RepositoryCard" },
+          "type": "array"
+        }
+      },
+      "required": ["records", "end"],
+      "type": "object"
+    },
     "PageEnd": { "enum": ["Complete", "More"], "type": "string" },
     "Phase": {
       "oneOf": [
@@ -692,6 +709,33 @@
         }
       ]
     },
+    "RepositoryCard": {
+      "properties": {
+        "feature_count": { "format": "uint", "minimum": 0, "type": "integer" },
+        "repository": { "$ref": "#/$defs/RepositorySelection" }
+      },
+      "required": ["repository", "feature_count"],
+      "type": "object"
+    },
+    "RepositoryId": {
+      "description": "Local identity shared by a main checkout and its linked worktrees.",
+      "format": "uuid",
+      "type": "string"
+    },
+    "RepositoryName": {
+      "description": "Human-readable directory label retained by the existing storage layout.",
+      "type": "string"
+    },
+    "RepositorySelection": {
+      "additionalProperties": false,
+      "description": "Both components are required: equal names and feature IDs may belong to independent clones.",
+      "properties": {
+        "name": { "$ref": "#/$defs/RepositoryName" },
+        "repository_id": { "$ref": "#/$defs/RepositoryId" }
+      },
+      "required": ["name", "repository_id"],
+      "type": "object"
+    },
     "RevisionLogEntry": {
       "properties": {
         "entry": { "$ref": "#/$defs/FeedEntry" },
@@ -727,6 +771,15 @@
         "next_step",
         "qualification"
       ],
+      "type": "object"
+    },
+    "StoredFeatureSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "feature": { "type": "string" },
+        "repository": { "$ref": "#/$defs/RepositorySelection" }
+      },
+      "required": ["repository", "feature"],
       "type": "object"
     },
     "TaskAssignment": {
@@ -1062,11 +1115,13 @@
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
+    "catalog": { "$ref": "#/$defs/DesktopCatalogReply" },
     "failure": { "$ref": "#/$defs/DesktopFailure" },
     "reply": { "$ref": "#/$defs/DesktopReply" },
+    "selection": { "$ref": "#/$defs/StoredFeatureSelection" },
     "workflow": { "$ref": "#/$defs/FeatureWorkflow" }
   },
-  "required": ["reply", "workflow", "failure"],
+  "required": ["reply", "catalog", "selection", "workflow", "failure"],
   "title": "DesktopContract",
   "type": "object"
 }

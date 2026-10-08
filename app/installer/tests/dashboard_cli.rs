@@ -186,7 +186,8 @@ fn snapshots_use_typed_transport_and_recorded_content() -> anyhow::Result<()> {
     Ok(())
 }
 #[test]
-fn dashboard_help_and_repository_errors_need_no_request_file() -> anyhow::Result<()> {
+fn dashboard_help_needs_no_request_file_and_snapshot_retains_repository_scope() -> anyhow::Result<()>
+{
     let executable = env!("CARGO_BIN_EXE_meta-cortex");
     let help = Command::new(executable)
         .args(["dashboard", "--help"])
@@ -200,15 +201,31 @@ fn dashboard_help_and_repository_errors_need_no_request_file() -> anyhow::Result
     assert!(!text.contains("--request"));
     let outside = tempfile::tempdir()?;
     let data = outside.path().join("unused-data");
+    let request = outside.path().join("snapshot.yaml");
+    fs::write(
+        &request,
+        serde_saphyr::to_string(&Request {
+            version: ProtocolVersion::V1,
+            project: outside.path().to_owned(),
+            operation: Operation::Workbench(WorkbenchOperation::Dashboard(
+                DashboardRequest::Snapshot {
+                    view: DashboardView::Features,
+                    page: PageIndex::FIRST,
+                },
+            )),
+        })?,
+    )?;
     let output = Command::new(executable)
-        .arg("dashboard")
+        .arg("run")
+        .arg("--request")
+        .arg(request)
         .current_dir(outside.path())
         .env("META_CORTEX_HOME", &data)
         .output()?;
     assert_eq!(output.status.code(), Some(2));
     let response: Response = serde_saphyr::from_str(&String::from_utf8(output.stdout)?)?;
     let Outcome::Error(failure) = response.result else {
-        anyhow::bail!("outside repository accepted");
+        anyhow::bail!("Snapshot accepted an outside repository");
     };
     assert!(failure.message.to_string().contains("Git operation failed"));
     assert!(!data.exists());

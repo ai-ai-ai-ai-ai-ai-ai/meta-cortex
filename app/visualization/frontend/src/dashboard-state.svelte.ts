@@ -1,5 +1,9 @@
 import { Effect } from "effect";
-import type { DesktopReply, FeatureCard } from "./contracts";
+import type {
+  DesktopReply,
+  FeatureCard,
+  RepositorySelection,
+} from "./contracts";
 import type { DashboardApi, DashboardFailure } from "./api";
 
 enum LoadKind {
@@ -27,15 +31,19 @@ type Reply =
  * The ledger read behind the feature list. A refresh keeps the last reply on
  * screen, so live updates never blank the view and failures mark it stale.
  */
+export interface FeatureReadRequest {
+  api: DashboardApi;
+  repository: RepositorySelection;
+}
 export class ReadController {
   load = $state<Load>({ kind: LoadKind.Loading });
-  reply = $state<Reply>({ kind: ReplyKind.Empty });
+  reply = $state.raw<Reply>({ kind: ReplyKind.Empty });
   private interrupt: () => void = () => {};
-  constructor(private readonly api: DashboardApi) {}
+  constructor(private readonly request: FeatureReadRequest) {}
   read(): void {
     this.stop();
     this.load = { kind: LoadKind.Loading };
-    const reading = this.api.read().pipe(
+    const reading = this.request.api.features(this.request.repository).pipe(
       Effect.match({
         onFailure: (failure) => {
           this.load = { kind: LoadKind.Failed, failure };

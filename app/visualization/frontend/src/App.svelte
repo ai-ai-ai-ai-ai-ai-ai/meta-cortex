@@ -7,30 +7,31 @@
   import { Effect } from "effect";
   import { CircleAlert, Network, Pause, Play, RefreshCw } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
-  import { DashboardApi } from "./api";
-  import {
-    Clock,
-    LiveMode,
-    LiveRefresh,
-    ReadController,
-  } from "./dashboard-state.svelte";
+  import { RepositoryNavigation } from "./repository-navigation.svelte";
+  import type { RepositoryCard } from "./contracts";
+  import RepositoryPage from "./RepositoryPage.svelte";
+  import { Clock, LiveMode, LiveRefresh } from "./dashboard-state.svelte";
   import { TimeLook } from "./presentation";
   import FeaturePage from "./FeaturePage.svelte";
 
   const navigation = new GuideNavigation();
-  const dashboard = new ReadController(new DashboardApi());
+  const repositories = new RepositoryNavigation();
+  let dashboard = $derived(repositories.reading());
   const live = new LiveRefresh();
   const clock = new Clock();
   let time = $derived(new TimeLook(clock.now));
 
   onMount(() => {
-    dashboard.read();
+    repositories.catalog.read();
     const stopClock = clock.run();
     return () => {
       stopClock();
-      dashboard.stop();
+      repositories.stop();
     };
   });
+  function focus(node: HTMLElement): void {
+    node.focus();
+  }
   $effect(() => live.run(Effect.sync(() => dashboard.refresh())));
 </script>
 
@@ -46,7 +47,7 @@
         size="sm"
         onclick={() => navigation.dashboard()}
         aria-current={navigation.route === GuideRoute.Dashboard}
-        >Workbench</Button
+        >Homeostat</Button
       >
       <Button
         variant="ghost"
@@ -127,27 +128,66 @@
           <Button
             variant="outline"
             size="sm"
+            class="min-h-[44px]"
             onclick={() => dashboard.refresh()}>Retry</Button
           >
         </div>
       {/each}
 
-      {#each dashboard.featurePages() as summaries, index (index)}
-        <FeaturePage
-          {summaries}
-          truncated={dashboard.truncated()}
-          refresh={() => dashboard.refresh()}
-        />
+      {#each repositories.selected() as selection (selection.card.repository.repository_id)}
+        {#if selection.read.featurePages().length === 0}<nav
+            class="repository-back"
+            tabindex="-1"
+            use:focus
+            aria-label="Repository navigation"
+          >
+            <Button variant="ghost" onclick={() => repositories.back()}
+              >Back to repositories</Button
+            ><span class="repository-identity"
+              >{selection.card.repository.name}<code
+                >{selection.card.repository.repository_id}</code
+              ></span
+            >
+          </nav>{/if}
+        {#each selection.read.featurePages() as summaries, index (index)}
+          <FeaturePage
+            {summaries}
+            repository={selection.card.repository}
+            back={() => repositories.back()}
+            truncated={selection.read.truncated()}
+            refresh={() => dashboard.refresh()}
+          />
+        {:else}
+          {#if dashboard.failures().length === 0}<div
+              role="status"
+              class="empty"
+            >
+              Reading repository features…
+            </div>{/if}
+        {/each}
       {:else}
-        {#if dashboard.failures().length === 0}
-          <div role="status" class="space-y-4" aria-label="Reading the ledger">
-            <div class="h-8 w-48 animate-pulse rounded-md bg-muted"></div>
-            {#each [1, 2, 3] as placeholder (placeholder)}
-              <div class="h-36 animate-pulse rounded-xl bg-muted"></div>
-            {/each}
-            <span class="sr-only">Reading recorded work…</span>
-          </div>
-        {/if}
+        {#each repositories.catalog.repositoryPages() as cards, index (index)}
+          <RepositoryPage
+            repositories={cards.records}
+            end={cards.end}
+            select={(card: RepositoryCard) => repositories.select(card)}
+            refresh={() => dashboard.refresh()}
+          />
+        {:else}
+          {#if dashboard.failures().length === 0}
+            <div
+              role="status"
+              class="space-y-4"
+              aria-label="Reading repositories"
+            >
+              <div class="h-8 w-48 animate-pulse rounded-md bg-muted"></div>
+              {#each [1, 2, 3] as placeholder (placeholder)}<div
+                  class="h-20 animate-pulse rounded-xl bg-muted"
+                ></div>{/each}
+              <span class="sr-only">Reading recorded repositories…</span>
+            </div>
+          {/if}
+        {/each}
       {/each}
     {/if}
   </main>
