@@ -7,8 +7,45 @@ use tempfile::NamedTempFile;
 use uuid::Uuid;
 
 /// Local identity shared by a main checkout and its linked worktrees.
-#[derive(Debug, Display, PartialEq, Eq)]
-pub(crate) struct RepositoryId(Uuid);
+#[derive(
+    Clone,
+    Debug,
+    Display,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    serde::Serialize,
+    serde::Deserialize,
+    schemars::JsonSchema,
+)]
+#[serde(try_from = "String", into = "String")]
+#[schemars(with = "String", extend("format" = "uuid"))]
+pub struct RepositoryId(Uuid);
+
+impl TryFrom<String> for RepositoryId {
+    type Error = RepositoryIdParseError;
+    fn try_from(text: String) -> Result<Self, Self::Error> {
+        let id = Uuid::parse_str(&text)?;
+        match id.is_nil() {
+            true => Err(RepositoryIdParseError::Nil),
+            false => Ok(Self(id)),
+        }
+    }
+}
+impl From<RepositoryId> for String {
+    fn from(id: RepositoryId) -> Self {
+        id.to_string()
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RepositoryIdParseError {
+    #[error("invalid repository UUID")]
+    Invalid(#[from] uuid::Error),
+    #[error("repository UUID must not be nil")]
+    Nil,
+}
 
 impl RepositoryId {
     const FILE: &str = ".meta-cortex/repository-id";
@@ -25,9 +62,7 @@ impl RepositoryId {
             Err(error) => return Err(error.into()),
         }
         let text = fs::read_to_string(path)?;
-        let id = Uuid::parse_str(text.trim())
-            .map_err(|_| LedgerError::Invalid("invalid repository-id; restore the original ID"))?;
-        Ok(Self(id))
+        Ok(Self::try_from(text.trim().to_owned())?)
     }
 
     pub fn initialize(root: &Path, common_dir: &Path) -> Result<Self, LedgerError> {
@@ -68,7 +103,7 @@ impl RepositoryId {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::RepositoryId;
     use crate::LedgerError;
     use std::fs;
@@ -92,7 +127,7 @@ pub mod tests {
         fs::write(root.join(RepositoryId::FILE), "broken ID")?;
         assert!(matches!(
             RepositoryId::initialize(root, git.path()),
-            Err(LedgerError::Invalid(_))
+            Err(LedgerError::RepositoryId(_))
         ));
         assert_eq!(
             fs::read_to_string(root.join(RepositoryId::FILE))?,

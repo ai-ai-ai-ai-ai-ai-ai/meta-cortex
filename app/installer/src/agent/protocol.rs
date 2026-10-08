@@ -3,7 +3,7 @@ use crate::information::InfoReport;
 use crate::installation::{InitRequest, Project, ToolSetup};
 use crate::integration::{Harness, HarnessChoice, InstructionAction, IntegrationOptions};
 use crate::wrapper::{ProjectWrapper, WrapperReport, WrapperRequest};
-use meta_cortex_visualization::{Dashboard, DashboardReport, DashboardRequest};
+use meta_cortex_visualization::{Dashboard, DashboardReport, DashboardRequest, DesktopLaunch};
 use meta_cortex_workbench::model::{Event, Task, TaskView};
 use meta_cortex_workbench::request::{
     AssignTask, ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery,
@@ -160,12 +160,17 @@ impl Request {
 
     pub async fn execute(self) -> Result<Execution, AgentError> {
         match self.operation {
-            Operation::Workbench(WorkbenchOperation::Dashboard(input)) => {
-                let workbench = Workbench::discover(&self.project)?;
-                Ok(Execution::from(
-                    Dashboard::from(workbench).execute(input).await?,
-                ))
-            }
+            Operation::Workbench(WorkbenchOperation::Dashboard(input)) => match input {
+                DashboardRequest::Desktop {} => Ok(Execution::Desktop(DesktopLaunch::discover()?)),
+                DashboardRequest::Snapshot { view, page } => {
+                    let workbench = Workbench::discover(&self.project)?;
+                    Ok(Execution::from(
+                        Dashboard::from(workbench)
+                            .execute(DashboardRequest::Snapshot { view, page })
+                            .await?,
+                    ))
+                }
+            },
             Operation::Framework(operation) => operation.execute(self.project).map(Execution::from),
             Operation::Feature(operation) => operation
                 .execute(Workbench::discover(&self.project)?)
@@ -241,7 +246,7 @@ impl TaskOperation {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use super::{AgentHarness, AgentInstructions, FrameworkInit, ToolSetup};
     use serde::Serialize;
 
@@ -249,6 +254,45 @@ pub mod tests {
     struct FrameworkDefaults {
         harness: AgentHarness,
         instructions: AgentInstructions,
+    }
+
+    #[test]
+    fn desktop_preparation_ignores_missing_non_git_project_but_snapshot_is_scoped()
+    -> anyhow::Result<()> {
+        use super::{Operation, Request, WorkbenchOperation};
+        use crate::agent::Execution;
+        use meta_cortex_visualization::{DashboardRequest, DashboardView};
+        use meta_cortex_workbench::PageIndex;
+        use meta_cortex_workbench::versions::ProtocolVersion;
+        use tokio::runtime::Builder;
+        let directory = tempfile::tempdir()?;
+        let missing = directory.path().join("no-checkout");
+        Builder::new_current_thread()
+            .enable_time()
+            .build()?
+            .block_on(async {
+                let desktop = Request {
+                    version: ProtocolVersion::V1,
+                    project: missing.clone(),
+                    operation: Operation::Workbench(WorkbenchOperation::Dashboard(
+                        DashboardRequest::Desktop {},
+                    )),
+                };
+                assert!(matches!(desktop.execute().await?, Execution::Desktop(_)));
+                let snapshot = Request {
+                    version: ProtocolVersion::V1,
+                    project: missing.clone(),
+                    operation: Operation::Workbench(WorkbenchOperation::Dashboard(
+                        DashboardRequest::Snapshot {
+                            view: DashboardView::Features,
+                            page: PageIndex::FIRST,
+                        },
+                    )),
+                };
+                assert!(snapshot.execute().await.is_err());
+                assert!(!missing.exists());
+                Ok::<_, anyhow::Error>(())
+            })
     }
 
     #[test]

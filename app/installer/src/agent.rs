@@ -6,17 +6,15 @@ use crate::installation::InstallError;
 use crate::wrapper::{WrapperError, WrapperReleaseError};
 use catalog::Catalog;
 use derive_more::{Display, From};
-use meta_cortex_visualization::{
-    Dashboard, DashboardError, DashboardExecution, DashboardRequest, DesktopLaunch,
-};
+use meta_cortex_visualization::{DashboardError, DashboardExecution, DesktopLaunch};
+use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::versions::ProtocolVersion;
-use meta_cortex_workbench::{LedgerError, Workbench};
 use protocol::{Reply, Request};
 use serde::Serialize;
+use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::{env, fs};
 use thiserror::Error;
 use tokio::runtime::Builder;
 
@@ -98,6 +96,7 @@ impl ErrorCode {
             LedgerError::Conflict | LedgerError::AlreadyExists => ErrorCode::Conflict,
             LedgerError::NotFound | LedgerError::Uninitialized => ErrorCode::NotFound,
             LedgerError::Invalid(_)
+            | LedgerError::RepositoryId(_)
             | LedgerError::Identifier(_)
             | LedgerError::BranchName(_)
             | LedgerError::CommitId(_)
@@ -249,13 +248,7 @@ impl AgentCli {
     }
 
     fn execute_dashboard() -> Result<Reply, AgentError> {
-        let project = env::current_dir()?;
-        let workbench = Workbench::discover(&project)?;
-        let runtime = Builder::new_current_thread().enable_time().build()?;
-        let execution =
-            runtime.block_on(Dashboard::from(workbench).execute(DashboardRequest::Desktop {}))?;
-        drop(runtime);
-        Execution::from(execution).finish()
+        Execution::Desktop(DesktopLaunch::discover()?).finish()
     }
 
     pub fn run(path: PathBuf) -> ExitCode {

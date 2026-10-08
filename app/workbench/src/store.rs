@@ -9,6 +9,7 @@ mod relational;
 mod schema;
 mod sequence;
 mod sql;
+pub(crate) mod storage_observation;
 
 use super::LedgerError;
 use super::git::Repository;

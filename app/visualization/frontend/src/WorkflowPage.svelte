@@ -30,6 +30,9 @@
   let look = $derived(new WorkflowLook(workflow));
   let chapters = $derived(new TimelineScale(workflow).chapters());
   let workers = $derived(new WorkerTimeline(workflow));
+  function focusHeading(node: HTMLElement): void {
+    node.focus();
+  }
   function jump(task: string): void {
     view = WorkflowView.Log;
     selected = task;
@@ -64,7 +67,7 @@
     <button class="back-link" onclick={back}
       ><ArrowLeft size={14} />Features</button
     >
-    <h1>{new FeatureLook(summary).title()}</h1>
+    <h1 tabindex="-1" use:focusHeading>{new FeatureLook(summary).title()}</h1>
   </div>
   <PullRequests requests={summary.pull_requests} />
 </div>

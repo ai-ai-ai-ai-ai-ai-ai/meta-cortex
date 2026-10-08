@@ -50,13 +50,14 @@ coverage with `cargo llvm-cov --locked --workspace --fail-under-lines 90`.
 This project does not retain legacy CLI aliases, interactive setup paths, or
 old instruction formats for hypothetical compatibility. `list` discovers commands;
 `run` executes typed YAML requests, including framework initialization and inspection.
-`dashboard` opens the native Tauri Workbench dashboard for the current repository
-without a request file or required arguments. Desktop observes existing ledger
-storage only in the resolved repository’s `features/<id>.db` files, without
-automatic migrations, under the
-[dashboard contract](cortex/teams/gizmo-team/docs/agent-ledger.md#storage-requirements-and-errors);
-typed `Workbench / Dashboard` requests use `Desktop` for the native feature journal
-and `Snapshot` for headless text output.
+`dashboard` opens Homeostat, the native Tauri dashboard, from any directory,
+including the user's home, without a request file or required arguments. Desktop
+browses existing repository groups in the application home without Git or checkout
+discovery, under the
+[dashboard contract](cortex/teams/gizmo-team/docs/agent-ledger.md#storage-requirements-and-errors).
+Typed `Workbench / Dashboard` requests use `Desktop` for this global browser;
+the request envelope retains `project`, which Desktop does not resolve. `Snapshot`
+keeps repository-scoped headless text output and its existing view contract.
 
 - **Prohibited:** migrate older feature ledgers when Desktop opens or refreshes.
 - **Required:** show their availability and require the explicit **Upgrade and open**

@@ -16,6 +16,7 @@ import type {
   DesktopReply,
   DesktopFailure,
   FeatureWorkflow,
+  StoredFeatureSelection,
 } from "./contracts";
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: native.invoke }));
@@ -25,9 +26,12 @@ afterEach(() => {
   native.invoke.mockReset();
 });
 interface UpgradeArguments {
-  feature: string;
+  selection: StoredFeatureSelection;
 }
 class MixedCatalog {
+  static readonly OPEN_REPOSITORY: RoleQueryOptions = {
+    name: `Open meta-cortex, ${Fixture.REPOSITORY.repository_id}`,
+  };
   readonly fixture = new Fixture();
   readonly old = { ...this.fixture.summary.feature, id: "older-feature" };
   reply(): DesktopReply {
@@ -54,6 +58,8 @@ class MixedCatalog {
   read(command: string) {
     switch (command) {
       case "dashboard_read":
+        return Effect.runPromise(Effect.succeed(this.fixture.catalog()));
+      case "dashboard_features":
         return Effect.runPromise(Effect.succeed(this.reply()));
       case "dashboard_workflow":
         return Effect.runPromise(Effect.succeed(this.fixture.workflow()));
@@ -69,6 +75,9 @@ it("keeps current, older, future and failed cards visible without automatic upgr
   const catalog = new MixedCatalog();
   catalog.install();
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", MixedCatalog.OPEN_REPOSITORY),
+  );
   const menuQuery: RoleQueryOptions = { name: "Choose a feature" };
   const menu = await screen.findByRole("group", menuQuery);
   expect(within(menu).getByText("Upgrade required")).toBeTruthy();
@@ -94,6 +103,9 @@ it("upgrades only the selected feature on explicit action, prevents repeat submi
   const catalog = new MixedCatalog();
   catalog.install();
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", MixedCatalog.OPEN_REPOSITORY),
+  );
   const oldQuery: RoleQueryOptions = { name: "Preview older-feature" };
   await fireEvent.click(await screen.findByRole("button", oldQuery));
   const upgraded: FeatureWorkflow = catalog.fixture.workflow();
@@ -122,7 +134,9 @@ it("upgrades only the selected feature on explicit action, prevents repeat submi
   expect(
     screen.getByRole("button", pendingQuery).hasAttribute("disabled"),
   ).toBe(true);
-  const args: UpgradeArguments = { feature: catalog.old.id };
+  const args: UpgradeArguments = {
+    selection: { repository: Fixture.REPOSITORY, feature: catalog.old.id },
+  };
   expect(native.invoke).toHaveBeenCalledWith("dashboard_upgrade", args);
   const workflowQuery: RoleQueryOptions = { name: "Agent index" };
   await screen.findByRole("navigation", workflowQuery);
@@ -134,6 +148,9 @@ it("keeps the catalog visible after selected upgrade failure and offers an expli
   const catalog = new MixedCatalog();
   catalog.install();
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", MixedCatalog.OPEN_REPOSITORY),
+  );
   const oldQuery: RoleQueryOptions = { name: "Preview older-feature" };
   await fireEvent.click(await screen.findByRole("button", oldQuery));
   const failure: DesktopFailure = {
@@ -160,10 +177,14 @@ it("shows an older first card without automatically reading or upgrading its wor
   const catalog = new MixedCatalog();
   const reply: DesktopReply = catalog.reply();
   reply.features.records = reply.features.records.slice(1);
+  native.invoke.mockResolvedValueOnce(catalog.fixture.catalog());
   native.invoke.mockResolvedValue(reply);
   render(App);
+  await fireEvent.click(
+    await screen.findByRole("button", MixedCatalog.OPEN_REPOSITORY),
+  );
   const query: RoleQueryOptions = { name: "Upgrade and open" };
   await screen.findByRole("button", query);
-  expect(native.invoke).toHaveBeenCalledTimes(1);
+  expect(native.invoke).toHaveBeenCalledTimes(2);
   expect(native.invoke).toHaveBeenCalledWith("dashboard_read");
 });

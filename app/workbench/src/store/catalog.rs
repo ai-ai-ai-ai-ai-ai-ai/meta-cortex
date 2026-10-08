@@ -18,6 +18,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
+use turso::transaction::TransactionBehavior;
 use turso::{Builder, Connection};
 
 /// Metadata-only discovery: unsupported sources never require record decoding.
@@ -31,6 +32,18 @@ pub enum CatalogFeature {
     Current { ledger: LedgerInfo },
     UpgradeRequired { ledger: LedgerInfo },
     Unavailable { feature: FeatureId, message: Note },
+}
+impl FeatureCatalog {
+    pub(crate) async fn at(path: PathBuf) -> Result<Self, LedgerError> {
+        let catalog = ObservedCatalog {
+            features: BTreeMap::new(),
+        }
+        .directory(path)
+        .await?;
+        Ok(Self {
+            features: catalog.features.into_values().collect(),
+        })
+    }
 }
 impl CatalogFeature {
     pub fn id(&self) -> &FeatureId {
@@ -82,6 +95,62 @@ impl FeatureFile {
     pub(super) fn error(&self, source: LedgerError) -> LedgerError {
         source.in_feature(&self.feature)
     }
+    pub(crate) async fn upgrade(&self) -> Result<(), LedgerError> {
+        // Inspect with the read-only catalog first: missing, future, and malformed sources
+        // cannot be opened by a writable connection or accidentally initialized.
+        let metadata = SourceMetadata::read(&self.path)
+            .await
+            .map_err(|error| self.error(error))?;
+        match metadata.features.as_slice() {
+            [feature] if feature.id == self.feature => {}
+            [] | [_] | [_, _, ..] => {
+                return Err(self.error(LedgerError::Invalid(
+                    "feature file must contain only its named feature",
+                )));
+            }
+        }
+        match metadata.version {
+            StorageVersion::FeatureHistoryV6 => return Ok(()),
+            StorageVersion::Empty => return Err(self.error(LedgerError::Uninitialized)),
+            StorageVersion::DocumentsV1
+            | StorageVersion::IndexedV2
+            | StorageVersion::RelationalV3
+            | StorageVersion::CommonTasksV4
+            | StorageVersion::SequencedEventsV5 => {}
+        }
+        let database = Builder::new_local(
+            self.path
+                .to_str()
+                .ok_or(LedgerError::Invalid("database path is not UTF-8"))?,
+        )
+        .with_io(PERSISTENT_IO)
+        .experimental_multiprocess_wal(true)
+        .build()
+        .await?;
+        let mut connection = database.connect()?;
+        connection.busy_timeout(Duration::from_secs(10))?;
+        LedgerSchema::configure(&connection).await?;
+        let tx = connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .await?;
+        LedgerSchema::migrate_transaction(&tx)
+            .await
+            .map_err(|error| self.error(error))?;
+        let documents = super::Documents {
+            connection: &tx,
+            feature: &self.feature,
+        };
+        documents
+            .require_feature_scope()
+            .await
+            .map_err(|error| self.error(error))?;
+        documents
+            .feature()
+            .await
+            .map_err(|error| self.error(error))?;
+        tx.commit().await?;
+        Ok(())
+    }
     pub(super) async fn reader(&self) -> Result<Connection, LedgerError> {
         let connection = Self::connect(&self.path)
             .await
@@ -116,21 +185,8 @@ impl FeatureFile {
     }
 }
 impl Repository {
-    pub(super) fn observation_file(&self, feature: &FeatureId) -> Result<FeatureFile, LedgerError> {
-        Ok(FeatureFile {
-            feature: feature.clone(),
-            path: self.feature_path(feature)?,
-        })
-    }
     pub(crate) async fn observed_features(&self) -> Result<FeatureCatalog, LedgerError> {
-        let catalog = ObservedCatalog {
-            features: BTreeMap::new(),
-        }
-        .directory(self.repository_directory()?.join("features"))
-        .await?;
-        Ok(FeatureCatalog {
-            features: catalog.features.into_values().collect(),
-        })
+        FeatureCatalog::at(self.repository_directory()?.join("features")).await
     }
 }
 

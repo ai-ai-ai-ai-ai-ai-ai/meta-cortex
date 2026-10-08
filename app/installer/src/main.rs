@@ -21,7 +21,7 @@ struct Cli {
 enum Command {
     /// Discover agent commands, typed schemas, and complete YAML requests.
     List,
-    /// Open the recorded Workbench dashboard for the current repository.
+    /// Open Homeostat to browse recorded repository storage.
     Dashboard,
     /// Execute a strictly typed YAML agent request; use - for stdin.
     Run {

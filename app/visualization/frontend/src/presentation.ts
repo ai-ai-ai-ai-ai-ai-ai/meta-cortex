@@ -7,6 +7,7 @@ import {
   OctagonAlert,
   PackageCheck,
 } from "@lucide/svelte";
+import { DateTime, Match } from "effect";
 import type { AgentId, FlowState } from "./contracts";
 
 type Icon = typeof CircleCheck;
@@ -94,6 +95,7 @@ interface TimeUnit {
   readonly size: number;
   readonly suffix: string;
 }
+type RelativeObservationTime = number | DateTime.Utc;
 /** Human time relative to one observation instant. */
 export class TimeLook {
   static readonly SECOND = 1000;
@@ -113,8 +115,12 @@ export class TimeLook {
   };
   static readonly WEEKDAY: Intl.DateTimeFormatOptions = { weekday: "short" };
   constructor(private readonly now: number) {}
-  relative(at: number): string {
-    const elapsed = Math.max(0, this.now - at);
+  relative(at: RelativeObservationTime): string {
+    const epoch = Match.value(at).pipe(
+      Match.when(DateTime.isDateTime, DateTime.toEpochMillis),
+      Match.orElse((value) => value),
+    );
+    const elapsed = Math.max(0, this.now - epoch);
     for (const unit of TimeLook.UNITS) {
       switch (elapsed >= unit.from) {
         case true:

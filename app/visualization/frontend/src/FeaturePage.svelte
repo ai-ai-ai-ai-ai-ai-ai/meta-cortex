@@ -4,33 +4,50 @@
     FeatureCard,
     FeatureSummary,
     FeatureWorkflow,
+    RepositorySelection,
   } from "./contracts";
   import { Search } from "@lucide/svelte";
   import { DashboardApi } from "./api";
-  import { WorkflowController, DetailKind } from "./workflow-state.svelte";
+  import {
+    WorkflowController,
+    DetailKind,
+    type WorkflowReadRequest,
+  } from "./workflow-state.svelte";
   import { CatalogLook, FilterMatch } from "./feature-availability";
   import {
     FeatureUpgrade,
     UpgradeKind,
     type UpgradeRequest,
+    type UpgradeScope,
   } from "./feature-upgrade.svelte";
   import { FeatureFilter, Screen } from "./observability";
   import FeatureMenuCard from "./FeatureCard.svelte";
   import FeatureBriefing from "./FeatureBriefing.svelte";
   import WorkflowPage from "./WorkflowPage.svelte";
   interface Props {
+    repository: RepositorySelection;
+    back: () => void;
     summaries: ReadonlyArray<FeatureCard>;
     truncated: boolean;
     refresh: () => void;
   }
-  let { summaries, truncated, refresh }: Props = $props();
+  let { repository, back, summaries, truncated, refresh }: Props = $props();
   let query = $state("");
   let filter = $state(FeatureFilter.All);
   let selected = $state("");
   let screen = $state(Screen.Features);
   let task = $state("");
-  const detail = new WorkflowController(new DashboardApi());
-  const upgrade = new FeatureUpgrade(new DashboardApi());
+  const detail = untrack(() => {
+    const request: WorkflowReadRequest = {
+      api: new DashboardApi(),
+      repository,
+    };
+    return new WorkflowController(request);
+  });
+  const upgrade = untrack(() => {
+    const request: UpgradeScope = { api: new DashboardApi(), repository };
+    return new FeatureUpgrade(request);
+  });
   let filtered = $derived(
     summaries.filter(
       (summary) =>
@@ -103,12 +120,36 @@
     };
     upgrade.open(request);
   }
+  function returnToFeatures(): void {
+    screen = Screen.Features;
+  }
+  function focus(node: HTMLElement): void {
+    node.focus();
+  }
   function open(id: string): void {
     task = id;
     screen = Screen.Workflow;
   }
 </script>
 
+<nav class="repository-breadcrumb" aria-label="Breadcrumb">
+  <button class="back-link" onclick={back}>Repositories</button><span
+    aria-hidden="true">/</span
+  >
+  <span class="repository-identity"
+    >{repository.name}<code>{repository.repository_id}</code></span
+  ><span aria-hidden="true">/</span>
+  {#if screen === Screen.Workflow}
+    <button
+      class="back-link"
+      onclick={returnToFeatures}
+      aria-label="Back to features">Features</button
+    ><span aria-hidden="true">/</span
+    >{#each current as card (new CatalogLook(card).id())}<span
+        aria-current="page">{new CatalogLook(card).id()}</span
+      >{/each}
+  {:else}<span aria-current="page">Features</span>{/if}
+</nav>
 {#each detail.failures as failure (failure.message)}<div
     role="alert"
     class="notice"
@@ -124,12 +165,13 @@
       {summary}
       workflow={detail.state.workflow}
       initialTask={task}
-      back={() => (screen = Screen.Features)}
+      back={returnToFeatures}
     />{/each}
 {:else}
   <div class="page-heading">
     <div>
-      <h1>Features</h1>
+      <button class="back-link" onclick={back}>Back to repositories</button>
+      <h1 id="feature-heading" tabindex="-1" use:focus>Features</h1>
       <p>
         {summaries.length} features · {summaries
           .flatMap((card) => new CatalogLook(card).summaries())
@@ -272,9 +314,8 @@
           yet{/if}
       </h2>
       <p>
-        {#if summaries.length}Try another search or filter.{:else}No feature
-          databases were found. Feature records appear here when work is saved
-          in Workbench.{/if}
+        {#if summaries.length}Try another search or filter.{:else}Feature work
+          appears here when it is recorded.{/if}
       </p>
     </div>{/if}
 {/if}
