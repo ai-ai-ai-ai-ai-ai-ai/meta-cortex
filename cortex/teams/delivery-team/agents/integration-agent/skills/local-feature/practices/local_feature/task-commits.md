@@ -107,6 +107,8 @@ The steps below establish final readiness.
    sending the completion notification.
 
    Use `Task / Update` with `action.kind: checkpoint` and `commit: task_sha`,
+   applying the canonical
+   [complete final outcome set](../../../../../../../gizmo-team/docs/agent-ledger.md#reaffirm-the-complete-final-set),
    then `action.kind: ready`, using each returned revision. Discover the exact
    typed request with `meta-cortex list`; Git commit alone does not record readiness.
 

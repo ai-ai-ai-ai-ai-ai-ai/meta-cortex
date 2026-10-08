@@ -113,7 +113,9 @@ that limitation. Use the assignments below when running in `multi_agent` mode.
    task branch, worktree, and fixed `task_base_sha`; the worker follows the ordinary
    delivery commands to consolidate private checkpoints before readiness.
    It must run required checks, confirm a clean checkout, and
-   record its final checkpoint and readiness before notifying Gizmo.
+   record its final checkpoint under the
+   [outcome protocol](agent-ledger.md#reaffirm-the-complete-final-set), then
+   record readiness before notifying Gizmo.
 2. Keep verifier context out of the worker assignment. Do not supply this
    handoff, the verifier role or skill, or review bookkeeping. Gizmo owns the
    decision to start verification after receiving the worker's result.

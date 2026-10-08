@@ -27,6 +27,8 @@ to distinguish a setup milestone from task readiness and delivery.
 5. Read the task again and record `Task / Coordinate` with the latest revision,
    `action.kind: integrate`, and the verified feature HEAD. A failed ledger
    update leaves the Git work intact; inspect both before retrying.
+   This records the owning task's integration evidence for the canonical
+   [Feature log projection](../../../../../gizmo-team/docs/agent-ledger.md#feature-log).
 6. Preserve the ledger when cleaning completed worker worktrees. Report failures
    to Team Gizmo; it decides whether to requeue work or assign a repair.
 7. Record readiness on the integration activity before the completion

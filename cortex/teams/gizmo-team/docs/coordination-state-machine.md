@@ -132,6 +132,9 @@ actual handoffs contain the observed full SHAs and check results.
 - **Evidence and output:** milestone progress names what changed or was learned,
   checks actually run, and the next operation. A blocker names the failed or
   missing input and who must resolve it. A heartbeat reports activity only.
+  Workers use the canonical
+  [checkpoint outcome protocol](agent-ledger.md#record-implementation-outcomes)
+  for explicit implemented milestones and the final accepted set.
 - **Next owner and expected state:** working or blocked progress keeps the task
   active. A completed worker result and its required evidence permit readiness
   and a handoff to Team Gizmo. For write work, use the existing

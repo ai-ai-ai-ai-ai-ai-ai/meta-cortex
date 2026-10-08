@@ -765,14 +765,26 @@ The window opens on a split feature preview. Compact cards show the title,
 precise first-task date, expandable description, task progress, recorded roles,
 and pull requests. Selecting a card opens a briefing with task inventory,
 latest recorded update, start and finish times, elapsed duration, and branch.
-Each inventory block opens that task in the full workflow.
+Each inventory block opens that task's **Log** chapter in the full workflow.
 
-The workflow keeps a shared agent/task index beside two views: **Log** presents
+**Open workflow** opens on **Feature log**, a compact journal of explicit
+implementation outcomes after their owning Git tasks integrate. Expand a row
+for checkpoint and integration evidence or follow its task link to **Log**.
+The canonical [Feature log guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#feature-log)
+defines inclusion, milestone identity, recorder attribution, and labeled times.
+
+The shared agent/task index navigates **Log** and **Time windows**. **Log** presents
 task chapters with distinct action icons, time and revision metadata, and
 expandable commands, findings, next steps, checkpoints, and saved details.
 **Time windows** compares task lifetimes from creation to their latest recorded
 update. Overlap does not prove continuous agent execution. Select a window to
 jump to its log. Repeated evidence appears only when it changes.
+
+- **Prohibited:** expect completed review tasks or undeclared historical progress
+  to appear as implementation outcomes.
+- **Required:** record explicit outcomes under the
+  [checkpoint protocol](cortex/teams/gizmo-team/docs/agent-ledger.md#record-implementation-outcomes)
+  and inspect their integration evidence in Feature log.
 
 - The dashboard refreshes summaries every five seconds; Pause stops automatic
   reads and Refresh reads at once.
