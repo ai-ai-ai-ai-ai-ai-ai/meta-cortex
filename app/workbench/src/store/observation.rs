@@ -22,6 +22,7 @@ pub use detail::{FeatureWorkflow, FeedEntry, RecordedRole, TaskChapter, Workflow
 use schemars::JsonSchema;
 use sea_query::{Expr, ExprTrait, Order, Query};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use turso::Connection;
 pub use workflow::{
     ActiveWork, Blocker, Completion, FeatureActivity, FeatureCard, FeatureCards, FeatureOutcome,
@@ -100,9 +101,9 @@ pub struct CatalogPage {
     pub features: Page<CatalogFeature>,
 }
 /// Read-only capability: never initializes identity/storage, imports, migrates or coordinates.
-/// Only existing repository identity/path discovery uses Git; content comes exclusively from Turso.
+/// Storage paths are supplied independently; content comes exclusively from Turso.
 pub struct Observation {
-    repository: Repository,
+    pub(super) directory: PathBuf,
 }
 /// One open read-only connection shared by every query of a single observation.
 struct LedgerReader {
@@ -110,17 +111,33 @@ struct LedgerReader {
 }
 impl Observation {
     pub(crate) async fn open(repository: Repository) -> Result<Self, LedgerError> {
-        repository.repository_directory()?;
-        Ok(Self { repository })
+        Ok(Self {
+            directory: repository.repository_directory()?,
+        })
     }
     async fn reader(&self, feature: &FeatureId) -> Result<LedgerReader, LedgerError> {
-        let file: FeatureFile = self.repository.observation_file(feature)?;
+        let file = self.file(feature);
         Ok(LedgerReader {
             connection: file.reader().await?,
         })
     }
+    fn file(&self, feature: &FeatureId) -> FeatureFile {
+        FeatureFile {
+            feature: feature.clone(),
+            path: self
+                .directory
+                .join("features")
+                .join(format!("{feature}.db")),
+        }
+    }
+    pub(crate) async fn upgrade(&self, feature: &FeatureId) -> Result<(), LedgerError> {
+        self.file(feature).upgrade().await
+    }
+    pub(crate) async fn catalog(&self) -> Result<FeatureCatalog, LedgerError> {
+        FeatureCatalog::at(self.directory.join("features")).await
+    }
     pub async fn features(&self, page: PageIndex) -> Result<CatalogPage, LedgerError> {
-        let FeatureCatalog { features } = self.repository.observed_features().await?;
+        let FeatureCatalog { features } = self.catalog().await?;
         Ok(CatalogPage {
             features: RecordLimit::PAGE.bound(
                 features

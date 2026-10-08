@@ -8,6 +8,11 @@ mod data_directory;
 mod git;
 pub mod model;
 mod repository_id;
+pub use repository_id::{RepositoryId, RepositoryIdParseError};
+pub use store::storage_observation::{
+    FeatureCount, RepositoryCard, RepositoryName, RepositorySelection, StorageObservation,
+    StoredFeatureSelection,
+};
 pub mod request;
 mod store;
 pub mod values;
@@ -102,6 +107,8 @@ pub enum LedgerError {
     UnsupportedVersion(#[from] versions::VersionParseError),
     #[error(transparent)]
     Identifier(#[from] values::IdentifierParseError),
+    #[error(transparent)]
+    RepositoryId(#[from] RepositoryIdParseError),
     #[error(transparent)]
     BranchName(#[from] values::BranchNameParseError),
     #[error(transparent)]

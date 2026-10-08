@@ -5,6 +5,15 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
+export type PageEnd = "Complete" | "More";
+/**
+ * Human-readable directory label retained by the existing storage layout.
+ */
+export type RepositoryName = string;
+/**
+ * Local identity shared by a main checkout and its linked worktrees.
+ */
+export type RepositoryId = string;
 export type DesktopFailure =
   | {
       kind: "Ledger";
@@ -22,7 +31,6 @@ export type DesktopFailure =
       [k: string]: unknown;
     };
 export type Note = string;
-export type PageEnd = "Complete" | "More";
 /**
  * A card never substitutes empty workflow data for an unavailable ledger.
  */
@@ -325,14 +333,40 @@ export type WorkflowTiming =
     };
 
 export interface DesktopContract {
+  catalog: DesktopCatalogReply;
   failure: DesktopFailure;
   reply: DesktopReply;
+  selection: StoredFeatureSelection;
   workflow: FeatureWorkflow;
   [k: string]: unknown;
 }
 /**
  * The most recently active features with their totals, held work, outcomes and pull requests.
  */
+export interface DesktopCatalogReply {
+  repositories: Page2;
+  [k: string]: unknown;
+}
+/**
+ * A page of bounded records. Each operation releases its connection before returning.
+ */
+export interface Page2 {
+  end: PageEnd;
+  records: RepositoryCard[];
+  [k: string]: unknown;
+}
+export interface RepositoryCard {
+  feature_count: number;
+  repository: RepositorySelection;
+  [k: string]: unknown;
+}
+/**
+ * Both components are required: equal names and feature IDs may belong to independent clones.
+ */
+export interface RepositorySelection {
+  name: RepositoryName;
+  repository_id: RepositoryId;
+}
 export interface DesktopReply {
   features: Page;
   [k: string]: unknown;
@@ -440,6 +474,10 @@ export interface FlowCount {
   count: number;
   state: FlowState;
   [k: string]: unknown;
+}
+export interface StoredFeatureSelection {
+  feature: string;
+  repository: RepositorySelection;
 }
 export interface FeatureWorkflow {
   chapters: TaskChapter[];
