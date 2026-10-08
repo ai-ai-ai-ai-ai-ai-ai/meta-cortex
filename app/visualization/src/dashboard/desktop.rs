@@ -474,7 +474,7 @@ mod tests {
                     cmd: "dashboard_workflow".to_owned(),
                     callback: CallbackFn(0),
                     error: CallbackFn(1),
-                    url: "tauri://localhost".parse()?,
+                    url: webview.url()?,
                     body: InvokeBody::Json(serde_json::to_value(WorkflowInvocation {
                         feature: self.feature.clone(),
                     })?),
