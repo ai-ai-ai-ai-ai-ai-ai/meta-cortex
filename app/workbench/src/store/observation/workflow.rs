@@ -301,7 +301,7 @@ impl Observation {
     /// Most recently active features first; features without tasks follow in ID order.
     pub async fn summaries(&self, page: PageIndex) -> Result<FeatureCards, LedgerError> {
         let now = Timestamp::now()?;
-        let FeatureCatalog { features } = self.repository.observed_features().await?;
+        let FeatureCatalog { features } = self.catalog().await?;
         let mut records = Vec::new();
         for entry in features {
             let card = match entry {

@@ -2,5 +2,6 @@
 mod dashboard;
 pub use dashboard::{
     Dashboard, DashboardError, DashboardExecution, DashboardReport, DashboardRequest,
-    DashboardView, DesktopContract, DesktopFailure, DesktopLaunch, DesktopReply,
+    DashboardView, DesktopCatalogReply, DesktopContract, DesktopFailure, DesktopLaunch,
+    DesktopReply,
 };
