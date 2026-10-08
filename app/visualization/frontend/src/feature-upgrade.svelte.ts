@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { FeatureWorkflow } from "./contracts";
+import type { FeatureWorkflow, StoredFeatureSelection } from "./contracts";
 import type { DashboardApi, DashboardFailure } from "./api";
 export enum UpgradeKind {
   Idle = "Idle",
@@ -9,21 +9,29 @@ export enum UpgradeKind {
 }
 type UpgradeState =
   | { kind: UpgradeKind.Idle }
-  | { kind: UpgradeKind.Pending; feature: string }
-  | { kind: UpgradeKind.Failed; feature: string; failure: DashboardFailure }
+  | { kind: UpgradeKind.Pending; feature: StoredFeatureSelection["feature"] }
+  | {
+      kind: UpgradeKind.Failed;
+      feature: StoredFeatureSelection["feature"];
+      failure: DashboardFailure;
+    }
   | { kind: UpgradeKind.Opened; workflow: FeatureWorkflow };
 interface UpgradeRequest {
-  feature: string;
+  feature: StoredFeatureSelection["feature"];
   opened: (workflow: FeatureWorkflow) => void;
 }
 interface UpgradeHandlers {
   onFailure: (failure: DashboardFailure) => Effect.Effect<void>;
   onSuccess: (workflow: FeatureWorkflow) => Effect.Effect<void>;
 }
+export interface UpgradeScope {
+  api: DashboardApi;
+  repository: StoredFeatureSelection["repository"];
+}
 export class FeatureUpgrade {
   state = $state.raw<UpgradeState>({ kind: UpgradeKind.Idle });
   private interrupt: () => void = () => {};
-  constructor(private readonly api: DashboardApi) {}
+  constructor(private readonly request: UpgradeScope) {}
   open(request: UpgradeRequest): void {
     switch (this.state.kind) {
       case UpgradeKind.Pending:
@@ -49,8 +57,12 @@ export class FeatureUpgrade {
           request.opened(workflow);
         }),
     };
-    const upgrading = this.api
-      .upgrade(request.feature)
+    const selection: StoredFeatureSelection = {
+      repository: this.request.repository,
+      feature: request.feature,
+    };
+    const upgrading = this.request.api
+      .upgrade(selection)
       .pipe(Effect.matchEffect(handlers));
     this.interrupt = Effect.runCallback(upgrading);
   }

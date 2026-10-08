@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { resolve, dirname } from "node:path";
 import { guide } from "virtual:agent-guide";
 import { Effect } from "effect";
-import type { DesktopReply, DesktopFailure } from "./contracts";
+import type { DesktopCatalogReply, DesktopFailure } from "./contracts";
 import App from "./App.svelte";
 import { type GuideDocument } from "./guide-content";
 import { Fixture } from "./dashboard-fixture";
@@ -24,7 +24,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 class CanonicalFixture {
   static readonly GUIDE: ByRoleOptions = { name: "Agent guide" };
-  static readonly WORKBENCH: ByRoleOptions = { name: "Workbench" };
+  static readonly WORKBENCH: ByRoleOptions = { name: "Homeostat" };
   static readonly PRIME_HEADING: ByRoleOptions = {
     name: "Gizmo Prime",
     level: 1,
@@ -54,7 +54,9 @@ class CanonicalFixture {
     );
   }
   empty(): void {
-    const reply: DesktopReply = { features: { records: [], end: "Complete" } };
+    const reply: DesktopCatalogReply = {
+      repositories: { records: [], end: "Complete" },
+    };
     native.invoke.mockResolvedValue(reply);
   }
 }
@@ -79,10 +81,10 @@ it("bundles current canonical role and protocol documents, with all 16 roles", (
       guide.documents.filter((document) => document.path === agent.path),
     ).toHaveLength(1);
 });
-it("opens every canonical role from the original graph with an empty repository and returns to Workbench", async () => {
+it("opens every canonical role from the original graph with an empty repository and returns to Homeostat", async () => {
   new CanonicalFixture().empty();
   render(App);
-  await screen.findByText("No features recorded yet");
+  await screen.findByText("No repositories recorded yet");
   await fireEvent.click(screen.getByRole("button", CanonicalFixture.GUIDE));
   const graph = screen.getByLabelText("Reporting structure");
   for (const agent of guide.agents) {
@@ -94,7 +96,7 @@ it("opens every canonical role from the original graph with an empty repository 
   }
   expect(native.invoke).toHaveBeenCalledTimes(1);
   await fireEvent.click(screen.getByRole("button", CanonicalFixture.WORKBENCH));
-  expect(await screen.findByText("No features recorded yet")).toBeTruthy();
+  expect(await screen.findByText("No repositories recorded yet")).toBeTruthy();
   await fireEvent.click(screen.getByRole("button", CanonicalFixture.GUIDE));
   expect(
     screen.getByRole("heading", CanonicalFixture.PRIME_HEADING),
@@ -129,7 +131,7 @@ it("keeps Agent guide available when the native observation fails and with curre
   expect(screen.getByRole("heading", CanonicalFixture.GUIDE)).toBeTruthy();
   cleanup();
   const fixture = new Fixture();
-  native.invoke.mockResolvedValue(fixture.reply());
+  native.invoke.mockResolvedValue(fixture.catalog());
   render(App);
   await screen.findByRole("button", CanonicalFixture.GUIDE);
   await fireEvent.click(screen.getByRole("button", CanonicalFixture.GUIDE));

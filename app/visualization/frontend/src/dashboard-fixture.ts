@@ -4,6 +4,8 @@ import { workflow } from "virtual:dashboard-validators";
 import type {
   AgentId,
   DesktopReply,
+  DesktopCatalogReply,
+  RepositorySelection,
   FeatureWorkflow,
   FeatureOutcome,
   FeatureSummary,
@@ -14,6 +16,18 @@ import type {
  * its SHA format, and the pull request task is the only remaining outcome.
  */
 export class Fixture {
+  static readonly REPOSITORY: RepositorySelection = {
+    name: "meta-cortex",
+    repository_id: "9622db5f-7552-44d4-bdc1-1e5ebd98bc4c",
+  };
+  catalog(): DesktopCatalogReply {
+    return {
+      repositories: {
+        records: [{ repository: Fixture.REPOSITORY, feature_count: 1 }],
+        end: "Complete",
+      },
+    };
+  }
   static readonly NOW = new Date(2026, 9, 3, 12).getTime();
   static readonly MINUTE = 60_000;
   static readonly PRIME: AgentId = { team: "Gizmo", role: "GizmoPrime" };
