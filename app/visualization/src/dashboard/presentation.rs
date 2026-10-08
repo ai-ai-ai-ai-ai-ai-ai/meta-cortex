@@ -259,6 +259,7 @@ mod tests {
     use super::super::snapshot::SnapshotContext;
     use super::{Content, TaskPresentation};
     use meta_cortex_workbench::agents::{AgentId, DeliveryAgent, DevelopmentAgent, GizmoAgent};
+    use meta_cortex_workbench::model::event_record::EventEnvelope;
     use meta_cortex_workbench::model::worker::WorkerIdentity;
     use meta_cortex_workbench::model::workflow::{TaskAssignment, TaskOwnership};
     use meta_cortex_workbench::model::{
@@ -268,7 +269,7 @@ mod tests {
     use meta_cortex_workbench::values::{
         Attempt, CommitId, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision, Timestamp,
     };
-    use meta_cortex_workbench::versions::{RecordVersion, TaskRecordVersion};
+    use meta_cortex_workbench::versions::TaskRecordVersion;
     use meta_cortex_workbench::{CatalogPage, Page, PageEnd};
 
     struct TaskFixture {
@@ -315,7 +316,9 @@ mod tests {
     impl TaskFixture {
         fn event(&self) -> Event {
             Event {
-                version: RecordVersion::CURRENT,
+                envelope: EventEnvelope::V2 {
+                    outcomes: Vec::new(),
+                },
                 kind: EventKind::Created,
                 actor: AgentId::Gizmo(GizmoAgent::Gizmo),
                 note: Note::from("Event note".to_owned()),

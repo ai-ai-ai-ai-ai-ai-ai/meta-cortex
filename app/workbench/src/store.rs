@@ -1,3 +1,4 @@
+use crate::model::event_record::EventEnvelope;
 use crate::model::worker::WorkerIdentity;
 pub(crate) mod catalog;
 mod legacy;
@@ -18,7 +19,7 @@ use super::model::workflow::TaskOwnership;
 use super::model::{Checkpoint, Event, EventKind, Feature, Task, TaskCommon, TaskState, TaskView};
 use super::request::{CreateTask, InitFeature};
 use super::values::{Attempt, FeatureId, TaskId, TaskRevision, Timestamp};
-use super::versions::{RecordVersion, StorageVersion, TaskRecordVersion};
+use super::versions::{StorageVersion, TaskRecordVersion};
 use relational::{EventTable, FeatureTable, RecordWriter, TaskTable};
 use sea_query::{Expr, ExprTrait, OnConflict, Order, Query};
 use serde::Serialize;
@@ -186,7 +187,9 @@ impl Ledger {
         }
         documents
             .event(&Event {
-                version: RecordVersion::CURRENT,
+                envelope: EventEnvelope::V2 {
+                    outcomes: Vec::new(),
+                },
                 kind: EventKind::Created,
                 actor: input.actor,
                 note: task.common.objective.clone(),

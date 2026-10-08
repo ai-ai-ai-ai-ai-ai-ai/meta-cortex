@@ -5,6 +5,8 @@ pub use timeline::{
     RecordedTimeline, RecordedWindow, TimelineExtent, TimelineGroup, TimelineGroupIdentity,
     TimelineOrder,
 };
+mod feature_log;
+pub use feature_log::{FeatureLog, FeatureLogCheckpoint, FeatureLogEntry, FeatureLogEvidence};
 mod detail;
 mod revision_log;
 pub use revision_log::{RevisionLogEntry, SequenceProvenance};

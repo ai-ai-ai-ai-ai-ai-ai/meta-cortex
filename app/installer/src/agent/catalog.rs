@@ -10,6 +10,7 @@ use derive_more::{Display, From};
 use meta_cortex_visualization::DashboardRequest;
 use meta_cortex_workbench::LedgerError;
 use meta_cortex_workbench::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+use meta_cortex_workbench::model::checkpoint_outcome::{CheckpointOutcome, OutcomeId};
 use meta_cortex_workbench::model::workflow::TaskAssignment;
 use meta_cortex_workbench::model::{Progress, Workspace};
 use meta_cortex_workbench::request::{
@@ -18,7 +19,7 @@ use meta_cortex_workbench::request::{
 };
 use meta_cortex_workbench::values::WorkerId;
 use meta_cortex_workbench::values::{
-    Attempt, BranchName, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
+    Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
 };
 use meta_cortex_workbench::versions::ProtocolVersion;
 use schemars::{Schema, schema_for};
@@ -90,7 +91,7 @@ impl Catalog {
         let ttl = LeaseSeconds::TEN_MINUTES;
         let assigned_revision = TaskRevision::INITIAL.advance()?;
         let claimed_revision = assigned_revision.advance()?;
-        let heartbeat_revision = claimed_revision.advance()?;
+        let checkpoint_revision = claimed_revision.advance()?;
         let examples = [
             CommandExample {
                 description: CommandSummary::from(
@@ -216,7 +217,7 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Worker operation: heartbeat, progress, checkpoint, or ready. The schema below describes each action. Timestamps are Unix milliseconds; TTL is 1–86400 seconds.",
+                    "Worker operation: heartbeat, progress, checkpoint, or ready. A Git checkpoint's outcomes replace its complete included implementation milestone set; omitted or empty means none. Reaffirm accepted IDs at the final checkpoint after consolidation. Feature log visibility requires recorded task integration. Timestamps are Unix milliseconds; TTL is 1–86400 seconds.",
                 ),
                 operation: Operation::Task(TaskOperation::Update(WorkerUpdate {
                     worker_id: WorkerId::EXAMPLE,
@@ -225,7 +226,27 @@ impl Catalog {
                     expected_revision: claimed_revision,
                     agent: worker,
                     attempt: Attempt::UNCLAIMED.advance()?,
-                    action: WorkerAction::Heartbeat { ttl_seconds: ttl },
+                    action: WorkerAction::Checkpoint {
+                        ttl_seconds: ttl,
+                        commit: CommitId::try_from("a".repeat(40)).map_err(LedgerError::from)?,
+                        outcomes: vec![CheckpointOutcome {
+                            id: OutcomeId::try_from("implemented-behavior".to_owned())
+                                .map_err(LedgerError::from)?,
+                            summary: Note::from("Implemented the completed behavior".to_owned()),
+                            detail: Note::from(
+                                "Describe the concrete change and its validation.".to_owned(),
+                            ),
+                        }],
+                        progress: Progress {
+                            summary: Note::from(
+                                "Checkpoint recorded; validation continues".to_owned(),
+                            ),
+                            findings: Vec::new(),
+                            next_steps: Vec::new(),
+                            checks: Vec::new(),
+                            extensions: Extensions::default(),
+                        },
+                    },
                 })),
             },
             CommandExample {
@@ -235,7 +256,7 @@ impl Catalog {
                 operation: Operation::Task(TaskOperation::Coordinate(CoordinatorUpdate {
                     feature,
                     task,
-                    expected_revision: heartbeat_revision,
+                    expected_revision: checkpoint_revision,
                     actor: coordinator,
                     action: CoordinatorAction::Requeue {
                         reason: Note::from(

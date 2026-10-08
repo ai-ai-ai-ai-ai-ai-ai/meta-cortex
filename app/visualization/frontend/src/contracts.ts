@@ -171,6 +171,10 @@ export type EventKind =
   | "completed"
   | "requeued"
   | "cancelled";
+/**
+ * Stable identity within one task, independent of summary text or checkpoint SHA.
+ */
+export type OutcomeId = string;
 export type ReportingTarget =
   | {
       kind: "Host";
@@ -271,6 +275,10 @@ export type SequenceProvenance = "LegacyStorageOrder" | "CommittedAppend";
  * preserve supported historical SQLite storage identities without renumbering.
  */
 export type EventSequence = number;
+/**
+ * Already ordered newest integration first, then original declaration order.
+ */
+export type FeatureLog = FeatureLogEntry[];
 export type TimelineExtent =
   | {
       kind: "Empty";
@@ -444,6 +452,7 @@ export interface FlowCount {
 export interface FeatureWorkflow {
   chapters: TaskChapter[];
   feature: string;
+  feature_log: FeatureLog;
   revision_log: RevisionLogEntry[];
   state_meanings: StateMeaning[];
   timeline: RecordedTimeline;
@@ -468,6 +477,7 @@ export interface FeedEntry {
   kind: EventKind;
   note: Note;
   objective: Note;
+  outcomes: CheckpointOutcome[];
   /**
    * Ownership recorded in this event snapshot, independent of its actor.
    */
@@ -541,6 +551,14 @@ export interface Check {
   outcome: CheckOutcome;
 }
 /**
+ * An explicitly recorded completed implementation milestone included by a checkpoint.
+ */
+export interface CheckpointOutcome {
+  detail: Note;
+  id: OutcomeId;
+  summary: Note;
+}
+/**
  * The intended owner and reporting line survive every task state and attempt.
  */
 export interface TaskAssignment {
@@ -578,6 +596,105 @@ export interface TaskCommon {
   objective: Note;
   progress: Progress;
   revision: number;
+}
+export interface FeatureLogEntry {
+  checkpoint: FeatureLogCheckpoint;
+  detail: Note;
+  first_recorded: FeatureLogEvidence1;
+  id: OutcomeId;
+  integration: FeatureLogCheckpoint1;
+  summary: Note;
+  task: string;
+  [k: string]: unknown;
+}
+/**
+ * Latest complete-set reaffirmation, including the final checkpoint SHA.
+ */
+export interface FeatureLogCheckpoint {
+  commit: string;
+  recorded: FeatureLogEvidence;
+  [k: string]: unknown;
+}
+export interface FeatureLogEvidence {
+  /**
+   * An agent role scoped to its owning Cortex team.
+   */
+  actor:
+    | {
+        role: GizmoAgent;
+        team: "Gizmo";
+      }
+    | {
+        role: DevelopmentAgent;
+        team: "Development";
+      }
+    | {
+        role: AiAgent;
+        team: "Ai";
+      }
+    | {
+        role: SecurityAgent;
+        team: "Security";
+      }
+    | {
+        role: SreAgent;
+        team: "Sre";
+      }
+    | {
+        role: DeliveryAgent;
+        team: "Delivery";
+      };
+  at: number;
+  provenance: SequenceProvenance;
+  revision: number;
+  sequence: EventSequence;
+  [k: string]: unknown;
+}
+/**
+ * Earliest declaration of this stable task-local milestone identity.
+ */
+export interface FeatureLogEvidence1 {
+  /**
+   * An agent role scoped to its owning Cortex team.
+   */
+  actor:
+    | {
+        role: GizmoAgent;
+        team: "Gizmo";
+      }
+    | {
+        role: DevelopmentAgent;
+        team: "Development";
+      }
+    | {
+        role: AiAgent;
+        team: "Ai";
+      }
+    | {
+        role: SecurityAgent;
+        team: "Security";
+      }
+    | {
+        role: SreAgent;
+        team: "Sre";
+      }
+    | {
+        role: DeliveryAgent;
+        team: "Delivery";
+      };
+  at: number;
+  provenance: SequenceProvenance;
+  revision: number;
+  sequence: EventSequence;
+  [k: string]: unknown;
+}
+/**
+ * Actual recorded integration completion, independently of milestone time.
+ */
+export interface FeatureLogCheckpoint1 {
+  commit: string;
+  recorded: FeatureLogEvidence;
+  [k: string]: unknown;
 }
 export interface RevisionLogEntry {
   entry: FeedEntry;

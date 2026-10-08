@@ -420,6 +420,7 @@ mod tests {
             let at = Timestamp::try_from(record.at)?;
             let revision = TaskRevision::try_from(i64::try_from(self.chapter.entries.len())? + 1)?;
             self.chapter.entries.push(FeedEntry {
+                outcomes: Vec::new(),
                 objective: Note::from("Historical objective".to_owned()),
                 worker: record.worker,
                 kind: EventKind::Progress,
