@@ -9,8 +9,12 @@ The current agent runs this workflow without launching another agent. The
 helper parses forms, validates answers, retains collection state, and returns a
 typed question. The agent presents that question through an available native UI
 or ordinary conversation. Both paths use the same validation and field binding.
+A delegated agent without a permitted user channel returns the pending field and
+validated state through its assigning hierarchy for the host to present. The
+handoff keeps dependent work pending; it does not supply an answer.
 The [protocol](references/protocol.md) owns schema and helper request details.
-Load [Codex mechanics](../../../../docs/codex-host.md) only when using that host.
+For host-specific question mapping, select only the active host from the
+[host catalog](../../../../docs/hosts/index.yaml).
 
 ## Required actions
 

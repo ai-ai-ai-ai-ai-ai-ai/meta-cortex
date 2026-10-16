@@ -1,0 +1,9 @@
+kind: navigation
+title: Host References
+entries:
+  - title: Codex
+    path: ../codex-host.md
+    summary: Codex settings precedence, spawned capacity, and exposed tool mappings.
+  - title: Claude Code
+    path: ../claude-code-host.md
+    summary: Claude subagent depth, context, settings overrides, and question availability.
