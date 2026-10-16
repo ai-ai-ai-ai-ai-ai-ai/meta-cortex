@@ -34,15 +34,15 @@ class CliScenario {
   }
 }
 
-test("CLI emits the shipped development-mode native question", () => {
+test("CLI emits the shipped development-mode host-independent question", () => {
   const input: CliInput = {
     arguments: [`--schema=${CliScenario.developmentSchema}`],
     request:
-      '{"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}',
+      '{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}',
   };
   const result = new CliScenario(input).execute();
   expect(result.exitCode).toBe(0);
-  expect(result.stdout.toString()).toContain('"field":"development.mode"');
+  expect(result.stdout.toString()).toContain('"name":"development.mode"');
   expect(result.stdout.toString()).toContain(
     '"options":["single_agent","multi_agent"]',
   );
@@ -54,15 +54,13 @@ test.each(["single_agent", "multi_agent"])(
   (mode) => {
     const input: CliInput = {
       arguments: [`--schema=${CliScenario.developmentSchema}`],
-      request: `{"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"development.mode","value":"${mode}"}}`,
+      request: `{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"development.mode","value":"${mode}"}}`,
     };
     const result = new CliScenario(input).execute();
     expect(result.exitCode).toBe(0);
     expect(result.stdout.toString()).toContain('"status":"pending"');
     expect(result.stdout.toString()).toContain(`"development.mode":"${mode}"`);
-    expect(result.stdout.toString()).toContain(
-      '"field":"development.delivery"',
-    );
+    expect(result.stdout.toString()).toContain('"name":"development.delivery"');
     expect(result.stdout.toString()).toContain(
       '"options":["create_pr","local_only"]',
     );
@@ -70,7 +68,7 @@ test.each(["single_agent", "multi_agent"])(
     for (const delivery of ["create_pr", "local_only"]) {
       const selection: CliInput = {
         arguments: [`--schema=${CliScenario.developmentSchema}`],
-        request: `{"version":1,"state":{"answers":{"development.mode":"${mode}"},"skipped":[]},"event":{"type":"answer","name":"development.delivery","value":"${delivery}"}}`,
+        request: `{"version":2,"state":{"answers":{"development.mode":"${mode}"},"skipped":[]},"event":{"type":"answer","name":"development.delivery","value":"${delivery}"}}`,
       };
       const completed = new CliScenario(selection).execute();
       expect(completed.exitCode).toBe(0);
@@ -93,12 +91,12 @@ test.each([
 ])("CLI does not default an unanswered delivery choice: %s", (event) => {
   const input: CliInput = {
     arguments: [`--schema=${CliScenario.developmentSchema}`],
-    request: `{"version":1,"state":{"answers":{"development.mode":"single_agent"},"skipped":[]},"event":${event}}`,
+    request: `{"version":2,"state":{"answers":{"development.mode":"single_agent"},"skipped":[]},"event":${event}}`,
   };
   const result = new CliScenario(input).execute();
   expect(result.exitCode).toBe(0);
   expect(result.stdout.toString()).toContain('"status":"pending"');
-  expect(result.stdout.toString()).toContain('"field":"development.delivery"');
+  expect(result.stdout.toString()).toContain('"name":"development.delivery"');
   expect(result.stdout.toString()).toContain(
     '"answers":{"development.mode":"single_agent"}',
   );
@@ -108,11 +106,11 @@ test("CLI loads the shipped profile example", () => {
   const input: CliInput = {
     arguments: [`--schema=${CliScenario.profileSchema}`],
     request:
-      '{"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}',
+      '{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}',
   };
   const result = new CliScenario(input).execute();
   expect(result.exitCode).toBe(0);
-  expect(result.stdout.toString()).toContain('"field":"name"');
+  expect(result.stdout.toString()).toContain('"name":"name"');
 });
 
 test("CLI rejects malformed input without echoing submitted data", () => {

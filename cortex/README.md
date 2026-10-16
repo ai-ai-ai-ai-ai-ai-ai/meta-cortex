@@ -23,8 +23,8 @@ assigned worktree.
 
 Give your host a development task with the framework entry point loaded.
 At the start of each new session, the current agent collects
-[mode and delivery choices](AGENTS.md#development-mode) using the host's native
-input UI. Choose the agent mode:
+[mode and delivery choices](AGENTS.md#development-mode) through an available host UI
+or conversation, with the same answer validation. Choose the agent mode:
 
 - `single_agent` keeps implementation, checks, and delivery in the current thread
   and agent, with the relevant team docs, circuit breakers, and skills.
@@ -40,9 +40,9 @@ The agent waits for both validated answers before starting development work,
 reusing explicit choices already supplied in the current session. New tasks and
 follow-ups in the same conversation retain both choices; a new conversation
 collects them again. Delegated agents inherit them. Cancelling configuration stops
-the task; a missing native UI is reported as a blocker. Codex uses
-`request_user_input_async` when available; the host controls whether choices
-appear as buttons or a dropdown.
+dependent work. A missing native UI allows a permitted conversation path;
+if no channel is allowed, the agent reports the blocker. Host-specific mappings
+live in references such as [Codex integration](teams/gizmo-team/docs/codex-host.md).
 
 The [agent instructions](teams/AGENTS.md) define the coordination workflow.
 The [coordination state machine](teams/gizmo-team/docs/coordination-state-machine.md)
@@ -142,7 +142,8 @@ uses Bun and the shared workspace dependencies installed by Framework / Initiali
 - Repositories, worktrees, and individual skills reuse these installations.
 - Initialization uses these managed copies and ignores tools on the user's `PATH`.
 - The entry point configures `PATH` for framework scripts in a POSIX shell.
-- The helper validates data locally; the agent calls the host's native question tool.
+- The helper validates data locally and returns typed questions in protocol version 2.
+- The agent presents questions through native input or conversation and validates replies.
 - Answers stay in session context.
 
 In PowerShell, set the managed tool paths from the framework library directory:
@@ -161,10 +162,12 @@ Windows uses native `.exe` tools, with no WSL or Git Bash requirement.
 
 ### Assignment execution settings
 
-[meta-cortex.toml](meta-cortex.toml) declares the required total host agent capacity.
-The entry point runs the [host capacity preflight](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
-after session choices, before development in either mode. Speed comes from the host session.
-Single-agent mode keeps the current host model and reasoning effort.
+[meta-cortex.toml](meta-cortex.toml) sets `host.max_total_agents`, the scheduling
+ceiling including the host agent and coordinators. It does not require or allocate
+that many host slots. The [capacity assessment](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
+uses the selected mode's needs: single-agent work needs no subagent allocation;
+multi-agent work preserves the hierarchy and queues within available capacity.
+Speed comes from the host session. Single-agent mode keeps its model and effort.
 
 In multi-agent mode, the launching agent selects model and effort for each
 assignment using the host's current capabilities and the

@@ -31,13 +31,16 @@ Run from any working directory after installing workspace dependencies:
 ```sh
 bun "$library_root/teams/gizmo-team/agents/gizmo/skills/user-input/scripts/src/ts/cli.ts" \
   --schema="$library_root/development.yaml" <<'FORM_REQUEST'
-{"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}
+{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}
 FORM_REQUEST
 ```
 
 The helper reads one request from stdin and writes one JSON result. It never
-calls host tools. Only protocol version `1` is supported; future incompatible
-formats require an explicit migration. There is no on-disk session store.
+calls host tools. Only protocol version `2` is supported; version 1 and unknown
+versions are rejected. Version 2 replaces Codex tool arguments with a typed field.
+When updating a caller, discard old prompt/tool bindings and submit retained
+answers and skips through a version 2 `start` request for revalidation. There is
+no on-disk session store or legacy decoder.
 
 Each request contains the last returned `state` and one event:
 
@@ -50,27 +53,37 @@ Each request contains the last returned `state` and one event:
 For example, submit the user's mode selection:
 
 ```json
-{"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"development.mode","value":"single_agent"}}
+{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"development.mode","value":"single_agent"}}
 ```
 
-The result is still `pending`, with `prompt.field: development.delivery` and
+The result is still `pending`, with `prompt.name: development.delivery` and
 `create_pr` first in the options. After the user selects delivery, retain the
 mode in the returned state and submit the delivery answer:
 
 ```json
-{"version":1,"state":{"answers":{"development.mode":"single_agent"},"skipped":[]},"event":{"type":"answer","name":"development.delivery","value":"create_pr"}}
+{"version":2,"state":{"answers":{"development.mode":"single_agent"},"skipped":[]},"event":{"type":"answer","name":"development.delivery","value":"create_pr"}}
 ```
 
 Only after both choices are validated does the completed result contain:
 
 ```json
-{"version":1,"status":"complete","state":{"answers":{"development.mode":"single_agent","development.delivery":"create_pr"},"skipped":[]},"issues":[]}
+{"version":2,"status":"complete","state":{"answers":{"development.mode":"single_agent","development.delivery":"create_pr"},"skipped":[]},"issues":[]}
 ```
 
-Pending results also contain `prompt.field` (the stable field name) and
-`prompt.arguments` (`questions` with `title` and, for choices, `options`). Pass
-only `prompt.arguments` to the host tool, retaining the field/call association.
-The host may preselect a suggestion; it is not an answer until submitted.
+Pending results contain a host-neutral `prompt` with `name`, `question`,
+`required` (`required` or `optional`), and `type` (`text`, `integer`, or `choice`).
+Choice prompts also contain `options`; other types have no options property.
+The form's boolean `required` is normalized to the explicit requirement state.
+For example, the next delivery question is:
+
+```json
+{"name":"development.delivery","question":"Delivery: create_pr (recommended) commits and pushes the validated feature and creates or updates its PR; local_only keeps work local without pushing or creating a PR. Which delivery?","required":"required","type":"choice","options":["create_pr","local_only"]}
+```
+
+Present this field through a supported native tool or ordinary conversation.
+It contains no tool arguments. Retain the stable `name` and bind the actual reply
+to it before submitting an answer event. A host's preselected suggestion is not
+an answer until the user submits it.
 
 For the next invocation copy `state` unchanged and replace `event`. The helper
 revalidates carried state against the same form, excludes answered/skipped fields
@@ -88,6 +101,6 @@ answers into logs.
 ## Validation
 
 From the library root, run `bun run --filter @meta-cortex/user-input verify`.
-Tests cover parsing, answer conversion, question mapping, retries, preservation,
-and terminal outcomes. Native rendering, reply delivery, and question lifetime
+Tests cover parsing, answer conversion, neutral question fields, retries, preservation,
+and terminal outcomes. Host rendering, reply delivery, and question lifetime
 belong to the host and require a live host test; unit tests do not prove those.

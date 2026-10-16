@@ -19,7 +19,7 @@ For each new user task, follow this order:
 3. Resolve the session's [mode and delivery choices](#development-mode) before
    planning, implementation, or an agent launch.
 4. Complete the [host capacity preflight](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
-   before development work in either mode.
+   for the selected mode; single-agent work needs no subagent allocation.
 5. In `multi_agent` mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
    [agent configuration rules](teams/gizmo-team/docs/agent-configuration.md).
 6. In `multi_agent` mode, read the [team instructions](teams/AGENTS.md). Launch
@@ -35,14 +35,14 @@ choices, complete the host capacity preflight, then follow the selected executio
 ### Development mode
 
 The current agent uses the
-[native user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
+[user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 with [development.yaml](development.yaml). The two validated answers are
 `answers["development.mode"]` and `answers["development.delivery"]`.
 
 #### Collect the choices
 
 - At the start of a new user-facing session, collect `development.mode` and
-  `development.delivery` through the native input UI.
+  `development.delivery` through an available interaction channel under that skill.
 - Validate a choice explicitly supplied in the current session. Do not ask the
   user to repeat it.
 - Wait for both validated answers before choosing execution or delivery.

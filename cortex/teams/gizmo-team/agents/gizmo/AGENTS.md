@@ -10,7 +10,7 @@ This role runs only in `multi_agent` mode. Inherit the validated mode and delive
 choices; the [entry point](../../../../AGENTS.md#development-mode) owns configuration
 and single-agent routing. Apply the supplied global circuit breaker and
 [team circuit breaker](../../CIRCUIT-BREAKER.md). For YAML-defined questions during
-coordination, use the [native user-input skill](skills/user-input/SKILL.md).
+coordination, use the [user-input skill](skills/user-input/SKILL.md).
 
 ## Select agents from team catalogs
 

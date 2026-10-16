@@ -3,7 +3,13 @@ import { Effect } from "effect";
 import { InputApplication, type InputSources } from "../ts/application.ts";
 import { IssueCode } from "../ts/answer.ts";
 import { EventType, Status, InputProtocol } from "../ts/protocol.ts";
-import { FormScenario, type HostAnswer, type HostEvent } from "./scenario.ts";
+import { FieldType, Requirement } from "../ts/schema.ts";
+import {
+  FormScenario,
+  type HostAnswer,
+  type HostEvent,
+  type ExpectedPrompt,
+} from "./scenario.ts";
 
 type ExpectedNames = readonly string[];
 type ExpectedIssues = readonly {
@@ -18,10 +24,14 @@ describe("answer collection", () => {
     const name: HostAnswer = { name: "name", value: "Ada" };
     let result = scenario.answer(name);
     if (result.status !== Status.Pending) throw new Error("expected question");
-    expect<string>(result.prompt.field).toBe("age");
-    expect(result.prompt.arguments.questions).toEqual([
-      { title: "What is your age?" },
-    ]);
+    expect<string>(result.prompt.name).toBe("age");
+    const agePrompt: ExpectedPrompt = {
+      name: "age",
+      question: "What is your age?",
+      type: FieldType.Integer,
+      required: Requirement.Required,
+    };
+    expect<ExpectedPrompt>(result.prompt).toEqual(agePrompt);
     const invalid: HostAnswer = { name: "age", value: "18.2" };
     result = scenario.answer(invalid);
     const afterName: ExpectedAnswers = { name: "Ada" };
@@ -30,25 +40,35 @@ describe("answer collection", () => {
       { name: "age", code: IssueCode.Integer },
     ]);
     if (result.status !== Status.Pending) throw new Error("expected retry");
-    expect<string>(result.prompt.field).toBe("age");
+    expect<string>(result.prompt.name).toBe("age");
     const age: HostAnswer = { name: "age", value: " +18 " };
     result = scenario.answer(age);
     const afterAge: ExpectedAnswers = { name: "Ada", age: 18 };
     expect<ExpectedAnswers>(result.state.answers).toEqual(afterAge);
     if (result.status !== Status.Pending) throw new Error("expected choices");
-    expect(result.prompt.arguments.questions).toEqual([
-      {
-        title: "Which environment?",
-        options: ["Development", "Staging", "Production"],
-      },
-    ]);
+    const environmentPrompt: ExpectedPrompt = {
+      name: "environment",
+      question: "Which environment?",
+      type: FieldType.Choice,
+      required: Requirement.Required,
+      options: ["Development", "Staging", "Production"],
+    };
+    expect<ExpectedPrompt>(result.prompt).toEqual(environmentPrompt);
     const choice: HostAnswer = { name: "environment", value: "staging" };
     result = scenario.answer(choice);
     expect<ExpectedIssues>(result.issues).toEqual([
       { name: "environment", code: IssueCode.Choice },
     ]);
     const corrected: HostAnswer = { name: "environment", value: "Staging" };
-    scenario.answer(corrected);
+    const optional = scenario.answer(corrected);
+    if (optional.status !== Status.Pending) throw new Error("expected notes");
+    const notesPrompt: ExpectedPrompt = {
+      name: "notes",
+      question: "Any notes?",
+      type: FieldType.Text,
+      required: Requirement.Optional,
+    };
+    expect<ExpectedPrompt>(optional.prompt).toEqual(notesPrompt);
     const skip: HostEvent = { type: EventType.Skip, name: "notes" };
     result = scenario.send(skip);
     expect(result.status).toBe(Status.Complete);
@@ -131,7 +151,7 @@ describe("answer collection", () => {
     const age: HostAnswer = { name: "age", value: "30" };
     let result = scenario.answer(age);
     if (result.status !== Status.Pending) throw new Error("expected question");
-    expect<string>(result.prompt.field).toBe("name");
+    expect<string>(result.prompt.name).toBe("name");
     const duplicate: HostAnswer = { name: "age", value: "bad" };
     result = scenario.answer(duplicate);
     const priorAge: ExpectedAnswers = { age: 30 };
@@ -172,15 +192,16 @@ describe("answer collection", () => {
 
 describe("request/state boundary", () => {
   test.each([
-    '{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{"age":"bad"},"skipped":[]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{"age":"18"},"skipped":[]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{"alien":"x"},"skipped":[]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{},"skipped":["name"]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{},"skipped":["notes","notes"]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{"notes":"x"},"skipped":["notes"]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{"__proto__":"x"},"skipped":[]},"event":{"type":"start"}}',
-    '{"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"name"}}',
+    '{"version":1,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}',
+    '{"version":3,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{"age":"bad"},"skipped":[]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{"age":"18"},"skipped":[]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{"alien":"x"},"skipped":[]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{},"skipped":["name"]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{},"skipped":["notes","notes"]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{"notes":"x"},"skipped":["notes"]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{"__proto__":"x"},"skipped":[]},"event":{"type":"start"}}',
+    '{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"name"}}',
   ])("rejects malformed request or fabricated state %s", (request) => {
     const sources: InputSources = { schema: FormScenario.profile, request };
     const result = Effect.runSync(

@@ -16,12 +16,12 @@ pub enum ConfigError {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct RequiredTotalAgents(NonZeroU32);
+pub struct MaxTotalAgents(NonZeroU32);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct HostSettings {
-    pub required_total_agents: RequiredTotalAgents,
+    pub max_total_agents: MaxTotalAgents,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -63,22 +63,19 @@ impl TryFrom<Configuration> for ConfigText {
 mod tests {
     use std::num::NonZeroU32;
 
-    use super::{ConfigError, ConfigText, Configuration, RequiredTotalAgents};
+    use super::{ConfigError, ConfigText, Configuration, MaxTotalAgents};
 
-    impl RequiredTotalAgents {
+    impl MaxTotalAgents {
         const STANDARD: Self = Self(NonZeroU32::MIN.saturating_add(19));
     }
 
     #[test]
     fn bundled_configuration_contains_only_host_capacity() -> Result<(), ConfigError> {
         let config = Configuration::bundled()?;
-        assert_eq!(
-            config.host.required_total_agents,
-            RequiredTotalAgents::STANDARD
-        );
+        assert_eq!(config.host.max_total_agents, MaxTotalAgents::STANDARD);
         let encoded = ConfigText::try_from(config)?;
         assert_eq!(encoded.parse()?, config);
-        assert_eq!(encoded.to_string(), "[host]\nrequired_total_agents = 20\n");
+        assert_eq!(encoded.to_string(), "[host]\nmax_total_agents = 20\n");
         Ok(())
     }
 
@@ -105,17 +102,29 @@ mod tests {
     #[test]
     fn custom_host_capacity_round_trips() -> Result<(), ConfigError> {
         let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
-        let customized = ConfigText::from(
-            text.replace("required_total_agents = 20", "required_total_agents = 37"),
-        );
+        let customized =
+            ConfigText::from(text.replace("max_total_agents = 20", "max_total_agents = 37"));
         let config = customized.parse()?;
-        assert_ne!(
-            config.host.required_total_agents,
-            RequiredTotalAgents::STANDARD
-        );
+        assert_ne!(config.host.max_total_agents, MaxTotalAgents::STANDARD);
         let encoded = ConfigText::try_from(config)?;
         assert_eq!(encoded.parse()?, config);
-        assert!(encoded.to_string().contains("required_total_agents = 37"));
+        assert!(encoded.to_string().contains("max_total_agents = 37"));
+        Ok(())
+    }
+
+    #[test]
+    fn accepts_single_agent_ceiling_and_rejects_the_old_minimum() -> Result<(), ConfigError> {
+        let config = Configuration {
+            host: super::HostSettings {
+                max_total_agents: MaxTotalAgents(NonZeroU32::MIN),
+            },
+        };
+        let encoded = ConfigText::try_from(config)?;
+        assert_eq!(encoded.parse()?, config);
+        assert!(matches!(
+            ConfigText::from("[host]\nrequired_total_agents = 20\n".to_owned()).parse(),
+            Err(ConfigError::Decode(_))
+        ));
         Ok(())
     }
 
@@ -124,8 +133,8 @@ mod tests {
         let text = ConfigText::try_from(Configuration::bundled()?)?.to_string();
         for value in ["0", "-1", "1.5", "true", "\"20\"", "4294967296"] {
             let invalid = text.replace(
-                "required_total_agents = 20",
-                &format!("required_total_agents = {value}"),
+                "max_total_agents = 20",
+                &format!("max_total_agents = {value}"),
             );
             assert!(matches!(
                 ConfigText::from(invalid).parse(),
@@ -133,8 +142,8 @@ mod tests {
             ));
         }
         for invalid in [
-            text.replace("required_total_agents = 20", ""),
-            text.replace("[host]\nrequired_total_agents = 20", ""),
+            text.replace("max_total_agents = 20", ""),
+            text.replace("[host]\nmax_total_agents = 20", ""),
             text.replace("[host]", "[host]\nunknown = true"),
         ] {
             assert!(matches!(

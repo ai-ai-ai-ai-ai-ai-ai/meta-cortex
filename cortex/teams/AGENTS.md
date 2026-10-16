@@ -103,8 +103,9 @@ following from the active library and supplies them in the launch instructions:
 - The validated session `development.mode` and `development.delivery`, plus any
   task-specific override; assigned agents inherit them and never repeat
   configuration collection.
-- The completed [host capacity preflight](gizmo-team/docs/agent-configuration.md#check-host-capacity),
-  including the configured target, observed total allocation, and host evidence source.
+- The mode-appropriate [capacity assessment](gizmo-team/docs/agent-configuration.md#check-host-capacity):
+  project ceiling, known host limits and evidence, unresolved capabilities, and
+  scheduling decisions. Single-agent work needs no subagent allocation.
 - Project root, library root, working directory, and the scoped handoff required
   by [consuming project context](gizmo-team/docs/project-context.md).
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.
