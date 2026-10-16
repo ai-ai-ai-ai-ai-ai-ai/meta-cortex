@@ -3,6 +3,7 @@
 Every substantive rule or explanatory section must teach one decision and
 show a prohibited/required pair. Use code for programming decisions, prose
 for writing decisions, and concrete scenarios for behavior or procedures.
+Local Git architecture uses the exception under [Demonstrate the difference](#demonstrate-the-difference).
 
 ## Required actions
 
@@ -25,6 +26,14 @@ The condition and required report are explicit. Documentation layout belongs
 in a separate section with its own example.
 
 ### Demonstrate the difference
+
+Local Git workflow documentation follows
+[Delivery Writing](../../delivery-writing/SKILL.md): concise architecture and
+responsibilities, with Git mechanics left to the agent. Those architecture
+statements do not require per-rule sections or prohibited/required examples.
+This exception covers their role and handoff descriptions, not programming rules
+or unrelated delivery contracts. For example, a statement that each writer owns
+a worktree can stand alone; a Rust input-validation rule still needs its code pair.
 
 - Label the alternatives **Prohibited** and **Required**.
 - Keep the same situation and intended outcome in both alternatives.
@@ -80,6 +89,9 @@ The required pair demonstrates an observable reporting requirement rather
 than a stylistic preference between two vague phrases.
 
 ## Validation
+
+For local Git architecture, check ownership and agent discretion instead of pairs.
+For other subjects, apply the checks below.
 
 For each substantive section, identify its decision and its pair. Verify that
 the pair demonstrates every requirement in that section and that the required

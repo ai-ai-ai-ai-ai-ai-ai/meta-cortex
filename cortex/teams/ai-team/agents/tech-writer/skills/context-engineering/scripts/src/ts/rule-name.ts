@@ -180,17 +180,7 @@ export enum CodePracticeWritingRule {
 
 export enum DeliveryWritingRule {
   Responsibilities = "delivery_writing:responsibilities",
-  OrdinaryProgress = "delivery_writing:ordinary_progress",
-  ReportContent = "delivery_writing:report_content",
-  RoleSkillBoundary = "delivery_writing:role_skill_boundary",
-  CommandWorkspace = "delivery_writing:command_workspace",
-  CommandInputs = "delivery_writing:command_inputs",
-  ExecutableActions = "delivery_writing:executable_actions",
-  ObservableResults = "delivery_writing:observable_results",
-  ConditionalSteps = "delivery_writing:conditional_steps",
-  NoExtraCoordination = "delivery_writing:no_extra_coordination",
-  DisposableValidation = "delivery_writing:disposable_validation",
-  FailureValidation = "delivery_writing:failure_validation",
+  AgentJudgment = "delivery_writing:agent_judgment",
   EvidenceScope = "delivery_writing:evidence_scope",
 }
 
@@ -459,6 +449,7 @@ export enum LocalFeatureRule {
   Cleanup = "local_feature:cleanup",
   Completion = "local_feature:completion",
   Integration = "local_feature:integration",
+  Judgment = "local_feature:judgment",
   Repair = "local_feature:repair",
   Workspace = "local_feature:workspace",
 }

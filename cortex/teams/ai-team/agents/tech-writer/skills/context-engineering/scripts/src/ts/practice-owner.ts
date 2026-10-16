@@ -12,10 +12,7 @@ export enum WritingPracticeOwner {
 }
 
 export enum DeliveryPracticeOwner {
-  WorkspaceSetup = "delivery:workspace_setup",
-  TaskCommits = "delivery:task_commits",
-  BranchIntegration = "delivery:branch_integration",
-  Cleanup = "delivery:cleanup",
+  LocalFeature = "delivery:local_feature",
 }
 
 export enum ProgrammingPracticeOwner {

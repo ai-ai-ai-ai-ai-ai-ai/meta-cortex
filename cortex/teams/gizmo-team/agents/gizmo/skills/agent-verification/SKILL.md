@@ -21,7 +21,7 @@ relates the exact-revision report to Team Gizmo's next operation.
    inventory its change, and read every changed file without changing the checkout.
 3. Load the catalog context below, then complete the protocol's review and result
    handoff. Use available read-only analysis; obtain missing validation evidence
-   through Gizmo under the Git guide's validation procedure.
+   through Gizmo under the Git guide's evidence requirements.
 
 **Prohibited:** replace the protocol's complete review with a passing build log.
 

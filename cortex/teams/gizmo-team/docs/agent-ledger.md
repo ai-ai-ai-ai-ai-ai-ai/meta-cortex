@@ -44,7 +44,7 @@ agent, or worktree. Preserve the database and its engine-managed sidecars togeth
 - Gizmo Prime owns the feature objective and branch decision.
 - Team Gizmo records assignments before launches, reads progress, and decides
   dependencies, reassignment, cancellation, and integration order.
-- The integration agent prepares worktrees, initializes the feature ledger,
+- Gizmo or its assigned integration owner prepares worktrees, initializes the feature ledger,
   verifies code integration, and records the integrated revision.
 - Workers claim their assigned tasks and persist their own progress and results.
 - In single-agent mode, the current agent performs these responsibilities locally.
@@ -697,10 +697,9 @@ in its claim and heartbeat alongside the matching role and attempt.
 
 ## Assignment and worker lifecycle
 
-Prepare the feature branch and worktree using the delivery team's existing Git
-workflow. The ledger records these resources; it does not create or merge them.
+Prepare the feature branch and worktree using the [local feature architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture). The ledger records these resources; it does not create or merge them.
 
-1. The integration agent runs `Feature / Initialize` with the feature ID, objective,
+1. The integration owner runs `Feature / Initialize` with the feature ID, objective,
    feature branch, and absolute feature worktree. Repeating an identical
    initialization reopens it; conflicting metadata is rejected.
 2. Team Gizmo runs `Task / Create` before launching each worker. Supply its
@@ -722,8 +721,8 @@ workflow. The ledger records these resources; it does not create or merge them.
    - `checkpoint` records a real commit from the task branch with continuation notes
      and an explicit [implementation outcome set](#record-implementation-outcomes).
    - `ready` records the final result before sending the completion notification.
-5. Team Gizmo reads durable readiness and directs the integration agent. After
-   merging and running the assigned combined checks, that agent records
+5. Team Gizmo reads durable readiness and decides integration. After
+   integrating and running the assigned combined checks, the integration owner records
    `Task / Coordinate` with `action.kind: integrate` and the feature HEAD.
 
 `agent` and `actor` contain a team and a role from that team's catalog. The
@@ -772,8 +771,9 @@ matches HEAD. The [integration transition](#recorded-state-meanings) checks the
 clean feature worktree and its current tip, with checkpoint ancestry only when
 a checkpoint is recorded. These Git checks do not run or prove tests; record
 actual check evidence and follow the assigned validation.
-The command does not support recording a squash/rebase that drops the checkpoint
-from ancestry; retain the existing merge-based local integration workflow.
+The current integration command requires checkpoint ancestry. An integration
+that drops that checkpoint from history cannot be recorded by this API; this is
+a runtime limitation, not a prescribed Git command sequence.
 
 **Prohibited:** merge unfinished code into the feature merely to publish a
 heartbeat, or treat a successful database write as proof of passing tests.
@@ -819,17 +819,17 @@ not automatically included from an earlier private checkpoint. Readiness does
 not copy or restore earlier outcome declarations.
 
 1. Before final readiness, follow the
-   [task completion procedure](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#finish-task-work).
-   Consolidate private commits when required and validate the final SHA.
+   [local feature architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
+   Validate the final revision.
 2. Record a checkpoint at that final SHA with the complete accepted outcome set.
    Reaffirm retained milestones using their existing IDs. Several milestones
-   may share this one consolidated SHA; equal summaries do not merge their IDs.
+   may share this final SHA; equal summaries do not merge their IDs.
 3. Record readiness using the next returned revision. Send the final SHA and
    validation evidence to Team Gizmo. Integration later supplies its own evidence;
    the final checkpoint alone does not prove inclusion in the feature branch.
 
 For example, a worker has implemented both journal navigation and expandable
-evidence across private checkpoints. After consolidation, reaffirm both against
+evidence across private checkpoints. At readiness, reaffirm both against
 the final commit. This illustrative request assumes revision `8`, attempt `1`,
 an active TechWriter claim, and a valid committed task HEAD. Replace all example
 identity, revision, and commit values with the observed assignment values:

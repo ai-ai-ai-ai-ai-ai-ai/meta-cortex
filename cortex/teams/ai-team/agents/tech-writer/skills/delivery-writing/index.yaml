@@ -3,4 +3,4 @@ title: Delivery Writing Catalog
 entries:
   - title: Delivery instructions
     path: practices/delivery_writing/index.yaml
-    summary: Responsibilities, command context, failure paths, and Git evidence.
+    summary: Responsibilities, agent judgment, and validation evidence.

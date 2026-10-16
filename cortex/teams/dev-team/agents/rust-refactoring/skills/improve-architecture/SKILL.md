@@ -13,21 +13,21 @@ judgment grounded in the actual solution, requirements, and preserved contracts.
 
 ### Establish the reviewed revision
 
-1. Receive the full consolidated worker commit SHA, its assigned base, successful
+1. Receive the final worker commit SHA, its assigned base, successful
    Rust verifier result for that SHA, task scope, and project context from Gizmo.
-2. Resolve that commit and its parent from Git. Inspect the complete task diff
+2. Resolve that commit and the assigned task base from Git. Inspect the complete task diff
    and committed files, including relevant manifests, callers, tests, and affected
    neighboring modules. Read the project's applicable architecture and contracts.
 3. Assess the resulting solution at that revision, including dependency paths
    and ownership beyond the changed lines when they explain the change's impact.
    Keep the entire worker change in scope on every review, including replacements.
-4. Report a missing commit, mismatched verifier result, incomplete consolidation,
+4. Report a missing commit, mismatched verifier result, incomplete task scope,
    or unavailable required context to Gizmo before making a review conclusion.
 
 **Prohibited:** review only the last small fix or mutable working files and
 attribute that conclusion to the completed worker commit.
 
-**Required:** inspect the full consolidated commit and its affected callers,
+**Required:** inspect the complete task change and its affected callers,
 then identify the exact SHA and architecture examined in the report.
 
 ### Judge the architecture in context

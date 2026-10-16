@@ -15,14 +15,14 @@ sequenceDiagram
     participant V as Verifier
     participant A as Rust architecture reviewer
     participant I as Integration agent
-    D->>D: Consolidate task, commit, validate, checkpoint, ready
+    D->>D: Commit, validate, checkpoint, ready
     D->>G: Branch, workspace, final SHA, files, check evidence
-    G->>V: verification_request with final SHA
+    G->>V: verification_request with final SHA and assigned review base
     V->>V: Read commit objects and complete every rule decision
     V->>G: review_result with every issue and blocker
     alt Authorized repairs required
         G->>D: Ordinary complete repair requirements
-        D->>G: Replacement consolidated SHA and readiness
+        D->>G: Replacement revision and readiness
         G->>V: New complete review of replacement SHA
         V->>G: New complete result
     end
@@ -107,68 +107,23 @@ that limitation. Use the assignments below when running in `multi_agent` mode.
 
 ### Receive the worker's committed result
 
-1. Give the worker ordinary task requirements and the existing
-   [task-completion procedure](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#finish-task-work).
-   Require one consolidated task commit. The integration owner supplies the
-   task branch, worktree, and fixed `task_base_sha`; the worker follows the ordinary
-   delivery commands to consolidate private checkpoints before readiness.
-   It must run required checks, confirm a clean checkout, and
-   record its final checkpoint under the
-   [outcome protocol](agent-ledger.md#reaffirm-the-complete-final-set), then
-   record readiness before notifying Gizmo.
-2. Keep verifier context out of the worker assignment. Do not supply this
-   handoff, the verifier role or skill, or review bookkeeping. Gizmo owns the
-   decision to start verification after receiving the worker's result.
-3. Receive the branch, workspace, final SHA, changed-file list, validation
-   evidence, and unresolved issues. Check durable readiness even if the host
-   notification is missing.
-   - If no changes were needed, retain the unchanged SHA and report that fact.
-     Do not require an empty commit just to produce a handoff.
-
-**Prohibited:** give the worker the verifier skill and ask it to manage its own
-verification handoff, then treat its “done” message as integration approval.
-
-**Required:** receive the worker's ordinary committed result, confirm its recorded
-readiness, and let Gizmo arrange the separate review.
+1. Receive the worker's committed result under the
+   [local feature architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
+   Confirm that its branch, worktree, ready checkpoint, final SHA, and validation
+   evidence describe the same result. A no-change task needs no empty commit.
+2. Establish an immutable review base covering the complete task in the assignment
+   context. Workers choose their commit organization; a task may span several commits.
+   Review the resulting task change, not merely its last commit's first-parent diff.
+3. Keep verifier instructions out of worker context. Gizmo arranges the separate
+   review and supplies the worker's result, task base, and exact final SHA.
 
 ### Check the Git handoff
 
-1. Use these values from the ordinary worker result: `task_path` is its
-   absolute worktree, `task_branch` its assigned branch, and `task_sha` its full
-   final SHA. Read `checkpoint_sha` from the ready ledger record and retain the
-   `task_base_sha` supplied at workspace setup. Gizmo inspects Git; it does not
-   stage, commit, reset, or merge on the worker's behalf.
-2. Run the read-only checks:
-
-   ```sh
-   git -C "$task_path" branch --show-current
-   git -C "$task_path" status --short
-   git -C "$task_path" rev-parse --verify HEAD
-   git -C "$task_path" rev-list --count "$task_base_sha..$task_sha"
-   git -C "$task_path" rev-list --parents -n 1 "$task_sha"
-   test "$task_sha" = "$checkpoint_sha"
-   ```
-
-   Require the assigned branch, empty status, and HEAD equal to `task_sha`.
-   For changed work, the count must be `1` and the parent listing must contain
-   exactly `task_sha task_base_sha`. If there was no change, require HEAD equal
-   to the base and report no change; do not manufacture an empty commit.
-   Finish a no-change implementation task through the existing ledger path;
-   do not present a review of an unrelated base commit as a new code change.
-3. Return a mismatch to the Git or task owner before starting review.
-   Do not treat the last commit of an unconsolidated branch as the complete task.
-   Keep the base in delivery assignment context; the verifier still receives
-   only one SHA and derives its first parent from Git.
-4. Send the verified `task_sha` as `commit_sha` in `verification_request`.
-   Tell the verifier to use its [committed-object commands](../agents/gizmo/skills/agent-verification/spec/git-review.md).
-   The passing report's SHA becomes `reviewed_sha` for the integration owner.
-
-**Prohibited:** the branch has two task commits, but Gizmo sends only the last
-SHA and treats its first-parent diff as all of the worker's work.
-
-**Required:** the worker consolidates its private task commits, validates the
-final SHA, and records a matching checkpoint. Gizmo checks the one-commit handoff
-before sending that SHA to the verifier.
+Confirm that the committed result and recorded readiness agree and that the
+assigned review base covers the whole task. Resolve missing objects, a changed
+head, or an ambiguous scope before requesting review. The verifier receives the
+exact final SHA and the fixed base in its assignment context under
+[committed Git reads](../agents/gizmo/skills/agent-verification/spec/git-review.md).
 
 ### Assign the read-only verifier
 
@@ -194,7 +149,8 @@ before sending that SHA to the verifier.
    Use ledger dependencies only for already integrated prerequisites.
 5. Launch the verifier and send the explicit SHA through the
    [review request protocol](../agents/gizmo/skills/agent-verification/spec/communication-protocol.md#request-a-review).
-   The request identifies one commit. If the verifier sends `need_commit`, resend
+   The request identifies the final revision; assignment context identifies the
+   review base. If the verifier sends `need_commit`, resend
    a complete request with a resolvable SHA.
 6. Keep the worker branch stable during review. Require all changed files,
    every required rule, and all cross-rule checks to be covered. Do not restrict
@@ -247,8 +203,8 @@ coverage record, and route both repairs before considering integration.
 4. Before resuming the worker, follow the ledger's
    [stopped-or-finished recovery procedure](agent-ledger.md#recovery-and-stale-work).
    Requeue the task and preserve its branch and worktree. The worker validates
-   its fixes and repeats the one-commit completion procedure. The replacement
-   commit includes the whole task relative to its assigned base. It records a
+   its fixes and returns the full task result relative to its assigned base.
+   It records a
    new checkpoint and readiness, then supplies the new SHA. Preserve the prior
    review in ledger history; never relabel it as a review of the replacement.
 
@@ -282,7 +238,7 @@ fresh evidence for all earlier repairs and the entire new change.
 1. After a complete Rust verifier pass for a completed Rust worker commit,
    assign the [Rust architecture reviewer](../../dev-team/agents/rust-refactoring/AGENTS.md)
    a read-only task under `Development/RustRefactoring`. Supply the same full
-   consolidated SHA, task base, passing report, scope, and affected project
+   final SHA, task base, passing report, scope, and affected project
    architecture. Keep the branch stable. Sequence this through Gizmo without
    making the unintegrated worker task a ledger dependency.
 2. Supply the reviewer's own role and
@@ -301,7 +257,7 @@ fresh evidence for all earlier repairs and the entire new change.
    Report broader proposals through the hierarchy without expanding the task.
 5. For accepted improvements, assign the complete actionable findings to the
    Rust developer. Use the existing recovery and ordinary task-completion paths
-   to obtain a replacement consolidated commit containing the whole worker task.
+   to obtain a replacement revision covering the whole worker task.
    Require its mandatory checks, a fresh complete Rust verifier pass, then
    fresh architecture and simplification assessments of the entire replacement
    commit and related solution. A fixes-only review or an earlier report cannot
@@ -324,28 +280,13 @@ manufacturing a refactor.
 
 ### Integrate the reviewed revision
 
-1. Supply the integration agent with the passing report, reviewed SHA, and task
-   branch, worktree, and consolidation base. Require both the branch head and
-   worker ready checkpoint to match
-   that SHA. For Rust work, include the architecture report and Gizmo disposition
-   from the [architecture handoff](#review-rust-architecture-after-verification).
-   A later commit requires new applicable reviews before integration.
-2. Give the integration owner the
-   [reviewed-task integration protocol](../../delivery-team/agents/integration-agent/skills/local-feature/spec/reviewed-integration.md).
-   It applies the review gate before the ordinary Git merge procedure and
-   requires combined checks. A verifier pass does not replace those checks.
-   The integration agent owns `git merge`; the worker owns implementation commits
-   and conflict-resolution commits. The verifier never commits. The PR agent
-   owns pushing the integrated feature under `create_pr`.
-   - Route conflict resolutions or later repairs through the responsible worker and a
-     complete verifier pass before retrying integration. Rust replacements also
-     repeat the architecture handoff.
-3. Retain review results and repair history in the existing tasks. After accepting
-   a read-only review's result, record its completion through the ledger's
-   existing read-only integration path. Do not require a verifier code commit.
-
-**Prohibited:** integrate a newer branch head using its predecessor's passing
-report, or treat successful Git integration as proof that combined checks passed.
-
-**Required:** integrate the matching reviewed revision, run the combined checks,
-and return any required repair through its owner and verification.
+1. Give the integration owner the task branch, worktree, ready checkpoint, review
+   base, and complete passing report for the same final SHA. For Rust work, include
+   the resolved architecture report and Gizmo's disposition for that revision.
+2. Apply the [local feature architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
+   Choose the integration approach within project and ledger constraints, validate
+   the combined result, and record the actual outcome. Review evidence must cover
+   the integrated content; changed content needs renewed review.
+3. Gizmo evaluates conflicts, failed checks, and remaining issues and decides the
+   next assignment. Retain review and repair history in the existing ledger tasks.
+   Read-only reviewers return reports without creating code commits.

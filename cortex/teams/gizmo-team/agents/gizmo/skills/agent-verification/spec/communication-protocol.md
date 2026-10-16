@@ -4,7 +4,7 @@ Gizmo sends a commit SHA. The verifier checks every rule in its skill's scope
 against every changed file, saves one complete report, and sends Gizmo every issue
 with the evidence and instructions needed to fix it.
 Gizmo owns repairs and integration.
-Use [committed Git reads](git-review.md) for executable commands. This protocol
+Use [committed Git reads](git-review.md) for review scope and evidence. This protocol
 defines messages and evidence; it does not authorize checkout changes.
 
 ## Required actions
@@ -30,12 +30,11 @@ and waits before starting review.
 
 1. Gizmo sends exactly `type: verification_request` and `commit_sha`, containing
    a full resolvable commit object ID.
-2. The verifier reviews the change introduced by that commit relative to its
-   first parent. A root commit adds its entire tree. Do not construct a task-wide
-   base, follow a moving branch, or select only some required rules.
-   For implementation handoffs, Gizmo ensures the worker supplied one
-   consolidated task commit before sending this request. The verifier derives
-   its parent from Git; no base field is added to the message.
+2. The verifier reviews the complete change between the fixed base in assignment
+   context and that final revision under [committed Git reads](git-review.md).
+   An explicitly assigned single-commit review uses its first parent; a root
+   commit adds its entire tree. Record the comparison base in the report.
+   The request SHA identifies the final revision, not a required commit count.
 3. If the SHA is missing, ambiguous, or unresolvable, stop before reading the
    diff or making rule judgments. Save blocked ledger progress and send
    `need_commit` with a nonempty `reason`. Gizmo resends a complete
@@ -69,8 +68,8 @@ reason: The assignment lacks project_root. Provide the absolute consuming-projec
 
 ### Evaluate every rule against every changed file
 
-1. Use the committed-object procedure to inventory and read every changed file
-   in full with its diff. Include non-code files, deleted parent content, and
+1. Use the committed review scope to inventory and read every changed file
+   in full with its diff. Include non-code files, content deleted from the review base, and
    both sides of renames. Inaccessible content remains an access blocker.
 2. Inventory every practice leaf, owned rule, and cross-rule check from the
    complete catalog. Record missing indexes, invalid references, cycles,
@@ -108,7 +107,8 @@ review coverage. Its complete repairs and blockers must also appear in the
 message to Gizmo; storing them only in the ledger is not a completed handoff.
 
 1. **Commit and inventory**
-   - State the reviewed SHA and list every changed file with its change kind:
+   - State the reviewed SHA and fixed comparison base (or root-commit scope).
+     List every changed file with its change kind:
      `added`, `modified`, `deleted`, `renamed`, or `type_changed`.
      A rename includes both paths; other changes carry only their actual path.
      Paths are relative to the assigned worker workspace.
@@ -136,7 +136,7 @@ message to Gizmo; storing them only in the ledger is not a completed handoff.
      in native `next_steps`. Unreviewed entries remain unfinished work.
 3. **Repairs and blockers**
    - Give each violation a stable issue ID and the full repair context defined
-     in the result payload below. Use parent lines for deleted content. List
+     in the result payload below. Use review-base lines for deleted content. List
      multiple violations separately, including multiple violations of one rule
      in one file. Keep these issue IDs in the rule decisions and outgoing message.
    - List blockers separately, each with what is unresolved and exactly what

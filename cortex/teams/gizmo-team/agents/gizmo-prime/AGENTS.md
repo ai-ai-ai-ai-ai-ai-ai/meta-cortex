@@ -38,7 +38,7 @@ flowchart LR
     G -->|One feature branch and check results| P
 ```
 
-- Use [feature setup](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/workspace-setup.md#set-up-workspaces)
+- Use [local feature architecture](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture)
   to establish the base and feature workspace for Team Gizmo.
 - Preserve the [user-owned feature worktree](../../../delivery-team/docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
   Pass its path to Team Gizmo. Never delete or archive it, or delegate its removal,

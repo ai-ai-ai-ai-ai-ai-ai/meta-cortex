@@ -81,7 +81,7 @@ presence does not transfer lifecycle ownership to an agent.
 - Preserve it after task completion, PR publication, PR merge, and cancellation.
   None of these events authorizes feature-worktree cleanup.
 - Automated local cleanup is limited to agent-created task worktrees and their
-  task branches under the [completed task cleanup procedure](../agents/integration-agent/skills/local-feature/practices/local_feature/cleanup.md).
+  task branches under the [local feature architecture](../agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
   A user-provided workspace never becomes disposable merely because its work
   is finished.
 - Return the feature branch and worktree path to the user. The user manages its
@@ -100,7 +100,7 @@ ordinary branch, revision, PR, and run information to the assigning Gizmo throug
 the host. Gizmo decides the next assignment and passes relevant evidence; these are
 work evidence, not credentials or an authorization protocol.
 
-- The integration owner prepares and integrates the feature branch locally.
+- Gizmo owns local integration and can delegate workspace preparation and integration.
 - The PR owner manages the published branch and PR lifecycle.
 - CI execution follows the SRE-owned project execution guidance when needed.
 - Product fixes belong to their development owner; pipeline fixes belong to SRE.
