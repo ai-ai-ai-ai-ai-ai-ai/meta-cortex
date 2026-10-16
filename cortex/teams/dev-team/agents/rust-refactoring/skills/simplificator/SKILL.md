@@ -13,7 +13,7 @@ Architectural fit and ownership remain the distinct concern of Improve Architect
 
 ### Examine the whole solution
 
-1. Use the same full consolidated commit, successful Rust verifier result, scope,
+1. Use the same final revision and task base, successful Rust verifier result, scope,
    and project context supplied for the architecture review. Confirm that the
    committed solution and verifier evidence identify that exact revision.
 2. Read the actual requirements and the complete proposed or completed solution.

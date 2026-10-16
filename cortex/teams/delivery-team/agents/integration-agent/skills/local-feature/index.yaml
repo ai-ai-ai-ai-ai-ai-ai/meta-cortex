@@ -1,6 +1,6 @@
 kind: navigation
 title: Local Feature Rule Map
 entries:
-  - title: Practices
-    path: practices/index.yaml
-    summary: Local feature delivery stages.
+  - title: Team architecture
+    path: practices/local_feature/index.yaml
+    summary: Isolated worker ownership, committed results, and Gizmo-led integration.

@@ -25,8 +25,8 @@ the current agent uses the relevant role and skill directly.
 
 ## Assignment boundaries
 
-Keep local integration with the integration agent and remote PR mechanics with
-the PR agent. Agents report pipeline execution or repair needs to their assigning
+Team Gizmo owns local integration and may assign it to the integration agent.
+The PR agent owns remote PR operations. Agents report pipeline execution or repair needs to their assigning
 Team Gizmo, which decides whether to assign the SRE CI/CD agent. Required checks, reviews,
 merge strategy, and cleanup follow the consuming project; this team does not prescribe a target branch or build system.
 

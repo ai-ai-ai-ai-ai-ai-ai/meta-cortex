@@ -90,66 +90,16 @@ for that assignment rather than preloading unrelated agents.
 
 ## Control local feature changes
 
-```mermaid
-flowchart LR
-    G[Team Gizmo] -->|Task branches and fixes| W[Workers]
-    W -->|Completion and checks| G
-    G -->|Committed SHA| V[Cataloged verifier]
-    V -->|Full coverage and repair requirements| G
-    G -->|Verified Rust SHA| A[Rust architecture reviewer]
-    A -->|Proposals or no change| G
-    G -->|Required reviews resolved| I[Integration agent]
-    I -->|Results or conflicts| G
-```
+Use the [local feature architecture](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture)
+for worker isolation, committed handoffs, and integration ownership. Choose the
+assignments and Git approach from the actual task and results; delegate workspace
+preparation or integration when useful.
 
-- For write work, launch one [integration agent](../../../delivery-team/agents/integration-agent/AGENTS.md)
-  with settings selected for the integration assignment. Give it Prime's feature/base decision,
-  worker assignments, dependency order, and required checks.
-- Assign workspace preparation to that agent. Give workers the returned branch
-  names and paths, their task scope, checks, and library location.
-- Read durable readiness even when a final worker message is missing.
-- For every worker with a `Verifier:` link in its team catalog, follow the
-  [agent verification handoff](../../docs/agent-verification.md). Verifiers load
-  the shared [agent verification skill](skills/agent-verification/SKILL.md)
-  through their own subject skill. When the worker finishes, require its
-  ordinary one-commit delivery, check the Git handoff, and launch the paired
-  verifier with the explicit final SHA. Gizmo performs
-  no Git mutations. Within authorized implementation, route every in-scope
-  repair to the assigned worker and require a complete new pass. For review-only
-  assignments, return all findings instead of starting repairs or integration.
-- After Rust verification passes, apply the
-  [Rust architecture handoff](../../docs/agent-verification.md#review-rust-architecture-after-verification).
-  Require both architecture and simplification assessments. Decide proposals and
-  route accepted improvements to the Rust developer.
-- Once required verification and architecture review are resolved, tell the integration agent which task
-  branch to integrate next. For every worker with a cataloged verifier, supply
-  the passing report and reviewed SHA, plus the Rust architecture report and
-  disposition when required. Order tasks by dependency and wait for
-  each integration result.
-- Route an integration conflict to the responsible worker with the task and
-  target commit SHAs and the [task-repair procedure](../../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#repair-the-assigned-revision).
-  The worker reads those revisions, resolves the conflict,
-  validates, and returns a commit through the ordinary task handoff. For failed
-  checks, also pass the failed command and diagnostic or existing log reference.
-  Do not require the integration agent to prepare a file inventory or repair plan.
-  Request integration again after the required review of the replacement SHA.
-- Once the combined feature passes its checks, ask the integration agent to
-  finish cleanup of eligible agent-created task worktrees. Preserve the
-  [user-owned feature worktree](../../../delivery-team/docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
-  Return the feature branch, workspace, check results, and
-  unfinished work to Prime. Continue through the
-  [configured implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
-  before the final handoff: PR delivery under `create_pr`, or the validated local
-  outcome under `local_only`, honoring task-specific overrides.
-
-**Prohibited:** take over Git operations or resolve an implementation conflict
-instead of assigning it to its owner.
-
-**Required:** direct the integration agent, inspect its results, and assign
-reported fixes to the responsible worker.
-
-Team Gizmo coordinates implementation without replacing its agents or expanding
-the feature scope. Gizmo Prime retains responsibility for the whole feature.
+For workers with a cataloged verifier, apply the
+[verification handoff](../../docs/agent-verification.md), including Rust architecture
+review where required. Decide whether results need repairs, further agents, or
+integration. Return the combined outcome and remaining work to Prime through the
+[configured delivery path](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery).
 
 ## Coordinate PR and CI/CD work
 

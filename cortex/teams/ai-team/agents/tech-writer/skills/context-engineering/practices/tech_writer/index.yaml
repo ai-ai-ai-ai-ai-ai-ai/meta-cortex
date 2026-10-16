@@ -22,7 +22,7 @@ rules:
     summary: Apply code writing to programming, commands, and delivery.
   - id: tech_writer:delivery_prerequisite
     source: ../../../../AGENTS.md#required-actions
-    summary: Apply delivery writing and Git procedures to delivery instructions.
+    summary: Apply delivery writing and the local Git architecture to delivery instructions.
   - id: tech_writer:programming_prerequisite
     source: ../../../../AGENTS.md#required-actions
     summary: Programming examples require subject and language prerequisites.

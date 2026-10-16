@@ -9,7 +9,7 @@ entries:
     summary: Programming examples, boundary exceptions, and execution evidence.
   - title: Delivery Writing
     path: ../../../tech-writer/skills/delivery-writing/index.yaml
-    summary: Git responsibilities, command context, and observable results.
+    summary: Delivery responsibilities, agent judgment, and validation evidence.
   - title: Local Feature Work
     path: ../../../../../delivery-team/agents/integration-agent/skills/local-feature/index.yaml
-    summary: Git workspace, completion, integration, repair, and cleanup.
+    summary: Isolated worker ownership, committed results, and Gizmo-led integration.

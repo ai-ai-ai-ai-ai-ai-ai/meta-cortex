@@ -7,7 +7,7 @@ description: Initialize a feature's embedded Turso ledger and record verified lo
 
 Apply the shared [agent ledger protocol](../../../../../gizmo-team/docs/agent-ledger.md).
 Team Gizmo owns assignment and recovery decisions. This skill owns the delivery
-agent's use of the ledger alongside its existing Git workspace procedure.
+agent's use of the ledger alongside its local feature architecture.
 Use the [coordination transitions](../../../../../gizmo-team/docs/coordination-state-machine.md)
 to distinguish a setup milestone from task readiness and delivery.
 
@@ -23,7 +23,7 @@ to distinguish a setup milestone from task readiness and delivery.
    Claim the integration activity once assigned. Record workspace preparation,
    merge results, combined checks, conflicts, and cleanup on that activity.
 4. Before integration, read the task's durable readiness and recorded checkpoint.
-   Follow the local-feature skill for merging and combined validation.
+   Use the local-feature architecture for integration ownership and validation.
 5. Read the task again and record `Task / Coordinate` with the latest revision,
    `action.kind: integrate`, and the verified feature HEAD. A failed ledger
    update leaves the Git work intact; inspect both before retrying.

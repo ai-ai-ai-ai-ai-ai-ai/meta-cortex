@@ -1,15 +1,31 @@
-kind: navigation
-title: Local Feature Stages
-entries:
-- title: Workspace setup
-  path: workspace/index.yaml
-  summary: Feature and worker worktree preparation.
-- title: Task commits
-  path: completion/index.yaml
-  summary: Worker repairs, validation, consolidation, commits, and readiness.
-- title: Branch integration and repairs
-  path: integration/index.yaml
-  summary: Task merges, combined validation, and integration recovery.
-- title: Cleanup
-  path: cleanup/index.yaml
-  summary: Removal of completed worker worktrees and branches.
+kind: practice
+owner: delivery:local_feature
+title: Local feature architecture
+source_title: Local Feature Work
+source: ../../SKILL.md
+owns:
+  - Agent workspaces and local feature integration responsibilities.
+excludes:
+  - Review requirements, ledger contracts, and remote delivery authorization.
+relationships:
+  - Connects worker results to Gizmo's feature coordination.
+related: []
+rules:
+  - id: local_feature:workspace
+    source: ../../SKILL.md#team-architecture
+    summary: Isolate writers; single-agent work uses the supplied workspace.
+  - id: local_feature:completion
+    source: ../../SKILL.md#team-architecture
+    summary: Workers validate, commit, and return results and issues to Gizmo.
+  - id: local_feature:integration
+    source: ../../SKILL.md#team-architecture
+    summary: Gizmo owns shared integration; its owner validates the combined feature.
+  - id: local_feature:repair
+    source: ../../SKILL.md#team-architecture
+    summary: Gizmo evaluates results and revises assignments or requests further work.
+  - id: local_feature:cleanup
+    source: ../../SKILL.md#team-architecture
+    summary: Preserve user workspaces and recovery state; clean only finished agent workspaces.
+  - id: local_feature:judgment
+    source: ../../SKILL.md#team-architecture
+    summary: Agents choose Git mechanics within project constraints; Prime owns acceptance.

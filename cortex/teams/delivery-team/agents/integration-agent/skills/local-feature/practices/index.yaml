@@ -1,6 +1,0 @@
-kind: navigation
-title: Practices
-entries:
-  - title: Local feature stages
-    path: local_feature/index.yaml
-    summary: Workspace setup, task commits, integration, and cleanup.

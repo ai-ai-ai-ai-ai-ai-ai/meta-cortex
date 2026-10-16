@@ -101,28 +101,11 @@ bounded activity before launching its owner.
 
 #### Prepare workspace output
 
-- **Preconditions and inputs:** Team Gizmo supplies the feature/base decision,
-  existing workspaces, named worker tasks, dependency order, and required checks.
-- **Owner and operation:** integration prepares or reuses the feature branch and
-  workspace, prepares the assigned worker workspaces, and initializes or reopens
-  the ledger as required. Follow [workspace setup](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/workspace-setup.md#set-up-workspaces)
-  and [feature ledger integration](../../delivery-team/agents/integration-agent/skills/agent-ledger/SKILL.md).
-- **Evidence and output:** return each task's branch, absolute path, fixed base
-  SHA, and branch/status checks to Team Gizmo, alongside the feature branch/path
-  and ledger context. Report existing edits or setup failures concretely.
-- **Next owner and expected state:** Team Gizmo can launch the named assignments
-  in the prepared workspaces. Integration records this milestone as progress
-  when its activity also owns later merges; its next dependency is a verified
-  ready worker revision, not “execute scope.”
-
-**Prohibited:** “Workspace ready; integration done.” Then mark the whole
-integration activity `ready` even though assigned merges and checks remain.
-
-**Required:** “Integration → Team Gizmo, workspace preparation for `parser`:
-`task/parser` at `/project-parser` is clean at the supplied base SHA. Feature
-`feature/editor` remains at `/project`. Launch the parser task there; integration
-now awaits its verified ready SHA.” These paths and names are illustrative;
-actual handoffs contain the observed full SHAs and check results.
+Team Gizmo arranges isolated worker workspaces under the
+[local feature architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
+The workspace owner returns the branch and path for each assignment and any
+unresolved setup issues. Preparing a workspace permits task work to begin;
+it does not establish implementation readiness or completed integration.
 
 #### Assign and perform task work
 
@@ -141,7 +124,7 @@ actual handoffs contain the observed full SHAs and check results.
 - **Next owner and expected state:** working or blocked progress keeps the task
   active. A completed worker result and its required evidence permit readiness
   and a handoff to Team Gizmo. For write work, use the existing
-  [task completion procedure](../../delivery-team/agents/integration-agent/skills/local-feature/practices/local_feature/task-commits.md#finish-task-work).
+  [local feature architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
 
 **Prohibited:** “RustDev is blocked; retry later,” without the failed operation
 or the dependency needed to continue.
@@ -178,7 +161,7 @@ literal placeholder sent to the verifier.
 
 #### Review the verified Rust architecture
 
-- **Preconditions and inputs:** the full consolidated Rust worker SHA has passed
+- **Preconditions and inputs:** the full Rust worker revision has passed
   complete Rust verification; Gizmo supplies that result and affected solution context.
 - **Owner and operation:** the Rust architecture reviewer applies Improve
   Architecture and Simplificator read-only under the
@@ -203,9 +186,9 @@ before directing integration.
 - **Preconditions and inputs:** Team Gizmo supplies the ready task's branch,
   workspace, checkpoint, and required review evidence for the same SHA, including
   the resolved architecture review for Rust work.
-- **Owner and operation:** integration applies the
-  [reviewed integration gate](../../delivery-team/agents/integration-agent/skills/local-feature/spec/reviewed-integration.md)
-  and existing merge procedure, then runs the assigned combined checks.
+- **Owner and operation:** the integration owner applies the
+  [reviewed integration requirements](agent-verification.md#integrate-the-reviewed-revision)
+  and validates the combined feature using its chosen Git approach.
 - **Evidence and output:** report the task and destination branch, resulting
   feature SHA, actual check outcomes, and durable integration result. A conflict
   or failed check includes its operation, revisions, and diagnostic.
