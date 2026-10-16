@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { InputApplication, type InputSources } from "../ts/application.ts";
 import { EventType, ProtocolVersion, type InputState } from "../ts/protocol.ts";
+import { FieldType, Requirement } from "../ts/schema.ts";
 import type { WorkflowResult } from "../ts/workflow.ts";
 
 // Test inputs deliberately retain the external JSON shapes to exercise decoding.
@@ -25,6 +26,15 @@ export interface HostAnswer {
   readonly value: SubmittedScalar;
 }
 
+export type ExpectedPrompt = {
+  readonly name: string;
+  readonly question: string;
+  readonly required: Requirement;
+} & (
+  | { readonly type: FieldType.Text | FieldType.Integer }
+  | { readonly type: FieldType.Choice; readonly options: readonly string[] }
+);
+
 export class FormScenario {
   static readonly profile = `fields:
   - name: name
@@ -45,7 +55,7 @@ export class FormScenario {
   constructor(private readonly schema: string) {}
   send(event: HostEvent): WorkflowResult {
     const request: HostRequest = {
-      version: ProtocolVersion.V1,
+      version: ProtocolVersion.V2,
       state: this.state,
       event,
     };

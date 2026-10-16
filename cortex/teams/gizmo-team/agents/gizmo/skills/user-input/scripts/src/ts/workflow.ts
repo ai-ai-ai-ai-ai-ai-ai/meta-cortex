@@ -7,7 +7,6 @@ import {
   type FieldIssue,
 } from "./answer.ts";
 import { FailureCode, InputFailure, type FailureDetail } from "./failure.ts";
-import { CodexPrompt, type NativePrompt } from "./host.ts";
 import {
   EventType,
   ProtocolVersion,
@@ -15,7 +14,7 @@ import {
   type InputRequest,
   type InputState,
 } from "./protocol.ts";
-import { Requirement, type Form } from "./schema.ts";
+import { Requirement, type Field, type Form } from "./schema.ts";
 
 export interface WorkflowRequest {
   readonly form: Form;
@@ -25,14 +24,14 @@ export type TerminalStatus =
   Status.Complete | Status.Cancelled | Status.Unavailable;
 export type WorkflowResult =
   | {
-      readonly version: ProtocolVersion.V1;
+      readonly version: ProtocolVersion.V2;
       readonly status: Status.Pending;
       readonly state: InputState;
       readonly issues: readonly FieldIssue[];
-      readonly prompt: NativePrompt;
+      readonly prompt: Field;
     }
   | {
-      readonly version: ProtocolVersion.V1;
+      readonly version: ProtocolVersion.V2;
       readonly status: TerminalStatus;
       readonly state: InputState;
       readonly issues: readonly FieldIssue[];
@@ -50,7 +49,7 @@ export class InputWorkflow {
     const skipped = [...input.state.skipped];
     const issues: FieldIssue[] = [];
     const state: InputState = { answers, skipped };
-    const base = { version: ProtocolVersion.V1, state, issues } as const;
+    const base = { version: ProtocolVersion.V2, state, issues } as const;
     if (event.type === EventType.Cancel)
       return { ...base, status: Status.Cancelled };
     if (event.type === EventType.Unavailable)
@@ -104,7 +103,7 @@ export class InputWorkflow {
       return {
         ...base,
         status: Status.Pending,
-        prompt: new CodexPrompt(next).render(),
+        prompt: next,
       };
     return { ...base, status: Status.Complete };
   });

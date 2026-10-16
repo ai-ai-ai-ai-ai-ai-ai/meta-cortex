@@ -2,7 +2,7 @@ import { Schema } from "effect";
 import { FormSchema } from "./schema.ts";
 
 export enum ProtocolVersion {
-  V1 = 1,
+  V2 = 2,
 }
 export enum EventType {
   Start = "start",
@@ -57,7 +57,7 @@ export class InputProtocol {
     Schema.Struct(InputProtocol.unavailableFields),
   ]);
   private static readonly requestFields = {
-    version: Schema.Literal(ProtocolVersion.V1),
+    version: Schema.Literal(ProtocolVersion.V2),
     state: InputProtocol.state,
     event: InputProtocol.event,
   } satisfies Schema.Struct.Fields;

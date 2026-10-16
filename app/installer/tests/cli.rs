@@ -5,7 +5,7 @@ use anyhow::{Context, bail};
 use meta_cortex_workbench::versions::ProtocolVersion;
 use report::{
     InfoDocument, Integration, ModelSelection, ReportConfiguration, ReportHarness,
-    ReportRequiredTotalAgents, ReportSchemaVersion, ReportVersion,
+    ReportMaxTotalAgents, ReportSchemaVersion, ReportVersion,
 };
 use serde::{Deserialize, Serialize};
 use std::env::consts::EXE_SUFFIX;
@@ -211,8 +211,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     let config = root.join(".meta-cortex/meta-cortex.toml");
     let customized = format!(
         "# Keep settings\n{}",
-        fs::read_to_string(&config)?
-            .replace("required_total_agents = 20", "required_total_agents = 37")
+        fs::read_to_string(&config)?.replace("max_total_agents = 20", "max_total_agents = 37")
     );
     fs::write(&config, &customized)?;
     let guidance = fs::read(root.join("AGENTS.md"))?;
@@ -224,7 +223,7 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
         instructions: Instructions::Write,
     })?;
     let info = scenario.info()?;
-    assert_eq!(info.schema_version, ReportSchemaVersion::V6);
+    assert_eq!(info.schema_version, ReportSchemaVersion::V7);
     assert_eq!(info.cli_version, ReportVersion::V0_18_0);
     assert_eq!(
         fs::read_to_string(root.join(".meta-cortex/.version"))?,
@@ -244,8 +243,8 @@ fn yaml_initialization_preserves_settings_and_reports_project() -> anyhow::Resul
     assert_eq!(codex.path, root.join("AGENTS.md"));
     assert_eq!(info.model_selection, ModelSelection::PerAssignment);
     assert_eq!(
-        info.configuration.host.required_total_agents,
-        ReportRequiredTotalAgents::CUSTOM
+        info.configuration.host.max_total_agents,
+        ReportMaxTotalAgents::CUSTOM
     );
     assert_eq!(fs::read_to_string(&config)?, customized);
     assert_eq!(fs::read(root.join("AGENTS.md"))?, guidance);

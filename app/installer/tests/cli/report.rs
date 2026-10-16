@@ -19,7 +19,7 @@ pub(super) struct InfoDocument {
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(try_from = "u32")]
 pub(super) enum ReportSchemaVersion {
-    V6,
+    V7,
 }
 
 #[derive(Debug, Error)]
@@ -33,13 +33,13 @@ impl TryFrom<u32> for ReportSchemaVersion {
 
     fn try_from(version: u32) -> Result<Self, Self::Error> {
         match version {
-            6 => Ok(Self::V6),
+            7 => Ok(Self::V7),
             _ => Err(ReportSchemaVersionError::Unsupported),
         }
     }
 }
 
-// Independent decoder for the established semantic-release strings in report schema 6.
+// Independent decoder for the established semantic-release strings in report schema 7.
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 pub(super) enum ReportVersion {
     #[serde(rename = "0.6.2")]
@@ -126,26 +126,26 @@ pub(super) struct ReportConfiguration {
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct ReportHost {
-    pub(super) required_total_agents: ReportRequiredTotalAgents,
+    pub(super) max_total_agents: ReportMaxTotalAgents,
 }
 
 #[derive(Debug, PartialEq, Eq, Deserialize)]
 #[serde(transparent)]
-pub(super) struct ReportRequiredTotalAgents(NonZeroU32);
+pub(super) struct ReportMaxTotalAgents(NonZeroU32);
 
-impl ReportRequiredTotalAgents {
+impl ReportMaxTotalAgents {
     pub(super) const CUSTOM: Self = Self(NonZeroU32::MIN.saturating_add(36));
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{ReportRequiredTotalAgents, ReportSchemaVersion, ReportVersion};
+    use super::{ReportMaxTotalAgents, ReportSchemaVersion, ReportVersion};
 
     #[test]
     fn report_consumer_rejects_invalid_host_capacity() {
         for input in ["0", "-1", "1.5", "true", "4294967296", "null"] {
             assert!(
-                serde_saphyr::from_str::<ReportRequiredTotalAgents>(input).is_err(),
+                serde_saphyr::from_str::<ReportMaxTotalAgents>(input).is_err(),
                 "{input}"
             );
         }
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn report_consumer_rejects_undeclared_or_malformed_versions() {
         for input in [
-            "0", "1", "2", "3", "4", "5", "7", "-1", "3.5", "\"six\"", "null",
+            "0", "1", "2", "3", "4", "5", "6", "8", "-1", "3.5", "\"six\"", "null",
         ] {
             assert!(
                 serde_saphyr::from_str::<ReportSchemaVersion>(input).is_err(),

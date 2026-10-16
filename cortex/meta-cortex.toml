@@ -1,9 +1,6 @@
-# Host requirements for Meta-Cortex.
-# Model and reasoning effort are chosen per assignment by the launching agent.
-# Selection and reassessment: teams/gizmo-team/docs/agent-configuration.md
-# Speed comes from the host session.
-
-# Required host capacity, including the primary agent and all coordinators.
-# This target does not change the host's active allocation.
+# Meta-Cortex concurrency ceiling, including the host agent and coordinators.
+# This bounds framework scheduling; it does not require or allocate host slots.
+# Model and effort are chosen per assignment; speed comes from the host session.
+# Policy: teams/gizmo-team/docs/agent-configuration.md
 [host]
-required_total_agents = 20
+max_total_agents = 20

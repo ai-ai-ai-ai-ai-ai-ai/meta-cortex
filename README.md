@@ -208,7 +208,7 @@ The global `meta-cortex` command accepts the same arguments.
 
 Use `harness: none` and `instructions: skip` to install only the framework.
 Initialization installs `.meta-cortex/` without terminal prompts. Its
-`meta-cortex.toml` configures required host capacity. The launching agent chooses
+`meta-cortex.toml` sets the concurrent agent ceiling. The launching agent chooses
 model and reasoning effort for each assignment and reassesses when work changes
 or fails review. Repeating initialization preserves valid capacity settings and
 does not replace a modified framework.
@@ -413,7 +413,7 @@ result:
   data:
     kind: framework_info
     value:
-      schema_version: 6
+      schema_version: 7
       cli_version: 0.18.0
       framework_version: 0.18.0
       paths:
@@ -432,7 +432,7 @@ result:
           status: Connected
       configuration:
         host:
-          required_total_agents: 20
+          max_total_agents: 20
       model_selection: PerAssignment
 ```
 
@@ -443,13 +443,16 @@ result:
 - `integrations` reports each harness's resolved instruction file and managed-block
   status: `Connected`, `Missing`, or `Conflict`. Multiple harnesses can share a file;
   this reports file contents, not which harness is running.
-- `configuration.host` reports the project's required total agent capacity.
+- `configuration.host` reports the project's concurrent agent ceiling, including coordinators
+  and the host agent; it is not a measurement of available host slots.
 - `model_selection: PerAssignment` reports the framework's selection policy.
   The CLI does not query host models or report running agents' settings.
 
-Report schema version 6 replaces the static `models` and `model_availability`
-fields with `configuration` and `model_selection`. Consumers must use the new
-shape; no compatibility decoder is retained for this inspection report.
+Report schema version 7 replaces `configuration.host.required_total_agents`
+with `configuration.host.max_total_agents`: a scheduling ceiling instead of a
+minimum host requirement. Consumers must use the new shape; no compatibility
+decoder is retained for this inspection report. The configuration likewise
+rejects the old key. Review the intended ceiling when replacing an installation.
 The [agent configuration rules](cortex/teams/gizmo-team/docs/agent-configuration.md)
 own task-based model and effort selection, reassessment, and host limitations.
 Speed stays with the host session; Meta-Cortex does not override its service tier.
@@ -474,11 +477,11 @@ response on stdout with exit status 2.
 ## Use Meta-Cortex
 
 Give your AI host a development task in the initialized project.
-In Codex, the current agent asks at the start of every new session whether to use
+The current agent asks at the start of every new session whether to use
 `single_agent` (this thread and agent) or `multi_agent` (Gizmo coordination), and
 whether delivery should `create_pr` (recommended) or stay `local_only`.
 Tasks and follow-ups in that conversation retain both choices. Configuration uses native
-questions and the library's Bun helper; see the
+questions or permitted conversation and the library's shared Bun validator; see the
 [setup and configuration instructions](cortex/README.md#execution-configuration).
 Read the [framework guide](cortex/README.md) for project context, agent
 coordination, model selection, and agent skills.
@@ -664,10 +667,11 @@ Automated framework upgrades are not implemented yet.
 1. Back up the project's `.meta-cortex/` directory.
 2. Move the existing directory out of the installation path.
 3. Run a `Framework / Initialize` YAML request with the new executable.
-4. Review and reapply supported host capacity changes. Remove the superseded
-   `[gizmo-prime]`, `[team.gizmo]`, and `[team.agent]` model/effort sections.
-   They are rejected by the new configuration schema; model selection now belongs
-   to the launching agent.
+4. Review and reapply supported configuration changes. Replace the former
+   `host.required_total_agents` minimum with an intentional `host.max_total_agents`
+   scheduling ceiling; do not assume the old minimum expresses the desired maximum.
+   Remove superseded `[gizmo-prime]`, `[team.gizmo]`, and `[team.agent]` sections.
+   The schema rejects old keys; model selection belongs to the launching agent.
 
 Repeated initialization succeeds when the installed framework is unchanged and
 matches the executable's bundle, allowing valid changes to `meta-cortex.toml`.
