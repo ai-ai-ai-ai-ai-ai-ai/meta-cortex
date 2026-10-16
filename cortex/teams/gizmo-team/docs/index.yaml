@@ -1,15 +1,24 @@
 kind: navigation
 title: Gizmo Documentation
 entries:
-  - title: Coordination state machine
+  - title: Coordination architecture
     path: coordination-state-machine.md
-    summary: Framework architecture, distinct state domains, operation outcomes, and human handoffs.
+    summary: Decision ownership, expected handoffs, agent discretion, and evidence.
   - title: Agent configuration
     path: agent-configuration.md
     summary: Host capacity, per-assignment model selection, execution reassessment, and launches.
   - title: Agent work ledger
     path: agent-ledger.md
-    summary: Homeostat repository browsing, Feature log, checkpoint outcomes, workflow, and recovery.
+    summary: Operational overview and focused references for recording and resuming work.
+  - title: Ledger tasks and recovery
+    path: ledger-task-lifecycle.md
+    summary: Activity coverage, worker identity, claims, checkpoint outcomes, and interrupted work.
+  - title: Homeostat dashboard
+    path: homeostat-dashboard.md
+    summary: Repository browsing, Feature log, state meanings, event order, and explicit upgrades.
+  - title: Ledger storage and compatibility
+    path: ledger-storage.md
+    summary: Repository identity, storage ownership, persisted versions, and migration contracts.
   - title: Agent verification handoff
     path: agent-verification.md
     summary: Cataloged verification, Rust architecture and simplification review, repair routing, and integration readiness.

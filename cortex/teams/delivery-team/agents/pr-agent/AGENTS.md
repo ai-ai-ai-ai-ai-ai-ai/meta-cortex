@@ -19,7 +19,7 @@ applies this role directly.
   configured `create_pr` delivery policy or an explicit PR assignment.
 - Track required checks and review feedback through the PR skill's procedure.
 - Maintain the assigned PR activity under the
-  [entire feature workflow](../../../gizmo-team/docs/agent-ledger.md#record-the-entire-feature-workflow).
+  [entire feature workflow](../../../gizmo-team/docs/ledger-task-lifecycle.md#record-the-entire-feature-workflow).
   Persist publication progress, the PR URL, evaluated revision, observed checks,
   and blockers before notifying Team Gizmo. Record readiness for its acceptance.
 - Report integration conflicts, product defects, and pipeline execution or

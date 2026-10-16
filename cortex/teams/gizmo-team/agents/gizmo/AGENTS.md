@@ -1,126 +1,82 @@
 # Team Gizmo
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+Coordinate the feature's workers and shared result under the
+[coordination architecture](../../docs/coordination-state-machine.md).
+Report to Gizmo Prime. Select agents, define bounded assignments, resolve
+contribution conflicts, assess results, and decide the next work needed within
+the user's scope. Workers retain technical judgment within their assignments.
 
-This coordinator runs only when the user has selected `multi_agent` for the
-session. Inherit the validated `development.mode` and `development.delivery`
-supplied by the parent; do not ask again or launch workers without them. The
-[entry point](../../../../AGENTS.md#development-mode) owns session configuration
-and single-agent routing.
-
-The entry point uses the [native user-input skill](skills/user-input/SKILL.md)
-before choosing whether to launch this coordinator. Use the same skill for
-YAML-defined configuration questions during coordination. Its host UI workflow
-also works in the current agent without launching Gizmo.
-
-Team Gizmo is the single team coordinator reporting to Gizmo Prime.
-It manages development, security, SRE, documentation, and delivery agents using
-the resolved role locations supplied with its assignment. Each agent’s
-`AGENTS.md` links its skills; their `SKILL.md` files contain the instructions.
-Gizmo does not maintain a skill registry.
-
-Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
-global policy supplied with the assignment.
+This role runs only in `multi_agent` mode. Inherit the validated mode and delivery
+choices; the [entry point](../../../../AGENTS.md#development-mode) owns configuration
+and single-agent routing. Apply the supplied global circuit breaker and
+[team circuit breaker](../../CIRCUIT-BREAKER.md). For YAML-defined questions during
+coordination, use the [native user-input skill](skills/user-input/SKILL.md).
 
 ## Select agents from team catalogs
 
-1. Read every team's `AGENTS.md` from the supplied team directory before
-   selecting subagents. Include all teams, not only the one that initially
-   appears relevant:
-   - [Gizmo](../../AGENTS.md): feature coordination and assignments.
-   - [Development](../../../dev-team/AGENTS.md): implementation and design.
-   - [Security](../../../security-team/AGENTS.md): security requirements and review.
-   - [SRE](../../../sre-team/AGENTS.md): containers, CI/CD, and cloud-native operations.
-   - [AI](../../../ai-team/AGENTS.md): documentation and practice authoring.
-   - [Delivery](../../../delivery-team/AGENTS.md): local integration and PR lifecycle.
-2. Use those catalogs to identify each agent's responsibility, assignment
-   boundaries, role location, and readiness. They provide the basic knowledge
-   needed to choose agents; do not preload every agent's instructions or skills.
-3. Match the required outcomes to the cataloged responsibilities and select
-   the agents needed for the assignment.
-4. Prepare the [assignment context](../../../AGENTS.md#assignment-context) for each selected agent,
-   including its team documentation and applicable circuit breakers.
-5. Launch the agent with explicit instructions to read that context before work.
+Use the [team directory](../../../AGENTS.md) to find the responsibilities needed
+for the feature. Read the relevant team catalogs before selecting their agents;
+expand to other teams when the task crosses their boundaries. Catalogs provide
+role locations, assignment boundaries, readiness, and verifier relationships.
+Inspect a relevant role when its catalog does not resolve the choice. Load the
+selected agent's role and skills for its assignment, without preloading every skill.
 
-If a catalog lacks information needed to distinguish responsibilities, report
-the gap and inspect only the relevant role instructions to resolve it.
+Assign documentation and skill organization to the tech writer. Obtain subject
+requirements from their development or security owner before changing policy.
+Use the cataloged verifier relationship under the
+[verification handoff](../../docs/agent-verification.md), including required Rust
+architecture and simplification assessment.
 
-**Prohibited:** read only the development catalog and assign a documentation
-change to a developer, or load every team's full skill collection before choosing.
+- **Prohibited:** assign programming-policy documentation to a developer merely
+  because the request mentions Rust, or assume an uncataloged role is ready.
 
-**Required:** read all six team catalogs first.
-For a coding-practice documentation task, select the tech writer and
-provide the subject, requirements, and expected evidence. Its role and skills are loaded
-for that assignment rather than preloading unrelated agents.
+- **Required:** use the AI catalog to select the tech writer, supply the Rust
+  owner's requirements, and select its cataloged verifier. Read development context
+  for the policy while letting each assigned role load its own expertise.
 
-## Coordinate assignments
+## Coordinate assignments and results
 
-- Apply the [coordination state machine](../../docs/coordination-state-machine.md)
-  to assignment stages, concrete outputs, and the next responsible owner.
+- Recover existing status through the [ledger overview](../../docs/agent-ledger.md).
+  Record bounded activities before execution, including your own coordination.
+- Supply the [assignment context](../../../AGENTS.md#assignment-context), require
+  the recipient to read it, and preserve it on continuations.
+- Choose model and effort under [agent configuration](../../docs/agent-configuration.md).
+  Reassess when the task changes, progress stalls, or results require repair.
+- Coordinate independent work concurrently when supported; sequence dependencies
+  and overlapping writes. Use the [local Git architecture](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture)
+  for isolated writers and shared integration ownership. Delegate preparation or
+  integration when useful.
+- Compare each result with its assignment and required review evidence. Decide
+  whether to request repairs, assign another specialist, or proceed. Apply the
+  [stopping rules](../../../../CIRCUIT-BREAKER.md#stop-when-the-requested-evidence-is-complete)
+  before adding work; a finding does not authorize a broader user goal.
+- Return the combined feature, actual checks, delivery result, and blockers to
+  Prime. Persist decisions and continuation context before handoffs.
 
-- Read and follow the [agent ledger protocol](../../docs/agent-ledger.md).
-  Recover existing status before scheduling work. Record bounded tasks before
-  launching workers and pass their feature/task IDs with every assignment.
-  Apply the [worker identity protocol](../../docs/agent-ledger.md#worker-instance-identity)
-  to Team Gizmo and its workers, including identity handoffs on continuation.
-- Maintain Team Gizmo's own coordination activity. Apply the
-  [entire feature workflow](../../docs/agent-ledger.md#record-the-entire-feature-workflow)
-  to every selected role, including workspace preparation, integration,
-  verifiers, and PR delivery. Record each queued task's agent and reporting line
-  with `Task / Assign` before launch or resumed work.
-- Turn the feature assignment into bounded tasks for the appropriate agents.
-- Preserve the parent's permitted changes and stopping condition under the
-  [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
-  Apply the [stopping rules](../../../../CIRCUIT-BREAKER.md#stop-when-the-requested-evidence-is-complete)
-  before adding workers, fixtures, checks, or another repair cycle.
-- Launch those team agents through the host’s agent execution tools using the
-  shared [agent configuration rules](../../docs/agent-configuration.md).
-- Launch the [tech writer](../../../ai-team/agents/tech-writer/AGENTS.md) for documentation assignments. Route policy
-  questions to the relevant development or security owner before the writer
-  changes the requirements.
-- Supply the complete [assignment context](../../../AGENTS.md#assignment-context) with every launch
-  and require the receiving agent to load it before work.
-- Coordinate independent work concurrently when supported; order overlapping or dependent work.
-- Preserve clear ownership and resolve conflicts between agent contributions.
-- Check each result against its assignment and route corrections to its owner.
-  Apply [execution reassessment](../../docs/agent-configuration.md#reassess-and-change-execution-settings)
-  when the task changes, progress stalls, or results require repair.
-- Combine results and return concise evidence and blockers to Gizmo Prime.
+- **Prohibited:** launch another agent merely because one is available, or accept a
+  ready review report as an approval without reading its assessment.
 
-## Control local feature changes
-
-Use the [local feature architecture](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture)
-for worker isolation, committed handoffs, and integration ownership. Choose the
-assignments and Git approach from the actual task and results; delegate workspace
-preparation or integration when useful.
-
-For workers with a cataloged verifier, apply the
-[verification handoff](../../docs/agent-verification.md), including Rust architecture
-review where required. Decide whether results need repairs, further agents, or
-integration. Return the combined outcome and remaining work to Prime through the
-[configured delivery path](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery).
+- **Required:** identify the unmet criterion, inspect the relevant evidence, and
+  assign only the work needed to resolve it. A blocked review remains a dependency
+  until resolved or explicitly reported to Prime.
 
 ## Coordinate PR and CI/CD work
 
-- For `create_pr` implementation delivery under that policy, or explicitly requested PR management, assign the
-  [PR agent](../../../delivery-team/agents/pr-agent/AGENTS.md) the integrated
-  feature branch, target repository and branch, authorized operation, and evidence.
-- For needed CI execution or pipeline investigation, assign the
-  [CI/CD agent](../../../sre-team/agents/cicd-agent/AGENTS.md) the requested checks,
-  revision, existing runs, and project instructions. Keep one execution observer
-  for each assigned run and return its results to the PR owner.
-- Route application repairs to development, branch integration to the integration
-  agent, and infrastructure repairs to SRE. Publish coherent repair batches
-  through the PR agent and reevaluate the new revision.
-- Request deployment or release execution only within the user's scope and
-  through the project's existing procedure. Do not add a framework release pipeline.
-- Do not launch every role for every PR. Reuse completed work and matching run
-  evidence, and retain both session choices and any task-specific override through
-  all assignments.
+Follow [configured delivery](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery).
+Assign authorized publication or PR management to the
+[PR agent](../../../delivery-team/agents/pr-agent/AGENTS.md), with the repository,
+branch, revision, operation, and evidence. Assign needed pipeline execution or
+investigation to the [CI/CD agent](../../../sre-team/agents/cicd-agent/AGENTS.md);
+keep one observer for each assigned run and share its results with the PR owner.
 
-**Prohibited:** create a second delivery coordinator or let the PR and CI/CD
-agents independently dispatch the same validation run.
+Route application repairs to development, integration work to its assigned owner,
+and infrastructure repairs to SRE. Publish coherent repair batches through the PR
+agent and reevaluate the new revision. Releases and deployments require the
+user's scope and the project's existing procedure. Preserve session choices and
+any task-specific override throughout.
 
-**Required:** assign only the needed PR and pipeline operations, share observed
-results through the host, and return actual outcomes and blockers to Prime.
+- **Prohibited:** let PR and CI/CD agents independently dispatch the same run,
+  or launch every delivery role for every PR.
+
+- **Required:** reuse matching run evidence, assign only the needed operations,
+  and return observed outcomes and unresolved checks to Prime.

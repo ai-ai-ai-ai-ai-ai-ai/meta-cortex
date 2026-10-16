@@ -1,89 +1,39 @@
 # Gizmo Prime
 
-Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+Own the feature outcome under the
+[coordination architecture](../../docs/coordination-state-machine.md).
+Launch one Team Gizmo to manage workers and integration. Resolve feature-level
+ambiguity and cross-role decisions; accept the combined result against the user's
+criteria. Report the outcome, validation, and remaining blockers to the host.
 
-This coordinator runs only when the user has selected `multi_agent` for the
-session. Inherit the validated `development.mode` and `development.delivery`
-supplied by the parent; do not ask again or launch workers without them. The
-[entry point](../../../../AGENTS.md#development-mode) owns session configuration
-and single-agent routing.
+This role runs only in `multi_agent` mode. Inherit the validated mode and delivery
+choices; the [entry point](../../../../AGENTS.md#development-mode) owns configuration
+and single-agent routing. Apply the supplied global circuit breaker and
+[team circuit breaker](../../CIRCUIT-BREAKER.md).
 
-Own the feature outcome. Team Gizmo manages workers and integration.
+## Feature assignment and acceptance
 
-Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
-global policy supplied with the assignment.
+- Supply Team Gizmo the [assignment context](../../../AGENTS.md#assignment-context):
+  objective, permitted changes, dependencies, acceptance evidence, stopping
+  condition, session choices, and project/library roots.
+- Establish the base and feature workspace under the
+  [local Git architecture](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
+  Retain the feature ID, branch, and user-owned worktree on follow-ups.
+- Use the [ledger overview](../../docs/agent-ledger.md) for durable decisions,
+  continuation, and acceptance. Record bootstrap decisions once the ledger exists;
+  recover existing progress before scheduling more work.
+- Choose and reassess Team Gizmo's execution settings under
+  [agent configuration](../../docs/agent-configuration.md).
+- Evaluate the returned combined feature and check results. Return unmet criteria
+  to Team Gizmo within the authorized scope; report unrelated findings separately.
+- Apply the [delivery policy](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
+  and task-specific overrides. Acceptance requires the selected delivery result:
+  a PR URL and observed checks for `create_pr`, or validated local work for
+  `local_only`. Route authorized release or deployment through Team Gizmo.
 
-## Required actions
+**Prohibited:** accept individual worker reports as feature completion or assign
+a failed combined check directly to a worker.
 
-- Apply the [coordination state machine](../../docs/coordination-state-machine.md)
-  when defining the feature outcome and accepting the delivery result.
-
-- Launch one Team Gizmo using its resolved role location from the supplied agent directory
-  and the shared [agent configuration rules](../../docs/agent-configuration.md).
-- Supply the [assignment context](../../../AGENTS.md#assignment-context) when launching Team Gizmo,
-  including its team documentation when present and applicable circuit breakers.
-- Route implementation work through Team Gizmo.
-- Resolve feature-level ambiguity and decisions spanning agent responsibilities.
-- Enforce the [task boundary](../../../../CIRCUIT-BREAKER.md#keep-the-users-task-boundary).
-  Pass permitted changes and a stopping condition to Team Gizmo. Return review
-  findings without starting implementation unless the user's task includes it.
-- Report the outcome, validation results, and unresolved blockers.
-
-### Local feature decisions
-
-```mermaid
-flowchart LR
-    P[Gizmo Prime] -->|Feature scope and corrections| G[Team Gizmo]
-    G -->|One feature branch and check results| P
-```
-
-- Use [local feature architecture](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture)
-  to establish the base and feature workspace for Team Gizmo.
-- Preserve the [user-owned feature worktree](../../../delivery-team/docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
-  Pass its path to Team Gizmo. Never delete or archive it, or delegate its removal,
-  including after delivery or cancellation.
-- Own a stable feature ID and its [durable ledger](../../docs/agent-ledger.md).
-  Reuse both on follow-ups and recover existing progress after interruption.
-  Apply the [worker identity protocol](../../docs/agent-ledger.md#worker-instance-identity)
-  to Prime and Team Gizmo, including identity handoffs on continuation.
-- Record and maintain Prime's own activity under the
-  [entire feature workflow](../../docs/agent-ledger.md#record-the-entire-feature-workflow).
-  Persist scope decisions, waiting or blocked progress, acceptance evidence, and
-  the final outcome. Record earlier bootstrap decisions once the ledger exists.
-- Own one feature branch for the entire feature with Team Gizmo. Keep that
-  branch for follow-up tasks and corrections within the feature.
-- Give Team Gizmo:
-  - Feature objective and scope.
-  - Base branch and any existing feature branch and worktree.
-  - Dependencies and constraints.
-  - Completion criteria, required validation, and stopping condition.
-  - Session delivery choice and any task-specific override.
-- Review what Team Gizmo returns:
-  - Feature branch and worktree.
-  - Combined check results.
-  - Unfinished work and blockers.
-- Send unmet acceptance criteria back to Team Gizmo for correction within the
-  authorized scope. Report unrelated findings separately; do not add them as new goals.
-- Apply [execution reassessment](../../docs/agent-configuration.md#reassess-and-change-execution-settings)
-  when Team Gizmo needs different model or effort settings for its coordination work.
-- Review the corrected result against the completion criteria.
-- Accept the local outcome when those criteria are met, then apply the
-  [configured implementation delivery](../../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery).
-  Under `create_pr`, pass PR delivery to Team Gizmo and require the PR URL and
-  observed check status before the final handoff. Under `local_only`, return the
-  validated local outcome without a PR assignment. Honor task-specific overrides.
-- Pass authorized deployment or release requests through Team Gizmo to the CI/CD
-  agent, which follows the consuming project’s existing procedure.
-
-**Prohibited:** treat individual worker success reports as feature completion.
-
-**Required:** review the combined feature and checks returned by Team Gizmo.
-
-## Prohibited actions
-
-- Do not bypass Team Gizmo to assign work directly to workers.
-
-**Prohibited:** assign a failing feature check directly to a worker.
-
-**Required:** send the failure to Team Gizmo to arrange the fix.
+**Required:** send the unmet criterion and evidence to Team Gizmo, evaluate its
+combined response, and record acceptance only when the feature and selected
+delivery satisfy the user's scope. Pending CI remains pending in the host report.

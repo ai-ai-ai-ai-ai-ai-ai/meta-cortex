@@ -19,7 +19,7 @@ to distinguish a setup milestone from task readiness and delivery.
    stable feature ID, objective, branch, and absolute worktree path.
 3. Return the ledger path and feature ID with the task branch/worktree mappings.
    Team Gizmo records and assigns every participating role's activity through the
-   [entire feature workflow](../../../../../gizmo-team/docs/agent-ledger.md#record-the-entire-feature-workflow).
+   [entire feature workflow](../../../../../gizmo-team/docs/ledger-task-lifecycle.md#record-the-entire-feature-workflow).
    Claim the integration activity once assigned. Record workspace preparation,
    merge results, combined checks, conflicts, and cleanup on that activity.
 4. Before integration, read the task's durable readiness and recorded checkpoint.
@@ -28,7 +28,7 @@ to distinguish a setup milestone from task readiness and delivery.
    `action.kind: integrate`, and the verified feature HEAD. A failed ledger
    update leaves the Git work intact; inspect both before retrying.
    This records the owning task's integration evidence for the canonical
-   [Feature log projection](../../../../../gizmo-team/docs/agent-ledger.md#feature-log).
+   [Feature log projection](../../../../../gizmo-team/docs/homeostat-dashboard.md#feature-log).
 6. Preserve the ledger when cleaning completed worker worktrees. Report failures
    to Team Gizmo; it decides whether to requeue work or assign a repair.
 7. Record readiness on the integration activity before the completion
