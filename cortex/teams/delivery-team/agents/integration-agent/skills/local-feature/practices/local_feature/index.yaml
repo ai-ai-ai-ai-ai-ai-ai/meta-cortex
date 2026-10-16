@@ -13,7 +13,7 @@ related: []
 rules:
   - id: local_feature:workspace
     source: ../../SKILL.md#team-architecture
-    summary: Isolate writers; single-agent work uses the supplied workspace.
+    summary: Give each writer an isolated task branch and worktree.
   - id: local_feature:completion
     source: ../../SKILL.md#team-architecture
     summary: Workers validate, commit, and return results and issues to Gizmo.

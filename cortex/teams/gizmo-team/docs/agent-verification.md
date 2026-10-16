@@ -14,7 +14,6 @@ owns review scope, reviewer judgment, and expected results.
 - Evaluate the returned findings and evidence. Gizmo decides the next assignment and routes authorized repairs to their owner.
 - Obtain a new assessment of a repaired revision; the reviewer determines which investigations need repeating.
 - Review-only requests end with findings and limitations. They do not authorize repairs.
-- In single-agent mode, perform these responsibilities locally without launching agents or claiming independent review.
 
 ## Review Rust architecture after verification
 

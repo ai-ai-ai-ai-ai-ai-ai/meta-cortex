@@ -8,13 +8,13 @@ consuming project owns its branch, review, validation, and merge policies.
 ### Configured implementation delivery
 
 Use the validated session `development.delivery` collected by the
-[entry point](../../../AGENTS.md#development-mode) from
-[development.yaml](../../../development.yaml). Apply it in both development modes:
+[entry point](../../../AGENTS.md#development-delivery) from
+[development.yaml](../../../development.yaml):
 
 - `create_pr` is the recommended first choice. An implementation request includes
   committing the validated feature, pushing its branch, and creating or updating
   its PR. Continue without requiring a separate PR request or approval. The PR
-  role owns remote operations in multi-agent mode.
+  role owns remote operations.
 - `local_only` completes after local implementation and required validation.
   Keep work local: do not push or create/update a PR. Return the local branch,
   workspace, validation results, and any uncommitted changes. Local commits remain
@@ -104,8 +104,6 @@ work evidence, not credentials or an authorization protocol.
 - The PR owner manages the published branch and PR lifecycle.
 - CI execution follows the SRE-owned project execution guidance when needed.
 - Product fixes belong to their development owner; pipeline fixes belong to SRE.
-- In single-agent mode, the current agent performs these responsibilities using
-  the relevant skills. Loading a role or skill does not launch another agent.
 
 **Prohibited:** create a staging branch, custom handoff registry, and another
 manager loop merely to move an integrated feature into a PR.

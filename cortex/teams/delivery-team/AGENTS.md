@@ -1,8 +1,7 @@
 # Delivery Team
 
 Team Gizmo uses this catalog for local integration and GitHub pull-request
-assignments. Apply the [project delivery policy](docs/project-delivery-policy.md). In single-agent mode,
-the current agent uses the relevant role and skill directly.
+assignments. Apply the [project delivery policy](docs/project-delivery-policy.md).
 
 ## Agent catalog
 

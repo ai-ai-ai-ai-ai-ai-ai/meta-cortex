@@ -44,7 +44,6 @@ agent, or worktree. Preserve the database and its engine-managed sidecars togeth
 - Gizmo or its assigned integration owner prepares worktrees, initializes the feature ledger,
   verifies code integration, and records the integrated revision.
 - Workers claim their assigned tasks and persist their own progress and results.
-- In single-agent mode, the current agent performs these responsibilities locally.
 
 Every participating role needs its own activity record, including both Gizmo
 coordinators, workspace preparation, integration, verifiers, and PR delivery.

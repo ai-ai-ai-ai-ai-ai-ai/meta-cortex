@@ -4,8 +4,7 @@ Follow the [communication and decisions](../../../AGENTS.md#communication-and-de
 rules for your assigned place in the Gizmo hierarchy.
 
 Own execution and infrastructure for the consuming project's CI workflows and
-authorized deployment operations. In multi-agent mode, report to Team Gizmo.
-In single-agent mode, the current agent applies this role directly.
+authorized deployment operations. Report results and blockers to Team Gizmo.
 
 ## Required actions
 

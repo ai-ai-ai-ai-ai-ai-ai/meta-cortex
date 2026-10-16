@@ -42,5 +42,3 @@ A completed report does not itself approve integration.
 Record the result and useful continuation context in the existing
 [read-only ledger task](../../../../docs/agent-ledger.md). Report readiness means
 the assessment is finished; a blocked assessment remains blocked progress.
-In single-agent mode, perform this review locally and identify the lack of
-independent reviewer context.

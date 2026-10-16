@@ -10,5 +10,4 @@ review, or another assignment is needed.
 
 Apply [feature ledger integration](skills/agent-ledger/SKILL.md) for durable records
 and [project delivery policy](../../docs/project-delivery-policy.md) for workspace
-ownership and delivery. Remote publication belongs to the PR role. In single-agent
-mode, the current agent applies the relevant skills locally.
+ownership and delivery. Remote publication belongs to the PR role.

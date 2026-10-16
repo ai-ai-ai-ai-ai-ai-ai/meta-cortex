@@ -22,32 +22,28 @@ assigned worktree.
 ## Agent coordination
 
 Give your host a development task with the framework entry point loaded.
-At the start of each new session, the current agent collects
-[mode and delivery choices](AGENTS.md#development-mode) through an available host UI
-or conversation, with the same answer validation. Choose the agent mode:
+The host launches Gizmo Prime; Prime launches Team Gizmo; Team Gizmo assigns the
+workers and independent verifiers needed for the task. The
+[agent instructions](teams/AGENTS.md) define this hierarchy, and the
+[coordination architecture](teams/gizmo-team/docs/coordination-state-machine.md)
+owns its decisions and handoffs.
 
-- `single_agent` keeps implementation, checks, and delivery in the current thread
-  and agent, with the relevant team docs, circuit breakers, and skills.
-- `multi_agent` launches Gizmo Prime, which launches Team Gizmo. Team Gizmo
-  launches the team agents needed for the task.
+At the start of each new session, the host collects a
+[delivery choice](AGENTS.md#development-delivery) through an available host UI
+or conversation, using the same answer validation:
 
-Then choose delivery: `create_pr` (recommended) commits and pushes the validated
-feature and creates or updates its PR; `local_only` keeps work local without
-pushing or creating a PR. The [delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
-defines completion for both paths.
+- `create_pr` (recommended) commits and pushes the validated feature and creates
+  or updates its PR.
+- `local_only` keeps implementation and required validation local.
 
-The agent waits for both validated answers before starting development work,
-reusing explicit choices already supplied in the current session. New tasks and
-follow-ups in the same conversation retain both choices; a new conversation
-collects them again. Delegated agents inherit them. Cancelling configuration stops
-dependent work. A missing native UI allows a permitted conversation path;
-if no channel is allowed, the agent reports the blocker. Host-specific mappings
-live in references such as [Codex integration](teams/gizmo-team/docs/codex-host.md).
-
-The [agent instructions](teams/AGENTS.md) define the coordination workflow.
-The [coordination state machine](teams/gizmo-team/docs/coordination-state-machine.md)
-explains the framework architecture, operation outcomes, and human handoffs.
-In multi-agent mode:
+The [delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
+defines completion for each outcome. The host validates an explicit choice already
+supplied in the session without asking again. Tasks, follow-ups, and delegated
+agents inherit it; an explicit user change applies before further affected work.
+A new conversation collects delivery again. Cancelled or pending collection stops
+dependent work. If no interaction channel is allowed, the host reports the blocker.
+Host-specific mappings live in references such as
+[Codex integration](teams/gizmo-team/docs/codex-host.md).
 
 - **Gizmo Prime**
   - Owns the overall outcome.
@@ -92,9 +88,8 @@ With `create_pr`, implementation continues through PR creation or update without
 a separate request. With `local_only`, it completes locally. You can override the
 delivery choice for a task or change the session preference explicitly. Request
 additional operations such as addressing feedback, checking CI, merging, or
-executing an existing deployment procedure when needed. In single-agent mode,
-the current agent applies the relevant delivery and CI/CD skills. In multi-agent
-mode, Team Gizmo assigns only the specialists needed for the requested work.
+executing an existing deployment procedure when needed. Team Gizmo assigns only
+the specialists needed for the requested work.
 
 [Project delivery policy](teams/delivery-team/docs/project-delivery-policy.md) covers discovery of branch,
 review, merge, and cleanup policy. [Project execution policy](teams/sre-team/docs/project-execution-policy.md)
@@ -131,7 +126,7 @@ permanent observer agent.
 
 ## Execution configuration
 
-The [development form](development.yaml) defines the session mode and delivery questions. The
+The [development form](development.yaml) defines the session delivery question. The
 [user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
 includes a generic YAML form helper, an example, and usage instructions. It
 uses Bun and the shared workspace dependencies installed by Framework / Initialize.
@@ -165,11 +160,10 @@ Windows uses native `.exe` tools, with no WSL or Git Bash requirement.
 [meta-cortex.toml](meta-cortex.toml) sets `host.max_total_agents`, the scheduling
 ceiling including the host agent and coordinators. It does not require or allocate
 that many host slots. The [capacity assessment](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
-uses the selected mode's needs: single-agent work needs no subagent allocation;
-multi-agent work preserves the hierarchy and queues within available capacity.
-Speed comes from the host session. Single-agent mode keeps its model and effort.
+preserves the hierarchy and queues work within available capacity.
+Speed comes from the host session.
 
-In multi-agent mode, the launching agent selects model and effort for each
+The launching agent selects model and effort for each
 assignment using the host's current capabilities and the
 [selection policy](teams/gizmo-team/docs/agent-configuration.md#choose-settings-for-the-assignment).
 Gizmo reassesses those choices when scope changes or results need repair.

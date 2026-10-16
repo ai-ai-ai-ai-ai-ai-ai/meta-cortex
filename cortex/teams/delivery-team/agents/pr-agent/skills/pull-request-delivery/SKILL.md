@@ -25,9 +25,8 @@ file tools or a safely quoted heredoc; pass its path with `--body-file`. Never
 interpolate retrieved text into executable shell code. Examples are individual
 operations, not a script to run from top to bottom without checking results.
 
-In multi-agent mode, report all outcomes, questions, and work outside the assigned
-scope only to the assigning Team Gizmo. Gizmo decides further work and routing.
-In single-agent mode, perform the applicable responsibilities locally.
+Report all outcomes, questions, and work outside the assigned scope only to the
+assigning Team Gizmo. Gizmo decides further work and routing.
 
 ## Required actions
 
@@ -105,7 +104,7 @@ summary and validation evidence for the new revision.
 3. Observe automatically triggered checks before requesting more execution.
    For manual validation, retries, or pipeline investigation, use
    [CI/CD Operations](../../../../../sre-team/agents/cicd-agent/skills/cicd-operations/SKILL.md).
-   In multi-agent mode, report execution needs to Team Gizmo, which decides
+   Report execution needs to Team Gizmo, which decides
    whether to assign CI/CD work and selects one execution observer per run.
    Reuse results supplied by Gizmo.
 4. Wait through the existing host's status/watch tools using bounded,

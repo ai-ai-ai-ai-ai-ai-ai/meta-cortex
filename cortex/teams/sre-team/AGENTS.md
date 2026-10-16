@@ -3,7 +3,7 @@
 Team Gizmo uses this directory to select owners for containers, cluster
 workloads, CI/CD, and cloud-native operations. Apply the
 [project execution policy](docs/project-execution-policy.md) to discover the consuming project’s execution
-contract. In single-agent mode, the current agent uses the relevant role directly.
+contract.
 
 ## Agent catalog
 

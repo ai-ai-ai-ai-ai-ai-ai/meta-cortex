@@ -15,6 +15,5 @@ For each affected boundary, read the applicable practice:
 Verify cleanup at each terminal interaction and enclosing session boundary.
 Implementation owners use these requirements while implementing and testing
 their assigned changes. Security reviewers verify them independently; loading
-this skill does not change either role's assignment. In multi-agent mode,
-return evidence and out-of-scope defects to the assigning Team Gizmo. In
-single-agent mode, apply the requirements and report the evidence locally.
+this skill does not change either role's assignment. Return evidence and
+out-of-scope defects to the assigning Team Gizmo.

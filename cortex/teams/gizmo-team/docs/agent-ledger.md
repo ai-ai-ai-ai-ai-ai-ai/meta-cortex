@@ -21,8 +21,7 @@ the ledger records their actual work. It does not launch agents or perform Git o
    and decides repairs, further assignments, integration, or acceptance. Ready
    means a result is available, not that its assessment passed or the feature is done.
 5. Record the selected delivery outcome and Prime's acceptance before completing
-   coordination. In single-agent mode, record these responsibilities locally;
-   do not imply that separate host agents ran.
+   coordination.
 
 **Prohibited:** mark a feature delivered because its developer task is ready,
 or rely on a final chat message as the only record of an interrupted task.

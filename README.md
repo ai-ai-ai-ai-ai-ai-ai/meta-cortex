@@ -477,10 +477,11 @@ response on stdout with exit status 2.
 ## Use Meta-Cortex
 
 Give your AI host a development task in the initialized project.
-The current agent asks at the start of every new session whether to use
-`single_agent` (this thread and agent) or `multi_agent` (Gizmo coordination), and
-whether delivery should `create_pr` (recommended) or stay `local_only`.
-Tasks and follow-ups in that conversation retain both choices. Configuration uses native
+The host launches Gizmo Prime, which launches Team Gizmo to assign workers and
+independent verifiers. At the start of a new session, the host validates delivery:
+`create_pr` (recommended) publishes the validated feature through a PR;
+`local_only` keeps the work local. Tasks, follow-ups, and delegated agents inherit
+that choice until the user explicitly changes it. Collection uses native
 questions or permitted conversation and the library's shared Bun validator; see the
 [setup and configuration instructions](cortex/README.md#execution-configuration).
 Read the [framework guide](cortex/README.md) for project context, agent

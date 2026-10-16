@@ -3,8 +3,8 @@
 Meta-Cortex is a composable development platform. Its agents, rules, skills,
 and configuration form one framework. Projects include it as an AI library.
 The host supplies models, tools, and the execution environment. Agents turn
-requirements into working software in the current thread or through the host's
-agent execution tools. The [coordination architecture](teams/gizmo-team/docs/coordination-state-machine.md)
+requirements into working software through the host's agent execution tools.
+The [coordination architecture](teams/gizmo-team/docs/coordination-state-machine.md)
 describes the framework architecture and the outcomes connecting those responsibilities.
 
 ## Required actions
@@ -16,96 +16,79 @@ For each new user task, follow this order:
 1. Read the [circuit breaker](CIRCUIT-BREAKER.md) before other framework documents.
    Carry its policy and resolved path through every assignment.
 2. Establish the [project context](#project-context).
-3. Resolve the session's [mode and delivery choices](#development-mode) before
-   planning, implementation, or an agent launch.
-4. Complete the [host capacity preflight](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
-   for the selected mode; single-agent work needs no subagent allocation.
-5. In `multi_agent` mode, read [meta-cortex.toml](meta-cortex.toml) and apply the
-   [agent configuration rules](teams/gizmo-team/docs/agent-configuration.md).
-6. In `multi_agent` mode, read the [team instructions](teams/AGENTS.md). Launch
-   Gizmo Prime through the host's agent execution tool and pass the task context.
-   The team instructions govern later launches and coordination.
+3. Resolve the session's [delivery choice](#development-delivery) before planning,
+   implementation, or an agent launch.
+4. Read [meta-cortex.toml](meta-cortex.toml) and apply the
+   [agent configuration rules](teams/gizmo-team/docs/agent-configuration.md),
+   including the host capacity preflight.
+5. Read the [team instructions](teams/AGENTS.md). Launch Gizmo Prime through the
+   host's agent execution tool with the task context. Prime launches Team Gizmo;
+   Team Gizmo assigns the workers and verifiers needed for the task.
 
-**Prohibited:** launch Gizmo Prime as soon as a task arrives, before reading the
-circuit breaker or resolving the session choices.
+**Prohibited:** begin implementation in the host thread or launch Prime before
+reading the circuit breaker, establishing context, and validating delivery.
 
-**Required:** read the circuit breaker, identify both roots, collect the session
-choices, complete the host capacity preflight, then follow the selected execution path.
+**Required:** resolve both roots and delivery, check host capacity, then launch
+Prime under the coordination hierarchy. Report an unavailable required host
+capability as a blocker.
 
-### Development mode
+### Development delivery
 
-The current agent uses the
+The host agent uses the
 [user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
-with [development.yaml](development.yaml). The two validated answers are
-`answers["development.mode"]` and `answers["development.delivery"]`.
+with [development.yaml](development.yaml) to validate
+`answers["development.delivery"]`.
 
-#### Collect the choices
+#### Collect the delivery choice
 
-- At the start of a new user-facing session, collect `development.mode` and
-  `development.delivery` through an available interaction channel under that skill.
+- At the start of a new user-facing session, collect `development.delivery`
+  through an available interaction channel under that skill.
 - Validate a choice explicitly supplied in the current session. Do not ask the
   user to repeat it.
-- Wait for both validated answers before choosing execution or delivery.
-- Do not infer an answer from an earlier session, repository settings, or a
+- Wait for a validated answer before dependent development work or agent launches.
+- Do not infer delivery from an earlier session, repository settings, or a
   preselected host option.
-- If configuration is cancelled, unavailable, invalid, or pending, stop dependent
-  development work. Do not launch Gizmos while either question is pending.
+- If collection is cancelled, unavailable, invalid, or pending, stop dependent work.
 
 **Prohibited:** treat the preselected `create_pr` option as a submitted answer
 and begin implementation while delivery is still pending.
 
-**Required:** validate the user's mode answer, collect and validate delivery,
-then begin work under both selected choices.
+**Required:** validate the user's explicit `create_pr` choice, then launch the
+coordinated work with that delivery outcome in its assignment.
 
-#### Apply the selected paths
+#### Apply delivery
 
-- **`single_agent`**
-  - Use the current agent and thread. Do not spawn Gizmos, workers, reviewers,
-    or integration subagents.
-  - Read the relevant team and role instructions, team docs, circuit breakers,
-    and skills locally. Use the [assignment context](teams/AGENTS.md#assignment-context)
-    requirements.
-  - Perform implementation, validation, and delivery in this thread. Keep the
-    current host model and settings. Technical requirements still apply;
-    delegation and coordinator routing requirements apply only in multi-agent mode.
-- **`multi_agent`**
-  - Use the Gizmo workflow with model and effort selected per assignment.
-- **`create_pr`**
-  - This is the recommended first delivery option. Follow the
-    [project delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
-    to complete and publish the work.
-- **`local_only`**
-  - Keep work local under the same delivery policy.
+- **`create_pr`** commits and pushes the validated feature and creates or updates
+  its PR. This is the recommended first option.
+- **`local_only`** completes implementation and required validation locally.
 
-**Prohibited:** select `single_agent`, then continue assigning work to Gizmo
-workers or stop after implementation when the validated delivery is `create_pr`.
+The [project delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
+owns completion and publication requirements.
 
-**Required:** with `single_agent` and `create_pr`, load the required context
-locally, implement and verify the change, and publish its PR in this thread.
+**Prohibited:** finish after local implementation when delivery is `create_pr`.
 
-#### Retain and change session choices
+**Required:** carry the validated `create_pr` choice through implementation,
+review, integration, and PR publication; report the PR and observed checks.
+
+#### Retain and change delivery
 
 A session is the current user-facing conversation or thread.
 
-- Retain both choices across tasks, follow-ups, turns, and context compaction.
-  Include them in continuation context and every assignment.
-- Do not ask again for each task or delegated agent. A delegated agent inherits
-  the parent session's choices.
-- Collect both choices again for a new user-facing conversation. If one choice
-  is lost in the current session, ask only for that missing choice.
-- Keep choices in session context. Do not persist them as model settings,
+- Retain delivery across tasks, follow-ups, turns, and context compaction.
+  Include it in continuation context and every assignment.
+- Delegated agents inherit the validated choice and never collect it again.
+- Collect delivery for a new user-facing conversation. If it is lost in the
+  current session, recover it from context or ask only for that missing choice.
+- Keep delivery in session context. Do not persist it as a model setting,
   rewrite `meta-cortex.toml`, or save answers in the repository.
-- Apply an explicit user change before further affected work. Retain the other
-  choice and pass the change to active agents.
-- When switching to `single_agent`, stop delegated agents before continuing.
-  A task-specific override does not replace the session preference.
+- Apply an explicit user change before further affected work and pass it to
+  active agents. A task-specific override leaves the session preference intact.
 
-**Prohibited:** ask for both choices again on a follow-up, or keep delegated
-agents running after the user switches to `single_agent`.
+**Prohibited:** ask for delivery again on every follow-up, or publish after the
+user explicitly changes delivery to `local_only`.
 
-**Required:** reuse both validated choices on follow-ups. If the user changes
-the mode to `single_agent`, stop delegated work, retain delivery, and continue
-in this thread.
+**Required:** reuse validated delivery on follow-ups. Apply a task's explicit
+local-only override to that task and retain the session preference for later work.
 
 ### Project context
 
