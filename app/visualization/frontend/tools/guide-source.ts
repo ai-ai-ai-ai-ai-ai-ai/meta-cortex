@@ -172,8 +172,9 @@ export class GuideSource implements Plugin {
     const handoff = Schema.decodeUnknownSync(
       Schema.Struct(GuideSourceFields.HANDOFF),
     )(
-      communication.match(/(?<text>In multi-agent mode,[\s\S]*?)(?=\n\n)/)
-        ?.groups,
+      communication.match(
+        /## Communication and decisions\n\n(?<text>[\s\S]*?)(?=\n\n)/,
+      )?.groups,
     ).text.replace(/\n/g, " ");
     const payload: GuidePayload = {
       sourceBase: this.sourceBase(),
