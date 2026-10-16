@@ -69,10 +69,10 @@ rules:
     source: ../../SKILL.md#executable-audits
     summary: Empty selections, findings, and tool failures fail the audit.
   - id: context_engineering:audit_limits
-    source: ../../SKILL.md#check-coverage
+    source: ../../SKILL.md#catalog-maintenance-and-semantic-review
     summary: Mechanical checks do not prove policy meaning or rule completeness.
   - id: context_engineering:comparison_scope
-    source: ../../SKILL.md#check-coverage
+    source: ../../SKILL.md#catalog-maintenance-and-semantic-review
     summary: Check comparison identities through the enclosing skill root audit.
   - id: context_engineering:maintained_checks
     source: ../../SKILL.md#maintain-the-checks

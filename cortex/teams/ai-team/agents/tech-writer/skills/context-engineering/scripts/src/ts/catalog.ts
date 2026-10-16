@@ -2,64 +2,9 @@ import { Effect, Schema } from "effect";
 import type { ParseOptions } from "effect/SchemaAST";
 import { parse, type ParseOptions as YamlParseOptions } from "yaml";
 
+import { RuleVocabulary, type RuleName } from "./rule-name.ts";
 import {
-  TechWriterRule,
-  ContextEngineeringRule,
-  WritingClarityRule,
-  FocusedExamplesRule,
-  ArticleStructureRule,
-  ConsistencyRule,
-  KnowledgeGraphsRule,
-  CodePracticeWritingRule,
-  DeliveryWritingRule,
-  ApiInputsRule,
-  BranchingRule,
-  BrowserImplementationRule,
-  BrowserTestingRule,
-  CloudNativeRule,
-  CodeChecksRule,
-  CodeSeparationRule,
-  DefaultValuesRule,
-  DependencySelectionRule,
-  DockerRule,
-  DomainStatesRule,
-  DomainStructureRule,
-  DomainTypesRule,
-  EffectRule,
-  EnumsOverBooleansRule,
-  ErrorHandlingRule,
-  ExplicitStateRule,
-  FunctionOwnershipRule,
-  KubernetesRule,
-  LibrariesRule,
-  LocalFeatureRule,
-  MacroMinimizationRule,
-  ModuleLayoutRule,
-  NamedArgsRule,
-  NoUnknownRule,
-  OwnedUpdatesRule,
-  PathImportsRule,
-  SerialOperationQueuesRule,
-  SerializationBoundariesRule,
-  SingleParameterRule,
-  StructConstructionRule,
-  SvelteStateModelingRule,
-  TestingRule,
-  TypedSqlRule,
-  WasmContractsRule,
-  WasmNameCoherenceRule,
-  WasmUiIntegrationRule,
-  WebUnusedCodeRule,
-  WorkflowTypestateRule,
-  type RuleName,
-} from "./rule-name.ts";
-import {
-  WritingPracticeOwner,
-  DeliveryPracticeOwner,
-  ProgrammingPracticeOwner,
-  RustPracticeOwner,
-  SrePracticeOwner,
-  TypescriptPracticeOwner,
+  PracticeOwnerVocabulary,
   type PracticeOwner,
 } from "./practice-owner.ts";
 
@@ -76,64 +21,12 @@ export class CatalogSchema {
   private static readonly ownerAnnotations = {
     identifier: "registered PracticeOwner",
   } satisfies Schema.Annotations.Bottom<PracticeOwner, readonly []>;
-  static readonly ruleName = Schema.Literals([
-    ...Object.values(TechWriterRule),
-    ...Object.values(ContextEngineeringRule),
-    ...Object.values(WritingClarityRule),
-    ...Object.values(FocusedExamplesRule),
-    ...Object.values(ArticleStructureRule),
-    ...Object.values(ConsistencyRule),
-    ...Object.values(KnowledgeGraphsRule),
-    ...Object.values(CodePracticeWritingRule),
-    ...Object.values(DeliveryWritingRule),
-    ...Object.values(ApiInputsRule),
-    ...Object.values(BranchingRule),
-    ...Object.values(BrowserImplementationRule),
-    ...Object.values(BrowserTestingRule),
-    ...Object.values(CloudNativeRule),
-    ...Object.values(CodeChecksRule),
-    ...Object.values(CodeSeparationRule),
-    ...Object.values(DefaultValuesRule),
-    ...Object.values(DependencySelectionRule),
-    ...Object.values(DockerRule),
-    ...Object.values(DomainStatesRule),
-    ...Object.values(DomainStructureRule),
-    ...Object.values(DomainTypesRule),
-    ...Object.values(EffectRule),
-    ...Object.values(EnumsOverBooleansRule),
-    ...Object.values(ErrorHandlingRule),
-    ...Object.values(ExplicitStateRule),
-    ...Object.values(FunctionOwnershipRule),
-    ...Object.values(KubernetesRule),
-    ...Object.values(LibrariesRule),
-    ...Object.values(LocalFeatureRule),
-    ...Object.values(MacroMinimizationRule),
-    ...Object.values(ModuleLayoutRule),
-    ...Object.values(NamedArgsRule),
-    ...Object.values(NoUnknownRule),
-    ...Object.values(OwnedUpdatesRule),
-    ...Object.values(PathImportsRule),
-    ...Object.values(SerialOperationQueuesRule),
-    ...Object.values(SerializationBoundariesRule),
-    ...Object.values(SingleParameterRule),
-    ...Object.values(StructConstructionRule),
-    ...Object.values(SvelteStateModelingRule),
-    ...Object.values(TestingRule),
-    ...Object.values(TypedSqlRule),
-    ...Object.values(WasmContractsRule),
-    ...Object.values(WasmNameCoherenceRule),
-    ...Object.values(WasmUiIntegrationRule),
-    ...Object.values(WebUnusedCodeRule),
-    ...Object.values(WorkflowTypestateRule),
-  ]).annotate(CatalogSchema.ruleAnnotations);
-  static readonly practiceOwner = Schema.Literals([
-    ...Object.values(WritingPracticeOwner),
-    ...Object.values(DeliveryPracticeOwner),
-    ...Object.values(ProgrammingPracticeOwner),
-    ...Object.values(RustPracticeOwner),
-    ...Object.values(SrePracticeOwner),
-    ...Object.values(TypescriptPracticeOwner),
-  ]).annotate(CatalogSchema.ownerAnnotations);
+  static readonly ruleName = Schema.Literals(RuleVocabulary.values).annotate(
+    CatalogSchema.ruleAnnotations,
+  );
+  static readonly practiceOwner = Schema.Literals(
+    PracticeOwnerVocabulary.values,
+  ).annotate(CatalogSchema.ownerAnnotations);
   static readonly referenceFields = {
     title: Schema.NonEmptyString,
     path: Schema.NonEmptyString,
@@ -189,8 +82,41 @@ export class CatalogSchema {
     CatalogSchema.practice,
     CatalogSchema.check,
   ]);
+  // Catalog declarations own the vocabulary; normal audits still use closed enums.
+  static readonly declarationId = Schema.String.check(
+    Schema.isPattern(
+      /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*:[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/,
+    ),
+  );
+  private static readonly declaredRuleFields = {
+    ...CatalogSchema.ruleFields,
+    id: CatalogSchema.declarationId,
+  } satisfies Schema.Struct.Fields;
+  private static readonly declaredPracticeFields = {
+    ...CatalogSchema.practiceFields,
+    owner: CatalogSchema.declarationId,
+    rules: Schema.NonEmptyArray(
+      Schema.Struct(CatalogSchema.declaredRuleFields),
+    ),
+  } satisfies Schema.Struct.Fields;
+  private static readonly declaredComparisonFields = {
+    ...CatalogSchema.comparisonFields,
+    id: CatalogSchema.declarationId,
+  } satisfies Schema.Struct.Fields;
+  private static readonly declaredCheckFields = {
+    ...CatalogSchema.checkFields,
+    compare: Schema.NonEmptyArray(
+      Schema.Struct(CatalogSchema.declaredComparisonFields),
+    ),
+  } satisfies Schema.Struct.Fields;
+  static readonly declaration = Schema.Union([
+    CatalogSchema.navigation,
+    Schema.Struct(CatalogSchema.declaredPracticeFields),
+    Schema.Struct(CatalogSchema.declaredCheckFields),
+  ]);
 }
 
+export type CatalogDeclaration = typeof CatalogSchema.declaration.Type;
 export type Catalog = typeof CatalogSchema.value.Type;
 export type CatalogEntry = typeof CatalogSchema.entry.Type;
 export type CatalogRule = typeof CatalogSchema.rule.Type;
@@ -207,14 +133,26 @@ export class CatalogInput {
   };
   constructor(private readonly source: string) {}
 
-  readonly decode = Effect.fnUntraced(function* (this: CatalogInput) {
+  private readonly parse = Effect.fnUntraced(function* (this: CatalogInput) {
     // YAML exposes an untyped parser result only inside this schema decoder.
     // eslint-disable-next-line @typescript-eslint/no-restricted-types
     const value = yield* Effect.try((): unknown =>
       parse(this.source, CatalogInput.yaml),
     );
+    return value;
+  });
+
+  readonly decode = Effect.fnUntraced(function* (this: CatalogInput) {
+    const value = yield* this.parse();
     return yield* Schema.decodeUnknownEffect(
       CatalogSchema.value,
+      CatalogInput.admission,
+    )(value);
+  });
+  readonly declarations = Effect.fnUntraced(function* (this: CatalogInput) {
+    const value = yield* this.parse();
+    return yield* Schema.decodeUnknownEffect(
+      CatalogSchema.declaration,
       CatalogInput.admission,
     )(value);
   });

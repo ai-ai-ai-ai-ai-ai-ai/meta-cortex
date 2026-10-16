@@ -241,6 +241,9 @@ It uses its own GitHub Actions token; no cross-repository token is required.
    [the CLI report consumer](app/installer/tests/cli/report.rs). `Version::CURRENT` is resolved from
    the package version at compile time; an undeclared release fails compilation.
    Keep only the releases whose installed metadata this executable supports.
+   Update the current-release expectations and the distinct mismatch pin in the
+   [Windows wrapper fixture](app/installer/tests/wrapper_windows_cli.rs); it tests
+   the newly built executable rather than downloading an older public release.
 3. Run the local validation described above.
 4. Update the release workflow if release configuration changed. CI generation is disabled
    with `allow-dirty = ["ci"]` to preserve its `app/` directory adjustments.

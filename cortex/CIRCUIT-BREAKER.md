@@ -84,14 +84,14 @@ needed to deliver its requested behavior.
    cannot finish, report the concrete blocker and remaining uncertainty.
 3. Once the requested outcome has its required evidence and authorized delivery
    is complete, report and stop. Do not invent another acceptance criterion.
-   Preserve mandatory exhaustive coverage within the assigned review; stopping
-   rules never authorize sampling, skipped rules, or an unsupported pass.
+   Reviews must satisfy their assigned scope and applicable requirements;
+   report material uncertainty instead of claiming an unsupported pass.
 
 **Prohibited:** after a complete verifier report detects every seeded violation,
 start fixing the fixture merely to demonstrate that another review can pass.
 
 **Required:** return the complete detection report when detection was the
-requested check. If required coverage is incomplete, finish it or report that
+requested check. If the assigned review is incomplete, finish it or report that
 blocker explicitly; do not call the partial review successful.
 
 ### Stop and recover

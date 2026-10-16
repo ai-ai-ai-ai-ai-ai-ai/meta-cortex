@@ -11,7 +11,7 @@ Identify relevant documents by their purpose and the project's conventions.
 Discover their locations from project instructions and actual files.
 Use the [rule catalog](index.yaml) to locate the complete writing decisions and
 their canonical sources. Authoring follows the source-loading procedure in
-Practice Knowledge Graphs; verifiers use their own index-only review protocol.
+Practice Knowledge Graphs; verifiers choose context under the shared review contract.
 
 ## Required actions
 
@@ -134,7 +134,7 @@ source was checked.
 - **Article plugin:** checks empty H2/H3 sections, more than three consecutive
   prose paragraphs, procedure headings without numbered actions, and tables.
 - **YAML catalog audit:** validates navigation, practice, and check shapes;
-  decodes rule names and practice owners through closed enums; follows child
+  decodes rule names and practice owners through generated closed enums; follows child
   indexes; checks owning entries for local `practices/` files;
   rejects duplicate ownership, duplicate rule IDs, unknown comparison IDs,
   inconsistent comparison sources, catalog cycles, and unlinked catalogs.
@@ -142,16 +142,25 @@ source was checked.
   Shared practices outside the skill remain prerequisites; ownership and policy
   meaning still need semantic review.
 
+### Catalog maintenance and semantic review
+
+After changing catalog identities, run `bun run catalog:generate` from the library
+root. It derives TypeScript vocabulary from owning practice declarations; the
+workspace tests check freshness. Catalog comparisons do not declare identities.
+Keep policy in Markdown and discovery cues in YAML, without manual enum registration.
+
 Meaning, rule completeness, and cross-document policy conflicts remain semantic
 review tasks. An absent index is not proof of coverage. The checker validates
 existing practice indexes and does not invent them. An isolated comparison leaf
 checks paths and section anchors; run its skill root audit to verify compared
 rule IDs and agreement with their cataloged sources.
 
-**Prohibited:** report complete semantic coverage because the command passed.
+- **Prohibited:** edit enum members manually or report complete semantic coverage
+  because generation and checks passed.
 
-**Required:** report which files passed and separately describe the ownership,
-policy, and example review performed.
+- **Required:** update the owning catalog, regenerate vocabulary, and report
+  which files passed. Separately describe the ownership, policy, and example
+  review performed.
 
 ### Maintain the checks
 

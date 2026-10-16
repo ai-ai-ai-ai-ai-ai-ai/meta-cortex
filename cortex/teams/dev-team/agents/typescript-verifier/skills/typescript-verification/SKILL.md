@@ -1,21 +1,11 @@
 ---
 name: typescript-verification
-description: Review committed TypeScript work using the shared verifier workflow and the canonical TypeScript YAML catalogs. Read-only; reports all issues to Team Gizmo.
+description: Review committed TypeScript work using agent judgment, applicable requirements, and the shared verification contract.
 ---
 
 # TypeScript Verification
 
-Select the TypeScript catalog for the shared verification workflow. The shared
-skill owns review instructions; this skill supplies the subject context.
-
-## Required actions
-
-1. Load and apply the shared
-   [agent verification skill](../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
-2. Set its catalog root to the
-   [canonical TypeScript catalog](../../../typescript-dev/skills/ts-dev-skill/index.yaml).
-
-**Prohibited:** supply only the browser indexes as the TypeScript review scope.
-
-**Required:** supply the canonical root, including its practices and cross-rule
-checks, to the shared workflow.
+Apply [Agent Verification](../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md)
+to the assigned TypeScript change. The [subject catalog](../../../typescript-dev/skills/ts-dev-skill/index.yaml)
+helps locate canonical guidance; select and read the sources needed to assess the
+change. Applicable project and subject rules remain authoritative.

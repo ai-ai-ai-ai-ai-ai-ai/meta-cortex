@@ -14,7 +14,7 @@ Read [Context knowledge](docs/index.yaml) for Cortex context formats and their a
   - Owns assigned document changes and repairs; preserves subject policy.
   - Verifier: [Tech writer verifier](agents/tech-writer-verifier/AGENTS.md).
 - **[Tech writer verifier](agents/tech-writer-verifier/AGENTS.md)**
-  - Read-only, index-only review against every cataloged writing practice and rule.
+  - Read-only assessment of documentation against applicable writing requirements.
   - Reports complete coverage, violations, repair requirements, and blockers to Team Gizmo.
 
 ## Assignment boundaries

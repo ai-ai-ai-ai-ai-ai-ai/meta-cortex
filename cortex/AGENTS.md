@@ -4,7 +4,7 @@ Meta-Cortex is a composable development platform. Its agents, rules, skills,
 and configuration form one framework. Projects include it as an AI library.
 The host supplies models, tools, and the execution environment. Agents turn
 requirements into working software in the current thread or through the host's
-agent execution tools. The [coordination state machine](teams/gizmo-team/docs/coordination-state-machine.md)
+agent execution tools. The [coordination architecture](teams/gizmo-team/docs/coordination-state-machine.md)
 describes the framework architecture and the outcomes connecting those responsibilities.
 
 ## Required actions
@@ -149,7 +149,8 @@ Apply the consuming project's context throughout the task:
   before planning or work, including repository and nested `.cortex/` scopes.
 - Resolve Markdown links and YAML catalog paths relative to their containing file.
 - Follow [catalog loading](teams/ai-team/agents/tech-writer/skills/context-engineering/practices/knowledge-graphs.md#load-only-selected-branches)
-  to select focused index branches and process their rule entries in order.
+  for authoring and implementation. Verifiers choose their investigation and
+  context under the [review contract](teams/gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
 - Resolve source paths, manifests, tests, and commands against the consuming
   project or assigned project worktree.
 - Pass the library location separately from each task worktree. An ignored

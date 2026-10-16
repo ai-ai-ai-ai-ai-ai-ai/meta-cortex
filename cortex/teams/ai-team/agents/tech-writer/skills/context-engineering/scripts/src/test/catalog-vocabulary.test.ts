@@ -56,5 +56,5 @@ class ShippedCatalogs {
   });
 }
 
-test("static enums exactly cover shipped rule names and canonical practice owners", () =>
+test("generated enums exactly cover shipped rule names and canonical practice owners", () =>
   Effect.runPromise(new ShippedCatalogs().verify()));

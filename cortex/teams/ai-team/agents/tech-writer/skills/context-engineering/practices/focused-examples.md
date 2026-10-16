@@ -3,7 +3,7 @@
 Every substantive rule or explanatory section must teach one decision and
 show a prohibited/required pair. Use code for programming decisions, prose
 for writing decisions, and concrete scenarios for behavior or procedures.
-Local Git architecture uses the exception under [Demonstrate the difference](#demonstrate-the-difference).
+Local Git and verification architecture use the exception under [Demonstrate the difference](#demonstrate-the-difference).
 
 ## Required actions
 
@@ -28,9 +28,10 @@ in a separate section with its own example.
 ### Demonstrate the difference
 
 Local Git workflow documentation follows
-[Delivery Writing](../../delivery-writing/SKILL.md): concise architecture and
-responsibilities, with Git mechanics left to the agent. Those architecture
-statements do not require per-rule sections or prohibited/required examples.
+[Delivery Writing](../../delivery-writing/SKILL.md). Verification documentation follows
+[Agent Verification](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
+Both describe concise architecture and expected results while leaving execution
+methods to the agent. Those architecture statements do not require per-rule sections or prohibited/required examples.
 This exception covers their role and handoff descriptions, not programming rules
 or unrelated delivery contracts. For example, a statement that each writer owns
 a worktree can stand alone; a Rust input-validation rule still needs its code pair.
@@ -90,7 +91,8 @@ than a stylistic preference between two vague phrases.
 
 ## Validation
 
-For local Git architecture, check ownership and agent discretion instead of pairs.
+For local Git and verification architecture, check ownership, expected results,
+and agent discretion instead of pairs.
 For other subjects, apply the checks below.
 
 For each substantive section, identify its decision and its pair. Verify that

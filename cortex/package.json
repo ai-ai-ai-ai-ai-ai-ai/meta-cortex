@@ -8,7 +8,8 @@
   "scripts": {
     "verify": "bun run --workspaces verify",
     "docs:check": "PATH=\"${META_CORTEX_HOME:-$HOME/.meta-cortex}/vale/bin:$PATH\" bun teams/ai-team/agents/tech-writer/skills/context-engineering/scripts/src/ts/cli.ts",
-    "context:check": "bun scripts/src/ts/check-context.ts"
+    "context:check": "bun scripts/src/ts/check-context.ts",
+    "catalog:generate": "bun teams/ai-team/agents/tech-writer/skills/context-engineering/scripts/src/ts/generate-catalogs.ts"
   },
   "devDependencies": {
     "effect": "4.0.0-rc.117"

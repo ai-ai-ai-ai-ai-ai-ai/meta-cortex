@@ -41,73 +41,43 @@ Follow-ups stay with the existing coordinator.
 
 ## Communication and decisions
 
-Apply the [coordination state machine](gizmo-team/docs/coordination-state-machine.md)
-for operation boundaries and [human messages](gizmo-team/docs/coordination-state-machine.md#write-useful-human-messages).
+The [coordination architecture](gizmo-team/docs/coordination-state-machine.md)
+owns the Prime → Team Gizmo → worker hierarchy, decision authority, expected
+handoffs, and [human messages](gizmo-team/docs/coordination-state-machine.md#write-useful-human-messages).
+Use ordinary host tools for launches and notifications and the
+[ledger overview](gizmo-team/docs/agent-ledger.md) for durable progress. Reading a
+role or recording an assignment does not launch an agent. Report unavailable
+host execution as a blocker. Single-agent mode performs these responsibilities
+locally without launches or agent messages.
 
-In multi-agent mode, team agents report results, blockers, questions, repair
-needs, and recommendations only to their assigning Team Gizmo. They do not
-contact peers, request work from another agent, launch subagents, or assign work.
-Team Gizmo decides whether further work is needed, selects its owner, and passes
-relevant evidence with that assignment. Reading another role's skill does not
-authorize contacting that agent.
+**Prohibited:** a worker bypasses Team Gizmo to ask a peer for repairs, or claims
+that reading the peer's instructions launched it.
 
-Team Gizmo reports to Gizmo Prime; Gizmo Prime reports to the current host agent.
-Decisions and assignments travel back down the same hierarchy. Gizmo Prime does
-not bypass Team Gizmo to direct workers. Agents retain technical judgment within
-their assigned scope; coordination decisions belong to their Gizmo.
-
-- Persist assignments and progress through the [agent ledger protocol](gizmo-team/docs/agent-ledger.md).
-- Record each participating role's own activity under the
-  [entire feature workflow](gizmo-team/docs/agent-ledger.md#record-the-entire-feature-workflow),
-  including coordinators and delivery roles. A message or an event on another
-  role's task does not replace that record.
-- Use ordinary host communication tools to notify the assigning coordinator.
-  Messages are not the only record of work.
-- All assigned agents may read their feature ledger while retaining this decision hierarchy.
-- In single-agent mode, perform these responsibilities locally without agent
-  messages or launches.
-
-**Prohibited:** the PR agent asks the CI/CD agent to rerun a failed workflow, or
-the integration agent sends a conflict directly to a developer.
-
-**Required:** the agent reports the failure and evidence to its Team Gizmo.
-Gizmo decides the next step, assigns any repair, and supplies the resulting
-evidence to agents that need it.
+**Required:** report the failure and evidence to Team Gizmo, which decides and
+launches the needed assignment through the host.
 
 ## Working model
 
-Coordinators use the host's agent execution tools to launch their assigned
-subagents with their linked role instructions and task context. Reading a role document does not launch
-a subagent. Report unavailable subagent execution capabilities as blockers.
+- Keep each team's catalog complete: every agent has responsibilities, assignment
+  boundaries, a role link, readiness, and any cataloged verifier relationship.
+  Team Gizmo selects from these summaries and investigates relevant roles further
+  when needed.
+- Each agent's `AGENTS.md` links its skills; each `SKILL.md` owns its instructions
+  and prerequisites. Assigned agents load those skills themselves without
+  restarting root routing. Reading another skill does not assign its role.
+- Load roles and skills from the library. Inspect, implement, and validate the
+  consuming project in the assigned worktree. Pass both locations through
+  delegation under the [assignment context](#assignment-context).
+- Documentation and skill organization belong to the tech writer under its
+  [organization rules](ai-team/agents/tech-writer/AGENTS.md#skill-organization).
+  Subject owners retain authority over programming and security requirements.
 
-- Pass this team directory and its resolved document locations to coordinators.
-- Keep the team directory complete. Each team's `AGENTS.md` catalogs every
-  agent under its `agents/` directory with responsibilities, assignment boundaries, a role link,
-  and any incomplete-role status, so Team Gizmo can select agents from these summaries.
-- A worker entry may declare a **Verifier** link to a cataloged read-only role.
-  Team Gizmo follows the shared [verification handoff](gizmo-team/docs/agent-verification.md)
-  for that pair. The verifier's own role and review skill declare its catalog;
-  the shared verification workflow requires index-only loading and exhaustive rule coverage.
-- Gizmo Prime launches the single Team Gizmo as a subagent.
-- Team Gizmo launches the team agents needed for its assignments as subagents.
-- Team Gizmo assigns instructions, specifications, skills, practices, and catalog
-  edits to the tech writer subagent. Pass the subject owner's requirements and affected
-  documents with the assignment.
+**Prohibited:** preload every worker's skill collection to choose one role,
+or edit the installed library to fix the consuming application's component.
 
-- Prepare every launch using the [assignment context](#assignment-context) below,
-  including launches by Gizmo Prime and Team Gizmo.
-- Load roles and skills from the library; inspect, implement, and validate the consuming project's code in the assigned working directory. Pass this context through every delegation.
-- Assigned agents load their own role and relevant skills directly; they do not restart root routing or become another Gizmo Prime.
-- Each agent’s `AGENTS.md` links the skills it uses. Each `SKILL.md` owns that
-  skill’s instructions and prerequisites. Agents load their skills themselves;
-  coordinators assign responsibilities.
-- Team Gizmo assigns skill organization and placement changes to the tech writer under its
-  [skill organization rules](ai-team/agents/tech-writer/AGENTS.md#skill-organization).
-- Coordinate independent work concurrently when supported and sequence work with shared scope or dependencies.
-- Team agents report only to Team Gizmo, which decides corrections and assignments and reports to Gizmo Prime.
-- Apply the [task boundary](../CIRCUIT-BREAKER.md#keep-the-users-task-boundary)
-  and [stopping rules](../CIRCUIT-BREAKER.md#stop-when-the-requested-evidence-is-complete).
-  Completion means the requested outcome is supported by evidence, with limitations stated clearly.
+**Required:** select the TypeScript role from its team catalog, supply the
+application scope and both roots, and let that worker load its skills and edit
+its assigned project worktree.
 
 ## Assignment context
 
@@ -116,7 +86,7 @@ following from the active library and supplies them in the launch instructions:
 
 - Objective, target scope, permitted changes, dependencies, acceptance criteria,
   expected evidence, and stopping condition. Use the
-  [transition narrative](gizmo-team/docs/coordination-state-machine.md#describe-each-transition-with-an-observable-outcome)
+  [handoff contract](gizmo-team/docs/coordination-state-machine.md#describe-each-transition-with-an-observable-outcome)
   to state the operation, output, and next owner. State whether the task is review
   or verification only, implementation, or an explicitly requested workflow exercise.
 - For task workers after feature initialization: stable feature ID, task ID,
@@ -125,7 +95,7 @@ following from the active library and supplies them in the launch instructions:
   bootstrap assignments establish this context before task workers launch.
 - The activity's assigned role, recorded reporting coordinator, and current
   ledger revision and attempt. Carry the instance's retained worker UUID on
-  continuations under the [worker identity protocol](gizmo-team/docs/agent-ledger.md#worker-instance-identity).
+  continuations under the [worker identity protocol](gizmo-team/docs/ledger-task-lifecycle.md#worker-instance-identity).
   New instances establish their own identity through that protocol.
   Coordinator activities use the same context once the feature ledger is available.
 - The assigning host agent or coordinator's identity and report destination, with the
@@ -171,11 +141,10 @@ Load newly relevant documents only for the authorized assignment.
 The skill’s own `SKILL.md` still owns its technical
 instructions; this handoff does not select or duplicate skill contents.
 
-- For verifiers, retain operational context and apply the shared
-  [index-only review context](gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md#keep-subject-practice-context-index-only)
-  instead of subject-source loading. Supply the verifier's own role and review
-  skill. Do not supply or load the target worker's role, authoring skills, or
-  practice Markdown. Its complete catalog supplies the practice cues.
+- For verifiers, supply the review objective, committed scope, available evidence,
+  and the verifier's role and skill. The shared
+  [review contract](gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md)
+  leaves further context selection and investigation to the reviewer.
 
 **Prohibited:** launch a TypeScript agent with only “implement this component”
 and its role path, assuming it already knows the development team’s programming

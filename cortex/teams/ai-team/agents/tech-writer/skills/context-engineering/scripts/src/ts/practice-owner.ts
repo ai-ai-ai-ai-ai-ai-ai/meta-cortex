@@ -1,15 +1,4 @@
-// Canonical practice identities; source paths remain separate catalog metadata.
-export enum WritingPracticeOwner {
-  TechWriter = "writing:tech_writer",
-  ContextEngineering = "writing:context_engineering",
-  WritingClarity = "writing:writing_clarity",
-  FocusedExamples = "writing:focused_examples",
-  ArticleStructure = "writing:article_structure",
-  Consistency = "writing:consistency",
-  KnowledgeGraphs = "writing:knowledge_graphs",
-  CodePracticeWriting = "writing:code_practice_writing",
-  DeliveryWriting = "writing:delivery_writing",
-}
+// Generated from practice index.yaml declarations by bun run catalog:generate. Do not edit.
 
 export enum DeliveryPracticeOwner {
   LocalFeature = "delivery:local_feature",
@@ -68,10 +57,33 @@ export enum TypescriptPracticeOwner {
   WebUnusedCode = "typescript:web_unused_code",
 }
 
+export enum WritingPracticeOwner {
+  ArticleStructure = "writing:article_structure",
+  CodePracticeWriting = "writing:code_practice_writing",
+  Consistency = "writing:consistency",
+  ContextEngineering = "writing:context_engineering",
+  DeliveryWriting = "writing:delivery_writing",
+  FocusedExamples = "writing:focused_examples",
+  KnowledgeGraphs = "writing:knowledge_graphs",
+  TechWriter = "writing:tech_writer",
+  WritingClarity = "writing:writing_clarity",
+}
+
 export type PracticeOwner =
-  | WritingPracticeOwner
   | DeliveryPracticeOwner
   | ProgrammingPracticeOwner
   | RustPracticeOwner
   | SrePracticeOwner
-  | TypescriptPracticeOwner;
+  | TypescriptPracticeOwner
+  | WritingPracticeOwner;
+
+export class PracticeOwnerVocabulary {
+  static readonly values = [
+    ...Object.values(DeliveryPracticeOwner),
+    ...Object.values(ProgrammingPracticeOwner),
+    ...Object.values(RustPracticeOwner),
+    ...Object.values(SrePracticeOwner),
+    ...Object.values(TypescriptPracticeOwner),
+    ...Object.values(WritingPracticeOwner),
+  ];
+}

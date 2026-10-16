@@ -1,3 +1,4 @@
+import MarkdownIt from "markdown-it";
 import { readFileSync } from "node:fs";
 import {
   type ExecFileSyncOptionsWithStringEncoding,
@@ -42,6 +43,9 @@ class GuideSourceFields {
     readonly path: typeof Schema.String;
     readonly detail: typeof Schema.String;
   } = { path: Schema.String, detail: Schema.String };
+  static readonly TEXT: { readonly content: typeof Schema.String } = {
+    content: Schema.String,
+  };
   static readonly HANDOFF: { readonly text: typeof Schema.String } = {
     text: Schema.String,
   };
@@ -80,6 +84,7 @@ export class GuideSource implements Plugin {
     "teams/gizmo-team/docs/agent-verification.md",
   ];
   private inputs = new Set<string>();
+  private readonly markdown = new MarkdownIt();
 
   // Vite normally binds hook `this` to PluginContext; these arrows retain the source owner.
   resolveId = (source: string) => {
@@ -167,13 +172,24 @@ export class GuideSource implements Plugin {
         return GuideReporting.Team;
     }
   }
+  private handoffText(source: string): string {
+    const content = Schema.Struct(GuideSourceFields.TEXT);
+    const environment: Parameters<typeof this.markdown.parseInline>[1] = {};
+    const children = this.markdown
+      .parseInline(source, environment)
+      .flatMap((token) =>
+        Schema.decodeUnknownSync(Schema.Array(content))(token.children),
+      );
+    return children.map((token) => token.content).join("");
+  }
   private payload(): GuidePayload {
     const communication = this.read("teams/AGENTS.md");
     const handoff = Schema.decodeUnknownSync(
       Schema.Struct(GuideSourceFields.HANDOFF),
     )(
-      communication.match(/(?<text>In multi-agent mode,[\s\S]*?)(?=\n\n)/)
-        ?.groups,
+      communication.match(
+        /## Communication and decisions\n\n(?<text>[\s\S]*?)(?=\n\n)/,
+      )?.groups,
     ).text.replace(/\n/g, " ");
     const payload: GuidePayload = {
       sourceBase: this.sourceBase(),
@@ -203,7 +219,7 @@ export class GuideSource implements Plugin {
           label,
           reports_to: this.reporting(path),
           responsibility,
-          handoff,
+          handoff: this.handoffText(handoff),
         };
         agents.push(agent);
         const document: GuidePayload["documents"][number] = { path, markdown };
