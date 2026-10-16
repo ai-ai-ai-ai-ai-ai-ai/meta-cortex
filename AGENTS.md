@@ -54,7 +54,7 @@ old instruction formats for hypothetical compatibility. `list` discovers command
 including the user's home, without a request file or required arguments. Desktop
 browses existing repository groups in the application home without Git or checkout
 discovery, under the
-[dashboard contract](cortex/teams/gizmo-team/docs/agent-ledger.md#storage-requirements-and-errors).
+[dashboard contract](cortex/teams/gizmo-team/docs/homeostat-dashboard.md#storage-requirements-and-errors).
 Typed `Workbench / Dashboard` requests use `Desktop` for this global browser;
 the request envelope retains `project`, which Desktop does not resolve. `Snapshot`
 keeps repository-scoped headless text output and its existing view contract.

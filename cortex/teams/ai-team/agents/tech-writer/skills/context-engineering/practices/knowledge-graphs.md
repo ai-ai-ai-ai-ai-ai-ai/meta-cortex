@@ -166,12 +166,15 @@ practice. A real catalog must resolve its links from its own location.
   prose use item sequences. Related entries contain `title` and `path`; rules
   contain `id`, `source`, and a nonempty scalar `summary`. Empty metadata sequences
   are valid when no metadata applies; the ordered `rules` sequence is nonempty.
-- Use the closed [rule-name enums](../scripts/src/ts/rule-name.ts) for rule and
-  comparison IDs and the [practice-owner enums](../scripts/src/ts/practice-owner.ts)
-  for each practice's `owner`. Group enums by namespace or subject; their union
-  types key shared maps. Keep source locations separate from owner identity.
-  Add or remove enum members with the corresponding catalog entries; the vocabulary
-  parity test rejects missing or unused members. Decoding rejects unregistered names.
+- Declare rule IDs and practice owners in their owning YAML practice catalogs.
+  Run `bun run catalog:generate` from the library root after adding, removing, or
+  renaming identities. It derives the closed [rule-name enums](../scripts/src/ts/rule-name.ts)
+  and [practice-owner enums](../scripts/src/ts/practice-owner.ts); do not edit those
+  generated files or register each namespace manually. Comparisons reference
+  declarations and cannot introduce new identities. IDs use lowercase snake-case
+  namespace and name separated by `:`. Keep source paths separate from identity.
+  The freshness test rejects stale generated files; audits still reject
+  unregistered names, duplicate ownership, and invalid links.
 - Preserve original subject groupings. Keep readable `practice:decision` IDs
   stable; the namespace identifies a decision, while `source` identifies its
   canonical Markdown owner. A practice can own a related namespace's decision.
@@ -193,35 +196,29 @@ and links to the existing Markdown practice.
 
 ## Load only selected branches
 
-This procedure is for authoring and implementation. Verifiers choose context
-under the shared review contract above.
+Use catalogs to find the context the assignment needs. Mandatory skill
+prerequisites still apply; the agent chooses the remaining investigation.
+Verifiers use the shared review contract above.
 
-1. Read the skill entry point and its mandatory prerequisites. These requirements
-   still apply to focused assignments; catalog selection does not waive them.
-2. Read each entry of the current navigation catalog in sequence. Select branches
-   covering the assignment using their summaries. Record the selected paths and
-   scope; do not recursively load unrelated branches.
-3. For each selected practice leaf, visit every rule and read its `summary` in order.
-   Read its canonical Markdown practice in full, including exceptions and
-   examples. For each rule, record applicability and the resulting check or
-   action; give a reason when it does not apply. Reuse a source already loaded.
-4. Load related practices and cross-rule checks when the task crosses their
-   boundaries. These references describe review relationships; they do not
-   instruct a leaf to reload its parent or restart routing. Apply cross-language
-   prerequisites when that boundary is involved.
-5. Supply subagents only the required role and skill context, mandatory
-   prerequisites, selected catalog paths, and relevant Markdown sources. Retain
-   the selected paths and rule IDs in the assignment so coverage can be reviewed.
-6. When scope expands, select the newly relevant branches before further work.
-   For catalog maintenance, update affected cues, ownership, section references,
-   and comparisons with source changes; keep detailed exceptions in Markdown.
+1. Read the skill entry point and its mandatory prerequisites. Use catalog
+   summaries to locate relevant subjects, then read the selected canonical
+   practices in full, including examples, exceptions, and validation requirements.
+2. Follow related practices and comparison links when the work crosses their
+   boundaries. Reuse already loaded sources. Leaf links do not restart role routing.
+3. Pass required role/skill context and relevant source locations to subagents.
+   Preserve unresolved conflicts, decisions, and evidence needed to continue;
+   do not require a rule-by-rule applicability log or a fixed traversal order.
+4. Reassess context as scope or evidence changes. When authoring policy, update
+   affected cues, ownership, links, and comparisons alongside the source. Keep
+   detailed requirements and exceptions in Markdown.
 
-**Prohibited:** skim the first rule, assume the remaining entries were applied,
-or load unrelated sibling namespaces into a focused authoring task.
+**Prohibited:** use a short catalog cue as the complete rule, waive mandatory
+prerequisites for a small edit, or copy every rule into an applicability report.
 
-**Required:** when changing domain-type guidance, traverse each item in the selected
-`domain_types/index.yaml`, check it against the changed guidance, and bring in
-construction or serialization guidance only when those boundaries are involved.
+**Required:** for a domain-type change, read its canonical practice and mandatory
+programming guidance. Inspect construction and serialization rules when the
+changed boundary involves them. Preserve the relevant decisions and evidence in
+the handoff without accounting for unrelated catalog entries.
 
 A parser can validate catalog structure and tooling can enumerate entries in a
 fixed order. Catalog indexes remain distinct from YAML context declarations,

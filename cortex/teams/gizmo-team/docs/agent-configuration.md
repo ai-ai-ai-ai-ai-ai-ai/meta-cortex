@@ -185,7 +185,7 @@ compatible context handling and report any unsupported execution capability.
 5. If changing that session is unsupported, stop its execution or establish that
    it finished before launching a replacement. Preserve its branch, uncommitted
    edits, checkpoints, findings, failed checks, and remaining acceptance criteria.
-   Apply [ledger recovery](agent-ledger.md#recovery-and-stale-work), including any
+   Apply [ledger recovery](ledger-task-lifecycle.md#recovery-and-stale-work), including any
    required requeue and new claim. Supply the new session's complete context and
    selected settings; retain one writer per workspace.
 6. Evaluate the resulting work against the same acceptance criteria and required

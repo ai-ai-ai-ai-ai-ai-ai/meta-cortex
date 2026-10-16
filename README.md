@@ -781,7 +781,7 @@ Each inventory block opens that task's **Log** chapter in the full workflow.
 **Open workflow** opens on **Feature log**, a compact journal of explicit
 implementation outcomes after their owning Git tasks integrate. Expand a row
 for checkpoint and integration evidence or follow its task link to **Log**.
-The canonical [Feature log guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#feature-log)
+The canonical [Feature log guidance](cortex/teams/gizmo-team/docs/homeostat-dashboard.md#feature-log)
 defines inclusion, milestone identity, recorder attribution, and labeled times.
 
 The shared agent/task index navigates **Log** and **Time windows**. **Log** presents
@@ -794,7 +794,7 @@ jump to its log. Repeated evidence appears only when it changes.
 - **Prohibited:** expect completed review tasks or undeclared historical progress
   to appear as implementation outcomes.
 - **Required:** record explicit outcomes under the
-  [checkpoint protocol](cortex/teams/gizmo-team/docs/agent-ledger.md#record-implementation-outcomes)
+  [checkpoint protocol](cortex/teams/gizmo-team/docs/ledger-task-lifecycle.md#record-implementation-outcomes)
   and inspect their integration evidence in Feature log.
 
 - The dashboard refreshes summaries every five seconds; Pause stops automatic
@@ -826,7 +826,7 @@ with an explicit project, `view`, and `page`; redirect the result with
 `meta-cortex run --request dashboard.yaml > dashboard-output.yaml`.
 The dashboard observes recorded ledger content; event actors identify who
 recorded evidence and do not establish Git authorship. See the canonical
-[dashboard guidance](cortex/teams/gizmo-team/docs/agent-ledger.md#homeostat-dashboard)
+[dashboard guidance](cortex/teams/gizmo-team/docs/homeostat-dashboard.md#homeostat-dashboard)
 for exact typed requests, views, fields, paging, refresh, and storage requirements.
 
 Homeostat follows the canonical storage boundary:
