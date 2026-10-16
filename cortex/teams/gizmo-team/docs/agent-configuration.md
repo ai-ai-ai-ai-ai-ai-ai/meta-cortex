@@ -3,8 +3,7 @@
 [meta-cortex.toml](../../../meta-cortex.toml) sets the scheduling ceiling.
 The launching agent chooses model and reasoning effort for each assignment from
 the active host's supported combinations. There are no static role settings or
-framework model catalog. Speed belongs to the host session. Single-agent mode
-keeps the current host model and effort.
+framework model catalog. Speed belongs to the host session.
 
 The host agent selects Gizmo Prime's settings; Prime selects Team Gizmo's;
 Team Gizmo selects each worker's and verifier's. The assigning agent owns later
@@ -15,10 +14,8 @@ recommend a change; they do not launch replacements or change peer settings.
 
 ### Check host capacity
 
-Assess the capabilities needed by the validated development mode. In
-`single_agent`, use the current agent; no subagent allocation or capacity
-metadata is required. In `multi_agent`, read `host.max_total_agents` from the
-active library's configuration. This positive integer bounds concurrent agents,
+Read `host.max_total_agents` from the active library's configuration. This
+positive integer bounds concurrent agents,
 including the host agent and coordinators. It neither allocates host slots nor
 requires the host to offer that many.
 
@@ -39,13 +36,13 @@ capacity exhaustion. Do not launch disposable agents to measure capacity.
 
 A host must support the delegation depth and coexistence needed for the team
 architecture. If its capabilities or the project ceiling cannot support that
-hierarchy, report the specific multi-agent blocker. Do not flatten the hierarchy
-or silently switch the user's development mode. Carry the ceiling, capability
+hierarchy, report the specific host capability or ceiling blocker. Preserve the
+hierarchy while resolving that limitation. Carry the ceiling, capability
 evidence, unresolved limits, and scheduling decisions through assignments and
 continuations; reassess when the host or task changes.
 
-- **Prohibited:** stop single-agent work because no agent limit is advertised, or
-  require a host with four total slots to provide the configured ceiling of twenty.
+- **Prohibited:** require a host with four total slots to provide the configured
+  ceiling of twenty, or bypass a coordinator to fit more workers.
 
 - **Required:** when four slots and the required delegation depth are available,
   count the host, Prime, Team Gizmo, and one worker; queue further workers until a
@@ -65,12 +62,12 @@ Use the [user-input skill](../agents/gizmo/skills/user-input/SKILL.md) and
 to validate approval of that concrete proposal. Reuse explicit authorization
 already supplied for the same change. `allow_host_update` authorizes the shown
 edit; `keep_host_settings`, cancellation, or unavailable input does not.
-Continue feasible work with existing settings, or report the affected mode's
-blocker. Do not silently change the project ceiling or development mode.
+Continue feasible work with existing settings, or report the blocked capability.
+Do not silently change the project ceiling or bypass the hierarchy.
 
 Apply an approved change with a supported configuration editor or parser,
 preserving unrelated settings and comments. Verify the saved values. If the host
-requires a restart, retain the task and session choices and wait for resumption.
+requires a restart, retain the task and session delivery and wait for resumption.
 Recheck active capabilities before dependent launches; saving a setting does not
 expand the running session. Unsupported or enforced settings remain limitations.
 
@@ -201,7 +198,7 @@ does not support the selected tier cannot be promised that speed.
 ### Verify the launch
 
 1. Check actual launch behavior through the host tool when validating execution.
-   Respect the session's development choice and any explicit test exception.
+   Preserve the coordination hierarchy and the authorized test scope.
 2. Inspect host-returned execution metadata when available. Configuration
    round trips, a child's self-report, and elapsed time do not verify the actual
    processing tier.
@@ -217,7 +214,7 @@ does not support the selected tier cannot be promised that speed.
 
 ## Prohibited actions
 
-- Do not retain execution-mode or service-tier fields in framework configuration.
+- Do not add execution selectors or service-tier fields to framework configuration.
 - Do not restore static role model/effort settings or a bundled model allowlist.
 - Do not turn illustrative task examples into a mandatory model lookup table.
 - Keep selection policy here; roles and skills link it instead of fixing models.

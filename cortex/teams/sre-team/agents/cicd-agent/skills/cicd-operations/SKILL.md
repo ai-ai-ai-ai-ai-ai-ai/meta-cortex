@@ -11,9 +11,8 @@ Use existing project commands and the host's provider tools. For GitHub Actions,
 use the GitHub connector or installed `gh` CLI with access to the requested
 repository. Missing tools or credentials are explicit blockers.
 
-In multi-agent mode, report all outcomes, questions, and work outside the assigned
-scope only to the assigning Team Gizmo. Gizmo decides further work and routing.
-In single-agent mode, perform the applicable responsibilities locally.
+Report all outcomes, questions, and work outside the assigned scope only to the
+assigning Team Gizmo. Gizmo decides further work and routing.
 
 ## Required actions
 

@@ -9,7 +9,7 @@
 - Extend the existing project-owned check entry point when a check is missing.
 - Keep check commands reproducible for later work.
 - Reuse existing automation.
-- Keep pipeline changes with the CI/CD owner under the active development mode.
+- Report pipeline changes to the assigning Gizmo for CI/CD coordination.
 - Run checks from each applicable Cargo workspace or standalone crate root.
 
 Baseline commands:

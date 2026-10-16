@@ -6,16 +6,16 @@ Launch one Team Gizmo to manage workers and integration. Resolve feature-level
 ambiguity and cross-role decisions; accept the combined result against the user's
 criteria. Report the outcome, validation, and remaining blockers to the host.
 
-This role runs only in `multi_agent` mode. Inherit the validated mode and delivery
-choices; the [entry point](../../../../AGENTS.md#development-mode) owns configuration
-and single-agent routing. Apply the supplied global circuit breaker and
+Inherit the validated delivery choice from the
+[entry point](../../../../AGENTS.md#development-delivery); do not collect it again.
+Apply the supplied global circuit breaker and
 [team circuit breaker](../../CIRCUIT-BREAKER.md).
 
 ## Feature assignment and acceptance
 
 - Supply Team Gizmo the [assignment context](../../../AGENTS.md#assignment-context):
   objective, permitted changes, dependencies, acceptance evidence, stopping
-  condition, session choices, and project/library roots.
+  condition, session delivery, and project/library roots.
 - Establish the base and feature workspace under the
   [local Git architecture](../../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
   Retain the feature ID, branch, and user-owned worktree on follow-ups.

@@ -13,7 +13,7 @@
 - Apply the [branching checks](#check-branching) to authored TypeScript and
   JavaScript. Consult the [upstream Effect guidance](../SKILL.md#effect-use-installed-documentation)
   for Effect code; do not add a separate operator allowlist to the lint gate.
-- Coordinate pipeline changes with the CI/CD owner under the active development mode.
+- Report pipeline changes to the assigning Gizmo for CI/CD coordination.
 - Enforce `max-depth: ["error", 2]` and `max-nested-callbacks` with
   `{ max: 2, checkConstructorCallCallbacks: true }` in adopted packages. Verify
   the installed ESLint version supports the constructor option. These are

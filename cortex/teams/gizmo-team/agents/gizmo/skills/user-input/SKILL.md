@@ -1,6 +1,6 @@
 ---
 name: user-input
-description: Collect and validate YAML form answers through an available host UI or conversation, including session mode and delivery choices before development.
+description: Collect and validate YAML form answers through an available host UI or conversation, including session delivery before development.
 ---
 
 # User input
@@ -77,7 +77,7 @@ This skill cannot override host restrictions on questions. When the host disallo
 all available ways to ask, report the blocker unless the user already supplied
 a valid answer.
 
-- **Prohibited:** treat a timeout as `single_agent`, or manufacture an approval
+- **Prohibited:** treat a timeout as `local_only`, or manufacture an approval
   because native questions are unavailable.
 
 - **Required:** ask the pending question in permitted conversation, validate the

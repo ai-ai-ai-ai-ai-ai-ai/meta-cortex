@@ -8,9 +8,8 @@ results needed to make the next decision.
 
 ## Responsibilities and decisions
 
-- **Host agent:** retains the user's session choices and launches Prime in
-    multi-agent mode. Single-agent mode performs the responsibilities in the current
-    thread without claiming that separate agents ran.
+- **Host agent:** establishes project context, validates and retains delivery,
+    checks host capacity, and launches Prime with the user's objective.
 - **Gizmo Prime:** owns feature scope, acceptance criteria, and the final outcome.
     It assigns the feature to one Team Gizmo and resolves decisions spanning roles.
 - **Team Gizmo:** selects workers, bounds assignments, coordinates dependencies,

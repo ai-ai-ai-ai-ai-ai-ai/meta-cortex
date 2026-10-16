@@ -40,8 +40,6 @@ responsibilities, not host processes or proof that a subagent was launched.
 6. Complete Team Gizmo's activity only after the selected local or PR delivery
    outcome is recorded. Prime accepts that result, records its final acceptance
    evidence, and completes its own activity before the final host handoff.
-   In single-agent mode, the current agent records these responsibilities locally
-   without claiming that separate host agents ran.
 
 For example, after creating integration's activity, assign its reporting line:
 
@@ -349,11 +347,11 @@ no background TTL process. Status computes expiration when queried.
    `Feature / Status`. Use `Feature / List` to rediscover feature IDs and paths
    when the coordinator context is lost. Inspect `last_update`, `last_progress`, the lease health,
    current checkpoint, and continuation notes. Read `Task / History` when needed.
-   Recover session mode and delivery choices from the
+   Recover session delivery from the
    [assignment context](../../AGENTS.md#assignment-context). An integrated ledger
    task does not imply PR delivery is complete. Apply the
    [delivery policy](../../delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
-   before the final handoff; collect any missing session choice through the entry
+   before the final handoff; collect missing delivery through the entry
    point rather than inferring it from an existing branch or ledger.
 2. For expired or stalled work, inspect the host execution and its worktree.
    Stop the previous execution or establish that it finished before reassignment.

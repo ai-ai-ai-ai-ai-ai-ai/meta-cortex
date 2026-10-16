@@ -26,12 +26,9 @@ entry point. Pass this context to delegated agents.
 
 ## Start with Gizmo Prime
 
-First resolve the session’s [mode and delivery choices](../AGENTS.md#development-mode) at the entry
-point. In `single_agent` mode, the current agent applies the assignment context
-locally and performs the work; the launch and delegation instructions below
-apply only to `multi_agent` mode.
-
-For a new multi-agent task, read [Gizmo Prime](gizmo-team/agents/gizmo-prime/AGENTS.md) and launch it
+Resolve the session's [delivery choice](../AGENTS.md#development-delivery) and
+host capacity at the entry point. For each new task, read
+[Gizmo Prime](gizmo-team/agents/gizmo-prime/AGENTS.md) and launch it
 as a subagent through the host’s agent execution tool. This subagent is the
 root coordinator, with model and effort selected for the feature under the shared
 configuration rules and with the host session's speed.
@@ -47,8 +44,7 @@ handoffs, and [human messages](gizmo-team/docs/coordination-state-machine.md#wri
 Use ordinary host tools for launches and notifications and the
 [ledger overview](gizmo-team/docs/agent-ledger.md) for durable progress. Reading a
 role or recording an assignment does not launch an agent. Report unavailable
-host execution as a blocker. Single-agent mode performs these responsibilities
-locally without launches or agent messages.
+host execution as a blocker.
 
 **Prohibited:** a worker bypasses Team Gizmo to ask a peer for repairs, or claims
 that reading the peer's instructions launched it.
@@ -100,12 +96,11 @@ following from the active library and supplies them in the launch instructions:
   Coordinator activities use the same context once the feature ledger is available.
 - The assigning host agent or coordinator's identity and report destination, with the
   [communication and decisions](#communication-and-decisions) rules.
-- The validated session `development.mode` and `development.delivery`, plus any
-  task-specific override; assigned agents inherit them and never repeat
-  configuration collection.
-- The mode-appropriate [capacity assessment](gizmo-team/docs/agent-configuration.md#check-host-capacity):
+- The validated session `development.delivery` and any task-specific override;
+  assigned agents inherit delivery and never repeat collection.
+- The [capacity assessment](gizmo-team/docs/agent-configuration.md#check-host-capacity):
   project ceiling, known host limits and evidence, unresolved capabilities, and
-  scheduling decisions. Single-agent work needs no subagent allocation.
+  scheduling decisions.
 - Project root, library root, working directory, and the scoped handoff required
   by [consuming project context](gizmo-team/docs/project-context.md).
 - The global `CIRCUIT-BREAKER.md` policy and its resolved path.

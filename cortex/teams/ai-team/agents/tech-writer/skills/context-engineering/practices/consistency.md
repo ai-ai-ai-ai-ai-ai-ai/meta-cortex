@@ -73,13 +73,12 @@ This reviews the affected topic without silently broadening ownership.
 - Keep one task owner responsible for conflict resolution and final edits.
 - Organize evidence by document family.
 - Report additional work needs to the assigning Gizmo; it decides delegation.
-  In single-agent mode, the current agent performs the review locally.
 
 **Prohibited:** treat a request to fix one example as permission to rewrite every specification.
 
 **Required:** after an explicit full-review request, group findings by document
 family and keep one owner responsible for conflicting changes. Report additional work needs
-to Gizmo for a decision in multi-agent mode.
+to Gizmo for a decision.
 
 The review scope comes from the assignment, not from discovering more files.
 

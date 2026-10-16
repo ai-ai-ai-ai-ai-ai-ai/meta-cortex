@@ -20,7 +20,6 @@ description: Coordinate isolated agent work and integrate committed results into
 - Gizmo can revise assignments and the integration approach as the task changes.
 - Each writable worktree has one active owner; agents preserve unrelated work and needed recovery state.
 - The user's feature worktree remains available after delivery; only finished agent-created task workspaces are eligible for cleanup.
-- In single-agent mode, the current agent performs these responsibilities in its supplied workspace without launching a team.
 
 [Review requirements](../../../../../gizmo-team/docs/agent-verification.md),
 [ledger records and runtime constraints](../agent-ledger/SKILL.md), and

@@ -6,9 +6,9 @@ Report to Gizmo Prime. Select agents, define bounded assignments, resolve
 contribution conflicts, assess results, and decide the next work needed within
 the user's scope. Workers retain technical judgment within their assignments.
 
-This role runs only in `multi_agent` mode. Inherit the validated mode and delivery
-choices; the [entry point](../../../../AGENTS.md#development-mode) owns configuration
-and single-agent routing. Apply the supplied global circuit breaker and
+Inherit the validated delivery choice from the
+[entry point](../../../../AGENTS.md#development-delivery); do not collect it again.
+Apply the supplied global circuit breaker and
 [team circuit breaker](../../CIRCUIT-BREAKER.md). For YAML-defined questions during
 coordination, use the [user-input skill](skills/user-input/SKILL.md).
 
@@ -72,7 +72,7 @@ keep one observer for each assigned run and share its results with the PR owner.
 Route application repairs to development, integration work to its assigned owner,
 and infrastructure repairs to SRE. Publish coherent repair batches through the PR
 agent and reevaluate the new revision. Releases and deployments require the
-user's scope and the project's existing procedure. Preserve session choices and
+user's scope and the project's existing procedure. Preserve session delivery and
 any task-specific override throughout.
 
 - **Prohibited:** let PR and CI/CD agents independently dispatch the same run,

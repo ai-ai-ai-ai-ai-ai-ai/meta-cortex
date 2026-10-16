@@ -50,31 +50,23 @@ Each request contains the last returned `state` and one event:
 - **`cancel`** returns `cancelled`; do not continue the task.
 - **`unavailable`** returns `unavailable`; report the host limitation.
 
-For example, submit the user's mode selection:
+For example, submit the user's explicit delivery choice:
 
 ```json
-{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"development.mode","value":"single_agent"}}
+{"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"answer","name":"development.delivery","value":"create_pr"}}
 ```
 
-The result is still `pending`, with `prompt.name: development.delivery` and
-`create_pr` first in the options. After the user selects delivery, retain the
-mode in the returned state and submit the delivery answer:
+The delivery-only form completes after that answer validates:
 
 ```json
-{"version":2,"state":{"answers":{"development.mode":"single_agent"},"skipped":[]},"event":{"type":"answer","name":"development.delivery","value":"create_pr"}}
-```
-
-Only after both choices are validated does the completed result contain:
-
-```json
-{"version":2,"status":"complete","state":{"answers":{"development.mode":"single_agent","development.delivery":"create_pr"},"skipped":[]},"issues":[]}
+{"version":2,"status":"complete","state":{"answers":{"development.delivery":"create_pr"},"skipped":[]},"issues":[]}
 ```
 
 Pending results contain a host-neutral `prompt` with `name`, `question`,
 `required` (`required` or `optional`), and `type` (`text`, `integer`, or `choice`).
 Choice prompts also contain `options`; other types have no options property.
 The form's boolean `required` is normalized to the explicit requirement state.
-For example, the next delivery question is:
+For example, starting the delivery form with empty state returns:
 
 ```json
 {"name":"development.delivery","question":"Delivery: create_pr (recommended) commits and pushes the validated feature and creates or updates its PR; local_only keeps work local without pushing or creating a PR. Which delivery?","required":"required","type":"choice","options":["create_pr","local_only"]}
@@ -85,12 +77,24 @@ It contains no tool arguments. Retain the stable `name` and bind the actual repl
 to it before submitting an answer event. A host's preselected suggestion is not
 an answer until the user submits it.
 
+### Retained state
+
 For the next invocation copy `state` unchanged and replace `event`. The helper
 revalidates carried state against the same form, excludes answered/skipped fields
 from pending prompts, and rejects invalid carried state. Invalid new answers
 produce `issues` without changing valid state. Unknown or already-answered field
 names produce issues without overwriting prior answers. Only a result with
 `status: complete` and no issues is ready for the original workflow.
+
+Carried answers and skips must belong to the current form. A changed form does
+not migrate removed fields; unknown retained-state fields are rejected. The host
+retains validated session delivery independently and can construct a fresh state
+containing only that delivery answer for revalidation.
+
+- **Prohibited:** accept state with a removed field by silently discarding it.
+
+- **Required:** reject that state. When the host independently retains validated
+  `create_pr`, revalidate fresh state with only `development.delivery: create_pr`.
 
 Malformed schema, malformed request, invalid carried state, or I/O failures exit
 with code 1 and an `error` code. Pending, complete, cancelled, and unavailable
