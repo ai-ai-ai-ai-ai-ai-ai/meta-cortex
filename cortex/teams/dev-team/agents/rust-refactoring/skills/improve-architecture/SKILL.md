@@ -66,7 +66,7 @@ This scenario illustrates evidence-based judgment, not a prescribed design.
 4. Record the complete result through the existing read-only ledger task and
    send it to Gizmo. Stop at that handoff; Gizmo decides what to accept and who
    implements it. A replacement commit receives a fresh review of the entire
-   work after successful complete Rust verification.
+   work after successful Rust verification.
 
 **Prohibited:** report “split this module” without evidence, or invent a finding
 because a review is expected to produce work.
@@ -79,9 +79,9 @@ to act without guessing its intent.
 
 ## Prohibited actions
 
-- Do not load the Rust developer role or implementation skills, apply code edits,
+- Do not apply code edits,
   run formatters that rewrite files, or create implementation commits.
-- Do not turn this review into a second exhaustive programming-rule audit.
+- Keep this assessment focused on architecture; the verifier assesses development-rule compliance.
   The successful Rust verifier result remains separate evidence.
 - Do not authorize scope expansion, dispatch implementation, or approve integration.
 

@@ -1,79 +1,46 @@
 ---
 name: agent-verification
-description: Apply the shared review protocol using the assigned verifier's complete YAML catalogs. Keep subject practice context index-only.
+description: Review committed work using agent judgment and return evidence, findings, and a clear conclusion to Gizmo.
 ---
 
 # Agent Verification
 
-Use this entry point for every cataloged verifier. Its own skill declares the
-canonical subject catalog roots. The
-[review transition](../../../../docs/coordination-state-machine.md#review-the-committed-result)
-relates the exact-revision report to Team Gizmo's next operation.
+The verifier owns read-only assessment of the assigned result. Gizmo owns repair
+assignments and integration decisions under the
+[verification handoff](../../../../docs/agent-verification.md).
 
-## Required actions
+## Review scope
 
-### Apply the existing review instructions
+- Establish the intended outcome, permitted scope, exact revision, and comparison base with Gizmo.
+- Assess the complete task change and its affected behavior, including relevant callers and contracts.
+- For work spanning several commits, cover the task from its fixed base to the final revision; a root commit has no base.
+- Apply the project's requirements and applicable development rules. Review discretion does not waive them.
+- Preserve the reviewed work. Findings do not authorize implementation or expansion of the user's task.
 
-1. Load the [communication protocol](spec/communication-protocol.md) for request
-   validation, exhaustive decisions, ledger progress, check evidence, complete
-   findings, and repair rechecks.
-2. Follow [committed Git reads](spec/git-review.md) to resolve the assigned SHA,
-   inventory its change, and read every changed file without changing the checkout.
-3. Load the catalog context below, then complete the protocol's review and result
-   handoff. Use available read-only analysis; obtain missing validation evidence
-   through Gizmo under the Git guide's evidence requirements.
+## Reviewer judgment
 
-**Prohibited:** replace the protocol's complete review with a passing build log.
+- Choose the investigation, tools, depth, and context appropriate to the change and its risks.
+- Use catalogs as navigation when helpful. Read canonical rules, skills, specifications, code, tests, and prior discussion as needed. Reading a worker skill does not transfer its implementation role to the reviewer.
+- Form conclusions from inspected evidence; a worker's explanation or passing test alone does not establish correctness.
+- Resolve missing context through available sources; ask Gizmo when a material requirement or required input remains unavailable or ambiguous.
+- On repairs, verify the earlier findings and assess the resulting change for regressions, choosing the re-review depth from its impact.
 
-**Required:** use the committed evidence and complete catalog scope to produce
-the protocol's report and send every finding to Gizmo.
+## Expected result
 
-### Keep subject practice context index-only
+Return a concise assessment to Gizmo identifying:
 
-1. Start at every review catalog root declared by the verifier's own skill.
-   Require those roots before review; send `need_context` if they are missing.
-   Recursively
-   visit every navigation entry in order, including all practice leaves and
-   cross-rule checks. Do not select branches by the changed files or the worker's
-   self-assessment. Applicability is a recorded decision, not a loading filter.
-2. Load only `index.yaml` files for practice context. Do not load the target
-   worker's role, skills, linked Markdown practices, or shared subject Markdown
-   as review authority.
-   This replaces ordinary selective catalog loading and subject prerequisites
-   for every verifier. Keep source links as citations rather than loading them.
-   Markdown in the committed change is still reviewed content; reading it as
-   evidence does not add its instructions to the verifier's practice context.
-3. Apply [consuming project context](../../../../docs/project-context.md) for
-   operational project instructions, architecture, specifications, and requirements.
-   Retain the verifier's own role and review skill, team
-   instructions, circuit breakers, the communication protocol, and the ledger
-   as operational context. Gizmo supplies acceptance criteria and exact-revision validation
-   requirements without copying the worker's full authoring context.
-4. Resolve references relative to their containing YAML file. Record paths and
-   loaded cues as one fixed catalog snapshot. A changed catalog requires a fresh
-   review; do not mix versions.
-5. If a cue cannot determine compliance, record its exact ambiguity as a blocker.
-   Ask Gizmo to obtain the subject owner's decision or catalog correction. Do not
-   open the cited Markdown, infer an exception, or approve from memory.
+- The reviewed revision and scope, with enough context to understand what was examined.
+- The conclusion: `pass`, `changes_required`, or `blocked`, supported by the review evidence.
+- All discovered actionable findings, with locations, why they matter, and enough detail to guide correction.
+- Validation performed or reused, its results, and any unverified requirements or limitations.
 
-**Prohibited:** skip WASM indexes for a CLI change, skip writing-example rules
-for a catalog change, or load the worker's skill to resolve an unclear cue.
+Choose a useful report format. A pass requires the assigned scope, applicable
+requirements, and required validation to be satisfied. Identified defects require
+changes; missing evidence or decisions that prevent a conclusion are blockers.
+A completed report does not itself approve integration.
 
-**Required:** traverse the entire declared review catalog, record applicability
-for every rule, and return unresolved cue decisions as blockers without expanding
-context.
-
-### Preserve catalog defects and unresolved decisions
-
-1. Check practice ownership, rule uniqueness, references, cycles, and source
-   consistency across every declared catalog. Preserve defective entries and
-   report them as blockers; do not silently deduplicate an incomplete inventory.
-2. Judge only the loaded cues. Do not claim compliance with canonical Markdown
-   that was never loaded as authority. Return unclear decisions through Gizmo
-   without inventing exceptions or adding worker context.
-
-**Prohibited:** remove a duplicated rule from the inventory and call coverage
-complete, or guess an unloaded practice's exception from memory.
-
-**Required:** preserve the defective entry and precise blocker while completing
-all remaining rule decisions and retaining every established violation.
+Record the result and useful continuation context in the existing
+[read-only ledger task](../../../../docs/agent-ledger.md). Report readiness means
+the assessment is finished; a blocked assessment remains blocked progress.
+In single-agent mode, perform this review locally and identify the lack of
+independent reviewer context.

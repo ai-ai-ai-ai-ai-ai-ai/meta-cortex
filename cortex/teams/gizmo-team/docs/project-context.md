@@ -65,18 +65,16 @@ is absent, record that absence and use other applicable service context.
    relevant sibling context before further affected work. Refresh selected
    documents and handoffs when paths, revisions, or scope change. Report proposed
    scope changes through the existing coordination hierarchy.
-4. Verifiers read consuming-project operational instructions and relevant
-   architecture, specifications, and requirements in full. Framework subject
-   practice review remains index-only under the verifier's review protocol.
-   Project context does not authorize loading worker skills or framework
-   subject-practice Markdown.
+4. Verifiers apply the project's instructions and choose additional context under
+   the [shared review contract](../agents/gizmo/skills/agent-verification/SKILL.md).
+   Catalogs help locate sources; reviewers may read canonical practice Markdown,
+   skills, and relevant implementation context directly.
 
 **Prohibited:** widen work from `services/api/` to `services/auth/` without
-reading auth context, or skip the API specification during index-only review.
+considering auth requirements, or claim a passing review with unresolved material context.
 
-**Required:** discover and load relevant auth context and pass updated scoped
-paths through Gizmo. The verifier reads the project specification while retaining
-framework practice source links as catalog citations.
+**Required:** inspect relevant auth requirements when the change reaches that
+boundary and report any evidence still needed for the review conclusion.
 
 ### Map context to the actual layout
 

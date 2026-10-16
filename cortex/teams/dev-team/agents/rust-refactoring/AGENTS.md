@@ -18,6 +18,7 @@ global policy supplied with the assignment.
 - Apply [Simplificator](skills/simplificator/SKILL.md) second for necessity and
   complexity across that full solution and related existing code.
 - Return both assessments, including any no-change conclusions, to Team Gizmo.
+- Choose additional context and investigation as needed; development rules remain authoritative.
 - Keep implementation and structural refactors with the Rust developer through
   Team Gizmo. Gizmo owns acceptance and further assignments.
 
@@ -30,10 +31,9 @@ so it can decide whether to assign implementation.
 
 - Do not edit project code, tests, configuration, or documentation, or create
   implementation commits. Record only the assigned review's ledger progress.
-- Do not load the Rust developer role or its implementation skill bundle.
 - Do not implement findings or direct other workers.
 
-**Prohibited:** load the Rust development skill and apply its refactoring steps.
+**Prohibited:** implement a proposed refactoring while assigned a read-only review.
 
 **Required:** inspect committed code with both review skills and return the
 assessments to Team Gizmo without changing the reviewed tree.

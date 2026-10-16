@@ -13,14 +13,14 @@ the consuming project.
   - Read-only architecture and simplification review after successful Rust verification.
   - Full worker solution and related existing code; proposals or no change to Team Gizmo.
 - **[Rust verifier](agents/rust-verifier/AGENTS.md)**
-  - Read-only, exhaustive Rust catalog compliance review of committed work.
+  - Read-only assessment of committed Rust work against applicable development rules.
   - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
 - **[TypeScript developer](agents/typescript-dev/AGENTS.md)**
   - TypeScript and JavaScript implementation: browser components, application state, APIs, libraries, services, and tooling.
   - Functional tests, browser integration, and corrections for those implementations.
   - Verifier: [TypeScript verifier](agents/typescript-verifier/AGENTS.md).
 - **[TypeScript verifier](agents/typescript-verifier/AGENTS.md)**
-  - Read-only, exhaustive TypeScript catalog compliance review of committed work.
+  - Read-only assessment of committed TypeScript work against applicable development rules.
   - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
 - **[Web designer](agents/web-designer/AGENTS.md)**
   - UI/UX, navigation, layout, typography, responsive styling, and visual states.

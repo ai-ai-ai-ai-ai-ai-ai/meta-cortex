@@ -13,7 +13,7 @@ related: []
 rules:
   - id: knowledge_graphs:verifier_boundary
     source: ../knowledge-graphs.md#practice-knowledge-graphs
-    summary: Verifier loading follows its separate index-only review protocol.
+    summary: Verifiers choose context and may read canonical sources under the review contract.
   - id: knowledge_graphs:decision_inventory
     source: ../knowledge-graphs.md#inventory-decisions-not-just-files
     summary: Inventory complete distinct decisions, not only practice files.

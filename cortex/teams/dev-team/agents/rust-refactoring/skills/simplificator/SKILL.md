@@ -71,7 +71,7 @@ This comparison preserves the capability while questioning its implementation co
 4. Record this assessment alongside the architecture assessment in the existing
    read-only task and report to Gizmo. Gizmo decides accepted work and assigns
    RustDev; stop without implementing. Reassess the entire replacement solution
-   and related existing code after its fresh complete Rust verifier pass.
+   and related existing code after its fresh Rust verifier pass.
 
 **Prohibited:** report “delete the extra layer” without showing which required
 behavior survives, or invent a reduction to avoid returning no findings.
@@ -85,7 +85,6 @@ checks needed before Gizmo can assign the change.
 
 - Do not edit code, tests, configuration, or documentation, or create implementation
   commits. Only record the assigned review's ledger progress and result.
-- Do not load the Rust developer role or implementation skill bundle.
 - Do not dispatch workers, approve integration, or treat a proposal as permission
   to change scope. Simplification does not waive the successful verifier's rules.
 

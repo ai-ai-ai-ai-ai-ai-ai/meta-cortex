@@ -11,7 +11,7 @@ Identify relevant documents by their purpose and the project's conventions.
 Discover their locations from project instructions and actual files.
 Use the [rule catalog](index.yaml) to locate the complete writing decisions and
 their canonical sources. Authoring follows the source-loading procedure in
-Practice Knowledge Graphs; verifiers use their own index-only review protocol.
+Practice Knowledge Graphs; verifiers choose context under the shared review contract.
 
 ## Required actions
 

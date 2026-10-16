@@ -149,7 +149,8 @@ Apply the consuming project's context throughout the task:
   before planning or work, including repository and nested `.cortex/` scopes.
 - Resolve Markdown links and YAML catalog paths relative to their containing file.
 - Follow [catalog loading](teams/ai-team/agents/tech-writer/skills/context-engineering/practices/knowledge-graphs.md#load-only-selected-branches)
-  to select focused index branches and process their rule entries in order.
+  for authoring and implementation. Verifiers choose their investigation and
+  context under the [review contract](teams/gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
 - Resolve source paths, manifests, tests, and commands against the consuming
   project or assigned project worktree.
 - Pass the library location separately from each task worktree. An ignored

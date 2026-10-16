@@ -86,8 +86,8 @@ a subagent. Report unavailable subagent execution capabilities as blockers.
   and any incomplete-role status, so Team Gizmo can select agents from these summaries.
 - A worker entry may declare a **Verifier** link to a cataloged read-only role.
   Team Gizmo follows the shared [verification handoff](gizmo-team/docs/agent-verification.md)
-  for that pair. The verifier's own role and review skill declare its catalog;
-  the shared verification workflow requires index-only loading and exhaustive rule coverage.
+  for that pair. The verifier's role and review skill identify subject guidance;
+  the verifier chooses its investigation and context under the shared review contract.
 - Gizmo Prime launches the single Team Gizmo as a subagent.
 - Team Gizmo launches the team agents needed for its assignments as subagents.
 - Team Gizmo assigns instructions, specifications, skills, practices, and catalog
@@ -171,11 +171,10 @@ Load newly relevant documents only for the authorized assignment.
 The skill’s own `SKILL.md` still owns its technical
 instructions; this handoff does not select or duplicate skill contents.
 
-- For verifiers, retain operational context and apply the shared
-  [index-only review context](gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md#keep-subject-practice-context-index-only)
-  instead of subject-source loading. Supply the verifier's own role and review
-  skill. Do not supply or load the target worker's role, authoring skills, or
-  practice Markdown. Its complete catalog supplies the practice cues.
+- For verifiers, supply the review objective, committed scope, available evidence,
+  and the verifier's role and skill. The shared
+  [review contract](gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md)
+  leaves further context selection and investigation to the reviewer.
 
 **Prohibited:** launch a TypeScript agent with only “implement this component”
 and its role path, assuming it already knows the development team’s programming

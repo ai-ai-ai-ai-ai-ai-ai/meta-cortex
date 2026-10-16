@@ -5,8 +5,9 @@ editing its Markdown practices. A file list is not enough: readers need the
 distinct decisions and their source sections to find relevant guidance.
 The source practice owns the full requirements, exceptions, checks, and examples.
 The source-loading procedure below applies to authoring and implementation.
-Read-only verifiers follow their review protocol's exhaustive, index-only
-loading. Their source links remain citations; an insufficient cue is a blocker.
+Read-only verifiers choose their investigation and context under the
+[review contract](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
+Catalogs help them locate canonical sources; they can read those sources directly.
 
 ## Inventory decisions, not just files
 
@@ -192,6 +193,9 @@ and links to the existing Markdown practice.
 
 ## Load only selected branches
 
+This procedure is for authoring and implementation. Verifiers choose context
+under the shared review contract above.
+
 1. Read the skill entry point and its mandatory prerequisites. These requirements
    still apply to focused assignments; catalog selection does not waive them.
 2. Read each entry of the current navigation catalog in sequence. Select branches
@@ -213,10 +217,10 @@ and links to the existing Markdown practice.
    and comparisons with source changes; keep detailed exceptions in Markdown.
 
 **Prohibited:** skim the first rule, assume the remaining entries were applied,
-or load every sibling namespace into a focused review.
+or load unrelated sibling namespaces into a focused authoring task.
 
-**Required:** for a domain-type review, traverse each item in the selected
-`domain_types/index.yaml`, check it against the changed code, and bring in
+**Required:** when changing domain-type guidance, traverse each item in the selected
+`domain_types/index.yaml`, check it against the changed guidance, and bring in
 construction or serialization guidance only when those boundaries are involved.
 
 A parser can validate catalog structure and tooling can enumerate entries in a

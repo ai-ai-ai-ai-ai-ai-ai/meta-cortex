@@ -16,10 +16,10 @@ rules:
     summary: Name the condition, required action, and prohibited consequence.
   - id: focused_examples:independent_sections
     source: ../focused-examples.md#demonstrate-the-difference
-    summary: Split independent decisions; local Git architecture may remain one concise description.
+    summary: Split independent decisions; local Git and verification architecture may remain one concise description.
   - id: focused_examples:required_pair
     source: ../focused-examples.md#demonstrate-the-difference
-    summary: Require labeled alternatives except for concise local Git architecture, roles, and handoffs.
+    summary: Require labeled alternatives except for concise local Git and verification architecture, roles, and handoffs.
   - id: focused_examples:same_situation
     source: ../focused-examples.md#demonstrate-the-difference
     summary: Alternatives keep the same situation and intended outcome.
@@ -43,4 +43,4 @@ rules:
     summary: Do not weaken rules or substitute decorative, unrelated examples.
   - id: focused_examples:validation
     source: ../focused-examples.md#validation
-    summary: Verify required pairs demonstrate their decisions; local Git architecture is exempt.
+    summary: Verify required pairs demonstrate their decisions; local Git and verification architecture is exempt.
