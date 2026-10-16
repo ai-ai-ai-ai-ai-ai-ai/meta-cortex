@@ -42,8 +42,8 @@ supplied in the session without asking again. Tasks, follow-ups, and delegated
 agents inherit it; an explicit user change applies before further affected work.
 A new conversation collects delivery again. Cancelled or pending collection stops
 dependent work. If no interaction channel is allowed, the host reports the blocker.
-Host-specific mappings live in references such as
-[Codex integration](teams/gizmo-team/docs/codex-host.md).
+Choose only the active host from the
+[host reference catalog](teams/gizmo-team/docs/hosts/index.yaml) for its mappings.
 
 - **Gizmo Prime**
   - Owns the overall outcome.
@@ -163,16 +163,16 @@ that many host slots. The [capacity assessment](teams/gizmo-team/docs/agent-conf
 preserves the hierarchy and queues work within available capacity.
 Speed comes from the host session.
 
-The launching agent selects model and effort for each
-assignment using the host's current capabilities and the
+The launching agent assesses model and effort for each assignment using the
+host's supported controls or known inherited settings under the
 [selection policy](teams/gizmo-team/docs/agent-configuration.md#choose-settings-for-the-assignment).
 Gizmo reassesses those choices when scope changes or results need repair.
 The policy covers supported session updates and replacement handoffs that
 preserve work. No manual role-model tuning is required.
 
 - **Prohibited:** assign all tasks one fixed model and effort regardless of complexity.
-- **Required:** assess the assignment, pass supported settings through the host
-  execution tool, and reassess when the evidence changes.
+- **Required:** assess available settings and their limits for the assignment,
+  use supported controls or known inheritance, and reassess when evidence changes.
 
 ## Agent skills
 

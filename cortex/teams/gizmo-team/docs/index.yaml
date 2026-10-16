@@ -7,9 +7,9 @@ entries:
   - title: Agent configuration
     path: agent-configuration.md
     summary: Host capacity, per-assignment model selection, execution reassessment, and launches.
-  - title: Codex host integration
-    path: codex-host.md
-    summary: Codex question mapping, capacity configuration, and context-fork mechanics.
+  - title: Host references
+    path: hosts/index.yaml
+    summary: Active-host navigation for Codex and Claude Code mechanics.
   - title: Agent work ledger
     path: agent-ledger.md
     summary: Operational overview and focused references for recording and resuming work.

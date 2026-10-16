@@ -1,9 +1,9 @@
 # Agent Configuration
 
 [meta-cortex.toml](../../../meta-cortex.toml) sets the scheduling ceiling.
-The launching agent chooses model and reasoning effort for each assignment from
-the active host's supported combinations. There are no static role settings or
-framework model catalog. Speed belongs to the host session.
+The launching agent assesses model and reasoning effort for each assignment
+using the active host's controls and known effective or inherited settings.
+There are no static role settings or framework model catalog. Speed belongs to the host session.
 
 The host agent selects Gizmo Prime's settings; Prime selects Team Gizmo's;
 Team Gizmo selects each worker's and verifier's. The assigning agent owns later
@@ -11,6 +11,26 @@ reassessment through the same hierarchy. Workers report evidence and may
 recommend a change; they do not launch replacements or change peer settings.
 
 ## Required actions
+
+### Resolve the active host
+
+1. Read the exposed execution-tool contract and relevant session metadata.
+   Identify supported launch, messaging, continuation, stop, context, and settings
+   controls. Use installed or official documentation to resolve their semantics.
+2. Select only the active host's reference from the
+   [host catalog](hosts/index.yaml) when host-specific mechanics are needed.
+   Carry its path, capability evidence, and limitations through assignments.
+3. Apply the shared rules below through those capabilities. Hosts need not expose
+   identical parameter names, model catalogs, effort controls, or tier metadata.
+   Block work when a required hierarchy, user constraint, or assignment-quality
+   requirement cannot be met; report other limitations without inventing controls.
+
+- **Prohibited:** reject a suitable inherited model solely because the host lacks
+  a separate effort parameter, or bypass Team Gizmo because nesting is unavailable.
+
+- **Required:** assess the known inherited settings for the assignment and report
+  unavailable effort control. If the host cannot launch the required descendants,
+  report that concrete hierarchy blocker.
 
 ### Check host capacity
 
@@ -20,7 +40,7 @@ including the host agent and coordinators. It neither allocates host slots nor
 requires the host to offer that many.
 
 Preserve the [team architecture](../../AGENTS.md): the host launches Gizmo Prime,
-Prime launches Team Gizmos, and Team Gizmos launch workers and verifiers. Each
+Prime launches Team Gizmo, and Team Gizmo launches workers and verifiers. Each
 coordinator schedules its children within the shared ceiling and actual host
 limits. Account for coordinators and other active agents before launching more
 work; queue assignments when slots are occupied.
@@ -54,8 +74,8 @@ Consider a host configuration change only when the task needs it or the user
 requests it. Busy slots usually call for scheduling. Identify the effective
 configuration and supported setting through installed or official host
 documentation. Show the exact path, current and proposed values, purpose, and
-any restart requirement before requesting approval. Load the
-[Codex reference](codex-host.md) only when working with that host's mechanics.
+any restart requirement before requesting approval. Use the active host's
+reference for its configuration format and activation rules.
 
 Use the [user-input skill](../agents/gizmo/skills/user-input/SKILL.md) and
 [capacity form](../agents/gizmo/skills/user-input/examples/host-capacity.yaml)
@@ -79,18 +99,19 @@ expand the running session. Unsupported or enforced settings remain limitations.
 
 ### Choose settings for the assignment
 
-1. Read the active host's model catalog and supported effort values from its
-   execution-tool instructions or discovery metadata. Use exact identifiers from
-   that source, including supported model/effort combinations. Do not infer an
-   identifier from a display name or use a stale catalog embedded in the framework.
-   If that information is unavailable, report the limitation before launching.
+1. Identify available model and effort choices, defaults, inheritance, and
+   overriding configuration from the active host's evidence. Use supported exact
+   identifiers when selecting explicit values. If no catalog or override exists,
+   assess the known effective or inherited settings and record what is unavailable.
+   Do not infer identifiers from display names or maintain a framework model catalog.
 2. Assess the actual assignment: ambiguity, reasoning depth, UI/design demands,
    cross-module dependencies, correctness risk, review scope, and prior attempts.
    Honor explicit user model, effort, cost, and latency constraints. Select the
    least costly combination likely to meet the required quality; do not choose
    solely by role, language, or file extension.
-3. Choose model capability and reasoning effort separately. High effort on a
-   smaller model does not automatically provide a stronger model's capability.
+3. Assess model capability and reasoning effort separately, using supported
+   controls or known inheritance. High effort on a smaller model does not
+   automatically provide a stronger model's capability.
    Use these examples as judgment cues, not fixed role mappings:
    - Routine monitoring or a bounded status check can use a lightweight model
      with effort proportionate to the reasoning needed. A trivial check may need
@@ -103,9 +124,9 @@ expand the running session. Unsupported or enforced settings remain limitations.
      actual reasoning burden and available evidence.
    - Coordinators and reviewers also need settings suited to their current
      decisions; routine tracking and a difficult architecture dispute differ.
-4. Record the selected model, effort, and a short task-specific rationale in
-   assignment context. Use existing ledger continuation notes when the ledger
-   is available; carry bootstrap choices until they can be recorded. These are
+4. Record the selected or inherited model and effort, their evidence and limits,
+   and a short task-specific rationale in assignment context. Use existing ledger
+   continuation notes when the ledger is available; carry bootstrap choices until they can be recorded. These are
    per-attempt decisions, not settings to write back into TOML or role files.
    Make routine choices autonomously without asking the user to tune each agent.
 
@@ -120,24 +141,25 @@ expand the running session. Unsupported or enforced settings remain limitations.
 
 1. Apply the selection above before every launch, including Gizmo Prime.
    Reassess before reusing a session for a changed assignment or repair.
-2. Pass the selected model and effort through the host execution tool using
-   its supported parameters. Choose context handling compatible with those
-   settings and supply the complete
-   [assignment context](../../AGENTS.md#assignment-context). Host-specific
-   mappings belong in references such as [Codex](codex-host.md).
+2. Apply supported explicit model and effort controls when available; otherwise
+   deliberately use the assessed effective or inherited settings. Choose compatible
+   context handling and supply the complete
+   [assignment context](../../AGENTS.md#assignment-context). Resolve parameter and
+   inheritance details through the active host's reference.
 3. Leave speed to the host as described below. Do not add a tier override to the
    launch request. Host configuration changes follow the approval procedure above.
 4. Check the host's launch result and returned execution metadata when available.
    Record a requested setting separately from a confirmed runtime setting.
    If a chosen combination is rejected or unavailable, select another supported
    combination that meets the assignment and user constraints and record why.
-   If none does, report the blocker; do not silently inherit settings.
+   If none meets those requirements, report the concrete blocker. Never describe
+   inheritance or an ignored request as a confirmed override.
 
 - **Prohibited:** name a stronger model in a child's prompt while the tool launches
   it with inherited settings, or send an unsupported `mode` argument.
 
-- **Required:** pass the selected model and effort through the actual tool with
-  compatible context handling and report any unsupported execution capability.
+- **Required:** use the supported controls or assessed inheritance, supply the
+  needed context, and distinguish the requested settings from runtime confirmation.
 
 ### Reassess and change execution settings
 
@@ -154,10 +176,11 @@ expand the running session. Unsupported or enforced settings remain limitations.
    acceptance checks in existing assignment or continuation notes. Stay within
    the [bounded repair workflow](agent-verification.md); changing models does not
    reset its repair limit or authorize broader work.
-4. Reuse an existing session only when its actual settings match the new choice.
-   If the host supports changing a session's settings, use that operation at its
-   supported turn boundary and confirm the result before resuming work. Do not
-   claim a prompt or a configuration edit changed a running model.
+4. Reuse an existing session when its known effective or inherited settings remain
+   suitable. Record unavailable runtime confirmation. If a change is needed and
+   supported, use that operation at the host's supported boundary and inspect its
+   result before resuming work. Do not claim a prompt or saved configuration
+   changed a running model.
 5. If changing that session is unsupported, stop its execution or establish that
    it finished before launching a replacement. Preserve its branch, uncommitted
    edits, checkpoints, findings, failed checks, and remaining acceptance criteria.
@@ -178,7 +201,7 @@ expand the running session. Unsupported or enforced settings remain limitations.
 
 ### Use the host speed setting
 
-The user selects speed in the host before launching agents. Use the host's
+Speed selection, where available, belongs to the user in the host. Use the host's
 supported subagent workflow and follow its documented session inheritance
 rules. Do not create a framework speed selector, alias, default, or translation
 layer.
