@@ -22,8 +22,8 @@ For each new user task, follow this order:
    [agent configuration rules](teams/gizmo-team/docs/agent-configuration.md),
    including the host capacity preflight.
 5. Read the [team instructions](teams/AGENTS.md). Launch Gizmo Prime through the
-   host's agent execution tool with the task context. Prime launches Team Gizmo;
-   Team Gizmo assigns the workers and verifiers needed for the task.
+   host's agent execution tool with the task context. Prime directly launches and
+   manages the specialists and independent verifiers needed for the task.
 
 **Prohibited:** begin implementation in the host thread or launch Prime before
 reading the circuit breaker, establishing context, and validating delivery.
@@ -35,7 +35,7 @@ capability as a blocker.
 ### Development delivery
 
 The host agent uses the
-[user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
+[user-input skill](teams/gizmo-team/agents/gizmo-prime/skills/user-input/SKILL.md)
 with [development.yaml](development.yaml) to validate
 `answers["development.delivery"]`.
 
@@ -133,7 +133,7 @@ Apply the consuming project's context throughout the task:
 - Resolve Markdown links and YAML catalog paths relative to their containing file.
 - Follow [catalog loading](teams/ai-team/agents/tech-writer/skills/context-engineering/practices/knowledge-graphs.md#load-only-selected-branches)
   for authoring and implementation. Verifiers choose their investigation and
-  context under the [review contract](teams/gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
+  context under the [review contract](teams/gizmo-team/agents/gizmo-prime/skills/agent-verification/SKILL.md).
 - Resolve source paths, manifests, tests, and commands against the consuming
   project or assigned project worktree.
 - Pass the library location separately from each task worktree. An ignored

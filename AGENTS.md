@@ -15,7 +15,7 @@ Split skill catalogs into directory-local YAML indexes by subject and namespace;
 use brief decision cues linked to canonical Markdown rule sources.
 Keep rules, explanations, and examples in descriptively named documents.
 Teams live in `cortex/teams/`; each team groups its agents under `agents/`.
-Both Gizmo coordinators belong to `gizmo-team`.
+Gizmo Prime is the single coordinator and belongs to `gizmo-team`.
 Skills live under their owning agents. Do not create library-root or team-level
 skill directories. Each agent links its skills; each `SKILL.md` owns its instructions.
 Keep one canonical copy of each practice and update all callers when moving it.

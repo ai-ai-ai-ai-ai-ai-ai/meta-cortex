@@ -75,6 +75,32 @@ pub(crate) enum TaskRecordVersionV2 {
     V2,
 }
 
+/// Released task shape before direct Prime coordination.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "i64", into = "i64")]
+pub(crate) enum TaskRecordVersionV3 {
+    V3,
+}
+impl From<TaskRecordVersionV3> for i64 {
+    fn from(version: TaskRecordVersionV3) -> Self {
+        match version {
+            TaskRecordVersionV3::V3 => 3,
+        }
+    }
+}
+impl TryFrom<i64> for TaskRecordVersionV3 {
+    type Error = VersionParseError;
+    fn try_from(version: i64) -> Result<Self, Self::Error> {
+        match version {
+            3 => Ok(Self::V3),
+            _ => Err(VersionParseError::Unsupported {
+                schema: VersionFamily::TaskRecord,
+                version: VersionNumber::from(version),
+            }),
+        }
+    }
+}
+
 /// Event envelopes evolve independently of feature and task record shapes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(try_from = "i64", into = "i64")]
@@ -132,17 +158,17 @@ impl TryFrom<i64> for TaskRecordVersionV2 {
 #[serde(try_from = "i64", into = "i64")]
 #[schemars(with = "i64", extend("const" = i64::from(Self::CURRENT)))]
 pub enum TaskRecordVersion {
-    V3,
+    V4,
 }
 
 impl TaskRecordVersion {
-    pub const CURRENT: Self = Self::V3;
+    pub const CURRENT: Self = Self::V4;
 }
 
 impl From<TaskRecordVersion> for i64 {
     fn from(version: TaskRecordVersion) -> Self {
         match version {
-            TaskRecordVersion::V3 => 3,
+            TaskRecordVersion::V4 => 4,
         }
     }
 }
@@ -152,7 +178,7 @@ impl TryFrom<i64> for TaskRecordVersion {
 
     fn try_from(version: i64) -> Result<Self, Self::Error> {
         match version {
-            3 => Ok(Self::V3),
+            4 => Ok(Self::V4),
             _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::TaskRecord,
                 version: VersionNumber::from(version),
@@ -180,10 +206,12 @@ pub enum StorageVersion {
     SequencedEventsV5,
     #[display("6")]
     FeatureHistoryV6,
+    #[display("7")]
+    DirectPrimeV7,
 }
 
 impl StorageVersion {
-    pub const CURRENT: Self = Self::FeatureHistoryV6;
+    pub const CURRENT: Self = Self::DirectPrimeV7;
 }
 
 impl TryFrom<i64> for StorageVersion {
@@ -198,6 +226,7 @@ impl TryFrom<i64> for StorageVersion {
             4 => Ok(StorageVersion::CommonTasksV4),
             5 => Ok(StorageVersion::SequencedEventsV5),
             6 => Ok(StorageVersion::FeatureHistoryV6),
+            7 => Ok(StorageVersion::DirectPrimeV7),
             _ => Err(VersionParseError::Unsupported {
                 schema: VersionFamily::Database,
                 version: VersionNumber::from(version),
@@ -216,6 +245,7 @@ impl From<StorageVersion> for i64 {
             StorageVersion::CommonTasksV4 => 4,
             StorageVersion::SequencedEventsV5 => 5,
             StorageVersion::FeatureHistoryV6 => 6,
+            StorageVersion::DirectPrimeV7 => 7,
         }
     }
 }
@@ -257,7 +287,7 @@ mod tests {
     fn task_record_schema_preserves_the_supported_wire_version() -> anyhow::Result<()> {
         let version = TaskRecordVersion::CURRENT;
         let encoded = serde_json::to_string(&version)?;
-        assert_eq!(encoded, "3");
+        assert_eq!(encoded, "4");
         assert_eq!(
             serde_json::from_str::<TaskRecordVersion>(&encoded)?,
             version
@@ -272,7 +302,7 @@ mod tests {
     #[test]
     fn task_record_decoder_rejects_other_or_malformed_versions() {
         for input in [
-            "1", "2", "-1", "0", "99", "1.5", "\"2\"", "null", "true", "{}", "[]",
+            "1", "2", "3", "-1", "0", "99", "1.5", "\"2\"", "null", "true", "{}", "[]",
         ] {
             assert!(serde_json::from_str::<TaskRecordVersion>(input).is_err());
         }
@@ -298,6 +328,7 @@ mod tests {
             StorageVersion::CommonTasksV4,
             StorageVersion::SequencedEventsV5,
             StorageVersion::FeatureHistoryV6,
+            StorageVersion::DirectPrimeV7,
         ] {
             let encoded = serde_json::to_string(&version)?;
             assert_eq!(encoded, i64::from(version).to_string());
@@ -313,7 +344,7 @@ mod tests {
             assert!(serde_json::from_str::<ProtocolVersion>(input).is_err());
             assert!(serde_json::from_str::<RecordVersion>(input).is_err());
         }
-        for input in ["-1", "7", "99", "1.5", "\"IndexedV2\""] {
+        for input in ["-1", "8", "99", "1.5", "\"IndexedV2\""] {
             assert!(serde_json::from_str::<StorageVersion>(input).is_err());
         }
     }

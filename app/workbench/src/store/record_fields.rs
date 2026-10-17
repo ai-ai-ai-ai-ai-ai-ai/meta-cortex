@@ -1,7 +1,7 @@
-//! Version-aware SQL projections of released task documents. V1 is flat; V2/V3
+//! Version-aware SQL projections of released task documents. V1 is flat; V2/V3/V4
 //! share common fields. Unknown versions never satisfy relational identity checks.
 use super::relational::{EventTable, JsonFunction, TaskTable};
-use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV2};
+use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV2, TaskRecordVersionV3};
 use sea_query::{Expr, ExprTrait, Func, Keyword, SimpleExpr};
 
 #[derive(Clone, Copy)]
@@ -43,7 +43,8 @@ impl TaskField {
         .case(
             version.is_in([
                 i64::from(TaskRecordVersionV2::V2),
-                i64::from(TaskRecordVersion::V3),
+                i64::from(TaskRecordVersionV3::V3),
+                i64::from(TaskRecordVersion::V4),
             ]),
             document.extract(self.common(document)),
         )
@@ -98,7 +99,7 @@ impl TaskField {
 
 #[cfg(test)]
 mod tests {
-    use crate::agents::AgentId;
+    use crate::agents::recorded::RecordedAgentId;
     use crate::model::workflow::TaskOwnership;
     use crate::model::{EventKind, TaskCommon, TaskState, Workspace};
     use crate::store::relational::tests::Records;
@@ -130,7 +131,7 @@ mod tests {
     struct HistoricalEvent<'a, TaskRecord> {
         version: RecordVersion,
         kind: EventKind,
-        actor: AgentId,
+        actor: RecordedAgentId,
         note: &'a Note,
         task: &'a TaskRecord,
     }

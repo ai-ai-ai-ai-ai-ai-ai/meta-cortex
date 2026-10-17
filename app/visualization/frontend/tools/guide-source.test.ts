@@ -67,11 +67,11 @@ it("builds the same complete canonical guide from LF and CRLF role, catalog and 
   const lfModule = fixture.present(lf);
   const crlfModule = fixture.present(crlf);
   expect(crlfModule).toBe(lfModule);
-  expect(fixture.inputs().size).toBe(25);
+  expect(fixture.inputs().size).toBe(24);
   for (const text of fixture.inputs().values()) expect(text).toContain("\r\n");
   expect(lfModule).toContain("Rust Developer");
   expect(lfModule).toContain(
-    '"handoff":"The coordination architecture owns the Prime → Team Gizmo → worker hierarchy',
+    '"handoff":"The coordination architecture owns the Host → Gizmo Prime → specialist hierarchy',
   );
   expect(lfModule).toContain("coordination-state-machine.md");
 });

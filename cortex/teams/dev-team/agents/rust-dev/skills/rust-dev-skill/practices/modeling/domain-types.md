@@ -161,7 +161,7 @@ impl TryFrom<String> for AgentId {
         if name.is_empty() { Err(InvalidAgent) } else { Ok(Self(name)) }
     }
 }
-let coordinator = AgentId::try_from("gizmo".to_owned())?;
+let coordinator = AgentId::try_from("gizmo-prime".to_owned())?;
 ```
 
 **Required:** internal construction is infallible and names the exact role.
@@ -174,11 +174,11 @@ pub enum AgentId {
     Development(DevelopmentAgent),
 }
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub enum GizmoAgent { GizmoPrime, Gizmo }
+pub enum GizmoAgent { GizmoPrime }
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum DevelopmentAgent { RustDev }
 
-let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
+let coordinator = AgentId::Gizmo(GizmoAgent::GizmoPrime);
 let worker = AgentId::Development(DevelopmentAgent::RustDev);
 ```
 
@@ -244,13 +244,13 @@ pub enum AgentId {
     Sre(SreAgent),
 }
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub enum GizmoAgent { GizmoPrime, Gizmo }
+pub enum GizmoAgent { GizmoPrime }
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum DevelopmentAgent { RustDev }
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum SreAgent { DockerSpecialist }
 
-let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
+let coordinator = AgentId::Gizmo(GizmoAgent::GizmoPrime);
 let developer = AgentId::Development(DevelopmentAgent::RustDev);
 let operator = AgentId::Sre(SreAgent::DockerSpecialist);
 ```

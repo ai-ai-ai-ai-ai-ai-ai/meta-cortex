@@ -26,7 +26,7 @@ interpolate retrieved text into executable shell code. Examples are individual
 operations, not a script to run from top to bottom without checking results.
 
 Report all outcomes, questions, and work outside the assigned scope only to the
-assigning Team Gizmo. Gizmo decides further work and routing.
+assigning Gizmo Prime. Prime decides further work and routing.
 
 ## Required actions
 
@@ -35,7 +35,7 @@ assigning Team Gizmo. Gizmo decides further work and routing.
 1. Resolve the assigned repository, remote, feature branch, target branch, and
    authorized operation from project context. Fetch the relevant remote refs.
 2. Inspect the workspace and committed feature diff. Preserve unrelated edits.
-   For divergence or integration repairs, report the need to the assigning Gizmo for a decision;
+   For divergence or integration repairs, report the need to the assigning Prime for a decision;
    do not force-push or silently change the feature's scope.
 3. Push the assigned branch once per coherent implementation or repair batch.
    Resolve its actual published head after the push.
@@ -104,16 +104,16 @@ summary and validation evidence for the new revision.
 3. Observe automatically triggered checks before requesting more execution.
    For manual validation, retries, or pipeline investigation, use
    [CI/CD Operations](../../../../../sre-team/agents/cicd-agent/skills/cicd-operations/SKILL.md).
-   Report execution needs to Team Gizmo, which decides
+   Report execution needs to Gizmo Prime, which decides
    whether to assign CI/CD work and selects one execution observer per run.
-   Reuse results supplied by Gizmo.
+   Reuse results supplied by Prime.
 4. Wait through the existing host's status/watch tools using bounded,
    interruptible waits. Gather the whole required check set, including failed,
    cancelled, missing, or pending checks. Report blockers without calling a
    partial inventory green. Accept skipped or neutral results only when the
    project's applicable policy explicitly permits them.
 5. Read actionable review feedback. Report product defects, integration conflicts,
-   and infrastructure failures to the assigning Gizmo for a repair decision. Do not change code
+   and infrastructure failures to the assigning Prime for a repair decision. Do not change code
    merely to satisfy an incorrect suggestion; report the reasoning. Post replies
    or resolve threads only within the authorized review-response assignment,
    after verifying the action or explanation addresses the feedback.
@@ -164,7 +164,7 @@ dispatch, rerun, and log commands belong to the CI/CD Operations skill.
 required check is missing, or retry a failing product test until it happens to pass.
 
 **Required:** return all observed failures with run URLs and diagnostics, let
-Gizmo decide repair assignments, and verify the resulting revision's required checks.
+Prime decide repair assignments, and verify the resulting revision's required checks.
 
 ### Merge and verify the outcome
 
@@ -172,7 +172,7 @@ Gizmo decide repair assignments, and verify the resulting revision's required ch
    PR head, target, checks, review state, and mergeability immediately before it.
 2. If the feature head changed, reevaluate the replacement revision. If the
    target advanced, follow the project's update or merge-queue policy; report
-   necessary branch integration to Gizmo for assignment and repeat invalidated checks.
+   necessary branch integration to Prime for assignment and repeat invalidated checks.
 3. Merge through GitHub using the permitted strategy and current-head guard
    where supported. Honor required reviews, environment gates, and merge queues;
    do not use administrator bypasses. A queued merge is still pending.
@@ -182,7 +182,7 @@ Gizmo decide repair assignments, and verify the resulting revision's required ch
    assignment scope call for it. Leave protected, shared, or still-needed
    branches intact. Preserve the
    [user-owned feature worktree](../../../../docs/project-delivery-policy.md#preserve-the-users-feature-worktree).
-   Report only remaining agent-created task worktrees to Gizmo for cleanup.
+   Report only remaining agent-created task worktrees to Prime for cleanup.
 6. Report the PR URL, evaluated head, required-check and review results, actual
    merge result, and cleanup outcome. Report cleanup failures separately from a
    successful merge; do not repeat the merge to repair cleanup.

@@ -6,7 +6,7 @@
       "summary": "Updated the release manifest",
       "detail": "Declared the supported release and package metadata.",
       "first_recorded": {
-        "at": 1791445782894,
+        "at": 1792215276550,
         "actor": {
           "team": "Development",
           "role": "RustDev"
@@ -16,9 +16,9 @@
         "provenance": "CommittedAppend"
       },
       "checkpoint": {
-        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "commit": "be3d8645d912e8df170a320d4b09449b58978a3d",
         "recorded": {
-          "at": 1791445782896,
+          "at": 1792215276552,
           "actor": {
             "team": "Development",
             "role": "RustDev"
@@ -29,9 +29,9 @@
         }
       },
       "integration": {
-        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "commit": "be3d8645d912e8df170a320d4b09449b58978a3d",
         "recorded": {
-          "at": 1791445782901,
+          "at": 1792215276557,
           "actor": {
             "team": "Gizmo",
             "role": "GizmoPrime"
@@ -48,7 +48,7 @@
       "summary": "Validated the release package",
       "detail": "Recorded the package checks for local integration.",
       "first_recorded": {
-        "at": 1791445782896,
+        "at": 1792215276552,
         "actor": {
           "team": "Development",
           "role": "RustDev"
@@ -58,9 +58,9 @@
         "provenance": "CommittedAppend"
       },
       "checkpoint": {
-        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "commit": "be3d8645d912e8df170a320d4b09449b58978a3d",
         "recorded": {
-          "at": 1791445782896,
+          "at": 1792215276552,
           "actor": {
             "team": "Development",
             "role": "RustDev"
@@ -71,9 +71,9 @@
         }
       },
       "integration": {
-        "commit": "1c0d522801b54da53dc89677bb9166cac1db442f",
+        "commit": "be3d8645d912e8df170a320d4b09449b58978a3d",
         "recorded": {
-          "at": 1791445782901,
+          "at": 1792215276557,
           "actor": {
             "team": "Gizmo",
             "role": "GizmoPrime"
@@ -161,7 +161,7 @@
         },
         "note": "Implement the release",
         "summary": "",
-        "at": 1791445782889,
+        "at": 1792215276546,
         "revision": 1,
         "evidence": [
           {
@@ -202,16 +202,16 @@
             },
             "reports_to": {
               "kind": "Gizmo",
-              "coordinator": "Gizmo"
+              "coordinator": "GizmoPrime"
             }
           }
         },
         "state": {
           "kind": "queued"
         },
-        "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
+        "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/GizmoPrime. Objective: Implement the release. State: queued, awaiting claim.",
         "summary": "",
-        "at": 1791445782891,
+        "at": 1792215276547,
         "revision": 2,
         "evidence": [
           {
@@ -253,7 +253,7 @@
             },
             "reports_to": {
               "kind": "Gizmo",
-              "coordinator": "Gizmo"
+              "coordinator": "GizmoPrime"
             }
           }
         },
@@ -265,7 +265,7 @@
               "role": "RustDev"
             },
             "attempt": 1,
-            "expires_at": 1791446382893,
+            "expires_at": 1792215876549,
             "phase": {
               "kind": "working"
             }
@@ -273,7 +273,7 @@
         },
         "note": "Assignment claimed",
         "summary": "",
-        "at": 1791445782893,
+        "at": 1792215276549,
         "revision": 3,
         "evidence": [
           {
@@ -321,7 +321,7 @@
             },
             "reports_to": {
               "kind": "Gizmo",
-              "coordinator": "Gizmo"
+              "coordinator": "GizmoPrime"
             }
           }
         },
@@ -333,7 +333,7 @@
               "role": "RustDev"
             },
             "attempt": 1,
-            "expires_at": 1791446382894,
+            "expires_at": 1792215876550,
             "phase": {
               "kind": "working"
             }
@@ -341,7 +341,7 @@
         },
         "note": "Release implemented",
         "summary": "Release implemented",
-        "at": 1791445782894,
+        "at": 1792215276550,
         "revision": 4,
         "evidence": [
           {
@@ -362,7 +362,7 @@
         ],
         "checkpoint": {
           "kind": "git",
-          "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+          "commit": "be3d8645d912e8df170a320d4b09449b58978a3d"
         }
       }
     },
@@ -403,7 +403,7 @@
             },
             "reports_to": {
               "kind": "Gizmo",
-              "coordinator": "Gizmo"
+              "coordinator": "GizmoPrime"
             }
           }
         },
@@ -415,7 +415,7 @@
               "role": "RustDev"
             },
             "attempt": 1,
-            "expires_at": 1791446382896,
+            "expires_at": 1792215876552,
             "phase": {
               "kind": "working"
             }
@@ -423,7 +423,7 @@
         },
         "note": "Release implemented",
         "summary": "Release implemented",
-        "at": 1791445782896,
+        "at": 1792215276552,
         "revision": 5,
         "evidence": [
           {
@@ -465,7 +465,7 @@
             },
             "reports_to": {
               "kind": "Gizmo",
-              "coordinator": "Gizmo"
+              "coordinator": "GizmoPrime"
             }
           }
         },
@@ -479,7 +479,7 @@
         },
         "note": "Release implemented",
         "summary": "Release implemented",
-        "at": 1791445782899,
+        "at": 1792215276554,
         "revision": 6,
         "evidence": [
           {
@@ -521,17 +521,17 @@
             },
             "reports_to": {
               "kind": "Gizmo",
-              "coordinator": "Gizmo"
+              "coordinator": "GizmoPrime"
             }
           }
         },
         "state": {
           "kind": "integrated",
-          "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+          "commit": "be3d8645d912e8df170a320d4b09449b58978a3d"
         },
         "note": "Integration recorded by the integration owner",
         "summary": "Release implemented",
-        "at": 1791445782901,
+        "at": 1792215276557,
         "revision": 7,
         "evidence": [
           {
@@ -551,8 +551,8 @@
   "timeline": {
     "extent": {
       "kind": "Recorded",
-      "started": 1791445782893,
-      "finished": 1791445782901
+      "started": 1792215276549,
+      "finished": 1792215276557
     },
     "groups": [
       {
@@ -576,9 +576,9 @@
             "objective": "Implement the release",
             "revision": 3,
             "summary_revision": 5,
-            "start": 1791445782893,
-            "end": 1791445782899,
-            "duration_ms": 6,
+            "start": 1792215276549,
+            "end": 1792215276554,
+            "duration_ms": 5,
             "state": {
               "kind": "active",
               "assignment": {
@@ -587,7 +587,7 @@
                   "role": "RustDev"
                 },
                 "attempt": 1,
-                "expires_at": 1791446382893,
+                "expires_at": 1792215876549,
                 "phase": {
                   "kind": "working"
                 }
@@ -612,9 +612,9 @@
             "objective": "Implement the release",
             "revision": 6,
             "summary_revision": 6,
-            "start": 1791445782899,
-            "end": 1791445782901,
-            "duration_ms": 2,
+            "start": 1792215276554,
+            "end": 1792215276557,
+            "duration_ms": 3,
             "state": {
               "kind": "ready",
               "agent": {
@@ -642,12 +642,12 @@
             "objective": "Implement the release",
             "revision": 7,
             "summary_revision": 7,
-            "start": 1791445782901,
-            "end": 1791445782901,
+            "start": 1792215276557,
+            "end": 1792215276557,
             "duration_ms": 0,
             "state": {
               "kind": "integrated",
-              "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+              "commit": "be3d8645d912e8df170a320d4b09449b58978a3d"
             },
             "status": "integrated",
             "worker": {
@@ -666,7 +666,7 @@
         ],
         "order": {
           "kind": "Recorded",
-          "at": 1791445782893
+          "at": 1792215276549
         }
       }
     ],
@@ -680,7 +680,7 @@
           "kind": "Recorded",
           "worker_id": "7ce4e2a5-e306-46ad-9180-c5d459180ee1"
         },
-        "version": 3,
+        "version": 4,
         "common": {
           "id": "rust-release",
           "feature": "release-0-12-3",
@@ -689,12 +689,12 @@
           "dependencies": [],
           "revision": 7,
           "attempt": 1,
-          "created_at": 1791445782889,
-          "last_update": 1791445782901,
-          "last_progress": 1791445782899,
+          "created_at": 1792215276546,
+          "last_update": 1792215276557,
+          "last_progress": 1792215276554,
           "checkpoint": {
             "kind": "git",
-            "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+            "commit": "be3d8645d912e8df170a320d4b09449b58978a3d"
           },
           "progress": {
             "summary": "Release implemented",
@@ -721,18 +721,18 @@
             },
             "reports_to": {
               "kind": "Gizmo",
-              "coordinator": "Gizmo"
+              "coordinator": "GizmoPrime"
             }
           }
         },
         "workspace": {
           "kind": "git",
           "branch": "codex/release-implementation",
-          "path": "/var/folders/gs/k7k3qrf546937s68q1tf_h900000gn/T/.tmpytYnH9/worker"
+          "path": "/var/folders/gs/k7k3qrf546937s68q1tf_h900000gn/T/.tmpc5SiUZ/worker"
         },
         "state": {
           "kind": "integrated",
-          "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+          "commit": "be3d8645d912e8df170a320d4b09449b58978a3d"
         }
       },
       "role": {
@@ -763,7 +763,7 @@
           },
           "note": "Implement the release",
           "summary": "",
-          "at": 1791445782889,
+          "at": 1792215276546,
           "revision": 1,
           "evidence": [
             {
@@ -798,16 +798,16 @@
               },
               "reports_to": {
                 "kind": "Gizmo",
-                "coordinator": "Gizmo"
+                "coordinator": "GizmoPrime"
               }
             }
           },
           "state": {
             "kind": "queued"
           },
-          "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/Gizmo. Objective: Implement the release. State: queued, awaiting claim.",
+          "note": "Gizmo/GizmoPrime assigned task rust-release to Development/RustDev, reporting to Gizmo/GizmoPrime. Objective: Implement the release. State: queued, awaiting claim.",
           "summary": "",
-          "at": 1791445782891,
+          "at": 1792215276547,
           "revision": 2,
           "evidence": [
             {
@@ -843,7 +843,7 @@
               },
               "reports_to": {
                 "kind": "Gizmo",
-                "coordinator": "Gizmo"
+                "coordinator": "GizmoPrime"
               }
             }
           },
@@ -855,7 +855,7 @@
                 "role": "RustDev"
               },
               "attempt": 1,
-              "expires_at": 1791446382893,
+              "expires_at": 1792215876549,
               "phase": {
                 "kind": "working"
               }
@@ -863,7 +863,7 @@
           },
           "note": "Assignment claimed",
           "summary": "",
-          "at": 1791445782893,
+          "at": 1792215276549,
           "revision": 3,
           "evidence": [
             {
@@ -905,7 +905,7 @@
               },
               "reports_to": {
                 "kind": "Gizmo",
-                "coordinator": "Gizmo"
+                "coordinator": "GizmoPrime"
               }
             }
           },
@@ -917,7 +917,7 @@
                 "role": "RustDev"
               },
               "attempt": 1,
-              "expires_at": 1791446382894,
+              "expires_at": 1792215876550,
               "phase": {
                 "kind": "working"
               }
@@ -925,7 +925,7 @@
           },
           "note": "Release implemented",
           "summary": "Release implemented",
-          "at": 1791445782894,
+          "at": 1792215276550,
           "revision": 4,
           "evidence": [
             {
@@ -946,7 +946,7 @@
           ],
           "checkpoint": {
             "kind": "git",
-            "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+            "commit": "be3d8645d912e8df170a320d4b09449b58978a3d"
           }
         },
         {
@@ -981,7 +981,7 @@
               },
               "reports_to": {
                 "kind": "Gizmo",
-                "coordinator": "Gizmo"
+                "coordinator": "GizmoPrime"
               }
             }
           },
@@ -993,7 +993,7 @@
                 "role": "RustDev"
               },
               "attempt": 1,
-              "expires_at": 1791446382896,
+              "expires_at": 1792215876552,
               "phase": {
                 "kind": "working"
               }
@@ -1001,7 +1001,7 @@
           },
           "note": "Release implemented",
           "summary": "Release implemented",
-          "at": 1791445782896,
+          "at": 1792215276552,
           "revision": 5,
           "evidence": [
             {
@@ -1037,7 +1037,7 @@
               },
               "reports_to": {
                 "kind": "Gizmo",
-                "coordinator": "Gizmo"
+                "coordinator": "GizmoPrime"
               }
             }
           },
@@ -1051,7 +1051,7 @@
           },
           "note": "Release implemented",
           "summary": "Release implemented",
-          "at": 1791445782899,
+          "at": 1792215276554,
           "revision": 6,
           "evidence": [
             {
@@ -1087,17 +1087,17 @@
               },
               "reports_to": {
                 "kind": "Gizmo",
-                "coordinator": "Gizmo"
+                "coordinator": "GizmoPrime"
               }
             }
           },
           "state": {
             "kind": "integrated",
-            "commit": "1c0d522801b54da53dc89677bb9166cac1db442f"
+            "commit": "be3d8645d912e8df170a320d4b09449b58978a3d"
           },
           "note": "Integration recorded by the integration owner",
           "summary": "Release implemented",
-          "at": 1791445782901,
+          "at": 1792215276557,
           "revision": 7,
           "evidence": [
             {
@@ -1117,7 +1117,7 @@
   ],
   "timing": {
     "kind": "Finished",
-    "started": 1791445782889,
-    "finished": 1791445782901
+    "started": 1792215276546,
+    "finished": 1792215276557
   }
 }

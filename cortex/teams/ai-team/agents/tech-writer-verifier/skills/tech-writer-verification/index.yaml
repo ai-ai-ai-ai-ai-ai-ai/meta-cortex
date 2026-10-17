@@ -12,4 +12,4 @@ entries:
     summary: Delivery responsibilities, agent judgment, and validation evidence.
   - title: Local Feature Work
     path: ../../../../../delivery-team/agents/integration-agent/skills/local-feature/index.yaml
-    summary: Isolated worker ownership, committed results, and Gizmo-led integration.
+    summary: Isolated worker ownership, committed results, and integration delegated by Prime.

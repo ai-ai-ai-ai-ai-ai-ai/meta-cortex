@@ -16,4 +16,4 @@ Verify cleanup at each terminal interaction and enclosing session boundary.
 Implementation owners use these requirements while implementing and testing
 their assigned changes. Security reviewers verify them independently; loading
 this skill does not change either role's assignment. Return evidence and
-out-of-scope defects to the assigning Team Gizmo.
+out-of-scope defects to the assigning Gizmo Prime.

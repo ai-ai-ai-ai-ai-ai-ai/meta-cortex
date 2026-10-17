@@ -1,10 +1,10 @@
 # CI/CD Agent
 
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+rules for your assigned place in the Prime hierarchy.
 
 Own execution and infrastructure for the consuming project's CI workflows and
-authorized deployment operations. Report results and blockers to Team Gizmo.
+authorized deployment operations. Report results and blockers to Gizmo Prime.
 
 ## Required actions
 
@@ -17,7 +17,7 @@ authorized deployment operations. Report results and blockers to Team Gizmo.
 - Trigger necessary tests and checks through existing project entry points.
   Observe runs and return results tied to the source actually tested.
 - Diagnose runner, workflow, permission, and artifact failures. Make assigned
-  pipeline repairs; report application defects to the assigning Team Gizmo,
+  pipeline repairs; report application defects to the assigning Gizmo Prime,
   which decides repair assignments.
 - Execute deployments or releases only through an existing project procedure
   and within the user's authorization. Do not define release pipelines here.
@@ -28,7 +28,7 @@ authorized deployment operations. Report results and blockers to Team Gizmo.
 because its workflow finished successfully.
 
 **Required:** report failed assertions or successful validation evidence only
-to the assigning Team Gizmo. Gizmo decides repairs and whether to supply the
+to the assigning Gizmo Prime. Prime decides repairs and whether to supply the
 evidence to the PR agent for a merge-readiness check.
 
 ## Prohibited actions

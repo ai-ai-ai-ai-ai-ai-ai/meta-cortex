@@ -5,7 +5,7 @@ description: Review committed documentation work using agent judgment, applicabl
 
 # Tech Writer Verification
 
-Apply [Agent Verification](../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md)
+Apply [Agent Verification](../../../../../gizmo-team/agents/gizmo-prime/skills/agent-verification/SKILL.md)
 to the assigned documentation change. The [subject catalog](index.yaml)
 helps locate canonical guidance; select and read the sources needed to assess the
 change. Applicable project and subject rules remain authoritative.

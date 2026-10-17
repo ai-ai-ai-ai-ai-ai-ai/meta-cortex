@@ -116,7 +116,7 @@ impl Scenario {
                 .create(CreateTask {
                     feature: Self::feature()?,
                     task: Self::task()?,
-                    actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                    actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
                     objective: Note::from("Observe this task".to_owned()),
                     acceptance: vec![Note::from("record observations".to_owned())],
                     dependencies: vec![],
@@ -427,7 +427,7 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
                 .create(CreateTask {
                     feature: Scenario::feature()?,
                     task: TaskId::try_from(format!("task-{index:03}"))?,
-                    actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                    actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
                     objective: Note::from("Page fixture".to_owned()),
                     acceptance: vec![Note::from("Bound reads".to_owned())],
                     dependencies: vec![],
@@ -514,7 +514,7 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
         assert_eq!(chapter.entries.len(), 102);
         assert_eq!(chapter.entries.first().ok_or_else(|| anyhow::anyhow!("first event"))?.revision, TaskRevision::INITIAL);
         assert_eq!(chapter.entries.last().ok_or_else(|| anyhow::anyhow!("last event"))?.revision, task.common.revision);
-        assert!(matches!(chapter.role, RecordedRole::Recorded { agent: recorded } if recorded == agent));
+        assert!(matches!(chapter.role, RecordedRole::Recorded { agent: recorded } if recorded == agent.into()));
         let later = observation.summaries(PageIndex::FIRST.next()).await?.features;
         assert_eq!(later.end, PageEnd::Complete);
         assert!(matches!(
@@ -536,7 +536,7 @@ fn database_pages_bound_features_tasks_and_long_history() -> anyhow::Result<()> 
             if first_task_at == task.common.created_at && last_activity_at == task.common.last_update));
         let active = &summary.active;
         assert_eq!(active.len(), 1);
-        assert_eq!(active[0].agent, agent);
+        assert_eq!(active[0].agent, agent.into());
         assert_eq!(active[0].status, FlowState::Working);
         assert_eq!(active[0].blocker, Blocker::Unblocked);
         assert_eq!(summary.outcomes.len(), 101);
@@ -566,7 +566,7 @@ fn integrated_work_is_the_latest_delivery_and_replaces_its_inputs_as_outcome() -
         repository.worktree("worker", &worker_path, Some(&worktree_options))?;
 
         let id = TaskId::try_from("code".to_owned())?;
-        let creator = AgentId::Gizmo(GizmoAgent::Gizmo);
+        let creator = AgentId::Gizmo(GizmoAgent::GizmoPrime);
         let worker = AgentId::Development(DevelopmentAgent::RustDev);
         let integrator = AgentId::Delivery(DeliveryAgent::IntegrationAgent);
         let mut task = ledger
@@ -677,7 +677,7 @@ impl Scenario {
     async fn completed_activity(&self, activity: ActivityObservation) -> anyhow::Result<()> {
         let ActivityObservation { id, workspace } = activity;
         let mut ledger = self.workbench()?.open(Self::feature()?).await?;
-        let creator = AgentId::Gizmo(GizmoAgent::Gizmo);
+        let creator = AgentId::Gizmo(GizmoAgent::GizmoPrime);
         let worker = AgentId::Delivery(DeliveryAgent::PrAgent);
         let progress = Progress {
             extensions: Extensions(serde_json::from_str(
@@ -795,7 +795,7 @@ fn a_fresh_claim_reports_its_worker_blocker_and_full_activity_bounds() -> anyhow
         let mut ledger = scenario.workbench()?.open(Scenario::feature()?).await?;
         let first_worker = AgentId::Development(DevelopmentAgent::RustDev);
         let next_worker = AgentId::Development(DevelopmentAgent::TypescriptDev);
-        let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
+        let coordinator = AgentId::Gizmo(GizmoAgent::GizmoPrime);
         let first = ledger.claim(ClaimTask {
  worker_id: WorkerId::EXAMPLE,
             feature: Scenario::feature()?, task: Scenario::task()?,
@@ -845,7 +845,7 @@ fn a_fresh_claim_reports_its_worker_blocker_and_full_activity_bounds() -> anyhow
         }).await?;
         let summary = scenario.summary().await?;
         assert_eq!(summary.active.len(), 1);
-        assert_eq!(summary.active[0].agent, next_worker);
+        assert_eq!(summary.active[0].agent, next_worker.into());
         assert_eq!(summary.active[0].status, FlowState::Blocked);
         assert_eq!(summary.active[0].blocker, Blocker::Blocked { reason });
         assert_eq!(summary.totals.condition, WorkflowCondition::Attention);

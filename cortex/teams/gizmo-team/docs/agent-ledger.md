@@ -11,13 +11,13 @@ the ledger records their actual work. It does not launch agents or perform Git o
 1. Recover existing progress with `Feature / Status` before scheduling work.
    For a new feature, prepare its workspace and use `Feature / Initialize`.
    Supply the consuming project path, not the library's repository.
-2. Record and assign bounded activities before execution, including coordinators,
+2. Record and assign bounded activities before execution, including Prime coordination,
    implementation, review, integration, and delivery when selected. Give each
    participant its feature/task IDs, workspace, objective, and acceptance criteria.
 3. Claim the assigned activity with the instance's retained worker UUID. Use the
    returned revision and attempt for updates. Record decisions, checks, blockers,
    and next steps at meaningful milestones; renew activity before its lease expires.
-4. Record the result before notifying the coordinator. Gizmo evaluates evidence
+4. Record the result before notifying the coordinator. Prime evaluates evidence
    and decides repairs, further assignments, integration, or acceptance. Ready
    means a result is available, not that its assessment passed or the feature is done.
 5. Record the selected delivery outcome and Prime's acceptance before completing

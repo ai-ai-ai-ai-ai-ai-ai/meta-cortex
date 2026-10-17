@@ -1,6 +1,6 @@
 use super::{FlowState, LedgerReader, RecordLimit};
 use crate::LedgerError;
-use crate::agents::AgentId;
+use crate::agents::recorded::RecordedAgentId;
 use crate::model::workflow::TaskOwnership;
 use crate::model::{Feature, Task, TaskState};
 use crate::store::record_fields::{TaskDocument, TaskField};
@@ -51,13 +51,13 @@ impl From<&Task> for TaskRole {
             ) => None,
         };
         match agent {
-            Some(AgentId::Gizmo(_)) => Self::Coordination,
+            Some(RecordedAgentId::Gizmo(_)) => Self::Coordination,
             Some(
-                AgentId::Development(_)
-                | AgentId::Ai(_)
-                | AgentId::Security(_)
-                | AgentId::Sre(_)
-                | AgentId::Delivery(_),
+                RecordedAgentId::Development(_)
+                | RecordedAgentId::Ai(_)
+                | RecordedAgentId::Security(_)
+                | RecordedAgentId::Sre(_)
+                | RecordedAgentId::Delivery(_),
             )
             | None => Self::Delivery,
         }

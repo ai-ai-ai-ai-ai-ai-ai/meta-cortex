@@ -1,6 +1,6 @@
 # Site Reliability Engineering Team
 
-Team Gizmo uses this directory to select owners for containers, cluster
+Gizmo Prime uses this directory to select owners for containers, cluster
 workloads, CI/CD, and cloud-native operations. Apply the
 [project execution policy](docs/project-execution-policy.md) to discover the consuming project’s execution
 contract.
@@ -24,11 +24,11 @@ Select the smallest specialist scope that owns the requested infrastructure
 behavior. Each agent loads the skills and prerequisites defined in its own
 `AGENTS.md`.
 Application behavior, product domain rules, and user-facing design remain with
-their owning teams. Team Gizmo retains cross-team coordination and delivery
+their owning teams. Gizmo Prime retains cross-team coordination and delivery
 decisions.
 
-Return changed paths, validation evidence, and unresolved dependencies to Team
-Gizmo. Keep provider-specific choices in the consuming project's instructions;
+Return changed paths, validation evidence, and unresolved dependencies to Gizmo
+Prime. Keep provider-specific choices in the consuming project's instructions;
 the distributable roles and skills remain portable.
 
 ## Team circuit breaker

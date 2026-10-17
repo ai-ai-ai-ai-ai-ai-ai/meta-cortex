@@ -12,7 +12,6 @@ export enum GuideTeamId {
 export enum GuideReporting {
   Host = "Host / User",
   Prime = "Gizmo Prime",
-  Team = "Team Gizmo",
 }
 export class GuideContent {
   static readonly PATH = Schema.String.pipe(Schema.brand("GuideDocumentPath"));

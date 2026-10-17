@@ -443,7 +443,7 @@ result:
 - `integrations` reports each harness's resolved instruction file and managed-block
   status: `Connected`, `Missing`, or `Conflict`. Multiple harnesses can share a file;
   this reports file contents, not which harness is running.
-- `configuration.host` reports the project's concurrent agent ceiling, including coordinators
+- `configuration.host` reports the project's concurrent agent ceiling, including Prime
   and the host agent; it is not a measurement of available host slots.
 - `model_selection: PerAssignment` reports the framework's selection policy.
   The CLI does not query host models or report running agents' settings.
@@ -477,8 +477,9 @@ response on stdout with exit status 2.
 ## Use Meta-Cortex
 
 Give your AI host a development task in the initialized project.
-The host launches Gizmo Prime, which launches Team Gizmo to assign workers and
-independent verifiers. At the start of a new session, the host validates delivery:
+The host launches Gizmo Prime, which directly coordinates workers and
+independent verifiers. Prime delegates mechanical execution to the appropriate
+specialists and owns scope, decisions, and acceptance. At the start of a new session, the host validates delivery:
 `create_pr` (recommended) publishes the validated feature through a PR;
 `local_only` keeps the work local. Tasks, follow-ups, and delegated agents inherit
 that choice until the user explicitly changes it. Collection uses native

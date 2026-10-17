@@ -95,7 +95,7 @@ impl Scenario {
         let task = CreateTask {
             feature: ledger.info().feature.id,
             task,
-            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
             objective: Note::from("Review code".to_owned()),
             acceptance: vec![Note::from("Report findings".to_owned())],
             dependencies: Vec::new(),
@@ -156,7 +156,7 @@ fn future_database_is_untouched() -> anyhow::Result<()> {
                 let conn = db.connect()?;
                 assert_eq!(
                     Scenario::version(&conn).await?,
-                    VersionNumber::from(i64::from(StorageVersion::FeatureHistoryV6))
+                    VersionNumber::from(i64::from(StorageVersion::DirectPrimeV7))
                 );
                 conn.pragma_update(
                     &DatabasePragma::UserVersion.to_string(),
@@ -244,7 +244,7 @@ fn interrupted_transaction_child() -> anyhow::Result<()> {
             let event = Event {
                 envelope: EventEnvelope::V1,
                 kind: EventKind::Progress,
-                actor: AgentId::Development(DevelopmentAgent::RustDev),
+                actor: AgentId::Development(DevelopmentAgent::RustDev).into(),
                 note: task.common.objective.clone(),
                 task,
             };
@@ -426,7 +426,7 @@ impl DurabilityWriter {
             .create(CreateTask {
                 feature: feature.clone(),
                 task: task.clone(),
-                actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
                 objective: Note::from("Concurrent task".to_owned()),
                 acceptance: vec![Note::from("Persist assignment and history".to_owned())],
                 dependencies: Vec::new(),
@@ -447,7 +447,7 @@ impl DurabilityWriter {
                 feature,
                 task,
                 expected_revision: TaskRevision::INITIAL,
-                actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
                 assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::RustDev)),
             })
             .await?;

@@ -54,13 +54,14 @@ impl CatalogFeature {
     }
     fn from_ledger(ledger: LedgerInfo) -> Self {
         match ledger.storage_version {
-            StorageVersion::FeatureHistoryV6 => Self::Current { ledger },
+            StorageVersion::DirectPrimeV7 => Self::Current { ledger },
             StorageVersion::Empty
             | StorageVersion::DocumentsV1
             | StorageVersion::IndexedV2
             | StorageVersion::RelationalV3
             | StorageVersion::CommonTasksV4
-            | StorageVersion::SequencedEventsV5 => Self::UpgradeRequired { ledger },
+            | StorageVersion::SequencedEventsV5
+            | StorageVersion::FeatureHistoryV6 => Self::UpgradeRequired { ledger },
         }
     }
 }
@@ -110,13 +111,14 @@ impl FeatureFile {
             }
         }
         match metadata.version {
-            StorageVersion::FeatureHistoryV6 => return Ok(()),
+            StorageVersion::DirectPrimeV7 => return Ok(()),
             StorageVersion::Empty => return Err(self.error(LedgerError::Uninitialized)),
             StorageVersion::DocumentsV1
             | StorageVersion::IndexedV2
             | StorageVersion::RelationalV3
             | StorageVersion::CommonTasksV4
-            | StorageVersion::SequencedEventsV5 => {}
+            | StorageVersion::SequencedEventsV5
+            | StorageVersion::FeatureHistoryV6 => {}
         }
         let database = Builder::new_local(
             self.path
@@ -208,7 +210,8 @@ impl SourceMetadata {
             StorageVersion::RelationalV3
             | StorageVersion::CommonTasksV4
             | StorageVersion::SequencedEventsV5
-            | StorageVersion::FeatureHistoryV6 => {
+            | StorageVersion::FeatureHistoryV6
+            | StorageVersion::DirectPrimeV7 => {
                 query
                     .column(FeatureTable::Document)
                     .from(FeatureTable::Table);
@@ -264,7 +267,8 @@ impl ObservedCatalog {
                 | StorageVersion::RelationalV3
                 | StorageVersion::CommonTasksV4
                 | StorageVersion::SequencedEventsV5
-                | StorageVersion::FeatureHistoryV6 => {}
+                | StorageVersion::FeatureHistoryV6
+                | StorageVersion::DirectPrimeV7 => {}
             }
             let feature = match metadata.features.as_slice() {
                 [feature] if feature.id == file.feature => feature.clone(),
@@ -448,7 +452,7 @@ mod tests {
             assert!(cards.features.records.iter().any(|card| matches!(card, FeatureCard::Current { summary } if summary.feature.id == current)));
             assert!(cards.features.records.iter().any(|card| matches!(card, FeatureCard::UpgradeRequired { feature, storage_version: StorageVersion::SequencedEventsV5 } if feature.id == old)));
             assert!(cards.features.records.iter().any(|card| matches!(card, FeatureCard::Unavailable { feature, .. } if feature == &broken)));
-            assert!(cards.features.records.iter().any(|card| matches!(card, FeatureCard::Unavailable { feature, message } if feature == &future && message.to_string().contains("99") && message.to_string().contains("schema 6"))));
+            assert!(cards.features.records.iter().any(|card| matches!(card, FeatureCard::Unavailable { feature, message } if feature == &future && message.to_string().contains("99") && message.to_string().contains("schema 7"))));
             assert!(observation.workflow(old.clone()).await.is_err());
             assert!(fixture.workbench.open(future.clone()).await.is_err());
             for (path, bytes) in &retained { assert_eq!(*bytes, fs::read(path)?); }

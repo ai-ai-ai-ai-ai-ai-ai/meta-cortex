@@ -1,4 +1,6 @@
 //! Agent identities preserve the membership defined by Cortex's team catalogs.
+pub mod recorded;
+
 use derive_more::Display;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -41,7 +43,6 @@ pub enum AgentId {
 )]
 pub enum GizmoAgent {
     GizmoPrime,
-    Gizmo,
 }
 
 #[derive(
@@ -93,12 +94,11 @@ impl AgentId {
     pub fn reports_to(self) -> ReportingTarget {
         match self {
             Self::Gizmo(GizmoAgent::GizmoPrime) => ReportingTarget::Host,
-            Self::Gizmo(GizmoAgent::Gizmo) => ReportingTarget::Gizmo(GizmoAgent::GizmoPrime),
             Self::Development(_)
             | Self::Ai(_)
             | Self::Security(_)
             | Self::Sre(_)
-            | Self::Delivery(_) => ReportingTarget::Gizmo(GizmoAgent::Gizmo),
+            | Self::Delivery(_) => ReportingTarget::Gizmo(GizmoAgent::GizmoPrime),
         }
     }
 
@@ -107,7 +107,6 @@ impl AgentId {
     pub fn instructions_path(self) -> PathBuf {
         let path = match self {
             Self::Gizmo(GizmoAgent::GizmoPrime) => "teams/gizmo-team/agents/gizmo-prime/AGENTS.md",
-            Self::Gizmo(GizmoAgent::Gizmo) => "teams/gizmo-team/agents/gizmo/AGENTS.md",
             Self::Development(DevelopmentAgent::RustDev) => {
                 "teams/dev-team/agents/rust-dev/AGENTS.md"
             }
@@ -170,7 +169,6 @@ mod tests {
     fn team_membership_and_coordinators_survive_round_trips() -> serde_json::Result<()> {
         for agent in [
             AgentId::Gizmo(GizmoAgent::GizmoPrime),
-            AgentId::Gizmo(GizmoAgent::Gizmo),
             AgentId::Development(DevelopmentAgent::RustDev),
             AgentId::Development(DevelopmentAgent::RustVerifier),
             AgentId::Development(DevelopmentAgent::TypescriptVerifier),
@@ -186,6 +184,7 @@ mod tests {
     #[test]
     fn decoder_rejects_cross_team_roles_flat_names_and_invented_identities() {
         for input in [
+            r#"{"team":"Gizmo","role":"Gizmo"}"#,
             r#"{"team":"Sre","role":"RustDev"}"#,
             r#"{"team":"Gizmo","role":"RustVerifier"}"#,
             r#"{"team":"Gizmo","role":"TypescriptVerifier"}"#,

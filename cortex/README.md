@@ -22,7 +22,7 @@ assigned worktree.
 ## Agent coordination
 
 Give your host a development task with the framework entry point loaded.
-The host launches Gizmo Prime; Prime launches Team Gizmo; Team Gizmo assigns the
+The host launches Gizmo Prime, which directly launches and manages the
 workers and independent verifiers needed for the task. The
 [agent instructions](teams/AGENTS.md) define this hierarchy, and the
 [coordination architecture](teams/gizmo-team/docs/coordination-state-machine.md)
@@ -46,15 +46,14 @@ Choose only the active host from the
 [host reference catalog](teams/gizmo-team/docs/hosts/index.yaml) for its mappings.
 
 - **Gizmo Prime**
-  - Owns the overall outcome.
-  - Directs Team Gizmo.
-- **Team Gizmo**
-  - Coordinates bounded assignments across teams.
-  - Checks results and routes corrections to their owners.
+  - Owns scope, acceptance criteria, and the overall outcome.
+  - Directly coordinates bounded specialist and verifier assignments across teams.
+  - Delegates mechanical execution, including setup, edits, checks, and publication.
+  - Evaluates results, assigns corrections, and accepts the combined delivery.
 - **Team agents**
   - Apply relevant skills to implement and validate their assignments.
-  - Report evidence and unresolved blockers only to their assigning Team Gizmo.
-    Gizmo decides further assignments and passes evidence between agents.
+  - Report evidence and unresolved blockers only to their assigning Gizmo Prime.
+    Prime decides further assignments and passes evidence between agents.
 - **[Integration agent](teams/delivery-team/agents/integration-agent/AGENTS.md)**
   - Manages feature worktrees and merges completed task branches.
 - **[PR agent](teams/delivery-team/agents/pr-agent/AGENTS.md)**
@@ -88,7 +87,7 @@ With `create_pr`, implementation continues through PR creation or update without
 a separate request. With `local_only`, it completes locally. You can override the
 delivery choice for a task or change the session preference explicitly. Request
 additional operations such as addressing feedback, checking CI, merging, or
-executing an existing deployment procedure when needed. Team Gizmo assigns only
+executing an existing deployment procedure when needed. Gizmo Prime assigns only
 the specialists needed for the requested work.
 
 [Project delivery policy](teams/delivery-team/docs/project-delivery-policy.md) covers discovery of branch,
@@ -112,7 +111,7 @@ one when requested, but the framework does not define its release process.
 
 The entry point loads the [circuit breaker](CIRCUIT-BREAKER.md) before roles and
 skills. Every assignment carries it. Agents check proposed mechanisms before
-implementation; coordinators check assignments and results. The global policy
+implementation; Prime checks assignments and results. The global policy
 owns precedence, scope checks, recovery, and preservation of product security.
 Subject-specific rules live in the owning teams’ `CIRCUIT-BREAKER.md`
 documents, linked from the global policy and each affected agent.
@@ -127,7 +126,7 @@ permanent observer agent.
 ## Execution configuration
 
 The [development form](development.yaml) defines the session delivery question. The
-[user-input skill](teams/gizmo-team/agents/gizmo/skills/user-input/SKILL.md)
+[user-input skill](teams/gizmo-team/agents/gizmo-prime/skills/user-input/SKILL.md)
 includes a generic YAML form helper, an example, and usage instructions. It
 uses Bun and the shared workspace dependencies installed by Framework / Initialize.
 
@@ -158,7 +157,7 @@ Windows uses native `.exe` tools, with no WSL or Git Bash requirement.
 ### Assignment execution settings
 
 [meta-cortex.toml](meta-cortex.toml) sets `host.max_total_agents`, the scheduling
-ceiling including the host agent and coordinators. It does not require or allocate
+ceiling including the host agent and Prime. It does not require or allocate
 that many host slots. The [capacity assessment](teams/gizmo-team/docs/agent-configuration.md#check-host-capacity)
 preserves the hierarchy and queues work within available capacity.
 Speed comes from the host session.
@@ -166,7 +165,7 @@ Speed comes from the host session.
 The launching agent assesses model and effort for each assignment using the
 host's supported controls or known inherited settings under the
 [selection policy](teams/gizmo-team/docs/agent-configuration.md#choose-settings-for-the-assignment).
-Gizmo reassesses those choices when scope changes or results need repair.
+Prime reassesses those choices when scope changes or results need repair.
 The policy covers supported session updates and replacement handoffs that
 preserve work. No manual role-model tuning is required.
 
@@ -177,7 +176,7 @@ preserve work. No manual role-model tuning is required.
 ## Agent skills
 
 Each agent’s `AGENTS.md` links its skills. Each skill’s `SKILL.md` contains its
-instructions and prerequisites. Team Gizmo assigns work by responsibility;
+instructions and prerequisites. Gizmo Prime assigns work by responsibility;
 the assigned agent loads its own guidance.
 The tech writer owns [skill organization](teams/ai-team/agents/tech-writer/AGENTS.md#skill-organization),
 including placement and updates to callers when guidance moves.
@@ -193,7 +192,7 @@ Engineering and Code Practice Writing for documentation and programming examples
 ## Team documentation
 
 Teams live directly under `teams/`. Each team groups its agents in `agents/`;
-the Gizmo team contains both coordinators. Shared subject knowledge lives in
+the Gizmo team contains the single coordinator, Gizmo Prime. Shared subject knowledge lives in
 each owning team’s `docs/`. Its `index.yaml` contains only navigation links and
 brief topic summaries. Skill catalogs branch into subject and namespace indexes
 so focused assignments load only relevant rule summaries and related checks.

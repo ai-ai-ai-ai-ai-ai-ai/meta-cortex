@@ -166,10 +166,8 @@ export class GuideSource implements Plugin {
     switch (path) {
       case "teams/gizmo-team/agents/gizmo-prime/AGENTS.md":
         return GuideReporting.Host;
-      case "teams/gizmo-team/agents/gizmo/AGENTS.md":
-        return GuideReporting.Prime;
       default:
-        return GuideReporting.Team;
+        return GuideReporting.Prime;
     }
   }
   private handoffText(source: string): string {

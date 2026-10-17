@@ -67,7 +67,9 @@ impl RecordRead<'_> {
             .from(EventTable::Table)
             .order_by(EventTable::RowId, Order::Asc);
         match self.version {
-            StorageVersion::SequencedEventsV5 | StorageVersion::FeatureHistoryV6 => {
+            StorageVersion::SequencedEventsV5
+            | StorageVersion::FeatureHistoryV6
+            | StorageVersion::DirectPrimeV7 => {
                 query.column(EventTable::Provenance);
             }
             StorageVersion::Empty
@@ -161,7 +163,9 @@ impl LegacyRecords {
                 }
             }
             let provenance = match request.version {
-                StorageVersion::SequencedEventsV5 | StorageVersion::FeatureHistoryV6 => {
+                StorageVersion::SequencedEventsV5
+                | StorageVersion::FeatureHistoryV6
+                | StorageVersion::DirectPrimeV7 => {
                     SequenceProvenance::try_from(row.get::<i64>(4)?)?
                 }
                 StorageVersion::Empty
@@ -462,8 +466,10 @@ pub mod tests {
                     writer.task(&records.task).await?;
                     writer.event(&records.event).await?;
                 }
-                StorageVersion::SequencedEventsV5 => self.seed(&connection).await?,
-                StorageVersion::Empty | StorageVersion::FeatureHistoryV6 => {
+                StorageVersion::SequencedEventsV5 | StorageVersion::FeatureHistoryV6 => {
+                    self.seed(&connection).await?
+                }
+                StorageVersion::Empty | StorageVersion::DirectPrimeV7 => {
                     return Err(anyhow::anyhow!("expected released old schema"));
                 }
             }
@@ -494,13 +500,10 @@ pub mod tests {
             drop(future);
             let unchanged = fs::read(&unrelated)?;
             let ledger = self.workbench.open(feature.clone()).await?;
-            assert_eq!(
-                ledger.info().storage_version,
-                StorageVersion::FeatureHistoryV6
-            );
+            assert_eq!(ledger.info().storage_version, StorageVersion::DirectPrimeV7);
             assert_eq!(
                 LedgerSchema::version(&connection).await?,
-                StorageVersion::FeatureHistoryV6
+                StorageVersion::DirectPrimeV7
             );
             let migrated = StoredEvent::read(&connection).await?;
             assert_eq!(
@@ -540,6 +543,7 @@ pub mod tests {
                     StorageVersion::RelationalV3,
                     StorageVersion::CommonTasksV4,
                     StorageVersion::SequencedEventsV5,
+                    StorageVersion::FeatureHistoryV6,
                 ] {
                     MigrationScenario::new()?
                         .migrate_selected_version(version)

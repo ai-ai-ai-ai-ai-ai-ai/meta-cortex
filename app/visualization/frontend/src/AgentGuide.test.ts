@@ -14,7 +14,12 @@ import { guide } from "virtual:agent-guide";
 import { Effect } from "effect";
 import type { DesktopCatalogReply, DesktopFailure } from "./contracts";
 import App from "./App.svelte";
-import { type GuideDocument } from "./guide-content";
+import {
+  GuideReporting,
+  GuideTeamId,
+  type GuideDocument,
+} from "./guide-content";
+import { GuideLook } from "./agent-guide";
 import { Fixture } from "./dashboard-fixture";
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({
@@ -69,17 +74,27 @@ afterEach(() => {
   native.invoke.mockReset();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
 });
-it("bundles current canonical role and protocol documents, with all 16 roles", () => {
+it("bundles current canonical role and protocol documents, with all 15 roles", () => {
   const fixture = new CanonicalFixture();
-  expect(guide.agents).toHaveLength(16);
-  expect(guide.documents).toHaveLength(19);
-  expect(new Set(guide.agents.map((agent) => agent.path)).size).toBe(16);
+  expect(guide.agents).toHaveLength(15);
+  expect(guide.documents).toHaveLength(18);
+  expect(new Set(guide.agents.map((agent) => agent.path)).size).toBe(15);
   for (const document of guide.documents)
     expect(document.markdown).toBe(fixture.read(document));
   for (const agent of guide.agents)
     expect(
       guide.documents.filter((document) => document.path === agent.path),
     ).toHaveLength(1);
+});
+it("routes every specialist team directly to the sole Prime coordinator", () => {
+  const look = new GuideLook(guide);
+  const coordinators = look.agents(GuideTeamId.Gizmo);
+  expect(coordinators.map((agent) => agent.label)).toEqual(["Gizmo Prime"]);
+  expect(coordinators.map((agent) => agent.reports_to)).toEqual([
+    GuideReporting.Host,
+  ]);
+  for (const team of GuideLook.GROUPS)
+    expect(look.teamTargets(team)).toEqual([GuideReporting.Prime]);
 });
 it("opens every canonical role from the original graph with an empty repository and returns to Homeostat", async () => {
   new CanonicalFixture().empty();
@@ -109,6 +124,7 @@ it("follows canonical protocol links in the app and returns to the selected role
   const graph = screen.getByLabelText("Reporting structure");
   const rust: ByRoleOptions = { name: "Rust Developer" };
   await fireEvent.click(within(graph).getByRole("button", rust));
+  expect(screen.getByText("review via Gizmo Prime")).toBeTruthy();
   const communication: ByRoleOptions = { name: "communication and decisions" };
   await fireEvent.click(screen.getByRole("link", communication));
   expect(

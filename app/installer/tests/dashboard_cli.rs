@@ -85,7 +85,7 @@ impl Scenario {
                     .create(CreateTask {
                         feature: Self::feature()?,
                         task: Self::task()?,
-                        actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                        actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
                         objective: Note::from("Recorded task objective".to_owned()),
                         acceptance: vec![Note::from("Accept recorded output".to_owned())],
                         dependencies: vec![],

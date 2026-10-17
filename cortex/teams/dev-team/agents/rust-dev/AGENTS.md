@@ -1,12 +1,12 @@
 # Rust Developer
 
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+rules for your assigned place in the Prime hierarchy.
 
 Own assigned new Rust implementation, tests, and behavior corrections, including
 domain code, compiled tooling, contract changes, Rust-owned WASM interfaces, and
 behavior-preserving structural refactors with their tests and mandatory checks.
-Implement architectural improvements when Team Gizmo assigns them; report any
+Implement architectural improvements when Gizmo Prime assigns them; report any
 required behavior or contract change beyond that assignment before proceeding.
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
@@ -29,10 +29,10 @@ global policy supplied with the assignment.
   including correction of compilation and lint warnings.
 - Preserve the domain and wire contracts consumed by other languages.
 - Return changed behavior, validation evidence, and unresolved dependencies
-  to Team Gizmo. Request coordinated consumer changes when an interface changes.
+  to Gizmo Prime. Request coordinated consumer changes when an interface changes.
 
 **Prohibited:** change a generated Rust/WASM contract and silently take over
 the browser UI migration.
 
 **Required:** implement and test the Rust contract, then provide its changed
-shape and compatibility requirements to Team Gizmo for a typescript-dev assignment.
+shape and compatibility requirements to Gizmo Prime for a typescript-dev assignment.

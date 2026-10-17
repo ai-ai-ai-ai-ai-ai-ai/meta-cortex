@@ -63,7 +63,7 @@ impl Ledger {
                     outcomes: Vec::new(),
                 },
                 kind: EventKind::Assigned,
-                actor: input.actor,
+                actor: input.actor.into(),
                 note,
                 task,
             })
@@ -112,7 +112,7 @@ impl Ledger {
                     outcomes: Vec::new(),
                 },
                 kind: EventKind::Claimed,
-                actor: input.agent,
+                actor: input.agent.into(),
                 note: Note::from("Assignment claimed".to_owned()),
                 task,
             })
@@ -258,7 +258,7 @@ impl TaskChange<'_> {
                 outcomes: recorded_outcomes,
             },
             kind,
-            actor: input.agent,
+            actor: input.agent.into(),
             note: self.task.common.progress.summary.clone(),
             task: self.task,
         })
@@ -309,7 +309,7 @@ impl TaskChange<'_> {
                 outcomes: Vec::new(),
             },
             kind: details.kind,
-            actor: input.actor,
+            actor: input.actor.into(),
             note: details.note,
             task: self.task,
         })
@@ -318,9 +318,12 @@ impl TaskChange<'_> {
 
 #[cfg(test)]
 mod tests {
+    use crate::agents::recorded::{RecordedAgentId, RecordedGizmoAgent, RecordedReportingTarget};
     use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+    use crate::model::checkpoint_outcome::CheckpointOutcome;
+    use crate::model::event_record::EventVersionV2;
     use crate::model::worker::WorkerIdentity;
-    use crate::model::workflow::{TaskAssignment, TaskOwnership};
+    use crate::model::workflow::{RecordedTaskAssignment, TaskAssignment, TaskOwnership};
     use crate::model::{EventKind, Progress, Task, TaskCommon, TaskState, Workspace};
     use crate::request::{
         AssignTask, ClaimTask, CoordinatorAction, CoordinatorUpdate, CreateTask, InitFeature,
@@ -329,7 +332,9 @@ mod tests {
     use crate::store::relational::{EventTable, TaskTable};
     use crate::store::sql::SqlStatement;
     use crate::values::{BranchName, FeatureId, LeaseSeconds, Note, TaskId, WorkerId};
-    use crate::versions::{RecordVersion, StorageVersion, TaskRecordVersionV2};
+    use crate::versions::{
+        RecordVersion, StorageVersion, TaskRecordVersionV2, TaskRecordVersionV3,
+    };
     use crate::{DataDirectory, Ledger, LedgerError, Workbench};
     use sea_query::{Expr, ExprTrait, Query};
     use serde::Serialize;
@@ -339,6 +344,14 @@ mod tests {
     struct Scenario {
         directory: TempDir,
         data: TempDir,
+    }
+    struct RetainedActivity {
+        agent: RecordedAgentId,
+        recovery: RecoveryAction,
+    }
+    enum RecoveryAction {
+        Reassign,
+        Cancel,
     }
     #[derive(Serialize)]
     struct LegacyTask {
@@ -363,11 +376,303 @@ mod tests {
     struct LegacyEvent {
         version: RecordVersion,
         kind: EventKind,
-        actor: AgentId,
+        actor: RecordedAgentId,
         note: Note,
         task: LegacyTask,
     }
+
+    #[derive(Serialize)]
+    struct RetainedTask {
+        version: TaskRecordVersionV3,
+        worker: WorkerIdentity,
+        common: TaskCommon,
+        ownership: TaskOwnership,
+        workspace: Workspace,
+        state: TaskState,
+    }
+    impl From<Task> for RetainedTask {
+        fn from(task: Task) -> Self {
+            Self {
+                version: TaskRecordVersionV3::V3,
+                worker: task.worker,
+                common: task.common,
+                ownership: task.ownership,
+                workspace: task.workspace,
+                state: task.state,
+            }
+        }
+    }
+    #[derive(Serialize)]
+    struct RetainedEvent {
+        version: EventVersionV2,
+        outcomes: Vec<CheckpointOutcome>,
+        kind: EventKind,
+        actor: RecordedAgentId,
+        note: Note,
+        task: RetainedTask,
+    }
+    impl RetainedEvent {
+        async fn persist(&self, ledger: &Ledger) -> anyhow::Result<()> {
+            SqlStatement::build(
+                Query::update()
+                    .table(TaskTable::Table)
+                    .value(
+                        TaskTable::Document,
+                        serde_json::to_string_pretty(&self.task)?,
+                    )
+                    .and_where(Expr::col(TaskTable::Id).eq(self.task.common.id.to_string()))
+                    .to_owned(),
+            )?
+            .execute(&ledger.state.connection)
+            .await?;
+            SqlStatement::build(
+                Query::update()
+                    .table(EventTable::Table)
+                    .value(EventTable::Document, serde_json::to_string_pretty(self)?)
+                    .and_where(Expr::col(EventTable::TaskId).eq(self.task.common.id.to_string()))
+                    .and_where(
+                        Expr::col(EventTable::Revision).eq(i64::from(self.task.common.revision)),
+                    )
+                    .to_owned(),
+            )?
+            .execute(&ledger.state.connection)
+            .await?;
+            Ok(())
+        }
+        async fn require_preserved(&self, ledger: &Ledger) -> anyhow::Result<()> {
+            let mut rows = SqlStatement::build(
+                Query::select()
+                    .column(EventTable::Document)
+                    .from(EventTable::Table)
+                    .and_where(Expr::col(EventTable::TaskId).eq(self.task.common.id.to_string()))
+                    .and_where(
+                        Expr::col(EventTable::Revision).eq(i64::from(self.task.common.revision)),
+                    )
+                    .to_owned(),
+            )?
+            .query(&ledger.state.connection)
+            .await?;
+            let row = rows
+                .next()
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("retained event missing"))?;
+            assert_eq!(row.get::<String>(0)?, serde_json::to_string_pretty(self)?);
+            Ok(())
+        }
+    }
     impl Scenario {
+        async fn recover_retired_assignment(&self, input: RetainedActivity) -> anyhow::Result<()> {
+            let recorded = input.agent;
+            let prime = AgentId::Gizmo(GizmoAgent::GizmoPrime);
+            let current = match recorded {
+                RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo) => prime,
+                RecordedAgentId::Development(DevelopmentAgent::RustDev) => {
+                    AgentId::Development(DevelopmentAgent::RustDev)
+                }
+                RecordedAgentId::Gizmo(RecordedGizmoAgent::GizmoPrime)
+                | RecordedAgentId::Development(_)
+                | RecordedAgentId::Ai(_)
+                | RecordedAgentId::Security(_)
+                | RecordedAgentId::Sre(_)
+                | RecordedAgentId::Delivery(_) => anyhow::bail!("unexpected retained fixture role"),
+            };
+            let mut ledger = self.ledger().await?;
+            let task = ledger
+                .create(CreateTask {
+                    feature: ledger.info().feature.id,
+                    task: TaskId::try_from("first".to_owned())?,
+                    actor: prime,
+                    objective: Note::Empty,
+                    acceptance: vec![Note::from("Recover directly under Prime".to_owned())],
+                    dependencies: vec![],
+                    workspace: Workspace::ReadOnly,
+                    progress: Self::progress(),
+                })
+                .await?;
+            let created = RetainedEvent {
+                version: EventVersionV2::V2,
+                outcomes: vec![],
+                kind: EventKind::Created,
+                actor: prime.into(),
+                note: Note::from("Historical task created".to_owned()),
+                task: task.clone().into(),
+            };
+            created.persist(&ledger).await?;
+            let mut task = ledger
+                .claim(ClaimTask {
+                    worker_id: WorkerId::EXAMPLE,
+                    feature: task.common.feature.clone(),
+                    task: task.common.id.clone(),
+                    expected_revision: task.common.revision,
+                    agent: current,
+                    ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                })
+                .await?;
+            let TaskState::Active { assignment } = &mut task.state else {
+                anyhow::bail!("active fixture")
+            };
+            assignment.agent = recorded;
+            let reports_to = match recorded {
+                RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo) => {
+                    RecordedReportingTarget::Gizmo(RecordedGizmoAgent::GizmoPrime)
+                }
+                RecordedAgentId::Gizmo(RecordedGizmoAgent::GizmoPrime)
+                | RecordedAgentId::Development(_)
+                | RecordedAgentId::Ai(_)
+                | RecordedAgentId::Security(_)
+                | RecordedAgentId::Sre(_)
+                | RecordedAgentId::Delivery(_) => {
+                    RecordedReportingTarget::Gizmo(RecordedGizmoAgent::Gizmo)
+                }
+            };
+            let legacy = RetainedEvent {
+                version: EventVersionV2::V2,
+                outcomes: vec![],
+                kind: EventKind::Claimed,
+                actor: recorded,
+                note: Note::from("Historical assignment claimed".to_owned()),
+                task: RetainedTask {
+                    ownership: TaskOwnership::Assigned {
+                        assignment: RecordedTaskAssignment {
+                            agent: recorded,
+                            reports_to,
+                        },
+                    },
+                    ..task.into()
+                },
+            };
+            legacy.persist(&ledger).await?;
+            #[derive(sea_query::Iden)]
+            enum Pragma {
+                UserVersion,
+            }
+            use sea_query::Iden;
+            ledger
+                .state
+                .connection
+                .pragma_update(
+                    &Pragma::UserVersion.to_string(),
+                    StorageVersion::FeatureHistoryV6,
+                )
+                .await?;
+            let feature = legacy.task.common.feature.clone();
+            drop(ledger);
+            let mut ledger = self.workbench()?.open(feature.clone()).await?;
+            assert_eq!(ledger.info().storage_version, StorageVersion::DirectPrimeV7);
+            created.require_preserved(&ledger).await?;
+            legacy.require_preserved(&ledger).await?;
+            let historical = ledger.task(&legacy.task.common.id).await?.task;
+            assert_eq!(historical.ownership, legacy.task.ownership);
+            let mut rows = SqlStatement::build(
+                Query::select()
+                    .column(TaskTable::Document)
+                    .from(TaskTable::Table)
+                    .and_where(Expr::col(TaskTable::Id).eq(legacy.task.common.id.to_string()))
+                    .to_owned(),
+            )?
+            .query(&ledger.state.connection)
+            .await?;
+            let row = rows
+                .next()
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("retained task missing"))?;
+            assert_eq!(
+                row.get::<String>(0)?,
+                serde_json::to_string_pretty(&legacy.task)?
+            );
+            drop(rows);
+            assert!(matches!(
+                ledger
+                    .update(WorkerUpdate {
+                        agent: current,
+                        ..Self::heartbeat(&historical)
+                    })
+                    .await,
+                Err(LedgerError::Invalid(_))
+            ));
+            assert_eq!(ledger.task(&legacy.task.common.id).await?.task, historical);
+            legacy.require_preserved(&ledger).await?;
+            match input.recovery {
+                RecoveryAction::Reassign => {}
+                RecoveryAction::Cancel => {
+                    let cancelled = ledger
+                        .coordinate(CoordinatorUpdate {
+                            feature,
+                            task: historical.common.id,
+                            expected_revision: historical.common.revision,
+                            actor: prime,
+                            action: CoordinatorAction::Cancel {
+                                reason: Note::from("Retired responsibility".to_owned()),
+                            },
+                        })
+                        .await?;
+                    assert!(matches!(cancelled.state, TaskState::Cancelled { .. }));
+                    legacy.require_preserved(&ledger).await?;
+                    return Ok(());
+                }
+            }
+            let queued = ledger
+                .coordinate(CoordinatorUpdate {
+                    feature: feature.clone(),
+                    task: historical.common.id.clone(),
+                    expected_revision: historical.common.revision,
+                    actor: prime,
+                    action: CoordinatorAction::Requeue {
+                        reason: Note::from(
+                            "Previous execution stopped; resume under Prime".to_owned(),
+                        ),
+                        previous_execution: StoppedExecution::StoppedOrFinished,
+                    },
+                })
+                .await?;
+            assert!(matches!(
+                ledger
+                    .claim(ClaimTask {
+                        worker_id: WorkerId::EXAMPLE,
+                        feature: feature.clone(),
+                        task: queued.common.id.clone(),
+                        expected_revision: queued.common.revision,
+                        agent: current,
+                        ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                    })
+                    .await,
+                Err(LedgerError::Invalid(_))
+            ));
+            let assigned = ledger
+                .assign(AssignTask {
+                    feature: feature.clone(),
+                    task: queued.common.id.clone(),
+                    expected_revision: queued.common.revision,
+                    actor: prime,
+                    assignment: TaskAssignment::from(current),
+                })
+                .await?;
+            let claimed = ledger
+                .claim(ClaimTask {
+                    worker_id: WorkerId::EXAMPLE,
+                    feature: feature.clone(),
+                    task: assigned.common.id.clone(),
+                    expected_revision: assigned.common.revision,
+                    agent: current,
+                    ttl_seconds: LeaseSeconds::TEN_MINUTES,
+                })
+                .await?;
+            assert_eq!(claimed.common.attempt, historical.common.attempt.advance()?);
+            assert_eq!(claimed.worker, historical.worker);
+            let resumed = ledger
+                .update(WorkerUpdate {
+                    agent: current,
+                    ..Self::heartbeat(&claimed)
+                })
+                .await?;
+            resumed.ownership.require_current()?;
+            legacy.require_preserved(&ledger).await?;
+            let events = ledger.history(&legacy.task.common.id).await?;
+            assert_eq!(events[1].actor, legacy.actor);
+            assert_eq!(events[1].task.ownership, legacy.task.ownership);
+            assert_eq!(events[1].task.state, legacy.task.state);
+            Ok(())
+        }
         fn create() -> anyhow::Result<Self> {
             let scenario = Self {
                 directory: tempfile::tempdir()?,
@@ -457,11 +762,39 @@ mod tests {
     }
 
     #[test]
+    fn retained_reporting_requires_explicit_reassignment_and_preserves_history()
+    -> anyhow::Result<()> {
+        Builder::new_current_thread()
+            .enable_time()
+            .build()?
+            .block_on(async {
+                Scenario::create()?
+                    .recover_retired_assignment(RetainedActivity {
+                        agent: RecordedAgentId::Development(DevelopmentAgent::RustDev),
+                        recovery: RecoveryAction::Reassign,
+                    })
+                    .await?;
+                Scenario::create()?
+                    .recover_retired_assignment(RetainedActivity {
+                        agent: RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo),
+                        recovery: RecoveryAction::Reassign,
+                    })
+                    .await?;
+                Scenario::create()?
+                    .recover_retired_assignment(RetainedActivity {
+                        agent: RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo),
+                        recovery: RecoveryAction::Cancel,
+                    })
+                    .await
+            })
+    }
+
+    #[test]
     fn assignment_notes_name_the_transition_and_preserve_queued_state() -> anyhow::Result<()> {
         let scenario = Scenario::create()?;
         Builder::new_current_thread().enable_time().build()?.block_on(async {
             let mut ledger = scenario.ledger().await?;
-            let actor = AgentId::Gizmo(GizmoAgent::Gizmo);
+            let actor = AgentId::Gizmo(GizmoAgent::GizmoPrime);
             struct AssignmentExample { recipient: AgentId, objective: Note, description: &'static str }
             for (index, example) in [
                 AssignmentExample { recipient: AgentId::Development(DevelopmentAgent::RustDev), objective: Note::from("Replace vague assignment notes".to_owned()), description: "Replace vague assignment notes" },
@@ -490,7 +823,7 @@ mod tests {
             .block_on(async {
                 let mut ledger = scenario.ledger().await?;
                 let agent = AgentId::Development(DevelopmentAgent::RustDev);
-                let actor = AgentId::Gizmo(GizmoAgent::Gizmo);
+                let actor = AgentId::Gizmo(GizmoAgent::GizmoPrime);
                 let original = WorkerId::EXAMPLE;
                 let other = WorkerId::generate();
                 let mut tasks = Vec::new();
@@ -638,10 +971,7 @@ mod tests {
                     assert_eq!(entry.worker, event.task.worker);
                 }
                 assert_eq!(chapter.entries.len(), history.len());
-                assert_eq!(
-                    ledger.info().storage_version,
-                    StorageVersion::FeatureHistoryV6
-                );
+                assert_eq!(ledger.info().storage_version, StorageVersion::DirectPrimeV7);
                 Ok(())
             })
     }

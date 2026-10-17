@@ -3,4 +3,4 @@ title: Local Feature Rule Map
 entries:
   - title: Team architecture
     path: practices/local_feature/index.yaml
-    summary: Isolated worker ownership, committed results, and Gizmo-led integration.
+    summary: Isolated worker ownership, committed results, and integration delegated by Prime.

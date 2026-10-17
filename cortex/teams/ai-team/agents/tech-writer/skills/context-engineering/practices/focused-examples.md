@@ -29,7 +29,7 @@ in a separate section with its own example.
 
 Local Git workflow documentation follows
 [Delivery Writing](../../delivery-writing/SKILL.md). Verification documentation follows
-[Agent Verification](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
+[Agent Verification](../../../../../../gizmo-team/agents/gizmo-prime/skills/agent-verification/SKILL.md).
 Both describe concise architecture and expected results while leaving execution
 methods to the agent. Those architecture statements do not require per-rule sections or prohibited/required examples.
 This exception covers their role and handoff descriptions, not programming rules

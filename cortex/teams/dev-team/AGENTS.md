@@ -1,6 +1,6 @@
 # Development Team
 
-Team Gizmo uses this directory to select the owner of design or implementation work in
+Gizmo Prime uses this directory to select the owner of design or implementation work in
 the consuming project.
 
 ## Agent catalog
@@ -11,17 +11,17 @@ the consuming project.
   - Verifier: [Rust verifier](agents/rust-verifier/AGENTS.md).
 - **[Rust architecture reviewer](agents/rust-refactoring/AGENTS.md)**
   - Read-only architecture and simplification review after successful Rust verification.
-  - Full worker solution and related existing code; proposals or no change to Team Gizmo.
+  - Full worker solution and related existing code; proposals or no change to Gizmo Prime.
 - **[Rust verifier](agents/rust-verifier/AGENTS.md)**
   - Read-only assessment of committed Rust work against applicable development rules.
-  - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
+  - Reports compliance evidence and repair requirements to Gizmo Prime; read-only.
 - **[TypeScript developer](agents/typescript-dev/AGENTS.md)**
   - TypeScript and JavaScript implementation: browser components, application state, APIs, libraries, services, and tooling.
   - Functional tests, browser integration, and corrections for those implementations.
   - Verifier: [TypeScript verifier](agents/typescript-verifier/AGENTS.md).
 - **[TypeScript verifier](agents/typescript-verifier/AGENTS.md)**
   - Read-only assessment of committed TypeScript work against applicable development rules.
-  - Reports compliance evidence and repair requirements to Team Gizmo; read-only.
+  - Reports compliance evidence and repair requirements to Gizmo Prime; read-only.
 - **[Web designer](agents/web-designer/AGENTS.md)**
   - UI/UX, navigation, layout, typography, responsive styling, and visual states.
   - Assigned markup/CSS and visual accessibility validation.
@@ -29,21 +29,21 @@ the consuming project.
 ## Assignment boundaries
 
 Keep implementation with the development owner. Report security verification
-and documentation needs to the assigning Team Gizmo. Gizmo decides whether to
+and documentation needs to the assigning Gizmo Prime. Prime decides whether to
 assign a security review or instructions, specifications, skills, and practice
 authoring to the AI team's tech writer.
-Cross-team decisions remain with Team Gizmo; this index does not expand an
+Cross-team decisions remain with Gizmo Prime; this index does not expand an
 agent's assignment.
 
-Team Gizmo assigns web design to web-designer and JS/TS behavior and functional tests to
+Gizmo Prime assigns web design to web-designer and JS/TS behavior and functional tests to
 typescript-dev. It assigns new Rust behavior, domain work, contract changes, and
 Rust-owned WASM work, structural refactors, and their tests/checks to rust-dev.
 After Rust verification passes, it assigns architecture review to rust-refactoring
 under the [Rust architecture handoff](../gizmo-team/docs/agent-verification.md#review-rust-architecture-after-verification).
-Architectural proposals return to Team Gizmo for a scope decision and any Rust
+Architectural proposals return to Gizmo Prime for a scope decision and any Rust
 developer assignment. The reviewer never implements them.
 
-A Svelte file may need web design and TypeScript implementation; Team Gizmo
+A Svelte file may need web design and TypeScript implementation; Gizmo Prime
 sequences edits to shared components and supplies the design decisions to the
 implementation owner. For work crossing these boundaries, give
 each agent a bounded assignment and explicit dependencies. Pass these boundaries
@@ -53,7 +53,7 @@ agent's work or feature coordination.
 - **Prohibited:** assign a developer a credential-storage fix and implicitly
   authorize it to redefine the security policy and rewrite the agent instructions.
 
-- **Required:** Team Gizmo assigns the implementation and regression tests to
+- **Required:** Gizmo Prime assigns the implementation and regression tests to
   the agent owning the affected implementation, security-policy questions to the security team, and
   instruction changes to the tech writer. Each assignment identifies its
   dependencies on the others.

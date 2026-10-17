@@ -7,6 +7,7 @@ pub mod workflow;
 
 use super::LedgerError;
 use super::agents::AgentId;
+use super::agents::recorded::RecordedAgentId;
 use super::values::{
     Attempt, BranchName, CommitId, Extensions, FeatureId, LeaseSeconds, Note, TaskId, TaskRevision,
     Timestamp,
@@ -85,7 +86,7 @@ pub enum Phase {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Assignment {
-    pub agent: AgentId,
+    pub agent: RecordedAgentId,
     pub attempt: Attempt,
     pub expires_at: Timestamp,
     pub phase: Phase,
@@ -105,11 +106,23 @@ impl Assignment {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum TaskState {
     Queued,
-    Active { assignment: Assignment },
-    Ready { agent: AgentId, attempt: Attempt },
-    Integrated { commit: CommitId },
-    Completed { agent: AgentId, attempt: Attempt },
-    Cancelled { reason: Note },
+    Active {
+        assignment: Assignment,
+    },
+    Ready {
+        agent: RecordedAgentId,
+        attempt: Attempt,
+    },
+    Integrated {
+        commit: CommitId,
+    },
+    Completed {
+        agent: RecordedAgentId,
+        attempt: Attempt,
+    },
+    Cancelled {
+        reason: Note,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -133,7 +146,7 @@ pub struct TaskCommon {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(try_from = "task_record::TaskRecord")]
-#[schemars(with = "task_record::TaskV3")]
+#[schemars(with = "task_record::TaskV4")]
 pub struct Task {
     pub worker: worker::WorkerIdentity,
     pub version: TaskRecordVersion,
@@ -182,7 +195,7 @@ pub enum EventKind {
 pub struct Event {
     pub envelope: EventEnvelope,
     pub kind: EventKind,
-    pub actor: AgentId,
+    pub actor: RecordedAgentId,
     pub note: Note,
     pub task: Task,
 }
@@ -214,7 +227,9 @@ impl Task {
             | TaskState::Completed { .. }
             | TaskState::Cancelled { .. } => return Err(LedgerError::InvalidTransition),
         }
-        self.ownership = TaskOwnership::Assigned { assignment };
+        self.ownership = TaskOwnership::Assigned {
+            assignment: assignment.into(),
+        };
         Ok(self)
     }
 
@@ -227,7 +242,8 @@ impl Task {
 
     #[must_use = "Save the task returned by this transition"]
     pub fn claim(mut self, input: ClaimAt) -> Result<Self, LedgerError> {
-        self.ownership.require_agent(input.agent)?;
+        self.ownership.require_current()?;
+        self.ownership.require_agent(input.agent.into())?;
         match self.state {
             TaskState::Queued => {}
             TaskState::Active { .. }
@@ -242,7 +258,7 @@ impl Task {
         };
         self.state = TaskState::Active {
             assignment: Assignment {
-                agent: input.agent,
+                agent: input.agent.into(),
                 attempt: self.common.attempt,
                 expires_at: input.now.expires(input.ttl)?,
                 phase: Phase::Working,
@@ -252,9 +268,12 @@ impl Task {
     }
 
     pub fn worker(&self, input: WorkerAt<'_>) -> Result<&Assignment, LedgerError> {
+        self.ownership.require_current()?;
         match &self.state {
             TaskState::Active { assignment } => {
-                match assignment.agent == *input.agent && assignment.attempt == input.attempt {
+                match assignment.agent == (*input.agent).into()
+                    && assignment.attempt == input.attempt
+                {
                     true => {}
                     false => return Err(LedgerError::AssignmentChanged),
                 }
@@ -295,7 +314,7 @@ impl Task {
             worker_id: input.worker_id,
         };
         self.state = TaskState::Ready {
-            agent: *input.agent,
+            agent: (*input.agent).into(),
             attempt: input.attempt,
         };
         Ok(self)
@@ -627,7 +646,7 @@ pub mod tests {
         for workspace in [Workspace::ReadOnly, Workspace::Feature] {
             let task = Task {
                 ownership: TaskOwnership::Assigned {
-                    assignment: TaskAssignment::from(agent),
+                    assignment: TaskAssignment::from(agent).into(),
                 },
                 workspace,
                 ..Scenario::task()?
@@ -656,7 +675,7 @@ pub mod tests {
             let task = task.complete()?;
             assert_eq!(task.ownership, ownership);
             assert!(
-                matches!(task.state, TaskState::Completed { agent: owner, .. } if owner == agent)
+                matches!(task.state, TaskState::Completed { agent: owner, .. } if owner == agent.into())
             );
             task.require_dependency()?;
             assert!(matches!(
@@ -691,7 +710,7 @@ pub mod tests {
     fn rejects_invalid_known_fields_and_versions() -> anyhow::Result<()> {
         let document = serde_json::to_string(&Scenario::task()?)?;
         for invalid in [
-            document.replace("\"version\":3", "\"version\":99"),
+            document.replace("\"version\":4", "\"version\":99"),
             document.replace("\"id\":\"task\"", "\"id\":\"../task\""),
             document.replace("\"kind\":\"queued\"", "\"kind\":\"invented\""),
             document.replace("\"revision\":1", "\"revision\":0"),

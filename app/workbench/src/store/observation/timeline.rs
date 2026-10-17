@@ -409,7 +409,7 @@ mod tests {
         fn working(attempt: i64) -> anyhow::Result<TaskState> {
             Ok(TaskState::Active {
                 assignment: Assignment {
-                    agent: Self::agent(),
+                    agent: Self::agent().into(),
                     attempt: Attempt::try_from(attempt)?,
                     expires_at: Timestamp::try_from(9999)?,
                     phase: Phase::Working,
@@ -424,7 +424,7 @@ mod tests {
                 objective: Note::from("Historical objective".to_owned()),
                 worker: record.worker,
                 kind: EventKind::Progress,
-                actor: Self::agent(),
+                actor: Self::agent().into(),
                 ownership: TaskOwnership::Unrecorded,
                 state: record.state.clone(),
                 note: Note::from("Waiting prose does not mean blocked".to_owned()),
@@ -486,7 +486,7 @@ mod tests {
             Record {
                 at: 800,
                 state: TaskState::Ready {
-                    agent: Scenario::agent(),
+                    agent: Scenario::agent().into(),
                     attempt: Attempt::try_from(2)?,
                 },
                 worker,
@@ -495,7 +495,7 @@ mod tests {
             Record {
                 at: 900,
                 state: TaskState::Completed {
-                    agent: Scenario::agent(),
+                    agent: Scenario::agent().into(),
                     attempt: Attempt::try_from(2)?,
                 },
                 worker,
@@ -504,7 +504,7 @@ mod tests {
             Record {
                 at: 1000,
                 state: TaskState::Completed {
-                    agent: Scenario::agent(),
+                    agent: Scenario::agent().into(),
                     attempt: Attempt::try_from(2)?,
                 },
                 worker,
@@ -546,7 +546,7 @@ mod tests {
         let worker = WorkerIdentity::Unrecorded;
         let blocked = TaskState::Active {
             assignment: Assignment {
-                agent: Scenario::agent(),
+                agent: Scenario::agent().into(),
                 attempt: Attempt::try_from(1)?,
                 expires_at: Timestamp::try_from(300)?,
                 phase: Phase::Blocked {
@@ -581,7 +581,7 @@ mod tests {
             Record {
                 at: 500,
                 state: TaskState::Ready {
-                    agent: Scenario::agent(),
+                    agent: Scenario::agent().into(),
                     attempt: Attempt::try_from(1)?,
                 },
                 worker,
@@ -754,7 +754,7 @@ mod tests {
             .record(Record {
                 at: 300,
                 state: TaskState::Ready {
-                    agent: other,
+                    agent: other.into(),
                     attempt: Attempt::try_from(1)?,
                 },
                 worker,
@@ -767,9 +767,11 @@ mod tests {
             timeline.groups[0].roles,
             [
                 RecordedRole::Recorded {
-                    agent: Scenario::agent()
+                    agent: Scenario::agent().into()
                 },
-                RecordedRole::Recorded { agent: other }
+                RecordedRole::Recorded {
+                    agent: other.into()
+                }
             ]
         );
         assert_eq!(

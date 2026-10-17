@@ -6,7 +6,7 @@ distinct decisions and their source sections to find relevant guidance.
 The source practice owns the full requirements, exceptions, checks, and examples.
 The source-loading procedure below applies to authoring and implementation.
 Read-only verifiers choose their investigation and context under the
-[review contract](../../../../../../gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md).
+[review contract](../../../../../../gizmo-team/agents/gizmo-prime/skills/agent-verification/SKILL.md).
 Catalogs help them locate canonical sources; they can read those sources directly.
 
 ## Inventory decisions, not just files

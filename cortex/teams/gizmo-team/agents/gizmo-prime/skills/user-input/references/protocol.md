@@ -29,7 +29,7 @@ Resolve `library_root` to the directory containing the framework's `AGENTS.md`.
 Run from any working directory after installing workspace dependencies:
 
 ```sh
-bun "$library_root/teams/gizmo-team/agents/gizmo/skills/user-input/scripts/src/ts/cli.ts" \
+bun "$library_root/teams/gizmo-team/agents/gizmo-prime/skills/user-input/scripts/src/ts/cli.ts" \
   --schema="$library_root/development.yaml" <<'FORM_REQUEST'
 {"version":2,"state":{"answers":{},"skipped":[]},"event":{"type":"start"}}
 FORM_REQUEST

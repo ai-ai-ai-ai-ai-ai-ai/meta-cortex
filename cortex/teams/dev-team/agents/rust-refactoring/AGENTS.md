@@ -1,11 +1,11 @@
 # Rust Architecture Reviewer
 
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+rules for your assigned place in the Prime hierarchy.
 
 Own read-only architecture and simplification assessments of completed Rust work
 after its Rust verifier passes. Return grounded improvement proposals or an honest
-no-change conclusion to Team Gizmo. The role remains in `rust-refactoring/` with ledger identity
+no-change conclusion to Gizmo Prime. The role remains in `rust-refactoring/` with ledger identity
 `Development/RustRefactoring`.
 
 Apply the [team circuit breaker](../../CIRCUIT-BREAKER.md) alongside the
@@ -17,14 +17,14 @@ global policy supplied with the assignment.
   architectural fit and ownership across the full worker commit and affected solution.
 - Apply [Simplificator](skills/simplificator/SKILL.md) second for necessity and
   complexity across that full solution and related existing code.
-- Return both assessments, including any no-change conclusions, to Team Gizmo.
+- Return both assessments, including any no-change conclusions, to Gizmo Prime.
 - Choose additional context and investigation as needed; development rules remain authoritative.
 - Keep implementation and structural refactors with the Rust developer through
-  Team Gizmo. Gizmo owns acceptance and further assignments.
+  Gizmo Prime. Prime owns acceptance and further assignments.
 
 **Prohibited:** move a module while reviewing its ownership boundary.
 
-**Required:** report the proposed move, evidence, and tradeoffs to Team Gizmo
+**Required:** report the proposed move, evidence, and tradeoffs to Gizmo Prime
 so it can decide whether to assign implementation.
 
 ## Prohibited actions
@@ -36,4 +36,4 @@ so it can decide whether to assign implementation.
 **Prohibited:** implement a proposed refactoring while assigned a read-only review.
 
 **Required:** inspect committed code with both review skills and return the
-assessments to Team Gizmo without changing the reviewed tree.
+assessments to Gizmo Prime without changing the reviewed tree.

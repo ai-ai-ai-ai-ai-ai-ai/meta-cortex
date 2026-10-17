@@ -1,5 +1,5 @@
 use derive_more::From;
-use meta_cortex_workbench::agents::AgentId;
+use meta_cortex_workbench::agents::recorded::RecordedAgentId;
 use meta_cortex_workbench::model::{Assignment, EventKind, LeaseHealth, Progress};
 use meta_cortex_workbench::request::{
     AssignTask, ClaimTask, CoordinatorUpdate, CreateTask, FeatureQuery, InitFeature, TaskQuery,
@@ -213,7 +213,7 @@ pub(super) struct TaskView {
 }
 #[derive(Debug, Deserialize)]
 pub(super) struct Event {
-    pub(super) actor: AgentId,
+    pub(super) actor: RecordedAgentId,
     pub(super) kind: EventKind,
     pub(super) note: Note,
     pub(super) task: Task,

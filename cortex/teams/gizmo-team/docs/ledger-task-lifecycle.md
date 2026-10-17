@@ -8,19 +8,20 @@ the responsibilities; `meta-cortex list` supplies current request schemas.
 
 Use ordinary tasks for every feature responsibility. A task identifies an
 activity; `Task / Assign` records its intended role and reporting coordinator.
-The reporting line is scoped to the feature's single Prime and Team Gizmo.
+The reporting line is scoped to the feature's single Gizmo Prime coordinator.
 Different tasks may belong to the same role. Role identities describe recorded
 responsibilities, not host processes or proof that a subagent was launched.
 
 1. Prepare or reuse the feature workspace and initialize its ledger through the
-   existing bootstrap procedure. Before routine assignments begin, record Prime,
-   Team Gizmo, and workspace preparation activities. Include the initial scope,
+   existing bootstrap procedure. Before routine assignments begin, record Prime's
+   coordination activity and the delegated workspace preparation activity. Include
+   the initial scope,
    branch decision, and workspace setup results in their progress. If the ledger
    already exists, record coordination before launching downstream work.
-2. Create a `read_only` activity for Prime and another for Team Gizmo.
-   Use `Task / Assign` with their actual roles and reporting lines. Each
-   coordinator claims its own activity and records decisions, findings,
+2. Create one `read_only` coordination activity for Prime with `reports_to: {kind: Host}`.
+   Prime claims that activity and records scope, scheduling, decisions, findings,
    acceptance checks, blockers, and next steps through `Task / Update`.
+   Do not create a second coordinator activity or a Prime-to-Prime reporting line.
 3. Create and assign activities for all selected specialists before their work.
    Include integration, verifier, documentation, security, pipeline, and PR
    responsibilities when selected. Integration and PR operations on the shared
@@ -37,9 +38,9 @@ responsibilities, not host processes or proof that a subagent was launched.
    activities through `Task / Coordinate` with `action.kind: complete`.
    Completion retains their ownership, reporting line, and evidence. Feature
    readiness requires a clean feature worktree and no worker checkpoint.
-6. Complete Team Gizmo's activity only after the selected local or PR delivery
-   outcome is recorded. Prime accepts that result, records its final acceptance
-   evidence, and completes its own activity before the final host handoff.
+6. After the selected local or PR delivery outcome is recorded, Prime evaluates
+   the combined result against the acceptance criteria. Record final acceptance
+   once and complete Prime's coordination activity before the host handoff.
 
 For example, after creating integration's activity, assign its reporting line:
 
@@ -54,24 +55,24 @@ operation:
       feature: example-feature
       task: integration
       expected_revision: 1
-      actor: {team: Gizmo, role: Gizmo}
+      actor: {team: Gizmo, role: GizmoPrime}
       assignment:
         agent: {team: Delivery, role: IntegrationAgent}
-        reports_to: {kind: Gizmo, coordinator: Gizmo}
+        reports_to: {kind: Gizmo, coordinator: GizmoPrime}
 ```
 
 Use the observed revision in actual calls. Prime's assignment uses
 `agent: {team: Gizmo, role: GizmoPrime}` with `reports_to: {kind: Host}`.
-Team Gizmo uses `agent: {team: Gizmo, role: Gizmo}` with
-`reports_to: {kind: Gizmo, coordinator: GizmoPrime}`. Every specialist reports to
-`{kind: Gizmo, coordinator: Gizmo}`. Assignment validates this hierarchy and
+Every specialist, including integration, PR, and independent verification,
+reports directly to `{kind: Gizmo, coordinator: GizmoPrime}`. Assignment validates
+this hierarchy and
 survives claim, readiness, integration, completion, cancellation, and requeue.
 
 **Prohibited:** record only developer tasks, put relationships in extensions,
 or mark the feature complete while integration and PR delivery are unrecorded.
 
-**Required:** retain Prime → Team Gizmo → integration and specialist reporting
-lines, with progress and acceptance evidence on each participating role's activity.
+**Required:** retain Host → Prime → specialist reporting lines, with progress
+and acceptance evidence on each participating role's activity.
 
 ## Worker instance identity
 
@@ -160,7 +161,7 @@ Prepare the feature branch and worktree using the [local feature architecture](.
 1. The integration owner runs `Feature / Initialize` with the feature ID, objective,
    feature branch, and absolute feature worktree. Repeating an identical
    initialization reopens it; conflicting metadata is rejected.
-2. Team Gizmo runs `Task / Create` before launching each worker. Supply its
+2. Gizmo Prime runs `Task / Create` before launching each worker. Supply its
    objective, at least one acceptance criterion, dependencies, initial continuation
    notes, and the appropriate workspace. Dependencies must
    already exist; self-dependencies and duplicates are rejected.
@@ -179,7 +180,7 @@ Prepare the feature branch and worktree using the [local feature architecture](.
    - `checkpoint` records a real commit from the task branch with continuation notes
      and an explicit [implementation outcome set](#record-implementation-outcomes).
    - `ready` records the final result before sending the completion notification.
-5. Team Gizmo reads durable readiness and decides integration. After
+5. Gizmo Prime reads durable readiness and decides integration. After
    integrating and running the assigned combined checks, the integration owner records
    `Task / Coordinate` with `action.kind: integrate` and the feature HEAD.
 
@@ -190,19 +191,22 @@ only its matching combinations. Examples of these identity fields:
 ```yaml
 actor:
   team: Gizmo
-  role: Gizmo
+  role: GizmoPrime
 agent:
   team: Development
   role: RustDev
 ```
 
-The two coordinators are `Gizmo/GizmoPrime` and `Gizmo/Gizmo`. Specialist teams
-are `Development`, `Ai`, `Security`, `Sre`, and `Delivery`; discover their roles
+The active coordinator is `Gizmo/GizmoPrime`. Specialist teams are
+`Development`, `Ai`, `Security`, `Sre`, and `Delivery`; discover their roles
 with `meta-cortex list`. For example, integration uses
 `{team: Delivery, role: IntegrationAgent}`. `Sre/RustDev` is impossible in the
 Rust model and rejected in requests and stored records. Flat strings such as
 `rust-dev`, unknown roles, and host session identifiers are rejected. Do not
-silently relabel historical actors or move them between teams.
+silently relabel historical actors or move them between teams. Historical
+`Gizmo/Gizmo` records retain their retired coordinator identity under the
+[storage contract](ledger-storage.md#versions-and-durable-contracts); they do not
+make that retired role available for new assignments or claims.
 Task IDs remain per-assignment values. The task and attempt identify the claimed
 assignment; the [worker UUID](#worker-instance-identity) identifies the executing
 instance across assignments.
@@ -283,7 +287,7 @@ not copy or restore earlier outcome declarations.
    Reaffirm retained milestones using their existing IDs. Several milestones
    may share this final SHA; equal summaries do not merge their IDs.
 3. Record readiness using the next returned revision. Send the final SHA and
-   validation evidence to Team Gizmo. Integration later supplies its own evidence;
+   validation evidence to Gizmo Prime. Integration later supplies its own evidence;
    the final checkpoint alone does not prove inclusion in the feature branch.
 
 For example, a worker has implemented both journal navigation and expandable
@@ -320,7 +324,7 @@ operation:
         progress:
           summary: Journal guidance consolidated and validated at final task HEAD.
           findings: []
-          next_steps: [Record readiness and hand the final SHA to Team Gizmo.]
+          next_steps: [Record readiness and hand the final SHA to Gizmo Prime.]
           checks: []
           extensions: {}
 ```
@@ -343,7 +347,7 @@ support the next decision; they do not configure or stop a host agent.
 A lease expiring is an observation, not proof the worker has stopped. There is
 no background TTL process. Status computes expiration when queried.
 
-1. On startup, after interruption, and before assigning more work, Gizmo reads
+1. On startup, after interruption, and before assigning more work, Prime reads
    `Feature / Status`. Use `Feature / List` to rediscover feature IDs and paths
    when the coordinator context is lost. Inspect `last_update`, `last_progress`, the lease health,
    current checkpoint, and continuation notes. Read `Task / History` when needed.
