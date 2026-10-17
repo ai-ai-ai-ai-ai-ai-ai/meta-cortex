@@ -218,7 +218,7 @@ impl Scenario {
         let TaskOwnership::Assigned { assignment } = &task.ownership else {
             bail!("missing assignment")
         };
-        let agent = assignment.agent;
+        let agent = AgentId::try_from(assignment.agent)?;
         self.task(TaskOperation::Claim(ClaimTask {
             worker_id: WorkerId::EXAMPLE,
             feature: task.common.feature,
@@ -232,7 +232,7 @@ impl Scenario {
         let TaskOwnership::Assigned { assignment } = &input.task.ownership else {
             bail!("missing assignment")
         };
-        let agent = assignment.agent;
+        let agent = AgentId::try_from(assignment.agent)?;
         self.task(TaskOperation::Update(WorkerUpdate {
             worker_id: WorkerId::EXAMPLE,
             feature: input.task.common.feature,
@@ -253,10 +253,8 @@ impl Scenario {
         let TaskOwnership::Assigned { assignment } = &task.ownership else {
             bail!("missing assignment")
         };
-        let actor = match assignment.reports_to {
-            ReportingTarget::Host => assignment.agent,
-            ReportingTarget::Gizmo(coordinator) => AgentId::Gizmo(coordinator),
-        };
+        assignment.validate()?;
+        let actor = AgentId::Gizmo(GizmoAgent::GizmoPrime);
         self.task(TaskOperation::Coordinate(CoordinatorUpdate {
             feature: task.common.feature,
             task: task.common.id,
@@ -309,19 +307,13 @@ struct ActivityUpdate {
 }
 
 #[test]
-fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> anyhow::Result<()> {
+fn cli_records_prime_direct_workers_verification_integration_and_pr_delivery() -> anyhow::Result<()>
+{
     let scenario = Scenario::new()?;
     let prime = AgentId::Gizmo(GizmoAgent::GizmoPrime);
-    let team = AgentId::Gizmo(GizmoAgent::Gizmo);
     let root = scenario.claim(scenario.create(TaskPlan {
         id: TaskId::try_from("prime".to_owned())?,
         agent: prime,
-        workspace: Workspace::ReadOnly,
-        dependencies: vec![],
-    })?)?;
-    let coordination = scenario.claim(scenario.create(TaskPlan {
-        id: TaskId::try_from("coordination".to_owned())?,
-        agent: team,
         workspace: Workspace::ReadOnly,
         dependencies: vec![],
     })?)?;
@@ -408,7 +400,6 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
         },
     })?;
     scenario.complete(delivery)?;
-    scenario.complete(coordination)?;
     let root = scenario.complete(root)?;
     let Reply::Status { tasks } =
         scenario.run(Operation::Feature(FeatureOperation::Status(FeatureQuery {
@@ -417,7 +408,7 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
     else {
         bail!("status response")
     };
-    assert_eq!(tasks.len(), 6);
+    assert_eq!(tasks.len(), 5);
     for view in &tasks {
         let TaskOwnership::Assigned { assignment } = &view.task.ownership else {
             bail!("unrecorded workflow participant")
@@ -439,12 +430,12 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
     assert!(
         history
             .iter()
-            .any(|event| event.kind == EventKind::Assigned && event.actor == prime)
+            .any(|event| event.kind == EventKind::Assigned && event.actor == prime.into())
     );
     assert!(
         history
             .iter()
-            .any(|event| event.kind == EventKind::Progress && event.actor == prime)
+            .any(|event| event.kind == EventKind::Progress && event.actor == prime.into())
     );
     let Reply::Dashboard(snapshot) = scenario.run(Operation::Workbench(
         WorkbenchOperation::Dashboard(DashboardRequest::Snapshot {
@@ -460,9 +451,8 @@ fn cli_records_prime_team_workers_verification_integration_and_pr_delivery() -> 
     let content = snapshot.content.to_string();
     for expected in [
         "Agent: Gizmo/GizmoPrime · Reports to: host",
-        "Agent: Gizmo/Gizmo · Reports to: Gizmo/GizmoPrime",
-        "Agent: Delivery/IntegrationAgent · Reports to: Gizmo/Gizmo",
-        "Agent: Delivery/PrAgent · Reports to: Gizmo/Gizmo",
+        "Agent: Delivery/IntegrationAgent · Reports to: Gizmo/GizmoPrime",
+        "Agent: Delivery/PrAgent · Reports to: Gizmo/GizmoPrime",
         "RustDev",
         "RustVerifier",
         "completed",
@@ -488,10 +478,10 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
         feature: task.common.feature.clone(),
         task: task.common.id.clone(),
         expected_revision: task.common.revision,
-        actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+        actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
         assignment: TaskAssignment {
             agent,
-            reports_to: ReportingTarget::Gizmo(GizmoAgent::GizmoPrime),
+            reports_to: ReportingTarget::Host,
         },
     };
     let Outcome::Error(failure) = scenario.call(Operation::Task(TaskOperation::Assign(input)))?
@@ -504,7 +494,7 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
             feature: task.common.feature.clone(),
             task: task.common.id.clone(),
             expected_revision: TaskRevision::INITIAL,
-            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
             assignment: TaskAssignment::from(agent),
         })))?
     else {
@@ -530,7 +520,7 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
             feature: claimed.common.feature.clone(),
             task: claimed.common.id.clone(),
             expected_revision: claimed.common.revision,
-            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
             assignment: TaskAssignment::from(agent),
         })))?
     else {
@@ -564,7 +554,7 @@ fn assignment_changes_require_a_queued_task_current_revision_and_catalog_reporti
             feature: completed.common.feature,
             task: completed.common.id,
             expected_revision: completed.common.revision,
-            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
             assignment: TaskAssignment::from(agent),
         })))?
     else {

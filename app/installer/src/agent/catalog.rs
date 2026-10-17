@@ -86,7 +86,7 @@ impl Catalog {
     pub fn discover() -> Result<Self, AgentError> {
         let feature = FeatureId::try_from("example".to_owned()).map_err(LedgerError::from)?;
         let task = TaskId::try_from("review".to_owned()).map_err(LedgerError::from)?;
-        let coordinator = AgentId::Gizmo(GizmoAgent::Gizmo);
+        let coordinator = AgentId::Gizmo(GizmoAgent::GizmoPrime);
         let worker = AgentId::Development(DevelopmentAgent::RustDev);
         let ttl = LeaseSeconds::TEN_MINUTES;
         let assigned_revision = TaskRevision::INITIAL.advance()?;
@@ -176,7 +176,7 @@ impl Catalog {
             },
             CommandExample {
                 description: CommandSummary::from(
-                    "Record a queued task's agent and reporting line before launch. Gizmo Prime reports to the host, Team Gizmo to Prime, and every specialist (including integration and PR delivery) to Team Gizmo. Assignment survives readiness, integration, completion, cancellation and requeue.",
+                    "Record a queued task's agent and reporting line before launch. Gizmo Prime reports to the host, and every specialist (including integration and PR delivery) reports directly to Prime. Assignment survives readiness, integration, completion, cancellation and requeue.",
                 ),
                 operation: Operation::Task(TaskOperation::Assign(AssignTask {
                     feature: feature.clone(),

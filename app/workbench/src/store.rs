@@ -192,7 +192,7 @@ impl Ledger {
                     outcomes: Vec::new(),
                 },
                 kind: EventKind::Created,
-                actor: input.actor,
+                actor: input.actor.into(),
                 note: task.common.objective.clone(),
                 task: task.clone(),
             })

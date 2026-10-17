@@ -1,7 +1,7 @@
 use super::checkpoint_outcome::CheckpointOutcome;
 use super::{Event, EventKind, Task};
 use crate::LedgerError;
-use crate::agents::AgentId;
+use crate::agents::recorded::RecordedAgentId;
 use crate::values::Note;
 use crate::versions::{
     EventRecordVersion, RecordVersion, VersionFamily, VersionNumber, VersionParseError,
@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 pub struct EventV1 {
     pub version: RecordVersion,
     pub kind: EventKind,
-    pub actor: AgentId,
+    pub actor: RecordedAgentId,
     pub note: Note,
     pub task: Task,
 }
@@ -26,7 +26,7 @@ pub struct EventV2 {
     pub version: EventVersionV2,
     pub outcomes: Vec<CheckpointOutcome>,
     pub kind: EventKind,
-    pub actor: AgentId,
+    pub actor: RecordedAgentId,
     pub note: Note,
     pub task: Task,
 }
@@ -160,6 +160,7 @@ impl From<EventVersionV2> for i64 {
 #[cfg(test)]
 mod tests {
     use super::{EventEnvelope, EventRecord, EventV1, EventVersionV2};
+    use crate::agents::recorded::{RecordedAgentId, RecordedGizmoAgent};
     use crate::agents::{AgentId, DevelopmentAgent};
     use crate::model::checkpoint_outcome::{CheckpointOutcome, OutcomeId};
     use crate::model::worker::WorkerIdentity;
@@ -182,7 +183,7 @@ mod tests {
                     }],
                 },
                 kind: EventKind::Checkpoint,
-                actor: AgentId::Development(DevelopmentAgent::RustDev),
+                actor: AgentId::Development(DevelopmentAgent::RustDev).into(),
                 note: Note::Empty,
                 task: Task {
                     version: TaskRecordVersion::CURRENT,
@@ -223,6 +224,28 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn both_event_envelopes_retain_the_retired_actor_attribution() -> anyhow::Result<()> {
+        for envelope in [
+            EventEnvelope::V1,
+            EventEnvelope::V2 {
+                outcomes: Vec::new(),
+            },
+        ] {
+            let event = Event {
+                envelope,
+                actor: RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo),
+                ..Scenario::event()?
+            };
+            let encoded = serde_json::to_string(&event)?;
+            let decoded: Event = serde_json::from_str(&encoded)?;
+            assert_eq!(decoded, event);
+            assert_eq!(serde_json::to_string(&decoded)?, encoded);
+            assert_eq!(decoded.actor.to_string(), "Gizmo/Gizmo");
+        }
+        Ok(())
+    }
+
     #[test]
     fn v1_retains_version_and_missing_evidence_and_v2_round_trips_outcomes() -> anyhow::Result<()> {
         let event = Scenario::event()?;

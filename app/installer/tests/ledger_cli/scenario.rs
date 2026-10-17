@@ -273,7 +273,7 @@ impl Cli<'_> {
         let Reply::Status { ledger, tasks } = reply else {
             bail!("unexpected status reply: {reply:?}");
         };
-        assert_eq!(ledger.storage_version, StorageVersion::FeatureHistoryV6);
+        assert_eq!(ledger.storage_version, StorageVersion::DirectPrimeV7);
         Ok(tasks)
     }
 }
@@ -285,7 +285,7 @@ impl Examples {
         Ok(CreateTask {
             feature,
             task,
-            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
             objective: Note::from("Review code".to_owned()),
             acceptance: vec![Note::from("Report findings".to_owned())],
             dependencies: Vec::new(),
@@ -333,7 +333,7 @@ impl Examples {
             feature,
             task,
             expected_revision: TaskRevision::INITIAL.advance()?,
-            actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
             action,
         })
     }

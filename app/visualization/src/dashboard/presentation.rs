@@ -320,7 +320,7 @@ mod tests {
                     outcomes: Vec::new(),
                 },
                 kind: EventKind::Created,
-                actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                actor: AgentId::Gizmo(GizmoAgent::GizmoPrime).into(),
                 note: Note::from("Event note".to_owned()),
                 task: self.task.clone(),
             }
@@ -331,13 +331,12 @@ mod tests {
         let mut records = Vec::new();
         for agent in [
             AgentId::Gizmo(GizmoAgent::GizmoPrime),
-            AgentId::Gizmo(GizmoAgent::Gizmo),
             AgentId::Delivery(DeliveryAgent::IntegrationAgent),
         ] {
             records.push(Task {
                 state: TaskState::Active {
                     assignment: Assignment {
-                        agent,
+                        agent: agent.into(),
                         attempt: Attempt::UNCLAIMED.advance()?,
                         expires_at: Timestamp::now()?.expires(LeaseSeconds::TEN_MINUTES)?,
                         phase: Phase::Working,
@@ -366,7 +365,6 @@ mod tests {
         let mut records = Vec::new();
         for agent in [
             AgentId::Gizmo(GizmoAgent::GizmoPrime),
-            AgentId::Gizmo(GizmoAgent::Gizmo),
             AgentId::Delivery(DeliveryAgent::IntegrationAgent),
         ] {
             let mut task = TaskFixture::try_from(Timestamp::now()?)?.task;
@@ -384,8 +382,7 @@ mod tests {
         .to_string();
         for relationship in [
             "Agent: Gizmo/GizmoPrime · Reports to: host",
-            "Agent: Gizmo/Gizmo · Reports to: Gizmo/GizmoPrime",
-            "Agent: Delivery/IntegrationAgent · Reports to: Gizmo/Gizmo",
+            "Agent: Delivery/IntegrationAgent · Reports to: Gizmo/GizmoPrime",
         ] {
             assert!(text.contains(relationship), "missing {relationship}");
         }
@@ -395,7 +392,7 @@ mod tests {
             .assign(TaskAssignment::from(agent))?;
         let task = Task {
             state: TaskState::Completed {
-                agent,
+                agent: agent.into(),
                 attempt: Attempt::UNCLAIMED.advance()?,
             },
             workspace: Workspace::Feature,
@@ -403,7 +400,7 @@ mod tests {
         };
         let text = TaskPresentation(&task).detail();
         assert!(text.contains("completed"));
-        assert!(text.contains("Agent: Delivery/PrAgent · Reports to: Gizmo/Gizmo"));
+        assert!(text.contains("Agent: Delivery/PrAgent · Reports to: Gizmo/GizmoPrime"));
         assert!(text.contains("shared feature worktree"));
         Ok(())
     }
@@ -454,7 +451,7 @@ mod tests {
             TaskState::Queued,
             TaskState::Active {
                 assignment: Assignment {
-                    agent,
+                    agent: agent.into(),
                     attempt: Attempt::UNCLAIMED.advance()?,
                     expires_at: Timestamp::now()?.expires(LeaseSeconds::TEN_MINUTES)?,
                     phase: Phase::Working,
@@ -462,7 +459,7 @@ mod tests {
             },
             TaskState::Active {
                 assignment: Assignment {
-                    agent,
+                    agent: agent.into(),
                     attempt: Attempt::UNCLAIMED.advance()?,
                     expires_at: Timestamp::now()?,
                     phase: Phase::Blocked {
@@ -471,14 +468,14 @@ mod tests {
                 },
             },
             TaskState::Ready {
-                agent,
+                agent: agent.into(),
                 attempt: Attempt::UNCLAIMED.advance()?,
             },
             TaskState::Integrated {
                 commit: CommitId::try_from("a".repeat(40))?,
             },
             TaskState::Completed {
-                agent,
+                agent: agent.into(),
                 attempt: Attempt::UNCLAIMED.advance()?,
             },
             TaskState::Cancelled {
@@ -552,7 +549,7 @@ mod tests {
             let task = Task {
                 workspace,
                 state: TaskState::Completed {
-                    agent,
+                    agent: agent.into(),
                     attempt: Attempt::UNCLAIMED.advance()?,
                 },
                 ..TaskFixture::try_from(Timestamp::now()?)?
@@ -561,7 +558,7 @@ mod tests {
             };
             let text = TaskPresentation(&task).detail();
             assert!(text.contains("completed"));
-            assert!(text.contains("Agent: Delivery/PrAgent · Reports to: Gizmo/Gizmo"));
+            assert!(text.contains("Agent: Delivery/PrAgent · Reports to: Gizmo/GizmoPrime"));
             assert!(text.contains("Checkpoint: unrecorded"));
             assert!(!text.contains("Recorded integration commit:"));
             assert!(!text.contains("Recorded checkpoint:"));

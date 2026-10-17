@@ -449,7 +449,7 @@ mod tests {
                     .seed(Seed {
                         repository: first.clone(),
                         feature: selected.clone(),
-                        version: StorageVersion::SequencedEventsV5,
+                        version: StorageVersion::FeatureHistoryV6,
                         objective: Note::from("old selected".to_owned()),
                     })
                     .await?;
@@ -457,7 +457,7 @@ mod tests {
                     .seed(Seed {
                         repository: first.clone(),
                         feature: sibling.clone(),
-                        version: StorageVersion::SequencedEventsV5,
+                        version: StorageVersion::FeatureHistoryV6,
                         objective: Note::from("old sibling".to_owned()),
                     })
                     .await?;
@@ -465,7 +465,7 @@ mod tests {
                     .seed(Seed {
                         repository: second.clone(),
                         feature: selected.clone(),
-                        version: StorageVersion::SequencedEventsV5,
+                        version: StorageVersion::FeatureHistoryV6,
                         objective: Note::from("old clone".to_owned()),
                     })
                     .await?;

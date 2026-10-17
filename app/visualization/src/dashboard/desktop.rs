@@ -281,7 +281,7 @@ mod tests {
                     .create(CreateTask {
                         feature: feature.clone(),
                         task: TaskId::try_from("recorded-task".to_owned())?,
-                        actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                        actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
                         objective: Note::from("Recorded task".to_owned()),
                         acceptance: vec![Note::from("Observed through IPC".to_owned())],
                         dependencies: Vec::new(),
@@ -503,7 +503,7 @@ mod tests {
                 .build()?
                 .block_on(async {
                     let workbench = self.workbench()?;
-                    let actor = AgentId::Gizmo(GizmoAgent::Gizmo);
+                    let actor = AgentId::Gizmo(GizmoAgent::GizmoPrime);
                     let agent = AgentId::Development(DevelopmentAgent::RustDev);
                     let mut ledger = workbench
                         .initialize(InitFeature {
@@ -697,11 +697,11 @@ mod tests {
             assert_eq!(first.summary, second.summary);
             assert_eq!(
                 first.checkpoint.recorded.actor,
-                AgentId::Development(DevelopmentAgent::RustDev)
+                AgentId::Development(DevelopmentAgent::RustDev).into()
             );
             assert_eq!(
                 first.integration.recorded.actor,
-                AgentId::Gizmo(GizmoAgent::Gizmo)
+                AgentId::Gizmo(GizmoAgent::GizmoPrime).into()
             );
             assert_eq!(
                 first.integration.recorded.provenance,

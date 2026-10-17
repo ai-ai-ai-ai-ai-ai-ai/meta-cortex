@@ -193,7 +193,7 @@ mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::FeatureHistoryV6
+                    StorageVersion::DirectPrimeV7
                 );
                 assert_eq!(snapshot(&connection).await?, before);
                 let mut provenance = SqlStatement::build(
