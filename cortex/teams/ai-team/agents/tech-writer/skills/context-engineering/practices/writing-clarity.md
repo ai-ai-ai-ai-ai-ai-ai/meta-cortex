@@ -21,14 +21,12 @@ Keep one independent idea per sentence.
 - Run the decoder tests after changing its behavior.
 - Update release instructions only if the release procedure changes.
 
-Each bullet has one action and condition. The reason for reading the schema
-stays attached to the decoder change.
-
 ### Instruction grouping
 
-- Begin instructional structure with `Required actions`, then `Prohibited actions`.
-- Place domain-specific groups beneath the appropriate branch.
-- Omit a branch only when no instruction of that kind exists.
+- Organize instructions by subject or decision. Use `Required actions` and
+  `Prohibited actions` headings only when they help readers find distinct content.
+- Keep related requirements and prohibitions together instead of repeating them
+  under separate headings.
 - Group large lists by genuine semantic domains.
 - Preserve a homogeneous peer list when it has no meaningful domain split.
 - Preserve a single ordered procedure when subdivision would break its meaning.
@@ -44,8 +42,7 @@ stays attached to the decoder change.
    - If decoding fails, report the malformed field and stop.
 2. Save the decoded output.
 
-The failure belongs to decoding, not to an arbitrary second group. A separate
-prohibition such as deleting the input belongs under Prohibited actions.
+The failure belongs to decoding, not to an arbitrary second group.
 
 ### Mappings and diagrams
 
@@ -67,9 +64,6 @@ prohibition such as deleting the input belongs under Prohibited actions.
 - **Author**
   - Input: accepted findings.
   - Output: corrected specification.
-
-The repeated fields belong beneath each role. Inspect the filesystem for current
-paths; use a Mermaid diagram when the relationship itself needs visualization.
 
 ### Host capacity
 
@@ -115,13 +109,3 @@ navigation tree or arbitrary grouping acceptable.
 3. Check list grouping against semantic ownership.
 4. Check for tables, static trees, and ASCII graphics.
 5. Report grouping defects outside the write scope without expanding the edit.
-
-Literal code examples retain their syntax.
-Do not use code fences to disguise prohibited document structure.
-
-- **Prohibited review:** “The prose is shorter, so it is clear.”
-
-- **Required review:** “Separated the author and reviewer actions, kept the
-  failure branch beneath decoding, and found no tables or copied directory trees.”
-
-Report an out-of-scope grouping defect instead of rewriting that document.

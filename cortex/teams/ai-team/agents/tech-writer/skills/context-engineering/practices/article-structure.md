@@ -18,9 +18,6 @@ Choose the body shape for each substantive H2 or H3 article.
 **Required:** “Cache successful lookups until their expiry. This avoids repeated
 origin requests while bounding staleness. After expiry, fetch a fresh result.”
 
-The explanation connects the decision, reason, and consequence instead of
-leaving a disconnected list of keywords.
-
 ### Rules articles
 
 - Use unordered lists for requirements that share a topic.
@@ -37,8 +34,6 @@ leaving a disconnected list of keywords.
 - The author records the execution result beside the example review.
 - The reviewer checks that the recorded result supports the claim.
 - An unexecuted example is labeled unverified.
-
-The peer items distinguish the actors and the reporting condition.
 
 ### Procedure articles
 
@@ -58,9 +53,6 @@ The peer items distinguish the actors and the reporting condition.
 2. Run the behavior checks.
 3. Record the compiler and behavior results separately.
 
-The order is executable, failure handling stays with its step, and the final
-step names the evidence produced.
-
 ### Reference articles
 
 - Use bullets for short catalogs.
@@ -77,8 +69,6 @@ step names the evidence produced.
 **Required:** “Error handling: typed failures and propagation,” linked to the
 owning practice. A command reference may show the literal command in a code block.
 
-A reference selects an authority instead of becoming another copy of it.
-
 ### Hierarchy
 
 - Use H2 for a major article owned by the document.
@@ -90,12 +80,6 @@ A reference selects an authority instead of becoming another copy of it.
 - Keep transitions visible when an article combines body shapes.
 - Update document indexes when ownership, paths, or discoverability change.
 - Update direct heading links when their target changes.
-
-**Prohibited:** separate top-level headings for “Decode,” “Malformed input,”
-and “Report malformed input,” even though the latter two only describe decoding.
-
-**Required:** an H2 for “Import,” an H3 for “Decode input,” and a conditional
-substep for reporting a malformed field. Keep an independent “Export” topic at H2.
 
 Move callers' heading links when a topic moves; do not preserve a dead anchor
 merely because the document still has a similarly named title.
@@ -109,14 +93,6 @@ merely because the document still has a similarly named title.
 - Define observable validation.
 - Use substantial subheadings or short bold labels according to content size.
 
-**Prohibited:** “Update the catalog.”
-
-**Required:** “Given the renamed practice and its old path, replace that path
-in the catalog and its callers. Verify that every changed link resolves.”
-
-The input, edit, and observable completion are explicit without an empty
-heading for each sentence.
-
 ## Prohibited actions
 
 - Do not use authored HTML, including inline HTML and comments.
@@ -128,10 +104,6 @@ heading for each sentence.
 - Do not add empty boilerplate sections.
 - Do not change policy under the guise of a presentation-only rewrite.
 - Do not treat a title or empty structural element as substantive content.
-
-Literal HTML examples belong in code or escaped text.
-Externally managed file markers are integration artifacts, not authored guidance.
-Preserve their required syntax when editing surrounding prose.
 
 ### Presentation without policy changes
 
@@ -163,10 +135,3 @@ mechanism for hiding instructions or rendering a prohibited structure.
 
 Mechanical checks can detect syntax defects.
 Semantic review must establish that the chosen structure fits the content.
-
-- **Prohibited review:** “The document has headings, so its structure passes.”
-
-- **Required review:** “The import section uses ordered actions, its failure
-  branch stays beneath decoding, and the updated catalog targets the new heading.”
-
-Heading presence is a syntax fact; useful grouping requires semantic review.

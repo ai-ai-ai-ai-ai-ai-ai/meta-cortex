@@ -1,8 +1,12 @@
 # Focused Rules and Examples
 
-Every substantive rule or explanatory section must teach one decision and
-show a prohibited/required pair. Use code for programming decisions, prose
-for writing decisions, and concrete scenarios for behavior or procedures.
+Teach concrete decisions. Add an example when it clarifies a non-obvious choice,
+exception, or boundary; omit examples that merely repeat an instruction.
+A prohibited/required pair is useful when comparing alternatives, not as a quota
+for every section. Subject requirements still apply: [Code Practice Writing](../../code-practice-writing/SKILL.md)
+requires programming code pairs and owns their validation.
+Use code for programming decisions, prose for writing decisions, and concrete
+scenarios for behavior or procedures.
 Local Git and verification architecture use the exception under [Demonstrate the difference](#demonstrate-the-difference).
 
 ## Required actions
@@ -11,9 +15,8 @@ Local Git and verification architecture use the exception under [Demonstrate the
 
 - Name the condition where the instruction applies and the action it requires.
 - Explain the consequence of the prohibited choice.
-- Split independent decisions into separate sections, each with its own pair.
-- Let one pair cover several statements only when all explain the same decision
-  and the example demonstrates each of them.
+- Separate independent decisions; add sections only when they aid navigation.
+- Let one example cover related statements when it demonstrates their decision.
 
 - **Prohibited:** “Handle failures properly and keep documentation clean.”
 
@@ -23,7 +26,7 @@ This combines two subjects without specifying an action for either.
   Do not describe it as passing.”
 
 The condition and required report are explicit. Documentation layout belongs
-in a separate section with its own example.
+in its own topic; an example is needed only if it clarifies that decision.
 
 ### Demonstrate the difference
 
@@ -36,7 +39,8 @@ This exception covers their role and handoff descriptions, not programming rules
 or unrelated delivery contracts. For example, a statement that each writer owns
 a worktree can stand alone; a Rust input-validation rule still needs its code pair.
 
-- Label the alternatives **Prohibited** and **Required**.
+- When contrasting alternatives, label them **Prohibited** and **Required**.
+  Retain pairs required by subject guidance; do not add them solely for symmetry.
 - Keep the same situation and intended outcome in both alternatives.
 - Show the actual wording, code, or sequence affected by the decision.
 - Place the pair beside the rule and explain why the required version works.
@@ -62,14 +66,14 @@ does not establish that its behavior was tested.
 - Skill knowledge graphs use brief decision and comparison cues under the
   [knowledge-graph rules](knowledge-graphs.md). Full requirements, exceptions,
   and examples stay in the authoritative source practice.
-- Require a pair when a catalog entry introduces a new rule; move that rule
-  into its owning practice instead of expanding the catalog.
+- Move a new rule from its catalog entry into the owning practice. Apply that
+  subject's example requirements there instead of expanding the catalog.
 
 **Prohibited catalog entry:** “Execution reports: never say an example passes
 unless it was run. Bad: ‘passes.’ Good: ‘execution unverified.’”
 
 **Required catalog entry:** “Execution reports: evidence labels and unverified
-examples,” linked to the owning practice containing the rule and pair.
+examples,” linked to the owning practice containing the rule and any example.
 
 The team catalog identifies what to load. The practice supplies the explanation.
 A skill graph can link related rules with short comparison cues.
@@ -91,13 +95,11 @@ than a stylistic preference between two vague phrases.
 
 ## Validation
 
+Check each section's decision and preserve the subject's example requirements.
 For local Git and verification architecture, check ownership, expected results,
-and agent discretion instead of pairs.
-For other subjects, apply the checks below.
-
-For each substantive section, identify its decision and its pair. Verify that
-the pair demonstrates every requirement in that section and that the required
-example complies with them.
+and agent discretion. Where examples are present, verify that they clarify the
+actual decision and comply with its requirements. Remove decorative repetition;
+do not treat the absence of a generic pair as a defect.
 
 - **Prohibited review:** “Every section has an example, so the document is clear.”
 

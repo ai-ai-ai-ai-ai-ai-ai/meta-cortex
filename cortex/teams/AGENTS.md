@@ -1,9 +1,7 @@
 # Teams
 
-Agents are part of Meta-Cortex. They carry out the framework's development work
-in the consuming project. Each role defines what it owns, who it works with,
-and what results it returns. Skills provide the reusable expertise an agent
-applies to its assignment.
+Roles define ownership and expected results in the consuming project. Skills
+supply the expertise for each assignment.
 
 - The [Gizmo team](gizmo-team/AGENTS.md) contains Gizmo Prime, which owns feature coordination and direct specialist assignments.
 - Agents in the [development team](dev-team/AGENTS.md), [security team](security-team/AGENTS.md), and [SRE team](sre-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
@@ -46,18 +44,12 @@ Use ordinary host tools for launches and notifications and the
 role or recording an assignment does not launch an agent. Report unavailable
 host execution as a blocker.
 
-**Prohibited:** a worker bypasses Gizmo Prime to ask a peer for repairs, or claims
-that reading the peer's instructions launched it.
-
-**Required:** report the failure and evidence to Gizmo Prime, which decides and
-launches the needed assignment through the host.
-
 ## Working model
 
 - Keep each team's catalog complete: every agent has responsibilities, assignment
   boundaries, a role link, readiness, and any cataloged verifier relationship.
-  Gizmo Prime selects from these summaries and investigates relevant roles further
-  when needed.
+  Gizmo Prime selects from these summaries and investigates relevant roles as
+  needed, without preloading every worker's skill collection.
 - Each agent's `AGENTS.md` links its skills; each `SKILL.md` owns its instructions
   and prerequisites. Assigned agents load those skills themselves without
   restarting root routing. Reading another skill does not assign its role.
@@ -67,13 +59,6 @@ launches the needed assignment through the host.
 - Documentation and skill organization belong to the tech writer under its
   [organization rules](ai-team/agents/tech-writer/AGENTS.md#skill-organization).
   Subject owners retain authority over programming and security requirements.
-
-**Prohibited:** preload every worker's skill collection to choose one role,
-or edit the installed library to fix the consuming application's component.
-
-**Required:** select the TypeScript role from its team catalog, supply the
-application scope and both roots, and let that worker load its skills and edit
-its assigned project worktree.
 
 ## Assignment context
 
@@ -142,12 +127,3 @@ instructions; this handoff does not select or duplicate skill contents.
   and the verifier's role and skill. The shared
   [review contract](gizmo-team/agents/gizmo-prime/skills/agent-verification/SKILL.md)
   leaves further context selection and investigation to the reviewer.
-
-**Prohibited:** launch a TypeScript agent with only “implement this component”
-and its role path, assuming it already knows the development team’s programming
-rules and circuit breaker.
-
-**Required:** supply the project and library roots, global and development-team
-circuit breakers, team instructions, documentation index and relevant programming
-documents, and the TypeScript role. Require the agent to read them in the order
-above before editing the component.
