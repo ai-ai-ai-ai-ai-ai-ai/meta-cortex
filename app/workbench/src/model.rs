@@ -295,7 +295,7 @@ impl Task {
     pub fn ready(mut self, input: WorkerAt<'_>) -> Result<Self, LedgerError> {
         self.worker(WorkerAt {
             worker_id: input.worker_id,
-            agent: input.agent.into(),
+            agent: input.agent,
             attempt: input.attempt,
             now: input.now,
         })?;

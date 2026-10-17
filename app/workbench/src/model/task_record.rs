@@ -230,7 +230,9 @@ mod tests {
     use crate::values::{
         Attempt, BranchName, CommitId, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
-    use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV3};
+    use crate::versions::{
+        RecordVersion, TaskRecordVersion, TaskRecordVersionV2, TaskRecordVersionV3,
+    };
     use std::path::PathBuf;
 
     struct Scenario;
@@ -449,7 +451,7 @@ mod tests {
         };
         assert!(serde_json::from_str::<Task>(&serde_json::to_string(&retained)?).is_err());
         let retained = TaskV2 {
-            version: crate::versions::TaskRecordVersionV2::V2,
+            version: TaskRecordVersionV2::V2,
             common: retained.common,
             ownership: retained.ownership,
             workspace: retained.workspace,
