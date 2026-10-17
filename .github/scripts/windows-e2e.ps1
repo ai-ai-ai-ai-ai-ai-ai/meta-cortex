@@ -167,15 +167,15 @@ class WindowsInstallationScenario {
         $identityPath = Join-Path $nativeProject '.meta-cortex\repository-id'
         $identity = Get-Content -LiteralPath $identityPath -Raw
         $created = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Create'; arguments = @{
-            feature = 'native-windows'; task = 'persisted-task'; actor = @{ team = 'Gizmo'; role = 'Gizmo' }
+            feature = 'native-windows'; task = 'persisted-task'; actor = @{ team = 'Gizmo'; role = 'GizmoPrime' }
             objective = 'Persist task through separate native CLI processes'; acceptance = @('Reopen recorded progress and history')
             dependencies = @(); workspace = @{ kind = 'read_only' }
             progress = @{ summary = 'Created on Windows'; findings = @(); next_steps = @(); checks = @(); extensions = @{} }
         } } })
         $assigned = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Assign'; arguments = @{
             feature = 'native-windows'; task = 'persisted-task'; expected_revision = $created.value.common.revision
-            actor = @{ team = 'Gizmo'; role = 'Gizmo' }
-            assignment = @{ agent = @{ team = 'Sre'; role = 'CicdAgent' }; reports_to = @{ kind = 'Gizmo'; coordinator = 'Gizmo' } }
+            actor = @{ team = 'Gizmo'; role = 'GizmoPrime' }
+            assignment = @{ agent = @{ team = 'Sre'; role = 'CicdAgent' }; reports_to = @{ kind = 'Gizmo'; coordinator = 'GizmoPrime' } }
         } } })
         $workerId = [guid]::NewGuid().ToString()
         $claimed = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Claim'; arguments = @{
@@ -210,6 +210,10 @@ class WindowsInstallationScenario {
         switch ($linked.value.task.state.kind) {
             'active' { }
             default { throw 'Linked worktree did not retain the claimed task state' }
+        }
+        switch ($linked.value.task.ownership.assignment.reports_to.coordinator) {
+            'GizmoPrime' { }
+            default { throw 'Linked worktree did not retain the direct Gizmo Prime reporting line' }
         }
         $history = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'History'; arguments = @{ feature = 'native-windows'; task = 'persisted-task' } } })
         switch (@($history.value).Count) {
@@ -287,7 +291,7 @@ class WindowsInstallationScenario {
             default { throw 'Second feature inherited tasks from the first feature' }
         }
         $otherTask = $scenario.Invoke(@{ group = 'Task'; command = @{ name = 'Create'; arguments = @{
-            feature = 'native-windows-other'; task = 'persisted-task'; actor = @{ team = 'Gizmo'; role = 'Gizmo' }
+            feature = 'native-windows-other'; task = 'persisted-task'; actor = @{ team = 'Gizmo'; role = 'GizmoPrime' }
             objective = 'Reuse a task ID in a separate feature'; acceptance = @('Keep feature tasks isolated')
             dependencies = @(); workspace = @{ kind = 'read_only' }
             progress = @{ summary = 'Separate feature progress'; findings = @(); next_steps = @(); checks = @(); extensions = @{} }
