@@ -1,17 +1,17 @@
 ---
 name: agent-verification
-description: Review committed work using agent judgment and return evidence, findings, and a clear conclusion to Gizmo.
+description: Review committed work using agent judgment and return evidence, findings, and a clear conclusion to Prime.
 ---
 
 # Agent Verification
 
-The verifier owns read-only assessment of the assigned result. Gizmo owns repair
+The verifier owns read-only assessment of the assigned result. Prime owns repair
 assignments and integration decisions under the
 [verification handoff](../../../../docs/agent-verification.md).
 
 ## Review scope
 
-- Establish the intended outcome, permitted scope, exact revision, and comparison base with Gizmo.
+- Establish the intended outcome, permitted scope, exact revision, and comparison base with Prime.
 - Assess the complete task change and its affected behavior, including relevant callers and contracts.
 - For work spanning several commits, cover the task from its fixed base to the final revision; a root commit has no base.
 - Apply the project's requirements and applicable development rules. Review discretion does not waive them.
@@ -22,12 +22,12 @@ assignments and integration decisions under the
 - Choose the investigation, tools, depth, and context appropriate to the change and its risks.
 - Use catalogs as navigation when helpful. Read canonical rules, skills, specifications, code, tests, and prior discussion as needed. Reading a worker skill does not transfer its implementation role to the reviewer.
 - Form conclusions from inspected evidence; a worker's explanation or passing test alone does not establish correctness.
-- Resolve missing context through available sources; ask Gizmo when a material requirement or required input remains unavailable or ambiguous.
+- Resolve missing context through available sources; ask Prime when a material requirement or required input remains unavailable or ambiguous.
 - On repairs, verify the earlier findings and assess the resulting change for regressions, choosing the re-review depth from its impact.
 
 ## Expected result
 
-Return a concise assessment to Gizmo identifying:
+Return a concise assessment to Prime identifying:
 
 - The reviewed revision and scope, with enough context to understand what was examined.
 - The conclusion: `pass`, `changes_required`, or `blocked`, supported by the review evidence.

@@ -1,7 +1,7 @@
 # Kubernetes Specialist
 
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+rules for your assigned place in the Prime hierarchy.
 
 Own assigned Kubernetes manifests, workload configuration, cluster
 execution-boundary checks, and cloud-native operations. Load [Kubernetes skill](skills/kubernetes-skill/SKILL.md)
@@ -24,5 +24,5 @@ global policy supplied with the assignment.
 
 Keep workload execution inside the declared Kubernetes boundary. Return changed
 files, manifest or schema validation evidence, and unresolved dependencies to
-Team Gizmo. Provider, cluster, and delivery choices come from the consuming
+Gizmo Prime. Provider, cluster, and delivery choices come from the consuming
 project.

@@ -2,7 +2,7 @@
 
 Load only for active Claude Code mechanics. Shared
 [agent configuration](agent-configuration.md) owns selection, capacity, and evidence;
-[User Input](../agents/gizmo/skills/user-input/SKILL.md) owns validation.
+[User Input](../agents/gizmo-prime/skills/user-input/SKILL.md) owns validation.
 Official sources checked 2026-10-16; no live Claude launch was tested.
 
 ## Delegation and context
@@ -20,10 +20,10 @@ launcher report to main. Preserve coordinator reporting; otherwise report the bl
 owns those distinctions. Native [agent teams](https://code.claude.com/docs/en/agent-teams#limitations)
 allow no nested teams; they do not implement Cortex's hierarchy by themselves.
 
-- **Prohibited:** assign every coordinator a fork and assume further forks work.
+- **Prohibited:** assign Prime a fork and assume it can launch worker forks.
 
-- **Required:** choose eligible nested subagents with actual `Agent` access for
-  Prime and Team Gizmo, within the effective depth and shared capacity ceiling.
+- **Required:** choose an eligible Prime subagent with actual `Agent` access so
+  it can launch specialists directly within the effective depth and shared capacity ceiling.
 
 ## Assignment settings
 

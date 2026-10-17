@@ -1,7 +1,7 @@
 # Gizmo Team
 
-Own feature coordination and assignments across teams. Both coordinators run as
-subagents, with execution settings selected for their current assignments.
+Own feature coordination and assignments across teams through Gizmo Prime.
+Prime runs as the host's coordinator subagent and manages specialists directly.
 
 ## Knowledge
 
@@ -11,21 +11,22 @@ Read the [documentation index](docs/index.yaml) and apply the shared
 ## Agent catalog
 
 - **[Gizmo Prime](agents/gizmo-prime/AGENTS.md)**
-  - Owns the overall outcome and acceptance criteria.
-  - Launches Team Gizmo and reviews the combined result.
-- **[Team Gizmo](agents/gizmo/AGENTS.md)**
-  - Selects agents from team catalogs and coordinates bounded assignments.
-  - Sequences dependencies and returns evidence to Gizmo Prime.
+  - Owns feature scope, acceptance criteria, delivery decisions, and final acceptance.
+  - Selects and launches specialists and independent verifiers directly.
+  - Bounds assignments, schedules dependencies, and evaluates results and repairs.
+  - Delegates mechanical execution and reports the combined outcome to the host.
 
 ## Assignment boundaries
 
-Coordinators assign work and resolve cross-team dependencies. Subject agents
-own implementation and documentation. Skills remain with their owning agents;
+Prime assigns work and resolves cross-team dependencies. Subject agents own
+technical execution and documentation. Skills remain with their owning agents;
 team documentation belongs in `docs/` when needed.
 
-**Prohibited:** a coordinator takes over an implementation because it assigned it.
+**Prohibited:** insert another coordinator to dispatch specialists, or let Prime
+take over a worker's implementation or mechanical checks.
 
-**Required:** return the correction to its owner and assess the resulting evidence.
+**Required:** assign the correction directly to its owner and assess the resulting
+evidence. Use additional specialists only for work the feature needs.
 
 ## Team circuit breaker
 

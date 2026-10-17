@@ -72,8 +72,8 @@ required checks and reviews before an authorized merge.
 
 ### Preserve the user's feature worktree
 
-The user owns the feature worktree's lifecycle. Carry its path through Prime,
-Team Gizmo, and delivery assignments. Reuse a supplied feature worktree; its
+The user owns the feature worktree's lifecycle. Carry its path through Prime
+and every delivery assignment. Reuse a supplied feature worktree; its
 presence does not transfer lifecycle ownership to an agent.
 
 - Gizmo Prime must not delete or archive the feature worktree, or assign another
@@ -85,7 +85,7 @@ presence does not transfer lifecycle ownership to an agent.
   A user-provided workspace never becomes disposable merely because its work
   is finished.
 - Return the feature branch and worktree path to the user. The user manages its
-  removal outside the Gizmo delivery workflow.
+  removal outside the Prime delivery workflow.
 
 **Prohibited:** after a PR merges, Prime asks integration to remove the user's
 feature worktree or invokes a host archive action that removes its checkout.
@@ -96,11 +96,11 @@ completed feature with its original worktree still available to the user.
 ### Preserve work ownership
 
 Local integration, PR management, and CI execution have distinct owners. Pass
-ordinary branch, revision, PR, and run information to the assigning Gizmo through
-the host. Gizmo decides the next assignment and passes relevant evidence; these are
+ordinary branch, revision, PR, and run information to the assigning Prime through
+the host. Prime decides the next assignment and passes relevant evidence; these are
 work evidence, not credentials or an authorization protocol.
 
-- Gizmo owns local integration and can delegate workspace preparation and integration.
+- Prime decides integration readiness and delegates workspace preparation and integration.
 - The PR owner manages the published branch and PR lifecycle.
 - CI execution follows the SRE-owned project execution guidance when needed.
 - Product fixes belong to their development owner; pipeline fixes belong to SRE.
@@ -109,6 +109,6 @@ work evidence, not credentials or an authorization protocol.
 manager loop merely to move an integrated feature into a PR.
 
 **Required:** the integration agent reports the feature branch and check results
-to Team Gizmo. Under `create_pr`, Gizmo supplies that evidence to the PR agent,
-which reports the outcome and remaining work back to Gizmo. Under `local_only`,
-Gizmo returns the local outcome to Prime.
+to Gizmo Prime. Under `create_pr`, Prime supplies that evidence to the PR agent,
+which reports the outcome and remaining work back to Prime. Under `local_only`,
+Prime evaluates the local outcome and reports it to the host.

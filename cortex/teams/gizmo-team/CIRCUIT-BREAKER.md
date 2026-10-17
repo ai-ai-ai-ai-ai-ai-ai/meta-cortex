@@ -7,13 +7,13 @@ by an agent from another team.
 
 ## Request focused reviews
 
-Report a concrete dispute to the assigning Gizmo with the proposal, requirement,
-and suspected violation. Gizmo decides whether to assign a focused second review. Do not run a permanent observer or intercept every
+Report a concrete dispute to the assigning Prime with the proposal, requirement,
+and suspected violation. Prime decides whether to assign a focused second review. Do not run a permanent observer or intercept every
 agent message to enforce this document.
 
 **Prohibited:** launch an observer that must approve every worker's tool call.
 
-**Required:** report the disputed handoff receipt system to Gizmo. Gizmo decides
+**Required:** report the disputed handoff receipt system to Prime. Prime decides
 whether a reviewer should assess its necessity for the stated requirement.
 Continue unrelated assigned work.
 

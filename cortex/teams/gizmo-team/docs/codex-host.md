@@ -2,7 +2,7 @@
 
 Load only for the active Codex host. Shared
 [agent configuration](agent-configuration.md) owns selection, capacity, and evidence;
-[User Input](../agents/gizmo/skills/user-input/SKILL.md) owns collection and validation.
+[User Input](../agents/gizmo-prime/skills/user-input/SKILL.md) owns collection and validation.
 Official sources checked 2026-10-16; tool schemas and runtime capabilities vary
 by client. These mappings do not establish live model or tier confirmation.
 

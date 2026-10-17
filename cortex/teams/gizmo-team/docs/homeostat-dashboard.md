@@ -236,7 +236,7 @@ are not rerun. Checkpoint and integration details refer to their history events
 for the recording actor. Event snapshots retain their historical revision while
 current views refresh. Full-feature state counts summarize recorded task states
 in the split feature preview. A feature's deliverables are its non-cancelled tasks that no
-other recorded task depends on, excluding Gizmo coordination tasks; its latest
+other recorded task depends on, excluding Prime coordination tasks; its latest
 delivery is the most recently updated integrated or completed task. A feature's
 pull requests are GitHub pull request URLs found in its tasks' current progress
 extensions, most often recorded first; no pull request field is stored. Feature
@@ -295,7 +295,7 @@ entries with `feature`, `task`, `sequence`, `provenance`, and the recorded
 belong to the storage envelope and observation result.
 
 - A successful mutation appends its event in the same `IMMEDIATE` transaction
-  as its task change. Database schema version `6` assigns its sequence through
+  as its task change. Database schema version `7` assigns its sequence through
   `AUTOINCREMENT`; no separate counter service or read-side increment exists.
 - New entries have `CommittedAppend` provenance. Their sequence orders committed
   appends in this feature database, independently of worker clocks and task revisions.

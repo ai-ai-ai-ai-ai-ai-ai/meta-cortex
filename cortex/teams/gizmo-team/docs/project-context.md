@@ -1,6 +1,6 @@
 # Consuming Project Context
 
-Every host agent, Gizmo coordinator, worker, and verifier loads the consuming
+Every host agent, Gizmo Prime, worker, and verifier loads the consuming
 project's operational context before planning or doing assigned work.
 
 ## Required actions
@@ -66,7 +66,7 @@ is absent, record that absence and use other applicable service context.
    documents and handoffs when paths, revisions, or scope change. Report proposed
    scope changes through the existing coordination hierarchy.
 4. Verifiers apply the project's instructions and choose additional context under
-   the [shared review contract](../agents/gizmo/skills/agent-verification/SKILL.md).
+   the [shared review contract](../agents/gizmo-prime/skills/agent-verification/SKILL.md).
    Catalogs help locate sources; reviewers may read canonical practice Markdown,
    skills, and relevant implementation context directly.
 

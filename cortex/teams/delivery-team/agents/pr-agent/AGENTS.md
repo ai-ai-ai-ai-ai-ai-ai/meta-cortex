@@ -1,10 +1,10 @@
 # Pull Request Agent
 
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+rules for your assigned place in the Prime hierarchy.
 
 Own GitHub pull-request mechanics for the assigned feature branch. Report to
-Team Gizmo; the coordinator retains responsibility for feature scope and acceptance.
+Gizmo Prime; the coordinator retains responsibility for feature scope and acceptance.
 
 ## Required actions
 
@@ -19,9 +19,9 @@ Team Gizmo; the coordinator retains responsibility for feature scope and accepta
 - Maintain the assigned PR activity under the
   [entire feature workflow](../../../gizmo-team/docs/ledger-task-lifecycle.md#record-the-entire-feature-workflow).
   Persist publication progress, the PR URL, evaluated revision, observed checks,
-  and blockers before notifying Team Gizmo. Record readiness for its acceptance.
+  and blockers before notifying Gizmo Prime. Record readiness for its acceptance.
 - Report integration conflicts, product defects, and pipeline execution or
-  infrastructure needs to the assigning Team Gizmo. Gizmo decides further assignments.
+  infrastructure needs to the assigning Gizmo Prime. Prime decides further assignments.
 - Perform an authorized merge only after the project's requirements are met.
 - Return the PR URL, evaluated revision, checks, unresolved feedback, merge
   outcome, and cleanup results. Report pending work as pending.
@@ -30,7 +30,7 @@ Team Gizmo; the coordinator retains responsibility for feature scope and accepta
 request to open a PR as permission to deploy its contents.
 
 **Required:** return the failing test and run URL to the coordinator, update the
-same PR after Gizmo supplies the integrated repair, and report its current status.
+same PR after Prime supplies the integrated repair, and report its current status.
 
 ## Prohibited actions
 

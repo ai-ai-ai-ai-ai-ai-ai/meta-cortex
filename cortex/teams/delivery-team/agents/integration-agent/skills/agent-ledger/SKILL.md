@@ -6,7 +6,7 @@ description: Initialize a feature's embedded Turso ledger and record verified lo
 # Feature Ledger Integration
 
 Apply the shared [agent ledger protocol](../../../../../gizmo-team/docs/agent-ledger.md).
-Team Gizmo owns assignment and recovery decisions. This skill owns the delivery
+Gizmo Prime owns assignment and recovery decisions. This skill owns the delivery
 agent's use of the ledger alongside its local feature architecture.
 Use the [coordination transitions](../../../../../gizmo-team/docs/coordination-state-machine.md)
 to distinguish a setup milestone from task readiness and delivery.
@@ -14,11 +14,11 @@ to distinguish a setup milestone from task readiness and delivery.
 ## Required actions
 
 1. Discover the installed executable with `meta-cortex list`. If unavailable or
-   incompatible, report the actual failure to Gizmo before launching untracked work.
-2. After preparing the feature workspace, initialize `Feature / Initialize` using Gizmo's
+   incompatible, report the actual failure to Prime before launching untracked work.
+2. After preparing the feature workspace, initialize `Feature / Initialize` using Prime's
    stable feature ID, objective, branch, and absolute worktree path.
 3. Return the ledger path and feature ID with the task branch/worktree mappings.
-   Team Gizmo records and assigns every participating role's activity through the
+   Gizmo Prime records and assigns every participating role's activity through the
    [entire feature workflow](../../../../../gizmo-team/docs/ledger-task-lifecycle.md#record-the-entire-feature-workflow).
    Claim the integration activity once assigned. Record workspace preparation,
    merge results, combined checks, conflicts, and cleanup on that activity.
@@ -30,9 +30,9 @@ to distinguish a setup milestone from task readiness and delivery.
    This records the owning task's integration evidence for the canonical
    [Feature log projection](../../../../../gizmo-team/docs/homeostat-dashboard.md#feature-log).
 6. Preserve the ledger when cleaning completed worker worktrees. Report failures
-   to Team Gizmo; it decides whether to requeue work or assign a repair.
+   to Gizmo Prime; it decides whether to requeue work or assign a repair.
 7. Record readiness on the integration activity before the completion
-   notification. Team Gizmo records its acceptance with `action.kind: complete`.
+   notification. Gizmo Prime records its acceptance with `action.kind: complete`.
    An integration event on a worker task remains separate code-integration evidence.
 
 **Prohibited:** merge code on an expired heartbeat alone or delete a feature's

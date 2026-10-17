@@ -89,7 +89,7 @@ the implementation changes. Finding the root cause alone is not completion.
      behavioral reason.
    - Verify the regression set and applicable suite pass with the fix.
    - Record the tested revisions, run references, and observed results.
-   - Report unavailable before/after execution capability to the assigning Gizmo.
+   - Report unavailable before/after execution capability to the assigning Prime.
    - Keep missing evidence explicit rather than claiming verified protection.
 
 ## Prohibited actions
