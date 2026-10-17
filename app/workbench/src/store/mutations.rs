@@ -390,6 +390,18 @@ mod tests {
         workspace: Workspace,
         state: TaskState,
     }
+    impl From<Task> for RetainedTask {
+        fn from(task: Task) -> Self {
+            Self {
+                version: TaskRecordVersionV3::V3,
+                worker: task.worker,
+                common: task.common,
+                ownership: task.ownership,
+                workspace: task.workspace,
+                state: task.state,
+            }
+        }
+    }
     #[derive(Serialize)]
     struct RetainedEvent {
         version: EventVersionV2,
@@ -477,6 +489,15 @@ mod tests {
                     progress: Self::progress(),
                 })
                 .await?;
+            let created = RetainedEvent {
+                version: EventVersionV2::V2,
+                outcomes: vec![],
+                kind: EventKind::Created,
+                actor: prime.into(),
+                note: Note::from("Historical task created".to_owned()),
+                task: task.clone().into(),
+            };
+            created.persist(&ledger).await?;
             let mut task = ledger
                 .claim(ClaimTask {
                     worker_id: WorkerId::EXAMPLE,
@@ -508,20 +529,16 @@ mod tests {
                 version: EventVersionV2::V2,
                 outcomes: vec![],
                 kind: EventKind::Claimed,
-                actor: RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo),
-                note: Note::from("Historical coordinator".to_owned()),
+                actor: recorded,
+                note: Note::from("Historical assignment claimed".to_owned()),
                 task: RetainedTask {
-                    version: TaskRecordVersionV3::V3,
-                    worker: task.worker,
-                    common: task.common,
                     ownership: TaskOwnership::Assigned {
                         assignment: RecordedTaskAssignment {
                             agent: recorded,
                             reports_to,
                         },
                     },
-                    workspace: task.workspace,
-                    state: task.state,
+                    ..task.into()
                 },
             };
             legacy.persist(&ledger).await?;
@@ -542,6 +559,7 @@ mod tests {
             drop(ledger);
             let mut ledger = self.workbench()?.open(feature.clone()).await?;
             assert_eq!(ledger.info().storage_version, StorageVersion::DirectPrimeV7);
+            created.require_preserved(&ledger).await?;
             legacy.require_preserved(&ledger).await?;
             let historical = ledger.task(&legacy.task.common.id).await?.task;
             assert_eq!(historical.ownership, legacy.task.ownership);
