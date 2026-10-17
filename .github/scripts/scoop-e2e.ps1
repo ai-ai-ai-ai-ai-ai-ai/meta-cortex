@@ -6,7 +6,60 @@ $manifest = Get-Content "$env:GITHUB_WORKSPACE\bucket\meta-cortex.json" -Raw | C
 $originalPath = $env:PATH
 $originalHome = $env:META_CORTEX_HOME
 $originalScoop = $env:SCOOP
+$originalWrapperCache = $env:META_CORTEX_WRAPPER_CACHE
 try {
+  $evidence = Join-Path $env:RUNNER_TEMP 'meta cortex Windows E2E\evidence'
+  $releaseZipUrl = $manifest.architecture.'64bit'.url
+  $expectedZipUrl = "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/download/v$($manifest.version)/meta-cortex-x86_64-pc-windows-msvc.zip"
+  if ($releaseZipUrl -ne $expectedZipUrl) { throw 'Scoop manifest does not select the versioned public Windows ZIP' }
+  $releaseZipPath = Join-Path $env:RUNNER_TEMP 'meta-cortex-public-release.zip'
+  Invoke-WebRequest -Uri $releaseZipUrl -OutFile $releaseZipPath
+  $releaseZipHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $releaseZipPath).Hash.ToLowerInvariant()
+  $zipEvidence = @("URL: $releaseZipUrl", "Expected SHA256: $($manifest.architecture.'64bit'.hash)", "Actual SHA256: $releaseZipHash")
+  $zipEvidence | Set-Content (Join-Path $evidence 'public-windows-zip-sha256.txt') -Encoding utf8
+  Write-Host ($zipEvidence -join "`n")
+  if ($releaseZipHash -ne $manifest.architecture.'64bit'.hash) { throw 'Public Windows ZIP SHA256 differs from the Scoop manifest' }
+
+  # Exercise the unchanged launcher against its real published installer.
+  $wrapperPinPath = Join-Path $env:GITHUB_WORKSPACE '.meta-cortex-version'
+  $wrapperPin = (Get-Content -LiteralPath $wrapperPinPath -Raw).Trim()
+  if ($wrapperPin -ne $manifest.version) { throw 'Published wrapper pin differs from the Scoop release' }
+  $wrapperProject = Join-Path $env:RUNNER_TEMP 'Public wrapper project with spaces'
+  if (Test-Path -LiteralPath $wrapperProject) { throw 'Expected a fresh public wrapper project' }
+  New-Item -ItemType Directory -Path $wrapperProject | Out-Null
+  $wrapperScript = Join-Path $wrapperProject 'meta-cortexw.ps1'
+  Copy-Item -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'meta-cortexw.ps1') -Destination $wrapperScript
+  Copy-Item -LiteralPath $wrapperPinPath -Destination (Join-Path $wrapperProject '.meta-cortex-version')
+  $env:META_CORTEX_WRAPPER_CACHE = Join-Path $wrapperProject 'cache with spaces'
+  if (Test-Path -LiteralPath $env:META_CORTEX_WRAPPER_CACHE) { throw 'Expected an empty public wrapper cache' }
+  $cachedBinary = Join-Path (Join-Path $env:META_CORTEX_WRAPPER_CACHE $wrapperPin) 'meta-cortex.exe'
+  # The wrapper calls exit, so run each invocation in its own native process.
+  $coldOutput = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $wrapperScript --version)
+  $coldExitCode = $LASTEXITCODE
+  $coldOutput | Set-Content (Join-Path $evidence 'public-wrapper-cold.txt') -Encoding utf8
+  Write-Host ($coldOutput -join "`n")
+  if ($coldExitCode -ne 0 -or ($coldOutput | Select-Object -Last 1) -ne "meta-cortex $wrapperPin") { throw 'Public wrapper cold bootstrap did not run the pinned release' }
+  if (-not (Test-Path -LiteralPath $cachedBinary -PathType Leaf)) { throw 'Public wrapper cold bootstrap did not populate its cache' }
+  $cachedHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $cachedBinary).Hash
+  $cachedWriteTime = (Get-Item -LiteralPath $cachedBinary).LastWriteTimeUtc
+  $warmOutput = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $wrapperScript --version)
+  $warmExitCode = $LASTEXITCODE
+  $warmOutput | Set-Content (Join-Path $evidence 'public-wrapper-cached.txt') -Encoding utf8
+  Write-Host ($warmOutput -join "`n")
+  if ($warmExitCode -ne 0 -or $warmOutput.Count -ne 1 -or $warmOutput[0] -ne "meta-cortex $wrapperPin") { throw 'Public wrapper cached invocation did not run the pinned release' }
+  if ((Get-FileHash -Algorithm SHA256 -LiteralPath $cachedBinary).Hash -ne $cachedHash -or (Get-Item -LiteralPath $cachedBinary).LastWriteTimeUtc -ne $cachedWriteTime) { throw 'Public wrapper cached invocation replaced its executable' }
+  $wrapperEvidence = @(
+    "Pin: $wrapperPin"
+    "Installer: https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/download/v$wrapperPin/meta-cortex-installer.ps1"
+    "Cached executable: $cachedBinary"
+    "SHA256: $cachedHash"
+    "Unchanged last write time UTC: $($cachedWriteTime.ToString('o'))"
+    "Cold exit code: $coldExitCode"
+    "Cached exit code: $warmExitCode"
+  )
+  $wrapperEvidence | Set-Content (Join-Path $evidence 'public-wrapper-bootstrap.txt') -Encoding utf8
+  Write-Host ($wrapperEvidence -join "`n")
+
   $env:SCOOP = Join-Path $env:RUNNER_TEMP 'Scoop package validation'
   $bootstrap = Join-Path $env:RUNNER_TEMP 'install-scoop.ps1'
   Invoke-WebRequest https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1 -OutFile $bootstrap
@@ -31,7 +84,6 @@ try {
   if (-not $shim.StartsWith("$env:SCOOP\shims\", [StringComparison]::OrdinalIgnoreCase)) { throw 'Command discovery did not select the Scoop shim' }
   $version = & $shim --version
   if ($LASTEXITCODE -ne 0 -or $version -ne "meta-cortex $($manifest.version)") { throw 'Scoop shim reports the wrong executable version' }
-  $evidence = Join-Path $env:RUNNER_TEMP 'meta cortex Windows E2E\evidence'
   $listing = Invoke-Scoop list meta-cortex
   if ($LASTEXITCODE -ne 0) { throw 'Scoop installed-package listing failed' }
   $listing | Set-Content (Join-Path $evidence 'scoop-list.txt') -Encoding utf8
@@ -135,4 +187,5 @@ try {
   $env:PATH = $originalPath
   $env:META_CORTEX_HOME = $originalHome
   $env:SCOOP = $originalScoop
+  $env:META_CORTEX_WRAPPER_CACHE = $originalWrapperCache
 }

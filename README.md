@@ -19,7 +19,7 @@ project.
 Commit `meta-cortexw`, `meta-cortexw.ps1`, and `.meta-cortex-version` in your
 Git repository. The scripts bootstrap the exact executable version in the pin
 file, so collaborators can use a fresh clone without installing a global command.
-The current pin is `0.20.0`; it has no `v` prefix and does not select `latest`.
+The current pin is `0.21.0`; it has no `v` prefix and does not select `latest`.
 The wrapper accepts stable numeric release versions from `0.15.0` onward.
 
 1. Obtain both launcher scripts from a fixed source revision that contains them.
@@ -31,7 +31,7 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    ```sh
    source_checkout=/path/to/meta-cortex-source
    cp "$source_checkout/meta-cortexw" "$source_checkout/meta-cortexw.ps1" .
-   printf '%s\n' '0.20.0' > .meta-cortex-version
+   printf '%s\n' '0.21.0' > .meta-cortex-version
    chmod +x meta-cortexw
    ```
 
@@ -42,7 +42,7 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    $sourceCheckout = 'C:\path\to\meta-cortex-source'
    Copy-Item (Join-Path $sourceCheckout 'meta-cortexw') .
    Copy-Item (Join-Path $sourceCheckout 'meta-cortexw.ps1') .
-   Set-Content -Encoding ascii .meta-cortex-version '0.20.0'
+   Set-Content -Encoding ascii .meta-cortex-version '0.21.0'
    ```
 
    To download the same source files directly:
@@ -52,7 +52,7 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    source_url="https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$source_revision"
    curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw" -o meta-cortexw
    curl --proto '=https' --tlsv1.2 -fLsS "$source_url/meta-cortexw.ps1" -o meta-cortexw.ps1
-   printf '%s\n' '0.20.0' > .meta-cortex-version
+   printf '%s\n' '0.21.0' > .meta-cortex-version
    chmod +x meta-cortexw
    ```
 
@@ -63,7 +63,7 @@ The wrapper accepts stable numeric release versions from `0.15.0` onward.
    $sourceUrl = "https://raw.githubusercontent.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/$sourceRevision"
    Invoke-WebRequest "$sourceUrl/meta-cortexw" -OutFile meta-cortexw
    Invoke-WebRequest "$sourceUrl/meta-cortexw.ps1" -OutFile meta-cortexw.ps1
-   Set-Content -Encoding ascii .meta-cortex-version '0.20.0'
+   Set-Content -Encoding ascii .meta-cortex-version '0.21.0'
    ```
 
 2. Commit the three files, including the shell script's executable permission.
@@ -88,9 +88,9 @@ write the exact pin before invoking the wrapper.
 ### Run the pinned command
 
 The first invocation downloads the versioned cargo-dist installer and uses it
-to install the executable in the wrapper cache. The current `0.20.0` pin uses
-`/releases/download/v0.20.0/meta-cortex-installer.sh` or
-`/releases/download/v0.20.0/meta-cortex-installer.ps1` on this repository's
+to install the executable in the wrapper cache. The current `0.21.0` pin uses
+`/releases/download/v0.21.0/meta-cortex-installer.sh` or
+`/releases/download/v0.21.0/meta-cortex-installer.ps1` on this repository's
 GitHub release. Later invocations reuse the cached executable after checking
 that its `--version` matches the pin.
 
@@ -584,7 +584,7 @@ updates the command.
 ### Upgrade the project pin
 
 1. Choose an exact published stable release at or above `0.15.0` and edit
-   `.meta-cortex-version`, for example replacing `0.16.0` with `0.20.0`.
+   `.meta-cortex-version`, for example replacing `0.16.0` with `0.21.0`.
    Keep only the version and a trailing newline. Earlier releases, prerelease
    suffixes, build metadata, and leading-zero components are unsupported.
 2. Run `./meta-cortexw list` or `.\meta-cortexw.ps1 list`. The wrapper installs
@@ -620,7 +620,7 @@ operation:
   command:
     name: Wrapper
     arguments:
-      release: '0.20.0'
+      release: '0.21.0'
 ```
 
 The capable executable writes the two launchers and exact pin into the project.
