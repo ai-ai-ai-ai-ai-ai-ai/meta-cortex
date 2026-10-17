@@ -15,9 +15,8 @@ responsibilities, not host processes or proof that a subagent was launched.
 1. Prepare or reuse the feature workspace and initialize its ledger through the
    existing bootstrap procedure. Before routine assignments begin, record Prime's
    coordination activity and the delegated workspace preparation activity. Include
-   the initial scope,
-   branch decision, and workspace setup results in their progress. If the ledger
-   already exists, record coordination before launching downstream work.
+   the initial scope, branch decision, and workspace setup results in progress.
+   If the ledger already exists, record coordination before downstream launches.
 2. Create one `read_only` coordination activity for Prime with `reports_to: {kind: Host}`.
    Prime claims that activity and records scope, scheduling, decisions, findings,
    acceptance checks, blockers, and next steps through `Task / Update`.
@@ -65,14 +64,8 @@ Use the observed revision in actual calls. Prime's assignment uses
 `agent: {team: Gizmo, role: GizmoPrime}` with `reports_to: {kind: Host}`.
 Every specialist, including integration, PR, and independent verification,
 reports directly to `{kind: Gizmo, coordinator: GizmoPrime}`. Assignment validates
-this hierarchy and
-survives claim, readiness, integration, completion, cancellation, and requeue.
-
-**Prohibited:** record only developer tasks, put relationships in extensions,
-or mark the feature complete while integration and PR delivery are unrecorded.
-
-**Required:** retain Host → Prime → specialist reporting lines, with progress
-and acceptance evidence on each participating role's activity.
+this hierarchy; ownership survives claim, readiness, integration, completion,
+cancellation, and requeue.
 
 ## Worker instance identity
 
@@ -98,13 +91,6 @@ instance may work on several tasks.
 5. Include `worker_id` in every `Task / Claim` and `Task / Update` request.
    Keep the catalog role in `agent`; the worker UUID does not replace it.
    Use the returned revision and attempt for subsequent updates.
-
-**Prohibited:** a resumed TechWriter generates a new UUID for each heartbeat,
-then a replacement copies the last UUID because it has the same role.
-
-**Required:** the resumed instance keeps its original UUID for every task and
-update. A replacement generates its own UUID and claims the task after the
-coordinator's inspected requeue. Both keep `agent: {team: Ai, role: TechWriter}`.
 
 ### Claim and update requests
 
@@ -147,12 +133,6 @@ operation:
       attempt: 1
       action: {kind: heartbeat, ttl_seconds: 3600}
 ```
-
-**Prohibited:** omit `worker_id` because `agent` already names TechWriter, or
-copy this illustrative UUID into a real agent's first claim.
-
-**Required:** generate the instance's UUID once, then supply that same value
-in its claim and heartbeat alongside the matching role and attempt.
 
 ## Assignment and worker lifecycle
 
@@ -237,12 +217,6 @@ The current integration command requires checkpoint ancestry. An integration
 that drops that checkpoint from history cannot be recorded by this API; this is
 a runtime limitation, not a prescribed Git command sequence.
 
-**Prohibited:** merge unfinished code into the feature merely to publish a
-heartbeat, or treat a successful database write as proof of passing tests.
-
-**Required:** commit a worker milestone, record its SHA and next steps, then
-continue on the worker branch until ready for integration.
-
 ## Record implementation outcomes
 
 Workers record concise implementation outcomes at real Git checkpoints. These
@@ -266,19 +240,13 @@ Git task integrates with recorded checkpoint inclusion.
    An unfinished checkpoint may record implemented milestones, but its task
    remains active and those outcomes do not appear in Feature log yet.
 
-**Prohibited:** record `summary: Working on navigation` as an implementation
-outcome, or use a heartbeat to claim that a checkpoint was integrated.
-
-**Required:** record `summary: Add task links to the feature journal` with detail
-describing the implemented destination. Keep remaining work in `progress.next_steps`
-and wait for recorded task integration before presenting it in Feature log.
-
 ### Reaffirm the complete final set
 
 Each checkpoint's `outcomes` replaces the prior complete set. Omission and an
 empty list both mean no outcomes at that checkpoint. An omitted milestone is
 not automatically included from an earlier private checkpoint. Readiness does
-not copy or restore earlier outcome declarations.
+not copy or restore earlier outcome declarations. Removed outcomes remain in
+history but disappear from the current Feature log projection.
 
 1. Before final readiness, follow the
    [local feature architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
@@ -329,20 +297,12 @@ operation:
           extensions: {}
 ```
 
-**Prohibited:** send the final checkpoint with no `outcomes` and expect both
-private checkpoint milestones to survive, or reuse one ID for both milestones.
-
-**Required:** send both distinct IDs in the final complete set shown above.
-To remove journal evidence intentionally, send only `journal-navigation`; to
-remove the whole set, send `outcomes: []`. Historical declarations remain in
-history, but removed outcomes are absent from the current Feature log projection.
-
 ## Recovery and stale work
 
 Apply [execution reassessment](agent-configuration.md#reassess-and-change-execution-settings)
-when recovering work or assigning repairs. Keep the selected model, effort,
-rationale, and triggering evidence in existing continuation notes. Those notes
-support the next decision; they do not configure or stop a host agent.
+when recovering work or assigning repairs. Retain meaningful continuation
+decisions and evidence in existing notes; notes do not configure or stop a host
+agent.
 
 A lease expiring is an observation, not proof the worker has stopped. There is
 no background TTL process. Status computes expiration when queried.
@@ -383,9 +343,3 @@ and exits before recording its checkpoint, inspect the existing task branch and
 worktree to recover that newer work. Never reset or remove an interrupted
 worktree merely because its ledger checkpoint is older. Uncommitted edits still
 need that worktree; the ledger is not a copy of their contents.
-
-**Prohibited:** start a replacement solely because the TTL elapsed, or require
-a lost final message before inspecting an existing branch.
-
-**Required:** inspect the execution, preserve its workspace, then resume from
-the recorded task plus any newer Git changes.

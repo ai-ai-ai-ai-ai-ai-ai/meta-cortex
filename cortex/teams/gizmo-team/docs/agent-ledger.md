@@ -8,27 +8,15 @@ the ledger records their actual work. It does not launch agents or perform Git o
 
 ## Use the ledger during work
 
-1. Recover existing progress with `Feature / Status` before scheduling work.
-   For a new feature, prepare its workspace and use `Feature / Initialize`.
-   Supply the consuming project path, not the library's repository.
-2. Record and assign bounded activities before execution, including Prime coordination,
-   implementation, review, integration, and delivery when selected. Give each
-   participant its feature/task IDs, workspace, objective, and acceptance criteria.
-3. Claim the assigned activity with the instance's retained worker UUID. Use the
-   returned revision and attempt for updates. Record decisions, checks, blockers,
-   and next steps at meaningful milestones; renew activity before its lease expires.
-4. Record the result before notifying the coordinator. Prime evaluates evidence
-   and decides repairs, further assignments, integration, or acceptance. Ready
-   means a result is available, not that its assessment passed or the feature is done.
-5. Record the selected delivery outcome and Prime's acceptance before completing
-   coordination.
-
-**Prohibited:** mark a feature delivered because its developer task is ready,
-or rely on a final chat message as the only record of an interrupted task.
-
-**Required:** retain the committed revision, actual checks, and remaining review
-or delivery work in the activity. A replacement reads that evidence and inspects
-the workspace before deciding what can continue.
+1. Read `Feature / Status` before scheduling existing work. For a new feature,
+   prepare its workspace and use `Feature / Initialize` with the consuming
+   project path, not the library's repository.
+2. Follow the [task lifecycle](ledger-task-lifecycle.md) to record, assign, and
+   claim activities before execution. Use returned revisions and attempts;
+   record meaningful progress and renew activity before its lease expires.
+3. Record results before notifying Prime. Prime evaluates them and records the
+   selected delivery outcome and final acceptance. Ready means a result is
+   available, not that its assessment passed or the feature is complete.
 
 ## Choose the relevant reference
 
@@ -48,13 +36,6 @@ the workspace before deciding what can continue.
 - **Storage or upgrade work:** [storage and compatibility](ledger-storage.md).
   Opening or refreshing Homeostat must not migrate a feature; only the explicit
   selected **Upgrade and open** action does so.
-
-**Prohibited:** load dashboard rendering and migration internals as prerequisites
-for every heartbeat, or skip recovery rules when replacing an expired worker.
-
-**Required:** use command discovery for a heartbeat's fields. For a replacement,
-read recovery and identity guidance, inspect execution and the preserved worktree,
-then use the recorded task's current revision and a new instance UUID.
 
 ## Discover and invoke commands
 
@@ -99,8 +80,3 @@ YAML/JSON are wire formats; the application operates on concrete Rust types.
   unsupported versions, malformed IDs, and out-of-range TTLs.
 - Put arbitrary task-specific content only in `progress.extensions`. Known fields
   remain strictly typed.
-
-**Prohibited:** invent a command flag or put coordination state into extensions.
-
-**Required:** discover the schema and send `action.kind: heartbeat` with the
-current revision and attempt from the previous response.

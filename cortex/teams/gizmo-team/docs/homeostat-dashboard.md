@@ -11,17 +11,13 @@ recorded Turso ledger content without automatic claims, heartbeats, requeues,
 migrations or other updates. Desktop provides an explicit
 [Upgrade and open action](#upgrade-and-open-one-feature) for a selected supported
 feature; opening the dashboard and refreshing its catalog remain observational.
-It does not collect
-host agent state, runtime metadata, chat content, or Git work and authorship data.
+It does not collect host agent state, runtime metadata, chat content, or Git
+work and authorship data.
 Desktop does not discover a project, consult Git, or require an available checkout.
 Snapshot resolves the existing repository identity and storage path from its
 request project. Development coordination retains its project and Git requirements.
 For example, a recorded integration SHA is ledger evidence; its event actor
 identifies who recorded it, not who actually authored that Git commit.
-
-**Prohibited:** report “RustDev authored this commit” from its Checkpoint event.
-
-**Required:** report “RustDev recorded this checkpoint; Git authorship is unrecorded.”
 
 ### Open the dashboard
 
@@ -57,13 +53,6 @@ The shipped executable embeds its Svelte/TypeScript frontend assets. Native IPC
 reads bounded Workbench observations; no HTTP server or browser tab is required.
 Loading, empty results, and observation errors are shown in the window.
 
-**Prohibited:** require Git discovery before opening Homeostat from `~`, or
-combine two same-name repositories' `alpha` journals into one feature.
-
-**Required:** run `meta-cortex dashboard` from `~`, select the intended name/UUID
-group, then open only that group's `alpha` journal. Return through the group's
-feature list using breadcrumbs or Back.
-
 ### Feature log
 
 Within the selected repository group and feature, **Open workflow** opens on
@@ -90,13 +79,6 @@ link opens that task's **Log** chapter in the same selected journal.
   update that milestone's checkpoint evidence. Different IDs remain separate
   even when their summaries or consolidated commit SHA are identical.
 
-**Prohibited:** turn every completed task into a row, collapse two outcomes
-named “Improve navigation,” or show a checkpoint time as integration completion.
-
-**Required:** show the two explicitly declared IDs after their owning Git task
-integrates. Label the checkpoint recording and task integration times separately;
-retain their distinct milestone identities and task evidence.
-
 #### Outcome evidence
 
 `FeatureWorkflow.feature_log` supplies each row's `id`, `task`, `summary`, and
@@ -119,25 +101,12 @@ authorship. Task integration has the limits in
 [recorded state meanings](#recorded-state-meanings); it does not establish CI
 success, PR merge, deployment, or feature acceptance.
 
-**Prohibited:** describe the row as “RustDev authored and deployed this change”
-because RustDev recorded its checkpoint and IntegrationAgent recorded integration.
-
-**Required:** describe RustDev as the checkpoint recorder and retain the separate
-integration actor and time in expanded evidence. Report deployment only from
-its own recorded result.
-
 #### Selected journal evidence
 
 Outcome rows, expanded checkpoint evidence, and task **Log** links belong to
 the current repository group and feature selection. Changing that selection
 removes the prior journal's results. A delayed observation reply for the prior
 selection cannot restore its rows or open its task evidence in the new journal.
-
-**Prohibited:** after selecting repository B's `alpha`, a late reply for
-repository A's `alpha` restores A's outcomes or its expanded checkpoint.
-
-**Required:** display only B's `alpha` journal and its task/checkpoint evidence.
-Discard A's late reply; use breadcrumbs or Back to select A intentionally.
 
 ### Browse agent roles
 
@@ -157,13 +126,6 @@ The guide is embedded at build time from the current shipped framework's
 canonical `cortex/teams/*/agents/*/AGENTS.md` files. Its content reflects the
 framework bundled with that executable build. Browsing roles uses the embedded
 assets without a runtime localhost server or retained preview JSON.
-
-**Prohibited:** require a recorded feature or a localhost preview to read an agent role.
-
-**Required:** open **Agent guide** in an empty feature catalog, select a catalog
-agent, and read its bundled role documentation beside the graph. After opening
-a bundled protocol link, use **Back to agent document** to return to that role.
-Select **Homeostat** to return to the prior browsing context within the native app.
 
 ### Advanced typed requests
 
@@ -198,12 +160,6 @@ Select **Homeostat** to return to the prior browsing context within the native a
 Both modes accept file or stdin requests. Snapshot reads once and returns the
 normal versioned YAML response with `data.kind: dashboard` and
 `data.value.content` containing the selected view’s text.
-
-**Prohibited:** expect `mode: Desktop` to restrict browsing to its `project`, or
-to produce a headless report.
-
-**Required:** choose `mode: Snapshot` with the consuming project, view, and page
-for repository-scoped scripted output; choose `Desktop` for global browsing.
 
 ### Views and recorded fields
 
@@ -251,10 +207,6 @@ of them establishes an unrecorded reporting line or host session ancestry.
 No live execution status or agent conversation is inferred. For example, a passed check is a worker’s recorded
 result, not a new test execution by the dashboard.
 
-**Prohibited:** treat a historical passed check as a fresh validation run.
-
-**Required:** inspect its event revision and recorded evidence before reporting it.
-
 ### Recorded state meanings
 
 Workbench supplies shared `StateMeaning` metadata for all seven `FlowState`
@@ -275,13 +227,6 @@ The following qualifications distinguish recorded results from stronger claims:
   acceptance. Git workspace tasks use integration instead. Completed and
   Integrated are alternative terminal outcomes, not consecutive stages; an
   integrated task cannot transition to completed.
-
-**Prohibited:** “Working proves the agent is executing; Integrated proves its PR
-merged; the next step is to mark that integrated task Completed.”
-
-**Required:** report the recorded working phase or integration tip with its
-actual evidence. Accept a ready read-only or feature activity through completion;
-report feature acceptance and delivery separately.
 
 ### Revision log and event order
 
@@ -313,13 +258,9 @@ belong to the storage envelope and observation result.
 - Reading the log does not change event order, task revisions, attempts, or stored
   snapshots. Use the current task revision, never `R`, in `expected_revision`.
 
-**Prohibited:** relabel historical `R41` and `R44` as `R1` and `R2`, infer that
-another feature's `R45` happened later, or send `expected_revision: 44` when the
-selected task is at revision `7`.
-
-**Required:** retain `R41` and `R44` with their provenance, show task revisions
-separately, and use that task's observed revision `7` for its next update.
-Interpret later appends within the selected feature only.
+For example, retain historical `R41` and `R44` with their provenance. If the
+selected task is at revision `7`, use `expected_revision: 7`, not `44`.
+Another feature's `R45` establishes no relative order.
 
 ### Historical ownership
 
@@ -327,12 +268,6 @@ Version `1` tasks did not record intended ownership or reporting lines.
 Their views label that information `unrecorded`. A retained active or ready
 claim can identify the claimed role, but it cannot establish a reporting line.
 Current views and historical event snapshots use only their recorded information.
-
-**Prohibited:** infer that a historical integration event proves a coordinator
-or integration activity existed.
-
-**Required:** show the old reporting line as unrecorded and record the actual
-roles and activities when continuing the feature.
 
 ### Refresh and pages
 
@@ -350,9 +285,6 @@ feature or task completion.
 Each query releases its connection after reading. Pages use live offsets, so
 concurrent writes can shift records between pages. For example, a new history
 event can push an older event onto the next page.
-
-- **Prohibited:** assume a page retains the same records while new events arrive.
-- **Required:** refresh and compare event revisions across the live pages.
 
 ### Storage requirements and errors
 
@@ -373,12 +305,7 @@ or Git discovery is required for Desktop observation.
 - Old storage layouts are ignored and left untouched; there is no fallback search
   or import from shared `workbench.db` files.
 
-**Prohibited:** opening Homeostat from `~` initializes a repository, creates an
-absent application home, or searches old layouts to fill an empty landing list.
-
-**Required:** show an empty view without creating storage when the application
-home is absent. When retained groups exist, browse their existing feature files
-by name/UUID even after their checkouts have been deleted.
+Feature availability determines access:
 
 - **Current schema:** the feature is available for detail observation.
 - **Supported older schema:** read-only metadata keeps the feature visible with
@@ -389,12 +316,6 @@ by name/UUID even after their checkouts have been deleted.
 - **Feature file read failure:** show the affected feature and concrete failure
   while retaining other readable feature cards.
 
-**Prohibited:** one version `99` file blanks the entire catalog, or its records
-are decoded as a supported version merely to construct a card.
-
-**Required:** show that file's identity and unsupported version as unavailable,
-and keep independently readable features visible without changing any database.
-
 Detail observation requires the current schema. The observer uses a short
 250 ms database busy timeout. Desktop failures appear in the window; refresh to
 retry or close the window to exit. Snapshot remains repository scoped: missing
@@ -403,11 +324,6 @@ without creating identity. Other Snapshot failures also return structured errors
 with exit status `2`. A schema error identifies the affected feature and version.
 Snapshot never upgrades storage. `Feature / List` and Snapshot feature listings
 also expose metadata availability without forcing detail reads.
-
-- **Prohibited:** treat an older feature's visible catalog metadata as proof that
-  its detail can be read, or use Snapshot to migrate it.
-- **Required:** retain the upgrade gate for detail and use an explicit selected
-  upgrade before retrying current-schema observation.
 
 ### Upgrade and open one feature
 
@@ -425,10 +341,3 @@ also expose metadata availability without forcing detail reads.
 The action preserves historical JSON, ordering, and provenance under the existing
 migration contract. It does not migrate other features or read old storage layouts.
 Future schemas have no supported upgrade action.
-
-**Prohibited:** clicking **Upgrade and open** for one group's `alpha` upgrades
-another group's `alpha` or `beta`, or opening the dashboard upgrades without a click.
-
-**Required:** after explicit selection, upgrade only that group's existing
-`alpha` database and open its detail, even without its checkout. Leave all other
-features and ignored old storage files unchanged.

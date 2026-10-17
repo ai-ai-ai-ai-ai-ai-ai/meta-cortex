@@ -6,7 +6,7 @@ entries:
     summary: Decision ownership, expected handoffs, agent discretion, and evidence.
   - title: Agent configuration
     path: agent-configuration.md
-    summary: Host capacity, per-assignment model selection, execution reassessment, and launches.
+    summary: Host capacity, assignment settings, execution reassessment, and authorized host changes.
   - title: Host references
     path: hosts/index.yaml
     summary: Active-host navigation for Codex and Claude Code mechanics.

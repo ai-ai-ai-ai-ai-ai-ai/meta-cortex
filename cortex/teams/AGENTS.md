@@ -111,9 +111,9 @@ following from the active library and supplies them in the launch instructions:
   relevant to the assignment. Include referenced subject documents from other
   teams when the task depends on them.
 - The assigned agent’s own `AGENTS.md` and the execution configuration context,
-  including the active host reference when needed, selected or inherited model
-  and effort, rationale, capability evidence and limits, and any reassessment or
-  replacement evidence.
+  including the active host reference when needed, relevant limits, and consequential
+  settings choices or continuation decisions under the
+  [selection policy](gizmo-team/docs/agent-configuration.md#choose-settings-for-the-assignment).
 
 Include the policies in the supplied context or require the receiving agent to
 read their resolved files before any task work. Do not assume parent-session

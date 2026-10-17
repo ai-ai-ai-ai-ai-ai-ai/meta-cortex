@@ -38,31 +38,14 @@ branch on follow-ups. Task IDs are scoped to their feature, so different feature
 can reuse a task ID in their separate databases. Never create a database per task,
 agent, or worktree. Preserve the database and its engine-managed sidecars together.
 
-- Gizmo Prime owns the feature objective, branch decision, and acceptance.
-- Prime records assignments before direct launches, reads progress, and decides
-  dependencies, reassignment, cancellation, and integration order.
-- Prime delegates workspace preparation and integration. The assigned integration
-  owner prepares worktrees, initializes the feature ledger, verifies code integration,
-  and records the integrated revision.
-- Workers claim their assigned tasks and persist their own progress and results.
-
-Every participating role needs its own activity record: one Prime coordination
-activity, plus selected workspace preparation, integration, verifier, and PR delivery
-activities.
-An integration event on a developer's task does not replace the integration
-agent's own activity. An integrated task does not mean the feature was accepted
-or its PR delivered.
+The [task lifecycle](ledger-task-lifecycle.md#record-the-entire-feature-workflow)
+owns activity coverage and responsibilities. Integration of a developer task does
+not replace the integration owner's activity, feature acceptance, or PR delivery.
 
 Everyone assigned to the feature may read its status and history. Reading does
 not authorize claiming a peer's assignment, expanding scope, or bypassing Prime.
 Actor names describe trusted workflow participants; they are not credentials.
 The CLI does not launch, stop, or monitor host agents.
-
-- **Prohibited:** create a database inside each worker checkout or wait until a
-  worker's final message to record its assignment.
-
-- **Required:** initialize one ledger for the feature and supply its ID to every
-  worker before launch.
 
 ## Versions and durable contracts
 
@@ -90,11 +73,6 @@ version `7` gates the changed contract so an older writer cannot append to an
 upgraded feature. The event envelope stays at version `2` because checkpoint
 outcomes and envelope fields keep their existing meaning.
 
-- **Prohibited:** rename historical Team Gizmo actors or reporting lines to Prime,
-  or write new direct-reporting tasks as version `3` because their fields look unchanged.
-- **Required:** preserve historical identities and JSON bytes, and write current
-  direct-reporting tasks as version `4` only after the selected feature reaches database version `7`.
-
 ### Checkpoint event records
 
 Event version `2` records the explicit checkpoint `outcomes` set. Typed readers
@@ -102,12 +80,6 @@ retain version `1` events with no recorded outcomes; they never infer outcomes
 from historical progress, titles, or checks. Reading and migration preserve the
 historical JSON bytes. Outcomes belong to event evidence and keep their existing
 contract; the task and database version changes above concern reporting ownership.
-
-**Prohibited:** backfill version `1` checkpoints from their progress summaries
-or rewrite their JSON as version `2` merely to populate Feature log.
-
-**Required:** retain their history and leave missing outcomes missing. Record
-explicit outcomes on a new valid checkpoint when continuing an assigned task.
 
 ### Retained task records
 
@@ -128,11 +100,6 @@ binding while preserving prior snapshots. Worker identity belongs to the task
 record, independently of database event ordering. Reading older task records
 does not rewrite them or invent historical worker identities.
 
-- **Prohibited:** derive UUIDs from old roles or event actors while reading
-  version `1` or `2` records.
-- **Required:** read their worker as `Unrecorded` and preserve their historical
-  snapshots. Only a current claim or valid worker update can record a worker UUID.
-
 ### Continue an older active claim
 
 1. Inspect the active task's recorded role, reporting line, attempt, and host
@@ -149,12 +116,6 @@ does not rewrite them or invent historical worker identities.
 4. Use that UUID on every later update. Once recorded, another UUID is rejected.
    Prior event snapshots remain unrecorded; the successful update records the
    binding only in the new revision.
-
-**Prohibited:** assign the current worker's UUID to all earlier snapshots, or
-let a replacement bind an old active claim without inspected requeue.
-
-**Required:** the continuing instance records its own UUID on its next valid
-update. A replacement follows recovery and makes a new claim with its own UUID.
 
 ### Database constraints
 
@@ -181,11 +142,6 @@ JSON retains actors, task snapshots, findings, checks,
 and evidence. [Event order](homeostat-dashboard.md#revision-log-and-event-order) records whether its
 sequence came from a committed append or preserved legacy storage order.
 
-- **Prohibited:** an already-open writer trusts its startup schema check and
-  appends after another executable upgrades the database to a future version.
-- **Required:** check the schema inside the acquired write transaction and reject
-  the unsupported version before changing the task or appending its event.
-
 ### Invalid legacy data during migration
 
 A storage migration must fail atomically when legacy rows violate its
@@ -194,24 +150,11 @@ failure. Diagnose and resolve the integrity problem separately before rollout;
 an upgrade must not silently remap sequence values, deduplicate rows, or rewrite
 recorded history to make invalid data pass.
 
-**Prohibited:** migration finds conflicting legacy identities, renumbers or
-drops their events, and reports that the upgrade succeeded.
-
-**Required:** abort the migration transaction, preserve the source, and report
-the constraint failure. Keep rollout blocked until the integrity problem is
-resolved through separately authorized work and the isolated migration succeeds.
-
 ### Storage migration and supported readers
 
 A command selecting a feature migrates supported version `1`, `2`, `3`, `4`, `5`,
 or `6` storage to version `7` transactionally. It leaves other feature databases alone.
 A future schema version is rejected without mutation or downgrade.
-
-**Prohibited:** selecting `alpha` upgrades `beta`, or accepting version `99`
-rewrites its schema as version `7`.
-
-**Required:** migrate only `alpha` when supported; reject its future version
-with feature/version context and leave committed data unchanged.
 
 ### Supported storage location
 
@@ -221,12 +164,6 @@ Homeostat discovers existing groups directly from application storage.
 `META_CORTEX_HOME` still overrides the application home. Old shared
 `workbench.db` files and unnamed historical home layouts are ignored. Workbench never imports, deletes, or automatically
 converts those files. Their presence does not populate an empty feature catalog.
-
-**Prohibited:** fall back to `workbench.db` when the repository’s `features/`
-directory is absent, or delete old files while listing features.
-
-**Required:** show an empty catalog, leave old files untouched, and use only the
-resolved per-feature location for subsequent feature initialization and access.
 
 ### Released format support
 
@@ -248,21 +185,9 @@ its meaning. Adding extension keys does not change a known schema version.
   live feature ledger merely to obtain test evidence while older writers still use it.
 - Migrations move forward. Current writers reject unsupported newer schemas
   within every write transaction; released legacy writers still require shutdown.
-- Before an upgrade that changes record shapes, preserve a consistent backup
-  with all writers stopped.
+- Before an upgrade that changes record shapes or reporting semantics, preserve
+  a consistent backup with all writers stopped.
 - To downgrade, restore that backup; do not rewrite newer records in place.
 - The database stays in the local application home, grouped by repository. Push,
   clone, and ordinary source commits do not copy it; separate clones or machines
   do not share this ledger.
-
-**Prohibited:** accept version `99` using the version `1` decoder or discard
-history to make an upgrade work.
-
-**Required:** reject the unsupported version with an upgrade message, leaving
-its committed data intact.
-
-- **Prohibited:** leave an older executable writing because the event envelope
-  remains version `2` or the task field names are unchanged.
-- **Required:** stop older writers, preserve a consistent backup, and move active
-  participants to the current executable before upgrading the selected feature to
-  database version `7`. Old binaries must reject that version without mutation.
