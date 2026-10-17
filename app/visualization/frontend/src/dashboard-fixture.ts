@@ -2,7 +2,7 @@ import { Match } from "effect";
 import fixtureWorkflow from "./workflow-fixture.json";
 import { workflow } from "virtual:dashboard-validators";
 import type {
-  AgentId,
+  RecordedAgentId,
   DesktopReply,
   DesktopCatalogReply,
   RepositorySelection,
@@ -30,9 +30,15 @@ export class Fixture {
   }
   static readonly NOW = new Date(2026, 9, 3, 12).getTime();
   static readonly MINUTE = 60_000;
-  static readonly PRIME: AgentId = { team: "Gizmo", role: "GizmoPrime" };
-  static readonly RUST: AgentId = { team: "Development", role: "RustDev" };
-  static readonly VERIFIER: AgentId = {
+  static readonly PRIME: RecordedAgentId = {
+    team: "Gizmo",
+    role: "GizmoPrime",
+  };
+  static readonly RUST: RecordedAgentId = {
+    team: "Development",
+    role: "RustDev",
+  };
+  static readonly VERIFIER: RecordedAgentId = {
     team: "Development",
     role: "RustVerifier",
   };

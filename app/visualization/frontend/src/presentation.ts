@@ -8,10 +8,10 @@ import {
   PackageCheck,
 } from "@lucide/svelte";
 import { DateTime, Match } from "effect";
-import type { AgentId, FlowState } from "./contracts";
+import type { RecordedAgentId, FlowState } from "./contracts";
 
 type Icon = typeof CircleCheck;
-type AgentRole = AgentId["role"];
+type AgentRole = RecordedAgentId["role"];
 /** Token suffix shared by the `status-*` color utilities. */
 enum Tone {
   Queued = "queued",
@@ -84,7 +84,7 @@ export class AgentLook {
     IntegrationAgent: "Integration Agent",
     PrAgent: "PR Agent",
   };
-  constructor(private readonly agent: AgentId) {}
+  constructor(private readonly agent: RecordedAgentId) {}
   name(): string {
     return AgentLook.ROLES[this.agent.role];
   }

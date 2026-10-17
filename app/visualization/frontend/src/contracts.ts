@@ -52,12 +52,9 @@ export type FeatureCard =
       message: Note;
       [k: string]: unknown;
     };
-/**
- * An agent role scoped to its owning Cortex team.
- */
-export type AgentId =
+export type RecordedAgentId =
   | {
-      role: GizmoAgent;
+      role: RecordedGizmoAgent;
       team: "Gizmo";
     }
   | {
@@ -80,7 +77,10 @@ export type AgentId =
       role: DeliveryAgent;
       team: "Delivery";
     };
-export type GizmoAgent = "GizmoPrime" | "Gizmo";
+/**
+ * `Gizmo` is the retired coordinator's original attribution, not an alias for Prime.
+ */
+export type RecordedGizmoAgent = "GizmoPrime" | "Gizmo";
 export type DevelopmentAgent =
   | "RustDev"
   | "RustRefactoring"
@@ -183,12 +183,12 @@ export type EventKind =
  * Stable identity within one task, independent of summary text or checkpoint SHA.
  */
 export type OutcomeId = string;
-export type ReportingTarget =
+export type RecordedReportingTarget =
   | {
       kind: "Host";
     }
   | {
-      coordinator: GizmoAgent;
+      coordinator: RecordedGizmoAgent;
       kind: "Gizmo";
     };
 export type Phase =
@@ -209,7 +209,7 @@ export type RecordedRole =
       [k: string]: unknown;
     }
   | {
-      agent: AgentId;
+      agent: RecordedAgentId;
       kind: "Recorded";
       [k: string]: unknown;
     };
@@ -221,7 +221,7 @@ export type TaskOwnership =
       kind: "Unrecorded";
     }
   | {
-      assignment: TaskAssignment;
+      assignment: RecordedTaskAssignment;
       kind: "Assigned";
     };
 export type TaskState =
@@ -233,7 +233,7 @@ export type TaskState =
       kind: "active";
     }
   | {
-      agent: AgentId;
+      agent: RecordedAgentId;
       attempt: number;
       kind: "ready";
     }
@@ -242,7 +242,7 @@ export type TaskState =
       kind: "integrated";
     }
   | {
-      agent: AgentId;
+      agent: RecordedAgentId;
       attempt: number;
       kind: "completed";
     }
@@ -253,7 +253,7 @@ export type TaskState =
 /**
  * Current task shape. V1 payloads are decoded by the separate legacy task record.
  */
-export type TaskRecordVersion = 3;
+export type TaskRecordVersion = 4;
 /**
  * Recorded host worker identity; legacy snapshots never invent one from a role.
  */
@@ -392,7 +392,7 @@ export interface FeatureSummary {
   /**
    * Distinct roles that actually authored saved events.
    */
-  actors: AgentId[];
+  actors: RecordedAgentId[];
   feature: Feature;
   latest_delivery: LatestDelivery;
   /**
@@ -410,7 +410,7 @@ export interface FeatureSummary {
  * Work currently held by an agent, extracted without loading full task documents.
  */
 export interface ActiveWork {
-  agent: AgentId;
+  agent: RecordedAgentId;
   blocker: Blocker;
   last_update: number;
   lease: LeaseHealth;
@@ -501,11 +501,11 @@ export interface TaskChapter {
   entries: FeedEntry[];
   role: RecordedRole;
   status: FlowState;
-  task: TaskV3;
+  task: TaskV4;
   [k: string]: unknown;
 }
 export interface FeedEntry {
-  actor: AgentId;
+  actor: RecordedAgentId;
   at: number;
   checkpoint: Checkpoint;
   /**
@@ -524,7 +524,7 @@ export interface FeedEntry {
         kind: "Unrecorded";
       }
     | {
-        assignment: TaskAssignment;
+        assignment: RecordedTaskAssignment;
         kind: "Assigned";
       };
   revision: number;
@@ -540,7 +540,7 @@ export interface FeedEntry {
         kind: "active";
       }
     | {
-        agent: AgentId;
+        agent: RecordedAgentId;
         attempt: number;
         kind: "ready";
       }
@@ -549,7 +549,7 @@ export interface FeedEntry {
         kind: "integrated";
       }
     | {
-        agent: AgentId;
+        agent: RecordedAgentId;
         attempt: number;
         kind: "completed";
       }
@@ -597,19 +597,19 @@ export interface CheckpointOutcome {
   summary: Note;
 }
 /**
- * The intended owner and reporting line survive every task state and attempt.
+ * Persisted ownership retains the reporting line that was actually recorded.
  */
-export interface TaskAssignment {
-  agent: AgentId;
-  reports_to: ReportingTarget;
+export interface RecordedTaskAssignment {
+  agent: RecordedAgentId;
+  reports_to: RecordedReportingTarget;
 }
 export interface Assignment {
-  agent: AgentId;
+  agent: RecordedAgentId;
   attempt: number;
   expires_at: number;
   phase: Phase;
 }
-export interface TaskV3 {
+export interface TaskV4 {
   common: TaskCommon;
   ownership: TaskOwnership;
   state: TaskState;
@@ -655,11 +655,11 @@ export interface FeatureLogCheckpoint {
 }
 export interface FeatureLogEvidence {
   /**
-   * An agent role scoped to its owning Cortex team.
+   * The agent that recorded this evidence, never Git authorship.
    */
   actor:
     | {
-        role: GizmoAgent;
+        role: RecordedGizmoAgent;
         team: "Gizmo";
       }
     | {
@@ -693,11 +693,11 @@ export interface FeatureLogEvidence {
  */
 export interface FeatureLogEvidence1 {
   /**
-   * An agent role scoped to its owning Cortex team.
+   * The agent that recorded this evidence, never Git authorship.
    */
   actor:
     | {
-        role: GizmoAgent;
+        role: RecordedGizmoAgent;
         team: "Gizmo";
       }
     | {

@@ -3,7 +3,7 @@
     "ActiveWork": {
       "description": "Work currently held by an agent, extracted without loading full task documents.",
       "properties": {
-        "agent": { "$ref": "#/$defs/AgentId" },
+        "agent": { "$ref": "#/$defs/RecordedAgentId" },
         "blocker": { "$ref": "#/$defs/Blocker" },
         "last_update": { "format": "int64", "type": "integer" },
         "lease": { "$ref": "#/$defs/LeaseHealth" },
@@ -22,65 +22,6 @@
       ],
       "type": "object"
     },
-    "AgentId": {
-      "description": "An agent role scoped to its owning Cortex team.",
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "role": { "$ref": "#/$defs/GizmoAgent" },
-            "team": { "const": "Gizmo", "type": "string" }
-          },
-          "required": ["team", "role"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "role": { "$ref": "#/$defs/DevelopmentAgent" },
-            "team": { "const": "Development", "type": "string" }
-          },
-          "required": ["team", "role"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "role": { "$ref": "#/$defs/AiAgent" },
-            "team": { "const": "Ai", "type": "string" }
-          },
-          "required": ["team", "role"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "role": { "$ref": "#/$defs/SecurityAgent" },
-            "team": { "const": "Security", "type": "string" }
-          },
-          "required": ["team", "role"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "role": { "$ref": "#/$defs/SreAgent" },
-            "team": { "const": "Sre", "type": "string" }
-          },
-          "required": ["team", "role"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "role": { "$ref": "#/$defs/DeliveryAgent" },
-            "team": { "const": "Delivery", "type": "string" }
-          },
-          "required": ["team", "role"],
-          "type": "object"
-        }
-      ]
-    },
     "AiAgent": {
       "enum": ["TechWriter", "TechWriterVerifier"],
       "type": "string"
@@ -88,7 +29,7 @@
     "Assignment": {
       "additionalProperties": false,
       "properties": {
-        "agent": { "$ref": "#/$defs/AgentId" },
+        "agent": { "$ref": "#/$defs/RecordedAgentId" },
         "attempt": { "format": "int64", "type": "integer" },
         "expires_at": { "format": "int64", "type": "integer" },
         "phase": { "$ref": "#/$defs/Phase" }
@@ -356,7 +297,7 @@
     "FeatureLogEvidence": {
       "properties": {
         "actor": {
-          "$ref": "#/$defs/AgentId",
+          "$ref": "#/$defs/RecordedAgentId",
           "description": "The agent that recorded this evidence, never Git authorship."
         },
         "at": { "format": "int64", "type": "integer" },
@@ -385,7 +326,7 @@
         },
         "actors": {
           "description": "Distinct roles that actually authored saved events.",
-          "items": { "$ref": "#/$defs/AgentId" },
+          "items": { "$ref": "#/$defs/RecordedAgentId" },
           "type": "array"
         },
         "feature": { "$ref": "#/$defs/Feature" },
@@ -445,7 +386,7 @@
     },
     "FeedEntry": {
       "properties": {
-        "actor": { "$ref": "#/$defs/AgentId" },
+        "actor": { "$ref": "#/$defs/RecordedAgentId" },
         "at": { "format": "int64", "type": "integer" },
         "checkpoint": { "$ref": "#/$defs/Checkpoint" },
         "evidence": {
@@ -513,7 +454,6 @@
       ],
       "type": "string"
     },
-    "GizmoAgent": { "enum": ["GizmoPrime", "Gizmo"], "type": "string" },
     "LatestDelivery": {
       "description": "The task a coordinator most recently integrated or completed.",
       "oneOf": [
@@ -630,6 +570,88 @@
       "required": ["url", "repository", "number", "tasks", "recorded_at"],
       "type": "object"
     },
+    "RecordedAgentId": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/RecordedGizmoAgent" },
+            "team": { "const": "Gizmo", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/DevelopmentAgent" },
+            "team": { "const": "Development", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/AiAgent" },
+            "team": { "const": "Ai", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/SecurityAgent" },
+            "team": { "const": "Security", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/SreAgent" },
+            "team": { "const": "Sre", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "role": { "$ref": "#/$defs/DeliveryAgent" },
+            "team": { "const": "Delivery", "type": "string" }
+          },
+          "required": ["team", "role"],
+          "type": "object"
+        }
+      ]
+    },
+    "RecordedGizmoAgent": {
+      "description": "`Gizmo` is the retired coordinator's original attribution, not an alias for Prime.",
+      "enum": ["GizmoPrime", "Gizmo"],
+      "type": "string"
+    },
+    "RecordedReportingTarget": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "Host", "type": "string" } },
+          "required": ["kind"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "coordinator": { "$ref": "#/$defs/RecordedGizmoAgent" },
+            "kind": { "const": "Gizmo", "type": "string" }
+          },
+          "required": ["kind", "coordinator"],
+          "type": "object"
+        }
+      ]
+    },
     "RecordedRole": {
       "oneOf": [
         {
@@ -639,13 +661,23 @@
         },
         {
           "properties": {
-            "agent": { "$ref": "#/$defs/AgentId" },
+            "agent": { "$ref": "#/$defs/RecordedAgentId" },
             "kind": { "const": "Recorded", "type": "string" }
           },
           "required": ["kind", "agent"],
           "type": "object"
         }
       ]
+    },
+    "RecordedTaskAssignment": {
+      "additionalProperties": false,
+      "description": "Persisted ownership retains the reporting line that was actually recorded.",
+      "properties": {
+        "agent": { "$ref": "#/$defs/RecordedAgentId" },
+        "reports_to": { "$ref": "#/$defs/RecordedReportingTarget" }
+      },
+      "required": ["agent", "reports_to"],
+      "type": "object"
     },
     "RecordedTimeline": {
       "properties": {
@@ -689,25 +721,6 @@
         "summary"
       ],
       "type": "object"
-    },
-    "ReportingTarget": {
-      "oneOf": [
-        {
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "Host", "type": "string" } },
-          "required": ["kind"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "coordinator": { "$ref": "#/$defs/GizmoAgent" },
-            "kind": { "const": "Gizmo", "type": "string" }
-          },
-          "required": ["kind", "coordinator"],
-          "type": "object"
-        }
-      ]
     },
     "RepositoryCard": {
       "properties": {
@@ -782,16 +795,6 @@
       "required": ["repository", "feature"],
       "type": "object"
     },
-    "TaskAssignment": {
-      "additionalProperties": false,
-      "description": "The intended owner and reporting line survive every task state and attempt.",
-      "properties": {
-        "agent": { "$ref": "#/$defs/AgentId" },
-        "reports_to": { "$ref": "#/$defs/ReportingTarget" }
-      },
-      "required": ["agent", "reports_to"],
-      "type": "object"
-    },
     "TaskChapter": {
       "properties": {
         "entries": {
@@ -800,7 +803,7 @@
         },
         "role": { "$ref": "#/$defs/RecordedRole" },
         "status": { "$ref": "#/$defs/FlowState" },
-        "task": { "$ref": "#/$defs/TaskV3" }
+        "task": { "$ref": "#/$defs/TaskV4" }
       },
       "required": ["task", "role", "status", "entries"],
       "type": "object"
@@ -850,7 +853,7 @@
         {
           "additionalProperties": false,
           "properties": {
-            "assignment": { "$ref": "#/$defs/TaskAssignment" },
+            "assignment": { "$ref": "#/$defs/RecordedTaskAssignment" },
             "kind": { "const": "Assigned", "type": "string" }
           },
           "required": ["kind", "assignment"],
@@ -859,7 +862,7 @@
       ]
     },
     "TaskRecordVersion": {
-      "const": 3,
+      "const": 4,
       "description": "Current task shape. V1 payloads are decoded by the separate legacy task record.",
       "format": "int64",
       "type": "integer"
@@ -884,7 +887,7 @@
         {
           "additionalProperties": false,
           "properties": {
-            "agent": { "$ref": "#/$defs/AgentId" },
+            "agent": { "$ref": "#/$defs/RecordedAgentId" },
             "attempt": { "format": "int64", "type": "integer" },
             "kind": { "const": "ready", "type": "string" }
           },
@@ -903,7 +906,7 @@
         {
           "additionalProperties": false,
           "properties": {
-            "agent": { "$ref": "#/$defs/AgentId" },
+            "agent": { "$ref": "#/$defs/RecordedAgentId" },
             "attempt": { "format": "int64", "type": "integer" },
             "kind": { "const": "completed", "type": "string" }
           },
@@ -921,7 +924,7 @@
         }
       ]
     },
-    "TaskV3": {
+    "TaskV4": {
       "additionalProperties": false,
       "properties": {
         "common": { "$ref": "#/$defs/TaskCommon" },
