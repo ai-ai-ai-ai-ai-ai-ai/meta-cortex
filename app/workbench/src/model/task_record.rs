@@ -439,6 +439,23 @@ mod tests {
         };
         let encoded = serde_json::to_string(&task)?;
         assert_eq!(serde_json::from_str::<Task>(&encoded)?, task);
+        let retained = TaskV3 {
+            version: TaskRecordVersionV3::V3,
+            worker: task.worker,
+            common: task.common.clone(),
+            ownership: task.ownership.clone(),
+            workspace: task.workspace.clone(),
+            state: task.state.clone(),
+        };
+        assert!(serde_json::from_str::<Task>(&serde_json::to_string(&retained)?).is_err());
+        let retained = TaskV2 {
+            version: crate::versions::TaskRecordVersionV2::V2,
+            common: retained.common,
+            ownership: retained.ownership,
+            workspace: retained.workspace,
+            state: retained.state,
+        };
+        assert!(serde_json::from_str::<Task>(&serde_json::to_string(&retained)?).is_err());
         let invalid = Task {
             state: TaskState::Ready {
                 agent: AgentId::Gizmo(GizmoAgent::GizmoPrime).into(),

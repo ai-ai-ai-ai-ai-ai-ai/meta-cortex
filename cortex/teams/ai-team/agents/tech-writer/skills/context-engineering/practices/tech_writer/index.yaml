@@ -13,7 +13,7 @@ related: []
 rules:
   - id: tech_writer:communication
     source: ../../../../AGENTS.md#tech-writer
-    summary: Follow the assigned Gizmo hierarchy and settings selected for the assignment.
+    summary: Report directly to Prime with settings selected for the assignment.
   - id: tech_writer:context_prerequisite
     source: ../../../../AGENTS.md#required-actions
     summary: Apply Context Engineering to all documentation work.
@@ -31,7 +31,7 @@ rules:
     summary: Security and secrets require their owning subject guidance.
   - id: tech_writer:subject_policy
     source: ../../../../AGENTS.md#required-actions
-    summary: Preserve subject policy; route unresolved decisions through Gizmo.
+    summary: Preserve subject policy; route unresolved decisions through Prime.
   - id: tech_writer:graph_sync
     source: ../../../../AGENTS.md#required-actions
     summary: Locate affected rules and synchronize catalogs with practices.
