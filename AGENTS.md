@@ -8,17 +8,10 @@ The distributable framework lives in `cortex/`. The Rust executable installs
 that framework into consuming projects at `.meta-cortex/`. Keep framework
 instructions generic and keep the root `LICENSE` in place.
 
-Keep each practice with its subject: programming, security, or repository automation.
-Put shared subject knowledge in the owning team’s `docs/`, with an
-`index.yaml` navigation catalog containing only paths and brief topic summaries.
-Split skill catalogs into directory-local YAML indexes by subject and namespace;
-use brief decision cues linked to canonical Markdown rule sources.
-Keep rules, explanations, and examples in descriptively named documents.
-Teams live in `cortex/teams/`; each team groups its agents under `agents/`.
+Follow the tech writer's [skill organization](cortex/teams/ai-team/agents/tech-writer/AGENTS.md#skill-organization)
+and [knowledge organization](cortex/teams/ai-team/agents/tech-writer/AGENTS.md#knowledge-organization)
+rules for canonical ownership, team and agent directories, and navigation catalogs.
 Gizmo Prime is the single coordinator and belongs to `gizmo-team`.
-Skills live under their owning agents. Do not create library-root or team-level
-skill directories. Each agent links its skills; each `SKILL.md` owns its instructions.
-Keep one canonical copy of each practice and update all callers when moving it.
 
 The Rust workspace lives in `app/`. `app/installer/` owns the `meta-cortex`
 executable, command transport, and framework installation. `app/workbench/`

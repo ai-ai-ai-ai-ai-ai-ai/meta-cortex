@@ -25,12 +25,7 @@ For each new user task, follow this order:
    host's agent execution tool with the task context. Prime directly launches and
    manages the specialists and independent verifiers needed for the task.
 
-**Prohibited:** begin implementation in the host thread or launch Prime before
-reading the circuit breaker, establishing context, and validating delivery.
-
-**Required:** resolve both roots and delivery, check host capacity, then launch
-Prime under the coordination hierarchy. Report an unavailable required host
-capability as a blocker.
+Report an unavailable required host capability as a blocker.
 
 ### Development delivery
 
@@ -50,12 +45,6 @@ with [development.yaml](development.yaml) to validate
   preselected host option.
 - If collection is cancelled, unavailable, invalid, or pending, stop dependent work.
 
-**Prohibited:** treat the preselected `create_pr` option as a submitted answer
-and begin implementation while delivery is still pending.
-
-**Required:** validate the user's explicit `create_pr` choice, then launch the
-coordinated work with that delivery outcome in its assignment.
-
 #### Apply delivery
 
 - **`create_pr`** commits and pushes the validated feature and creates or updates
@@ -64,11 +53,6 @@ coordinated work with that delivery outcome in its assignment.
 
 The [project delivery policy](teams/delivery-team/docs/project-delivery-policy.md#configured-implementation-delivery)
 owns completion and publication requirements.
-
-**Prohibited:** finish after local implementation when delivery is `create_pr`.
-
-**Required:** carry the validated `create_pr` choice through implementation,
-review, integration, and PR publication; report the PR and observed checks.
 
 #### Retain and change delivery
 
@@ -83,12 +67,6 @@ A session is the current user-facing conversation or thread.
   rewrite `meta-cortex.toml`, or save answers in the repository.
 - Apply an explicit user change before further affected work and pass it to
   active agents. A task-specific override leaves the session preference intact.
-
-**Prohibited:** ask for delivery again on every follow-up, or publish after the
-user explicitly changes delivery to `local_only`.
-
-**Required:** reuse validated delivery on follow-ups. Apply a task's explicit
-local-only override to that task and retain the session preference for later work.
 
 ### Project context
 
@@ -146,13 +124,6 @@ Apply the consuming project's context throughout the task:
   team directory through every delegation. Each assigned agent loads the skills
   linked from its own instructions and follows their `SKILL.md` files.
 
-**Prohibited:** treat an installed `.meta-cortex/` directory as the project root
-and run the consuming project's tests against library paths.
-
-**Required:** identify the consuming repository as the project root and the
-installed framework as the library root. Read the project's instructions, run
-its tests in its worktree, and pass both roots in assignments.
-
 ## Cortex context format
 
 Read the [YAML context authoring entry point](teams/ai-team/agents/tech-writer/skills/context-engineering/AGENTS.yaml)
@@ -177,10 +148,3 @@ or use context declarations as an application workflow.
 - Do not assume the project root is the library root or its immediate parent.
 - Do not change the Meta-Cortex library unless the task concerns its rules,
   skills, roles, or configuration.
-
-**Prohibited:** edit the installed framework to fix an unrelated application
-endpoint in the consuming project.
-
-**Required:** change the application's owning code in its project worktree.
-Change the framework only when the task concerns its own rules, skills, roles,
-or configuration.

@@ -47,25 +47,13 @@ without loading the language skill or restarting agent coordination.
 
 ### Bounded review
 
-1. Identify the durable topic affected by the task.
-2. Find its owning instructions, specifications, and practices.
-3. Follow links one hop from those documents.
-4. Compare their claims with each other.
-5. Compare their claims with code, commands, configuration, and checks.
-6. Capture missing durable decisions relevant to the topic.
-7. Correct obsolete or conflicting guidance within the write scope.
-8. Update indexes when ownership, path, or discoverability changes.
-9. Update direct links when their target headings change.
-10. Report related defects that remain outside the write scope.
-
-**Prohibited:** rename one practice, update its heading, and declare completion
-without checking the catalog; alternatively, rewrite unrelated teams during the edit.
-
-**Required:** identify the renamed practice and its callers, update the catalog
-and affected links, compare the rule with its implementation evidence, and report
-an unrelated stale team instruction separately.
-
-This reviews the affected topic without silently broadening ownership.
+1. Identify the affected durable topic, its owning instructions, specifications,
+   and practices, and their one-hop links.
+2. Compare their claims with each other and with code, commands, configuration,
+   and checks. Capture missing durable decisions relevant to the topic.
+3. Correct obsolete or conflicting guidance within scope. Update indexes when
+   ownership, paths, or discoverability changes, and links when headings change.
+4. Report related defects outside the write scope.
 
 ### Full knowledge-base review
 
@@ -73,14 +61,6 @@ This reviews the affected topic without silently broadening ownership.
 - Keep one task owner responsible for conflict resolution and final edits.
 - Organize evidence by document family.
 - Report additional work needs to the assigning Prime; it decides delegation.
-
-**Prohibited:** treat a request to fix one example as permission to rewrite every specification.
-
-**Required:** after an explicit full-review request, group findings by document
-family and keep one owner responsible for conflicting changes. Report additional work needs
-to Prime for a decision.
-
-The review scope comes from the assignment, not from discovering more files.
 
 ### Evidence
 
@@ -147,5 +127,3 @@ Clearly labeled historical archives do not need to describe current behavior.
 
 - **Required review:** “Checked the changed rule against the decoder and its catalog.
   The links resolve; the unknown-version behavior still violates the specification.”
-
-A full review also identifies retained historical documents as historical.

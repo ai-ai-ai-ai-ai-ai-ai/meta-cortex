@@ -18,7 +18,7 @@ Practice Knowledge Graphs; verifiers choose context under the shared review cont
 ### Authoring
 
 - Apply [writing clarity](practices/writing-clarity.md) to changed prose.
-- Apply [focused rules and examples](practices/focused-examples.md) to every substantive rule or explanatory section, whether it concerns code, prose, or behavior.
+- Apply [focused rules and examples](practices/focused-examples.md) to select examples that clarify decisions while preserving subject-specific example requirements.
 - Apply [article structure](practices/article-structure.md) to changed documents.
 - Apply [consistency](practices/consistency.md) to authority, context flow, and link direction.
 - Apply [practice knowledge graphs](practices/knowledge-graphs.md) when selecting
@@ -31,8 +31,9 @@ Practice Knowledge Graphs; verifiers choose context under the shared review cont
 **Prohibited:** rewrite a rule for convenience, copy it into two skills, and
 report that adding headings proves the documentation is correct.
 
-**Required:** preserve the requirement in its owning practice, add the focused
-example there, and update its catalog link. Review meaning separately from link checks.
+**Required:** preserve the requirement in its owning practice, add examples where
+they clarify its decision or subject rules require them, and update its catalog
+link. Review meaning separately from link checks.
 
 ### Scope and ownership
 
@@ -66,7 +67,7 @@ locations and reports the specific semantic and mechanical checks performed.
 ## Validation
 
 1. Review meaning, scope, and document ownership.
-2. Check the changed document against the applicable authoring practices, including whether each substantive section's examples demonstrate its decision.
+2. Check the changed document against the applicable authoring practices and subject-specific example requirements. Keep examples that demonstrate a decision; omit decorative repetition.
 3. Verify affected paths, links, headings, and indexes.
 4. Run applicable checks provided by the consuming project.
 5. Report the checks actually run and any unresolved inconsistencies.

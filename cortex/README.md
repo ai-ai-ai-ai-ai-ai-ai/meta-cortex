@@ -169,22 +169,12 @@ Prime reassesses those choices when scope changes or results need repair.
 The policy covers supported session updates and replacement handoffs that
 preserve work. No manual role-model tuning is required.
 
-- **Prohibited:** assign all tasks one fixed model and effort regardless of complexity.
-- **Required:** assess available settings and their limits for the assignment,
-  use supported controls or known inheritance, and reassess when evidence changes.
-
 ## Agent skills
 
-Each agent’s `AGENTS.md` links its skills. Each skill’s `SKILL.md` contains its
-instructions and prerequisites. Gizmo Prime assigns work by responsibility;
-the assigned agent loads its own guidance.
-The tech writer owns [skill organization](teams/ai-team/agents/tech-writer/AGENTS.md#skill-organization),
-including placement and updates to callers when guidance moves.
-Each practice has one canonical owner.
-
-Skills live under their owning agents. An agent may use another agent’s skill
-by linking to its canonical copy from its own instructions. There is no common
-skill category or library-root skill directory.
+Prime assigns work by responsibility; each agent loads the skills linked from
+its `AGENTS.md`. Each `SKILL.md` owns its instructions and prerequisites. Follow
+[skill organization](teams/ai-team/agents/tech-writer/AGENTS.md#skill-organization)
+for placement, canonical reuse, and updates when guidance moves.
 
 The [tech writer](teams/ai-team/agents/tech-writer/AGENTS.md) owns Context
 Engineering and Code Practice Writing for documentation and programming examples.

@@ -19,7 +19,7 @@ rules:
     summary: Keep necessary reasoning connected; group parallel facts in bullets.
   - id: writing_clarity:instruction_order
     source: ../writing-clarity.md#instruction-grouping
-    summary: Group required then prohibited instructions by real subjects.
+    summary: Group related requirements and prohibitions by subject or decision.
   - id: writing_clarity:semantic_groups
     source: ../writing-clarity.md#instruction-grouping
     summary: Preserve homogeneous lists and indivisible ordered procedures.

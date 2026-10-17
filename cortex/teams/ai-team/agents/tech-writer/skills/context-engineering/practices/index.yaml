@@ -12,7 +12,7 @@ entries:
     summary: Atomic prose, grouping, representations, and host capacity.
   - title: Focused rules and examples
     path: focused_examples/index.yaml
-    summary: Concrete decisions, required pairs, authority, and validation.
+    summary: Concrete decisions, useful examples, authority, and validation.
   - title: Article structure
     path: article_structure/index.yaml
     summary: Body shapes, hierarchy, action blocks, and preserved meaning.

@@ -10,7 +10,7 @@ Read [Context knowledge](docs/index.yaml) for Cortex context formats and their a
 ## Agent catalog
 
 - **[Tech writer](agents/tech-writer/AGENTS.md)**
-  - Documentation structure, context flow, rule clarity, and prohibited/required examples.
+  - Documentation structure, context flow, rule clarity, and useful examples.
   - Owns assigned document changes and repairs; preserves subject policy.
   - Verifier: [Tech writer verifier](agents/tech-writer-verifier/AGENTS.md).
 - **[Tech writer verifier](agents/tech-writer-verifier/AGENTS.md)**
