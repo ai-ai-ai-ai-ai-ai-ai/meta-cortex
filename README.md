@@ -823,6 +823,30 @@ continuously, or treat a recorded passed check as a new test run.
 **Required:** read the saved task history and check evidence; report recorded
 lifetimes separately from actual execution or fresh validation.
 
+#### Animated view
+
+Within a repository group, the top bar's **Classic / Animated** switch replaces
+the feature journal with a live constellation of the group's most recently
+active features (up to 12). Gizmo Prime sits at the core; features, teams,
+agents and tasks branch from it. Each task is a star whose glyph follows its
+recorded flow state, whose glow follows the recency of its last entry, and
+whose size follows its recorded progress, checkpoints and passed checks.
+Agents are comets that fly to their claimed task. Blocked tasks, lapsed leases
+and recent failed checks stay labelled. Select an agent for a close-up with its
+recorded checks, commits and completed tasks.
+
+The view replays each feature's `revision_log` in sequence order. It shows
+every entry's recorded state, owner, lease expiry and check evidence as stored;
+it does not derive windows or reattribute work. The timeline replays the whole
+recorded history and returns to live reads. Visual rules live in the frontend's
+[design code](app/visualization/frontend/DESIGN.md).
+
+**Prohibited:** read the sky's glow or star size as a completion estimate; the
+ledger records no completion percentage.
+
+**Required:** open the Classic journal for task logs, evidence and workflow
+detail; use the Animated view to see where work is active or needs attention.
+
 #### Typed requests and storage
 
 Run `meta-cortex list` for advanced typed `Workbench / Dashboard` requests.

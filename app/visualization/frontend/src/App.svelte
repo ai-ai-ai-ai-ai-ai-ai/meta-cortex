@@ -13,12 +13,15 @@
   import { Clock, LiveMode, LiveRefresh } from "./dashboard-state.svelte";
   import { TimeLook } from "./presentation";
   import FeaturePage from "./FeaturePage.svelte";
+  import ViewSwitch from "./ViewSwitch.svelte";
+  import { SkyLoad, ViewModes } from "./view-mode.svelte";
 
   const navigation = new GuideNavigation();
   const repositories = new RepositoryNavigation();
   let dashboard = $derived(repositories.reading());
   const live = new LiveRefresh();
   const clock = new Clock();
+  const views = new ViewModes();
   let time = $derived(new TimeLook(clock.now));
 
   onMount(() => {
@@ -57,6 +60,9 @@
       >
     </nav>
     {#if navigation.route === GuideRoute.Dashboard}
+      {#each repositories.selected() as selection (selection.card.repository.repository_id)}
+        <ViewSwitch {views} />
+      {/each}
       <p
         class="hidden items-center gap-2 text-xs text-muted-foreground sm:flex"
         role="status"
@@ -157,6 +163,16 @@
             truncated={selection.read.truncated()}
             refresh={() => dashboard.refresh()}
           />
+          {#if views.load === SkyLoad.Requested}
+            {#await import("./SkyView.svelte") then sky}
+              <sky.default
+                repository={selection.card.repository}
+                cards={summaries}
+                mode={views.mode}
+                origin={views.origin}
+              />
+            {/await}
+          {/if}
         {:else}
           {#if dashboard.failures().length === 0}<div
               role="status"

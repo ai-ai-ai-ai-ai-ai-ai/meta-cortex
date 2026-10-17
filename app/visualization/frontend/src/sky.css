@@ -1,0 +1,974 @@
+/*
+ * Animated view. The sky is a deliberate dark world in both app themes:
+ * every colour below is explicit. See DESIGN.md for the visual language.
+ */
+.sky {
+  --sky-space: #020309;
+  --sky-ink: #edf1fb;
+  --sky-dim: rgba(207, 224, 255, 0.58);
+  --sky-faint: rgba(207, 224, 255, 0.16);
+  --sky-line: rgba(207, 224, 255, 0.09);
+  --sky-glass: rgba(8, 10, 22, 0.62);
+  --sky-gold: #ffe2a8;
+  --sky-red: #ff4d63;
+  --sky-lost: #9fb0d8;
+  --sky-mono:
+    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sky-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  color: var(--sky-ink);
+  background: var(--sky-space);
+  font-family: var(--sky-sans);
+  color-scheme: dark;
+}
+/*
+ * The sky opens as a circle from the switch and closes back into it. The clip
+ * exists only while animating, so a resized window never crops the open sky.
+ */
+.sky[data-mode="animated"] {
+  animation: sky-open 1.05s cubic-bezier(0.7, 0, 0.2, 1);
+}
+.sky[data-mode="classic"] {
+  animation: sky-close 1.05s cubic-bezier(0.7, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+@keyframes sky-open {
+  from {
+    clip-path: circle(0 at var(--ox) var(--oy));
+  }
+  to {
+    clip-path: circle(calc(100vw + 100vh) at var(--ox) var(--oy));
+  }
+}
+@keyframes sky-close {
+  from {
+    clip-path: circle(calc(100vw + 100vh) at var(--ox) var(--oy));
+  }
+  to {
+    clip-path: circle(0 at var(--ox) var(--oy));
+  }
+}
+.topbar {
+  position: relative;
+  z-index: 30;
+}
+.sky-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+.sky-canvas:active {
+  cursor: grabbing;
+}
+.sky button {
+  color: inherit;
+  font: inherit;
+}
+.sky-kicker {
+  font: 500 9.5px var(--sky-mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--sky-dim);
+}
+
+/* ---- Rails ---- */
+.sky-rail {
+  position: absolute;
+  top: calc(var(--sky-top) + 18px);
+  width: 284px;
+  padding: 14px;
+  background: var(--sky-glass);
+  border: 1px solid var(--sky-line);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  transition: opacity 0.5s;
+}
+.sky-rail-left {
+  left: 18px;
+}
+.sky-rail-right {
+  right: 18px;
+  width: 304px;
+  max-height: calc(100% - var(--sky-top) - 138px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.sky[data-focus="open"]
+  :is(.sky-rail, .sky-dock, .sky-ticker, .sky-keybutton, .sky-key) {
+  opacity: 0;
+  pointer-events: none;
+}
+.sky-headline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 2px;
+}
+.sky-headline b {
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.sky-headline i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tone);
+  box-shadow: 0 0 12px var(--tone);
+}
+.sky-summary {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--sky-dim);
+}
+.sky-features {
+  display: grid;
+  gap: 2px;
+}
+.sky-feature {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  text-align: left;
+}
+.sky-feature:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.sky-feature[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--sky-faint);
+}
+.sky-feature i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffb066;
+  box-shadow: 0 0 8px currentColor;
+}
+.sky-feature i[data-condition="attention"] {
+  background: #ff5a6e;
+}
+.sky-feature i[data-condition="waiting"] {
+  background: #ffe2a8;
+}
+.sky-feature i[data-condition="finished"] {
+  background: #8fd8ff;
+}
+.sky-feature i[data-condition="empty"] {
+  background: #8090b0;
+}
+.sky-feature b {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.sky-feature small {
+  font: 10px var(--sky-mono);
+  color: var(--sky-dim);
+  font-variant-numeric: tabular-nums;
+}
+.sky-stack {
+  grid-column: 2 / 4;
+  display: flex;
+  gap: 1.5px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.sky-stack [data-state="queued"] {
+  background: #8a97b8;
+}
+.sky-stack [data-state="working"] {
+  background: #ffb35c;
+}
+.sky-stack [data-state="blocked"] {
+  background: #ff4d63;
+}
+.sky-stack [data-state="ready"] {
+  background: #ffe2a8;
+}
+.sky-stack [data-state="integrated"] {
+  background: #ffffff;
+}
+.sky-stack [data-state="completed"] {
+  background: #a6f3ff;
+}
+.sky-stack [data-state="cancelled"] {
+  background: #5c5f70;
+}
+.sky-whole {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 0;
+  background: none;
+  font: 500 10px var(--sky-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sky-dim);
+}
+.sky-whole:hover {
+  color: var(--sky-ink);
+}
+.sky-rail h3 {
+  display: flex;
+  justify-content: space-between;
+  margin: 14px 0 6px;
+  font: 600 9.5px var(--sky-mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sky-dim);
+}
+.sky-rail h3:first-child {
+  margin-top: 2px;
+}
+.sky-rail h3[data-tone="red"] {
+  color: var(--sky-red);
+}
+.sky-rail h3[data-tone="gold"] {
+  color: var(--sky-gold);
+}
+.sky-rail h3 span {
+  color: var(--sky-ink);
+  opacity: 0.6;
+}
+.sky-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 1px 8px;
+  align-items: center;
+  width: 100%;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+}
+.sky-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.sky-row .glyph-icon {
+  grid-row: span 2;
+}
+.sky-row b {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sky-row time {
+  font: 10px var(--sky-mono);
+  color: var(--sky-dim);
+  font-variant-numeric: tabular-nums;
+}
+.sky-row small {
+  grid-column: 2 / 4;
+  overflow: hidden;
+  font: 10.5px var(--sky-mono);
+  color: var(--sky-dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sky-row em {
+  font-style: normal;
+  color: var(--sky-red);
+}
+.sky-glowbar {
+  display: block;
+  grid-column: 2 / 4;
+  height: 2px;
+  margin-top: 3px;
+  overflow: hidden;
+  border-radius: 1px;
+  background: var(--sky-line);
+}
+.sky-glowbar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #c2350f, #ffc457, #fff1d0);
+}
+.sky-glowbar[data-alarm="true"] i {
+  background: var(--sky-red);
+}
+.sky-empty {
+  margin: 0;
+  padding: 4px 6px 2px;
+  font: 11px var(--sky-mono);
+  color: var(--sky-dim);
+  opacity: 0.7;
+}
+
+/* ---- Ticker, key, dock ---- */
+.sky-ticker {
+  position: absolute;
+  left: 22px;
+  bottom: 102px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+  width: min(560px, 50vw);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.sky-ticker li {
+  display: flex;
+  gap: 10px;
+  overflow: hidden;
+  font: 11px var(--sky-mono);
+  color: var(--sky-dim);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  animation: sky-rise 0.45s ease-out;
+}
+.sky-ticker li:nth-child(n + 3) {
+  opacity: 0.55;
+}
+.sky-ticker li:nth-child(n + 4) {
+  opacity: 0.28;
+}
+.sky-ticker time {
+  color: rgba(207, 224, 255, 0.35);
+}
+.sky-ticker b {
+  font-weight: 500;
+}
+@keyframes sky-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.sky-keybutton {
+  position: absolute;
+  right: 22px;
+  bottom: 102px;
+  padding: 6px 12px;
+  border: 1px solid var(--sky-line);
+  border-radius: 999px;
+  background: var(--sky-glass);
+  font: 500 10px var(--sky-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sky-dim);
+}
+.sky-keybutton:hover,
+.sky-keybutton[aria-expanded="true"] {
+  color: var(--sky-ink);
+  border-color: var(--sky-faint);
+}
+.sky-key {
+  position: absolute;
+  right: 22px;
+  bottom: 140px;
+  width: 300px;
+  padding: 14px;
+  border: 1px solid var(--sky-faint);
+  border-radius: 14px;
+  background: rgba(6, 8, 18, 0.92);
+  backdrop-filter: blur(14px);
+}
+.sky-key ul {
+  display: grid;
+  gap: 7px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sky-key li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.sky-key li b {
+  font: 600 13px var(--sky-mono);
+  text-align: center;
+}
+.sky-key hr {
+  margin: 10px 0 2px;
+  border: 0;
+  border-top: 1px solid var(--sky-line);
+}
+.sky-dock {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 14px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  height: 74px;
+  padding: 10px 14px;
+  border: 1px solid var(--sky-line);
+  border-radius: 14px;
+  background: var(--sky-glass);
+  backdrop-filter: blur(14px);
+  transition: opacity 0.5s;
+}
+.sky-transport {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.sky-transport button {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--sky-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  font: 500 11px var(--sky-mono);
+  color: var(--sky-dim);
+}
+.sky-transport button:hover {
+  color: var(--sky-ink);
+  border-color: var(--sky-faint);
+}
+.sky-transport button[aria-pressed="true"] {
+  color: var(--sky-ink);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--sky-faint);
+}
+.sky-separator {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--sky-line);
+}
+.sky-track {
+  width: 100%;
+  height: 54px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.sky-clock {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+.sky-clock b {
+  font-size: 20px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.sky-live {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid var(--sky-faint);
+  border-radius: 999px;
+  background: none;
+  font: 600 10px var(--sky-mono);
+  letter-spacing: 0.2em;
+  color: var(--sky-dim);
+}
+.sky-live i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sky-dim);
+}
+.sky-live[data-live="true"] {
+  color: #ffd0d6;
+  border-color: rgba(255, 77, 99, 0.5);
+}
+.sky-live[data-live="true"] i {
+  background: var(--sky-red);
+  box-shadow: 0 0 8px var(--sky-red);
+  animation: sky-blink 1.4s infinite;
+}
+@keyframes sky-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+.sky-stale {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--sky-top) + 18px);
+  margin: 0;
+  padding: 6px 12px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 77, 99, 0.4);
+  border-radius: 999px;
+  background: var(--sky-glass);
+  font: 11px var(--sky-mono);
+  color: #ffd0d6;
+}
+
+/* ---- Tooltip ---- */
+.sky-tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 10px 12px;
+  border: 1px solid var(--sky-faint);
+  border-radius: 10px;
+  background: rgba(6, 8, 18, 0.9);
+  font-size: 12px;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+.sky-tip h4 {
+  margin: 4px 0 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-transform: none;
+}
+.sky-tip dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 3px 10px;
+  margin: 6px 0 0;
+  font: 10.5px var(--sky-mono);
+}
+.sky-tip dt {
+  color: var(--sky-dim);
+}
+.sky-tip dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.sky-chip {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font: 500 10px var(--sky-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sky-chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--chip);
+  box-shadow: 0 0 6px var(--chip);
+}
+.sky-tip-action {
+  margin-top: 8px;
+  font: 10px var(--sky-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sky-gold);
+}
+
+/* ---- Agent focus: a documentary close-up ---- */
+.sky-focus {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: sky-fade 0.6s ease-out;
+}
+.sky-focus button,
+.sky-focus-panel {
+  pointer-events: auto;
+}
+.sky-focus::before,
+.sky-focus::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 34px;
+  background: #000;
+  animation: sky-letterbox 0.9s cubic-bezier(0.7, 0, 0.2, 1);
+}
+.sky-focus::before {
+  top: var(--sky-top);
+}
+.sky-focus::after {
+  bottom: 0;
+}
+@keyframes sky-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sky-letterbox {
+  from {
+    height: 0;
+  }
+}
+.sky-focus-close {
+  position: absolute;
+  top: calc(var(--sky-top) + 50px);
+  left: 40px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  background: none;
+  font: 500 11px var(--sky-mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sky-dim);
+}
+.sky-focus-close kbd {
+  padding: 3px 6px;
+  border: 1px solid var(--sky-faint);
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+.sky-focus-close:hover {
+  color: var(--sky-ink);
+}
+.sky-focus-nav {
+  position: absolute;
+  top: calc(var(--sky-top) + 46px);
+  left: 50%;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  transform: translateX(-50%);
+  font: 500 11px var(--sky-mono);
+  letter-spacing: 0.22em;
+  color: var(--sky-dim);
+}
+.sky-focus-nav button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--sky-faint);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 16px;
+  line-height: 1;
+}
+.sky-focus-nav button:hover {
+  border-color: var(--team);
+}
+.sky-focus-caption {
+  position: absolute;
+  top: calc(var(--sky-top) + 98px);
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  animation: sky-caption 3.4s ease forwards;
+}
+.sky-focus-caption span {
+  display: inline-flex;
+  gap: 14px;
+  align-items: center;
+  font: 500 12px var(--sky-mono);
+  letter-spacing: 0.42em;
+  color: var(--caption);
+  text-shadow: 0 0 14px var(--caption);
+}
+.sky-focus-caption span::before,
+.sky-focus-caption span::after {
+  content: "";
+  width: 48px;
+  height: 1px;
+  background: var(--caption);
+  opacity: 0.6;
+}
+.sky-focus-caption small {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--sky-dim);
+}
+@keyframes sky-caption {
+  0% {
+    opacity: 0;
+    filter: blur(6px);
+  }
+  12%,
+  80% {
+    opacity: 1;
+    filter: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* The event log lives inside the panel, so the two can never overlap. */
+.sky-focus-panel {
+  position: absolute;
+  top: 50%;
+  right: 56px;
+  width: 300px;
+  max-height: calc(100% - var(--sky-top) - 120px);
+  padding-left: 22px;
+  overflow-y: auto;
+  transform: translateY(-50%);
+  border-left: 1px solid var(--sky-faint);
+  scrollbar-width: none;
+}
+.sky-focus-panel > * {
+  animation: sky-slide 0.7s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+.sky-focus-panel > :nth-child(2) {
+  animation-delay: 0.25s;
+}
+.sky-focus-panel > :nth-child(3) {
+  animation-delay: 0.4s;
+}
+.sky-focus-panel > :nth-child(4) {
+  animation-delay: 0.55s;
+}
+.sky-focus-panel > :nth-child(5) {
+  animation-delay: 0.7s;
+}
+.sky-focus-panel > :nth-child(n + 6) {
+  animation-delay: 0.85s;
+}
+@keyframes sky-slide {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+.sky-focus-kicker {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  font: 500 10px var(--sky-mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--team);
+}
+.sky-focus-kicker::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--team);
+  box-shadow: 0 0 10px var(--team);
+  animation: sky-blink 1.2s infinite;
+}
+.sky-metric span,
+.sky-spark span,
+.sky-focus-task > span {
+  display: block;
+  margin-bottom: 2px;
+  font: 500 9.5px var(--sky-mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--sky-dim);
+}
+.sky-metric b {
+  font-size: 28px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+}
+.sky-metric i {
+  margin-left: 6px;
+  font: normal 10px var(--sky-mono);
+  color: var(--sky-dim);
+}
+.sky-metric-hero {
+  margin-bottom: 16px;
+}
+.sky-metric-hero b {
+  font-size: 68px;
+  line-height: 1;
+  background: linear-gradient(180deg, #fff, var(--team));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sky-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  padding: 14px 0;
+  border-block: 1px solid var(--sky-line);
+}
+.sky-spark {
+  padding: 14px 0 6px;
+}
+.sky-spark svg {
+  display: block;
+  width: 100%;
+  height: 56px;
+}
+.sky-spark polyline {
+  fill: none;
+  stroke: var(--team);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 4px var(--team));
+}
+.sky-focus-task {
+  padding-top: 12px;
+}
+.sky-focus-task strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+}
+.sky-focus-task small {
+  display: block;
+  margin-top: 3px;
+  font: 10.5px var(--sky-mono);
+  color: var(--sky-dim);
+}
+.sky-focus-task .sky-glowbar {
+  height: 3px;
+  margin-top: 10px;
+}
+.sky-focus-uptime {
+  margin-top: 18px;
+  font: 500 11px var(--sky-mono);
+  letter-spacing: 0.2em;
+  color: var(--sky-dim);
+}
+.sky-focus-uptime b {
+  font-weight: 500;
+  color: var(--sky-ink);
+}
+.sky-focus-log {
+  display: grid;
+  gap: 5px;
+  margin: 16px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--sky-line);
+  list-style: none;
+}
+.sky-focus-log li {
+  display: grid;
+  grid-template-columns: 82px 86px minmax(0, 1fr);
+  gap: 8px;
+  overflow: hidden;
+  font: 10.5px var(--sky-mono);
+  color: var(--sky-dim);
+  white-space: nowrap;
+}
+.sky-focus-log li:first-child {
+  color: var(--sky-ink);
+}
+.sky-focus-log b {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--team);
+}
+.sky-focus-log span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sky-focus-lower {
+  position: absolute;
+  left: 56px;
+  bottom: 76px;
+  max-width: 520px;
+}
+.sky-focus-lower > * {
+  animation: sky-lift 0.8s ease-out both;
+}
+.sky-focus-lower h2 {
+  margin: 6px 0 10px;
+  font-size: clamp(30px, 4.2vw, 52px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  animation-delay: 0.35s;
+}
+.sky-focus-lower p {
+  max-width: 400px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--sky-dim);
+  animation-delay: 0.9s;
+}
+@keyframes sky-lift {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.sky-focus-team {
+  font: 500 11px var(--sky-mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--team);
+}
+.sky-focus-line {
+  width: 360px;
+  max-width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--team), transparent);
+  animation: sky-draw 1.2s 0.6s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  transform-origin: left;
+}
+@keyframes sky-draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (max-width: 980px) {
+  .sky-rail,
+  .sky-ticker {
+    display: none;
+  }
+  .sky-dock {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    gap: 8px;
+  }
+  .sky-clock {
+    grid-auto-flow: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sky-keybutton {
+    bottom: 150px;
+  }
+  .sky-key {
+    left: 16px;
+    right: 16px;
+    bottom: 188px;
+    width: auto;
+  }
+  .sky-focus-panel {
+    top: auto;
+    left: 16px;
+    right: 16px;
+    bottom: 120px;
+    width: auto;
+    max-height: 45%;
+    transform: none;
+  }
+  .sky-metric-hero b {
+    font-size: 44px;
+  }
+  .sky-focus-lower {
+    left: 16px;
+    bottom: 40px;
+  }
+  .sky-focus-lower p,
+  .sky-focus-line {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sky {
+    transition: none;
+  }
+}
