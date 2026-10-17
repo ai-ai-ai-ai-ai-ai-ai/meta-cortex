@@ -58,12 +58,6 @@ request data through literal stdin or a safely quoted heredoc whose delimiter
 is absent from the data. Never interpolate answers into shell commands, `eval`,
 or executable templates.
 
-- **Prohibited:** accept `age: "18.2"` as 18, or discard an accepted name while
-  retrying age because the reply came through chat instead of buttons.
-
-- **Required:** retain the name, explain the integer error, and validate the new
-  age under its bound field name through the same helper.
-
 ### Interrupted or unavailable collection
 
 Explicit user cancellation produces a `cancel` event and stops dependent work.
@@ -80,9 +74,3 @@ field from state before resubmission; ordinary retries cannot overwrite it.
 This skill cannot override host restrictions on questions. When the host disallows
 all available ways to ask, report the blocker unless the user already supplied
 a valid answer.
-
-- **Prohibited:** treat a timeout as `local_only`, or manufacture an approval
-  because native questions are unavailable.
-
-- **Required:** ask the pending question in permitted conversation, validate the
-  reply, and keep dependent work paused until its answer is accepted.

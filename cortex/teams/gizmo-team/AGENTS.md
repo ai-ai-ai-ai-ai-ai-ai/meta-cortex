@@ -22,12 +22,6 @@ Prime assigns work and resolves cross-team dependencies. Subject agents own
 technical execution and documentation. Skills remain with their owning agents;
 team documentation belongs in `docs/` when needed.
 
-**Prohibited:** insert another coordinator to dispatch specialists, or let Prime
-take over a worker's implementation or mechanical checks.
-
-**Required:** assign the correction directly to its owner and assess the resulting
-evidence. Use additional specialists only for work the feature needs.
-
 ## Team circuit breaker
 
 Apply the [subject-specific circuit breaker](CIRCUIT-BREAKER.md) to this

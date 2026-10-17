@@ -72,10 +72,8 @@ For example, starting the delivery form with empty state returns:
 {"name":"development.delivery","question":"Delivery: create_pr (recommended) commits and pushes the validated feature and creates or updates its PR; local_only keeps work local without pushing or creating a PR. Which delivery?","required":"required","type":"choice","options":["create_pr","local_only"]}
 ```
 
-Present this field through a supported native tool or ordinary conversation.
-It contains no tool arguments. Retain the stable `name` and bind the actual reply
-to it before submitting an answer event. A host's preselected suggestion is not
-an answer until the user submits it.
+The prompt contains no host tool arguments. Apply the
+[collection workflow](../SKILL.md#run-a-form) to presentation and reply binding.
 
 ### Retained state
 
@@ -90,11 +88,6 @@ Carried answers and skips must belong to the current form. A changed form does
 not migrate removed fields; unknown retained-state fields are rejected. The host
 retains validated session delivery independently and can construct a fresh state
 containing only that delivery answer for revalidation.
-
-- **Prohibited:** accept state with a removed field by silently discarding it.
-
-- **Required:** reject that state. When the host independently retains validated
-  `create_pr`, revalidate fresh state with only `development.delivery: create_pr`.
 
 Malformed schema, malformed request, invalid carried state, or I/O failures exit
 with code 1 and an `error` code. Pending, complete, cancelled, and unavailable

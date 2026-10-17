@@ -1,242 +1,90 @@
 # Agent Configuration
 
-[meta-cortex.toml](../../../meta-cortex.toml) sets the scheduling ceiling.
-The launching agent assesses model and reasoning effort for each assignment
-using the active host's controls and known effective or inherited settings.
-There are no static role settings or framework model catalog. Speed belongs to the host session.
+The host selects Gizmo Prime's model and reasoning effort; Prime selects and
+reassesses workers and verifiers. Workers recommend changes to Prime. Follow the
+[coordination architecture](coordination-state-machine.md) and supply the
+[assignment context](../../AGENTS.md#assignment-context).
 
-The host agent selects Gizmo Prime's settings; Prime selects each worker's and
-verifier's settings directly. The assigning agent owns later
-reassessment through the same hierarchy. Workers report evidence and may
-recommend a change; they do not launch replacements or change peer settings.
+## Check host capacity
 
-## Required actions
+`host.max_total_agents` in [meta-cortex.toml](../../../meta-cortex.toml) is a
+positive scheduling ceiling that includes the host, Prime, and all active agents.
+It neither allocates slots nor requires the host to provide that many. Schedule
+within both this ceiling and actual host limits; queue work when slots are full.
+For example, three total slots allow the host, Prime, and one worker.
 
-### Resolve the active host
+Use exposed capabilities, session metadata, and launch results to establish host
+limits, including whether a reported limit counts the primary agent. Missing exact
+capacity metadata alone is not a blocker: launch needed assignments within known
+bounds and queue on exhaustion. Do not launch disposable agents to probe capacity.
 
-1. Read the exposed execution-tool contract and relevant session metadata.
-   Identify supported launch, messaging, continuation, stop, context, and settings
-   controls. Use installed or official documentation to resolve their semantics.
-2. Select only the active host's reference from the
-   [host catalog](hosts/index.yaml) when host-specific mechanics are needed.
-   Carry its path, capability evidence, and limitations through assignments.
-3. Apply the shared rules below through those capabilities. Hosts need not expose
-   identical parameter names, model catalogs, effort controls, or tier metadata.
-   Block work when a required hierarchy, user constraint, or assignment-quality
-   requirement cannot be met; report other limitations without inventing controls.
+Preserve the required delegation depth and coexistence. Report a concrete blocker
+if the host or ceiling cannot support Host → Prime → worker; do not bypass Prime.
+Carry known limits, unresolved capabilities, and scheduling decisions through
+assignments, and reassess when the host or task changes. Use the active
+[host reference](hosts/index.yaml) when host-specific mechanics are needed.
 
-- **Prohibited:** reject a suitable inherited model solely because the host lacks
-  a separate effort parameter, or let the host dispatch workers around Prime
-  because nesting is unavailable.
+## Choose settings for the assignment
 
-- **Required:** assess the known inherited settings for the assignment and report
-  unavailable effort control. If the host cannot launch the required descendants,
-  report that concrete hierarchy blocker.
+Honor the user's model, effort, cost, and latency constraints. Select the least
+costly available combination likely to meet the assignment's quality requirements,
+considering ambiguity, dependencies, correctness risk, and prior results. Assess
+model capability and reasoning effort separately; choose per assignment, not by
+role or language. There are no static role settings or framework model catalog.
 
-### Check host capacity
+Use supported explicit controls or assessed effective or inherited settings.
+Record consequential choices, exceptions, and changes with their evidence and
+reason in the assignment or existing continuation notes. Routine choices do not
+require user tuning or a repeated settings report. If no available combination
+meets the assignment and user constraints, report the concrete blocker.
 
-Read `host.max_total_agents` from the active library's configuration. This
-positive integer bounds concurrent agents,
-including the host agent and Prime. It neither allocates host slots nor
-requires the host to offer that many.
+Distinguish requested or configured settings and known inheritance from confirmed
+runtime settings. Only host-returned runtime evidence confirms what ran; saved
+configuration, a child's self-report, or elapsed time does not. State unavailable
+confirmation when it limits a decision or a requested execution check.
 
-Preserve the [team architecture](../../AGENTS.md): the host launches Gizmo Prime,
-Prime directly launches workers and verifiers. Prime schedules its workers
-within the shared ceiling and actual host limits. Account for the host, Prime,
-and other active agents before launching more work; queue assignments when slots are occupied.
+## Reassess and change execution settings
 
-Use execution-tool capabilities, active-session metadata, and actual launch
-results as evidence. When a host reports a limit, record its source and normalize
-whether it includes the primary agent. A saved configuration is not proof of the
-active limit. Missing exact capacity metadata alone does not block work: launch
-only needed assignments within known bounds and queue when the host reports
-capacity exhaustion. Do not launch disposable agents to measure capacity.
+Reassess after material scope changes, stalled progress, failed checks, or review
+findings. Use the evidence to decide whether to repair the environment, clarify
+the assignment, change settings, or retain a suitable worker. Record meaningful
+continuation decisions with the triggering evidence and next acceptance checks.
+Changing settings does not expand scope, reset applicable repair limits, or replace
+[verification](agent-verification.md).
 
-#### Preserve the hierarchy
+Reuse a suitable session. Apply a needed settings change only at a supported host
+boundary. If replacement is necessary, establish that the old execution stopped
+or finished, preserve its work and evidence, and follow
+[ledger recovery](ledger-task-lifecycle.md#recovery-and-stale-work). Retain one
+writer per workspace under the [local Git architecture](../../delivery-team/agents/integration-agent/skills/local-feature/SKILL.md#team-architecture).
 
-A host must support the delegation depth and coexistence needed for the team
-architecture. If its capabilities or the project ceiling cannot support that
-hierarchy, report the specific host capability or ceiling blocker. Preserve the
-hierarchy while resolving that limitation. Carry the ceiling, capability
-evidence, unresolved limits, and scheduling decisions through assignments and
-continuations; reassess when the host or task changes.
+## Approve host configuration
 
-- **Prohibited:** require a host with three total slots to provide the configured
-  ceiling of twenty, or bypass a coordinator to fit more workers.
-
-- **Required:** when three slots and the required delegation depth are available,
-  count the host, Prime, and one worker; queue further workers until a
-  slot is released. If that hierarchy cannot run, explain the blocking capability.
-
-### Approve host configuration
-
-Consider a host configuration change only when the task needs it or the user
-requests it. Busy slots usually call for scheduling. Identify the effective
-configuration and supported setting through installed or official host
-documentation. Show the exact path, current and proposed values, purpose, and
-any restart requirement before requesting approval. Use the active host's
-reference for its configuration format and activation rules.
+Consider a host change only for a task need or user request; occupied slots
+usually call for scheduling. Identify the effective configuration and supported
+setting through installed or official host documentation. Before approval, show
+its exact path, current and proposed values, purpose, and restart requirement.
 
 Use the [user-input skill](../agents/gizmo-prime/skills/user-input/SKILL.md) and
 [capacity form](../agents/gizmo-prime/skills/user-input/examples/host-capacity.yaml)
-to validate approval of that concrete proposal. Reuse explicit authorization
-already supplied for the same change. `allow_host_update` authorizes the shown
-edit; `keep_host_settings`, cancellation, or unavailable input does not.
-Continue feasible work with existing settings, or report the blocked capability.
-Do not silently change the project ceiling or bypass the hierarchy.
+for that concrete proposal. Reuse explicit authorization for the same change.
+`allow_host_update` authorizes the shown edit; `keep_host_settings`, cancellation,
+or unavailable input does not. Continue feasible work with existing settings or
+report the blocked capability. Do not silently change the project ceiling.
 
-Apply an approved change with a supported configuration editor or parser,
-preserving unrelated settings and comments. Verify the saved values. If the host
-requires a restart, retain the task and session delivery and wait for resumption.
-Recheck active capabilities before dependent launches; saving a setting does not
-expand the running session. Unsupported or enforced settings remain limitations.
+Apply an approved change through a supported editor or parser, preserving
+unrelated settings and comments, and verify the saved values. If activation
+requires restart, retain the task and session delivery for resumption. Recheck
+active capabilities before dependent launches; saving a setting does not expand
+the running session. Unsupported or enforced settings remain limitations.
 
-- **Prohibited:** rewrite host configuration just to match the project ceiling,
-  or claim an approved configuration edit already changed live capacity.
+## Use the host speed setting
 
-- **Required:** propose only a necessary, supported change, obtain explicit
-  approval, and verify the active capability before relying on it.
+Speed belongs to the user's host session. Follow documented subagent inheritance
+and activation rules; do not add a framework speed selector, alias, default,
+translation layer, or launch tier override. Supported tiers describe availability,
+not the selected speed. Do not assume that an existing child follows a parent
+speed change, or promise a tier the selected model does not support.
 
-### Choose settings for the assignment
-
-1. Identify available model and effort choices, defaults, inheritance, and
-   overriding configuration from the active host's evidence. Use supported exact
-   identifiers when selecting explicit values. If no catalog or override exists,
-   assess the known effective or inherited settings and record what is unavailable.
-   Do not infer identifiers from display names or maintain a framework model catalog.
-2. Assess the actual assignment: ambiguity, reasoning depth, UI/design demands,
-   cross-module dependencies, correctness risk, review scope, and prior attempts.
-   Honor explicit user model, effort, cost, and latency constraints. Select the
-   least costly combination likely to meet the required quality; do not choose
-   solely by role, language, or file extension.
-3. Assess model capability and reasoning effort separately, using supported
-   controls or known inheritance. High effort on a smaller model does not
-   automatically provide a stronger model's capability.
-   Use these examples as judgment cues, not fixed role mappings:
-   - Routine monitoring or a bounded status check can use a lightweight model
-     with effort proportionate to the reasoning needed. A trivial check may need
-     less effort than interpreting an ambiguous monitoring result.
-   - Complex TypeScript UI work, visual interaction design, and difficult state
-     behavior warrant a strong model from the start with supported high effort.
-     A small copy edit does not have the same demands.
-   - Complex Rust ownership, concurrency, architecture, or cross-module repairs
-     can warrant a stronger model and high reasoning effort. Choose from the
-     actual reasoning burden and available evidence.
-   - Coordinators and reviewers also need settings suited to their current
-     decisions; routine tracking and a difficult architecture dispute differ.
-4. Record the selected or inherited model and effort, their evidence and limits,
-   and a short task-specific rationale in assignment context. Use existing ledger
-   continuation notes when the ledger is available; carry bootstrap choices until they can be recorded. These are
-   per-attempt decisions, not settings to write back into TOML or role files.
-   Make routine choices autonomously without asking the user to tune each agent.
-
-- **Prohibited:** assign every developer the same model because `[team.agent]`
-  used it, or give a complex UI repair the cheapest model without assessing risk.
-
-- **Required:** explain that the UI repair spans interaction states and prior
-  attempts missed a requirement, then select a supported stronger combination.
-  Record why it fits this assignment and retain the user's constraints.
-
-### Launch with the selected settings
-
-1. Apply the selection above before every launch, including Gizmo Prime.
-   Reassess before reusing a session for a changed assignment or repair.
-2. Apply supported explicit model and effort controls when available; otherwise
-   deliberately use the assessed effective or inherited settings. Choose compatible
-   context handling and supply the complete
-   [assignment context](../../AGENTS.md#assignment-context). Resolve parameter and
-   inheritance details through the active host's reference.
-3. Leave speed to the host as described below. Do not add a tier override to the
-   launch request. Host configuration changes follow the approval procedure above.
-4. Check the host's launch result and returned execution metadata when available.
-   Record a requested setting separately from a confirmed runtime setting.
-   If a chosen combination is rejected or unavailable, select another supported
-   combination that meets the assignment and user constraints and record why.
-   If none meets those requirements, report the concrete blocker. Never describe
-   inheritance or an ignored request as a confirmed override.
-
-- **Prohibited:** name a stronger model in a child's prompt while the tool launches
-  it with inherited settings, or send an unsupported `mode` argument.
-
-- **Required:** use the supported controls or assessed inheritance, supply the
-  needed context, and distinguish the requested settings from runtime confirmation.
-
-### Reassess and change execution settings
-
-1. Reassess when scope or difficulty changes, a check or review exposes incorrect
-   work, progress stalls, or an attempted repair fails. Inspect the evidence and
-   remaining work before choosing the next execution. A tool outage or missing
-   dependency may require an environment fix rather than more reasoning.
-2. Keep a suitable combination when the failure has a clear bounded correction.
-   Increase effort or choose a stronger model when reasoning or implementation
-   quality is insufficient. Simplify the assignment when that resolves ambiguity.
-   Once difficult work is complete, a cheaper combination may suit monitoring.
-   Do not wait for repeated failures when the first result shows a capability gap.
-3. Record the prior and selected settings, the triggering evidence, and the next
-   acceptance checks in existing assignment or continuation notes. Stay within
-   the [bounded repair workflow](agent-verification.md); changing models does not
-   reset its repair limit or authorize broader work.
-4. Reuse an existing session when its known effective or inherited settings remain
-   suitable. Record unavailable runtime confirmation. If a change is needed and
-   supported, use that operation at the host's supported boundary and inspect its
-   result before resuming work. Do not claim a prompt or saved configuration
-   changed a running model.
-5. If changing that session is unsupported, stop its execution or establish that
-   it finished before launching a replacement. Preserve its branch, uncommitted
-   edits, checkpoints, findings, failed checks, and remaining acceptance criteria.
-   Apply [ledger recovery](ledger-task-lifecycle.md#recovery-and-stale-work), including any
-   required requeue and new claim. Supply the new session's complete context and
-   selected settings; retain one writer per workspace.
-6. Evaluate the resulting work against the same acceptance criteria and required
-   checks. A more capable model does not itself establish that the repair passed.
-   Workers request reassessment directly from Prime; the host agent reassesses Prime.
-
-- **Prohibited:** retry unchanged settings indefinitely, start a second writer in
-  an active workspace, or mark a failed feature fixed because its model changed.
-
-- **Required:** after a weak repair misses a Rust invariant, Prime records that
-  failure, selects stronger supported settings, preserves the work through the
-  host and ledger handoff, and requires the replacement's repair to pass checks.
-
-### Use the host speed setting
-
-Speed selection, where available, belongs to the user in the host. Use the host's
-supported subagent workflow and follow its documented session inheritance
-rules. Do not create a framework speed selector, alias, default, or translation
-layer.
-A list of supported service tiers describes availability, not the selected
-speed. If host metadata is available, inspect the active session's setting.
-Do not treat a global configuration file as proof of the active session setting.
-If speed changes during a task, follow the host's rules for new and existing
-agents; do not assume an existing child changes with its parent. A model that
-does not support the selected tier cannot be promised that speed.
-
-- **Prohibited:** infer an agent's selected speed from a list of available tiers,
-  or claim that omitting a tier argument proves inheritance.
-
-- **Required:** honor the user's host speed selection and use runtime metadata to
-  check the child's selected tier when available.
-
-### Verify the launch
-
-1. Check actual launch behavior through the host tool when validating execution.
-   Preserve the coordination hierarchy and the authorized test scope.
-2. Inspect host-returned execution metadata when available. Configuration
-   round trips, a child's self-report, and elapsed time do not verify the actual
-   processing tier.
-3. Report the launch result and tier evidence separately. If the host exposes no
-   processing-tier metadata, state that runtime tier confirmation is unavailable.
-   A successful launch verifies the launch path, not a latency guarantee.
-
-- **Prohibited:** report “Selected processing tier verified” after only reading the
-  configuration or receiving a child's claim about its tier.
-
-- **Required:** report “The parent has the requested tier selected and the live
-  child launch completed. The host exposes no actual processing-tier metadata for the child.”
-
-## Prohibited actions
-
-- Do not add execution selectors or service-tier fields to framework configuration.
-- Do not restore static role model/effort settings or a bundled model allowlist.
-- Do not turn illustrative task examples into a mandatory model lookup table.
-- Keep selection policy here; roles and skills link it instead of fixing models.
+Keep this selection policy here. Roles and skills link it instead of fixing model,
+effort, or service-tier settings in framework configuration.
