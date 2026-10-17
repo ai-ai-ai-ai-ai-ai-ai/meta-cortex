@@ -137,10 +137,40 @@ pub enum StoppedExecution {
 
 #[cfg(test)]
 mod tests {
-    use super::ClaimTask;
-    use crate::agents::{AgentId, DevelopmentAgent};
+    use super::{AssignTask, ClaimTask};
+    use crate::agents::recorded::{RecordedAgentId, RecordedGizmoAgent, RecordedReportingTarget};
+    use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
+    use crate::model::workflow::TaskAssignment;
     use crate::values::WorkerId;
     use crate::values::{FeatureId, LeaseSeconds, TaskId, TaskRevision};
+
+    #[test]
+    fn current_assign_requests_reject_retired_actor_owner_and_reporting_target()
+    -> anyhow::Result<()> {
+        let request = AssignTask {
+            feature: FeatureId::try_from("feature".to_owned())?,
+            task: TaskId::try_from("task".to_owned())?,
+            expected_revision: TaskRevision::INITIAL,
+            actor: AgentId::Gizmo(GizmoAgent::GizmoPrime),
+            assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::RustDev)),
+        };
+        let valid = serde_json::to_value(request)?;
+        let decoded: AssignTask = serde_json::from_value(valid.clone())?;
+        decoded.assignment.validate()?;
+        let retired = serde_json::to_value(RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo))?;
+        // These input documents deliberately violate the current request boundary.
+        let mut actor = valid.clone();
+        actor["actor"] = retired.clone();
+        let mut owner = valid.clone();
+        owner["assignment"]["agent"] = retired;
+        let mut reporting = valid;
+        reporting["assignment"]["reports_to"] =
+            serde_json::to_value(RecordedReportingTarget::Gizmo(RecordedGizmoAgent::Gizmo))?;
+        for invalid in [actor, owner, reporting] {
+            assert!(serde_json::from_value::<AssignTask>(invalid).is_err());
+        }
+        Ok(())
+    }
 
     #[test]
     fn claim_contract_records_the_worker_instance() -> anyhow::Result<()> {

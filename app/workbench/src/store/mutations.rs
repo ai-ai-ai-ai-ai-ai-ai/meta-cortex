@@ -345,6 +345,14 @@ mod tests {
         directory: TempDir,
         data: TempDir,
     }
+    struct RetainedActivity {
+        agent: RecordedAgentId,
+        recovery: RecoveryAction,
+    }
+    enum RecoveryAction {
+        Reassign,
+        Cancel,
+    }
     #[derive(Serialize)]
     struct LegacyTask {
         version: TaskRecordVersionV2,
@@ -441,10 +449,8 @@ mod tests {
         }
     }
     impl Scenario {
-        async fn recover_retired_assignment(
-            &self,
-            recorded: RecordedAgentId,
-        ) -> anyhow::Result<()> {
+        async fn recover_retired_assignment(&self, input: RetainedActivity) -> anyhow::Result<()> {
+            let recorded = input.agent;
             let prime = AgentId::Gizmo(GizmoAgent::GizmoPrime);
             let current = match recorded {
                 RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo) => prime,
@@ -539,6 +545,24 @@ mod tests {
             legacy.require_preserved(&ledger).await?;
             let historical = ledger.task(&legacy.task.common.id).await?.task;
             assert_eq!(historical.ownership, legacy.task.ownership);
+            let mut rows = SqlStatement::build(
+                Query::select()
+                    .column(TaskTable::Document)
+                    .from(TaskTable::Table)
+                    .and_where(Expr::col(TaskTable::Id).eq(legacy.task.common.id.to_string()))
+                    .to_owned(),
+            )?
+            .query(&ledger.state.connection)
+            .await?;
+            let row = rows
+                .next()
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("retained task missing"))?;
+            assert_eq!(
+                row.get::<String>(0)?,
+                serde_json::to_string_pretty(&legacy.task)?
+            );
+            drop(rows);
             assert!(matches!(
                 ledger
                     .update(WorkerUpdate {
@@ -550,10 +574,25 @@ mod tests {
             ));
             assert_eq!(ledger.task(&legacy.task.common.id).await?.task, historical);
             legacy.require_preserved(&ledger).await?;
-            let cancelled = historical
-                .clone()
-                .cancel(Note::from("Retired responsibility".to_owned()))?;
-            assert!(matches!(cancelled.state, TaskState::Cancelled { .. }));
+            match input.recovery {
+                RecoveryAction::Reassign => {}
+                RecoveryAction::Cancel => {
+                    let cancelled = ledger
+                        .coordinate(CoordinatorUpdate {
+                            feature,
+                            task: historical.common.id,
+                            expected_revision: historical.common.revision,
+                            actor: prime,
+                            action: CoordinatorAction::Cancel {
+                                reason: Note::from("Retired responsibility".to_owned()),
+                            },
+                        })
+                        .await?;
+                    assert!(matches!(cancelled.state, TaskState::Cancelled { .. }));
+                    legacy.require_preserved(&ledger).await?;
+                    return Ok(());
+                }
+            }
             let queued = ledger
                 .coordinate(CoordinatorUpdate {
                     feature: feature.clone(),
@@ -712,12 +751,22 @@ mod tests {
             .build()?
             .block_on(async {
                 Scenario::create()?
-                    .recover_retired_assignment(RecordedAgentId::Development(
-                        DevelopmentAgent::RustDev,
-                    ))
+                    .recover_retired_assignment(RetainedActivity {
+                        agent: RecordedAgentId::Development(DevelopmentAgent::RustDev),
+                        recovery: RecoveryAction::Reassign,
+                    })
                     .await?;
                 Scenario::create()?
-                    .recover_retired_assignment(RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo))
+                    .recover_retired_assignment(RetainedActivity {
+                        agent: RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo),
+                        recovery: RecoveryAction::Reassign,
+                    })
+                    .await?;
+                Scenario::create()?
+                    .recover_retired_assignment(RetainedActivity {
+                        agent: RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo),
+                        recovery: RecoveryAction::Cancel,
+                    })
                     .await
             })
     }
