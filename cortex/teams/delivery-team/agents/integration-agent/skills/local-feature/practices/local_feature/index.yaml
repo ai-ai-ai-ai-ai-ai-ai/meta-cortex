@@ -8,7 +8,7 @@ owns:
 excludes:
   - Review requirements, ledger contracts, and remote delivery authorization.
 relationships:
-  - Connects worker results to Gizmo's feature coordination.
+  - Connects worker results to Prime's feature coordination.
 related: []
 rules:
   - id: local_feature:workspace
@@ -16,13 +16,13 @@ rules:
     summary: Give each writer an isolated task branch and worktree.
   - id: local_feature:completion
     source: ../../SKILL.md#team-architecture
-    summary: Workers validate, commit, and return results and issues to Gizmo.
+    summary: Workers validate, commit, and return results and issues to Prime.
   - id: local_feature:integration
     source: ../../SKILL.md#team-architecture
-    summary: Gizmo owns shared integration; its owner validates the combined feature.
+    summary: Prime delegates shared integration; its owner validates the combined feature.
   - id: local_feature:repair
     source: ../../SKILL.md#team-architecture
-    summary: Gizmo evaluates results and revises assignments or requests further work.
+    summary: Prime evaluates results and revises assignments or requests further work.
   - id: local_feature:cleanup
     source: ../../SKILL.md#team-architecture
     summary: Preserve user workspaces and recovery state; clean only finished agent workspaces.
