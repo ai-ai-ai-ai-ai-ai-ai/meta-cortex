@@ -103,7 +103,7 @@
           <p class="guide-review">
             {#each look.selected(review.author) as author (author.path)}{author.label}{/each}
             → {#each look.selected(review.reviewer) as reviewer (reviewer.path)}{reviewer.label}{/each}<small
-              >{GuideLook.TEXT.via} Team Gizmo</small
+              >{GuideLook.TEXT.via} Gizmo Prime</small
             >
           </p>
         {/each}
