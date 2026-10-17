@@ -483,7 +483,7 @@ mod tests {
                     task: TaskId::try_from("first".to_owned())?,
                     actor: prime,
                     objective: Note::Empty,
-                    acceptance: vec![],
+                    acceptance: vec![Note::from("Recover directly under Prime".to_owned())],
                     dependencies: vec![],
                     workspace: Workspace::ReadOnly,
                     progress: Self::progress(),
