@@ -85,7 +85,7 @@ it("opens unbundled source links through the native opener at the embedded revis
 });
 it("renders Mermaid fences in strict mode and leaves ordinary code untouched", async () => {
   const result: DiagramFixtureResult = {
-    svg: '<svg role="img" aria-label="Flow"><text>Team Gizmo</text></svg>',
+    svg: '<svg role="img" aria-label="Flow"><text>Gizmo Prime</text></svg>',
   };
   diagrams.render.mockResolvedValue(result);
   const fixture = new ReaderFixture();

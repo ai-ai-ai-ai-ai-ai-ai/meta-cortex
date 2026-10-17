@@ -40,11 +40,11 @@ class MixedCatalog {
         end: "Complete",
         records: [
           { kind: "current", summary: this.fixture.summary },
-          { kind: "upgrade_required", feature: this.old, storage_version: 4 },
+          { kind: "upgrade_required", feature: this.old, storage_version: 6 },
           {
             kind: "unavailable",
             feature: "future-feature",
-            message: "Database version 99 is newer than supported version 5",
+            message: "Database version 99 is newer than supported version 7",
           },
           {
             kind: "unavailable",
@@ -84,13 +84,13 @@ it("keeps current, older, future and failed cards visible without automatic upgr
   expect(within(menu).getAllByText("Unavailable")).toHaveLength(2);
   const oldQuery: RoleQueryOptions = { name: "Preview older-feature" };
   await fireEvent.click(screen.getByRole("button", oldQuery));
-  expect(screen.getByText("Storage version 4")).toBeTruthy();
+  expect(screen.getByText("Storage version 6")).toBeTruthy();
   const refreshQuery: RoleQueryOptions = { name: "Refresh now" };
   await fireEvent.click(screen.getByRole("button", refreshQuery));
   const futureQuery: RoleQueryOptions = { name: "Preview future-feature" };
   await fireEvent.click(screen.getByRole("button", futureQuery));
   expect(
-    screen.getByText("Database version 99 is newer than supported version 5"),
+    screen.getByText("Database version 99 is newer than supported version 7"),
   ).toBeTruthy();
   expect(
     native.invoke.mock.calls.filter((call) => call[0] === "dashboard_upgrade"),

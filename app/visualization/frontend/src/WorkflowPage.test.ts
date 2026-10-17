@@ -234,7 +234,7 @@ it("preserves per-event ownership after a chapter is reassigned", () => {
       kind: "Assigned",
       assignment: {
         agent: Fixture.VERIFIER,
-        reports_to: { kind: "Gizmo", coordinator: "Gizmo" },
+        reports_to: { kind: "Gizmo", coordinator: "GizmoPrime" },
       },
     };
     chapter.role = { kind: "Recorded", agent: Fixture.VERIFIER };

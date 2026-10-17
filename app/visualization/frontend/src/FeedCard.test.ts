@@ -53,8 +53,38 @@ it("keeps the historical assignment and reporting line distinct from the recordi
   render(FeedCard, feedProps);
   expect(screen.getByText("Recorded by Gizmo Prime")).toBeTruthy();
   expect(screen.getByText("Assigned to Rust Dev")).toBeTruthy();
-  expect(screen.getByText("Reports to Team Gizmo")).toBeTruthy();
+  expect(screen.getByText("Reports to Team Gizmo (retired)")).toBeTruthy();
   expect(screen.getByText("implementation")).toBeTruthy();
+});
+it("shows the current specialist reporting line directly to Gizmo Prime", () => {
+  const ownership: TaskOwnership = {
+    kind: "Assigned",
+    assignment: {
+      agent: Fixture.RUST,
+      reports_to: { kind: "Gizmo", coordinator: "GizmoPrime" },
+    },
+  };
+  const feedProps: FeedProps = {
+    entry: new FeedScenario().entry(ownership),
+    task: "implementation",
+  };
+  render(FeedCard, feedProps);
+  expect(screen.getByText("Assigned to Rust Dev")).toBeTruthy();
+  expect(screen.getByText("Reports to Gizmo Prime")).toBeTruthy();
+  expect(screen.queryAllByText(/Team Gizmo/)).toHaveLength(0);
+});
+it("preserves the retired coordinator as a historical recorder", () => {
+  const ownership: TaskOwnership = { kind: "Unrecorded" };
+  const feedProps: FeedProps = {
+    entry: {
+      ...new FeedScenario().entry(ownership),
+      actor: { team: "Gizmo", role: "Gizmo" },
+    },
+    task: "old-coordination",
+  };
+  render(FeedCard, feedProps);
+  expect(screen.getByText("Recorded by Team Gizmo (retired)")).toBeTruthy();
+  expect(screen.queryAllByText("Recorded by Gizmo Prime")).toHaveLength(0);
 });
 it("labels historical missing ownership without deriving a recipient from the actor", () => {
   const ownership: TaskOwnership = { kind: "Unrecorded" };

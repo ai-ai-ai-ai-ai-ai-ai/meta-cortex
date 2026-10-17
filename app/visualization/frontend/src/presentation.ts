@@ -68,7 +68,7 @@ export class StatusLook {
 export class AgentLook {
   static readonly ROLES: Record<AgentRole, string> = {
     GizmoPrime: "Gizmo Prime",
-    Gizmo: "Team Gizmo",
+    Gizmo: "Team Gizmo (retired)",
     RustDev: "Rust Dev",
     RustRefactoring: "Rust Refactoring",
     RustVerifier: "Rust Verifier",
