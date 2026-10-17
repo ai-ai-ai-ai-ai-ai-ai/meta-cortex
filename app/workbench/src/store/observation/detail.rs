@@ -6,7 +6,7 @@ use super::revision_log::{RevisionLogEntry, SequencedEvent};
 use super::timeline::RecordedTimeline;
 use super::{FlowState, HistoryPage, Observation, PageEnd, PageIndex, TaskPage};
 use crate::LedgerError;
-use crate::agents::AgentId;
+use crate::agents::recorded::RecordedAgentId;
 use crate::model::checkpoint_outcome::CheckpointOutcome;
 use crate::model::worker::WorkerIdentity;
 use crate::model::workflow::TaskOwnership;
@@ -41,7 +41,7 @@ pub enum WorkflowTiming {
 #[serde(tag = "kind")]
 pub enum RecordedRole {
     Unrecorded,
-    Recorded { agent: AgentId },
+    Recorded { agent: RecordedAgentId },
 }
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct TaskChapter {
@@ -57,7 +57,7 @@ pub struct FeedEntry {
     /// Worker identity from this event snapshot, never inferred from its actor.
     pub worker: WorkerIdentity,
     pub kind: EventKind,
-    pub actor: AgentId,
+    pub actor: RecordedAgentId,
     /// Ownership recorded in this event snapshot, independent of its actor.
     pub ownership: TaskOwnership,
     /// Task state recorded in this event snapshot, independent of later revisions.
@@ -358,7 +358,7 @@ mod tests {
                     outcomes: Vec::new(),
                 },
                 kind: EventKind::Progress,
-                actor: Self::agent(),
+                actor: Self::agent().into(),
                 note: Note::Empty,
                 task,
             }
@@ -374,7 +374,7 @@ mod tests {
     fn entries_preserve_historical_state_through_blocking_and_requeue() -> anyhow::Result<()> {
         let first_attempt = Attempt::UNCLAIMED.advance()?;
         let assignment = Assignment {
-            agent: Scenario::agent(),
+            agent: Scenario::agent().into(),
             attempt: first_attempt,
             expires_at: Timestamp::try_from(5000)?,
             phase: Phase::Working,
@@ -392,7 +392,7 @@ mod tests {
         };
         let reclaimed = TaskState::Active {
             assignment: Assignment {
-                agent: AgentId::Development(DevelopmentAgent::TypescriptDev),
+                agent: AgentId::Development(DevelopmentAgent::TypescriptDev).into(),
                 attempt: first_attempt.advance()?,
                 ..assignment
             },
@@ -443,7 +443,7 @@ mod tests {
         let mut task = Scenario::task()?;
         let legacy = Scenario::event(task.clone());
         let original = TaskOwnership::Assigned {
-            assignment: TaskAssignment::from(Scenario::agent()),
+            assignment: TaskAssignment::from(Scenario::agent()).into(),
         };
         task.common.revision = task.common.revision.advance()?;
         task.ownership = original.clone();
@@ -453,7 +453,8 @@ mod tests {
         };
         task.common.revision = task.common.revision.advance()?;
         task.ownership = TaskOwnership::Assigned {
-            assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::TypescriptDev)),
+            assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::TypescriptDev))
+                .into(),
         };
         let reassigned = Event {
             kind: EventKind::Assigned,
@@ -467,7 +468,7 @@ mod tests {
         assert_eq!(chapter.entries[0].ownership, TaskOwnership::Unrecorded);
         assert_eq!(chapter.entries[1].ownership, original);
         assert_eq!(chapter.entries[2].ownership, current);
-        assert_eq!(chapter.entries[2].actor, Scenario::agent());
+        assert_eq!(chapter.entries[2].actor, Scenario::agent().into());
         Ok(())
     }
     #[test]
@@ -516,7 +517,7 @@ mod tests {
             events: vec![created, claimed, first, repeat, changed],
         });
         assert!(
-            matches!(chapter.role,RecordedRole::Recorded {agent} if agent == Scenario::agent())
+            matches!(chapter.role,RecordedRole::Recorded {agent} if agent == Scenario::agent().into())
         );
         assert_eq!(chapter.entries.len(), 5);
         let original = &chapter.entries[2];
@@ -545,7 +546,7 @@ mod tests {
         ));
         let mut task = Scenario::task()?;
         task.ownership = TaskOwnership::Assigned {
-            assignment: TaskAssignment::from(Scenario::agent()),
+            assignment: TaskAssignment::from(Scenario::agent()).into(),
         };
         let open = TaskChapter::from(ChapterSource {
             task: task.clone(),
@@ -557,7 +558,7 @@ mod tests {
             WorkflowTiming::Running { .. }
         ));
         task.state = TaskState::Completed {
-            agent: Scenario::agent(),
+            agent: Scenario::agent().into(),
             attempt: Attempt::UNCLAIMED,
         };
         task.common.last_update = Timestamp::try_from(2000)?;

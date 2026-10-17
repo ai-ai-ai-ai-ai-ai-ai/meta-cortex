@@ -32,7 +32,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
     let scenario = scenario.initialize(Examples::feature()?.feature)?;
     assert_eq!(
         scenario.ledger().storage_version,
-        StorageVersion::FeatureHistoryV6
+        StorageVersion::DirectPrimeV7
     );
     let Reply::Ledger(reopened) = scenario
         .client()
@@ -77,7 +77,7 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
                 };
                 assert_eq!(
                     assignment.agent,
-                    AgentId::Development(DevelopmentAgent::RustDev)
+                    AgentId::Development(DevelopmentAgent::RustDev).into()
                 );
             }
             Outcome::Success(other) => bail!("{other:?}"),
@@ -130,14 +130,17 @@ fn concurrent_claims_history_and_feature_isolation() -> anyhow::Result<()> {
         Reply::History(events) => {
             assert_eq!(events.len(), 3);
             assert_eq!(events[0].kind, EventKind::Created);
-            assert_eq!(events[0].actor, AgentId::Gizmo(GizmoAgent::Gizmo));
+            assert_eq!(
+                events[0].actor,
+                AgentId::Gizmo(GizmoAgent::GizmoPrime).into()
+            );
             assert_eq!(
                 events[1].actor,
-                AgentId::Development(DevelopmentAgent::RustDev)
+                AgentId::Development(DevelopmentAgent::RustDev).into()
             );
             assert_eq!(
                 events[2].actor,
-                AgentId::Development(DevelopmentAgent::RustDev)
+                AgentId::Development(DevelopmentAgent::RustDev).into()
             );
             assert_eq!(events[2].task.common.revision, after.task.common.revision);
         }

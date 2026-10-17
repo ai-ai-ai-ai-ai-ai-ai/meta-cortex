@@ -3,27 +3,41 @@ use super::worker::WorkerIdentity;
 use super::workflow::TaskOwnership;
 use super::{Assignment, Checkpoint, Progress, Task, TaskCommon, TaskState, Workspace};
 use crate::LedgerError;
-use crate::agents::AgentId;
+use crate::agents::recorded::RecordedAgentId;
 use crate::values::{
     Attempt, BranchName, CommitId, FeatureId, Note, TaskId, TaskRevision, Timestamp,
 };
-use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV2};
+use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV2, TaskRecordVersionV3};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Deserialize)]
+#[cfg_attr(test, derive(Serialize))]
 #[serde(untagged)]
 pub(super) enum TaskRecord {
+    V4(TaskV4),
     V3(TaskV3),
     V2(TaskV2),
     V1(TaskV1),
 }
 
 #[derive(Deserialize, JsonSchema)]
+#[cfg_attr(test, derive(Serialize))]
+#[serde(deny_unknown_fields)]
+pub(super) struct TaskV4 {
+    pub version: TaskRecordVersion,
+    pub worker: WorkerIdentity,
+    pub common: TaskCommon,
+    pub ownership: TaskOwnership,
+    pub workspace: Workspace,
+    pub state: TaskState,
+}
+
+#[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct TaskV3 {
-    pub version: TaskRecordVersion,
+    pub version: TaskRecordVersionV3,
     pub worker: WorkerIdentity,
     pub common: TaskCommon,
     pub ownership: TaskOwnership,
@@ -72,10 +86,19 @@ pub(super) enum WorkspaceV1 {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum TaskStateV1 {
     Queued,
-    Active { assignment: Assignment },
-    Ready { agent: AgentId, attempt: Attempt },
-    Integrated { commit: CommitId },
-    Cancelled { reason: Note },
+    Active {
+        assignment: Assignment,
+    },
+    Ready {
+        agent: RecordedAgentId,
+        attempt: Attempt,
+    },
+    Integrated {
+        commit: CommitId,
+    },
+    Cancelled {
+        reason: Note,
+    },
 }
 
 impl From<WorkspaceV1> for Workspace {
@@ -103,8 +126,19 @@ impl TryFrom<TaskRecord> for Task {
 
     fn try_from(record: TaskRecord) -> Result<Self, Self::Error> {
         let record = match record {
-            TaskRecord::V3(record) => Self::from(record),
-            TaskRecord::V2(record) => Self::from(record),
+            TaskRecord::V4(record) => Self::from(record),
+            TaskRecord::V3(record) => {
+                if let TaskOwnership::Assigned { assignment } = &record.ownership {
+                    assignment.validate_retained()?;
+                }
+                Self::from(record)
+            }
+            TaskRecord::V2(record) => {
+                if let TaskOwnership::Assigned { assignment } = &record.ownership {
+                    assignment.validate_retained()?;
+                }
+                Self::from(record)
+            }
             TaskRecord::V1(record) => Self::from(TaskV2::from(record)),
         };
         let task = record;
@@ -160,8 +194,8 @@ impl From<TaskV2> for Task {
     }
 }
 
-impl From<TaskV3> for Task {
-    fn from(record: TaskV3) -> Self {
+impl From<TaskV4> for Task {
+    fn from(record: TaskV4) -> Self {
         Self {
             version: record.version,
             worker: record.worker,
@@ -173,20 +207,70 @@ impl From<TaskV3> for Task {
     }
 }
 
+impl From<TaskV3> for Task {
+    fn from(record: TaskV3) -> Self {
+        Self {
+            version: TaskRecordVersion::CURRENT,
+            worker: record.worker,
+            common: record.common,
+            ownership: record.ownership,
+            workspace: record.workspace,
+            state: record.state,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{TaskRecord, TaskStateV1, TaskV1, TaskV2, TaskV3, WorkspaceV1};
+    use super::{TaskRecord, TaskStateV1, TaskV1, TaskV2, TaskV3, TaskV4, WorkspaceV1};
+    use crate::agents::recorded::{RecordedAgentId, RecordedGizmoAgent, RecordedReportingTarget};
     use crate::agents::{AgentId, DevelopmentAgent, GizmoAgent};
-    use crate::model::workflow::{TaskAssignment, TaskOwnership};
+    use crate::model::workflow::{RecordedTaskAssignment, TaskAssignment, TaskOwnership};
     use crate::model::{Assignment, Checkpoint, Phase, Progress, Task, TaskState};
     use crate::values::{
         Attempt, BranchName, CommitId, Extensions, FeatureId, Note, TaskId, TaskRevision, Timestamp,
     };
-    use crate::versions::{RecordVersion, TaskRecordVersion};
+    use crate::versions::{RecordVersion, TaskRecordVersion, TaskRecordVersionV3};
     use std::path::PathBuf;
 
     struct Scenario;
     impl Scenario {
+        fn retired_records() -> anyhow::Result<Vec<TaskRecord>> {
+            let retired = RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo);
+            let legacy = TaskV1 {
+                state: TaskStateV1::Ready {
+                    agent: retired,
+                    attempt: Attempt::UNCLAIMED.advance()?,
+                },
+                ..Self::legacy()?
+            };
+            let mut owned = TaskV2::from(TaskV1 {
+                state: TaskStateV1::Ready {
+                    agent: retired,
+                    attempt: Attempt::UNCLAIMED.advance()?,
+                },
+                ..Self::legacy()?
+            });
+            owned.ownership = TaskOwnership::Assigned {
+                assignment: RecordedTaskAssignment {
+                    agent: retired,
+                    reports_to: RecordedReportingTarget::Gizmo(RecordedGizmoAgent::GizmoPrime),
+                },
+            };
+            let current = TaskV3 {
+                version: TaskRecordVersionV3::V3,
+                worker: super::WorkerIdentity::Unrecorded,
+                common: owned.common.clone(),
+                ownership: owned.ownership.clone(),
+                workspace: owned.workspace.clone(),
+                state: owned.state.clone(),
+            };
+            Ok(vec![
+                TaskRecord::V1(legacy),
+                TaskRecord::V2(owned),
+                TaskRecord::V3(current),
+            ])
+        }
         fn legacy() -> anyhow::Result<TaskV1> {
             let now = Timestamp::try_from(1000)?;
             Ok(TaskV1 {
@@ -200,7 +284,7 @@ mod tests {
                 revision: TaskRevision::INITIAL,
                 attempt: Attempt::UNCLAIMED.advance()?,
                 state: TaskStateV1::Ready {
-                    agent: AgentId::Development(DevelopmentAgent::RustDev),
+                    agent: AgentId::Development(DevelopmentAgent::RustDev).into(),
                     attempt: Attempt::UNCLAIMED.advance()?,
                 },
                 created_at: now,
@@ -219,14 +303,45 @@ mod tests {
     }
 
     #[test]
-    fn v2_snapshots_remain_unrecorded_and_only_v3_requires_worker_identity() -> anyhow::Result<()> {
+    fn all_retained_task_versions_preserve_retired_claims_and_recorded_ownership()
+    -> anyhow::Result<()> {
+        let retired = RecordedAgentId::Gizmo(RecordedGizmoAgent::Gizmo);
+        for record in Scenario::retired_records()? {
+            let encoded = serde_json::to_string(&record)?;
+            let retained: TaskRecord = serde_json::from_str(&encoded)?;
+            assert_eq!(serde_json::to_string(&retained)?, encoded);
+            let task: Task = serde_json::from_str(&encoded)?;
+            assert!(matches!(task.state, TaskState::Ready { agent, .. } if agent == retired));
+            assert_eq!(task.common.revision, TaskRevision::INITIAL);
+            assert_eq!(task.common.attempt, Attempt::UNCLAIMED.advance()?);
+            match record {
+                TaskRecord::V1(_) => assert_eq!(task.ownership, TaskOwnership::Unrecorded),
+                TaskRecord::V2(_) | TaskRecord::V3(_) => assert_eq!(
+                    task.ownership,
+                    TaskOwnership::Assigned {
+                        assignment: RecordedTaskAssignment {
+                            agent: retired,
+                            reports_to: RecordedReportingTarget::Gizmo(
+                                RecordedGizmoAgent::GizmoPrime
+                            ),
+                        }
+                    }
+                ),
+                TaskRecord::V4(_) => anyhow::bail!("expected retained task"),
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn v2_snapshots_remain_unrecorded_and_current_requires_worker_identity() -> anyhow::Result<()> {
         let legacy = TaskV2::from(Scenario::legacy()?);
         let encoded = serde_json::to_string(&legacy)?;
         let task: Task = serde_json::from_str(&encoded)?;
         assert_eq!(task.worker, super::WorkerIdentity::Unrecorded);
         assert_eq!(task.common, legacy.common);
         assert_eq!(task.state, legacy.state);
-        assert_eq!(task.version, TaskRecordVersion::V3);
+        assert_eq!(task.version, TaskRecordVersion::V4);
         assert!(matches!(
             serde_json::from_str::<TaskRecord>(&encoded)?,
             TaskRecord::V2(_)
@@ -234,7 +349,7 @@ mod tests {
         let current = serde_json::to_string(&task)?;
         for invalid in [
             encoded.replace("\"version\":2", "\"version\":3"),
-            current.replace("\"version\":3", "\"version\":2"),
+            current.replace("\"version\":4", "\"version\":2"),
             current.replace("\"worker\":{\"kind\":\"Unrecorded\"},", ""),
         ] {
             assert!(serde_json::from_str::<Task>(&invalid).is_err());
@@ -245,7 +360,7 @@ mod tests {
     }
 
     #[test]
-    fn native_readers_keep_v1_flat_and_require_strict_v3_common() -> anyhow::Result<()> {
+    fn native_readers_keep_v1_flat_and_require_strict_v4_common() -> anyhow::Result<()> {
         let legacy = serde_json::to_string(&Scenario::legacy()?)?;
         assert!(matches!(
             serde_json::from_str::<TaskRecord>(&legacy)?,
@@ -255,16 +370,16 @@ mod tests {
         let current = serde_json::to_string(&task)?;
         assert!(matches!(
             serde_json::from_str::<TaskRecord>(&current)?,
-            TaskRecord::V3(_)
+            TaskRecord::V4(_)
         ));
-        let decoded: TaskV3 = serde_json::from_str(&current)?;
+        let decoded: TaskV4 = serde_json::from_str(&current)?;
         assert_eq!(decoded.common, task.common);
-        assert_eq!(decoded.version, TaskRecordVersion::V3);
+        assert_eq!(decoded.version, TaskRecordVersion::V4);
         assert!(serde_json::from_str::<TaskV1>(&current).is_err());
         for invalid in [
             legacy.replace("\"version\":1", "\"version\":2"),
             legacy.replacen('{', "{\"unexpected\":0,", 1),
-            current.replace("\"version\":3", "\"version\":1"),
+            current.replace("\"version\":4", "\"version\":1"),
             current.replacen('{', "{\"unexpected\":0,", 1),
             current.replace("\"common\":{", "\"common\":{\"unexpected\":0,"),
             current.replace("\"common\":", "\"missing_common\":"),
@@ -279,13 +394,13 @@ mod tests {
     fn v1_reader_preserves_evidence_without_inventing_a_reporting_line() -> anyhow::Result<()> {
         let encoded = serde_json::to_string(&Scenario::legacy()?)?;
         let task: Task = serde_json::from_str(&encoded)?;
-        assert_eq!(task.version, TaskRecordVersion::V3);
+        assert_eq!(task.version, TaskRecordVersion::V4);
         assert_eq!(task.ownership, TaskOwnership::Unrecorded);
         assert_eq!(task.common.objective.to_string(), " Preserve history ");
         assert!(matches!(
             task.state,
             TaskState::Ready {
-                agent: AgentId::Development(DevelopmentAgent::RustDev),
+                agent: RecordedAgentId::Development(DevelopmentAgent::RustDev),
                 ..
             }
         ));
@@ -305,7 +420,7 @@ mod tests {
     }
 
     #[test]
-    fn v3_requires_ownership_and_rejects_invalid_hierarchy() -> anyhow::Result<()> {
+    fn v4_requires_ownership_and_rejects_invalid_hierarchy() -> anyhow::Result<()> {
         let mut task = Task::try_from(TaskRecord::V1(Scenario::legacy()?))?;
         let encoded = serde_json::to_string(&task)?;
         assert!(
@@ -315,17 +430,18 @@ mod tests {
             .is_err()
         );
         assert!(
-            serde_json::from_str::<Task>(&encoded.replace("\"version\":3", "\"version\":1"))
+            serde_json::from_str::<Task>(&encoded.replace("\"version\":4", "\"version\":1"))
                 .is_err()
         );
         task.ownership = TaskOwnership::Assigned {
-            assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::RustDev)),
+            assignment: TaskAssignment::from(AgentId::Development(DevelopmentAgent::RustDev))
+                .into(),
         };
         let encoded = serde_json::to_string(&task)?;
         assert_eq!(serde_json::from_str::<Task>(&encoded)?, task);
         let invalid = Task {
             state: TaskState::Ready {
-                agent: AgentId::Gizmo(GizmoAgent::GizmoPrime),
+                agent: AgentId::Gizmo(GizmoAgent::GizmoPrime).into(),
                 attempt: task.common.attempt,
             },
             ..task
@@ -333,8 +449,8 @@ mod tests {
         assert!(serde_json::from_str::<Task>(&serde_json::to_string(&invalid)?).is_err());
         assert!(
             serde_json::from_str::<Task>(&encoded.replace(
-                "\"coordinator\":\"Gizmo\"",
-                "\"coordinator\":\"GizmoPrime\""
+                "\"kind\":\"Gizmo\",\"coordinator\":\"GizmoPrime\"",
+                "\"kind\":\"Host\""
             ))
             .is_err()
         );
@@ -350,7 +466,7 @@ mod tests {
             TaskStateV1::Queued,
             TaskStateV1::Active {
                 assignment: Assignment {
-                    agent,
+                    agent: agent.into(),
                     attempt,
                     expires_at: Timestamp::try_from(2000)?,
                     phase: Phase::Blocked {
@@ -358,7 +474,10 @@ mod tests {
                     },
                 },
             },
-            TaskStateV1::Ready { agent, attempt },
+            TaskStateV1::Ready {
+                agent: agent.into(),
+                attempt,
+            },
             TaskStateV1::Integrated {
                 commit: commit.clone(),
             },

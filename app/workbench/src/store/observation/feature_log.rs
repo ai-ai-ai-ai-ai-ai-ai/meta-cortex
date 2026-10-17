@@ -1,7 +1,7 @@
 //! Explicit included implementation outcomes. No Git reads or lifecycle-summary inference.
 use super::SequenceProvenance;
 use super::revision_log::SequencedEvent;
-use crate::agents::AgentId;
+use crate::agents::recorded::RecordedAgentId;
 use crate::model::checkpoint_outcome::OutcomeId;
 use crate::model::{Checkpoint, EventKind, Task, TaskState, Workspace};
 use crate::values::{CommitId, EventSequence, Note, TaskId, TaskRevision, Timestamp};
@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 pub struct FeatureLogEvidence {
     pub at: Timestamp,
     /// The agent that recorded this evidence, never Git authorship.
-    pub actor: AgentId,
+    pub actor: RecordedAgentId,
     pub revision: TaskRevision,
     pub sequence: EventSequence,
     pub provenance: SequenceProvenance,
@@ -306,7 +306,7 @@ mod tests {
                         outcomes: input.outcomes,
                     },
                     kind: input.kind,
-                    actor: AgentId::Development(DevelopmentAgent::RustDev),
+                    actor: AgentId::Development(DevelopmentAgent::RustDev).into(),
                     note: Note::Empty,
                     task: self.task.clone(),
                 },
@@ -324,7 +324,7 @@ mod tests {
             let Some(record) = integrated.records.last_mut() else {
                 anyhow::bail!("integration event missing");
             };
-            record.event.actor = AgentId::Gizmo(GizmoAgent::Gizmo);
+            record.event.actor = AgentId::Gizmo(GizmoAgent::GizmoPrime).into();
             Ok(integrated)
         }
         fn log(&self) -> FeatureLog {
@@ -371,11 +371,11 @@ mod tests {
         assert!(first.checkpoint.recorded.at < first.integration.recorded.at);
         assert_eq!(
             first.integration.recorded.actor,
-            AgentId::Gizmo(GizmoAgent::Gizmo)
+            AgentId::Gizmo(GizmoAgent::GizmoPrime).into()
         );
         assert_eq!(
             first.checkpoint.recorded.actor,
-            AgentId::Development(DevelopmentAgent::RustDev)
+            AgentId::Development(DevelopmentAgent::RustDev).into()
         );
         Ok(())
     }
@@ -396,7 +396,7 @@ mod tests {
                 )?)],
             })?;
         scenario.task.state = TaskState::Ready {
-            agent: AgentId::Development(DevelopmentAgent::RustDev),
+            agent: AgentId::Development(DevelopmentAgent::RustDev).into(),
             attempt: Attempt::UNCLAIMED,
         };
         assert!(scenario.log().entries().is_empty());

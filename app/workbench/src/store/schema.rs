@@ -86,13 +86,14 @@ impl LedgerSchema {
 
     pub(super) async fn require_current(connection: &Connection) -> Result<(), LedgerError> {
         match Self::version(connection).await? {
-            StorageVersion::FeatureHistoryV6 => Ok(()),
+            StorageVersion::DirectPrimeV7 => Ok(()),
             version @ (StorageVersion::Empty
             | StorageVersion::DocumentsV1
             | StorageVersion::IndexedV2
             | StorageVersion::RelationalV3
             | StorageVersion::CommonTasksV4
-            | StorageVersion::SequencedEventsV5) => {
+            | StorageVersion::SequencedEventsV5
+            | StorageVersion::FeatureHistoryV6) => {
                 Err(LedgerError::ObservationMigrationRequired(version))
             }
         }
@@ -100,7 +101,7 @@ impl LedgerSchema {
 
     pub(super) async fn migrate_transaction(connection: &Connection) -> Result<(), LedgerError> {
         match Self::version(connection).await? {
-            StorageVersion::FeatureHistoryV6 => return Ok(()),
+            StorageVersion::DirectPrimeV7 => return Ok(()),
             StorageVersion::Empty => {
                 RelationalSchema::create(connection).await?;
                 SequenceSchema::migrate(connection).await?;
@@ -114,7 +115,8 @@ impl LedgerSchema {
             }
             StorageVersion::RelationalV3
             | StorageVersion::CommonTasksV4
-            | StorageVersion::SequencedEventsV5 => {
+            | StorageVersion::SequencedEventsV5
+            | StorageVersion::FeatureHistoryV6 => {
                 LegacyRecords::migrate(LegacySource {
                     connection,
                     layout: LegacyLayout::RelationalDatabase,
@@ -182,6 +184,7 @@ pub mod tests {
     use super::{
         DatabasePragma, EventTable, FeatureTable, LedgerSchema, StorageVersion, TaskTable,
     };
+    use crate::agents::recorded::RecordedAgentId;
     use crate::agents::{AgentId, DevelopmentAgent};
     use crate::model::event_record::EventEnvelope;
     use crate::model::workflow::TaskOwnership;
@@ -252,7 +255,7 @@ pub mod tests {
     struct LegacyEvent {
         version: RecordVersion,
         kind: EventKind,
-        actor: AgentId,
+        actor: RecordedAgentId,
         note: Note,
         task: LegacyTask,
     }
@@ -531,7 +534,7 @@ pub mod tests {
                 let claimed = Event {
                     envelope: EventEnvelope::V1,
                     kind: EventKind::Claimed,
-                    actor: agent,
+                    actor: agent.into(),
                     note: Note::from("Worker claimed the task".to_owned()),
                     task: task.clone(),
                 };
@@ -662,7 +665,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::FeatureHistoryV6
+                    StorageVersion::DirectPrimeV7
                 );
                 assert_eq!(RepositorySnapshot::read(&connection).await?, expected);
                 LedgerSchema::migrate(&mut connection).await?;
@@ -733,7 +736,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::FeatureHistoryV6
+                    StorageVersion::DirectPrimeV7
                 );
                 assert_eq!(RepositorySnapshot::read(&connection).await?, original);
                 anyhow::Ok(())
@@ -770,7 +773,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::FeatureHistoryV6
+                    StorageVersion::DirectPrimeV7
                 );
                 LedgerSchema::migrate(&mut connection).await?;
                 let mut rows = SqlStatement::build(
@@ -788,7 +791,7 @@ pub mod tests {
                 let migrated = row.get::<String>(0)?;
                 assert_eq!(migrated, original);
                 assert_eq!(serde_json::from_str::<Event>(&migrated)?, expected);
-                assert_eq!(expected.task.version, TaskRecordVersion::V3);
+                assert_eq!(expected.task.version, TaskRecordVersion::V4);
                 drop(rows);
                 connection
                     .pragma_update(&DatabasePragma::UserVersion.to_string(), 99)
@@ -844,7 +847,7 @@ pub mod tests {
                 LedgerSchema::migrate(&mut connection).await?;
                 assert_eq!(
                     LedgerSchema::version(&connection).await?,
-                    StorageVersion::FeatureHistoryV6
+                    StorageVersion::DirectPrimeV7
                 );
                 anyhow::Ok(())
             })

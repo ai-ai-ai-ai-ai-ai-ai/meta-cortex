@@ -300,7 +300,7 @@ pub mod tests {
             let event = Event {
                 envelope: EventEnvelope::V1,
                 kind: EventKind::Created,
-                actor: AgentId::Gizmo(GizmoAgent::Gizmo),
+                actor: AgentId::Gizmo(GizmoAgent::GizmoPrime).into(),
                 note: feature.objective.clone(),
                 task: task.clone(),
             };

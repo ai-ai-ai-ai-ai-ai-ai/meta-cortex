@@ -6,7 +6,7 @@ mod pull_requests;
 
 use super::{LedgerReader, Observation, Page, PageIndex, RecordLimit};
 use crate::LedgerError;
-use crate::agents::AgentId;
+use crate::agents::recorded::RecordedAgentId;
 use crate::model::{Feature, LeaseHealth, Phase, TaskState};
 use crate::store::relational::{EventTable, JsonFunction, TaskTable};
 use crate::store::sql::SqlStatement;
@@ -211,7 +211,7 @@ pub struct WorkflowTotals {
 #[derive(Clone, Debug, PartialEq, Serialize, JsonSchema)]
 pub struct ActiveWork {
     pub task: TaskId,
-    pub agent: AgentId,
+    pub agent: RecordedAgentId,
     pub status: FlowState,
     pub lease: LeaseHealth,
     pub blocker: Blocker,
@@ -231,7 +231,7 @@ pub struct FeatureSummary {
     pub totals: WorkflowTotals,
     pub active: Vec<ActiveWork>,
     /// Distinct roles that actually authored saved events.
-    pub actors: Vec<AgentId>,
+    pub actors: Vec<RecordedAgentId>,
     /// Pull requests recorded in task progress extensions, most often recorded first.
     pub pull_requests: Vec<PullRequest>,
     /// Live tasks no other task depends on, most recently updated first.
@@ -429,7 +429,7 @@ impl LedgerReader {
             latest_delivery: shape.latest_delivery(),
         })
     }
-    async fn actors(&self, feature: &Feature) -> Result<Vec<AgentId>, LedgerError> {
+    async fn actors(&self, feature: &Feature) -> Result<Vec<RecordedAgentId>, LedgerError> {
         let actor = Func::cust(JsonFunction::JsonExtract)
             .args([Expr::col(EventTable::Document), Expr::val("$.actor")]);
         let mut rows = SqlStatement::build(
@@ -516,7 +516,7 @@ impl LedgerReader {
 }
 enum HeldWork {
     Held {
-        agent: AgentId,
+        agent: RecordedAgentId,
         lease: LeaseHealth,
         blocker: Blocker,
     },
@@ -574,7 +574,7 @@ mod tests {
     #[test]
     fn active_phases_split_into_working_and_blocked() -> anyhow::Result<()> {
         let working = Assignment {
-            agent: AgentId::Gizmo(GizmoAgent::Gizmo),
+            agent: AgentId::Gizmo(GizmoAgent::GizmoPrime).into(),
             attempt: Attempt::UNCLAIMED,
             expires_at: Timestamp::try_from(10)?,
             phase: Phase::Working,
