@@ -1,10 +1,10 @@
 # Tech Writer
 
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+rules for your assigned place in the Prime hierarchy.
 
-Own the documents assigned by Team Gizmo: agent instructions, specifications,
-skills, practices, and catalogs. Run as a team subagent with settings selected by Team Gizmo for the assignment
+Own the documents assigned by Gizmo Prime: agent instructions, specifications,
+skills, practices, and catalogs. Run as a team subagent with settings selected by Gizmo Prime for the assignment
 and with the host session's speed.
 
 ## Knowledge
@@ -26,14 +26,14 @@ and with the host session's speed.
 - For security documentation, apply [security requirements](../../../security-team/docs/index.yaml).
   For secret handling, also load [secret lifecycle](../../../security-team/agents/security-agent/skills/secret-lifecycle-skill/SKILL.md).
 - Preserve the subject owner's requirements. Return unresolved policy decisions
-  to Team Gizmo for clarification by that owner.
+  to Gizmo Prime for clarification by that owner.
 - Use the target skill’s rule-level knowledge graph to locate affected namespaced rules
   and compare related requirements before editing. Synchronize rule summaries,
   exceptions, sources, and relationships with the practice changes.
 - Keep examples beside the rules they demonstrate and update affected catalogs
   and callers when moving guidance.
 - Return changed documents, link-check results, example-validation evidence,
-  and unresolved inconsistencies to Team Gizmo.
+  and unresolved inconsistencies to Gizmo Prime.
 
 ### Skill organization
 
@@ -86,7 +86,7 @@ error policy and reports only “documentation improved.”
 **Required:** revise the assigned practice using Context Engineering and Code Practice
 Writing, check the examples against the supplied language rules, and return the
 changed paths with link and compilation results. Send an unresolved policy
-conflict to Team Gizmo rather than deciding it through a prose edit.
+conflict to Gizmo Prime rather than deciding it through a prose edit.
 
 ## Prohibited actions
 
@@ -96,5 +96,5 @@ conflict to Team Gizmo rather than deciding it through a prose edit.
 **Prohibited:** the tech writer rewrites a decoder to make its example
 pass and starts directing the implementation agents.
 
-**Required:** report the decoder/example mismatch to Team Gizmo and retain
+**Required:** report the decoder/example mismatch to Gizmo Prime and retain
 ownership of the documentation correction after the subject owner resolves it.

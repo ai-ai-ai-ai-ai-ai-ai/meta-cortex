@@ -5,7 +5,7 @@ in the consuming project. Each role defines what it owns, who it works with,
 and what results it returns. Skills provide the reusable expertise an agent
 applies to its assignment.
 
-- The [Gizmo team](gizmo-team/AGENTS.md) contains Gizmo Prime and Team Gizmo, which own feature coordination and agent assignments.
+- The [Gizmo team](gizmo-team/AGENTS.md) contains Gizmo Prime, which owns feature coordination and direct specialist assignments.
 - Agents in the [development team](dev-team/AGENTS.md), [security team](security-team/AGENTS.md), and [SRE team](sre-team/AGENTS.md) implement and validate work within their assigned responsibilities, using the relevant skills.
 - The [AI team](ai-team/AGENTS.md) owns agent-facing documentation and programming-rule examples through its tech writer and read-only tech writer verifier.
 - The [delivery team](delivery-team/AGENTS.md) owns local feature integration
@@ -15,7 +15,7 @@ applies to its assignment.
 Each agent's `AGENTS.md` owns its role responsibilities. Keep technical guidance
 in that role's linked skills so they can evolve independently.
 
-Team catalogs may add a `Verifier:` role link to any agent's entry. Gizmo follows
+Team catalogs may add a `Verifier:` role link to any agent's entry. Prime follows
 that relationship through the shared
 [agent verification handoff](gizmo-team/docs/agent-verification.md).
 The verifier's own skill selects its subject catalogs; coordination is shared.
@@ -39,24 +39,24 @@ Follow-ups stay with the existing coordinator.
 ## Communication and decisions
 
 The [coordination architecture](gizmo-team/docs/coordination-state-machine.md)
-owns the Prime → Team Gizmo → worker hierarchy, decision authority, expected
+owns the Host → Gizmo Prime → specialist hierarchy, decision authority, expected
 handoffs, and [human messages](gizmo-team/docs/coordination-state-machine.md#write-useful-human-messages).
 Use ordinary host tools for launches and notifications and the
 [ledger overview](gizmo-team/docs/agent-ledger.md) for durable progress. Reading a
 role or recording an assignment does not launch an agent. Report unavailable
 host execution as a blocker.
 
-**Prohibited:** a worker bypasses Team Gizmo to ask a peer for repairs, or claims
+**Prohibited:** a worker bypasses Gizmo Prime to ask a peer for repairs, or claims
 that reading the peer's instructions launched it.
 
-**Required:** report the failure and evidence to Team Gizmo, which decides and
+**Required:** report the failure and evidence to Gizmo Prime, which decides and
 launches the needed assignment through the host.
 
 ## Working model
 
 - Keep each team's catalog complete: every agent has responsibilities, assignment
   boundaries, a role link, readiness, and any cataloged verifier relationship.
-  Team Gizmo selects from these summaries and investigates relevant roles further
+  Gizmo Prime selects from these summaries and investigates relevant roles further
   when needed.
 - Each agent's `AGENTS.md` links its skills; each `SKILL.md` owns its instructions
   and prerequisites. Assigned agents load those skills themselves without
@@ -77,7 +77,7 @@ its assigned project worktree.
 
 ## Assignment context
 
-Before launching an agent, the host agent or Gizmo coordinator resolves the
+Before launching an agent, the host agent or Gizmo Prime resolves the
 following from the active library and supplies them in the launch instructions:
 
 - Objective, target scope, permitted changes, dependencies, acceptance criteria,
@@ -131,8 +131,8 @@ The receiving agent must, before starting work:
 3. Read its own role instructions and follow its linked skills.
 4. Report any required context it cannot access before doing dependent work.
 
-Coordinators carry the same requirements through their assignments. Agents
-report proposed scope changes to their Gizmo. Gizmo may adjust assignments within
+The host and Prime carry these requirements through their assignments. Agents
+report proposed scope changes to Prime. Prime may adjust assignments within
 the user's scope; a broader goal requires user authorization through the hierarchy.
 Load newly relevant documents only for the authorized assignment.
 The skill’s own `SKILL.md` still owns its technical
@@ -140,7 +140,7 @@ instructions; this handoff does not select or duplicate skill contents.
 
 - For verifiers, supply the review objective, committed scope, available evidence,
   and the verifier's role and skill. The shared
-  [review contract](gizmo-team/agents/gizmo/skills/agent-verification/SKILL.md)
+  [review contract](gizmo-team/agents/gizmo-prime/skills/agent-verification/SKILL.md)
   leaves further context selection and investigation to the reviewer.
 
 **Prohibited:** launch a TypeScript agent with only “implement this component”

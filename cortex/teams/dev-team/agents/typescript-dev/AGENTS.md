@@ -1,7 +1,7 @@
 # TypeScript Developer
 
 Follow the [communication and decisions](../../../AGENTS.md#communication-and-decisions)
-rules for your assigned place in the Gizmo hierarchy.
+rules for your assigned place in the Prime hierarchy.
 
 Own assigned TypeScript and JavaScript implementation: browser components,
 application state, browser APIs, services, libraries, repository tooling, and
@@ -28,10 +28,10 @@ global policy supplied with the assignment.
 - For browser UI implementation, also apply
   [web design](../web-designer/skills/web-design-skill/SKILL.md).
 - Implement the assigned interface's behavior and state transitions against
-  the supplied design. Route changes to visual direction through Team Gizmo
+  the supplied design. Route changes to visual direction through Gizmo Prime
   to the web designer.
 - Preserve Rust-owned domain behavior and generated contracts. Route required
-  Rust changes through Team Gizmo.
+  Rust changes through Gizmo Prime.
 - Return changed behavior, functional validation evidence, and unresolved dependencies.
 
 **Prohibited:** implement a dialog's submit behavior and replace the approved
@@ -39,7 +39,7 @@ layout, typography, and navigation without a design assignment.
 
 **Required:** implement and test submission, cancellation, and error handling
 against the supplied dialog design. Report any missing visual state to Team
-Gizmo for the web designer; sequence shared component edits through Team Gizmo.
+Prime for the web designer; sequence shared component edits through Gizmo Prime.
 
 ## Cross-language prerequisites
 

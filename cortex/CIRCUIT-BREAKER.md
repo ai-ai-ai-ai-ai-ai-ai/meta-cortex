@@ -100,7 +100,7 @@ blocker explicitly; do not call the partial review successful.
 2. Say “Circuit breaker tripped,” name the mechanism, and identify the rule.
 3. Replace it with the smallest existing workflow that meets the requirement.
 4. Remove violating changes within the assigned write scope. Report violations
-   outside that scope to the assigning Gizmo for a decision; preserve unrelated work.
+   outside that scope to the assigning Prime for a decision; preserve unrelated work.
 5. Continue the task. Existing code and passing tests do not exempt a violation.
 
 **Prohibited:** finish an unnecessary mechanism because its tests pass, or
@@ -108,7 +108,7 @@ delete another agent’s work to remove it.
 
 **Required:** name the violated rule, remove the mechanism within the assigned
 write scope, use the existing supported operation, and report out-of-scope
-corrections to the assigning Gizmo.
+corrections to the assigning Prime.
 
 ## Prohibited actions
 

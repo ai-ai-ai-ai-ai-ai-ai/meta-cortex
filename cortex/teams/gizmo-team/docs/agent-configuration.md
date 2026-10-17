@@ -5,8 +5,8 @@ The launching agent assesses model and reasoning effort for each assignment
 using the active host's controls and known effective or inherited settings.
 There are no static role settings or framework model catalog. Speed belongs to the host session.
 
-The host agent selects Gizmo Prime's settings; Prime selects Team Gizmo's;
-Team Gizmo selects each worker's and verifier's. The assigning agent owns later
+The host agent selects Gizmo Prime's settings; Prime selects each worker's and
+verifier's settings directly. The assigning agent owns later
 reassessment through the same hierarchy. Workers report evidence and may
 recommend a change; they do not launch replacements or change peer settings.
 
@@ -26,7 +26,8 @@ recommend a change; they do not launch replacements or change peer settings.
    requirement cannot be met; report other limitations without inventing controls.
 
 - **Prohibited:** reject a suitable inherited model solely because the host lacks
-  a separate effort parameter, or bypass Team Gizmo because nesting is unavailable.
+  a separate effort parameter, or let the host dispatch workers around Prime
+  because nesting is unavailable.
 
 - **Required:** assess the known inherited settings for the assignment and report
   unavailable effort control. If the host cannot launch the required descendants,
@@ -36,14 +37,13 @@ recommend a change; they do not launch replacements or change peer settings.
 
 Read `host.max_total_agents` from the active library's configuration. This
 positive integer bounds concurrent agents,
-including the host agent and coordinators. It neither allocates host slots nor
+including the host agent and Prime. It neither allocates host slots nor
 requires the host to offer that many.
 
 Preserve the [team architecture](../../AGENTS.md): the host launches Gizmo Prime,
-Prime launches Team Gizmo, and Team Gizmo launches workers and verifiers. Each
-coordinator schedules its children within the shared ceiling and actual host
-limits. Account for coordinators and other active agents before launching more
-work; queue assignments when slots are occupied.
+Prime directly launches workers and verifiers. Prime schedules its workers
+within the shared ceiling and actual host limits. Account for the host, Prime,
+and other active agents before launching more work; queue assignments when slots are occupied.
 
 Use execution-tool capabilities, active-session metadata, and actual launch
 results as evidence. When a host reports a limit, record its source and normalize
@@ -61,11 +61,11 @@ hierarchy while resolving that limitation. Carry the ceiling, capability
 evidence, unresolved limits, and scheduling decisions through assignments and
 continuations; reassess when the host or task changes.
 
-- **Prohibited:** require a host with four total slots to provide the configured
+- **Prohibited:** require a host with three total slots to provide the configured
   ceiling of twenty, or bypass a coordinator to fit more workers.
 
-- **Required:** when four slots and the required delegation depth are available,
-  count the host, Prime, Team Gizmo, and one worker; queue further workers until a
+- **Required:** when three slots and the required delegation depth are available,
+  count the host, Prime, and one worker; queue further workers until a
   slot is released. If that hierarchy cannot run, explain the blocking capability.
 
 ### Approve host configuration
@@ -77,8 +77,8 @@ documentation. Show the exact path, current and proposed values, purpose, and
 any restart requirement before requesting approval. Use the active host's
 reference for its configuration format and activation rules.
 
-Use the [user-input skill](../agents/gizmo/skills/user-input/SKILL.md) and
-[capacity form](../agents/gizmo/skills/user-input/examples/host-capacity.yaml)
+Use the [user-input skill](../agents/gizmo-prime/skills/user-input/SKILL.md) and
+[capacity form](../agents/gizmo-prime/skills/user-input/examples/host-capacity.yaml)
 to validate approval of that concrete proposal. Reuse explicit authorization
 already supplied for the same change. `allow_host_update` authorizes the shown
 edit; `keep_host_settings`, cancellation, or unavailable input does not.
@@ -189,13 +189,12 @@ expand the running session. Unsupported or enforced settings remain limitations.
    selected settings; retain one writer per workspace.
 6. Evaluate the resulting work against the same acceptance criteria and required
    checks. A more capable model does not itself establish that the repair passed.
-   Workers request reassessment from Team Gizmo; Prime reassesses Team Gizmo,
-   and the host agent reassesses Prime.
+   Workers request reassessment directly from Prime; the host agent reassesses Prime.
 
 - **Prohibited:** retry unchanged settings indefinitely, start a second writer in
   an active workspace, or mark a failed feature fixed because its model changed.
 
-- **Required:** after a weak repair misses a Rust invariant, Gizmo records that
+- **Required:** after a weak repair misses a Rust invariant, Prime records that
   failure, selects stronger supported settings, preserves the work through the
   host and ledger handoff, and requires the replacement's repair to pass checks.
 
