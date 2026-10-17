@@ -38,7 +38,7 @@ global policy supplied with the assignment.
 layout, typography, and navigation without a design assignment.
 
 **Required:** implement and test submission, cancellation, and error handling
-against the supplied dialog design. Report any missing visual state to Team
+against the supplied dialog design. Report any missing visual state to Gizmo
 Prime for the web designer; sequence shared component edits through Gizmo Prime.
 
 ## Cross-language prerequisites

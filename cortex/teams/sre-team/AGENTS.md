@@ -27,7 +27,7 @@ Application behavior, product domain rules, and user-facing design remain with
 their owning teams. Gizmo Prime retains cross-team coordination and delivery
 decisions.
 
-Return changed paths, validation evidence, and unresolved dependencies to Team
+Return changed paths, validation evidence, and unresolved dependencies to Gizmo
 Prime. Keep provider-specific choices in the consuming project's instructions;
 the distributable roles and skills remain portable.
 
