@@ -1,12 +1,12 @@
 {
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Install the Meta-Cortex development framework in a project",
   "homepage": "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex",
   "license": "Apache-2.0",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/download/v0.20.0/meta-cortex-x86_64-pc-windows-msvc.zip",
-      "hash": "8d73f3ea96e13d9e1cfde9126d1e3a851938c86b82dd5c79099bc7000747045b"
+      "url": "https://github.com/ai-ai-ai-ai-ai-ai-ai/meta-cortex/releases/download/v0.21.0/meta-cortex-x86_64-pc-windows-msvc.zip",
+      "hash": "03a89e8184655e97ff41b9aac85aa47626c01d0b3c3d34af29ea8e8f91d260ce"
     }
   },
   "bin": "meta-cortex.exe"
