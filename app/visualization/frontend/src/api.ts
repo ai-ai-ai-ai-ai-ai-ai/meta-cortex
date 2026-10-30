@@ -37,9 +37,7 @@ export interface InvalidNativeReply {
   detail: string;
 }
 export type DashboardFailure =
-  | DesktopFailure
-  | NativeTransportFailure
-  | InvalidNativeReply;
+  DesktopFailure | NativeTransportFailure | InvalidNativeReply;
 interface NativeFailureContext {
   operation: NativeCommand;
   transportMessage: string;

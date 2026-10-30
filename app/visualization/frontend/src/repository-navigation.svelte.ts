@@ -24,8 +24,7 @@ interface SelectedRepositoryScreen {
   read: ReadController;
 }
 type RepositoryScreen =
-  | { kind: RepositoryRoute.Catalog }
-  | SelectedRepositoryScreen;
+  { kind: RepositoryRoute.Catalog } | SelectedRepositoryScreen;
 type SelectedRepositoryScreens = ReadonlyArray<SelectedRepositoryScreen>;
 type ActiveRead = CatalogController | ReadController;
 /** Repository selection owns the scope and lifetime of feature observations. */
@@ -85,9 +84,9 @@ export class RepositoryNavigation {
           node,
         }),
       ),
-      Match.orElse(
-        (): RepositoryReturnTarget => ({ kind: ReturnTargetKind.Missing }),
-      ),
+      Match.orElse((): RepositoryReturnTarget => ({
+        kind: ReturnTargetKind.Missing,
+      })),
     );
     switch (target.kind) {
       case ReturnTargetKind.Found:

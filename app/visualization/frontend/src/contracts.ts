@@ -91,9 +91,7 @@ export type DevelopmentAgent =
 export type AiAgent = "TechWriter" | "TechWriterVerifier";
 export type SecurityAgent = "SecurityAgent";
 export type SreAgent =
-  | "CicdAgent"
-  | "DockerSpecialist"
-  | "KubernetesSpecialist";
+  "CicdAgent" | "DockerSpecialist" | "KubernetesSpecialist";
 export type DeliveryAgent = "IntegrationAgent" | "PrAgent";
 /**
  * Why held work cannot proceed, as its worker recorded it.
@@ -153,11 +151,7 @@ export type FeatureActivity =
  * The single headline an observer needs first; attention outranks progress.
  */
 export type WorkflowCondition =
-  | "empty"
-  | "attention"
-  | "active"
-  | "waiting"
-  | "finished";
+  "empty" | "attention" | "active" | "waiting" | "finished";
 export type Checkpoint =
   | {
       kind: "unrecorded";

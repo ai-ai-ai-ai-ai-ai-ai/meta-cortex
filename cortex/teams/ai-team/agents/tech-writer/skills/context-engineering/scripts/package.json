@@ -12,7 +12,7 @@
     "lint": "eslint src --max-warnings 0"
   },
   "dependencies": {
-    "effect": "4.0.0-rc.117",
+    "effect": "4.1.0",
     "globby": "16.2.4",
     "mdast-util-to-string": "4.0.0",
     "remark-cli": "12.0.1",
@@ -26,7 +26,7 @@
     "unified": "11.0.5",
     "unist-util-select": "5.1.0",
     "vfile": "6.0.3",
-    "yaml": "2.9.0",
+    "yaml": "2.9.1",
     "remark-parse": "11.0.0",
     "unified-engine": "11.2.2",
     "remark-stringify": "11.0.0"
@@ -34,9 +34,9 @@
   "devDependencies": {
     "@types/bun": "catalog:",
     "@types/mdast": "4.0.4",
-    "eslint": "10.8.1",
-    "prettier": "3.9.6",
+    "eslint": "10.13.0",
+    "prettier": "3.9.10",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.66.0"
+    "typescript-eslint": "8.72.1"
   }
 }
