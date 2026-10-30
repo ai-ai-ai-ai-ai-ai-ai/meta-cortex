@@ -17,7 +17,8 @@ bun run lint
 bun run test -- tools/checks
 ```
 
-`typecheck` runs the native Svelte compiler/type checker and component CSS checks.
+`typecheck` combines rsvelte compiler diagnostics, native TypeScript API diagnostics,
+and component CSS checks.
 `lint` refreshes native projections, then checks authored files, mapped component
 code, Svelte rules, and CSS. The focused Vitest command exercises the committed
 adapter fixtures. Full frontend verification remains `bun run verify`,
@@ -32,8 +33,11 @@ context. Fixture coverage of an adapter does not establish every underlying
 rule's behavioral parity.
 
 - **Strict types, unused symbols, and component diagnostics**
-  - Owner: native TypeScript through `@rsvelte/svelte-check`, using
-    [the project configuration](../../tsconfig.json) and [orchestration](check.ts).
+  - Owner: [NativeProject](native-project.ts) collects TypeScript syntactic,
+    semantic, program, global, and configuration diagnostics through the native
+    async API. [Orchestration](check.ts) runs `@rsvelte/svelte-check` with
+    `--no-type-check` for Svelte compiler diagnostics and overlay generation,
+    using [the project configuration](../../tsconfig.json).
   - Evidence: full `typecheck` plus diagnostic and file-discovery CLI probes.
     These are distinct from the focused source-map fixtures.
 - **Core JavaScript, TypeScript syntax, and type-aware lint**
@@ -44,6 +48,13 @@ rule's behavioral parity.
     and mixed mappings, template keys, and authored code inside generated wrappers.
     The baseline CLI differential corpus supplies per-rule comparison evidence;
     it is not part of these committed projection tests.
+- **JavaScript component semantics and source maps**
+  - Owner: [JavascriptProjection](javascript-projection.ts) preserves JavaScript
+    inference for scriptless, JavaScript-script, and module-script components.
+    It adapts only the native transform's synthetic type alias and composes the map.
+  - Fixtures: [JavaScript projection tests](javascript-projection.test.ts) cover
+    scriptless callbacks, original Unicode spans, authored marker lookalikes,
+    JavaScript inference, and module scripts.
 - **Authored branching and nesting**
   - Owner: [AuthoredSvelteCheck](authored-svelte.ts), using the Svelte compiler AST
     for JavaScript `if`/ternary restrictions, block depth, and callback depth
@@ -74,7 +85,9 @@ rule's behavioral parity.
 ## Source provenance and failures
 
 [CheckCommand](command.ts) runs subprocesses through the current Bun executable.
-The rsvelte CLI owns `.svelte-check` projections and incremental cleanup.
+The rsvelte CLI creates the `.svelte-check` overlay and owns incremental cleanup.
+For JavaScript components, orchestration writes the project-owned JavaScript
+projection and its map into that overlay before native checking.
 [GeneratedSyntax](generated-syntax.ts) and the projection adapter distinguish
 compiler scaffolding from authored code using transform output, source maps,
 and syntax ownership. Native byte spans must map to original UTF-16 source
