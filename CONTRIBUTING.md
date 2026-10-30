@@ -40,6 +40,9 @@ records ownership, source mapping, fixtures, and failure behavior. Cortex packag
 also use native TypeScript 7 and type-aware Oxlint with the official
 `oxlint-plugin-eslint`. Package scripts and configurations define the active checks.
 
+Use Node.js 24 on `PATH` alongside Bun for frontend development. Framework
+bootstrap installs Bun and Vale; supply Node separately. Bun runs the checker
+entry point, while maintained CLI launchers use their declared Node runtime.
 Install package-local frontend dependencies from the repository root:
 
 ```sh

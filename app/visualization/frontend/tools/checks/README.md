@@ -93,7 +93,10 @@ rule's behavioral parity.
 
 ## Source provenance and failures
 
-[CheckCommand](command.ts) runs subprocesses through the current Bun executable.
+[CheckCommand](command.ts) uses Bun to dispatch commands while honoring each CLI
+launcher’s declared runtime; Node must also be on `PATH`. The checker entry point
+runs on Bun. [Command tests](command.test.ts) verify complete capture of a large
+native JSON diagnostic report and its nonzero exit status.
 The rsvelte CLI creates the `.svelte-check` overlay and cleans its own outputs.
 Orchestration materializes each JavaScript component projection and its map before
 native checking. ModuleSvelteChecks rebuilds its own `.svelte-check/modules`
