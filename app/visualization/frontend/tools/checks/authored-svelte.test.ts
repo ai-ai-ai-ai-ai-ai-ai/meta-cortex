@@ -1,16 +1,16 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
-import { checkAuthoredSvelte } from "./authored-svelte";
+import { AuthoredSvelteCheck } from "./authored-svelte";
 
 class ComponentFixture {
   constructor(readonly source: string) {}
 
   check() {
-    return checkAuthoredSvelte({
+    return new AuthoredSvelteCheck({
       source: this.source,
       filepath: "src/Fixture.svelte",
       allowConditionals: false,
-    });
+    }).run();
   }
 }
 
@@ -98,11 +98,11 @@ it.each([
 it("preserves else-if depth and resets sibling branches", () => {
   const source =
     "<script>for(;;){if(a){} else if(b){} else if(c){while(d){break}}}</script>";
-  const diagnostics = checkAuthoredSvelte({
+  const diagnostics = new AuthoredSvelteCheck({
     source,
     filepath: "src/Fixture.svelte",
     allowConditionals: true,
-  });
+  }).run();
   expect(diagnostics).toEqual([
     expect.objectContaining({
       rule: "max-depth",
@@ -144,14 +144,14 @@ it("applies the caller's button exception only to restricted syntax", () => {
     "<script>if (ready) {for(;;){while(ready){break}}} first(() => second(() => third(() => work())));</script>";
   const filepath = "src/lib/components/ui/button/button.svelte";
   expect(
-    checkAuthoredSvelte({ source, filepath, allowConditionals: true }).map(
-      (diagnostic) => diagnostic.rule,
-    ),
+    new AuthoredSvelteCheck({ source, filepath, allowConditionals: true })
+      .run()
+      .map((diagnostic) => diagnostic.rule),
   ).toEqual(["max-depth", "max-nested-callbacks"]);
   expect(
-    checkAuthoredSvelte({ source, filepath, allowConditionals: false }).map(
-      (diagnostic) => diagnostic.rule,
-    ),
+    new AuthoredSvelteCheck({ source, filepath, allowConditionals: false })
+      .run()
+      .map((diagnostic) => diagnostic.rule),
   ).toEqual(["no-restricted-syntax", "max-depth", "max-nested-callbacks"]);
 });
 

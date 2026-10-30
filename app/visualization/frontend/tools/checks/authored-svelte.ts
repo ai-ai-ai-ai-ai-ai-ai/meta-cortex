@@ -22,7 +22,7 @@ interface WalkContext {
 }
 
 /** Checks authored nodes, never the helper scopes in a generated TSX projection. */
-class AuthoredSvelteCheck {
+export class AuthoredSvelteCheck {
   private readonly diagnostics: AuthoredSvelteDiagnostic[] = [];
 
   constructor(private readonly request: AuthoredSvelteRequest) {}
@@ -280,10 +280,4 @@ class AuthoredSvelteCheck {
         return;
     }
   }
-}
-
-export function checkAuthoredSvelte(
-  request: AuthoredSvelteRequest,
-): readonly AuthoredSvelteDiagnostic[] {
-  return new AuthoredSvelteCheck(request).run();
 }
