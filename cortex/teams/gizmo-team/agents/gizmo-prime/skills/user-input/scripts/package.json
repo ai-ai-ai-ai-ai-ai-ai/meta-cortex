@@ -7,10 +7,10 @@
     "tools": "bun src/ts/cli.ts",
     "check": "tsc --noEmit",
     "test": "bun test src/test",
-    "format": "prettier --write src package.json tsconfig.json eslint.config.js",
-    "format:check": "prettier --check src package.json tsconfig.json eslint.config.js",
+    "format": "prettier --write src package.json tsconfig.json .oxlintrc.json",
+    "format:check": "prettier --check src package.json tsconfig.json .oxlintrc.json",
     "verify": "bun run format:check && bun run lint && bun run check && bun test src/test",
-    "lint": "eslint src --max-warnings 0"
+    "lint": "oxlint --type-aware --max-warnings 0 src"
   },
   "dependencies": {
     "effect": "4.1.0",
@@ -18,9 +18,10 @@
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "prettier": "3.9.10",
-    "eslint": "10.13.0",
-    "typescript-eslint": "8.72.1"
+    "oxlint": "1.90.0",
+    "oxlint-tsgolint": "7.0.2005",
+    "oxlint-plugin-eslint": "1.90.0"
   }
 }
