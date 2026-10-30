@@ -2,6 +2,12 @@ import { GeneratedSyntax } from "./generated-syntax.ts";
 import { decodedMappings, TraceMap } from "@jridgewell/trace-mapping";
 import { svelte2tsx } from "@rsvelte/svelte2tsx";
 
+export enum ProjectionOrigin {
+  Authored = "authored",
+  Generated = "generated",
+  Unknown = "unknown",
+}
+
 export interface SourceSpan {
   readonly start: number;
   readonly end: number;
@@ -10,29 +16,37 @@ export interface SourceSpan {
 export class SvelteProjection {
   readonly code: string;
   private readonly origins = new Map<number, number>();
+  private readonly scopeAnchors = new Map<number, number>();
   private readonly syntax: GeneratedSyntax;
 
   constructor(
     readonly source: string,
     readonly filepath: string,
-    emitted?: { code: string; map: string },
+    emitted?: { code: string; map?: string; typescript?: boolean },
   ) {
-    const result =
-      emitted ??
-      svelte2tsx(source, {
-        filename: filepath,
-        isTsFile: true,
-        version: "5",
-      });
-    this.code = result.code;
+    const transformed = svelte2tsx(source, {
+      filename: filepath,
+      isTsFile: emitted?.typescript ?? true,
+      version: "5",
+    });
+    this.code = emitted?.code ?? transformed.code;
     this.syntax = new GeneratedSyntax(this.code);
-    switch (result.map) {
+    switch (transformed.map) {
       case null:
         throw new Error(
           `The native Svelte transform returned no source map: ${filepath}`,
         );
-      default:
-        this.readMappings(new TraceMap(result.map.toString()));
+      default: {
+        const map = new TraceMap(emitted?.map ?? transformed.map.toString());
+        switch (emitted !== undefined && emitted.map === undefined) {
+          case true:
+            this.validateMappedCode(transformed.code, map);
+            break;
+          case false:
+            break;
+        }
+        this.readMappings(map);
+      }
     }
     const keys = this.syntax.templateKeys(source);
     const classes = this.syntax.templateClasses(
@@ -43,10 +57,51 @@ export class SvelteProjection {
           (position) => position >= start && position < end,
         ),
     );
-    for (const key of [...keys, ...classes]) {
+    const styles = this.syntax.templateStyles(
+      source,
+      (position) => this.generatedPosition(position) !== undefined,
+      (start, end) => this.hasGeneratedOrigin(start, end),
+    );
+    const bindings = this.syntax.templateBindings(
+      source,
+      (position) => this.generatedPosition(position) !== undefined,
+      (start, end) => this.hasGeneratedOrigin(start, end),
+    );
+    for (const key of [...keys, ...classes, ...styles, ...bindings]) {
       for (let offset = 0; offset < key.length; offset += 1) {
         this.origins.set(key.generated + offset, key.original + offset);
       }
+    }
+  }
+
+  private hasGeneratedOrigin(start: number, end: number): boolean {
+    return Array.from(this.origins.keys()).some(
+      (position) => position >= start && position < end,
+    );
+  }
+
+  private validateMappedCode(transformed: string, map: TraceMap): void {
+    const lines = decodedMappings(map);
+    const lastMappedLine =
+      lines
+        .map((segments, index) => ({ segments, index }))
+        .filter(({ segments }) => segments.length > 0)
+        .at(-1)?.index ?? 0;
+    const expected = transformed
+      .split("\n")
+      .slice(1, lastMappedLine + 1)
+      .join("\n");
+    const actual = this.code
+      .split("\n")
+      .slice(1, lastMappedLine + 1)
+      .join("\n");
+    switch (expected === actual) {
+      case true:
+        break;
+      case false:
+        throw new Error(
+          `Native JSX output differs within source-mapped code: ${this.filepath}`,
+        );
     }
   }
 
@@ -82,6 +137,13 @@ export class SvelteProjection {
         const generated = generatedLine + (segment[0] ?? 0);
         const original =
           (originalLines[originalLine ?? 0] ?? 0) + (originalColumn ?? 0);
+        switch (this.scopeAnchors.has(original)) {
+          case false:
+            this.scopeAnchors.set(original, generated);
+            break;
+          case true:
+            break;
+        }
         this.copyVerbatim(generated, original, nextColumn, generatedLine);
         break;
       }
@@ -106,6 +168,13 @@ export class SvelteProjection {
       this.origins.set(generated + offset, original + offset);
       offset += 1;
     }
+  }
+
+  generatedScopePosition(originalUtf16Offset: number): number | undefined {
+    return (
+      this.scopeAnchors.get(originalUtf16Offset) ??
+      this.generatedPosition(originalUtf16Offset)
+    );
   }
 
   generatedPosition(originalUtf16Offset: number): number | undefined {
@@ -150,14 +219,14 @@ export class SvelteProjection {
     byteLength: number,
     rule: string,
   ):
-    | { readonly kind: "authored"; readonly span: SourceSpan }
-    | { readonly kind: "generated"; readonly reason: string }
-    | { readonly kind: "unknown" } {
+    | { readonly kind: ProjectionOrigin.Authored; readonly span: SourceSpan }
+    | { readonly kind: ProjectionOrigin.Generated; readonly reason: string }
+    | { readonly kind: ProjectionOrigin.Unknown } {
     const { start, end } = this.utf16Span(byteOffset, byteLength);
     switch (this.syntax.owns(start, end, rule) && !this.origins.has(start)) {
       case true:
         return {
-          kind: "generated",
+          kind: ProjectionOrigin.Generated,
           reason: "synthetic node in the native transform's rendering function",
         };
       case false:
@@ -175,16 +244,16 @@ export class SvelteProjection {
         ) {
           case true:
             return {
-              kind: "generated",
+              kind: ProjectionOrigin.Generated,
               reason: "native transform's explicit generated-only region",
             };
           case false:
             break;
         }
-        return { kind: "unknown" };
+        return { kind: ProjectionOrigin.Unknown };
       }
       default:
-        return { kind: "authored", span };
+        return { kind: ProjectionOrigin.Authored, span };
     }
   }
 }

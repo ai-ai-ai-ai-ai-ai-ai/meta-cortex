@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SvelteProjection } from "./projection.ts";
+import { ProjectionOrigin, SvelteProjection } from "./projection.ts";
 
 class ProjectionFixture {
   readonly source =
@@ -63,7 +63,7 @@ it("retains authored code when a native label begins in generated punctuation", 
   const projection = new MixedProjectionFixture().projection;
   expect(
     projection.classify(0, 14, "typescript(no-unsafe-assignment)"),
-  ).toEqual({ kind: "authored", span: { start: 0, end: 6 } });
+  ).toEqual({ kind: ProjectionOrigin.Authored, span: { start: 0, end: 6 } });
 });
 it("expands a sparse verbatim source-map segment to its full authored span", () => {
   expect(new MixedProjectionFixture().projection.originalSpan(8, 6)).toEqual({
@@ -78,7 +78,7 @@ it("reports unknown mapping instead of silently calling it generated", () => {
       3,
       "typescript(no-unsafe-assignment)",
     ),
-  ).toEqual({ kind: "unknown" });
+  ).toEqual({ kind: ProjectionOrigin.Unknown });
 });
 it("uses generated AST ownership for the synthetic async wrapper", () => {
   const fixture = new ProjectionFixture();
@@ -89,7 +89,7 @@ it("uses generated AST ownership for the synthetic async wrapper", () => {
       11,
       "typescript(require-await)",
     ).kind,
-  ).toBe("generated");
+  ).toBe(ProjectionOrigin.Generated);
 });
 it("does not suppress a mixed authored diagnostic merely because it crosses the wrapper", () => {
   const fixture = new ProjectionFixture();
@@ -100,7 +100,7 @@ it("does not suppress a mixed authored diagnostic merely because it crosses the 
       Buffer.byteLength(fixture.projection.code.slice(start)),
       "typescript(no-floating-promises)",
     ).kind,
-  ).toBe("authored");
+  ).toBe(ProjectionOrigin.Authored);
 });
 
 class TemplateOwnershipFixture {
@@ -145,7 +145,7 @@ it("retains authored unsafe code inside a helper-like variable declaration", () 
       "$$_probe = unsafe()".length,
       "typescript(no-unsafe-assignment)",
     ).kind,
-  ).toBe("authored");
+  ).toBe(ProjectionOrigin.Authored);
 });
 it("retains authored unsafe code inside the rendering return", () => {
   const code = "function $$render(){ return unsafe(); }";
@@ -156,5 +156,43 @@ it("retains authored unsafe code inside the rendering return", () => {
       "return unsafe();".length,
       "typescript(no-unsafe-return)",
     ).kind,
-  ).toBe("authored");
+  ).toBe(ProjectionOrigin.Authored);
+});
+
+class DirectiveMappingFixture {
+  readonly source = `<script lang="ts">import Child from './Child.svelte'; import { fade, fly } from 'svelte/transition'; import { flip } from 'svelte/animate'; let element: HTMLElement; const offset = '2px'; const active = true; const options = {}; const action = () => ({}); const handle = () => {}; const rows = [1];</script><button bind:this={element} style:left={offset} class:active={active} on:click={handle} use:action={options}>Text</button><div transition:fade={options}></div><div in:fly={options}></div><div out:fly={options}></div>{#each rows as row (row)}<div animate:flip={options}></div>{/each}<Child let:value>{value}</Child>`;
+  readonly projection = new SvelteProjection(
+    this.source,
+    "DirectiveAudit.svelte",
+  );
+}
+it("maps authored bind, style, class, event, action, transition and animation expressions", () => {
+  const fixture = new DirectiveMappingFixture();
+  for (const prefix of [
+    "bind:this={",
+    "style:left={",
+    "class:active={",
+    "on:click={",
+    "use:action={",
+    "transition:fade={",
+    "in:fly={",
+    "out:fly={",
+    "animate:flip={",
+  ]) {
+    const original = fixture.source.indexOf(prefix) + prefix.length;
+    expect(
+      fixture.projection.generatedPosition(original),
+      prefix,
+    ).toBeDefined();
+  }
+  expect(
+    fixture.projection.generatedPosition(
+      fixture.source.lastIndexOf("{value}") + 1,
+    ),
+  ).toBeDefined();
+  expect(
+    fixture.projection.generatedScopePosition(
+      fixture.source.indexOf("<button"),
+    ),
+  ).toBeDefined();
 });

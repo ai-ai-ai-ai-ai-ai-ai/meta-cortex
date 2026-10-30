@@ -1,10 +1,13 @@
+import { ModuleSvelteChecks } from "./module-svelte.ts";
+import { JavascriptProjection } from "./javascript-projection.ts";
+import { NativeProject } from "./native-project.ts";
 import { globSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Schema } from "effect";
 import { CheckCommand, CheckFailure } from "./command.ts";
-import { SvelteProjection } from "./projection.ts";
+import { ProjectionOrigin, SvelteProjection } from "./projection.ts";
 import { ComponentCss } from "./css.ts";
 import { AuthoredSvelteCheck } from "./authored-svelte.ts";
 
@@ -107,16 +110,18 @@ class FrontendChecks {
             finding.code ?? "parse",
           ),
         );
-        const authored = origins.find((origin) => origin.kind === "authored");
+        const authored = origins.find(
+          (origin) => origin.kind === ProjectionOrigin.Authored,
+        );
         switch (authored?.kind) {
-          case "authored":
+          case ProjectionOrigin.Authored:
             return this.authoredFinding(finding, projection, authored.span);
           case undefined:
             break;
         }
         switch (
           origins.length > 0 &&
-          origins.every((origin) => origin.kind === "generated")
+          origins.every((origin) => origin.kind === ProjectionOrigin.Generated)
         ) {
           case true:
             return [];
@@ -151,7 +156,7 @@ class FrontendChecks {
         }
         break;
       case "typescript(no-unsafe-assignment)":
-        switch (authored.isTypedPropsAssignment(span.start, span.end)) {
+        switch (authored.isIntrinsicPropsAssignment(span.start, span.end)) {
           case true:
             return [];
           case false:
@@ -174,6 +179,7 @@ class FrontendChecks {
       "--tsconfig",
       "tsconfig.json",
       "--fail-on-warnings",
+      "--no-type-check",
     ]);
     yield* this.command.requireSuccess(emit);
     const components = yield* Effect.try(() => this.files("**/*.svelte"));
@@ -207,24 +213,64 @@ class FrontendChecks {
               `${file}:${finding.start}: ${finding.rule}: ${finding.message}`,
             ),
           );
-          const projected = join(".svelte-check/svelte", `${file}.tsx`);
-          const [code, map] = yield* Effect.all([
-            Effect.tryPromise(() => readFile(projected, "utf8")),
-            Effect.tryPromise(() => readFile(`${projected}.map`, "utf8")),
-          ]);
+        }
+      }
+      const candidates = globSync(
+        join(".svelte-check/svelte", `${file}.{tsx,jsx}`),
+      );
+      switch (candidates.length) {
+        case 1:
+          break;
+        default:
+          return yield* new CheckFailure({
+            message: `Expected one native projection for ${file}; found ${candidates.length}.`,
+          });
+      }
+      const projected = candidates[0] ?? "";
+      const code = yield* Effect.tryPromise(() => readFile(projected, "utf8"));
+      switch (projected.endsWith(".tsx")) {
+        case true: {
+          const map = yield* Effect.tryPromise(() =>
+            readFile(`${projected}.map`, "utf8"),
+          );
           projections.set(
             resolve(projected),
             new SvelteProjection(source, file, { code, map }),
           );
+          break;
+        }
+        case false: {
+          const javascript = yield* Effect.try(() =>
+            new JavascriptProjection().generate(source, file),
+          );
+          yield* Effect.tryPromise(() => writeFile(projected, javascript.code));
+          yield* Effect.tryPromise(() =>
+            writeFile(`${projected}.map`, javascript.map),
+          );
+          projections.set(
+            resolve(projected),
+            new SvelteProjection(source, file, {
+              ...javascript,
+              typescript: false,
+            }),
+          );
+          break;
         }
       }
     }
     switch (mode) {
       case "typecheck":
+        failures.push(
+          ...(yield* new NativeProject().check(projections, [], "typecheck")),
+        );
         break;
       default: {
         const files = yield* Effect.try(() =>
           this.files("**/*.{ts,js,mjs,cjs}"),
+        );
+        failures.push(...(yield* new ModuleSvelteChecks().check(files)));
+        failures.push(
+          ...(yield* new NativeProject().check(projections, files)),
         );
         const authored = yield* this.nativeLint(
           files,
@@ -252,6 +298,7 @@ class FrontendChecks {
           "--max-warnings",
           "0",
           ...components,
+          ...files.filter((file) => /\.svelte\.[jt]s$/.test(file)),
         ]);
         switch (svelte.status) {
           case 0:

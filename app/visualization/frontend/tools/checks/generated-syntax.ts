@@ -11,7 +11,8 @@ interface GeneratedRegion {
     | "no-unsafe-assignment"
     | "no-unsafe-return"
     | "no-empty"
-    | "no-explicit-any";
+    | "no-explicit-any"
+    | "no-undef";
 }
 
 /** Structural ownership of helper nodes emitted by the native Svelte transform. */
@@ -19,12 +20,16 @@ export class GeneratedSyntax {
   private readonly regions: GeneratedRegion[] = [];
   private readonly eachLoops: Readonly<Record<string, unknown>>[] = [];
   private readonly code: string;
+  private readonly root: unknown;
   private readonly expressions: Readonly<Record<string, unknown>>[] = [];
+  private readonly styleExpressions: Readonly<Record<string, unknown>>[] = [];
+  private readonly bindings: Readonly<Record<string, unknown>>[] = [];
   private readonly prefix = '<script context="module" lang="ts">';
 
   constructor(code: string) {
     this.code = code;
     const ast = parse(`${this.prefix}${code}</script>`, { modern: true });
+    this.root = ast;
     this.visit(ast, false);
   }
 
@@ -156,6 +161,45 @@ export class GeneratedSyntax {
     const argument = this.node(node.argument);
     const callee = this.node(argument.callee);
     switch (node.type) {
+      case "AssignmentExpression": {
+        const right = this.node(node.right);
+        switch (
+          (typeof right.name === "string" && right.name.startsWith("$$_")) ||
+          (typeof this.node(right.callee).name === "string" &&
+            String(this.node(right.callee).name).startsWith("__sveltets_"))
+        ) {
+          case true:
+            this.bindings.push(this.node(node.left));
+            break;
+          case false:
+            break;
+        }
+        break;
+      }
+      case "CallExpression":
+        switch (this.node(node.callee).name) {
+          case "__sveltets_2_ensureType": {
+            const args = Match.value(node.arguments).pipe(
+              Match.when(Array.isArray, (nodes: readonly unknown[]) => nodes),
+              Match.orElse(() => []),
+            );
+            this.styleExpressions.push(...this.findNodes(args.slice(2), "*"));
+            break;
+          }
+        }
+        break;
+      case "Identifier":
+        switch (
+          typeof node.name === "string" &&
+          (node.name.startsWith("__sveltets_") || node.name === "svelteHTML")
+        ) {
+          case true:
+            this.add(node, "no-undef");
+            break;
+          case false:
+            break;
+        }
+        break;
       case "ExpressionStatement":
         this.expressions.push(this.node(node.expression));
         break;
@@ -279,7 +323,10 @@ export class GeneratedSyntax {
         const descendants = Object.values(node).flatMap((child) =>
           this.findNodes(child, type),
         );
-        switch (node.type === type) {
+        switch (
+          node.type === type ||
+          (type === "*" && typeof node.type === "string")
+        ) {
           case true:
             return [node, ...descendants];
           case false:
@@ -377,6 +424,61 @@ export class GeneratedSyntax {
     );
   }
 
+  templateStyles(
+    source: string,
+    hasOriginal: (position: number) => boolean,
+    hasGenerated: (start: number, end: number) => boolean,
+  ): readonly { original: number; generated: number; length: number }[] {
+    const directives = this.findNodes(
+      parse(source, { modern: true }),
+      "StyleDirective",
+    );
+    const expressions = directives.flatMap((directive) =>
+      this.findNodes(directive, "ExpressionTag").map((expression) =>
+        this.node(expression.expression),
+      ),
+    );
+    const originals = expressions.filter(
+      (expression) =>
+        !hasOriginal(this.position(expression.start) + this.prefix.length),
+    );
+    const generated = this.styleExpressions.filter(
+      (expression) =>
+        !hasGenerated(
+          this.position(expression.start),
+          this.position(expression.end),
+        ),
+    );
+    return originals.map((expression) =>
+      this.classExpression(source, expression, originals, generated),
+    );
+  }
+
+  templateBindings(
+    source: string,
+    hasOriginal: (position: number) => boolean,
+    hasGenerated: (start: number, end: number) => boolean,
+  ): readonly { original: number; generated: number; length: number }[] {
+    const expressions = this.findNodes(
+      parse(source, { modern: true }),
+      "BindDirective",
+    ).map((directive) => this.node(directive.expression));
+    const originals = expressions.filter(
+      (expression) =>
+        !hasOriginal(this.position(expression.start) + this.prefix.length),
+    );
+    const generated = this.bindings.filter(
+      (expression) =>
+        !hasGenerated(
+          this.position(expression.start),
+          this.position(expression.end),
+        ),
+    );
+    return originals.map((expression) =>
+      this.classExpression(source, expression, originals, generated),
+    );
+  }
+
   private classExpression(
     source: string,
     expression: Readonly<Record<string, unknown>>,
@@ -418,6 +520,46 @@ export class GeneratedSyntax {
       case false:
         throw new Error(
           "Native class-directive projections are not uniquely paired with the authored AST.",
+        );
+    }
+  }
+
+  javascriptAlias(): { start: number; end: number; replacement: string } {
+    const body = this.node(this.node(this.node(this.root).module).content).body;
+    const statements = Match.value(body).pipe(
+      Match.when(Array.isArray, (nodes: readonly unknown[]) => nodes),
+      Match.orElse(() => []),
+    );
+    const alias = this.node(statements.at(-2));
+    const exported = this.node(statements.at(-1));
+    const name = this.node(alias.id).name;
+    const declarations = this.node(statements.at(-3)).declarations;
+    const binding = Match.value(declarations).pipe(
+      Match.when(Array.isArray, (nodes: readonly unknown[]) =>
+        this.node(nodes[0]),
+      ),
+      Match.orElse((): Readonly<Record<string, unknown>> => ({})),
+    );
+    const factory = this.node(this.node(binding.init).callee).name;
+    const annotation = this.node(alias.typeAnnotation);
+    switch (
+      alias.type === "TSTypeAliasDeclaration" &&
+      typeof name === "string" &&
+      this.node(binding.id).name === name &&
+      this.node(exported.declaration).name === name &&
+      exported.type === "ExportDefaultDeclaration" &&
+      (factory === "__sveltets_2_isomorphic_component" ||
+        factory === "__sveltets_2_fn_component")
+    ) {
+      case true:
+        return {
+          start: this.position(alias.start),
+          end: this.position(alias.end),
+          replacement: `/** @typedef {${this.code.slice(this.position(annotation.start), this.position(annotation.end))}} ${String(name)} */`,
+        };
+      case false:
+        throw new Error(
+          "Native JavaScript component footer is not the supported generated alias structure.",
         );
     }
   }
