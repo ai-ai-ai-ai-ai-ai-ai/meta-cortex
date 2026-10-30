@@ -7,5 +7,13 @@
   "project": ["src/**/*.{ts,svelte,css}", "tools/**/*.ts"],
   "ignore": ["src/contracts.ts"],
   "ignoreMembers": ["Features", "Workflow", "Log", "Windows", "Closed", "Open"],
-  "ignoreDependencies": ["@typescript/native"]
+  "ignoreDependencies": [
+    "@rsvelte/lint",
+    "@rsvelte/svelte-check",
+    "oxlint-tsgolint",
+    "oxlint"
+  ],
+  "oxlint": {
+    "config": ["tools/checks/oxlint.json", "tools/checks/oxlint-projected.json"]
+  }
 }
