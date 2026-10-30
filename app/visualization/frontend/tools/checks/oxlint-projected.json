@@ -16,7 +16,12 @@
   "rules": {
     "eslint-js/no-dupe-args": [2],
     "eslint-js/no-octal": [2],
-    "no-undef": "off",
+    "no-undef": [
+      2,
+      {
+        "typeof": false
+      }
+    ],
     "typescript/await-thenable": [2],
     "typescript/ban-ts-comment": [2],
     "typescript/no-array-constructor": [2],
@@ -310,7 +315,6 @@
     "$effect": false,
     "$inspect": false,
     "$bindable": false,
-    "$host": false,
-    "svelteHTML": false
+    "$host": false
   }
 }
