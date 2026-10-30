@@ -19,25 +19,266 @@ interface WalkContext {
   readonly field: string;
   readonly blocks: number;
   readonly callbacks: number;
+  readonly ancestors: readonly Readonly<Record<string, unknown>>[];
+}
+
+interface IndexedNode {
+  readonly node: Readonly<Record<string, unknown>>;
+  readonly parent: Readonly<Record<string, unknown>>;
+  readonly field: string;
+  readonly ancestors: readonly Readonly<Record<string, unknown>>[];
 }
 
 /** Checks authored nodes, never the helper scopes in a generated TSX projection. */
 export class AuthoredSvelteCheck {
   private readonly diagnostics: AuthoredSvelteDiagnostic[] = [];
+  private readonly nodes: IndexedNode[] = [];
 
   constructor(private readonly request: AuthoredSvelteRequest) {}
 
   run(): readonly AuthoredSvelteDiagnostic[] {
+    this.diagnostics.length = 0;
+    this.nodes.length = 0;
     // The compiler owns parsing and its failures propagate to the caller.
     const root = parse(this.request.source, {
       modern: true,
       filename: this.request.filepath,
     });
-    this.visit(root, { parent: {}, field: "", blocks: 0, callbacks: 0 });
+    this.visit(root, {
+      parent: {},
+      field: "",
+      blocks: 0,
+      callbacks: 0,
+      ancestors: [],
+    });
     return this.diagnostics.sort(
       (left, right) =>
         left.start - right.start || left.rule.localeCompare(right.rule),
     );
+  }
+
+  ownsExpressionStatement(start: number, end: number): boolean {
+    this.run();
+    return this.nodes.some(
+      (entry) =>
+        entry.node.type === "ExpressionStatement" &&
+        this.contains(entry.node, start, end),
+    );
+  }
+
+  isTypedPropsAssignment(start: number, end: number): boolean {
+    this.run();
+    return this.nodes.some((entry) =>
+      this.typedPropsDeclarator(entry, start, end),
+    );
+  }
+
+  private contains(
+    node: Readonly<Record<string, unknown>>,
+    start: number,
+    end: number,
+  ): boolean {
+    return (
+      typeof node.start === "number" &&
+      typeof node.end === "number" &&
+      start >= node.start &&
+      end <= node.end &&
+      start < end
+    );
+  }
+
+  private typedPropsDeclarator(
+    entry: IndexedNode,
+    start: number,
+    end: number,
+  ): boolean {
+    return (
+      entry.node.type === "VariableDeclarator" &&
+      entry.node.start === start &&
+      entry.node.end === end &&
+      this.instanceRoot(entry) &&
+      this.typedPattern(entry) &&
+      this.propsInitializer(entry) &&
+      !this.nodes.some((binding) => this.shadowsProps(binding))
+    );
+  }
+
+  private instanceRoot(entry: IndexedNode): boolean {
+    return (
+      entry.ancestors.some(
+        (node) => node.type === "Script" && node.context === "default",
+      ) && !entry.ancestors.some((node) => this.scopeBoundary(node))
+    );
+  }
+
+  private scopeBoundary(node: Readonly<Record<string, unknown>>): boolean {
+    switch (node.type) {
+      case "FunctionDeclaration":
+      case "FunctionExpression":
+      case "ArrowFunctionExpression":
+      case "ClassDeclaration":
+      case "ClassExpression":
+      case "StaticBlock":
+      case "BlockStatement":
+      case "SwitchStatement":
+      case "ForStatement":
+      case "ForInStatement":
+      case "ForOfStatement":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private typedPattern(entry: IndexedNode): boolean {
+    return this.nodes.some(
+      (pattern) =>
+        pattern.parent === entry.node &&
+        pattern.field === "id" &&
+        this.annotatedDestructure(pattern),
+    );
+  }
+
+  private annotatedDestructure(pattern: IndexedNode): boolean {
+    switch (pattern.node.type) {
+      case "ObjectPattern":
+      case "ArrayPattern":
+        return this.nodes.some(
+          (annotation) =>
+            annotation.parent === pattern.node &&
+            annotation.field === "typeAnnotation" &&
+            annotation.node.type === "TSTypeAnnotation",
+        );
+      default:
+        return false;
+    }
+  }
+
+  private propsInitializer(entry: IndexedNode): boolean {
+    return this.nodes.some(
+      (call) =>
+        call.parent === entry.node &&
+        call.field === "init" &&
+        this.intrinsicPropsCall(call),
+    );
+  }
+
+  private intrinsicPropsCall(call: IndexedNode): boolean {
+    return (
+      call.node.type === "CallExpression" &&
+      call.node.optional !== true &&
+      Array.isArray(call.node.arguments) &&
+      call.node.arguments.length === 0 &&
+      this.nodes.some(
+        (callee) =>
+          callee.parent === call.node &&
+          callee.field === "callee" &&
+          callee.node.type === "Identifier" &&
+          callee.node.name === "$props",
+      )
+    );
+  }
+
+  private shadowsProps(entry: IndexedNode): boolean {
+    switch (entry.node.type) {
+      case "VariableDeclarator":
+        return (
+          this.rootBinding(entry) &&
+          this.nodes.some(
+            (pattern) =>
+              pattern.parent === entry.node &&
+              pattern.field === "id" &&
+              this.patternBindsProps(pattern),
+          )
+        );
+      case "FunctionDeclaration":
+      case "ClassDeclaration":
+      case "TSModuleDeclaration":
+      case "TSEnumDeclaration":
+      case "TSDeclareFunction":
+      case "TSImportEqualsDeclaration":
+        return (
+          this.rootBinding(entry) &&
+          this.nodes.some(
+            (name) =>
+              name.parent === entry.node &&
+              name.field === "id" &&
+              name.node.name === "$props",
+          )
+        );
+      case "ImportSpecifier":
+      case "ImportDefaultSpecifier":
+      case "ImportNamespaceSpecifier":
+        return this.nodes.some(
+          (local) =>
+            local.parent === entry.node &&
+            local.field === "local" &&
+            local.node.name === "$props",
+        );
+      default:
+        return false;
+    }
+  }
+
+  private rootBinding(entry: IndexedNode): boolean {
+    switch (entry.parent.kind) {
+      case "var":
+        return !entry.ancestors.some((node) => this.functionBoundary(node));
+      default:
+        return !entry.ancestors.some((node) => this.scopeBoundary(node));
+    }
+  }
+
+  private functionBoundary(node: Readonly<Record<string, unknown>>): boolean {
+    switch (node.type) {
+      case "FunctionDeclaration":
+      case "FunctionExpression":
+      case "ArrowFunctionExpression":
+      case "ClassDeclaration":
+      case "ClassExpression":
+      case "StaticBlock":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private patternBindsProps(entry: IndexedNode): boolean {
+    switch (entry.node.type) {
+      case "Identifier":
+        return entry.node.name === "$props";
+      case "ObjectPattern":
+      case "ArrayPattern":
+        return this.nodes.some(
+          (child) =>
+            child.parent === entry.node &&
+            child.field !== "typeAnnotation" &&
+            this.patternBindsProps(child),
+        );
+      case "Property":
+        return this.nodes.some(
+          (value) =>
+            value.parent === entry.node &&
+            value.field === "value" &&
+            this.patternBindsProps(value),
+        );
+      case "AssignmentPattern":
+        return this.nodes.some(
+          (left) =>
+            left.parent === entry.node &&
+            left.field === "left" &&
+            this.patternBindsProps(left),
+        );
+      case "RestElement":
+        return this.nodes.some(
+          (argument) =>
+            argument.parent === entry.node &&
+            argument.field === "argument" &&
+            this.patternBindsProps(argument),
+        );
+      default:
+        return false;
+    }
   }
 
   private visit(value: unknown, context: WalkContext): void {
@@ -79,7 +320,11 @@ export class AuthoredSvelteCheck {
         case "trailingComments":
           break;
         default:
-          this.visit(child, { ...next, field: key });
+          this.visit(child, {
+            ...next,
+            field: key,
+            ancestors: [...context.ancestors, fields],
+          });
       }
     }
   }
@@ -88,6 +333,12 @@ export class AuthoredSvelteCheck {
     node: Readonly<Record<string, unknown>>,
     context: WalkContext,
   ): WalkContext {
+    this.nodes.push({
+      node,
+      parent: context.parent,
+      field: context.field,
+      ancestors: context.ancestors,
+    });
     switch (typeof node.type) {
       case "string":
         return this.syntaxContext(node, node.type, context);
