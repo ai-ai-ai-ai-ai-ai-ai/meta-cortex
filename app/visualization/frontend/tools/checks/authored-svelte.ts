@@ -66,10 +66,10 @@ export class AuthoredSvelteCheck {
     );
   }
 
-  isTypedPropsAssignment(start: number, end: number): boolean {
+  isIntrinsicPropsAssignment(start: number, end: number): boolean {
     this.run();
     return this.nodes.some((entry) =>
-      this.typedPropsDeclarator(entry, start, end),
+      this.intrinsicPropsDeclarator(entry, start, end),
     );
   }
 
@@ -87,7 +87,7 @@ export class AuthoredSvelteCheck {
     );
   }
 
-  private typedPropsDeclarator(
+  private intrinsicPropsDeclarator(
     entry: IndexedNode,
     start: number,
     end: number,
@@ -97,7 +97,7 @@ export class AuthoredSvelteCheck {
       entry.node.start === start &&
       entry.node.end === end &&
       this.instanceRoot(entry) &&
-      this.typedPattern(entry) &&
+      this.propsPattern(entry) &&
       this.propsInitializer(entry) &&
       !this.nodes.some((binding) => this.shadowsProps(binding))
     );
@@ -130,25 +130,21 @@ export class AuthoredSvelteCheck {
     }
   }
 
-  private typedPattern(entry: IndexedNode): boolean {
+  private propsPattern(entry: IndexedNode): boolean {
     return this.nodes.some(
       (pattern) =>
         pattern.parent === entry.node &&
         pattern.field === "id" &&
-        this.annotatedDestructure(pattern),
+        this.propsBinding(pattern),
     );
   }
 
-  private annotatedDestructure(pattern: IndexedNode): boolean {
+  private propsBinding(pattern: IndexedNode): boolean {
     switch (pattern.node.type) {
+      case "Identifier":
       case "ObjectPattern":
       case "ArrayPattern":
-        return this.nodes.some(
-          (annotation) =>
-            annotation.parent === pattern.node &&
-            annotation.field === "typeAnnotation" &&
-            annotation.node.type === "TSTypeAnnotation",
-        );
+        return true;
       default:
         return false;
     }
