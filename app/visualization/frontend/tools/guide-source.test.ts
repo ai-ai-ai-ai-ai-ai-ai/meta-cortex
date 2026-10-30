@@ -38,10 +38,10 @@ class CanonicalNewlines {
       }
     });
     return Match.value(this.source.load("\0virtual:agent-guide")).pipe(
-      Match.when(
-        Match.string,
-        (source): GeneratedModule => ({ kind: GeneratedKind.Present, source }),
-      ),
+      Match.when(Match.string, (source): GeneratedModule => ({
+        kind: GeneratedKind.Present,
+        source,
+      })),
       Match.orElse((): GeneratedModule => ({ kind: GeneratedKind.Missing })),
     );
   }

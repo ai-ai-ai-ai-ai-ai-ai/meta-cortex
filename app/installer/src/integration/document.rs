@@ -1,5 +1,5 @@
 use super::{InstructionError, InstructionTarget};
-use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Tag, TagEnd};
+use pulldown_cmark::{Event, LinkType, MetadataBlockKind, Options, Tag, TagEnd};
 use pulldown_cmark_to_cmark::cmark;
 use serde::{Deserialize, Serialize};
 
@@ -71,9 +71,9 @@ impl CursorHeader {
                 Event::Start(Tag::MetadataBlock(MetadataBlockKind::YamlStyle)),
                 Event::Text(yaml.into()),
                 Event::End(TagEnd::MetadataBlock(MetadataBlockKind::YamlStyle)),
-            ]
-            .into_iter(),
+            ],
             &mut output,
+            Options::ENABLE_YAML_STYLE_METADATA_BLOCKS,
         )?;
         output.push('\n');
         Ok(output)
@@ -119,7 +119,11 @@ impl InstructionTarget {
         events.extend(self.body_events());
         events.push(Event::Rule);
         let mut output = String::new();
-        cmark(events.into_iter(), &mut output)?;
+        cmark(
+            events,
+            &mut output,
+            Options::ENABLE_YAML_STYLE_METADATA_BLOCKS,
+        )?;
         Ok(output)
     }
 }

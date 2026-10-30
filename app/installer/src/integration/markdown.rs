@@ -119,9 +119,9 @@ impl MarkdownInstructions<'_> {
             | Event::TaskListMarker(_)) => event,
         });
         let mut actual = String::new();
-        cmark(events, &mut actual)?;
+        cmark(events, &mut actual, Options::empty())?;
         let mut expected = String::new();
-        cmark(self.target.body_events().into_iter(), &mut expected)?;
+        cmark(self.target.body_events(), &mut expected, Options::empty())?;
         if actual.trim() != expected.trim() {
             return Err(InstructionError::InvalidEntry(self.target.path()));
         }
