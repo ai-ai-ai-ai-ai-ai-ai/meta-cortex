@@ -1,0 +1,48 @@
+{
+  "extends": [],
+  "rules": {
+    "svelte/comment-directive": [2],
+    "svelte/system": [2],
+    "svelte/infinite-reactive-loop": [2],
+    "svelte/no-at-debug-tags": [1],
+    "svelte/no-at-html-tags": [2],
+    "svelte/no-dom-manipulating": [2],
+    "svelte/no-dupe-else-if-blocks": [2],
+    "svelte/no-dupe-on-directives": [2],
+    "svelte/no-dupe-style-properties": [2],
+    "svelte/no-dupe-use-directives": [2],
+    "svelte/no-export-load-in-svelte-module-in-kit-pages": [2],
+    "svelte/no-immutable-reactive-statements": [2],
+    "svelte/no-inner-declarations": [
+      2,
+      "functions",
+      {
+        "blockScopedFunctions": "allow"
+      }
+    ],
+    "svelte/no-inspect": [1],
+    "svelte/no-navigation-without-resolve": [2],
+    "svelte/no-not-function-handler": [2],
+    "svelte/no-object-in-text-mustaches": [2],
+    "svelte/no-raw-special-elements": [2],
+    "svelte/no-reactive-functions": [2],
+    "svelte/no-reactive-literals": [2],
+    "svelte/no-reactive-reassign": [2],
+    "svelte/no-shorthand-style-property-overrides": [2],
+    "svelte/no-store-async": [2],
+    "svelte/no-svelte-internal": [2],
+    "svelte/no-unknown-style-directive-property": [2],
+    "svelte/no-unnecessary-state-wrap": [2],
+    "svelte/no-unused-props": [2],
+    "svelte/no-unused-svelte-ignore": [2],
+    "svelte/no-useless-children-snippet": [2],
+    "svelte/no-useless-mustaches": [2],
+    "svelte/prefer-svelte-reactivity": [2],
+    "svelte/prefer-writable-derived": [2],
+    "svelte/require-each-key": [2],
+    "svelte/require-event-dispatcher-types": [2],
+    "svelte/require-store-reactive-access": [2],
+    "svelte/valid-each-key": [2],
+    "svelte/valid-prop-names-in-kit-pages": [2]
+  }
+}
