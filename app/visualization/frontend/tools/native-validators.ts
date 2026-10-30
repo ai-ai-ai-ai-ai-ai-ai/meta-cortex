@@ -2,7 +2,7 @@ import Ajv, { type AnySchemaObject, type Options } from "ajv/dist/2020";
 import standaloneCode from "ajv/dist/standalone";
 import { Effect } from "effect";
 import type { Plugin } from "vite";
-import schema from "../contracts.schema.json";
+import schema from "../contracts.schema.json" with { type: "json" };
 
 type ValidatorExports = NonNullable<Parameters<typeof standaloneCode>[1]>;
 

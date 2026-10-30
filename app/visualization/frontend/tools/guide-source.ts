@@ -17,7 +17,7 @@ import {
   GuideTeamId,
   GuideReporting,
   type GuidePayload,
-} from "../src/guide-content";
+} from "../src/guide-content.ts";
 
 enum SourceChange {
   Bundled = "Bundled",
