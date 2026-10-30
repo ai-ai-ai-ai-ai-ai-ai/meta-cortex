@@ -1,16 +1,16 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
-import { checkAuthoredSvelte } from "./authored-svelte";
+import { AuthoredSvelteCheck } from "./authored-svelte";
 
 class ComponentFixture {
   constructor(readonly source: string) {}
 
   check() {
-    return checkAuthoredSvelte({
+    return new AuthoredSvelteCheck({
       source: this.source,
       filepath: "src/Fixture.svelte",
       allowConditionals: false,
-    });
+    }).run();
   }
 }
 
@@ -98,11 +98,11 @@ it.each([
 it("preserves else-if depth and resets sibling branches", () => {
   const source =
     "<script>for(;;){if(a){} else if(b){} else if(c){while(d){break}}}</script>";
-  const diagnostics = checkAuthoredSvelte({
+  const diagnostics = new AuthoredSvelteCheck({
     source,
     filepath: "src/Fixture.svelte",
     allowConditionals: true,
-  });
+  }).run();
   expect(diagnostics).toEqual([
     expect.objectContaining({
       rule: "max-depth",
@@ -144,14 +144,14 @@ it("applies the caller's button exception only to restricted syntax", () => {
     "<script>if (ready) {for(;;){while(ready){break}}} first(() => second(() => third(() => work())));</script>";
   const filepath = "src/lib/components/ui/button/button.svelte";
   expect(
-    checkAuthoredSvelte({ source, filepath, allowConditionals: true }).map(
-      (diagnostic) => diagnostic.rule,
-    ),
+    new AuthoredSvelteCheck({ source, filepath, allowConditionals: true })
+      .run()
+      .map((diagnostic) => diagnostic.rule),
   ).toEqual(["max-depth", "max-nested-callbacks"]);
   expect(
-    checkAuthoredSvelte({ source, filepath, allowConditionals: false }).map(
-      (diagnostic) => diagnostic.rule,
-    ),
+    new AuthoredSvelteCheck({ source, filepath, allowConditionals: false })
+      .run()
+      .map((diagnostic) => diagnostic.rule),
   ).toEqual(["no-restricted-syntax", "max-depth", "max-nested-callbacks"]);
 });
 
@@ -160,4 +160,136 @@ it("propagates compiler parse failures instead of returning a clean check", () =
     new ComponentFixture("<script>const broken = ;</script>").check(),
   ).toThrow();
   expect(() => new ComponentFixture("{#if ready}<p>broken").check()).toThrow();
+});
+
+it.each([
+  { source: "<script>value;</script>", fragment: "value", expected: true },
+  {
+    source: '<script context="module">value;</script>',
+    fragment: "value",
+    expected: true,
+  },
+  { source: "<script>(value);</script>", fragment: "value", expected: true },
+  {
+    source: "<button onclick={() => { value; }}>run</button>",
+    fragment: "value",
+    expected: true,
+  },
+  { source: "{first(() => { value; })}", fragment: "value", expected: true },
+  { source: "{value}", fragment: "value", expected: false },
+  {
+    source: "<button onclick={() => value}>run</button>",
+    fragment: "value",
+    expected: false,
+  },
+  {
+    source: "{#if value}<p>{value}</p>{/if}",
+    fragment: "value",
+    expected: false,
+  },
+  {
+    source: "<div class:active={value}></div>",
+    fragment: "value",
+    expected: false,
+  },
+  {
+    source: "<script>const value = other;</script>",
+    fragment: "other",
+    expected: false,
+  },
+  {
+    source: "<script>value;</script>{other}",
+    fragment: "other",
+    expected: false,
+  },
+])(
+  "classifies authored statement ownership: $source",
+  ({ source, fragment, expected }) => {
+    const checker = new AuthoredSvelteCheck({
+      source,
+      filepath: "src/Fixture.svelte",
+      allowConditionals: false,
+    });
+    const start = source.indexOf(fragment);
+    expect(
+      checker.ownsExpressionStatement(start, start + fragment.length),
+    ).toBe(expected);
+  },
+);
+
+it.each([
+  "<script lang='ts'>let { title }: Props = $props();</script>",
+  "<script lang='ts'>let [title]: Props = $props();</script>",
+  "<script lang='ts'>let { title: renamed = 'default', ...rest }: Props = $props();</script>",
+  "<script lang='ts'>function unrelated($props: unknown) {} let { title }: Props = $props();</script>",
+  "<script lang='ts'>{let $props = other;} let { title }: Props = $props();</script>",
+  "<script lang='ts'>function unrelated(){var $props = other;} let { title }: Props = $props();</script>",
+  "<script lang='ts'>const { $props: local } = other; let { title }: Props = $props();</script>",
+])("recognizes explicitly typed intrinsic destructuring: %s", (source) => {
+  const checker = new AuthoredSvelteCheck({
+    source,
+    filepath: "src/Fixture.svelte",
+    allowConditionals: false,
+  });
+  const start = source.lastIndexOf("let ") + "let ".length;
+  const end = source.indexOf(";</script>");
+  expect(checker.isTypedPropsAssignment(start, end)).toBe(true);
+});
+
+it.each([
+  "<script lang='ts'>let { title }: Props = ordinaryAny();</script>",
+  "<script lang='ts'>let { title } = $props();</script>",
+  "<script lang='ts'>let title: Props = $props();</script>",
+  "<script lang='ts'>let { title }: Props = owner.$props();</script>",
+  "<script lang='ts'>let { title }: Props = $props(other);</script>",
+  "<script lang='ts'>let { title }: Props = $props?.();</script>",
+  "<script lang='ts'>let { title }: Props = ($props() as Props);</script>",
+  "<script lang='ts'>const $props = ordinaryAny; let { title }: Props = $props();</script>",
+  "<script lang='ts'>function $props() {} let { title }: Props = $props();</script>",
+  "<script lang='ts'>const { value: $props } = other; let { title }: Props = $props();</script>",
+  "<script lang='ts'>const [$props] = other; let { title }: Props = $props();</script>",
+  "<script lang='ts'>const { ...$props } = other; let { title }: Props = $props();</script>",
+  "<script lang='ts'>{var $props = ordinaryAny;} let { title }: Props = $props();</script>",
+  "<script lang='ts'>import { value as $props } from 'other'; let { title }: Props = $props();</script>",
+  "<script lang='ts' context='module'>const $props = ordinaryAny;</script><script lang='ts'>let { title }: Props = $props();</script>",
+  "<script lang='ts' context='module'>let { title }: Props = $props();</script>",
+  "<script lang='ts'>function local($props: Callable) { let { title }: Props = $props(); }</script>",
+])(
+  "excludes nonmatching assignments from the narrow typed-destructure query: %s",
+  (source) => {
+    const checker = new AuthoredSvelteCheck({
+      source,
+      filepath: "src/Fixture.svelte",
+      allowConditionals: false,
+    });
+    const start = source.lastIndexOf("let ") + "let ".length;
+    const end = source.indexOf(";", start);
+    expect(checker.isTypedPropsAssignment(start, end)).toBe(false);
+  },
+);
+
+it("does not classify unrelated or nested unsafe ranges as a props assignment", () => {
+  const source =
+    "<script lang='ts'>let { title = ordinaryAny() }: Props = $props(); const other: Props = ordinaryAny();</script>";
+  const checker = new AuthoredSvelteCheck({
+    source,
+    filepath: "src/Fixture.svelte",
+    allowConditionals: false,
+  });
+  const unsafeDefault = source.indexOf("ordinaryAny()");
+  const unrelated = source.indexOf("other:");
+  expect(
+    checker.isTypedPropsAssignment(
+      unsafeDefault,
+      unsafeDefault + "ordinaryAny()".length,
+    ),
+  ).toBe(false);
+  expect(
+    checker.isTypedPropsAssignment(unrelated, source.lastIndexOf(";")),
+  ).toBe(false);
+  expect(checker.isTypedPropsAssignment(-1, 1)).toBe(false);
+  expect(checker.ownsExpressionStatement(0, source.length)).toBe(false);
+  expect(checker.ownsExpressionStatement(unsafeDefault, unsafeDefault)).toBe(
+    false,
+  );
 });
