@@ -32,6 +32,15 @@ even for headless `list` and `run` commands. Follow the distribution-specific
 [Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
 Opening the dashboard requires a graphical desktop session.
 
+The frontend uses native TypeScript 7 through `svelte-check --tsgo --incremental`.
+Incremental mode keeps generated component inputs in sync after source files are
+added or deleted. Its TypeScript 6 JavaScript API dependency supports Svelte
+adapters and the retained ESLint checks for typed scripts and templates; it is
+not the compiler invoked by the type-checking command. Cortex packages use native
+TypeScript 7 and type-aware Oxlint with the official `oxlint-plugin-eslint`, removing
+their former typescript-eslint and TypeScript 6 dependency coupling. The package
+scripts and configurations define the active commands and checks.
+
 Install package-local frontend dependencies from the repository root:
 
 ```sh
