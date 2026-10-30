@@ -15,7 +15,7 @@ export class CheckCommand {
   ) {
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
     const handle = yield* spawner.spawn(
-      ChildProcess.make(this.runtime(), ["--bun", ...args]),
+      ChildProcess.make(this.runtime(), args),
     );
     const [stdout, stderr, status] = yield* Effect.all(
       [
