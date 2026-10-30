@@ -19,20 +19,8 @@ export class CheckCommand {
     );
     const [stdout, stderr, status] = yield* Effect.all(
       [
-        handle.stdout.pipe(
-          Stream.decodeText(),
-          Stream.runFold(
-            () => "",
-            (text, chunk) => text + chunk,
-          ),
-        ),
-        handle.stderr.pipe(
-          Stream.decodeText(),
-          Stream.runFold(
-            () => "",
-            (text, chunk) => text + chunk,
-          ),
-        ),
+        handle.stdout.pipe(Stream.decodeText(), Stream.mkString),
+        handle.stderr.pipe(Stream.decodeText(), Stream.mkString),
         handle.exitCode,
       ],
       { concurrency: "unbounded" },
