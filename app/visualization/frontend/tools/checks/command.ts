@@ -9,10 +9,13 @@ export class CheckFailure extends Schema.TaggedError<CheckFailure>()(
 ) {}
 
 export class CheckCommand {
-  run = Effect.fn("CheckCommand.run")(function* (args: readonly string[]) {
+  run = Effect.fn("CheckCommand.run")(function* (
+    this: CheckCommand,
+    args: readonly string[],
+  ) {
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
     const handle = yield* spawner.spawn(
-      ChildProcess.make(process.execPath, ["--bun", ...args]),
+      ChildProcess.make(this.runtime(), args),
     );
     const [stdout, stderr, status] = yield* Effect.all(
       [
@@ -36,6 +39,15 @@ export class CheckCommand {
     );
     return { stdout, stderr, status: Number(status) };
   });
+
+  private runtime(): string {
+    switch (process.versions.bun) {
+      case undefined:
+        return "bun";
+      default:
+        return process.execPath;
+    }
+  }
 
   requireSuccess = Effect.fn("CheckCommand.requireSuccess")(function* (result: {
     stdout: string;
