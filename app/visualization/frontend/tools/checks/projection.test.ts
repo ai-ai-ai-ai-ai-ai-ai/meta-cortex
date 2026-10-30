@@ -1,3 +1,4 @@
+import { AuthoredSvelteCheck } from "./authored-svelte.ts";
 import { describe, expect, it } from "vitest";
 import { ProjectionOrigin, SvelteProjection } from "./projection.ts";
 
@@ -195,4 +196,59 @@ it("maps authored bind, style, class, event, action, transition and animation ex
       fixture.source.indexOf("<button"),
     ),
   ).toBeDefined();
+});
+
+class HelperIdentityFixture {
+  readonly source: string;
+  readonly projection: SvelteProjection;
+
+  constructor(readonly key = "item") {
+    this.source = `<script lang="ts">function __sveltets_2_ensureArray<T>(items:ReadonlyArray<T>):ReadonlyArray<T>{return items;} const items=[1]; for (const item of __sveltets_2_ensureArray(items)) { console.log(item); }</script>{#each items as item (${key})}<p>{item}</p>{/each}`;
+    this.projection = new SvelteProjection(
+      this.source,
+      "HelperIdentity.svelte",
+    );
+  }
+}
+
+it("distinguishes an authored helper-like loop from a generated each loop", () => {
+  const fixture = new HelperIdentityFixture();
+  const original = fixture.source.indexOf("for (const item");
+  const generated = fixture.projection.generatedPosition(original);
+  expect(generated).toBeDefined();
+  expect(
+    fixture.projection.originalSpan(
+      Buffer.byteLength(fixture.projection.code.slice(0, generated)),
+      3,
+    ),
+  ).toEqual({ start: original, end: original + 3 });
+  expect(
+    new AuthoredSvelteCheck({
+      source: fixture.source,
+      filepath: "HelperIdentity.svelte",
+      allowConditionals: false,
+    }).run(),
+  ).toEqual([]);
+});
+
+it("retains an actual keyed-each violation and its authored mapping beside a helper-like loop", () => {
+  const fixture = new HelperIdentityFixture("item > 0 ? item : 0");
+  const original = fixture.source.indexOf(`(${fixture.key})`) + 1;
+  const generated = fixture.projection.generatedPosition(original);
+  expect(generated).toBeDefined();
+  expect(
+    fixture.projection.originalSpan(
+      Buffer.byteLength(fixture.projection.code.slice(0, generated)),
+      fixture.key.length,
+    ),
+  ).toEqual({ start: original, end: original + fixture.key.length });
+  expect(
+    new AuthoredSvelteCheck({
+      source: fixture.source,
+      filepath: "HelperIdentity.svelte",
+      allowConditionals: false,
+    }).run(),
+  ).toContainEqual(
+    expect.objectContaining({ rule: "no-restricted-syntax", start: original }),
+  );
 });

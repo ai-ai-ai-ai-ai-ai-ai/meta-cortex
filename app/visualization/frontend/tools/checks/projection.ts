@@ -48,7 +48,9 @@ export class SvelteProjection {
         this.readMappings(map);
       }
     }
-    const keys = this.syntax.templateKeys(source);
+    const keys = this.syntax.templateKeys(source, (position) =>
+      this.origins.get(position),
+    );
     const classes = this.syntax.templateClasses(
       source,
       (position) => this.generatedPosition(position) !== undefined,

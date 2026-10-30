@@ -338,14 +338,23 @@ export class GeneratedSyntax {
 
   templateKeys(
     source: string,
+    originalPosition: (generated: number) => number | undefined,
   ): readonly { original: number; generated: number; length: number }[] {
-    const original = this.findNodes(
-      parse(source, { modern: true }),
-      "EachBlock",
-    ).sort((a, b) => this.position(a.start) - this.position(b.start));
-    const generated = [...this.eachLoops].sort(
+    const root = parse(source, { modern: true });
+    const authoredLoops = new Set(
+      this.findNodes(root, "ForOfStatement").map(
+        (node) => this.position(node.start) + this.prefix.length,
+      ),
+    );
+    const original = this.findNodes(root, "EachBlock").sort(
       (a, b) => this.position(a.start) - this.position(b.start),
     );
+    const generated = this.eachLoops
+      .filter(
+        (node) =>
+          !authoredLoops.has(originalPosition(this.position(node.start)) ?? -1),
+      )
+      .sort((a, b) => this.position(a.start) - this.position(b.start));
     return original.flatMap((each, index) =>
       this.templateKey(source, each, generated[index]),
     );
