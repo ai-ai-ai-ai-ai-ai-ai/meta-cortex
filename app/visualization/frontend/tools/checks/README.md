@@ -53,8 +53,8 @@ rule's behavioral parity.
     inference for scriptless, JavaScript-script, and module-script components.
     It adapts only the native transform's synthetic type alias and composes the map.
   - Fixtures: [JavaScript projection tests](javascript-projection.test.ts) cover
-    scriptless callbacks, original Unicode spans, authored marker lookalikes,
-    JavaScript inference, and module scripts.
+    scriptless callbacks, original source positions, authored marker lookalikes,
+    preservation of JavaScript declarations, and module scripts.
 - **Authored branching and nesting**
   - Owner: [AuthoredSvelteCheck](authored-svelte.ts), using the Svelte compiler AST
     for JavaScript `if`/ternary restrictions, block depth, and callback depth
@@ -71,6 +71,15 @@ rule's behavioral parity.
     imported stores, rest capture, shadowed bindings, unions, directive contexts,
     missing mappings, and disposed compiler resources. Other Svelte families need
     their eligible CLI differential cases; these tests do not cover every rule.
+- **Svelte protections in ordinary modules**
+  - Owner: [ModuleSvelteChecks](module-svelte.ts) copies ordinary TypeScript and
+    JavaScript files byte-for-byte to native-supported Svelte suffixes. The
+    [module configuration](rsvelte-modules.json) enables only `no-svelte-internal`
+    and `no-store-async`; diagnostics translate filenames without changing positions.
+    Actual `.svelte.ts` and `.svelte.js` companions keep their full eligible rules.
+  - Fixtures: [module tests](module-svelte.test.ts) cover internal imports,
+    aliased async store callbacks, original filenames, and allowed ordinary-module
+    and relative-import cases.
 - **CSS, accessibility, and compiler warnings**
   - Owner: Svelte compiler diagnostics plus the maintained CSS language service
     in [ComponentCss](css.ts). Every warning remains a failing diagnostic.
@@ -85,9 +94,10 @@ rule's behavioral parity.
 ## Source provenance and failures
 
 [CheckCommand](command.ts) runs subprocesses through the current Bun executable.
-The rsvelte CLI creates the `.svelte-check` overlay and owns incremental cleanup.
-For JavaScript components, orchestration writes the project-owned JavaScript
-projection and its map into that overlay before native checking.
+The rsvelte CLI creates the `.svelte-check` overlay and cleans its own outputs.
+Orchestration materializes each JavaScript component projection and its map before
+native checking. ModuleSvelteChecks rebuilds its own `.svelte-check/modules`
+subtree on each run; these copies are not original type-project or lint inputs.
 [GeneratedSyntax](generated-syntax.ts) and the projection adapter distinguish
 compiler scaffolding from authored code using transform output, source maps,
 and syntax ownership. Native byte spans must map to original UTF-16 source
@@ -101,7 +111,8 @@ positions, including astral characters and CRLF.
   declarations, tools, and configuration files. Added/deleted source files must
   affect the next run. Generated contracts remain typechecked and formatted even
   though lint and Knip exclude them.
-- Keep the installed and resolved production graph free of TypeScript 6 adapters.
+- Keep the complete installed and resolved frontend dependency graph, including
+  development dependencies, free of TypeScript 6 runtimes and API aliases.
   Historical comparison tools belong only to isolated verification evidence.
 
 ## Maintenance evidence
