@@ -18,7 +18,7 @@ related:
 rules:
   - id: code_checks:establish
     source: ../../typescript-code-checks.md#establish-repeatable-checks
-    summary: Establish complete, repeatable project validation gates.
+    summary: Establish complete gates with equivalent tool enforcement.
   - id: code_checks:branching
     source: ../../typescript-code-checks.md#check-branching
     summary: Enforce explicit, exhaustive TypeScript branching.
@@ -27,4 +27,4 @@ rules:
     summary: Fix diagnostics and rerun checks after final edits.
   - id: code_checks:evidence
     source: ../../typescript-code-checks.md#report-verification-evidence
-    summary: Report actual check results and unresolved verification gaps.
+    summary: Report compiler identity, check evidence, and verification gaps.

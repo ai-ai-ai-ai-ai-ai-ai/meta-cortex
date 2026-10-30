@@ -1,0 +1,109 @@
+{
+  "plugins": ["typescript"],
+  "jsPlugins": [
+    {
+      "name": "eslint-js",
+      "specifier": "oxlint-plugin-eslint"
+    }
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "rules": {
+    "typescript/no-restricted-types": [
+      "error",
+      {
+        "types": {
+          "object": "Use a concrete contract.",
+          "Object": "Use a concrete contract.",
+          "{}": "Use a concrete contract.",
+          "unknown": "Keep unknown in the transport decoder only."
+        }
+      }
+    ],
+    "max-params": [
+      "error",
+      {
+        "max": 1,
+        "countThis": "never"
+      }
+    ],
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": [
+      "error",
+      {
+        "allowDefaultCaseForExhaustiveSwitch": false,
+        "considerDefaultExhaustiveForUnions": false
+      }
+    ],
+    "max-depth": ["error", 2],
+    "eslint-js/no-restricted-syntax": [
+      "error",
+      {
+        "selector": "IfStatement",
+        "message": "Use native pattern matching."
+      },
+      {
+        "selector": "ConditionalExpression",
+        "message": "Use explicit pattern matching for alternatives and boundary predicates."
+      },
+      {
+        "selector": "CallExpression > ObjectExpression",
+        "message": "Pass a named, typed request instead of an inline object."
+      },
+      {
+        "selector": "NewExpression > ObjectExpression",
+        "message": "Name and type constructor requests."
+      },
+      {
+        "selector": "Program > VariableDeclaration",
+        "message": "Constants and mutable state belong to concrete owners."
+      },
+      {
+        "selector": "Program > ExportNamedDeclaration > VariableDeclaration",
+        "message": "Export owned contracts instead of module variables."
+      },
+      {
+        "selector": "FunctionDeclaration",
+        "message": "Behavior belongs to an instance or its construction factory."
+      },
+      {
+        "selector": "TSNullKeyword",
+        "message": "Model explicit domain states."
+      },
+      {
+        "selector": "TSUndefinedKeyword",
+        "message": "Normalize absence at the external edge."
+      },
+      {
+        "selector": "LogicalExpression[operator='??']",
+        "message": "Handle absence explicitly."
+      }
+    ],
+    "eslint-js/max-nested-callbacks": [
+      "error",
+      {
+        "max": 2,
+        "checkConstructorCallCallbacks": true
+      }
+    ],
+    "no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "args": "after-used",
+        "caughtErrors": "all",
+        "reportVarsOnlyUsedAsTypes": true
+      }
+    ]
+  }
+}
