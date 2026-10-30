@@ -63,6 +63,8 @@ pub(super) enum WrapperRelease {
     V0_20_0,
     #[serde(rename = "0.21.0")]
     V0_21_0,
+    #[serde(rename = "0.21.1")]
+    V0_21_1,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
