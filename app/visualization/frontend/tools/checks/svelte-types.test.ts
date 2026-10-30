@@ -9,7 +9,7 @@ import {
   TraceMap,
   type EachMapping,
 } from "@jridgewell/trace-mapping";
-import { resolve } from "node:path";
+import { posix, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { SvelteTypeChecks, type TypedSvelteComponent } from "./svelte-types";
 
@@ -44,10 +44,10 @@ class SemanticFixture implements TypedSvelteComponent {
       process.cwd(),
       ".semantic-fixtures",
       randomUUID(),
-    );
-    this.filepath = resolve(directory, "Fixture.svelte");
-    this.projectedPath = resolve(directory, "Fixture.tsx");
-    this.config = resolve(directory, "tsconfig.json");
+    ).replaceAll("\\", "/");
+    this.filepath = posix.join(directory, "Fixture.svelte");
+    this.projectedPath = posix.join(directory, "Fixture.tsx");
+    this.config = posix.join(directory, "tsconfig.json");
     const projection = svelte2tsx(source, {
       filename: this.filepath,
       isTsFile: true,
@@ -65,7 +65,7 @@ class SemanticFixture implements TypedSvelteComponent {
     const { module = "export {};" } = options;
     this.files = {
       [this.projectedPath]: projection.code,
-      [resolve(directory, "store.ts")]: module,
+      [posix.join(directory, "store.ts")]: module,
       [this.config]: JSON.stringify({
         compilerOptions: {
           strict: true,
