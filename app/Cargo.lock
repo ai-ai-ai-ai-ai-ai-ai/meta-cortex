@@ -2853,7 +2853,7 @@ dependencies = [
 
 [[package]]
 name = "meta-cortex"
-version = "0.21.1"
+version = "0.21.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -2877,7 +2877,7 @@ dependencies = [
 
 [[package]]
 name = "meta-cortex-visualization"
-version = "0.21.1"
+version = "0.21.2"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -2897,7 +2897,7 @@ dependencies = [
 
 [[package]]
 name = "meta-cortex-workbench"
-version = "0.21.1"
+version = "0.21.2"
 dependencies = [
  "anyhow",
  "derive_more",
