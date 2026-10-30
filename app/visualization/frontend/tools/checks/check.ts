@@ -49,7 +49,7 @@ class FrontendChecks {
     config: string,
     tsconfig: string,
   ) {
-    const result = yield* this.command.run([
+    const args = [
       "run",
       "oxlint",
       "--type-aware",
@@ -61,7 +61,8 @@ class FrontendChecks {
       "--format",
       "json",
       ...files,
-    ]);
+    ];
+    const result = yield* this.command.run(args);
     switch (result.status) {
       case 0:
       case 1:
@@ -73,7 +74,14 @@ class FrontendChecks {
     }
     const report = yield* Schema.decodeUnknownEffect(
       Schema.fromJsonString(NativeReport),
-    )(result.stdout);
+    )(result.stdout).pipe(
+      Effect.mapError(
+        (error) =>
+          new CheckFailure({
+            message: `Native lint returned an invalid JSON report: ${error.message}\nArguments: ${JSON.stringify(args)}\nExit status: ${result.status}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`,
+          }),
+      ),
+    );
     switch (report.number_of_files === files.length) {
       case true:
         break;
