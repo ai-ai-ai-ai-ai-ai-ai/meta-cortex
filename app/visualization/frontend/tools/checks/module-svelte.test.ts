@@ -1,14 +1,14 @@
 // @vitest-environment node
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { BunServices } from "@effect/platform-bun";
 import { Effect } from "effect";
 import { expect, it } from "vitest";
 import { ModuleSvelteChecks } from "./module-svelte.ts";
 
 class ModuleFixture {
-  run(name: string, source: string) {
+  run(sources: Readonly<Record<string, string>>) {
     return Effect.gen({ self: this }, function* () {
       const root = yield* Effect.acquireRelease(
         Effect.tryPromise(() =>
@@ -16,9 +16,16 @@ class ModuleFixture {
         ),
         (directory) => this.cleanup(directory),
       );
-      const file = join(root, name);
-      yield* Effect.tryPromise(() => writeFile(file, source));
-      return yield* new ModuleSvelteChecks().check([file]);
+      const files: string[] = [];
+      for (const [name, source] of Object.entries(sources)) {
+        const file = join(root, name);
+        yield* Effect.tryPromise(() =>
+          mkdir(dirname(file), { recursive: true }),
+        );
+        yield* Effect.tryPromise(() => writeFile(file, source));
+        files.push(file);
+      }
+      return yield* new ModuleSvelteChecks().check(files);
     }).pipe(Effect.scoped, Effect.provide(BunServices.layer));
   }
 
@@ -32,7 +39,7 @@ class ModuleFixture {
 it("rejects internal imports in ordinary TypeScript with original filenames", () =>
   Effect.runPromise(
     new ModuleFixture()
-      .run("ordinary source.ts", 'import "svelte/internal";')
+      .run({ "ordinary source.ts": 'import "svelte/internal";' })
       .pipe(
         Effect.map((findings) => {
           expect(findings.join("\n")).toContain("ordinary source.ts:1:1");
@@ -45,10 +52,10 @@ it("rejects internal imports in ordinary TypeScript with original filenames", ()
 it("rejects an aliased async store callback in ordinary JavaScript", () =>
   Effect.runPromise(
     new ModuleFixture()
-      .run(
-        "ordinary source.js",
-        'import { readable as create } from "svelte/store"; export const value = create(0, async () => {});',
-      )
+      .run({
+        "ordinary source.js":
+          'import { readable as create } from "svelte/store"; export const value = create(0, async () => {});',
+      })
       .pipe(
         Effect.map((findings) => {
           expect(findings.join("\n")).toContain("async");
@@ -59,15 +66,31 @@ it("rejects an aliased async store callback in ordinary JavaScript", () =>
 it("keeps component-only reactivity rules off ordinary modules", () =>
   Effect.runPromise(
     new ModuleFixture()
-      .run("ordinary.ts", "export const value = new Map<string,string>();")
+      .run({ "ordinary.ts": "export const value = new Map<string,string>();" })
       .pipe(Effect.map((findings) => expect(findings).toEqual([]))),
   ));
 it("does not reinterpret relative imports as Svelte store imports", () =>
   Effect.runPromise(
     new ModuleFixture()
-      .run(
-        "relative.js",
-        'import { readable } from "./local-module"; export const value = readable(0, async () => {});',
-      )
+      .run({
+        "relative.js":
+          'import { readable } from "./local-module"; export const value = readable(0, async () => {});',
+      })
       .pipe(Effect.map((findings) => expect(findings).toEqual([]))),
+  ));
+
+it("keeps equal basenames in distinct directories separate", () =>
+  Effect.runPromise(
+    new ModuleFixture()
+      .run({
+        "first/source.ts": 'import "svelte/internal";',
+        "second/source.ts": "export const value = 1;",
+      })
+      .pipe(
+        Effect.map((findings) => {
+          expect(findings).toHaveLength(1);
+          expect(findings[0]).toContain(join("first", "source.ts") + ":1:1");
+          expect(findings[0]).not.toContain(".svelte-check/modules");
+        }),
+      ),
   ));

@@ -1,5 +1,5 @@
 import { copyFile, mkdir, rm } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { Effect } from "effect";
 import { CheckCommand, CheckFailure } from "./command.ts";
 
@@ -16,7 +16,11 @@ export class ModuleSvelteChecks {
     const paths = new Map<string, string>();
     for (const file of files.filter((file) => !/\.svelte\.[jt]s$/.test(file))) {
       const extension = this.extension(file);
-      const projected = join(root, `${file}.svelte.${extension}`);
+      const projected = join(
+        root,
+        String(paths.size),
+        `${basename(file)}.svelte.${extension}`,
+      );
       yield* Effect.tryPromise(() =>
         mkdir(dirname(projected), { recursive: true }),
       );
