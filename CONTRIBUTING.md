@@ -203,7 +203,7 @@ require separate wrapper assets or a global command.
    installers are published. Check first use and cached use against that exact
    release; retain the global installation instructions.
 
-The current pin is `0.21.0`. Release `0.16.0` provides typed
+The current pin is `0.21.1`. Release `0.16.0` provides typed
 `Framework / Wrapper` scaffolding; released `0.15.0` does not. Wrapper source
 acquisition remains independent of the executable running that command.
 
