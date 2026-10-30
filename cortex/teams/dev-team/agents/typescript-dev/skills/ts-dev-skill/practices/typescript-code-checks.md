@@ -9,15 +9,26 @@
   configurations, framework, and verification commands first.
 - Extend the existing project-owned check entry point when a gate is missing.
 - Use the chosen package manager and locally installed tools.
-- Preserve the project's formatter, linter, framework, and compiler settings.
+- Preserve the project's effective formatter, linter, framework, and compiler checks.
+- Use maintained native compilers and linters when their installed interfaces
+  preserve the required checks and file coverage.
+  - Compare effective rules, options, defaults, exclusions, and type-aware behavior.
+  - Verify representative accepted and rejected code before replacing a gate.
+  - A matching rule name does not establish equivalent enforcement.
+- Identify the compiler actually invoked by the project scripts and verify its
+  executable and reported version. A package name alone does not identify it.
+  Framework adapters may still consume a JavaScript compiler API while delegating
+  type checking to a native compiler; record those responsibilities separately.
 - Apply the [branching checks](#check-branching) to authored TypeScript and
   JavaScript. Consult the [upstream Effect guidance](../SKILL.md#effect-use-installed-documentation)
   for Effect code; do not add a separate operator allowlist to the lint gate.
 - Report pipeline changes to the assigning Prime for CI/CD coordination.
-- Enforce `max-depth: ["error", 2]` and `max-nested-callbacks` with
-  `{ max: 2, checkConstructorCallCallbacks: true }` in adopted packages. Verify
-  the installed ESLint version supports the constructor option. These are
-  separate structural checks; review mixed callback/branch depth under the
+- Enforce block depth two and callback depth two, including callbacks passed to
+  constructors, in adopted packages. In ESLint, use `max-depth: ["error", 2]` and
+  `max-nested-callbacks` with `{ max: 2, checkConstructorCallCallbacks: true }`.
+  Verify that the installed rule implementation supports the constructor option.
+  An equivalent native rule or maintained plugin must check the same callbacks.
+  These are separate structural checks; review mixed callback/branch depth under the
   [TypeScript scope rules](typescript-function-ownership.md#count-execution-scopes).
   Confirm the previously nested form fails and the flattened form passes.
 
@@ -43,6 +54,9 @@ TypeScript, and ESLint.
 - Use project-reference-aware commands for referenced projects.
 - Use the framework's checker for component files.
   - Plain `tsc` does not check Svelte or Vue templates.
+  - Retain framework linting for templates and component scripts when a native
+    replacement cannot enforce their existing rules. Passing native type checking
+    does not establish equivalent component linting.
 - Use the existing JS/framework checker in JavaScript projects.
   - Establish suitable `checkJs` coverage when no checker exists.
 - Keep generated and vendor files under their owning tools.
@@ -59,23 +73,29 @@ TypeScript, and ESLint.
 or run ESLint with its default warning threshold and accept remaining warnings.
 
 **Required:** run formatter checks, the appropriate type/component checker,
-and lint with zero warnings, then run the required build and tests.
+and lint with zero warnings, then run the required build and tests. For a tool
+replacement, verify the same rejected syntax, nesting, typed operations, and unused
+declarations; keep any component checker needed for coverage.
 
 ### Check branching
 
 - Reject `IfStatement` and `ConditionalExpression` through the existing lint gate.
   Include pure code, adapters, tests, and tooling; Effect is not a scope boundary.
-- Require `@typescript-eslint/switch-exhaustiveness-check` with
+- Require type-aware switch exhaustiveness checking with
   `allowDefaultCaseForExhaustiveSwitch: false` and
   `considerDefaultExhaustiveForUnions: false`.
+  ESLint uses `@typescript-eslint/switch-exhaustiveness-check`; Oxlint uses
+  `typescript/switch-exhaustiveness-check` with type-aware linting enabled.
+  Other implementations must reject the same omitted variants and redundant
+  defaults; do not assume that the compiler checks them.
 - Require fallthrough checking alongside exhaustiveness checking.
 - Verify that a missing enum case fails lint, even when a `default` is present.
   TypeScript compilation alone does not prove every switch is exhaustive.
 
 **Prohibited:** accept a switch because its `default` hides a newly added variant.
 
-**Required:** apply these rules in the existing ESLint configuration. This is
-its `rules` fragment; it assumes type-aware typescript-eslint is already configured.
+**Required:** apply these rules in the project's lint gate. This ESLint `rules`
+fragment assumes type-aware typescript-eslint is already configured.
 
 ```json
 {
@@ -92,6 +112,12 @@ Merge the selectors with existing restrictions. Use the
 [domain-switch examples](typescript-explicit-state.md#match-decisions-exhaustively)
 to review the resulting code; the lint gate supplies enforcement.
 
+When a native linter lacks the required AST selectors or constructor-callback
+option, retain a supported rule implementation through its maintained plugin
+interface. For example, Oxlint's official `oxlint-plugin-eslint` supplies those
+ESLint rules. Preserve their options and verify the installed combination; a
+similarly named native callback rule is insufficient if it omits constructors.
+
 ### Fix diagnostics before completion
 
 - Fix formatting violations and type errors.
@@ -103,6 +129,9 @@ to review the resulting code; the lint gate supplies enforcement.
   - Run the checks again afterward.
 - Keep behavioral tests alongside these gates.
 - Apply [unused-code enforcement](web-unused-code.md) alongside these gates.
+- Preserve unused-variable, parameter, and caught-error checks when changing
+  linters. Configure differing defaults explicitly; do not introduce underscore
+  exemptions absent from the existing gate.
 - Do not weaken checks merely to pass.
   - Do not weaken compiler settings, disable rules, or expand ignores.
   - Do not add type-check suppression comments for that purpose.
@@ -133,6 +162,9 @@ then rerun formatting, type checking, lint, and the required build/tests.
 ### Report verification evidence
 
 - Report the commands actually run.
+- For compiler or linter replacements, report the resolved compiler version,
+  comparison of effective rules, and representative parity checks. Distinguish
+  native type checking from dependencies retained for framework API adapters.
 - Identify the package/workspace roots and configurations checked.
 - Report the results actually verified.
 - Require formatting, type checking, linting, and required builds to pass before completion.
