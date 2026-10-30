@@ -16,6 +16,7 @@ import { SvelteTypeChecks, type TypedSvelteComponent } from "./svelte-types";
 enum MappingMode {
   Available = "available",
   Missing = "missing",
+  ScopeOnly = "scopeOnly",
 }
 enum ProjectLifetime {
   Live = "live",
@@ -136,8 +137,20 @@ class SemanticFixture implements TypedSvelteComponent {
   generatedPosition(offset: number): number | undefined {
     switch (this.options.mapping) {
       case MappingMode.Missing:
+      case MappingMode.ScopeOnly:
         return undefined;
       case MappingMode.Available:
+      case undefined:
+        return this.origins.get(offset);
+    }
+  }
+
+  generatedScopePosition(offset: number): number | undefined {
+    switch (this.options.mapping) {
+      case MappingMode.Missing:
+        return undefined;
+      case MappingMode.Available:
+      case MappingMode.ScopeOnly:
       case undefined:
         return this.origins.get(offset);
     }
@@ -421,4 +434,40 @@ it("uses the complete compound Props annotation", async () => {
     "'omitted' in 'value' is an unused property.",
     "'other' is an unused Props property.",
   ]);
+});
+
+it("uses a separate native lexical anchor for transformed element punctuation", async () => {
+  const fixture = new SemanticFixture(
+    '<script lang="ts">import {store} from "./store";</script><nav use:store></nav>',
+    { module: StoreFixture.readable, mapping: MappingMode.ScopeOnly },
+  );
+  expect(
+    (await Effect.runPromise(fixture.check())).map((finding) => finding.rule),
+  ).toEqual(["svelte/require-store-reactive-access"]);
+});
+
+it("keeps ordinary expression mappings strict when lexical anchors exist", async () => {
+  const fixture = new SemanticFixture(
+    '<script lang="ts">import {store} from "./store";</script>{store}',
+    { module: StoreFixture.readable, mapping: MappingMode.ScopeOnly },
+  );
+  const failure = await Effect.runPromise(Effect.flip(fixture.check()));
+  expect(failure.cause).toEqual(
+    new Error(
+      `Missing native type mapping for ${fixture.filepath}:${fixture.source.lastIndexOf("store")}`,
+    ),
+  );
+});
+
+it("fails when the required directive lexical anchor is unavailable", async () => {
+  const fixture = new SemanticFixture(
+    '<script lang="ts">import {store} from "./store";</script><nav use:store></nav>',
+    { module: StoreFixture.readable, mapping: MappingMode.Missing },
+  );
+  const failure = await Effect.runPromise(Effect.flip(fixture.check()));
+  expect(failure.cause).toEqual(
+    new Error(
+      `Missing native lexical scope mapping for ${fixture.filepath}:${fixture.source.indexOf("<nav")}`,
+    ),
+  );
 });

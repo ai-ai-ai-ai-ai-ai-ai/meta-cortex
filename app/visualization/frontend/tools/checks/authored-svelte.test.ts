@@ -219,13 +219,17 @@ it.each([
 
 it.each([
   "<script lang='ts'>let { title }: Props = $props();</script>",
+  "<script lang='ts'>let { title } = $props();</script>",
+  "<script lang='ts'>let title: Props = $props();</script>",
+  "<script lang='ts'>let title = $props();</script>",
+  "<script lang='ts'>let [title] = $props();</script>",
   "<script lang='ts'>let [title]: Props = $props();</script>",
   "<script lang='ts'>let { title: renamed = 'default', ...rest }: Props = $props();</script>",
   "<script lang='ts'>function unrelated($props: unknown) {} let { title }: Props = $props();</script>",
   "<script lang='ts'>{let $props = other;} let { title }: Props = $props();</script>",
   "<script lang='ts'>function unrelated(){var $props = other;} let { title }: Props = $props();</script>",
   "<script lang='ts'>const { $props: local } = other; let { title }: Props = $props();</script>",
-])("recognizes explicitly typed intrinsic destructuring: %s", (source) => {
+])("recognizes intrinsic Props declarations: %s", (source) => {
   const checker = new AuthoredSvelteCheck({
     source,
     filepath: "src/Fixture.svelte",
@@ -233,13 +237,13 @@ it.each([
   });
   const start = source.lastIndexOf("let ") + "let ".length;
   const end = source.indexOf(";</script>");
-  expect(checker.isTypedPropsAssignment(start, end)).toBe(true);
+  expect(checker.isIntrinsicPropsAssignment(start, end)).toBe(true);
 });
 
 it.each([
   "<script lang='ts'>let { title }: Props = ordinaryAny();</script>",
-  "<script lang='ts'>let { title } = $props();</script>",
-  "<script lang='ts'>let title: Props = $props();</script>",
+  "<script lang='ts'>let props: Props = ordinaryAny();</script>",
+  "<script lang='ts'>const $props = ordinaryAny; let props: Props = $props();</script>",
   "<script lang='ts'>let { title }: Props = owner.$props();</script>",
   "<script lang='ts'>let { title }: Props = $props(other);</script>",
   "<script lang='ts'>let { title }: Props = $props?.();</script>",
@@ -251,11 +255,12 @@ it.each([
   "<script lang='ts'>const { ...$props } = other; let { title }: Props = $props();</script>",
   "<script lang='ts'>{var $props = ordinaryAny;} let { title }: Props = $props();</script>",
   "<script lang='ts'>import { value as $props } from 'other'; let { title }: Props = $props();</script>",
+  "<script lang='ts'>import type { Value as $props } from 'other'; let { title }: Props = $props();</script>",
   "<script lang='ts' context='module'>const $props = ordinaryAny;</script><script lang='ts'>let { title }: Props = $props();</script>",
   "<script lang='ts' context='module'>let { title }: Props = $props();</script>",
   "<script lang='ts'>function local($props: Callable) { let { title }: Props = $props(); }</script>",
 ])(
-  "excludes nonmatching assignments from the narrow typed-destructure query: %s",
+  "excludes nonintrinsic assignments from the ownership query: %s",
   (source) => {
     const checker = new AuthoredSvelteCheck({
       source,
@@ -264,7 +269,7 @@ it.each([
     });
     const start = source.lastIndexOf("let ") + "let ".length;
     const end = source.indexOf(";", start);
-    expect(checker.isTypedPropsAssignment(start, end)).toBe(false);
+    expect(checker.isIntrinsicPropsAssignment(start, end)).toBe(false);
   },
 );
 
@@ -279,17 +284,29 @@ it("does not classify unrelated or nested unsafe ranges as a props assignment", 
   const unsafeDefault = source.indexOf("ordinaryAny()");
   const unrelated = source.indexOf("other:");
   expect(
-    checker.isTypedPropsAssignment(
+    checker.isIntrinsicPropsAssignment(
       unsafeDefault,
       unsafeDefault + "ordinaryAny()".length,
     ),
   ).toBe(false);
   expect(
-    checker.isTypedPropsAssignment(unrelated, source.lastIndexOf(";")),
+    checker.isIntrinsicPropsAssignment(unrelated, source.lastIndexOf(";")),
   ).toBe(false);
-  expect(checker.isTypedPropsAssignment(-1, 1)).toBe(false);
+  expect(checker.isIntrinsicPropsAssignment(-1, 1)).toBe(false);
   expect(checker.ownsExpressionStatement(0, source.length)).toBe(false);
   expect(checker.ownsExpressionStatement(unsafeDefault, unsafeDefault)).toBe(
     false,
   );
+});
+
+it("keeps the native unsafe-default range outside the intrinsic assignment exception", () => {
+  const source =
+    '<script lang="ts">interface Props {title?: string;} let {title=JSON.parse("{}")} : Props=$props();</script><p>{title}</p>';
+  const checker = new AuthoredSvelteCheck({
+    source,
+    filepath: "src/Fixture.svelte",
+    allowConditionals: false,
+  });
+  expect(checker.isIntrinsicPropsAssignment(56, 97)).toBe(true);
+  expect(checker.isIntrinsicPropsAssignment(57, 79)).toBe(false);
 });

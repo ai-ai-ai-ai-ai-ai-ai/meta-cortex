@@ -14,6 +14,7 @@ export interface TypedSvelteComponent {
   readonly filepath: string;
   readonly projectedPath: string;
   generatedPosition(originalUtf16Offset: number): number | undefined;
+  generatedScopePosition?(originalUtf16Offset: number): number | undefined;
 }
 
 export class SvelteTypeCheckFailure extends Schema.TaggedError<SvelteTypeCheckFailure>()(
@@ -403,7 +404,7 @@ export class SvelteTypeSource {
     scopeOffset: number,
   ): Effect.Effect<Type, SvelteTypeCheckFailure> {
     return Effect.gen({ self: this }, function* () {
-      const position = yield* this.position(component, scopeOffset);
+      const position = yield* this.scopePosition(component, scopeOffset);
       const symbol = yield* this.native(() =>
         this.project.checker.resolveName(name, SymbolFlags.Value, {
           document: component.projectedPath,
@@ -423,6 +424,44 @@ export class SvelteTypeSource {
           return yield* this.symbolType(symbol);
       }
     });
+  }
+
+  private scopePosition(
+    component: TypedSvelteComponent,
+    original: number,
+  ): Effect.Effect<number, SvelteTypeCheckFailure> {
+    switch (typeof component.generatedScopePosition) {
+      case "function":
+        return Effect.try({
+          try: () => {
+            const generated = component.generatedScopePosition?.(original);
+            switch (generated) {
+              case undefined:
+                throw new Error(
+                  `Missing native lexical scope mapping for ${component.filepath}:${original}`,
+                );
+              default:
+                return generated;
+            }
+          },
+          catch: (cause) => new SvelteTypeCheckFailure({ cause }),
+        });
+      case "undefined":
+        return this.position(component, original);
+      case "bigint":
+      case "boolean":
+      case "number":
+      case "object":
+      case "string":
+      case "symbol":
+        return Effect.fail(
+          new SvelteTypeCheckFailure({
+            cause: new Error(
+              "Native lexical scope mapping capability is invalid",
+            ),
+          }),
+        );
+    }
   }
 
   apparentType(type: Type): Effect.Effect<Type, SvelteTypeCheckFailure> {
