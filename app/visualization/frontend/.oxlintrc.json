@@ -299,8 +299,7 @@
     "dist/**",
     "node_modules/**",
     ".svelte-check/**",
-    "src/contracts.ts",
-    "**/*.svelte"
+    "src/contracts.ts"
   ],
   "overrides": [
     {
@@ -382,6 +381,12 @@
         "vitest/valid-expect-in-promise": "error",
         "vitest/valid-title": "error",
         "vitest/warn-todo": "error"
+      }
+    },
+    {
+      "files": ["**/*.svelte"],
+      "rules": {
+        "eslint-js/prefer-const": "off"
       }
     }
   ],
