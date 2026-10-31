@@ -48,6 +48,22 @@ for (let index = 0; index < 10; index++) { console.log(index); }
     status: 0,
     rules: [],
   },
+  {
+    name: "Svelte rune bindings",
+    filename: "fixture.svelte",
+    source:
+      '<script lang="ts">let { value } = $props();</script><p>{value}</p>',
+    status: 0,
+    rules: [],
+  },
+  {
+    name: "Svelte script restrictions",
+    filename: "fixture.svelte",
+    source:
+      '<script lang="ts">export function choose(value:boolean) { if (value) { console.log(value); } }</script>',
+    status: 1,
+    rules: ["no-restricted-syntax"],
+  },
 ])("stock Oxlint handles $name", ({ filename, source, status, rules }) => {
   const directory = mkdtempSync(join(tmpdir(), "stock oxlint "));
   try {
