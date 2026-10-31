@@ -32,17 +32,17 @@ even for headless `list` and `run` commands. Follow the distribution-specific
 [Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
 Opening the dashboard requires a graphical desktop session.
 
-The frontend uses native TypeScript 7 with project-owned checks for Svelte
-projections, authored syntax, and semantic rules. Native Oxlint and rsvelte tools
-supply the maintained lint and compiler checks; the frontend no longer requires
-a TypeScript 6 JavaScript API adapter. The [checker guide](app/visualization/frontend/tools/checks/README.md)
-records ownership, source mapping, fixtures, and failure behavior. Cortex packages
-also use native TypeScript 7 and type-aware Oxlint with the official
-`oxlint-plugin-eslint`. Package scripts and configurations define the active checks.
+The frontend uses native TypeScript 7 through maintained rsvelte and Oxlint
+commands. Custom checker runtime is deferred pending supported tooling; the
+[checker guide](app/visualization/frontend/tools/checks/README.md) records current
+coverage, missing protections, and the conditional TypeScript 7.1 follow-up.
+Cortex packages also use native TypeScript 7 and type-aware Oxlint with the
+official `oxlint-plugin-eslint`. Package scripts and configurations define the
+active checks.
 
 Use Node.js 24 on `PATH` alongside Bun for frontend development. Framework
-bootstrap installs Bun and Vale; supply Node separately. Bun runs the checker
-entry point, while maintained CLI launchers use their declared Node runtime.
+bootstrap installs Bun and Vale; supply Node separately. Bun runs package scripts;
+maintained CLI launchers use their declared runtime.
 Install package-local frontend dependencies from the repository root:
 
 ```sh
