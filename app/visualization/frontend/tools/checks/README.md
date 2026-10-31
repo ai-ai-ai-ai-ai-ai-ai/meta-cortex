@@ -24,13 +24,16 @@ bun run build
 - **Lint:** `bun run lint` runs type-aware Oxlint over ordinary source, tools, and
   configuration files, then rsvelte lint over `src`. The
   [root Oxlint configuration](../../.oxlintrc.json) retains maintained JavaScript
-  and TypeScript rules and test-only Vitest guards. It excludes `.svelte` files
-  and generated overlays. The [Svelte configuration](rsvelte-lint.json) retains
+  and TypeScript rules and test-only Vitest guards. Stock Oxlint also checks
+  supported Svelte script fragments, with the existing `prefer-const` exception
+  for `.svelte` files. Generated overlays remain excluded.
+  The [Svelte configuration](rsvelte-lint.json) retains
   maintained checks for components and eligible companion modules.
 - **Other gates:** `verify` also runs Prettier and Knip. Vitest, Vite, and
   `bun run generate:contracts` retain their existing roles. The
   [Oxlint CLI tests](oxlint.test.ts) cover representative bug checks,
-  constructor callback limits, focused tests, and allowed operations.
+  constructor callback limits, focused tests, Svelte script restrictions, and
+  allowed operations including Svelte Props destructuring.
 
 Type errors, compiler warnings, lint warnings, and tool failures still fail their
 commands. The two known Mermaid vendor chunk-size warnings remain visible in Vite
@@ -41,10 +44,10 @@ builds; this deferral does not broaden their existing exception.
 The removed adapters supplied coverage beyond the current maintained tools.
 The following protections are deferred while supported tooling catches up:
 
-- Full generic and type-aware lint across Svelte scripts and template expressions,
+- Full type-aware Svelte lint and generic checks across template expressions,
   including the removed provenance mapping and JavaScript projection corrections.
-- Authored Svelte JavaScript `if`/ternary restrictions, block depth, and callback
-  depth including constructors. Ordinary TypeScript/JavaScript Oxlint rules remain.
+  Configured `if`/ternary restrictions, block depth, and constructor callback
+  limits remain active in supported script fragments; template coverage is deferred.
 - Supplemental nested unused-Props and imported-store semantic checks. Maintained
   Svelte rules still run; the missing cases do not imply that every Props or store
   diagnostic is unavailable.
