@@ -41,10 +41,16 @@ rule's behavioral parity.
   - Evidence: full `typecheck` plus diagnostic and file-discovery CLI probes.
     These are distinct from the focused source-map fixtures.
 - **Core JavaScript, TypeScript syntax, and type-aware lint**
-  - Owner: type-aware Oxlint and official `oxlint-plugin-eslint` configured in
-    [authored rules](oxlint.json) and [projected rules](oxlint-projected.json).
+  - Owner: type-aware Oxlint and official `oxlint-plugin-eslint` share
+    [baseline rules](oxlint-base.json). [Authored rules](oxlint.json) add selected
+    native correctness and suspicious-code checks, with Vitest guards restricted
+    to test files. [Projected rules](oxlint-projected.json) preserve the existing
+    effective checks for generated Svelte code. Each entry configuration retains
+    its required environment, globals, and options.
     [Projection ownership](projection.ts) maps native findings back to source.
-  - Fixtures: [projection tests](projection.test.ts) cover Unicode, CRLF, sparse
+  - Fixtures: [Oxlint CLI tests](oxlint.test.ts) cover representative native bug
+    checks, constructor callback restrictions, focused tests, and allowed operations.
+    [Projection tests](projection.test.ts) cover Unicode, CRLF, sparse
     and mixed mappings, template keys, and authored code inside generated wrappers.
     The baseline CLI differential corpus supplies per-rule comparison evidence;
     it is not part of these committed projection tests.
