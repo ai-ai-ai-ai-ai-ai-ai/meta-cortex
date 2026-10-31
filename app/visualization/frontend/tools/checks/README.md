@@ -1,141 +1,78 @@
-# Native frontend checks
+# Maintained frontend checks
 
-The frontend checks authored TypeScript, JavaScript, and Svelte with native
-TypeScript 7. Project-owned adapters connect maintained tools and preserve
-checks that need original Svelte syntax or native semantic queries. The
-[package scripts](../../package.json) own the entry commands; the JSON
-configurations beside this guide own exact lint rules and options.
+The frontend uses native TypeScript 7 with maintained command-line tools.
+Project-owned checker runtime, projection adapters, and semantic supplements are
+removed. The [package scripts](../../package.json) define the commands; the
+configurations linked below define their scope and options.
 
-## Commands
+## Commands and ownership
 
-Run these commands from `app/visualization/frontend` with its frozen dependencies
-installed:
+Run the existing frontend gates from `app/visualization/frontend` with its frozen
+dependencies installed and Bun plus Node.js 24 on `PATH`:
 
 ```sh
-bun run typecheck
-bun run lint
-bun run test -- tools/checks
+bun run verify
+bun run test
+bun run build
 ```
 
-`typecheck` combines rsvelte compiler diagnostics, native TypeScript API diagnostics,
-and component CSS checks.
-`lint` refreshes native projections, then checks authored files, mapped component
-code, Svelte rules, and CSS. The focused Vitest command exercises the committed
-adapter fixtures. Full frontend verification remains `bun run verify`,
-`bun run test`, and `bun run build`; contract generation remains
-`bun run generate:contracts`.
+- **Type checking:** `bun run typecheck` runs
+  `rsvelte-check --tsconfig tsconfig.json --incremental --fail-on-warnings`.
+  The stock CLI uses the workspace TypeScript 7 compiler and
+  [strict project settings](../../tsconfig.json). It owns Svelte projection,
+  compiler diagnostics, and incremental cleanup; no project adapter rewrites output.
+- **Lint:** `bun run lint` runs type-aware Oxlint over ordinary source, tools, and
+  configuration files, then rsvelte lint over `src`. The
+  [root Oxlint configuration](../../.oxlintrc.json) retains maintained JavaScript
+  and TypeScript rules and test-only Vitest guards. Stock Oxlint also checks
+  supported Svelte script fragments, with the existing `prefer-const` exception
+  for `.svelte` files. Generated overlays remain excluded.
+  The [Svelte configuration](rsvelte-lint.json) retains
+  maintained checks for components and eligible companion modules.
+- **Other gates:** `verify` also runs Prettier and Knip. Vitest, Vite, and
+  `bun run generate:contracts` retain their existing roles. The
+  [Oxlint CLI tests](oxlint.test.ts) cover representative bug checks,
+  constructor callback limits, focused tests, Svelte script restrictions, and
+  allowed operations including Svelte Props destructuring.
 
-## Protection ownership and fixtures
+Type errors, compiler warnings, lint warnings, and tool failures still fail their
+commands. The two known Mermaid vendor chunk-size warnings remain visible in Vite
+builds; this deferral does not broaden their existing exception.
 
-The mapping below identifies families, not a second rule catalog. A configured
-rule can be inactive for a particular file, Svelte version, runes mode, or Kit
-context. Fixture coverage of an adapter does not establish every underlying
-rule's behavioral parity.
+## Deferred protections
 
-- **Strict types, unused symbols, and component diagnostics**
-  - Owner: [NativeProject](native-project.ts) collects TypeScript syntactic,
-    semantic, program, global, and configuration diagnostics through the native
-    async API. [Orchestration](check.ts) runs `@rsvelte/svelte-check` with
-    `--no-type-check` for Svelte compiler diagnostics and overlay generation,
-    using [the project configuration](../../tsconfig.json).
-  - Evidence: full `typecheck` plus diagnostic and file-discovery CLI probes.
-    These are distinct from the focused source-map fixtures.
-- **Core JavaScript, TypeScript syntax, and type-aware lint**
-  - Owner: type-aware Oxlint and official `oxlint-plugin-eslint` share
-    [baseline rules](oxlint-base.json). [Authored rules](oxlint.json) add selected
-    native correctness and suspicious-code checks, with Vitest guards restricted
-    to test files. [Projected rules](oxlint-projected.json) preserve the existing
-    effective checks for generated Svelte code. Each entry configuration retains
-    its required environment, globals, and options.
-    [Projection ownership](projection.ts) maps native findings back to source.
-  - Fixtures: [Oxlint CLI tests](oxlint.test.ts) cover representative native bug
-    checks, constructor callback restrictions, focused tests, and allowed operations.
-    [Projection tests](projection.test.ts) cover Unicode, CRLF, sparse
-    and mixed mappings, template keys, and authored code inside generated wrappers.
-    The baseline CLI differential corpus supplies per-rule comparison evidence;
-    it is not part of these committed projection tests.
-- **JavaScript component semantics and source maps**
-  - Owner: [JavascriptProjection](javascript-projection.ts) preserves JavaScript
-    inference for scriptless, JavaScript-script, and module-script components.
-    It adapts only the native transform's synthetic type alias and composes the map.
-  - Fixtures: [JavaScript projection tests](javascript-projection.test.ts) cover
-    scriptless callbacks, original source positions, authored marker lookalikes,
-    preservation of JavaScript declarations, and module scripts.
-- **Authored branching and nesting**
-  - Owner: [AuthoredSvelteCheck](authored-svelte.ts), using the Svelte compiler AST
-    for JavaScript `if`/ternary restrictions, block depth, and callback depth
-    including constructors. Svelte `{#if}` remains allowed. Only the existing
-    button component path receives the branching exception.
-  - Fixtures: [authored Svelte tests](authored-svelte.test.ts) cover script and
-    template expressions, scope boundaries, constructor callbacks, and the exception.
-- **Svelte syntax and semantic protections**
-  - Owner: native rsvelte lint under [its configured rules](rsvelte-lint.json).
-    [SvelteTypeChecks](svelte-types.ts) supplies native semantic queries for unused
-    Props and reactive store access. [NativeProject](native-project.ts) owns the
-    TypeScript async API process, snapshot, and source-root coverage.
-  - Fixtures: [native semantic tests](svelte-types.test.ts) cover nested Props,
-    imported stores, rest capture, shadowed bindings, unions, directive contexts,
-    missing mappings, and disposed compiler resources. Other Svelte families need
-    their eligible CLI differential cases; these tests do not cover every rule.
-- **Svelte protections in ordinary modules**
-  - Owner: [ModuleSvelteChecks](module-svelte.ts) copies ordinary TypeScript and
-    JavaScript files byte-for-byte to native-supported Svelte suffixes. The
-    [module configuration](rsvelte-modules.json) enables only `no-svelte-internal`
-    and `no-store-async`; diagnostics translate filenames without changing positions.
-    Actual `.svelte.ts` and `.svelte.js` companions keep their full eligible rules.
-  - Fixtures: [module tests](module-svelte.test.ts) cover internal imports,
-    aliased async store callbacks, original filenames, and allowed ordinary-module
-    and relative-import cases.
-- **CSS, accessibility, and compiler warnings**
-  - Owner: Svelte compiler diagnostics plus the maintained CSS language service
-    in [ComponentCss](css.ts). Every warning remains a failing diagnostic.
-  - Fixtures: [CSS tests](css.test.ts) cover property diagnostics and original
-    positions; compiler/accessibility and unused-selector cases belong to CLI probes.
-- **Unused graph, formatting, tests, build, and code generation**
-  - Owner: existing Knip, Prettier/Svelte, Vitest, Vite, and
-    [contract generation](../generate-contracts.ts), through the package scripts.
-  - Evidence: run their existing commands. Local variable lint does not replace
-    unused import/export/dependency analysis or contract generation.
+The removed adapters supplied coverage beyond the current maintained tools.
+The following protections are deferred while supported tooling catches up:
 
-## Source provenance and failures
+- Full type-aware Svelte lint and generic checks across template expressions,
+  including the removed provenance mapping and JavaScript projection corrections.
+  Configured `if`/ternary restrictions, block depth, and constructor callback
+  limits remain active in supported script fragments; template coverage is deferred.
+- Supplemental nested unused-Props and imported-store semantic checks. Maintained
+  Svelte rules still run; the missing cases do not imply that every Props or store
+  diagnostic is unavailable.
+- Applying `no-svelte-internal` and `no-store-async` to ordinary TypeScript and
+  JavaScript modules through renamed copies. Eligible Svelte companions still
+  receive maintained Svelte lint.
+- Extra CSS language-service diagnostics previously composed by the project.
+  Maintained compiler, accessibility, and CSS-related diagnostics remain active.
 
-[CheckCommand](command.ts) uses Bun to dispatch commands while honoring each CLI
-launcher’s declared runtime; Node must also be on `PATH`. The checker entry point
-runs on Bun. [Command tests](command.test.ts) verify complete capture of a large
-native JSON diagnostic report and its nonzero exit status.
-The rsvelte CLI creates the `.svelte-check` overlay and cleans its own outputs.
-Orchestration materializes each JavaScript component projection and its map before
-native checking. ModuleSvelteChecks rebuilds its own `.svelte-check/modules`
-subtree on each run; these copies are not original type-project or lint inputs.
-[GeneratedSyntax](generated-syntax.ts) and the projection adapter distinguish
-compiler scaffolding from authored code using transform output, source maps,
-and syntax ownership. Native byte spans must map to original UTF-16 source
-positions, including astral characters and CRLF.
+A passing stock-tool run establishes its current coverage, not parity with the
+removed checks. The deferred fixtures and earlier comparison evidence remain
+relevant when evaluating a replacement; they are not active production checks.
 
-- Keep imports and native type context when checking projected code. Do not
-  suppress an authored expression merely because its diagnostic crosses a wrapper.
-- Treat unknown mappings, missing projects or source roots, malformed tool output,
-  incomplete file counts, and subprocess failures as failures, not clean results.
-- Check scriptless components, module scripts, companion `.svelte.ts` files,
-  declarations, tools, and configuration files. Added/deleted source files must
-  affect the next run. Generated contracts remain typechecked and formatted even
-  though lint and Knip exclude them.
-- Keep the complete installed and resolved frontend dependency graph, including
-  development dependencies, free of TypeScript 6 runtimes and API aliases.
-  Historical comparison tools belong only to isolated verification evidence.
+## Revisit with maintained TypeScript 7.1 tooling
 
-## Maintenance evidence
+As of October 30, 2026, Microsoft's
+[TypeScript 7.1 plan](https://github.com/microsoft/TypeScript/issues/63703)
+targets November 24, 2026 for stable release. This is a planned date, not a
+release guarantee or proof that dependent tools will restore the missing checks.
 
-When changing an adapter or upgrading a tool:
-
-1. Inspect its runtime configuration and upstream API at the installed version.
-   The native `typescript/unstable/async` API and rsvelte transform shape are
-   explicit integration boundaries; changes require focused regression checks.
-2. Add or update the owning fixture for the behavior being changed. Include a
-   violating case, an allowed case, and original source-location assertions when
-   mapping is involved.
-3. Run focused tests and compare applicable baseline CLI cases, preserving
-   configured options and actual rule eligibility. Record uncovered families
-   rather than inferring complete parity from a clean application run.
-4. Run the existing full frontend commands and report their actual results.
-   Include fresh-file cleanup and tool-failure probes when those boundaries change.
+1. Confirm stable TypeScript 7.1 and compatible maintained tools are available
+   before upgrading. Check their supported APIs and published compatibility.
+2. Re-run the deferred violating and allowed fixtures against the candidate tools,
+   including original source locations and each affected file kind. Restore only
+   the protections demonstrated by those results.
+3. Run the existing full frontend gates and update this coverage record. Keep
+   unresolved gaps explicit; do not automatically restore checks or add custom
+   runtime, feature flags, or scheduled upgrade machinery.
