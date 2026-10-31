@@ -32,15 +32,17 @@ even for headless `list` and `run` commands. Follow the distribution-specific
 [Tauri system prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
 Opening the dashboard requires a graphical desktop session.
 
-The frontend uses native TypeScript 7 through `svelte-check --tsgo --incremental`.
-Incremental mode keeps generated component inputs in sync after source files are
-added or deleted. Its TypeScript 6 JavaScript API dependency supports Svelte
-adapters and the retained ESLint checks for typed scripts and templates; it is
-not the compiler invoked by the type-checking command. Cortex packages use native
-TypeScript 7 and type-aware Oxlint with the official `oxlint-plugin-eslint`, removing
-their former typescript-eslint and TypeScript 6 dependency coupling. The package
-scripts and configurations define the active commands and checks.
+The frontend uses native TypeScript 7 through maintained rsvelte and Oxlint
+commands. Custom checker runtime is deferred pending supported tooling; the
+[checker guide](app/visualization/frontend/tools/checks/README.md) records current
+coverage, missing protections, and the conditional TypeScript 7.1 follow-up.
+Cortex packages also use native TypeScript 7 and type-aware Oxlint with the
+official `oxlint-plugin-eslint`. Package scripts and configurations define the
+active checks.
 
+Use Node.js 24 on `PATH` alongside Bun for frontend development. Framework
+bootstrap installs Bun and Vale; supply Node separately. Bun runs package scripts;
+maintained CLI launchers use their declared runtime.
 Install package-local frontend dependencies from the repository root:
 
 ```sh
@@ -52,7 +54,7 @@ bun run build
 cd ../..
 ```
 
-`verify` runs Prettier, TypeScript, ESLint with zero warnings, and Knip checks;
+`verify` runs Prettier, native frontend checks with zero warnings, and Knip;
 `test` runs Vitest with
 jsdom. `build` typechecks and generates Vite assets in `frontend/dist`.
 Ordinary Cargo builds also invoke `bun run build` before Tauri’s build step and

@@ -18,6 +18,9 @@ cache-builds = true
 allow-dirty = ["ci"]
 include = ["../LICENSE", "../README.md"]
 
+[dist.github-custom-runners]
+aarch64-apple-darwin = "macos-15"
+
 # Native Linux builds link the Tauri desktop runtime against system WebKitGTK.
 [dist.dependencies.apt]
 "libwebkit2gtk-4.1-dev" = "*"

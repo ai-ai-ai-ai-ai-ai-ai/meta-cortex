@@ -6,6 +6,6 @@
   ],
   "project": ["src/**/*.{ts,svelte,css}", "tools/**/*.ts"],
   "ignore": ["src/contracts.ts"],
-  "ignoreMembers": ["Features", "Workflow", "Log", "Windows", "Closed", "Open"],
-  "ignoreDependencies": ["@typescript/native"]
+  "ignoreDependencies": ["@typescript/native"],
+  "ignoreMembers": ["Features", "Workflow", "Log", "Windows", "Closed", "Open"]
 }

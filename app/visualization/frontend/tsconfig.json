@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
-    "paths": { "$lib": ["./src/lib"], "$lib/*": ["./src/lib/*"] },
+    "paths": {
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"]
+    },
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
@@ -18,5 +21,11 @@
     "checkJs": true,
     "types": ["svelte", "vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.svelte", "vite.config.ts", "tools"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.svelte",
+    "vite.config.ts",
+    "tools",
+    "*.js"
+  ]
 }
