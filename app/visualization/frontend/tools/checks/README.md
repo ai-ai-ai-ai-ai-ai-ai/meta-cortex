@@ -17,8 +17,11 @@ bun run build
 ```
 
 - **Type checking:** `bun run typecheck` runs
-  `rsvelte-check --tsconfig tsconfig.json --incremental --fail-on-warnings`.
-  The stock CLI uses the workspace TypeScript 7 compiler and
+  `rsvelte-check --tsgo --tsconfig tsconfig.json --incremental --fail-on-warnings`.
+  The supported `--tsgo` option resolves the `@typescript/native` package binary
+  through Node, avoiding default Windows compiler-discovery failures. This alias
+  and the primary `typescript` dependency both select stable TypeScript 7.0.2.
+  The stock CLI uses that native compiler and
   [strict project settings](../../tsconfig.json). It owns Svelte projection,
   compiler diagnostics, and incremental cleanup; no project adapter rewrites output.
 - **Lint:** `bun run lint` runs type-aware Oxlint over ordinary source, tools, and

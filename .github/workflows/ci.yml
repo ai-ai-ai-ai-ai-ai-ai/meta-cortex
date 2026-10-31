@@ -113,12 +113,15 @@ jobs:
       - uses: jdx/mise-action@v4
         with:
           working_directory: cortex
-      - name: Verify and test desktop frontend
+      - name: Install desktop frontend dependencies
         working-directory: app/visualization/frontend
-        run: |
-          bun install --frozen-lockfile
-          bun run verify
-          bun run test
+        run: bun install --frozen-lockfile
+      - name: Verify desktop frontend
+        working-directory: app/visualization/frontend
+        run: bun run verify
+      - name: Test desktop frontend
+        working-directory: app/visualization/frontend
+        run: bun run test
   windows-tests:
     name: Windows workspace tests
     runs-on: windows-latest
